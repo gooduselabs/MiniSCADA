@@ -1,0 +1,82 @@
+{
+  "description": "Site mất điện 08:00 đến 10:00 (boot id đổi, runtime lên 10:01); nhật ký ghi loại site: 136 phút loại trừ",
+  "args": {
+    "site": "lab",
+    "from": "2026-11-02",
+    "to": "2026-11-02"
+  },
+  "expect": {
+    "samples": 87,
+    "uptime": {
+      "ratio": 1,
+      "downtimeMin": 0,
+      "excluded": [
+        {
+          "from": "2026-11-02T07:45:00+07:00",
+          "to": "2026-11-02T10:01:00+07:00",
+          "minutes": 136,
+          "kind": "site",
+          "incident": "INC-lab-01"
+        }
+      ]
+    },
+    "restarts": [
+      {
+        "at": "2026-11-02T10:01:00+07:00",
+        "reason": "crash",
+        "bootChanged": true,
+        "downtimeMin": 136,
+        "excluded": "site",
+        "incident": "INC-lab-01"
+      }
+    ],
+    "gaps": [],
+    "clockJumps": [],
+    "ioWrite": {
+      "perDay": [
+        {
+          "date": "2026-11-02",
+          "bytes": 87000000,
+          "components": {
+            "history": 65250000,
+            "audit": 21750000
+          }
+        }
+      ],
+      "maxDayBytes": 87000000
+    },
+    "emmc": {
+      "start": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "end": {
+        "typeA": 1,
+        "typeB": 1,
+        "preEol": 1
+      },
+      "stepsIncreased": 0
+    },
+    "incidents": {
+      "S1": 0,
+      "S2": 0,
+      "S3": 0,
+      "S4": 0,
+      "events": 1
+    },
+    "criteria": {
+      "X1": "Đạt",
+      "X2": "Đạt",
+      "X3": "Chưa đo",
+      "X4": "Đạt",
+      "X5": "Chưa đo",
+      "X6": "Chưa đo",
+      "X7": "Chưa đo",
+      "X8": "Chưa đo",
+      "X9": "Chưa đo",
+      "X10": "Chưa đo",
+      "X11": "Chưa đo"
+    }
+  }
+}

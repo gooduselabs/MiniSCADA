@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:docs": "node ../../tools/build-docs.mjs --out src-tauri/docs-html",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "tauri": "tauri",

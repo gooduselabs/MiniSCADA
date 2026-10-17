@@ -144,10 +144,27 @@ export const viLogic = {
   'logic.dock.test': 'Thử logic',
   'logic.info.list': 'Lỗi và cảnh báo của logic.json',
   'logic.info.none': 'Không có lỗi hay cảnh báo.',
+  'logic.info.noneToast': 'Không có lỗi hay cảnh báo trong logic.json.',
+  'logic.info.at': 'Lỗi {i}/{n}: {code}',
+  'cmd.logic.nextIssue': 'Logic: tới lỗi kế',
+  'cmd.logic.prevIssue': 'Logic: tới lỗi trước',
+  'reason.logicNotActive': 'Mở editor Logic',
+  // ---- Task card "Khối / Tag" (mockup studio-logic.html cảnh 1) ----
+  'tc.logic': 'Khối / Tag',
+  'tc.logic.blocks': 'Khối',
+  'tc.logic.blocksSub': 'kéo vào bảng',
+  'tc.logic.blockTip': 'Kéo vào bảng hoặc nhấp đúp để thêm {kind}',
+  'tc.logic.full': '{kind}: đã đủ {n} mục (E_LOGIC_LIMIT)',
+  'tc.logic.tags': 'Tag',
+  'tc.logic.tagsSub': 'kéo vào ô biểu thức',
+  'tc.logic.filter': 'Lọc Tag',
+  'tc.logic.noTag': 'Không có Tag khớp.',
+  'tc.logic.more': 'và {n} Tag nữa: gõ để lọc',
+  'tc.logic.retain': 'Ước tính ghi retain: {size}/ngày (logic.flushS 60 s)',
   'logic.info.jumpTip': 'Nhấp đúp hoặc Enter để nhảy tới ô',
   'logic.info.live': 'Kiểm khi gõ',
   'logic.info.liveText':
-    'Validator TS chạy sau mỗi lần sửa (cùng vector với C++). Nhấp đúp một dòng để nhảy tới ô; F8 tới lỗi kế.',
+    'Validator TS chạy sau mỗi lần sửa (cùng vector với C++). Nhấp đúp một dòng để nhảy tới ô; F8 tới lỗi kế, Shift+F8 lỗi trước (ở bất kỳ đâu trong editor Logic).',
   'logic.insp.none': 'Chưa chọn khối {kind} nào.',
 
   // ---- Inspector ----

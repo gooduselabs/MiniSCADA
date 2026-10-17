@@ -61,8 +61,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
   const rows = contractRows();
 
   it('contract có đủ các mục (kiểm bộ đọc contract)', () => {
-    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005, cộng 10 lệnh của feature 006 (T084, T152, T189).
-    expect(rows.length).toBe(48);
+    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005, cộng 10 lệnh của feature 006 (T084, T152, T189), cộng Hướng dẫn sử dụng (feature 011, T178).
+    expect(rows.length).toBe(49);
     expect(rows.find((r) => r.id === 'online.download')).toEqual({
       id: 'online.download',
       label: 'Nạp xuống…',
@@ -98,6 +98,9 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'alarm.filter.errors',
       'alarm.deleteRows',
       'alarm.test.open',
+      // feature 011 (T144): F8 / Shift+F8 tới lỗi kế / trước của editor Logic
+      'logic.nextIssue',
+      'logic.prevIssue',
       'alarm.test.run',
       'alarm.test.step',
       'alarm.test.reset',

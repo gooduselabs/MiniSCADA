@@ -2,7 +2,7 @@
 
 Dành cho người cài đặt và giữ hệ thống chạy: thiết bị BL335, tài khoản, chứng chỉ, sao lưu, cập nhật, gia cố, chẩn đoán. Chi tiết kỹ thuật đầy đủ của từng khóa cấu hình: [mat-runtime.md](../deployment/mat-runtime.md). Alarm: [alarm-operations.md](../deployment/alarm-operations.md).
 
-Áp dụng cho runtime 0.9 và Studio 0.8. Mục ghi **(có từ bản 1.0)** mô tả tính năng của bản 1.0 theo đặc tả đã duyệt; bản hiện tại chưa có.
+Áp dụng cho bản 1.0: runtime 1.0.0 (API thiết bị 1.5.0) và Studio 1.0. Mục còn ghi **(có từ bản 1.0)** mô tả tính năng thuộc bản 1.0 theo đặc tả đã duyệt nhưng bản dựng hiện tại chưa có: cập nhật runtime qua mạng (OTA, gói `.matupdate`), kiểm chữ ký bản phát hành, bộ cài có chữ ký số, hướng dẫn gia cố chi tiết, công cụ thu KPI của pilot; chi tiết có thể còn đổi nhỏ. Các phần khác (khóa đăng nhập, kiểm `Host`, giới hạn kết nối theo nguồn, `--check-data`, chẩn đoán, ghi PLC từ logic) đã có trong runtime 1.0.0.
 
 Quy ước trong tài liệu:
 
@@ -17,7 +17,7 @@ Quy ước trong tài liệu:
 | `viewer` | xem trang vận hành, chẩn đoán; không điều khiển |
 | `operator` | thêm: điều khiển trên trang vận hành, xác nhận và tạm ẩn alarm |
 | `engineer` | thêm: nạp xuống, đọc lên, khôi phục project bằng Studio, thử kết nối |
-| `administrator` | thêm: đọc audit, cập nhật runtime qua mạng (có từ bản 1.0) |
+| `administrator` | thêm: đọc audit, dừng ghi PLC của logic (mục 9), cập nhật runtime qua mạng (có từ bản 1.0) |
 
 Quyền root trên thiết bị (SSH) đứng ngoài các vai trò trên: tạo tài khoản, sửa cấu hình, bật ghi PLC từ logic, bật cập nhật qua mạng.
 
@@ -126,9 +126,9 @@ So khớp chính xác, không phân biệt hoa thường, không có ký tự đ
 |---|---|---|
 | `viewerAccess` | `private` (mặc định) | trang xem không đăng nhập chỉ cho địa chỉ mạng riêng; `any` chỉ khi demo (cảnh báo `VIEWER_PUBLIC`); `off` tắt trang xem |
 | `viewerLogin` | `off` cho kiosk trong phòng điều khiển; `required` khi trang có thể bị mở từ ngoài LAN | `required`: không có dữ liệu nếu chưa đăng nhập |
-| `maxConnPerSource` | 24 (mặc định) | số kết nối tối đa mỗi IP; chống một máy chiếm hết worker |
+| `maxConnPerSource` | 48 (mặc định; khoảng 4–64) | số kết nối đồng thời tối đa mỗi IP (HTTP, HTTPS, WebSocket cộng chung); chống một máy chiếm hết worker. Runtime áp tối đa 75 % `httpsThreads` (mặc định 64, tức 48): đặt cao hơn thì runtime dùng mức đó và in cảnh báo lúc khởi động |
 
-Kết nối HTTPS rảnh được giữ 3 s rồi đóng; 40 worker HTTPS (`httpsThreads`) đủ cho 10 trang mở cùng lúc.
+Kết nối HTTPS rảnh được giữ 3 s rồi đóng. Mặc định 64 worker HTTPS (`httpsThreads`): đủ cho 10 trang mở cùng lúc sau một địa chỉ (NAT, VPN) cả khi cùng bấm F5, và vẫn chừa 16 worker cho máy khác. Đừng hạ `maxConnPerSource` khi nhiều trạm vận hành đi qua cùng một NAT hoặc VPN.
 
 ### 5.3. Gia cố thiết bị
 
@@ -182,7 +182,13 @@ Chép tệp sao lưu ra khỏi thiết bị (máy quản trị, ổ mã hóa). K
 
 3. Kiểm: `runuser -u matscada -- mat-runtime --project-status`, `runuser -u matscada -- mat-runtime --check-history` ("integrity: ok"), `runuser -u matscada -- mat-runtime --alarm-db-check`.
 
-Từ bản 1.0, `mat-runtime --check-data --json` kiểm một lần mọi kho dữ liệu (lịch sử, audit, project, retain, nhật ký xung, trạng thái logic) (có từ bản 1.0).
+Kiểm một lần mọi kho dữ liệu (lịch sử, alarm, audit, project, retain, nhật ký xung, trạng thái logic), chỉ đọc, không cần dừng dịch vụ, tối đa khoảng 30 s:
+
+```sh
+runuser -u matscada -- mat-runtime --check-data          # thêm --json để in một đối tượng JSON
+```
+
+Mã thoát: 0 nguyên vẹn; 1 chỉ có cảnh báo phục hồi được (ví dụ `-wal` còn dữ liệu, xung chưa nhả: lần chạy sau tự xử lý); 2 có mục hỏng (khôi phục từ sao lưu); 3 sai tham số hoặc cấu hình. Tệp không có (thiết bị chưa từng tạo) báo "missing", không phải lỗi. Thời gian kiểm tối đa đặt bằng `--budget-s` (mặc định 25 s); hết giờ thì mục đó là cảnh báo "chưa kiểm hết".
 
 ### 6.4. Khôi phục project
 
@@ -219,20 +225,36 @@ Mỗi bản phát hành có `SHA256SUMS` và chữ ký `SHA256SUMS.sig`. Kiểm 
 - Xuất audit: `runuser -u matscada -- mat-runtime --export-audit --from "2026-10-01 00:00" --format csv > audit.csv`.
 - Lưu trữ: `runuser -u matscada -- mat-runtime --history-stats` (số dòng, dung lượng, số lần chạy).
 - Log: `journalctl -u mat-runtime --since "1 hour ago" --no-pager`.
-- Số luồng: `ls /proc/$(pidof mat-runtime)/task | wc -l` (khoảng 73 là bình thường: phần lớn là worker HTTP/HTTPS).
+- Số luồng: `ls /proc/$(pidof mat-runtime)/task | wc -l` (khoảng 100 là bình thường: 24 worker HTTP và 64 worker HTTPS, khoảng 10 luồng chức năng, mỗi kênh Modbus TCP thêm một luồng).
 - Ghi eMMC: `system/info`, mục `historian.io` (`bytesPerDay`). Ngân sách: ≤ 2 GB/ngày.
 
-**KPI của bản 1.0 (có từ bản 1.0):** `GET /api/v1/system/diagnostics` (role viewer) trả `uptimeS`, số lần khởi động lại và nguyên nhân, `rssMb`, `cpuPct`, ghi đĩa trong ngày theo thành phần, `emmcLife`, `liveLagP95Ms`, `timeSynced`. Trong pilot, `tools/pilot/collect.ps1` thu dữ liệu này mỗi 15 phút và `tools/pilot/kpi.mjs` tính KPI (xem [docs/pilot/criteria.md](../pilot/criteria.md)).
+**Chẩn đoán dài hạn (KPI):** `GET https://<địa chỉ>:8443/api/v1/diagnostics` (cần đăng nhập, vai trò `viewer` trở lên; tab **Chẩn đoán** của Studio đọc cùng địa chỉ này). Ngoài các khối cũ (CPU, bộ nhớ, đĩa, phiên), bản 1.0 thêm:
+
+| Khóa | Ý nghĩa |
+|---|---|
+| `uptimeS` | số giây runtime đã chạy |
+| `restarts` | số lần khởi động lại và nguyên nhân lần cuối: `crash` (lần trước không dừng sạch, kể cả mất điện), `update` (đổi phiên bản), `systemd-restart` (dừng sạch), `unknown` |
+| `rssMb`, `rssPeakMb` | RAM của runtime hiện tại và cao nhất (MiB) |
+| `cpuPct` | CPU của runtime, trung bình 5 phút |
+| `fdCount`, `threads` | số tệp đang mở, số luồng |
+| `ioWriteBytesToday` | byte ghi từ 00:00 theo từng phần (lịch sử, alarm, audit, retain, logic…) |
+| `emmcLife` | tuổi thọ eMMC đọc từ thiết bị; `null` kèm `emmcLifeReason` khi không đọc được |
+| `liveLagP95Ms` | độ trễ dữ liệu sống p95 trong 5 phút gần nhất |
+| `timeSynced` | đồng hồ thiết bị đã đồng bộ chưa (lịch của logic và báo cáo cần giờ đúng) |
+
+Giá trị không biết là `null`, không bao giờ là 0. Trong pilot, `tools/pilot/collect.ps1` thu dữ liệu này mỗi 15 phút và `tools/pilot/kpi.mjs` tính KPI (có từ bản 1.0; xem [docs/pilot/criteria.md](../pilot/criteria.md)).
 
 Ngưỡng tham khảo: RSS ≤ 150 MB, CPU trung bình ≤ 30 %, `liveLagP95Ms` ≤ 500 ms, ghi eMMC ≤ 2 GB/ngày.
 
-## 9. Ghi xuống PLC từ logic (`logic.writes`, có từ bản 1.0)
+## 9. Ghi xuống PLC từ logic (`logic.writes`)
 
-Logic của project (bản 1.0) có thể ghi xuống PLC qua danh sách "Ghi PLC" mà kỹ sư khai. Thiết bị **mặc định chặn** mọi lệnh ghi của logic (`"logic": {"writes": "off"}`), ghi audit `logic.write.suppressed` và báo cảnh báo `LOGIC_WRITES_OFF`.
+Logic của project (định dạng 1.0.0, runtime 1.0.0) có thể ghi xuống PLC qua danh sách "Ghi PLC" mà kỹ sư khai ([engineer-guide.md](engineer-guide.md) mục 9). Thiết bị **mặc định chặn** mọi lệnh ghi của logic (`"logic": {"writes": "off"}`): luật vẫn chạy, lệnh bị chặn ghi audit `logic.write.suppressed` (gộp 60 s) và thiết bị báo cảnh báo `LOGIC_WRITES_OFF`. Studio hiện chip "Ghi PLC: tắt", "Ghi PLC: bật" hoặc "Ghi PLC: dừng".
 
-- **Bật** (sau khi kỹ sư và người phụ trách an toàn đã duyệt danh sách ghi): root sửa `runtime.json` thành `"logic": {"writes": "on"}`, rồi `systemctl restart mat-runtime`. Không bật được từ Studio hay web.
-- **Dừng khẩn:** administrator trong Studio, chip "Ghi PLC" > "Dừng ghi của logic": có hiệu lực ngay, giữ qua khởi động lại. Bật lại chỉ bằng root như trên.
-- Giới hạn: `logic.maxWritesPerMin` (mặc định 20 lệnh mỗi phút cho mọi luật). Vượt thì luật bị tạm hãm (`LOGIC_THROTTLED`).
+- **Bật** (sau khi kỹ sư và người phụ trách an toàn đã duyệt danh sách ghi): root sửa `runtime.json` thành `"logic": {"writes": "on"}`, rồi `systemctl restart mat-runtime`. Không bật được từ Studio hay web (API trả 403 `LOGIC_ENABLE_ROOT_ONLY`).
+- **Dừng khẩn:** administrator trong Studio, Online, tab Logic: nhấp chip "Ghi PLC" > **Dừng ghi của logic…**, tích "Tôi hiểu việc bật lại cần quyền root trên thiết bị.", bấm **Dừng ghi ngay**. Có hiệu lực ngay, giữ qua khởi động lại (cờ dừng nằm trong `/var/lib/mat-runtime/logic-state.json`), audit `logic.writes.disabled`. Chỉ lệnh ghi PLC dừng; Tag logic, timer, counter, lịch vẫn chạy. Thiết bị đang được logic điều khiển giữ trạng thái hiện tại trên PLC.
+- **Bật lại sau khi dừng:** root đặt `"logic": {"writes": "on"}` trong `runtime.json`, xóa `/var/lib/mat-runtime/logic-state.json` rồi `systemctl restart mat-runtime` (chỉ sửa `runtime.json` thì thiết bị vẫn ở trạng thái dừng).
+- Giới hạn: `logic.maxWritesPerMin` (mặc định 20, khoảng 1–60 lệnh mỗi phút cho mọi luật). Vượt thì lệnh bị từ chối và luật bị tạm hãm (`LOGIC_THROTTLED`).
+- Khóa khác: `logic.scanMs` (chu kỳ quét, mặc định 100 ms, 50–1000), `logic.flushS` (chu kỳ lưu trạng thái giữ qua mất điện, mặc định 60 s, 10–600).
 - Mỗi lệnh ghi của logic có audit, người thực hiện `logic:<id luật>`.
 
 ## 10. Lệnh xung và mất điện (`pulseRecovery`)
@@ -247,12 +269,12 @@ Nút xung bật bit rồi tự nhả sau N ms. Runtime ghi nhật ký xung `/var
 
 | Studio | Runtime | Định dạng project | Kết quả |
 |---|---|---|---|
-| 0.8 | 0.9 | 0.1 đến 0.6 | đầy đủ (bản hiện tại) |
-| 1.0 | 1.0 | 0.1 đến 0.6 và 1.0.0 | đầy đủ (có từ bản 1.0) |
-| 1.0 | 0.9 hoặc cũ hơn | 1.0.0 | Studio ẩn cập nhật qua mạng và logic, **chặn** nạp xuống project 1.0.0 kèm hướng dẫn cập nhật runtime |
-| 0.8 hoặc cũ hơn | 1.0 | 1.0.0 | Studio cũ từ chối mở project 1.0.0; project định dạng cũ vẫn nạp xuống được |
+| 1.0 | 1.0.0 (API 1.5.0) | 0.1 đến 0.6 và 1.0.0 | đầy đủ (bản hiện tại; cập nhật qua mạng: có từ bản 1.0) |
+| 0.8 | 0.9 | 0.1 đến 0.6 | đầy đủ (bản trước) |
+| 1.0 | 0.9 hoặc cũ hơn | 1.0.0 | Studio ẩn logic (chip "Logic: chưa hỗ trợ"), **chặn** nạp xuống project 1.0.0 kèm hướng dẫn cập nhật runtime; project định dạng cũ vẫn nạp xuống được |
+| 0.8 hoặc cũ hơn | 1.0.0 | 1.0.0 | Studio cũ từ chối mở project 1.0.0; project định dạng cũ vẫn nạp xuống được |
 
-Mỗi runtime có `minRuntimeVersion` của project: runtime cũ hơn từ chối với `E_RUNTIME_TOO_OLD`. Xem phiên bản đang chạy: `system/info` hoặc tab Thiết bị của Studio.
+Mỗi runtime có `minRuntimeVersion` của project: runtime cũ hơn từ chối với `E_RUNTIME_TOO_OLD`. Xem phiên bản đang chạy: `system/info` (khóa `runtimeVersion`) hoặc tab Thiết bị của Studio.
 
 ## 12. Sự cố thường gặp
 
@@ -268,7 +290,10 @@ Mỗi runtime có `minRuntimeVersion` của project: runtime cũ hơn từ chố
 | Cảnh báo `SSH_ROOT_PASSWORD` | `/etc/ssh/sshd_config` | mục 5.3 |
 | Cảnh báo `PULSE_STUCK` | Tag trong `detail` | kiểm PLC, nhả bit bằng tay (mục 10) |
 | Lưu trữ dừng ghi | `system/info` mục `historian` | kiểm `historianMinFreeMB`, dung lượng |
-| Sau mất điện nghi hỏng dữ liệu | `--check-history`, `--alarm-db-check` | tệp hỏng được đổi tên `*.corrupt-<thời điểm>`; khôi phục từ sao lưu nếu cần |
+| Sau mất điện nghi hỏng dữ liệu | `--check-data` (mục 6.3), `--check-history`, `--alarm-db-check` | tệp hỏng được đổi tên `*.corrupt-<thời điểm>`; khôi phục từ sao lưu nếu cần |
+| Nhiều trạm sau một NAT/VPN: trang chậm hoặc thiếu dữ liệu sống | log khởi động có dòng `maxConnPerSource`; giá trị `maxConnPerSource`, `httpsThreads` | về mặc định 48 và 64 (mục 5.2) |
+| Cảnh báo `LOGIC_WRITES_OFF` | project có ghi PLC từ logic, thiết bị đang tắt | bật theo mục 9 sau khi đã duyệt; hoặc để tắt nếu chủ ý |
+| Cảnh báo `LOGIC_THROTTLED` | luật ghi quá `logic.maxWritesPerMin` | kỹ sư sửa luật (thường do điều kiện dao động); không nâng giới hạn khi chưa rõ nguyên nhân |
 | Nạp xuống tự quay về bản cũ | thông báo ở Studio; `--project-status` | đọc lý do (kiểm tra sức khỏe không đạt); sửa project rồi nạp lại |
 
 ## 13. Bảng tác vụ kiểm tra
@@ -291,3 +316,6 @@ Giáo trình: [docs/training/admin.md](../training/admin.md). Làm trên bàn th
 | A12 | Đọc audit | Studio **Audit của thiết bị**, lọc theo tài khoản | thấy đăng nhập, nạp xuống của A2–A9 |
 | A13 | Chẩn đoán | đọc `system/info`, tab Chẩn đoán, `journalctl` | nêu được phiên bản, RSS, cảnh báo đang có |
 | A14 | Cập nhật qua mạng (có từ bản 1.0) | bật `update.enabled`, cập nhật từ Studio bằng gói thử | thiết bị chạy bản mới; `--update-status` báo thành công |
+| A15 | Kiểm dữ liệu | `runuser -u matscada -- mat-runtime --check-data --json`; rồi `systemctl kill -s KILL mat-runtime` và chạy lại lệnh | lần đầu mã thoát 0; sau `kill` mã thoát 0 hoặc 1 (cảnh báo phục hồi được), không có mục `damaged` |
+| A16 | Chỉ số dài hạn | đăng nhập (viewer), đọc `GET /api/v1/diagnostics` | nêu được `uptimeS`, `restarts` (nguyên nhân `crash` sau A15), `rssMb`, `timeSynced` |
+| A17 | Dừng khẩn ghi PLC của logic | trên bàn thử có `logic.writes` = `on`: Studio, administrator, **Dừng ghi của logic…**; khởi động lại dịch vụ | chip "Ghi PLC: dừng" giữ qua khởi động lại; audit `logic.writes.disabled`; bật lại theo mục 9 |

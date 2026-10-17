@@ -14,6 +14,9 @@ import { ALL_SYMBOL_FILES, symbolKey, symbolFileByKey } from '../model/symbol-fl
 import { phaseLabel, type Phase } from '../model/tree.ts';
 import { AppElement, icon } from './base.ts';
 import './taskcards-symbols.css';
+import './taskcards-context.css';
+import { renderLogicCard } from './logic/logic-card.ts';
+import { renderDrawCard } from './svg/draw-card.ts';
 import {
   metric,
   projectIcon,
@@ -349,7 +352,18 @@ export class MatTaskcards extends AppElement {
     </button>`;
   }
 
+  /** Nội dung của thẻ đầu theo editor đang mở: Logic → "Khối / Tag", trình vẽ SVG → "Công cụ vẽ", còn lại Toolbox widget. */
+  private toolboxMode(): 'logic' | 'draw' | 'widgets' {
+    const active = this.app.store.state.active;
+    if (active === 'logic' && this.app.store.state.outline.logic) return 'logic';
+    if (active === 'svgnew' || active.startsWith('svgdraw:')) return 'draw';
+    return 'widgets';
+  }
+
   private toolbox() {
+    const mode = this.toolboxMode();
+    if (mode === 'logic') return renderLogicCard(this.app, () => this.requestUpdate());
+    if (mode === 'draw') return renderDrawCard(this.app, () => this.requestUpdate());
     if (this.app.store.state.outline.schema === '0.3') return this.catalogToolbox();
     const phases = this.app.workspace.showPhases;
     return TOOLBOX.map(({ group, phase, tools }) => {
@@ -525,6 +539,11 @@ export class MatTaskcards extends AppElement {
   protected override render() {
     const app = this.app;
     const { taskCard, taskCardOpen } = app.workspace;
+    const mode = this.toolboxMode();
+    const firstLabel: MessageKey =
+      mode === 'logic' ? 'tc.logic' : mode === 'draw' ? 'svgd.toolbox' : 'tc.toolbox';
+    const labelOf = (c: (typeof CARDS)[number]): MessageKey =>
+      c.id === 'toolbox' ? firstLabel : c.label;
     const card = CARDS.find((c) => c.id === taskCard) ?? CARDS[0];
     const body =
       taskCard === 'toolbox'
@@ -543,7 +562,7 @@ export class MatTaskcards extends AppElement {
               aria-labelledby="tc-tab-${card.id}"
             >
               <div class="pane-h">
-                <span>${t(card.label)}</span>
+                <span>${t(labelOf(card))}</span>
                 <button
                   class="ibtn sm"
                   type="button"
@@ -577,7 +596,9 @@ export class MatTaskcards extends AppElement {
               @click=${() => app.setTaskCard(c.id)}
               @keydown=${(e: KeyboardEvent) => this.onStripKey(e, c.id)}
             >
-              ${icon(c.icon)}<span>${t(c.label)}</span>
+              ${icon(c.id === 'toolbox' && mode === 'logic' ? 'rule' : c.id === 'toolbox' && mode === 'draw' ? 'd-rect' : c.icon)}<span
+                >${t(labelOf(c))}</span
+              >
             </button>`,
         )}
       </div>`;

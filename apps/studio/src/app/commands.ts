@@ -74,8 +74,12 @@ export type CommandId =
   | 'alarm.test.speed5'
   | 'alarm.test.speed20'
   | 'alarm.upgrade'
+  // Feature 011 (T144): F8 / Shift+F8 tới lỗi kế / trước của logic.json khi tab Logic đang mở.
+  | 'logic.nextIssue'
+  | 'logic.prevIssue'
   | 'alarm.classes.add'
   | 'alarm.areas.add'
+  | 'help.docs'
   | 'help.shortcuts'
   | 'help.roadmap'
   | 'help.about'
@@ -379,6 +383,8 @@ function svgCheck(id: SvgCommandId): Check {
 
 /** Project 0.5 (alarm, feature 009). */
 const project05: Check = (c) => c.version05 || 'reason.needVersion05';
+const logicOpen: Check = (c) =>
+  !c.hasProject ? 'reason.noProject' : c.activeEditor === 'logic' || 'reason.logicNotActive';
 const alarmGridOpen: Check = (c) => c.activeEditor === 'alarms' || 'reason.alarmNotActive';
 const alarmClassesOpen: Check = (c) =>
   c.activeEditor === 'alarmClasses' || 'reason.alarmClassesNotActive';
@@ -566,6 +572,8 @@ export const COMMANDS: readonly CommandSpec[] = [
   cmd('tools.validate', 'tools', needProject, { shortcut: 'F7', icon: 'check' }),
   // Mô phỏng (feature 006, FR-052): bật hoặc tắt; giá trị tự tính trong Studio, không gửi gì tới thiết bị.
   cmd('tools.simulate', 'tools', needProject, { icon: 'play' }),
+  // Hướng dẫn sử dụng (feature 011, T178): mục của editor đang mở trong tài liệu HTML đi kèm bộ cài.
+  cmd('help.docs', 'help', always, { shortcut: 'F1', icon: 'info' }),
   cmd('help.shortcuts', 'help', always),
   // Lộ trình: mở tab Bắt đầu.
   cmd('help.roadmap', 'help', always),
@@ -596,6 +604,8 @@ export const COMMANDS: readonly CommandSpec[] = [
     all(needProject, project05, (c) => c.alarmCount > 0 || 'reason.noAlarmsValid'),
     { icon: 'play' },
   ),
+  cmd('logic.nextIssue', null, logicOpen, { shortcut: 'F8' }),
+  cmd('logic.prevIssue', null, logicOpen, { shortcut: 'Shift+F8' }),
   cmd('alarm.test.run', null, alarmTestOpen, { canvasKey: 'Space' }),
   cmd('alarm.test.step', null, alarmTestOpen, { canvasKey: '.' }),
   cmd('alarm.test.reset', null, alarmTestOpen, { canvasKey: 'R' }),
@@ -802,5 +812,5 @@ export const MENUS: Readonly<Record<MenuId, ReadonlyArray<CommandId | '-'>>> = {
     'watch.writeAll',
   ],
   tools: ['tools.validate', 'tools.simulate'],
-  help: ['help.shortcuts', 'help.roadmap', '-', 'help.about'],
+  help: ['help.docs', 'help.shortcuts', 'help.roadmap', '-', 'help.about'],
 };

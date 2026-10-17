@@ -562,6 +562,8 @@ mat-inspector > mat-logic-dock.lg-dock,
   grid-template-rows: auto minmax(0, 1fr) auto;
   height: 100%;
   min-height: 0;
+  /* Bố cục theo bề ngang của chính panel (khung dưới hẹp hơn cửa sổ khi cây và task card mở), không theo cửa sổ. */
+  container-type: inline-size;
 }
 .lg-test .ttools {
   display: flex;
@@ -590,7 +592,8 @@ mat-inspector > mat-logic-dock.lg-dock,
 }
 .lg-test .tgrid {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 270px;
+  /* Đường thời gian lấy phần còn lại (T144): hai cột bên co trong khoảng, không cố định 240 + 270 px. */
+  grid-template-columns: minmax(190px, 220px) minmax(0, 1fr) minmax(210px, 250px);
   min-height: 0;
 }
 .lg-test .tin,
@@ -817,14 +820,34 @@ table.wl {
   margin: 0;
 }
 
-@media (max-width: 1280px) {
+/* Panel hẹp (cây và task card mở ở cửa sổ ≤ 1400 px): Đầu vào và đường thời gian chung hàng, nhật ký hành động và trạng
+   thái khối xuống dưới thành dải hai cột thấp, để đường thời gian rộng gấp đôi. */
+@container (max-width: 1100px) {
   .lg-test .tgrid {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: minmax(180px, 210px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(96px, 34%);
   }
   .lg-test .tout {
     grid-column: 1 / -1;
     border-left: 0;
     border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .lg-test .tout > .pane-h {
+    grid-column: 1;
+  }
+  .lg-test .tout > .alog {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .lg-test .tout > .bst {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--border-2);
   }
 }
 

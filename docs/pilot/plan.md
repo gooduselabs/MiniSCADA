@@ -69,3 +69,40 @@ Không thu dữ liệu quy trình (giá trị Tag, tên Tag, tên màn hình): [
 | Bị dò mật khẩu từ Internet | bảo mật | không chuyển cổng; SSH bằng khóa; cảnh báo `SSH_ROOT_PASSWORD` |
 | Người vận hành chưa quen | dùng sai, báo sự cố giả | huấn luyện tuần đầu, hướng dẫn in tại chỗ |
 | Bản vá giữa kỳ gây lỗi mới | sự cố | hồi quy đầy đủ trước khi cài; giữ `.prev` để rollback |
+
+## 7. Bàn thử
+
+Bàn thử nội bộ chạy song song với site, cùng bản `1.0.0-rc.N`, trong suốt kỳ pilot (soak S2 của [contract test-protocols](../../specs/011-pilot-hardening/contracts/test-protocols.md) §2, FR-136). Nó cho số đo khi site chưa có hoặc mất đường VPN, và là nơi thử bản vá trước khi đưa ra site.
+
+**Thiết bị:** 1 BL335 (cài như site, theo `admin-guide` mục 2), 1 máy bàn thử cùng LAN (Windows hoặc Linux, có Node ≥ 22, PowerShell 7, Go để dựng `load-tester`), nguồn điện có thể cắt để thử mất điện.
+
+**Cài bằng script** `tools/pilot/bench-setup.ps1` (chạy trên máy bàn thử; không đổi gì trên thiết bị):
+
+| Bước | Việc | Bỏ qua bằng |
+|---|---|---|
+| 1 | sinh project `soak-standard` (500 Tag, lưu trữ 200 Tag theo thay đổi, 3 màn hình) bằng `tools/gen-bench-projects.mjs` vào `out/pilot-bench/projects/`; **nạp xuống bằng Studio** (không đi tắt chuỗi triển khai của thiết bị) | `-SkipProject` |
+| 2 | chạy giả lập Modbus `tools/modbus-sim/sim.mjs` với bản đồ `bench-500.json` ở cổng `5020` (PLC giả ở máy khác, như soak S1) | `-SkipModbus` |
+| 3 | 10 client trang xem bằng `load-tester -clients 10 -tags 500` trong `-Days` ngày (mặc định 30) | `-SkipLoad` |
+| 4 | chạy `tools/pilot/collect.ps1 -Site bench` thu dữ liệu mỗi 15 phút vào `docs/pilot/data/<site>/` (site `bench`, không commit) | `-SkipCollect` |
+
+```powershell
+$env:MAT_PILOT_PASSWORD = '<mật khẩu tài khoản chỉ đọc>'   # hoặc kho thông tin xác thực Windows: cmdkey /generic:mat-pilot/bench /user:<tài khoản> /pass
+pwsh tools/pilot/bench-setup.ps1 -Device <địa chỉ BL335 bàn thử> -User <tài khoản chỉ đọc> -DryRun   # xem trước, không chạy gì
+pwsh tools/pilot/bench-setup.ps1 -Device <địa chỉ BL335 bàn thử> -User <tài khoản chỉ đọc> -Fingerprint <SHA-256 chứng chỉ>
+pwsh tools/pilot/bench-setup.ps1 -Stop                                                              # dừng các tiến trình đã chạy
+```
+
+Tiến trình chạy nền, PID và log ghi ở `out/pilot-bench/bench-state.json` (không commit). Máy bàn thử khởi động lại thì chạy lại script (tiến trình đang chạy không bị chạy hai lần).
+
+**Tài khoản:** `collect.ps1` dùng tài khoản chỉ đọc (`viewer`) cho `system/info` và `diagnostics`. API `audit` chỉ cho `administrator`: với `viewer`, dòng thu có `"audit": {"error": "FORBIDDEN"}` và mẫu vẫn được ghi. Muốn có tóm tắt audit ở bàn thử thì dùng tài khoản quản trị riêng cho việc thu (mật khẩu không vào repo).
+
+**Lưu ý:** project `soak-standard` dùng Tag mô phỏng trong runtime, chưa có kênh Modbus; giả lập Modbus ở bước 2 chỉ tạo tải driver khi project có kênh trỏ tới máy bàn thử (thêm bằng Studio nếu cần đo cả driver).
+
+**KPI và tiêu chí ra:** cuối mỗi tuần và cuối kỳ chạy
+
+```powershell
+node tools/pilot/kpi.mjs --site bench --from <ngày bắt đầu> --to <ngày kết thúc>          # bảng X1 đến X11
+node tools/pilot/kpi.mjs --site bench --from <ngày bắt đầu> --to <ngày kết thúc> --json   # số cho weekly-report.md
+```
+
+Quy tắc tính (khoảng trống, đồng hồ nhảy, ước tính thời gian ngừng, loại trừ mất điện và cập nhật có kế hoạch): [tests/pilot-kpi/README.md](../../tests/pilot-kpi/README.md). Mất điện chủ động ở bàn thử ghi vào [incident-log.md](incident-log.md) với mã `INC-bench-<nn>`, mức `-`, loại `site`, khung giờ trong cột "Tác động" (`ngừng <ngày giờ> đến <ngày giờ>`), rồi chạy `mat-runtime --check-data` (X6).

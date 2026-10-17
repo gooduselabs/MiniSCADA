@@ -1,0 +1,55 @@
+{
+  "description": "Thiết bị không đọc được emmcLife (null, lý do no-emmc): X4 Chưa đo dù ghi đĩa trong ngưỡng",
+  "args": {
+    "site": "lab",
+    "from": "2026-11-02",
+    "to": "2026-11-02"
+  },
+  "expect": {
+    "samples": 96,
+    "uptime": {
+      "ratio": 1,
+      "downtimeMin": 0,
+      "excluded": []
+    },
+    "ioWrite": {
+      "perDay": [
+        {
+          "date": "2026-11-02",
+          "bytes": 96000000,
+          "components": {
+            "history": 72000000,
+            "audit": 24000000
+          }
+        }
+      ],
+      "maxDayBytes": 96000000
+    },
+    "emmc": {
+      "start": null,
+      "end": null,
+      "stepsIncreased": null,
+      "reason": "no-emmc"
+    },
+    "incidents": {
+      "S1": 0,
+      "S2": 0,
+      "S3": 0,
+      "S4": 0,
+      "events": 0
+    },
+    "criteria": {
+      "X1": "Đạt",
+      "X2": "Đạt",
+      "X3": "Chưa đo",
+      "X4": "Chưa đo",
+      "X5": "Chưa đo",
+      "X6": "Chưa đo",
+      "X7": "Chưa đo",
+      "X8": "Chưa đo",
+      "X9": "Chưa đo",
+      "X10": "Chưa đo",
+      "X11": "Chưa đo"
+    }
+  }
+}

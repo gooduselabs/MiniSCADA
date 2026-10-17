@@ -52,6 +52,9 @@ export function resolveShortcut(e: KeyLike, ctx: KeyContext): ShortcutAction | n
   if (ctx.modal) return null;
   if (e.metaKey) return null;
   if (!e.ctrlKey && !e.altKey) {
+    // Hướng dẫn sử dụng (feature 011, T178) và lỗi kế / trước của editor Logic (T144): cả khi focus trong ô nhập.
+    if (e.key === 'F1' && !e.shiftKey) return { command: 'help.docs' };
+    if (e.key === 'F8') return { command: e.shiftKey ? 'logic.prevIssue' : 'logic.nextIssue' };
     if (e.key === 'F6') return { command: e.shiftKey ? 'view.prevRegion' : 'view.nextRegion' };
     if (e.key === 'F7' && !e.shiftKey) return { command: 'tools.validate' };
     if (e.key === 'F10' && !e.shiftKey) return { focusMenu: true };
