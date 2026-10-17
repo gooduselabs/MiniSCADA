@@ -11,7 +11,7 @@
 // says so). Passwords are random per run (docker exec -e, --password-stdin).
 import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,6 +46,7 @@ const tags = JSON.parse(readFileSync(join(pdir, 'tags.json'), 'utf8'));
 tags.tags.push({ id: 'CMD.SP', kind: 'internal', type: 'FLOAT64', access: 'RW', initial: 0, retain: true });
 writeFileSync(join(pdir, 'tags.json'), `${JSON.stringify(tags, null, 2)}\n`);
 const cmdLog = join(work, 'commands.jsonl');
+const pauseFile = join(work, 'pause');
 writeFileSync(cmdLog, '');
 
 sh('docker', ['rm', '-f', name]);
@@ -105,6 +106,7 @@ async function deployer() {
   let n = 0;
   while (!stop) {
     await sleep(deployS * 1000);
+    if (existsSync(pauseFile)) continue; // x64-kill is checking the round after a kill
     try {
       token ??= await tokenOf('kysu1');
       if (!token) continue;
@@ -129,7 +131,7 @@ await sleep(15000);
 const killArgs = [
   join(root, 'tools/powercut/x64-kill.mjs'), '--container', name, '--rounds', opt('--rounds', '100'),
   '--point-rounds', opt('--point-rounds', '10'), '--points', opt('--points', 'D1,D3,D5'), '--base-url', BASE,
-  '--runtime', '/build/x64/bin/mat-runtime', '--data-dir', '/data', '--command-log', cmdLog, '--out', out,
+  '--runtime', '/build/x64/bin/mat-runtime', '--data-dir', '/data', '--command-log', cmdLog, '--pause-file', pauseFile, '--out', out,
   '--stable-s', opt('--stable-s', '10'), '--max-delay-s', opt('--max-delay-s', '60'), '--ready-timeout-s', '90',
   '--event-timeout-s', opt('--event-timeout-s', '900'), '--retain-period-s', opt('--retain-period-s', '5'), '--off-s', '5',
   '--wal-bytes', opt('--wal-bytes', String(3 * 1024 * 1024)),

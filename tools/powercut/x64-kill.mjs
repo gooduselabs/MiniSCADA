@@ -8,7 +8,7 @@
 //
 // Each round: READY (GET /api/v1/system/info) and stable --stable-s; the kill time (random in [0, --max-delay-s] or the
 // event of the point, read inside the container); docker kill -s KILL; --off-s; docker start; READY within
-// --ready-timeout-s; no deploy operation left running (<= 90 s); `mat-runtime --check-data --json` (exit 0, or 1 only for pulse.journal or a WAL to recover); every
+// --ready-timeout-s; no deploy operation left running and no `pending` in state.json of the store (<= 90 s); `mat-runtime --check-data --json` (exit 0, or 1 only for pulse.journal or a WAL to recover); every
 // requestId logged ACCEPTED in --command-log before the kill is in `mat-runtime --export-audit --format jsonl`. Stops at the first
 // failure and keeps the container as it is. Points: D1 a deploy running (the running op of
 // <--store-dir, default <data dir>/projects>/ops/*.json; x64-kill.ps1 looked in <data dir>/ops and at finished ops), killed
@@ -17,7 +17,7 @@
 // LIMITATION (in the report): docker kill only kills processes; the kernel of the host still writes the page cache,
 // so data not yet fsynced is not lost as on a real power cut. Never against a container you do not own.
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import https from 'node:https';
 import { dirname } from 'node:path';
 
@@ -48,6 +48,7 @@ const cfg = {
   retainPeriodS: Number(opt('--retain-period-s', '60')),
   offS: Number(opt('--off-s', '5')),
   walBytes: Number(opt('--wal-bytes', String(4 * 1024 * 1024))),
+  pauseFile: opt('--pause-file', ''),
 };
 cfg.storeDir ||= `${cfg.dataDir}/projects`;
 const limitation =
@@ -209,6 +210,8 @@ for (const point of plan) {
   if (!fail) {
     await sleep(Math.max(0, r.cutDelayMs));
     r.cutAt = new Date().toISOString();
+    // --pause-file: a command generator of the rig starts no new deploy until the checks of this round are done
+    if (cfg.pauseFile) writeFileSync(cfg.pauseFile, r.cutAt);
     docker(['kill', '-s', 'KILL', container]);
     const acc = accepted();
     await sleep(cfg.offS * 1000);
@@ -219,7 +222,10 @@ for (const point of plan) {
       // a deploy cut in the middle is finished or rolled back by the runtime at its start (boot decision, health):
       // check-data runs once no operation is left running (it reports a running one as a warning), at most 90 s
       const t0 = now();
-      while (now() - t0 < 90000 && execIn(`grep -l '"result": "running"' '${cfg.storeDir}'/ops/*.json 2>/dev/null`).out) await sleep(500);
+      const busy = () =>
+        execIn(`grep -l '"result": "running"' '${cfg.storeDir}'/ops/*.json 2>/dev/null`).out ||
+        !/"pending":\s*null/.test(execIn(`cat '${cfg.storeDir}/state.json' 2>/dev/null`).out);
+      while (now() - t0 < 90000 && busy()) await sleep(500);
       r.pendingOpMs = now() - t0;
       const c = execIn(`${cfg.runtime} --check-data --json --data-dir ${cfg.dataDir}`);
       r.check = { ...checkData(c.out, c.code), exitCode: c.code };
@@ -234,6 +240,7 @@ for (const point of plan) {
       } else r.audit = { status: 'not-measured', detail: 'no --command-log' };
     }
   }
+  if (cfg.pauseFile) rmSync(cfg.pauseFile, { force: true });
   r.ok = !fail;
   if (fail) r.failure = fail;
   rounds.push(r);
