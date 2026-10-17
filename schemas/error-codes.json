@@ -237,7 +237,7 @@
       "http": 409,
       "group": "deploy",
       "message": "Thiết bị đang bận với một thao tác khác.",
-      "usedIn": ["core/project-store", "server/http"]
+      "usedIn": ["core/project-store", "server", "server/http"]
     },
     {
       "code": "DEVICE_EXCEPTION",
@@ -266,6 +266,41 @@
       "group": "quality",
       "message": "Phép chia cho 0",
       "usedIn": ["core/expression"]
+    },
+    {
+      "code": "ENVELOPE_EXTRA_MEMBER",
+      "http": null,
+      "group": "update",
+      "message": "Phong bì có thêm thành viên hoặc dữ liệu sau phần kết thúc",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "ENVELOPE_HEADER",
+      "http": null,
+      "group": "update",
+      "message": "Tiêu đề tar của phong bì sai (tổng kiểm, magic, loại mở rộng)",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "ENVELOPE_ORDER",
+      "http": null,
+      "group": "update",
+      "message": "Thành viên của phong bì sai tên hoặc sai thứ tự",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "ENVELOPE_SIZE",
+      "http": null,
+      "group": "update",
+      "message": "Thành viên của phong bì vượt kích thước tối đa",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "ENVELOPE_TRUNCATED",
+      "http": null,
+      "group": "update",
+      "message": "Gói cập nhật bị cắt ngang",
+      "usedIn": ["core/update"]
     },
     {
       "code": "EXCEPTION_01",
@@ -1641,11 +1676,46 @@
       "usedIn": ["server/http"]
     },
     {
+      "code": "FILE_DIGEST",
+      "http": null,
+      "group": "update",
+      "message": "Băm hoặc kích thước của một tệp trong payload khác files[]",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "FILE_EXTRA",
+      "http": null,
+      "group": "update",
+      "message": "Payload có tệp không có trong files[]",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "FILE_MISSING",
+      "http": null,
+      "group": "update",
+      "message": "Thiếu một tệp có trong files[] (hoặc trong SHA256SUMS)",
+      "usedIn": ["core/update"]
+    },
+    {
       "code": "FORBIDDEN",
       "http": 403,
       "group": "auth",
       "message": "Tài khoản không đủ quyền cho thao tác này.",
       "usedIn": ["server/http"]
+    },
+    {
+      "code": "FORMAT_UNSUPPORTED",
+      "http": null,
+      "group": "update",
+      "message": "Định dạng gói cập nhật (format) không được runtime này hỗ trợ",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "FROM_VERSION",
+      "http": null,
+      "group": "update",
+      "message": "Bản đang chạy thấp hơn minFromVersion: cần qua bản trung gian",
+      "usedIn": ["core/update"]
     },
     {
       "code": "HEALTH_CRASH",
@@ -1732,6 +1802,13 @@
       "usedIn": ["core/expression", "core/logic", "server/http"]
     },
     {
+      "code": "INSUFFICIENT_SPACE",
+      "http": 507,
+      "group": "update",
+      "message": "Không đủ chỗ trống để nhận gói cập nhật (cần 3 lần kích thước gói)",
+      "usedIn": ["server"]
+    },
+    {
       "code": "INTERNAL_ERROR",
       "http": 500,
       "group": "auth",
@@ -1746,11 +1823,39 @@
       "usedIn": ["core/tag-engine", "drivers/modbus"]
     },
     {
+      "code": "KEYSET_KEY",
+      "http": null,
+      "group": "update",
+      "message": "Khóa của gói keyset không hợp lệ (không phải ECDSA P-256, quá 4 khóa)",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "KEYSET_SELF_REVOKE",
+      "http": null,
+      "group": "update",
+      "message": "Gói keyset gỡ chính khóa đã ký nó",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "KEYSET_WRITE_FAILED",
+      "http": null,
+      "group": "update",
+      "message": "mat-update-verify không ghi được khóa của gói keyset",
+      "usedIn": ["server/updater"]
+    },
+    {
       "code": "LENGTH_REQUIRED",
       "http": 411,
       "group": "auth",
       "message": "Yêu cầu cần có Content-Length.",
       "usedIn": ["server/http"]
+    },
+    {
+      "code": "LINK_FORBIDDEN",
+      "http": null,
+      "group": "update",
+      "message": "Liên kết (tượng trưng hoặc cứng) trong payload",
+      "usedIn": ["core/update"]
     },
     {
       "code": "LIVE_ACK_NOT_ALLOWED",
@@ -1842,6 +1947,13 @@
       "group": "auth",
       "message": "Phương thức không được hỗ trợ cho đường dẫn này.",
       "usedIn": ["server/http"]
+    },
+    {
+      "code": "MODE_FORBIDDEN",
+      "http": null,
+      "group": "update",
+      "message": "Quyền tệp khác 0644 và 0755 (ví dụ setuid)",
+      "usedIn": ["core/update"]
     },
     {
       "code": "MOD_ZERO",
@@ -2117,6 +2229,48 @@
       "usedIn": ["server/http"]
     },
     {
+      "code": "PATH_ABSOLUTE",
+      "http": null,
+      "group": "update",
+      "message": "Đường dẫn tuyệt đối trong gói cập nhật",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "PATH_DUPLICATE",
+      "http": null,
+      "group": "update",
+      "message": "Hai tệp trùng tên (không phân biệt hoa thường) trong gói cập nhật",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "PATH_INVALID",
+      "http": null,
+      "group": "update",
+      "message": "Đường dẫn trong gói cập nhật không hợp lệ hoặc ngoài tiền tố cho phép",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "PATH_TRAVERSAL",
+      "http": null,
+      "group": "update",
+      "message": "Đường dẫn trong gói cập nhật có đoạn . hoặc ..",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "PAYLOAD_DIGEST",
+      "http": null,
+      "group": "update",
+      "message": "Băm của payload.tar.gz không khớp payloadSha256",
+      "usedIn": ["core/update"]
+    },
+    {
+      "code": "PAYLOAD_FORMAT",
+      "http": null,
+      "group": "update",
+      "message": "payload.tar.gz không phải gzip hoặc tar hợp lệ",
+      "usedIn": ["core/update"]
+    },
+    {
       "code": "PERSIST_FAILED",
       "http": 500,
       "group": "deploy",
@@ -2236,6 +2390,13 @@
       "usedIn": ["core/logic", "core/tag-engine", "server", "server/http"]
     },
     {
+      "code": "RATIO_TOO_HIGH",
+      "http": null,
+      "group": "update",
+      "message": "Tỉ lệ nén của payload lớn hơn 20",
+      "usedIn": ["core/update"]
+    },
+    {
       "code": "READBACK_ERROR",
       "http": null,
       "group": "write",
@@ -2262,6 +2423,13 @@
       "group": "write",
       "message": "Tag này không ghi được (chỉ đọc hoặc Tag tính toán).",
       "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "REAUTH_FAILED",
+      "http": 403,
+      "group": "update",
+      "message": "Mật khẩu xác nhận cập nhật không đúng hoặc thiếu",
+      "usedIn": ["server/http"]
     },
     {
       "code": "RECEIVE_ABORTED",
@@ -2376,6 +2544,13 @@
       "usedIn": ["server/http"]
     },
     {
+      "code": "SPECIAL_FORBIDDEN",
+      "http": null,
+      "group": "update",
+      "message": "Tệp thiết bị hoặc FIFO trong payload",
+      "usedIn": ["core/update"]
+    },
+    {
       "code": "SSH_ROOT_PASSWORD",
       "http": null,
       "group": "system",
@@ -2402,6 +2577,13 @@
       "group": "write",
       "message": "Chuỗi dài hơn mức cho phép.",
       "usedIn": ["core/tag-engine", "drivers/modbus"]
+    },
+    {
+      "code": "SUMS_FORMAT",
+      "http": null,
+      "group": "update",
+      "message": "Dòng của SHA256SUMS sai định dạng",
+      "usedIn": ["core/update"]
     },
     {
       "code": "TEST_BUSY",
@@ -2481,6 +2663,13 @@
       "usedIn": ["server/cli"]
     },
     {
+      "code": "UNPACKED_TOO_LARGE",
+      "http": null,
+      "group": "update",
+      "message": "Payload giải nén lớn hơn 128 MiB",
+      "usedIn": ["core/update"]
+    },
+    {
       "code": "UNSUPPORTED_MEDIA_TYPE",
       "http": 415,
       "group": "deploy",
@@ -2488,10 +2677,80 @@
       "usedIn": ["server/http"]
     },
     {
+      "code": "UPDATER_MANUAL_ONLY",
+      "http": 422,
+      "group": "update",
+      "message": "Gói cần mat-updater mới: chỉ cài thủ công bằng deploy.sh",
+      "usedIn": ["core/update", "server"]
+    },
+    {
+      "code": "UPDATE_ARCH_MISMATCH",
+      "http": 422,
+      "group": "update",
+      "message": "Gói cập nhật dành cho kiến trúc khác",
+      "usedIn": ["core/update", "server"]
+    },
+    {
+      "code": "UPDATE_DISABLED",
+      "http": 404,
+      "group": "update",
+      "message": "Cập nhật qua mạng đang tắt (update.enabled trong runtime.json)",
+      "usedIn": ["server", "server/http"]
+    },
+    {
+      "code": "UPDATE_DOWNGRADE",
+      "http": 409,
+      "group": "update",
+      "message": "Gói cập nhật không mới hơn bản đang chạy (releaseSeq)",
+      "usedIn": ["core/update", "server"]
+    },
+    {
       "code": "UPDATE_KEYS_MISSING",
       "http": null,
       "group": "system",
       "message": "Cập nhật qua mạng đang bật nhưng chưa có khóa tin cậy.",
+      "usedIn": ["core/update", "server", "server/updater"]
+    },
+    {
+      "code": "UPDATE_KEY_UNKNOWN",
+      "http": 403,
+      "group": "update",
+      "message": "Gói cập nhật được ký bằng khóa thiết bị không tin cậy",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "UPDATE_NOT_FOUND",
+      "http": 404,
+      "group": "update",
+      "message": "Không có gói đã kiểm với mã này (gói hết hạn sau 30 phút)",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "UPDATE_NO_PREVIOUS",
+      "http": 409,
+      "group": "update",
+      "message": "Không có bản trước (/opt/mat-runtime.prev) để quay về",
+      "usedIn": ["server"]
+    },
+    {
+      "code": "UPDATE_PACKAGE_INVALID",
+      "http": 400,
+      "group": "update",
+      "message": "Gói cập nhật không hợp lệ (xem detail.code)",
+      "usedIn": ["core/update", "server"]
+    },
+    {
+      "code": "UPDATE_PROJECT_INCOMPATIBLE",
+      "http": 409,
+      "group": "update",
+      "message": "Bản mới không chạy được định dạng của project đang chạy",
+      "usedIn": ["core/update", "server"]
+    },
+    {
+      "code": "UPDATE_RECEIVE_ABORTED",
+      "http": 408,
+      "group": "update",
+      "message": "Nhận gói cập nhật bị dừng giữa chừng (chậm, đứt hoặc thiếu byte): gửi lại",
       "usedIn": ["server"]
     },
     {
@@ -2500,6 +2759,20 @@
       "group": "system",
       "message": "Bản cập nhật vừa cài không chạy được: đã trở về bản trước.",
       "usedIn": ["server"]
+    },
+    {
+      "code": "UPDATE_SIGNATURE_INVALID",
+      "http": 403,
+      "group": "update",
+      "message": "Chữ ký của gói cập nhật không đúng với khóa tin cậy nào của thiết bị",
+      "usedIn": ["core/update", "server", "server/updater"]
+    },
+    {
+      "code": "UPDATE_TOO_LARGE",
+      "http": 413,
+      "group": "update",
+      "message": "Gói cập nhật lớn hơn update.maxPackageMiB",
+      "usedIn": ["core/update", "server"]
     },
     {
       "code": "USERS_WRITE_FAILED",

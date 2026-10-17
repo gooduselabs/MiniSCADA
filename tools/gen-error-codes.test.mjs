@@ -61,6 +61,7 @@ const GROUPS = [
   'live',
   'logic',
   'system',
+  'update',
 ];
 
 const SKIP_DIRS = new Set(['tests', 'test', 'node_modules', 'third_party', 'dist', 'out']);

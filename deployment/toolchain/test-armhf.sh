@@ -21,7 +21,8 @@ alarm_text_test alarm_defs_test alarm_engine_test alarm_state_table_test alarm_e
 alarm_store_test alarm_service_test
 proc_stats_test diagnostics_011_test time_sync_test check_data_test
 logic_vectors_test logic_timers_test logic_counters_test logic_totalizer_test logic_runhours_test
-logic_schedule_test logic_rules_test rules_logic_test logic_write_test logic_runtime_test"
+logic_schedule_test logic_rules_test rules_logic_test logic_write_test logic_runtime_test
+update_envelope_test update_signature_test update_fuzz_test"
 TESTS=${*:-$DEFAULT}
 cmake -S . -B "$B" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=deployment/toolchain/armhf.cmake \
   -DMAT_ARMHF_TESTS=ON > /dev/null || { echo "armhf tests: configure failed"; exit 1; }
@@ -42,5 +43,37 @@ for t in $TESTS; do
     tail -40 "$T/$t.log"
   fi
 done
+# mat-update-verify (feature 011 T096, FR-069): the armhf tool itself on the shared vectors, with the exit
+# codes mat-updater and deploy.sh read (0 valid, 3 signature, 4 no key, 5 invalid, 6 refused for the tree).
+case " $TESTS " in
+*" update_envelope_test "*)
+  if cmake --build "$B" --target mat-update-verify > /dev/null; then
+    cp "$B/bin/mat-update-verify" "$T/"
+    V=tests/update-vectors
+    K="--keys $V/keys-trusted"
+    mkdir -p "$T/inst" "$T/nokeys"
+    echo '{"version":"1.0.0","releaseSeq":10}' > "$T/inst/build-info.json"
+    vfail=0
+    for c in "0 $V/valid.matupdate $K" "3 $V/bad/01-sig-byte.matupdate $K" "4 $V/valid.matupdate --keys $T/nokeys" \
+             "5 $V/bad/04-payload-byte.matupdate $K" "5 $V/bad/10-link.matupdate $K" \
+             "6 $V/bad/16-downgrade.matupdate $K --installed $T/inst" "0 $V/sums/SHA256SUMS --sig $V/sums/SHA256SUMS.sig $K"; do
+      # shellcheck disable=SC2086
+      set -- $c
+      want=$1
+      shift
+      $QEMU "$T/mat-update-verify" "$@" > "$T/v.out" 2>&1
+      got=$?
+      [ "$got" = "$want" ] || { vfail=1; echo "armhf mat-update-verify $*: exit $got, want $want"; cat "$T/v.out"; }
+    done
+    size=$(stat -c %s "$B/bin/mat-update-verify")
+    # shellcheck disable=SC2086
+    timing=$($QEMU "$T/mat-update-verify" $V/valid.matupdate $K --bench 50 2>&1 >/dev/null | tail -1)
+    echo "armhf mat-update-verify: exit codes $([ $vfail = 0 ] && echo ok || echo FAILED), $size bytes, $timing (qemu)"
+    [ $vfail = 0 ] || failed=1
+  else
+    failed=1
+    echo "armhf mat-update-verify: build failed"
+  fi ;;
+esac
 rm -rf "$T"
 exit $failed

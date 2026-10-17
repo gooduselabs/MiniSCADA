@@ -20,6 +20,7 @@ import {
   type PackageInfo,
   type ProbeResult,
   type SessionInfo,
+  type UpdateFile,
 } from './device-types.ts';
 import { asReadFailure, type PickResult, type ReadOutcome } from './types.ts';
 
@@ -120,6 +121,24 @@ export const tauriDevice: DeviceLink = {
   logicGet: (id) => call<ApiResult>('logic_get', { id }),
   logicStopWrites: (id) => call<ApiResult>('logic_writes_stop', { id }),
   logicReset: (id, block, value) => call<ApiResult>('logic_reset', { id, block, value }),
+  // Feature 011 (T119): OTA của `device/update.rs`. Mật khẩu tới Rust ở dạng dựng sẵn (NFC) như đăng nhập.
+  updatePick: () => call<UpdateFile | null>('update_pick'),
+  updateUpload: (id, fileId, onEvent) =>
+    call<ApiResult>('device_update_upload', {
+      id,
+      fileId,
+      onEvent: new Channel<DeployEvent>(onEvent),
+    }),
+  updateStatus: (id) => call<ApiResult>('device_update_status', { id }),
+  updateApply: (id, updateId, password) =>
+    call<ApiResult>('device_update_apply', {
+      id,
+      updateId,
+      password: loginPassword(password),
+    }),
+  updateCancel: (id, updateId) => call<ApiResult>('device_update_cancel', { id, updateId }),
+  updateRollback: (id, password) =>
+    call<ApiResult>('device_update_rollback', { id, password: loginPassword(password) }),
 };
 
 export const deviceLink: DeviceLink = tauriDevice;

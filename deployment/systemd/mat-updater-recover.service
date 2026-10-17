@@ -1,0 +1,27 @@
+[Unit]
+# Xử lý cập nhật bị gián đoạn (mất điện, kill) trước khi runtime khởi động (feature 011,
+# contracts/update-package.md §4 bảng "Bị gián đoạn ở"): luôn để lại bản cũ hoặc bản mới hoàn chỉnh.
+Description=mAT SCADA: phục hồi cập nhật runtime dở dang
+Before=mat-runtime.service
+After=local-fs.target
+ConditionPathExists=/usr/lib/mat-updater/mat-updater
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /usr/lib/mat-updater/mat-updater --recover
+TimeoutStartSec=120
+ProtectSystem=strict
+ReadWritePaths=/opt /var/lib/mat-updater /var/lib/mat-runtime/update /etc/mat-runtime
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+RestrictAddressFamilies=AF_UNIX
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target

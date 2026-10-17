@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 401 mã.
+Tổng cộng 440 mã.
 
 ## Mục lục
 
@@ -32,6 +32,7 @@ Tổng cộng 401 mã.
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
 - [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (30)
 - [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (20)
+- [Cập nhật runtime qua mạng (OTA) và chữ ký phát hành](#update) (39)
 
 <a id="format"></a>
 
@@ -325,7 +326,7 @@ Tổng cộng 401 mã.
 | --- | --- | --- | --- |
 | `ALREADY_ACTIVE` | 409 | Bản này đang chạy. | `core/project-store`, `server/http` |
 | `BASE_CHANGED` | 409 | Project trên thiết bị đã đổi sau lúc xem trước. Hãy đọc lại rồi thử lại. | `core/project-store`, `server/http` |
-| `DEVICE_BUSY` | 409 | Thiết bị đang bận với một thao tác khác. | `core/project-store`, `server/http` |
+| `DEVICE_BUSY` | 409 | Thiết bị đang bận với một thao tác khác. | `core/project-store`, `server`, `server/http` |
 | `EXEC_FAILED` | — | Không khởi động lại được runtime | `core/project-store` |
 | `HEALTH_CRASH` | — | Runtime dừng 2 lần khi chạy bản này | `core/project-store` |
 | `HEALTH_HTTPS` | — | Không mở được HTTPS | `core/project-store` |
@@ -541,7 +542,53 @@ Tổng cộng 401 mã.
 | `TIME_NOT_SYNCED` | — | Đồng hồ thiết bị chưa đồng bộ: lịch và thời gian có thể sai. | `core/logic`, `server` |
 | `TLS_NO_IP_SAN` | — | Chứng chỉ không có địa chỉ IP của thiết bị. | `server`, `server/tls` |
 | `TLS_SAN_MISMATCH` | — | Chứng chỉ không khớp địa chỉ hiện tại của thiết bị. | `server`, `server/tls` |
-| `UPDATE_KEYS_MISSING` | — | Cập nhật qua mạng đang bật nhưng chưa có khóa tin cậy. | `server` |
+| `UPDATE_KEYS_MISSING` | — | Cập nhật qua mạng đang bật nhưng chưa có khóa tin cậy. | `core/update`, `server`, `server/updater` |
 | `UPDATE_ROLLED_BACK` | — | Bản cập nhật vừa cài không chạy được: đã trở về bản trước. | `server` |
 | `USERS_WRITE_FAILED` | — | Không ghi được file tài khoản | `server/cli` |
 | `VIEWER_PUBLIC` | — | Trang vận hành mở cho mọi địa chỉ (viewerAccess = any). | `server`, `server/http` |
+
+<a id="update"></a>
+
+## Cập nhật runtime qua mạng (OTA) và chữ ký phát hành
+
+| Mã | HTTP | Thông điệp | Nơi dùng |
+| --- | --- | --- | --- |
+| `ENVELOPE_EXTRA_MEMBER` | — | Phong bì có thêm thành viên hoặc dữ liệu sau phần kết thúc | `core/update` |
+| `ENVELOPE_HEADER` | — | Tiêu đề tar của phong bì sai (tổng kiểm, magic, loại mở rộng) | `core/update` |
+| `ENVELOPE_ORDER` | — | Thành viên của phong bì sai tên hoặc sai thứ tự | `core/update` |
+| `ENVELOPE_SIZE` | — | Thành viên của phong bì vượt kích thước tối đa | `core/update` |
+| `ENVELOPE_TRUNCATED` | — | Gói cập nhật bị cắt ngang | `core/update` |
+| `FILE_DIGEST` | — | Băm hoặc kích thước của một tệp trong payload khác files[] | `core/update` |
+| `FILE_EXTRA` | — | Payload có tệp không có trong files[] | `core/update` |
+| `FILE_MISSING` | — | Thiếu một tệp có trong files[] (hoặc trong SHA256SUMS) | `core/update` |
+| `FORMAT_UNSUPPORTED` | — | Định dạng gói cập nhật (format) không được runtime này hỗ trợ | `core/update` |
+| `FROM_VERSION` | — | Bản đang chạy thấp hơn minFromVersion: cần qua bản trung gian | `core/update` |
+| `INSUFFICIENT_SPACE` | 507 | Không đủ chỗ trống để nhận gói cập nhật (cần 3 lần kích thước gói) | `server` |
+| `KEYSET_KEY` | — | Khóa của gói keyset không hợp lệ (không phải ECDSA P-256, quá 4 khóa) | `core/update` |
+| `KEYSET_SELF_REVOKE` | — | Gói keyset gỡ chính khóa đã ký nó | `core/update` |
+| `KEYSET_WRITE_FAILED` | — | mat-update-verify không ghi được khóa của gói keyset | `server/updater` |
+| `LINK_FORBIDDEN` | — | Liên kết (tượng trưng hoặc cứng) trong payload | `core/update` |
+| `MODE_FORBIDDEN` | — | Quyền tệp khác 0644 và 0755 (ví dụ setuid) | `core/update` |
+| `PATH_ABSOLUTE` | — | Đường dẫn tuyệt đối trong gói cập nhật | `core/update` |
+| `PATH_DUPLICATE` | — | Hai tệp trùng tên (không phân biệt hoa thường) trong gói cập nhật | `core/update` |
+| `PATH_INVALID` | — | Đường dẫn trong gói cập nhật không hợp lệ hoặc ngoài tiền tố cho phép | `core/update` |
+| `PATH_TRAVERSAL` | — | Đường dẫn trong gói cập nhật có đoạn . hoặc .. | `core/update` |
+| `PAYLOAD_DIGEST` | — | Băm của payload.tar.gz không khớp payloadSha256 | `core/update` |
+| `PAYLOAD_FORMAT` | — | payload.tar.gz không phải gzip hoặc tar hợp lệ | `core/update` |
+| `RATIO_TOO_HIGH` | — | Tỉ lệ nén của payload lớn hơn 20 | `core/update` |
+| `REAUTH_FAILED` | 403 | Mật khẩu xác nhận cập nhật không đúng hoặc thiếu | `server/http` |
+| `SPECIAL_FORBIDDEN` | — | Tệp thiết bị hoặc FIFO trong payload | `core/update` |
+| `SUMS_FORMAT` | — | Dòng của SHA256SUMS sai định dạng | `core/update` |
+| `UNPACKED_TOO_LARGE` | — | Payload giải nén lớn hơn 128 MiB | `core/update` |
+| `UPDATER_MANUAL_ONLY` | 422 | Gói cần mat-updater mới: chỉ cài thủ công bằng deploy.sh | `core/update`, `server` |
+| `UPDATE_ARCH_MISMATCH` | 422 | Gói cập nhật dành cho kiến trúc khác | `core/update`, `server` |
+| `UPDATE_DISABLED` | 404 | Cập nhật qua mạng đang tắt (update.enabled trong runtime.json) | `server`, `server/http` |
+| `UPDATE_DOWNGRADE` | 409 | Gói cập nhật không mới hơn bản đang chạy (releaseSeq) | `core/update`, `server` |
+| `UPDATE_KEY_UNKNOWN` | 403 | Gói cập nhật được ký bằng khóa thiết bị không tin cậy | `server` |
+| `UPDATE_NOT_FOUND` | 404 | Không có gói đã kiểm với mã này (gói hết hạn sau 30 phút) | `server` |
+| `UPDATE_NO_PREVIOUS` | 409 | Không có bản trước (/opt/mat-runtime.prev) để quay về | `server` |
+| `UPDATE_PACKAGE_INVALID` | 400 | Gói cập nhật không hợp lệ (xem detail.code) | `core/update`, `server` |
+| `UPDATE_PROJECT_INCOMPATIBLE` | 409 | Bản mới không chạy được định dạng của project đang chạy | `core/update`, `server` |
+| `UPDATE_RECEIVE_ABORTED` | 408 | Nhận gói cập nhật bị dừng giữa chừng (chậm, đứt hoặc thiếu byte): gửi lại | `server` |
+| `UPDATE_SIGNATURE_INVALID` | 403 | Chữ ký của gói cập nhật không đúng với khóa tin cậy nào của thiết bị | `core/update`, `server`, `server/updater` |
+| `UPDATE_TOO_LARGE` | 413 | Gói cập nhật lớn hơn update.maxPackageMiB | `core/update`, `server` |

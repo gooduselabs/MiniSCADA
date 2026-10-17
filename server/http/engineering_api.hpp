@@ -57,6 +57,8 @@ class HostPolicy;
 class DeployPipeline;
 class ProjectStore;
 class LogicSubsystem;
+class UpdateService;
+struct UpdateCaller;
 
 constexpr size_t kJsonBodyMaxBytes = 16 * 1024;  // device-api §1.2
 constexpr size_t kLoginBodyMaxBytes = 4 * 1024;  // device-api §3
@@ -178,6 +180,15 @@ class EngineeringApi {
     };
     void setLogic(LogicBackend backend);
 
+    // GET/POST /api/v1/system/update, POST …/apply, …/cancel, …/rollback (administrator, Bearer
+    // only, HTTPS), feature 011 (device-api-011 §3). 404 UPDATE_DISABLED while the service is off.
+    // Call before install(); adds "update" to the features of device/identity. Without it the
+    // routes answer 501.
+    struct UpdateBackend {
+        UpdateService* service = nullptr;
+    };
+    void setUpdate(UpdateBackend backend);
+
     // Registers the endpoints of the roles table on `ctx` (HTTP or HTTPS listener).
     void install(mg_context* ctx);
 
@@ -226,6 +237,10 @@ class EngineeringApi {
     // The routes of logic (logic_api.cpp).
     int logicRoute(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                    bool close);
+    // The routes of OTA (update_api.cpp).
+    int updateRoute(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                    bool close);
+    int updateUpload(mg_connection* c, const UpdateCaller& who);
     // The connection test (drivers_api.cpp).
     int driversTest(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                     bool close);
@@ -248,6 +263,7 @@ class EngineeringApi {
     SerialBackend serial_;
     AlarmsBackend alarms_;
     LogicBackend logic_;
+    UpdateBackend update_;
     std::unique_ptr<alarmsapi::PostLimiter> postLimiter_;
     std::mutex testMu_;              // guards the two members below
     std::deque<int64_t> testTimes_;  // when the tests of the last minute began

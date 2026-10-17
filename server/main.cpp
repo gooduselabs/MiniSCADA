@@ -57,8 +57,11 @@
 #include "server/cli/package.hpp"
 #include "server/cli/project.hpp"
 #include "server/cli/retain.hpp"
+#include "server/cli/self_check.hpp"
 #include "server/cli/serial.hpp"
 #include "server/cli/set_secret.hpp"
+#include "server/cli/trust_key.hpp"
+#include "server/cli/update_status.hpp"
 #include "server/cli/users.hpp"
 #include "server/cli/verify_aggregates.hpp"
 #include "server/config.hpp"
@@ -80,6 +83,7 @@
 #include "server/time_sync.hpp"
 #include "server/tls/server_cert.hpp"
 #include "server/tls/tls_init.hpp"
+#include "server/update_service.hpp"
 #include "server/websocket/civet_transport.hpp"
 #include "server/websocket/live_hub.hpp"
 #include "server/write_subsystem.hpp"
@@ -194,6 +198,15 @@ int main(int argc, char** argv) {
     // Feature 011 (FR-040): the data on the eMMC after a power cut, read only; exit 0, 1, 2.
     if (isCheckDataCommand(argc, argv))
         return runCheckDataCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
+    // Feature 011 (US4, device-api-011 §7): the commands of OTA. --self-check runs as matscada
+    // under mat-updater with the binary of the new tree (its schemas: <exe>/../schemas); read only.
+    if (isSelfCheckCommand(argc, argv))
+        return runSelfCheckCli(argc, argv, systemDeviceCliEnv(), exeDir() + "/../schemas",
+                               std::cout, std::cerr);
+    if (isTrustKeyCommand(argc, argv))
+        return runTrustKeyCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
+    if (isUpdateStatusCommand(argc, argv))
+        return runUpdateStatusCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
     if (isRetainCommand(argc, argv))
         return runRetainCli(argc, argv, systemDeviceCliEnv(), std::cout, std::cerr);
     if (isUserCommand(argc, argv))
@@ -378,7 +391,13 @@ int main(int argc, char** argv) {
             return true;
         };
 #endif
+    // Feature 011 (FR-060): an OTA update and a deployment never run together (DEVICE_BUSY both
+    // ways); the service is made below, once the warnings exist.
+    std::unique_ptr<UpdateService> updateService;
     DeployOptions deployOptions;
+    deployOptions.otherBusy = [&updateService]() -> std::optional<BusyInfo> {
+        return updateService ? updateService->busy() : std::nullopt;
+    };
     deployOptions.minFreeBytes = static_cast<uint64_t>(cfg.historianMinFreeMB) << 20;
     deployOptions.audit = [&audit](const AuditEvent& e) { audit.append(e); };
     deployOptions.runningDigest = [&]() -> std::optional<std::string> {
@@ -450,6 +469,52 @@ int main(int argc, char** argv) {
     });
     // Feature 011 (T140, R23): is the clock synchronised? Read once now, then once a minute on a
     // thread of its own (the programs it asks may take up to 2 s); TIME_NOT_SYNCED when not.
+    // Feature 011 (US4): OTA. Off by default (update.enabled); the routes answer 404 then. The
+    // result left by mat-updater (last.json) is audited here, once (FR-063).
+    {
+        UpdateServiceOptions uo;
+        uo.enabled = cfg.updateEnabled;
+        uo.maxPackageBytes = static_cast<uint64_t>(cfg.updateMaxPackageMiB) << 20;
+        uo.trustedKeysDir = cfg.updateTrustedKeysDir;
+        uo.dataDir = cfg.dataDir;
+        {
+            std::string root = selfPath.substr(0, selfPath.rfind('/'));  // <root>/bin
+            root = root.substr(0, root.rfind('/'));
+            uo.installRoot = root.empty() ? "/opt/mat-runtime" : root;
+        }
+        uo.version = kRuntimeVersion;
+        const std::string runDir = startup.runDir;
+        uo.projectFormat = [runDir]() -> std::string {
+            const auto text = readTextFile(runDir + "/project.json");
+            if (!text) return {};
+            const nlohmann::json j = nlohmann::json::parse(*text, nullptr, false);
+            return j.is_object() && j.contains("schemaVersion") && j["schemaVersion"].is_string()
+                       ? j["schemaVersion"].get<std::string>()
+                       : std::string();
+        };
+        uo.deployBusy = [&pipeline]() -> std::optional<BusyInfo> {
+            const auto op = pipeline.current();
+            if (!op) return std::nullopt;
+            BusyInfo b;
+            b.opId = op->opId;
+            b.kind = op->kind;
+            b.user = op->user;
+            b.source = op->source;
+            b.since = op->startedMs;
+            return b;
+        };
+        uo.audit = [&audit](const AuditEvent& e) {
+            try {
+                audit.append(e);
+                return true;
+            } catch (const std::exception&) {
+                return false;
+            }
+        };
+        uo.warnings = &systemWarnings;
+        updateService = std::make_unique<UpdateService>(uo);
+        updateService->start();
+    }
     static TimeSync timeSync(systemTimeSyncProbes(), &systemWarnings);
     timeSync.refresh();
     Joiner timeSyncThread;
@@ -797,7 +862,10 @@ int main(int argc, char** argv) {
                               {"tagCount", store.size()},
                               {"historian", historianInfo()},
                               {"operation", operationInfoJson(pipeline.current())},
-                              {"timeSynced", timeSync.synced()}};  // feature 011 (T140)
+                              {"timeSynced", timeSync.synced()},  // feature 011 (T140)
+                              // feature 011 (US4): the order of releases (build-info.json), which
+                              // mat-updater checks after a switch
+                              {"releaseSeq", updateService->releaseSeq()}};
     });
 
     // The engineering API (device-api §3): on HTTPS; on HTTP its paths answer 403 HTTPS_REQUIRED.
@@ -926,6 +994,7 @@ int main(int argc, char** argv) {
     if (writes) engineering.setTags({&writes->coordinator()});  // device-api-1.1 §3
     engineering.setAlarms({&alarmGlue, monoMs});                // device-api-1.3 §3 (feature 009)
     engineering.setLogic({[&rtEngine] { return rtEngine.logic(); }});  // device-api-011 §4
+    engineering.setUpdate({updateService.get()});                      // device-api-011 §3
     // GET /api/v1/history/* (feature 010): reads of history.db on connections of their own.
     if (historian) {
         HistoryApi::Options hq;

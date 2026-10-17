@@ -265,7 +265,8 @@ int EngineeringApi::handle(mg_connection* c) {
     const std::string path = d.rule->path;
     // POST /api/v1/project/deployments has its own limits (application/zip, Content-Length at most
     // 50 MiB, never chunked), checked before anything of its body is read (device-api §4).
-    const bool packageUpload = path == kDeployPath;
+    const bool packageUpload =
+        path == kDeployPath || (path == "/api/v1/system/update" && r.method == "POST");
     if (std::strcmp(d.rule->method, "POST") == 0 && !packageUpload) {
         // JSON bodies (device-api §1.2).
         const size_t limit =
@@ -298,6 +299,8 @@ int EngineeringApi::handle(mg_connection* c) {
     if (path.rfind("/api/v1/alarms/", 0) == 0) return alarmsPost(c, r, d, close);  // feature 009
     if (logic_.logic && path.rfind("/api/v1/logic", 0) == 0)
         return logicRoute(c, r, d, close);  // feature 011
+    if (update_.service && path.rfind("/api/v1/system/update", 0) == 0)
+        return updateRoute(c, r, d, close);  // feature 011 (OTA)
     // Endpoints of the table this runtime does not serve (the routes of a story not set up).
     return sendError(c, 501, "NOT_IMPLEMENTED", close);
 }

@@ -33,6 +33,8 @@ import {
   uptimeText,
 } from '../diagnostics.ts';
 import { historianLines } from '../../model/logging-online.ts';
+import { updateAccess } from '../../model/update-flow.ts';
+import { otaButton } from '../dialogs/update-wizard.ts';
 import { registerEditor } from '../registry.ts';
 import './device-page.css';
 
@@ -431,6 +433,30 @@ export class DevicePage extends AppElement {
     }
   }
 
+  /**
+   * Task card "Cập nhật runtime" (feature 011, FR-068): chỉ administrator, chỉ khi system/info báo `update.supported` (thiết bị
+   * cũ không có khóa `update`: không hiện); OTA tắt trên thiết bị thì hiện nhưng khóa, kèm gợi ý cho root.
+   */
+  private ota() {
+    const app = this.app;
+    const s = app.session;
+    if (!app.link || s.mode !== 'online' || !app.online()) return nothing;
+    const access = updateAccess(s.info, s.auth);
+    if (access === 'hidden') return nothing;
+    return html`<fieldset data-role="ota">
+      <legend>${t('ota.card.title')}</legend>
+      <div class="dp-body">
+        <p class="help">${t('ota.card.text')}</p>
+        ${otaButton(app, access, 'dp-ota-off')}
+        ${
+          access === 'disabled'
+            ? html`<p class="help" id="dp-ota-off">${icon('lock')}${t('ota.card.disabled')}</p>`
+            : nothing
+        }
+      </div>
+    </fieldset>`;
+  }
+
   protected override render() {
     return html`<div class="ed dp">
       <div class="ed-head">
@@ -454,6 +480,7 @@ export class DevicePage extends AppElement {
             <p class="help">${t('device.page.monitorHelp')}</p>
           </div>
         </fieldset>
+        ${this.ota()}
       </div>
     </div>`;
   }

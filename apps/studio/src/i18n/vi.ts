@@ -26,6 +26,7 @@ import { viHistory } from './vi-history.ts';
 import { viTemplate } from './vi-template.ts';
 import { viLogic } from './vi-logic.ts';
 import { viSvgDraw } from './vi-svgdraw.ts';
+import { viUpdate } from './vi-update.ts';
 
 const viCore = {
   // ---- Giai đoạn của lộ trình v2: nhãn cạnh mục chưa làm (cây, task card, trang giai đoạn) ----
@@ -461,4 +462,5 @@ export const viMessages = {
   ...viTemplate,
   ...viLogic,
   ...viSvgDraw,
+  ...viUpdate,
 } as const;

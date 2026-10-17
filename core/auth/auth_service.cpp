@@ -216,8 +216,13 @@ LoginResult AuthService::loginWeb(std::string_view user, std::string& password,
     return loginKind(SessionKind::Web, user, password, from);
 }
 
+LoginResult AuthService::reauthenticate(std::string_view user, std::string& password,
+                                        const ClientAddress& from) {
+    return loginKind(SessionKind::Bearer, user, password, from, true);
+}
+
 LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std::string& password,
-                                   const ClientAddress& from) {
+                                   const ClientAddress& from, bool reauth) {
     struct Wipe {
         std::string& p;
         ~Wipe() { secureZero(p); }
@@ -325,6 +330,23 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
         slot.held = false;
     }
 
+    if (real && equal && reauth) {  // the password again (OTA): no session
+        AuditEvent ok(AuditAction::AuthReauth, AuditResult::Ok, channel, source);
+        ok.user = name;
+        ok.role = roleName(role);
+        if (!s.audit(ok)) {
+            res.status = LoginStatus::AuditUnavailable;
+            return res;
+        }
+        {
+            std::lock_guard<std::mutex> l(s.mu);
+            s.guard.recordSuccess(key, from.ip, attemptMono);
+        }
+        res.status = LoginStatus::Ok;
+        res.user = name;
+        res.role = role;
+        return res;
+    }
     if (real && equal) {
         AuditEvent ok(AuditAction::AuthLogin, AuditResult::Ok, channel, source);
         ok.user = name;
@@ -375,7 +397,8 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
         std::lock_guard<std::mutex> l(s.mu);
         attack = s.guard.noteFailure(key, from.ip, s.mono());
     }
-    AuditEvent failed(AuditAction::AuthLogin, AuditResult::Failed, channel, source);
+    AuditEvent failed(reauth ? AuditAction::AuthReauth : AuditAction::AuthLogin,
+                      AuditResult::Failed, channel, source);
     failed.code = "AUTH_FAILED";
     nlohmann::json detail = nlohmann::json::object();
     typedUser(failed, name, nameValid, detail);

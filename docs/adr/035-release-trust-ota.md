@@ -81,3 +81,23 @@ Kiểm chức năng (host và qemu cho cùng kết quả): 2 gói hợp lệ (k�
 
 - **Thời gian ≤ 100 ms: đạt dưới qemu** (≈ 10 ms một chữ ký). Chưa có số Cortex-A7; qemu trên Apple Silicon không đại diện tốc độ BL335. Tham chiếu gián tiếp: bắt tay TLS trên BL335 trung vị 133 ms (005, `005-bl335-auth-tls.json`, gồm ECDHE, ký ECDSA và mạng). Phải đo lại trên thiết bị ở T122 (chạy `mat-update-verify --bench 50`).
 - **Kích thước ≤ 400 KB: không đạt nếu bắt buộc tĩnh hoàn toàn** (465 KiB do glibc tĩnh), **đạt nếu glibc động** (142–154 KiB). Quyết định cho T111 (đề xuất, phiên chính chốt): liên kết **Mbed TLS và libstdc++ tĩnh, glibc động** (cùng glibc của hệ thống mà `mat-runtime` đã dùng), dùng thư viện `mat_mbedtls` với cấu hình hiện có (không cần cấu hình riêng: `--gc-sections` bỏ phần TLS), giữ nlohmann/json; điều kiện đổi thành "≤ 400 KB, chỉ phụ thuộc `libc.so.6`".
+
+**T096, T124 (2026-10-17): `mat-update-verify` của sản phẩm.** Trạng thái ADR vẫn Proposed (chuyển ở T198).
+
+| Đo | Giá trị | Ghi chú |
+|---|---|---|
+| kích thước armhf (Release, strip, `-Os`, `--gc-sections`, libstdc++/libgcc/Mbed TLS tĩnh, glibc động) | **214 592 B (210 KiB)**, đạt ≤ 400 KB | phụ thuộc `libc.so.6`, `libpthread.so.0` (một phần của glibc), `ld-linux-armhf.so.3`. Bản đầu dùng `std::ifstream`/`ostringstream` nặng 489 160 B (không đạt): iostream kéo theo locale của libstdc++; đọc tệp bằng `open`/`read` (`readFileLimited`) bỏ được ≈ 270 KB |
+| một lần kiểm chữ ký, `--bench 50` | **7,3 ms dưới qemu-arm** (Apple Silicon) | không phải Cortex-A7: đo lại trên BL335 ở T122 |
+| cả lần kiểm (đọc khóa, phong bì, chữ ký, băm, liệt kê payload) gói vector 5 KB | 17,8 ms dưới qemu | gói thật vài MB thêm thời gian băm và gunzip |
+
+**T120 (2026-10-17): lab "x64".** `tools/update-it.ps1` (kịch bản Python trong container `mat-armhf`); **máy là Linux arm64 trong Docker trên Apple Silicon, không phải x64 thật**, runtime thật của kiến trúc đó, `mat-updater.sh` thật, `systemctl` giả khởi động và dừng runtime thật, kiểm sức khỏe 60 s và ổn định 5 s như trên thiết bị, giới hạn 1 lần/5 phút tắt trong lab. Kết quả `docs/reports/011-update-x64.json`: 9/9 kịch bản đạt.
+
+| Kịch bản | Kết quả |
+|---|---|
+| ok (SC-020) | 20/20 committed; ngừng phục vụ (client hỏi `system/info` mỗi 100 ms) tối đa **9,6 s**, trung bình 9,4 s (≤ 30 s); toàn bộ (tải lên gói ≈ 3 MB, kiểm, áp dụng, kiểm sức khỏe, commit) tối đa **17,6 s**, trung bình 17,2 s (≤ 120 s) |
+| bad | 31/31 gói xấu bị từ chối đúng mã và HTTP; cây cài không đổi, không còn tệp trong `update/` |
+| kill (SC-021) | 40/40 (5 điểm × S1–S8, kill -9 rồi mất điện giả): luôn bản cũ (30) hoặc bản mới hoàn chỉnh (10), runtime trả lời, không tệp thừa, không thao tác treo |
+| health | bản không chạy được: tự quay về sau **89,3 s** (≤ 90 s: 60 s kiểm sức khỏe + dừng, đổi tên, khởi động, kiểm bản cũ); `.failed` giữ bản hỏng |
+| busy, downgrade, keyset, manual-rollback, auth | đạt (DEVICE_BUSY hai chiều, `UPDATE_DOWNGRADE`, khóa mới vào `trusted-keys/` không khởi động lại, quay về `.prev` cần mật khẩu, ma trận quyền và audit) |
+
+Quyết định chi tiết khi làm (contract update-package §8, device-api-011 §3 "Cài đặt"): mã thoát 6; `UPDATE_KEY_UNKNOWN` không phát ra cho gói (ECDSA không cho biết khóa ký); root không đọc, không ghi dưới `<dataDir>` (đi qua `runuser -u matscada`), trạng thái gốc S4–S8 ở `/var/lib/mat-updater/ops/`; `mat-updater.service` cần AF_INET tới loopback (kiểm sức khỏe) và ghi `/etc/mat-runtime` (gói keyset); phiên đăng nhập không qua lần khởi động lại của OTA (Studio đăng nhập lại). Số BL335 thật (T122, T123) chờ người.

@@ -45,8 +45,9 @@ using StoreAuditFn = std::function<void(const AuditEvent& event)>;
 using FreeBytesFn = std::function<bool(const std::string& dir, uint64_t& freeBytes)>;
 bool statvfsFreeBytes(const std::string& dir, uint64_t& freeBytes);  // f_bavail × f_frsize
 
-enum class OpKind { Deploy, Restore };
-const char* opKindName(OpKind k);  // "deploy", "restore"
+// Update: an OTA update holds the device (DEVICE_BUSY of the deployment; never in a record).
+enum class OpKind { Deploy, Restore, Update };
+const char* opKindName(OpKind k);  // "deploy", "restore", "update"
 std::optional<OpKind> parseOpKind(std::string_view s);
 
 enum class VersionSource { Studio, RuntimePackage, Restore };

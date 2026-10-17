@@ -74,7 +74,7 @@ target_include_directories(mat_mbedtls SYSTEM PUBLIC
 target_include_directories(mat_mbedtls PRIVATE third_party/mbedtls/library)
 target_compile_definitions(mat_mbedtls PUBLIC MBEDTLS_CONFIG_FILE="mat_mbedtls_config.h")
 target_link_libraries(mat_mbedtls PUBLIC Threads::Threads)
-target_compile_options(mat_mbedtls PRIVATE -w -O2)
+target_compile_options(mat_mbedtls PRIVATE -w -O2 -ffunction-sections -fdata-sections)
 
 # phc-winner-argon2 20190702 (Apache-2.0, chosen over CC0-1.0) vendored in third_party/argon2
 # (feature 005, research R7): Argon2id password hashing, reference code (ref.c, no SSE), one thread.
@@ -98,7 +98,7 @@ target_include_directories(mat_miniz SYSTEM PUBLIC third_party/miniz)
 target_compile_definitions(mat_miniz PUBLIC
   MINIZ_NO_STDIO MINIZ_NO_TIME MINIZ_NO_ARCHIVE_APIS MINIZ_NO_DEFLATE_APIS MINIZ_NO_ZLIB_APIS
   MINIZ_NO_ZLIB_COMPATIBLE_NAMES MINIZ_NO_MALLOC)
-target_compile_options(mat_miniz PRIVATE -w -O2)
+target_compile_options(mat_miniz PRIVATE -w -O2 -ffunction-sections -fdata-sections)
 
 # Feature 005 device modules (crypto, audit, auth, package, project store, discovery, diagnostics):
 # one static library per module (mat_crypto, mat_audit, ...), so a test links only the modules it
@@ -226,6 +226,32 @@ target_include_directories(mat_diagnostics PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_diagnostics PUBLIC mat_json)
 target_compile_options(mat_diagnostics PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat_device INTERFACE mat_diagnostics)
+
+# core/update (feature 011 T096; contracts/update-package.md, ADR-035): the reader of the .matupdate
+# envelope, ECDSA P-256 signatures and trusted keys, the manifest and files[] rules, the listing of
+# payload.tar.gz (miniz tinfl), the whole check in the order of FR-061, SHA256SUMS. Shared by the
+# runtime (update service), mat-update-verify (root side of mat-updater, deploy.sh, release.ps1) and
+# the fuzz target. Built small (-Os, one section per function: --gc-sections of mat-update-verify
+# drops the TLS part of Mbed TLS, T008).
+add_library(mat_update STATIC
+  core/update/envelope.cpp
+  core/update/signature.cpp
+  core/update/manifest.cpp
+  core/update/paths.cpp
+  core/update/payload.cpp
+  core/update/verify.cpp)
+target_include_directories(mat_update PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_update PUBLIC mat_json PRIVATE mat_mbedtls mat_miniz)
+target_compile_options(mat_update PRIVATE ${MAT_WARN} -Os -ffunction-sections -fdata-sections)
+target_link_libraries(mat_device INTERFACE mat_update)
+
+# mat-update-verify (FR-069, device-api-011 §7): the small stand-alone checker. libstdc++, libgcc and
+# Mbed TLS static, glibc dynamic (T008 decision: <= 400 KB, only libc.so.6), stripped.
+add_executable(mat-update-verify server/updater/verify_main.cpp)
+target_link_libraries(mat-update-verify PRIVATE mat_update)
+target_compile_options(mat-update-verify PRIVATE ${MAT_WARN} -Os -ffunction-sections -fdata-sections)
+target_link_options(mat-update-verify PRIVATE -static-libstdc++ -static-libgcc -Wl,--gc-sections
+                    $<$<CONFIG:Release>:-s>)
 
 # Clock floor for the historian: the device clock is invalid before this build (research R5).
 string(TIMESTAMP MAT_BUILD_EPOCH_S "%s" UTC)
@@ -397,10 +423,10 @@ target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 # The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
 # member functions of EngineeringApi, in files of their own.
 add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/http/logic_api.cpp server/write_glue.cpp
-            server/write_subsystem.cpp)
+            server/write_subsystem.cpp server/http/update_api.cpp server/update_service.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_api_ext PUBLIC mat_historian_query civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
-                      mat_runtime_engine)
+                      mat_runtime_engine mat_update mat_project_store)
 target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
 # The alarm engine in the runtime and its routes (feature 009 T038, T055, T095): the glue owns the
 # engine and alarm.db, alarms_api reads the requests. Linked by whoever builds http_api.cpp, which
@@ -477,8 +503,11 @@ add_library(mat_cli STATIC
   server/cli/device_cli.cpp
   server/cli/users.cpp
   server/cli/cert.cpp
-  server/cli/auth_bench.cpp)
-target_link_libraries(mat_cli PUBLIC mat_historian mat_historian_query mat_auth mat_audit mat_server_tls mat_discovery mat_package
+  server/cli/auth_bench.cpp
+  server/cli/self_check.cpp
+  server/cli/trust_key.cpp
+  server/cli/update_status.cpp)
+target_link_libraries(mat_cli PUBLIC mat_update mat_historian mat_historian_query mat_auth mat_audit mat_server_tls mat_discovery mat_package
                       mat_project_store mat_drivers mat_tag_engine mat_alarm)
 target_compile_options(mat_cli PRIVATE ${MAT_WARN} -O2)
 
@@ -580,6 +609,31 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     mat_test(${t} core/expression/tests/${t}.cpp)
     target_link_libraries(${t} PRIVATE mat_expression)
   endforeach()
+  # Update packages (feature 011 T090): envelope, signatures, keys, paths, the shared vectors of
+  # tests/update-vectors; the exit codes of mat-update-verify (x64: the armhf tool runs under qemu
+  # from test-armhf.sh).
+  foreach(t envelope signature)
+    mat_test(update_${t}_test core/update/tests/${t}_test.cpp)
+    target_link_libraries(update_${t}_test PRIVATE mat_update)
+  endforeach()
+  # The fuzz of the reader (T118): links only mat_update, so the ASan + UBSan build of
+  # tools/fuzz/update-envelope.ps1 stays small. MAT_FUZZ_SECONDS (20 s under ctest).
+  add_executable(update_fuzz_test core/update/tests/update_fuzz_test.cpp)
+  target_link_libraries(update_fuzz_test PRIVATE mat_update GTest::gtest_main)
+  target_compile_options(update_fuzz_test PRIVATE ${MAT_WARN})
+  target_compile_definitions(update_fuzz_test PRIVATE MAT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+  if(CMAKE_CROSSCOMPILING)
+    set_target_properties(update_fuzz_test PROPERTIES EXCLUDE_FROM_ALL TRUE)
+  else()
+    gtest_discover_tests(update_fuzz_test DISCOVERY_TIMEOUT 30)
+  endif()
+  if(NOT CMAKE_CROSSCOMPILING)
+    mat_test(update_verify_cli_test core/update/tests/update_verify_cli_test.cpp)
+    target_link_libraries(update_verify_cli_test PRIVATE mat_json)
+    target_compile_definitions(update_verify_cli_test PRIVATE
+      MAT_UPDATE_VERIFY_BIN="$<TARGET_FILE:mat-update-verify>")
+    add_dependencies(update_verify_cli_test mat-update-verify)
+  endif()
   # Logic v2 (feature 011 T125, T126, T127, T128, T134): the shared vectors and the unit tests of
   # each kind of block, on the engine and the validator (the armhf list is in test-armhf.sh).
   set(MAT_LOGIC_TEST_NAMES logic_vectors_test logic_timers_test logic_counters_test
@@ -853,6 +907,14 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     target_link_libraries(logic_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
                           mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext
                           mat_runtime_engine)
+    # The update routes (feature 011 T107): the same listeners, the update service on a temporary
+    # data directory and installed tree, the packages of tests/update-vectors.
+    mat_test(update_api_test server/tests/update_api_test.cpp server/http/auth_gate.cpp
+             server/http/engineering_api.cpp server/http/engineering_api_project.cpp
+             server/http/web_contexts.cpp server/project_glue.cpp)
+    target_link_libraries(update_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                          mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext
+                          mat_runtime_engine mat_update)
     # The alarm routes on the two listeners, over the real engine and alarm.db (feature 009 T044,
     # T090, T114): the page's handlers (source filter) and the POST routes of the engineering API.
     foreach(t alarms_api_test alarms_history_api_test alarm_recovery_test)
@@ -893,6 +955,12 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   # mat-runtime --check-data (feature 011 T066): real SQLite files, store, retain, pulse journal.
   mat_test(check_data_test server/tests/check_data_test.cpp)
   target_link_libraries(check_data_test PRIVATE mat_tag_engine mat_project_store mat_package mat_sqlite)
+  # mat-runtime --self-check, --trust-key, --update-status (feature 011 T109): the commands of
+  # mat-updater and of root; the runtime's audit of a changed key set at start.
+  mat_test(self_check_test server/tests/self_check_test.cpp)
+  target_link_libraries(self_check_test PRIVATE mat_project_store mat_package mat_sqlite)
+  mat_test(trust_key_cli_test server/tests/trust_key_cli_test.cpp)
+  target_link_libraries(trust_key_cli_test PRIVATE mat_update mat_api_ext)
   # mat-runtime --alarm-db-check (feature 009 T038)
   mat_test(alarm_db_check_test server/tests/alarm_db_check_test.cpp)
   target_link_libraries(alarm_db_check_test PRIVATE mat_alarm mat_audit)

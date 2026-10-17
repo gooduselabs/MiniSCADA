@@ -29,6 +29,7 @@ const GROUPS = {
   live: 'Kênh dữ liệu sống (WebSocket)',
   logic: 'Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC',
   system: 'Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh',
+  update: 'Cập nhật runtime qua mạng (OTA) và chữ ký phát hành',
 };
 
 const cell = (v) => String(v).replace(/\|/g, '\\|');

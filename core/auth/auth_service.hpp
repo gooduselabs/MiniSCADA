@@ -143,6 +143,13 @@ class AuthService {
     // channel `web`, best effort.
     AccessStatus logoutWeb(std::string_view token, const ClientAddress& from);
 
+    // Feature 011 (FR-059, device-api-011 §3): the password of `user` asked again before an OTA
+    // update is applied or rolled back. The same lockout of the pair and of the address, the same
+    // maxConcurrentLogins slots and hash queue as login() (Locked, Busy); no session is made.
+    // Audit auth.reauth ok / failed (and auth.lockout). `password` is wiped before return.
+    LoginResult reauthenticate(std::string_view user, std::string& password,
+                               const ClientAddress& from);
+
     bool setupRequired();  // users.json missing or without account (device identity)
     UsersStatus accountsStatus();
     size_t activeSessions();
@@ -154,7 +161,7 @@ class AuthService {
 
    private:
     LoginResult loginKind(SessionKind kind, std::string_view user, std::string& password,
-                          const ClientAddress& from);
+                          const ClientAddress& from, bool reauth = false);
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };

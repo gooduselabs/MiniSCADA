@@ -147,6 +147,8 @@ export type OnlineDialogSpec =
   | { kind: 'popupArgs'; screen: string; item: string }
   // Feature 011 (FR-083): "Dừng ghi của logic" trên thiết bị đang Online (administrator).
   | { kind: 'logicStop' }
+  // Feature 011 (FR-068): Cập nhật runtime (OTA) của thiết bị đang Online (administrator; ui/dialogs/update-wizard.ts).
+  | { kind: 'runtimeUpdate' }
 
   // Feature 011 (FR-110, FR-109, FR-112, FR-113, FR-105): trình vẽ SVG (ui/svg/svg-dialogs.ts).
   | { kind: 'svgRestore' }
@@ -206,6 +208,7 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'templateDelete' ||
   d?.kind === 'popupArgs' ||
   d?.kind === 'logicStop' ||
+  d?.kind === 'runtimeUpdate' ||
   d?.kind === 'svgRestore' ||
   d?.kind === 'svgExternal' ||
   d?.kind === 'svgDelete' ||

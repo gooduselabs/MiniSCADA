@@ -37,6 +37,7 @@ import './dialogs/template-instance.ts';
 import './dialogs/template-confirm.ts';
 import './dialogs/args-dialog.ts';
 import './logic/stop-dialog.ts';
+import './dialogs/update-wizard.ts';
 import './svg/svg-dialogs.ts';
 import './mat-inspector.ts';
 import './mat-menubar.ts';
@@ -435,6 +436,7 @@ export class MatShell extends AppElement {
       <mat-template-confirm-dialog .app=${app}></mat-template-confirm-dialog>
       <mat-args-dialog .app=${app}></mat-args-dialog>
       <mat-logic-stop-dialog .app=${app}></mat-logic-stop-dialog>
+      <mat-update-wizard .app=${app}></mat-update-wizard>
       <mat-toast .app=${app}></mat-toast>`;
   }
 }

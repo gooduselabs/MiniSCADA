@@ -325,7 +325,9 @@ bool statvfsFreeBytes(const std::string& dir, uint64_t& freeBytes) {
     return true;
 }
 
-const char* opKindName(OpKind k) { return k == OpKind::Restore ? "restore" : "deploy"; }
+const char* opKindName(OpKind k) {
+    return k == OpKind::Restore ? "restore" : (k == OpKind::Update ? "update" : "deploy");
+}
 std::optional<OpKind> parseOpKind(std::string_view s) {
     if (s == "deploy") return OpKind::Deploy;
     if (s == "restore") return OpKind::Restore;

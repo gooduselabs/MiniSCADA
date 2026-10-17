@@ -222,6 +222,8 @@ pub fn run() {
         // Feature 005: lượt quét tìm thiết bị và các kết nối live (chỉ trong bộ nhớ).
         .manage(Discovery::default())
         .manage(LiveHub::default())
+        // Feature 011 (T119): file `.matupdate` đang chọn của hộp Cập nhật runtime (chỉ trong bộ nhớ).
+        .manage(device::update::UpdateFiles::default())
         .setup(|app| {
             let config_dir = app.path().app_config_dir()?;
             // %APPDATA%\vn.com.atpro.matstudio\recent.json (data-model §2)
@@ -276,6 +278,13 @@ pub fn run() {
             device::logic::logic_get,
             device::logic::logic_writes_stop,
             device::logic::logic_reset,
+            // Feature 011 (T119, device-api-011 §3): cập nhật runtime (OTA).
+            device::update::update_pick,
+            device::update::device_update_upload,
+            device::update::device_update_status,
+            device::update::device_update_apply,
+            device::update::device_update_cancel,
+            device::update::device_update_rollback,
             project_backup,
             project_remove,
             csv::csv_open,

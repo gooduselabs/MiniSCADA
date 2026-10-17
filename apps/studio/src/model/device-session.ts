@@ -636,6 +636,13 @@ export class DeviceSession {
     return true;
   }
 
+  /** Hỏi lại system/info ngay (sau khi cập nhật runtime: phiên bản mới, khối `update`). */
+  refreshInfo(): void {
+    if (!this.link || !this.dev || this.md !== 'online') return;
+    this.lastInfoAt = null;
+    this.fetchInfo();
+  }
+
   /** Đặt lại counter, totalizer, giờ chạy (engineer; audit `logic.reset` trên thiết bị). */
   async resetLogicBlock(block: string, value = 0): Promise<true | DeviceError> {
     const d = this.dev;

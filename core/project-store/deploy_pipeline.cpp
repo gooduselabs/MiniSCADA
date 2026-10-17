@@ -685,6 +685,12 @@ BeginResult DeployPipeline::begin(const BeginRequest& r) {
         out.busy = m.busyInfo();
         return refuse(BeginStatus::Busy, "Thiết bị đang bận với thao tác khác");
     }
+    if (m.o.otherBusy) {
+        if (auto other = m.o.otherBusy()) {
+            out.busy = *other;
+            return refuse(BeginStatus::Busy, "Thiết bị đang cập nhật runtime");
+        }
+    }
     if (const std::string why = m.store.baseBlockReason(); !why.empty())
         return refuse(BeginStatus::NoBaseProject, why);
     if (m.store.stateStatus() == StateStatus::Corrupt)

@@ -15,6 +15,7 @@ pub mod logic;
 pub mod registry;
 pub mod session;
 pub mod tls;
+pub mod update;
 
 #[cfg(test)]
 pub(crate) mod test_support;
@@ -122,6 +123,14 @@ pub enum DeviceError {
     BadArgs,
     /// 403 `LOGIC_ENABLE_ROOT_ONLY`: bật lại ghi PLC của logic chỉ bằng runtime.json (root).
     LogicEnableRootOnly,
+    // --- Feature 011 (T119, device-api-011 §3): OTA ---
+    /// Thiết bị từ chối gói cập nhật hay lệnh áp dụng: mã của thiết bị (`UPDATE_*`, `UPDATER_MANUAL_ONLY`,
+    /// `INSUFFICIENT_SPACE`, `REAUTH_FAILED`) và `detail` của thân lỗi (`null` khi không có):
+    /// `{ "update": { "code", "detail" } }`.
+    Update {
+        code: String,
+        detail: Value,
+    },
 }
 
 impl From<RegistryError> for DeviceError {

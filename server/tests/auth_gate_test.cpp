@@ -358,6 +358,12 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"GET /api/v1/logic", false},
         {"POST /api/v1/logic/writes", true},
         {"POST /api/v1/logic/reset", true},
+        // feature 011 (OTA): the state is polled during an update; the other four are a person's
+        {"GET /api/v1/system/update", false},
+        {"POST /api/v1/system/update", true},
+        {"POST /api/v1/system/update/apply", true},
+        {"POST /api/v1/system/update/cancel", true},
+        {"POST /api/v1/system/update/rollback", true},
     };
     for (const auto& kv : expected) {
         const size_t space = kv.first.find(' ');
