@@ -279,14 +279,15 @@ function walk(
     }
     if (isObj(v)) {
       let changed = false;
-      const out: Record<string, unknown> = {};
+      const entries: Array<[string, unknown]> = [];
       for (const [k, x] of Object.entries(v)) {
         if (hasBrace(k)) bad([...segs, k], `tên khóa '${k}' có '{' hoặc '}'`);
         const y = go(x, [...segs, k]);
         if (y !== x) changed = true;
-        out[k] = y;
+        entries.push([k, y]);
       }
-      return changed ? out : v;
+      // fromEntries tạo khóa riêng: khóa "__proto__" (JSON.parse cho phép) không thành prototype của bản sao (fuzz T058)
+      return changed ? Object.fromEntries(entries) : v;
     }
     return v;
   };

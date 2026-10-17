@@ -3,7 +3,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { MemorySource, validateProject } from './index.ts';
+import { MemorySource, substituteParams, validateProject } from './index.ts';
 
 const DIR = resolve(__dirname, '../../../tests/project-vectors');
 
@@ -54,4 +54,37 @@ describe('fuzz project-json: id màn hình trùng tên khóa của Object.protot
           expect(res.errors.length).toBeGreaterThan(0);
         }
       });
+});
+
+describe('fuzz params: khóa "__proto__" riêng của item (JSON.parse)', () => {
+  // Phát hiện: seed 20261017 ca 19273091, 53343922 (9 ca / 129 triệu): item có khóa riêng "__proto__" (JSON.parse
+  // tạo khóa riêng) và có chỗ cần thay; bản sao dựng bằng `out[k] = y` nên "__proto__" thành prototype của bản sao
+  // thay vì khóa: khóa biến mất, giá trị của nó được thừa kế (không qua bước kiểm từng khóa).
+  const params = [{ name: 'p', kind: 'tagPrefix' as const }];
+  it('khóa "__proto__" giữ là khóa riêng, được thay như khóa khác; prototype không đổi', () => {
+    const item = JSON.parse(
+      '{"id":"w","type":"widget","widget":"card","tags":{"__proto__":"{p}.RUN","value":"{p}.FLOW"}}',
+    );
+    const r = substituteParams(item, params, { p: 'PUMP01' });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const tags = (r.value as { tags: Record<string, unknown> }).tags;
+    expect(Object.getPrototypeOf(tags)).toBe(Object.prototype);
+    expect(Object.keys(tags)).toEqual(['__proto__', 'value']);
+    expect(Object.getOwnPropertyDescriptor(tags, '__proto__')?.value).toBe('PUMP01.RUN');
+    expect(tags.value).toBe('PUMP01.FLOW');
+  });
+
+  it('khóa "__proto__" là đối tượng: không thành prototype của bản sao', () => {
+    const item = JSON.parse(
+      '{"id":"w","type":"widget","widget":"card","props":{"label":"{p}"},"__proto__":{"evil":"x"}}',
+    );
+    const r = substituteParams(item, [{ name: 'p', kind: 'string' }], { p: 'A' });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const v = r.value as Record<string, unknown>;
+    expect(Object.getPrototypeOf(v)).toBe(Object.prototype);
+    expect('evil' in v).toBe(false);
+    expect(Object.keys(v)).toContain('__proto__');
+  });
 });
