@@ -244,7 +244,7 @@
       "http": null,
       "group": "write",
       "message": "Thiết bị trường từ chối lệnh ghi",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": ["core/tag-engine", "drivers/modbus"]
     },
     {
       "code": "DEVICE_NOT_ACTIVE",
@@ -2577,6 +2577,13 @@
       "group": "write",
       "message": "Giá trị của Tag đã đổi so với lúc bạn xem: không ghi gì.",
       "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "STATE_UNREADABLE",
+      "http": null,
+      "group": "system",
+      "message": "Tệp trạng thái logic có nhưng không đọc được: ghi PLC của logic bị dừng tới khi root chạy mat-runtime --logic-writes-reset.",
+      "usedIn": ["server"]
     },
     {
       "code": "STORE_IO",
