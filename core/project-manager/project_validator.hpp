@@ -16,8 +16,9 @@ namespace mat {
 // 0.9.0: history, reports and aggregates, project format 0.6 (feature 010). 0.8.0: alarms, format
 // 0.5 (feature 009). 0.7.0: format 0.4 (feature 008: SVG binding targets, animations, events).
 // 0.6.0 was screens v1 and widgets, format 0.3 (feature 007). 0.1.x to 0.5.x projects still run
-// (research R3). 1.0.0-rc.N (T191): builds before the Go/No-Go carry a pre-release tag; compareSemver
-// compares the numbers only, so a project with minRuntimeVersion 1.0.0 runs on 1.0.0-rc.1 (ADR 035).
+// (research R3). 1.0.0-rc.N (T191): builds before the Go/No-Go carry a pre-release tag;
+// compareSemver compares the numbers only, so a project with minRuntimeVersion 1.0.0 runs
+// on 1.0.0-rc.1 (ADR 035).
 constexpr const char* kRuntimeVersion = "1.0.0-rc.1";
 
 // The rule that only the runtime of a device can run (feature 006 T166): a project may use only the
