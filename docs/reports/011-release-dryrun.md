@@ -77,6 +77,24 @@ Kiểm chữ ký `SHA256SUMS.sig` dùng bản Node (`tools/release/sums.mjs`, c�
 - `release.ps1`: gọi script PowerShell con bằng mảng làm tham số chỉ truyền theo vị trí; đổi sang hashtable. Tóm tắt bước lỗi kiểu trên PowerShell 7; viết lại cách dựng.
 - `.gitignore` mục `release/` che cả `tools/release/` và `docs/release/`; đổi thành `/release/`.
 
+## Lượt T191: `1.0.0-rc.1` (2026-10-18, macOS)
+
+Nhánh `gd6-rc1` sau khi nâng phiên bản và có `docs/release/notes/1.0.0-rc.1.md`; cây git sạch (`build-info.json`: `dirty = false`). Chạy **từng bước bằng các script Node mà `release.ps1` gọi**, theo đúng thứ tự và tham số của `release.ps1` không `-Release`: phiên agent bị sandbox chặn gọi `pwsh` nên không chạy được chính `release.ps1` (lần sau chạy `pwsh -File tools/release/release.ps1 -SkipCi -Skip studio -RuntimeTarball … -OutDir <ngoài repo> -Force`). Thư mục kết quả ngoài repo, khóa thử sinh tại chỗ (`sums.mjs genkey`), không commit.
+
+| Bước | Kết quả |
+|---|---|
+| 1 cổng | `build-info.mjs versions --expect 1.0.0-rc.1`: **đồng nhất** (Studio `package.json`, `tauri.conf.json`, `Cargo.toml`, `kRuntimeVersion`; CMake chưa khai `VERSION`); `releaseSeq` 1 (không có `releaseSeq.txt`); Authenticode BỎ QUA (chỉ Windows) |
+| 2 `ci-local.ps1` | BỎ QUA: chạy riêng sau khi gộp |
+| 3 Studio | BỎ QUA: bộ cài NSIS, Authenticode chỉ dựng trên Windows |
+| 4 gói runtime | gói dựng sẵn của repo chính (2026-10-18 01:45; `build-info.json` bên trong là **1.0.0**, chưa dựng lại với chuỗi rc.1), `.sha256` tính lại |
+| 5 `.matupdate` | `make-update.mjs --test --version 1.0.0-rc.1 --release-seq 1`: 5.804.032 B, 106 tệp. Chỉ để thử chữ ký: payload là cây 1.0.0 nên `mat-updater` sẽ quay về (sức khỏe đòi `runtimeVersion` = 1.0.0-rc.1); bản thật dựng gói runtime từ mã nguồn (bước 4 không `-RuntimeTarball`) |
+| 7 SBOM, license | 836 thành phần (npm 301, cargo 526, vendored 9); 0 từ chối, 18 MPL (cần `cargo` trong `PATH`, không thì 526 crate UNKNOWN và license-report từ chối) |
+| 8 ghi chú, build-info | `RELEASE-NOTES.md` = `docs/release/notes/1.0.0-rc.1.md`; `build-info.json` `1.0.0-rc.1`, `release = false`, `skipped` = ci, studio, runtime-prebuilt |
+| 6 `SHA256SUMS` | 7 tệp; ký `openssl dgst -sha256 -sign` (như `sign-sums.ps1`), kiểm lại bằng `sums.mjs verify`: hợp lệ |
+| 9 kiểm | `verify-release.mjs --break-cases`: mọi mục OK (thiếu bộ cài, được phép ở chế độ thử); ca hỏng 6–12 **7/7 bị từ chối**, 1–5 BỎ QUA (Authenticode) |
+
+Tổng ≈ 55 s (gồm SBOM/license với `cargo metadata`). Đây vẫn **không** phải kết quả đạt của SC-017, SC-018 (cần Windows, chứng chỉ, mục dưới).
+
 ## Còn lại trên Windows (T091, T093, T102 phần Windows)
 
 1. `tools/release/make-test-cert.ps1` (T091) tạo chứng chỉ thử trong `Cert:\CurrentUser\My`.

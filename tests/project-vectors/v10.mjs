@@ -2,8 +2,8 @@
 // Được generate.mjs nạp; mô tả ở tests/project-vectors/README-011.md. Dùng chung TS (vectors-10.test.ts) và C++
 // (core/project-manager/tests/vectors_10_test.cpp, T020).
 //
-// Mỗi ca: [tên, hàm sửa base10, mã lỗi (tập), cảnh báo (tập), thêm { issues }]. Mọi ca có `runtimeVersion` 1.0.0 trong
-// expected.json (bộ chạy truyền cho validator; RUNTIME_VERSION của bản dựng hiện tại vẫn là 0.9.0).
+// Mỗi ca: [tên, hàm sửa base10, mã lỗi (tập), cảnh báo (tập), thêm { issues, runtimeVersion }]. Mọi ca có `runtimeVersion` 1.0.0 trong
+// expected.json (bộ chạy truyền cho validator), riêng `v10-runtime-rc-*` là 1.0.0-rc.1 (T191).
 import { base06 } from './v06.mjs';
 
 export const V10 = '1.0.0';
@@ -909,6 +909,17 @@ export function cases10() {
   bad('v10-version-mismatch-screen', (f) => (f[FS].schemaVersion = '0.6.0'), ['E_SCHEMA_VERSION']);
   bad('v10-min-runtime-low', (f) => (f[PJ].minRuntimeVersion = '0.9.0'), ['E_MIN_RUNTIME']);
   bad('v10-runtime-too-old', (f) => (f[PJ].minRuntimeVersion = '1.0.1'), ['E_RUNTIME_TOO_OLD']);
+  // T191: bản dựng 1.0.0-rc.N nhận project minRuntimeVersion 1.0.0 (so phần số, bỏ hậu tố pre-release; ADR 035)
+  ok('v10-runtime-rc-accepts-1.0.0', () => {}, [], { runtimeVersion: '1.0.0-rc.1' });
+  bad(
+    'v10-runtime-rc-too-old',
+    (f) => (f[PJ].minRuntimeVersion = '1.0.1'),
+    ['E_RUNTIME_TOO_OLD'],
+    undefined,
+    {
+      runtimeVersion: '1.0.0-rc.1',
+    },
+  );
   bad('v10-item-id-dot-bad', (f) => (mainItems(f)[1].id = 'pump7.'), ['E_ITEM_ID']);
   ok('v10-valid-expanded-no-tpl', (f) => {
     // "Bung thành item thường": bỏ tpl, giữ id <inst>.<rid>

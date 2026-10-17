@@ -102,6 +102,8 @@ Các bước (dừng ở lỗi đầu tiên):
 
 Đầu ra: `release/<ver>/` (không commit; `.gitignore`).
 
+**Số phiên bản bản rc (T191):** `<ver>` = `1.0.0-rc.N`, cùng chuỗi ở Studio và `kRuntimeVersion`/`RUNTIME_VERSION` (bước 1 so đúng chuỗi; CMake nếu khai `VERSION` chỉ so phần số). `minRuntimeVersion` của project so phần số (rc.N nhận 1.0.0); `minFromVersion` của `.matupdate` so SemVer đầy đủ (rc.N < 1.0.0). Bộ cài NSIS dùng `VIProductVersion` số (`1.0.0.0`). Lý do: ADR 035 quyết định 7.
+
 ## 8. 12 ca hỏng bắt buộc của `verify-release.ps1`
 
 | # | Ca | Kết quả |

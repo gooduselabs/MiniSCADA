@@ -231,8 +231,11 @@ export interface Issue {
   span?: [number, number];
 }
 
-/** Phiên bản runtime mà bộ kiểm tra này đại diện (so với `minRuntimeVersion`). */
-export const RUNTIME_VERSION = '1.0.0';
+/**
+ * Phiên bản runtime mà bộ kiểm tra này đại diện (so với `minRuntimeVersion`). `1.0.0-rc.N` (T191): `compareSemver` chỉ so
+ * phần số nên project `minRuntimeVersion` 1.0.0 chạy được trên 1.0.0-rc.1 (ADR 035). Khớp `kRuntimeVersion` của C++.
+ */
+export const RUNTIME_VERSION = '1.0.0-rc.1';
 /** v0: chấp nhận đúng 0.1.x, không hậu tố pre-release (MAJOR = 0 nên MINOR cũng phải khớp, ADR-004). */
 export const SUPPORTED_SCHEMA = /^0\.1\.\d+$/;
 /** Định dạng 0.2: mọi file bằng đúng `project.json.schemaVersion`, khớp mẫu này. */

@@ -17,7 +17,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 
 | FR | Nội dung | Task | Bằng chứng | Trạng thái |
 |---|---|---|---|---|
-| FR-001 | Phiên bản 1.0.0 (runtime, Studio, định dạng, `.matupdate`), API MINOR kế tiếp, bản dựng mang `-rc.N` | T003, T191 | `kRuntimeVersion` = 1.0.0 (`core/project-manager/project_validator.hpp`), API 1.5.0, live 1.3.0, định dạng 1.0.0; Studio còn **0.8.0** (`apps/studio/package.json`), chưa có hậu tố `-rc` | Không đạt — chờ T191 (nâng Studio, gắn `1.0.0-rc.1`) |
+| FR-001 | Phiên bản 1.0.0 (runtime, Studio, định dạng, `.matupdate`), API MINOR kế tiếp, bản dựng mang `-rc.N` | T003, T191 | T191 (2026-10-18): Studio (`package.json`, `tauri.conf.json`, `Cargo.toml`) và runtime (`kRuntimeVersion`, `RUNTIME_VERSION`) cùng `1.0.0-rc.1` (`build-info.mjs versions --expect 1.0.0-rc.1` đồng nhất); API 1.5.0, live 1.3.0, định dạng 1.0.0, `.matupdate` 1.0.0; rc.1 nhận project `minRuntimeVersion` 1.0.0 (vector `v10-runtime-rc-*`, ADR 035 mục 7) | Đạt (mã nguồn; gói rc ký trên Windows: T102, T104) |
 | FR-002 | Runtime nhận 0.1 đến 1.0; Studio nâng cấp có sao lưu; ma trận tương thích | T015–T020 | `ps/migrate-10.test.ts` 21/21, `tests/migration-vectors/0.6-to-1.0/` 18 cặp; `store-10.test.ts` 6/6; BL335 1.0.0 báo `schemaVersions` 0.1–1.0 (`device-changes.md` 2026-10-17); ma trận ở `docs/user/admin-guide.md` | Đạt |
 | FR-003 | Hồi quy 003–010 | T059, T200 | Từng nhánh chạy bộ test của module bị sửa; **chưa có lượt `ci-local` đầy đủ sau khi gộp mọi nhánh** | Chưa đo — T059, T200 |
 | FR-004 | Cấm `eval`/`innerHTML`; lint mở rộng | T014 | `tools/lint-rules.test.mjs` đỏ 5/22 rồi 22/22; khối mới trong `eslint.config.mjs` | Đạt |
@@ -230,7 +230,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 
 | Nhóm | Đạt trọn | Không đạt (việc chưa xong) | Chưa đo | Chờ người |
 |---|---|---|---|---|
-| FR (143) | 88 | 6 (FR-001, 030, 038, 128, 129, 135) | 22 | 27 |
+| FR (143) | 89 | 5 (FR-030, 038, 128, 129, 135) | 22 | 27 |
 | SC (43) | 17 | 0 | 13 | 13 |
 
-Cách đếm: mỗi FR/SC tính một lần theo phần yếu nhất của dòng, thứ tự Không đạt, Chưa đo, Chờ người, Đạt (dòng "Đạt (x64) · Chưa đo BL335" tính là Chưa đo); dòng gộp (ví dụ FR-014, 015, 016) tính đủ số FR. Không SC nào có số đo vượt ngưỡng; các mục chưa xong là việc chưa chạy hoặc chờ người. Đếm lại khi T075–T087, T191, T198 xong.
+Cách đếm: mỗi FR/SC tính một lần theo phần yếu nhất của dòng, thứ tự Không đạt, Chưa đo, Chờ người, Đạt (dòng "Đạt (x64) · Chưa đo BL335" tính là Chưa đo); dòng gộp (ví dụ FR-014, 015, 016) tính đủ số FR. Không SC nào có số đo vượt ngưỡng; các mục chưa xong là việc chưa chạy hoặc chờ người. Đếm lại khi T075–T087, T198 xong (FR-001 chuyển Đạt ở T191, 2026-10-18).

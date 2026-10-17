@@ -10,12 +10,12 @@ Cách đọc: **Đạt** là test hoặc kịch bản tự động xanh, số đ
 
 | Thành phần | Phiên bản | Ghi chú |
 |---|---|---|
-| Runtime | 1.0.0 | `kRuntimeVersion`; đang chạy trên BL335 từ 2026-10-17 (OTA tắt). Chưa có hậu tố `-rc.N` (FR-001): T191 |
+| Runtime | 1.0.0-rc.1 | `kRuntimeVersion` nâng ở T191 (2026-10-18); BL335 còn chạy bản 1.0.0 cài 2026-10-17 (OTA tắt). `minRuntimeVersion` so phần số: rc.1 nhận project 1.0.0 (ADR 035 mục 7) |
 | API thiết bị | 1.5.0 | MINOR kế tiếp của 1.4.0 (010) |
 | Giao thức live | 1.3.0 | không đổi |
 | Định dạng project | 1.0.0 | runtime nhận 0.1–1.0; Studio nâng cấp có sao lưu |
 | Gói `.matupdate` | 1.0.0 | `mat-update-verify` armhf 214.592 B |
-| Studio | 0.8.0 | **chưa nâng**; lên `1.0.0-rc.1` ở T191 (`release.ps1` đã cảnh báo lệch phiên bản) |
+| Studio | 1.0.0-rc.1 | nâng ở T191 (`package.json`, `tauri.conf.json`, `Cargo.toml`); `build-info.mjs versions --expect 1.0.0-rc.1` đồng nhất |
 | Gói `.matscada` | không đổi | thêm từ chối tệp thừa `E_PACKAGE_EXTRA_FILE` |
 | Constitution | 2.0.2 | PATCH T004 (ghi từ logic, OTA chỉ khi có HTTPS/đăng nhập/role/audit) |
 

@@ -1,6 +1,6 @@
 # Vector project của feature 011 (định dạng 1.0.0: template, faceplate, logic.json)
 
-Sinh bởi `tests/project-vectors/generate.mjs` (mã ca ở `v10.mjs`). Cấu trúc thư mục và `expected.json` như mọi vector khác (`valid`, `errors`, `warnings`, `issues`, với ca hợp lệ `files`, `digest`) cộng **`runtimeVersion: "1.0.0"`**: bộ chạy truyền giá trị này cho validator (như `v05-*`), vì `RUNTIME_VERSION`/`kRuntimeVersion` của bản dựng còn 0.9.0. Hợp đồng: [contracts/project-format-1.0.md](../../specs/011-pilot-hardening/contracts/project-format-1.0.md) §2-§5, §7. Chạy: `packages/project-schema/src/vectors-10.test.ts` (TS), `core/project-manager/tests/vectors_10_test.cpp` (C++, T020).
+Sinh bởi `tests/project-vectors/generate.mjs` (mã ca ở `v10.mjs`). Cấu trúc thư mục và `expected.json` như mọi vector khác (`valid`, `errors`, `warnings`, `issues`, với ca hợp lệ `files`, `digest`) cộng **`runtimeVersion`** (`"1.0.0"`, riêng `v10-runtime-rc-*` là `"1.0.0-rc.1"`): bộ chạy truyền giá trị này cho validator (như `v05-*`), để kết luận không phụ thuộc `RUNTIME_VERSION`/`kRuntimeVersion` của bản dựng (nay `1.0.0-rc.1`, T191). `v10-runtime-rc-*`: runtime `1.0.0-rc.1` nhận project `minRuntimeVersion` 1.0.0 (so phần số, bỏ hậu tố pre-release) và vẫn từ chối 1.0.1. Hợp đồng: [contracts/project-format-1.0.md](../../specs/011-pilot-hardening/contracts/project-format-1.0.md) §2-§5, §7. Chạy: `packages/project-schema/src/vectors-10.test.ts` (TS), `core/project-manager/tests/vectors_10_test.cpp` (C++, T020).
 
 ## Project nền `base10()`
 
