@@ -2768,6 +2768,13 @@
       "usedIn": ["core/update", "server"]
     },
     {
+      "code": "UPDATE_READ_TIMEOUT",
+      "http": null,
+      "group": "update",
+      "message": "mat-updater đọc gói cập nhật quá thời gian cho phép (kết quả trong last.json, audit system.update.rejected)",
+      "usedIn": ["server"]
+    },
+    {
       "code": "UPDATE_RECEIVE_ABORTED",
       "http": 408,
       "group": "update",

@@ -1,10 +1,13 @@
 [Unit]
 # Kích hoạt mat-updater khi runtime ghi tệp yêu cầu (feature 011, contracts/update-package.md §5).
 # Runtime chỉ được tắt OTA bằng update.enabled; path unit này vô hại khi không có tệp yêu cầu.
+# PathExists (không phải PathChanged; rà soát lần hai T202 N-OTA3): yêu cầu ghi trong lúc mat-updater
+# còn chạy không bị mất, systemd kích hoạt lại khi mat-updater dừng mà tệp vẫn còn. mat-updater luôn
+# xóa request.json khi đọc (kể cả yêu cầu lạ) nên không lặp.
 Description=mAT SCADA: chờ yêu cầu cập nhật runtime
 
 [Path]
-PathChanged=/var/lib/mat-runtime/update/request.json
+PathExists=/var/lib/mat-runtime/update/request.json
 Unit=mat-updater.service
 
 [Install]

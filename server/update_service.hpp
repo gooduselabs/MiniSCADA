@@ -62,6 +62,13 @@ struct UpdateServiceOptions {
     int64_t rateGraceMs = 10000;
     // The warning UPDATE_ROLLED_BACK stays this long after the rollback (or until acknowledged).
     int64_t rolledBackWarningMs = 30LL * 24 * 3600 * 1000;
+    // An apply, keyset or rollback without a result of mat-updater (last.json) this long after it
+    // was requested (or after a start found it under way) is audited "interrupted" and the device
+    // freed (second review T202 N-OTA2: mat-updater.service stops at TimeoutStartSec = 300 s).
+    int64_t applyingDeadlineMs = 600 * 1000;
+    // A result of mat-updater whose audit row cannot be written: tried again at each settle for
+    // this long, then the device is freed (last.json stays unaudited for the next start; N8).
+    int64_t auditRetryMs = 60 * 1000;
     std::function<void(const std::string&)> log;  // empty: stderr
 };
 
@@ -82,7 +89,10 @@ class UpdateService {
     bool enabled() const { return o_.enabled; }
     // update/ and its subdirectories (0700), stale incoming/ and ready/ removed, last.json read:
     // a result not yet audited is audited now (system.update.committed / rolled-back /
-    // manual-rollback) and marked audited (FR-063). The warnings are set. Call once at start.
+    // manual-rollback) and marked audited (FR-063). The warnings are set. An operation still
+    // under way holds the device again (Applying): request.json not taken yet, or a step of
+    // mat-updater (ops/<id>.json, step >= 4, result null) whose result is not in last.json — the
+    // runtime restarted by an apply at S6 (second review T202 N-OTA2). Call once at start.
     void start();
 
     // POST /system/update, before the body: enabled, keys, size, busy; then the audit
@@ -111,15 +121,21 @@ class UpdateService {
     nlohmann::json infoBlock() const;
     // releaseSeq of the running tree (build-info.json), 0 without one.
     int64_t releaseSeq() const { return releaseSeq_; }
-    // Expiry of a verified package, and the end of an apply / keyset / rollback that mat-updater
-    // finished without restarting the runtime (last.json of this updateId: audited, device freed);
-    // called by status() and the API, and by the runtime's tick.
+    // Expiry of a verified package; a last.json not yet audited is audited (whatever the state),
+    // and when it names the operation under way the device is freed; an operation under way past
+    // applyingDeadlineMs is audited "interrupted" and freed. Called by status() and the API, and
+    // by the runtime's tick (one stat() of last.json when nothing changed).
     void expire();
 
    private:
-    void startLast(nlohmann::json& last, bool& keysetAudited);
+    // last.json: its row when not audited yet (then marked audited), the warning
+    // UPDATE_ROLLED_BACK. false: the row could not be written.
+    bool startLast(nlohmann::json& last, bool& keysetAudited);
+    // The audit row of a result of mat-updater (last.json, or an "interrupted" one).
+    bool auditResult(const nlohmann::json& last, bool& keysetAudited);
     void syncKeysSeen(bool keysetAudited);
-    // A result of mat-updater in last.json for the update under way: audited, the device freed.
+    // A result of mat-updater in last.json: audited; for the update under way the device freed.
+    // One settle at a time (claimed under the mutex, then audited: second review T202 N3).
     void settle();
     struct Impl;
     UpdateServiceOptions o_;
