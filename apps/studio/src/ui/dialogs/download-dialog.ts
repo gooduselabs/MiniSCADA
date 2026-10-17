@@ -17,6 +17,7 @@ import type {
   RowStatus,
 } from '../../model/download-flow.ts';
 import { icon } from '../base.ts';
+import { allowedText, rateText, wsChip } from '../logic/logic-parts.ts';
 import { resultBlock, runningBody } from './deploy-parts.ts';
 import { OnlineDialog } from './dialog-frame.ts';
 
@@ -49,6 +50,7 @@ const ROW_LABEL: Readonly<Record<keyof PreviewRows, MessageKey>> = {
   logging: 'dl.row.logging',
   connections: 'dl.row.connections',
   screens: 'dl.row.screens',
+  logic: 'dl.row.logic',
   retain: 'dl.row.retain',
   device: 'dl.row.device',
 };
@@ -325,6 +327,13 @@ export class MatDownloadDialog extends OnlineDialog {
     // Chỉ project 0.3 có màn hình nhiều item (feature 007, FR-072).
     if (r.screens.summary)
       out.push({ id: 'screens', status: r.screens.status, info: this.screensInfo(r.screens) });
+    // Project có ghi tự động từ logic (feature 011, FR-082): dòng riêng, danh sách ở dòng phụ ngay dưới.
+    if (r.logic.preview)
+      out.push({
+        id: 'logic',
+        status: r.logic.status,
+        info: t('dl.logic.info'),
+      });
     out.push({ id: 'retain', status: r.retain.status, info: this.retainInfo(r.retain) });
     out.push({
       id: 'device',
@@ -341,6 +350,67 @@ export class MatDownloadDialog extends OnlineDialog {
         : {}),
     });
     return out;
+  }
+
+  /** Dòng phụ của "Logic sẽ tự động ghi N Tag xuống PLC": bảng Tag, chip ghi PLC của thiết bị, lời nhắc theo trạng thái. */
+  private logicSub(pv: Preview) {
+    const lp = pv.rows.logic.preview;
+    if (!lp) return nothing;
+    const note =
+      lp.device === 'off'
+        ? html`<div class="banner warn" data-role="logic-note">
+            ${icon('warn', 'warn')}
+            <div>${t('dl.logic.off')}</div>
+          </div>`
+        : lp.device === 'on'
+          ? html`<div class="banner" data-role="logic-note">
+              ${icon('info', 'info')}
+              <div>${t('dl.logic.on')}</div>
+            </div>`
+          : lp.device === 'stopped'
+            ? html`<div class="banner err" data-role="logic-note">
+                ${icon('stop', 'err')}
+                <div>${t('dl.logic.stopped')}</div>
+              </div>`
+            : html`<div class="banner err" data-role="logic-note">
+                ${icon('err', 'err')}
+                <div>${t('dl.logic.unsupported')}</div>
+              </div>`;
+    return html`<tr class="sub dl-logic">
+      <td></td>
+      <td colspan="2">
+        <table class="wl" data-role="logic-writes" aria-label=${t('dl.logic.table')}>
+          <thead>
+            <tr>
+              <th scope="col">${t('dl.logic.col.tag')}</th>
+              <th scope="col">${t('dl.logic.col.write')}</th>
+              <th scope="col">${t('dl.logic.col.allowed')}</th>
+              <th scope="col">${t('dl.logic.col.rate')}</th>
+              <th scope="col">${t('dl.logic.col.rules')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${lp.writes.map(
+              (w) =>
+                html`<tr>
+                  <td class="mono">${w.tag}</td>
+                  <td class="mono">${w.write}</td>
+                  <td class="mono">
+                    ${w.pulseMs !== null ? t('dl.logic.pulse', { v: allowedText(w.allowed), ms: w.pulseMs }) : allowedText(w.allowed)}
+                  </td>
+                  <td>${rateText(w.minIntervalMs, w.maxPerHour)}</td>
+                  <td class="mono">${w.rules.length ? w.rules.join(', ') : t('logic.unused')}</td>
+                </tr>`,
+            )}
+          </tbody>
+        </table>
+        <div class="row dl-logic-ws">
+          <span class="muted">${t('dl.logic.device')}</span>
+          <span data-role="logic-device">${wsChip(lp.device)}</span>
+        </div>
+        ${note}
+      </td>
+    </tr>`;
   }
 
   private noticeText(n: PreviewNotice): string {
@@ -362,6 +432,7 @@ export class MatDownloadDialog extends OnlineDialog {
       return key ? t(key) : b;
     });
     if (pv.needsAck && !pv.acknowledged) out.push(t('dl.lock.ack'));
+    if (pv.needsLogicAck && !pv.logicAcknowledged) out.push(t('dl.lock.logicAck'));
     return out;
   }
 
@@ -387,26 +458,35 @@ export class MatDownloadDialog extends OnlineDialog {
           <tbody>
             ${this.rows(pv).map(
               (r) =>
-                html`<tr data-row=${r.id}>
-                  <td>${this.chip(r.status)}</td>
-                  <td>${t(ROW_LABEL[r.id])}</td>
-                  <td>
-                    <span class="row-act"
-                      ><span>${r.info}</span>${
-                        r.action
-                          ? html`<button
-                              class="btn"
-                              type="button"
-                              data-role=${r.action.role}
-                              @click=${r.action.run}
-                            >
-                              ${r.action.text}
-                            </button>`
-                          : nothing
-                      }</span
-                    >
-                  </td>
-                </tr>`,
+                html`<tr data-row=${r.id} class=${r.id === 'logic' ? 'lg' : ''}>
+                    <td>${this.chip(r.status)}</td>
+                    <td>
+                      ${
+                        r.id === 'logic' && pv.rows.logic.preview
+                          ? html`<b
+                              >${t('dl.logic.title', { n: pv.rows.logic.preview.tagCount })}</b
+                            >`
+                          : t(ROW_LABEL[r.id])
+                      }
+                    </td>
+                    <td>
+                      <span class="row-act"
+                        ><span>${r.info}</span>${
+                          r.action
+                            ? html`<button
+                                class="btn"
+                                type="button"
+                                data-role=${r.action.role}
+                                @click=${r.action.run}
+                              >
+                                ${r.action.text}
+                              </button>`
+                            : nothing
+                        }</span
+                      >
+                    </td>
+                  </tr>
+                  ${r.id === 'logic' ? this.logicSub(pv) : nothing}`,
             )}
           </tbody>
         </table>
@@ -420,6 +500,19 @@ export class MatDownloadDialog extends OnlineDialog {
                 .checked=${pv.acknowledged}
                 @change=${(e: Event) => this.flow?.acknowledge((e.target as HTMLInputElement).checked)}
               />${t('dl.ack')}</label
+            >`
+          : nothing
+      }
+      ${
+        pv.needsLogicAck
+          ? html`<label class="inline"
+              ><input
+                type="checkbox"
+                data-role="logic-ack"
+                .checked=${pv.logicAcknowledged}
+                @change=${(e: Event) =>
+                  this.flow?.acknowledgeLogic((e.target as HTMLInputElement).checked)}
+              />${t('dl.logic.ack', { n: pv.rows.logic.preview?.tagCount ?? 0 })}</label
             >`
           : nothing
       }

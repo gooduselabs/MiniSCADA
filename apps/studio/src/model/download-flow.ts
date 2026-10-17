@@ -25,6 +25,7 @@ import {
   type Issue,
   type LocalSide,
   type LoggingImpact,
+  type LogicDoc,
   type ProjectSource,
 } from '@mat/project-schema';
 import {
@@ -43,6 +44,7 @@ import {
 } from '../platform/device-types.ts';
 import type { ReadOutcome } from '../platform/types.ts';
 import { acceptsFormat10, type DeviceInfo } from './device.ts';
+import { logicDeployPreview, type LogicDeployPreview } from './deploy-preview.ts';
 
 /** Trần gói (device-api §4: `Content-Length` > 52.428.800 → 413 `PACKAGE_TOO_LARGE`). */
 export const MAX_PACKAGE_BYTES = 52_428_800;
@@ -60,6 +62,7 @@ export const PREVIEW_ROWS = [
   'logging',
   'connections',
   'screens',
+  'logic',
   'retain',
   'device',
 ] as const;
@@ -107,6 +110,8 @@ export interface DownloadProject {
   source(): ProjectSource;
   /** Project 0.3 (feature 007, FR-072): tóm tắt màn hình cho dòng xem trước; vắng hoặc `null` khi không phải 0.3. */
   screens?(): ScreensSummary | null;
+  /** Project 1.0 (feature 011, FR-082): logic.json đã lưu; vắng hoặc `null` khi không có logic. */
+  logic?(): LogicDoc | null;
 }
 
 /** Màn hình của project 0.3: số màn hình, số popup, số widget điều khiển ghi Tag. */
@@ -303,6 +308,13 @@ export interface ScreensRow {
   httpsOff: boolean;
 }
 
+/** Logic sẽ tự động ghi N Tag xuống PLC (feature 011, T007 quyết định 4, 5); `preview` null khi không có ghi tự động. */
+export interface LogicRow {
+  id: 'logic';
+  status: RowStatus;
+  preview: LogicDeployPreview | null;
+}
+
 export interface DeviceRow {
   id: 'device';
   status: RowStatus;
@@ -323,6 +335,7 @@ export interface PreviewRows {
   logging: LoggingRow;
   connections: ConnectionsRow;
   screens: ScreensRow;
+  logic: LogicRow;
   retain: RetainRow;
   device: DeviceRow;
 }
@@ -337,6 +350,9 @@ export interface Preview {
   /** Có cảnh báo kiểm tra project: phải đánh dấu "đã đọc cảnh báo". */
   needsAck: boolean;
   acknowledged: boolean;
+  /** Project có ghi tự động từ logic: phải tích "Tôi đã xem danh sách" (độc lập với ô cảnh báo). */
+  needsLogicAck: boolean;
+  logicAcknowledged: boolean;
   canDeploy: boolean;
   /** Digest đang chạy đã xem trước, gửi trong `X-Mat-Base-Digest` (`none` khi chưa có project). */
   baseDigest: string;
@@ -585,6 +601,7 @@ interface PreviewInput {
   retain: RetainLoss[] | null;
   /** Tóm tắt màn hình của project 0.3; `null` khi không phải 0.3. */
   screens: ScreensSummary | null;
+  logic: LogicDoc | null;
   notice: PreviewNotice | null;
   acknowledged: boolean;
 }
@@ -712,6 +729,14 @@ function buildPreview(i: PreviewInput): Preview {
     httpsOff,
   };
 
+  const lp = logicDeployPreview(i.logic, info);
+  const logic: LogicRow = {
+    id: 'logic',
+    // Có ghi tự động: luôn "chú ý" (mockup cảnh 3), phải đọc danh sách và tích xác nhận.
+    status: lp === null ? 'ok' : 'warn',
+    preview: lp,
+  };
+
   const retain: RetainRow = {
     id: 'retain',
     status: i.retain === null ? 'unknown' : i.retain.length ? 'notice' : 'ok',
@@ -750,17 +775,33 @@ function buildPreview(i: PreviewInput): Preview {
       logging,
       connections,
       screens,
+      logic,
       retain,
       device: deviceRow,
     },
     blockers,
     needsAck,
     acknowledged: i.acknowledged,
-    canDeploy: blockers.length === 0 && pkg !== null && (!needsAck || i.acknowledged),
+    needsLogicAck: lp?.needsAck === true,
+    logicAcknowledged: false,
+    canDeploy: canDeployOf(blockers, pkg, needsAck, i.acknowledged, lp?.needsAck === true, false),
     baseDigest: deviceDigestOf(info) ?? NO_BASE,
     package: pkg,
     notice,
   };
+}
+
+function canDeployOf(
+  blockers: readonly Blocker[],
+  pkg: PackageInfo | null,
+  needsAck: boolean,
+  ack: boolean,
+  needsLogicAck: boolean,
+  logicAck: boolean,
+): boolean {
+  return (
+    blockers.length === 0 && pkg !== null && (!needsAck || ack) && (!needsLogicAck || logicAck)
+  );
 }
 
 /** Lỗi của `device_deploy` đưa về bước xem trước thay vì kết thúc (người dùng xem lại hoặc đăng nhập lại). */
@@ -864,7 +905,33 @@ export class DownloadFlow {
     this.pv = {
       ...pv,
       acknowledged: on,
-      canDeploy: pv.blockers.length === 0 && pv.package !== null && (!pv.needsAck || on),
+      canDeploy: canDeployOf(
+        pv.blockers,
+        pv.package,
+        pv.needsAck,
+        on,
+        pv.needsLogicAck,
+        pv.logicAcknowledged,
+      ),
+    };
+    this.emit();
+  }
+
+  /** Ô "Tôi đã xem danh sách" của ghi tự động từ logic. */
+  acknowledgeLogic(on: boolean): void {
+    const pv = this.pv;
+    if (this.st !== 'preview' || !pv || pv.logicAcknowledged === on) return;
+    this.pv = {
+      ...pv,
+      logicAcknowledged: on,
+      canDeploy: canDeployOf(
+        pv.blockers,
+        pv.package,
+        pv.needsAck,
+        pv.acknowledged,
+        pv.needsLogicAck,
+        on,
+      ),
     };
     this.emit();
   }
@@ -1031,6 +1098,7 @@ export class DownloadFlow {
       compareError,
       retain,
       screens: this.project.screens?.() ?? null,
+      logic: this.project.logic?.() ?? null,
       notice: this.nextNotice,
       acknowledged: false,
     });

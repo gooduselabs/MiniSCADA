@@ -11,6 +11,7 @@
 pub mod deploy;
 pub mod http;
 pub mod live;
+pub mod logic;
 pub mod registry;
 pub mod session;
 pub mod tls;
@@ -116,6 +117,11 @@ pub enum DeviceError {
     ViewerPrivate,
     /// 403 `VIEWER_OFF`: trang xem đã tắt.
     ViewerOff,
+    // --- Feature 011 (T145, device-api-011 §4) ---
+    /// Tham số của lệnh logic sai (id khối sai dạng, giá trị không hữu hạn hoặc âm): không gửi gì.
+    BadArgs,
+    /// 403 `LOGIC_ENABLE_ROOT_ONLY`: bật lại ghi PLC của logic chỉ bằng runtime.json (root).
+    LogicEnableRootOnly,
 }
 
 impl From<RegistryError> for DeviceError {

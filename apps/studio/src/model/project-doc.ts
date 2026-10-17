@@ -33,6 +33,7 @@ import {
   type TagListV1,
   type TagV1,
   type TemplateDoc,
+  type LogicDoc,
   type ValueTableDoc,
   type WatchTableDoc,
 } from '@mat/project-schema';
@@ -122,6 +123,9 @@ export type ProjectEdit =
   | { kind: 'templateUpsert'; template: TemplateDoc }
   /** Xóa template: đường dẫn khỏi `templates` (hết thì bỏ khóa), file bị xóa khi lưu. Bản sao phải được bung trước. */
   | { kind: 'templateRemove'; id: string }
+  // ---- Feature 011 (định dạng 1.0): logic ----
+  /** Thay cả logic.json; lần đầu tạo `logic.json` và thêm `logic` vào project.json (editor Logic: mỗi lần sửa một bước hoàn tác). */
+  | { kind: 'logicSet'; doc: LogicDoc }
   | { kind: 'batch'; edits: readonly ProjectEdit[] };
 
 export interface EditableProject {
@@ -143,6 +147,8 @@ export interface EditableProject {
   reports?: ReportsConfig | null;
   /** Định dạng 1.0: template theo id (tệp `templates/<id>.template.json` khai ở project.json). */
   templates?: Record<string, TemplateDoc>;
+  /** Định dạng 1.0: logic.json (thiếu: project chưa có logic). */
+  logic?: LogicDoc | null;
 }
 
 const clone = <T>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
@@ -153,6 +159,7 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.str
 export const CONNECTIONS_FILE = 'connections.json';
 export const LOGGING_FILE = 'logging.json';
 export const REPORTS_FILE = 'reports.json';
+export const LOGIC_FILE = 'logic.json';
 export const valueTableFile = (name: string): string => `value-tables/${name}.json`;
 export const watchTableFile = (id: string): string => `watch-tables/${id}.json`;
 export const screenFile = (id: string): string => `screens/${id}.screen.json`;
@@ -176,6 +183,7 @@ export interface Touched {
   logging: boolean;
   reports: boolean;
   templates: Set<string>;
+  logic: boolean;
 }
 
 const newTouched = (): Touched => ({
@@ -191,6 +199,7 @@ const newTouched = (): Touched => ({
   logging: false,
   reports: false,
   templates: new Set(),
+  logic: false,
 });
 
 /** Áp các sửa đổi lên bản sao (không đụng bản gốc); giữ thứ tự khóa và trường không sửa. */
@@ -216,6 +225,7 @@ export function applyEdits(
     ...(base.logging !== undefined ? { logging: clone(base.logging) } : {}),
     ...(base.reports !== undefined ? { reports: clone(base.reports) } : {}),
     ...(base.templates ? { templates: clone(base.templates) } : {}),
+    ...(base.logic !== undefined ? { logic: clone(base.logic) } : {}),
   };
   const touched = newTouched();
   run(state, edits, touched);
@@ -462,6 +472,17 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
         if (s.templates) delete s.templates[e.id];
         touched.project = true;
         touched.templates.add(e.id);
+        break;
+      }
+      case 'logicSet': {
+        if (!isObject(s.project)) break;
+        const rec = s.project as unknown as Record<string, unknown>;
+        if (typeof rec.logic !== 'string') {
+          rec.logic = LOGIC_FILE;
+          touched.project = true;
+        }
+        s.logic = clone(e.doc);
+        touched.logic = true;
         break;
       }
       case 'svgBindings': {
@@ -815,9 +836,12 @@ export function editableRels(docs: ProjectDocs): Set<string> {
     if (typeof rec.loggingFile === 'string') out.add(rec.loggingFile);
     if (typeof rec.reportsFile === 'string') out.add(rec.reportsFile);
   }
-  if (isVersion10(p))
+  if (isVersion10(p)) {
     for (const f of stringList((p as Record<string, unknown>).templates))
       if (TEMPLATE_REL.test(f)) out.add(f);
+    const logic = (p as Record<string, unknown>).logic;
+    if (typeof logic === 'string') out.add(logic);
+  }
   for (const f of svgBindingFiles(docs)) out.add(f);
   return out;
 }
@@ -950,6 +974,9 @@ function editableOf(docs: ProjectDocs): EditableProject | null {
         templates[id] = d.value as unknown as TemplateDoc;
     }
     state.templates = templates;
+    const lf = (p as unknown as Record<string, unknown>).logic;
+    const l = typeof lf === 'string' ? docs[lf] : undefined;
+    state.logic = l && !l.removed && isObject(l.value) ? (l.value as unknown as LogicDoc) : null;
   }
   return state;
 }
@@ -1016,6 +1043,8 @@ export function applyDocEdits(
   if (touched.reports && state.reports && typeof rec06.reportsFile === 'string')
     syncTable(rec06.reportsFile, state.reports);
   for (const id of touched.templates) syncTable(templateFile(id), state.templates?.[id]);
+  if (touched.logic && state.logic)
+    syncTable(typeof rec06.logic === 'string' ? rec06.logic : LOGIC_FILE, state.logic);
   return out;
 }
 
@@ -1184,6 +1213,8 @@ export interface ProjectOutline {
   format10: boolean;
   /** `logic` của project.json 1.0 (null: không có). */
   logicFile: string | null;
+  /** Nội dung logic.json đọc được (null: không có hoặc sai hình). */
+  logic: LogicDoc | null;
   /** `templates` của project.json 1.0 (đường dẫn, theo thứ tự khai). */
   templateFiles: string[];
   /** Template đọc được (theo `templateFiles`, chỉ đường dẫn `templates/<id>.template.json`); `doc` null khi thiếu hay sai hình. */
@@ -1279,6 +1310,10 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
   return {
     format10,
     logicFile: format10 && typeof rec.logic === 'string' ? rec.logic : null,
+    logic: (() => {
+      const v = format10 && typeof rec.logic === 'string' ? files[rec.logic] : undefined;
+      return isObject(v) && typeof v.schemaVersion === 'string' ? (v as unknown as LogicDoc) : null;
+    })(),
     templateFiles: format10 ? stringList(rec.templates) : [],
     templates: format10
       ? stringList(rec.templates).flatMap((file): TemplateOutline[] => {

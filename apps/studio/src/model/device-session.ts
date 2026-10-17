@@ -33,9 +33,11 @@ import {
   DEVICE_TIMEOUT_MS,
   liveUrl,
   normalizeMonitor,
+  parseLogicStatus,
   type CheckErrorCode,
   type DeviceInfo,
   type FetchFn,
+  type LogicStatus,
 } from './device.ts';
 
 /**
@@ -608,6 +610,38 @@ export class DeviceSession {
     const online = this.md === 'online';
     this.disconnect();
     if (link && d && online) await link.logout(d.id);
+  }
+
+  // ---- Logic của thiết bị (feature 011, T145; device-api-011 §4) ----
+
+  /** `GET /api/v1/logic` của thiết bị đang Online (trạng thái từng khối, ghi PLC, vòng quét). */
+  async logicStatus(): Promise<LogicStatus | DeviceError> {
+    const d = this.dev;
+    if (!this.link || !d || this.md !== 'online') return { error: 'no-such-device' };
+    const r = await this.link.logicGet(d.id);
+    return isDeviceError(r) ? r : parseLogicStatus(r.body);
+  }
+
+  /**
+   * "Dừng ghi của logic" (administrator): `POST /api/v1/logic/writes {"enabled": false}`, có hiệu lực ngay và giữ qua khởi
+   * động lại. Không có đường bật lại từ Studio (root sửa runtime.json). Xong thì hỏi lại system/info để chip đổi ngay.
+   */
+  async stopLogicWrites(): Promise<true | DeviceError> {
+    const d = this.dev;
+    if (!this.link || !d || this.md !== 'online') return { error: 'no-such-device' };
+    const r = await this.link.logicStopWrites(d.id);
+    if (isDeviceError(r)) return r;
+    this.lastInfoAt = null;
+    this.fetchInfo();
+    return true;
+  }
+
+  /** Đặt lại counter, totalizer, giờ chạy (engineer; audit `logic.reset` trên thiết bị). */
+  async resetLogicBlock(block: string, value = 0): Promise<true | DeviceError> {
+    const d = this.dev;
+    if (!this.link || !d || this.md !== 'online') return { error: 'no-such-device' };
+    const r = await this.link.logicReset(d.id, block, value);
+    return isDeviceError(r) ? r : true;
   }
 
   private requireLink(): DeviceLink {

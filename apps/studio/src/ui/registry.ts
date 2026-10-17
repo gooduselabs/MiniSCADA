@@ -54,3 +54,24 @@ export function registerDiagnostics(renderer: (app: StudioApp) => InspectorView)
 export function renderDiagnostics(app: StudioApp): InspectorView | null {
   return diagnostics ? diagnostics(app) : null;
 }
+
+/**
+ * Khung dưới riêng của một editor (feature 011, T007 quyết định 3: Logic chia Inspector trái, Thông tin và "Thử logic"
+ * phải): editor nào đăng ký thì thay cả vùng inspector của khung khi editor đó đang mở.
+ */
+export interface DockEntry {
+  match: (id: EditorId) => boolean;
+  render: (app: StudioApp) => unknown;
+}
+
+const docks: DockEntry[] = [];
+
+export function registerDock(entry: DockEntry): void {
+  docks.unshift(entry);
+}
+
+export function renderDock(app: StudioApp): unknown | null {
+  const id = app.store.state.active;
+  const d = docks.find((e) => e.match(id));
+  return d ? d.render(app) : null;
+}

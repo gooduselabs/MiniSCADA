@@ -89,6 +89,8 @@ export type EditorId =
   /** Thư viện template và từng template (feature 011, project định dạng 1.0). */
   | 'templates'
   | `template:${string}`
+  /** Editor Logic (feature 011, project định dạng 1.0): một tab cho cả bảy nhóm (Luật, Timer, …, Ghi PLC). */
+  | 'logic'
   | `phase:${PhasePageKey}`;
 
 /** Trạng thái phiên thiết bị (data-model §9), dùng chung với `device-session.ts`. */
@@ -333,6 +335,47 @@ function templatesNode(outline: ProjectOutline): TreeNode {
   };
 }
 
+/** Nhóm của Logic theo thứ tự cây (mockup studio-logic.html; T007 quyết định 3). */
+const LOGIC_GROUPS: ReadonlyArray<[kind: string, key: string, label: MessageKey, icon: IconName]> =
+  [
+    ['rule', 'rules', 'logic.kind.rule', 'rule'],
+    ['timer', 'timers', 'logic.kind.timer', 'timer'],
+    ['counter', 'counters', 'logic.kind.counter', 'counter'],
+    ['totalizer', 'totalizers', 'logic.kind.totalizer', 'sum'],
+    ['runhours', 'runhours', 'logic.kind.runhours', 'hours'],
+    ['schedule', 'schedules', 'logic.kind.schedule', 'cal'],
+    ['writes', 'writes', 'logic.kind.writes', 'plc'],
+  ];
+
+/**
+ * Nút Logic của project 1.0 (feature 011, FR-094): dưới thiết bị, cạnh Alarm và Lưu trữ; mỗi nhóm mở cùng tab `logic` (một
+ * logic.json, một lịch sử hoàn tác) và đổi nhóm. Huy hiệu số lỗi, cảnh báo của logic.json.
+ */
+function logicNode(input: TreeInput): TreeNode {
+  const o = input.outline;
+  const doc = (o.logic ?? {}) as unknown as Record<string, unknown>;
+  const len = (k: string) => (Array.isArray(doc[k]) ? (doc[k] as unknown[]).length : 0);
+  const children = LOGIC_GROUPS.map(([kind, key, label, ic]): TreeNode => ({
+    id: `logic:${kind}`,
+    label: t(label),
+    icon: ic,
+    editor: 'logic',
+    count: len(key),
+  }));
+  const mine = (input.issues ?? []).filter((i) => o.logicFile !== null && i.file === o.logicFile);
+  const errors = mine.filter((i) => i.code.startsWith('E_')).length;
+  const node: TreeNode = {
+    id: 'logic',
+    label: t('logic.tree'),
+    icon: 'logic',
+    editor: 'logic',
+    count: children.reduce((n, c) => n + (c.count ?? 0), 0),
+    children,
+  };
+  if (mine.length) node.issues = { errors, warnings: mine.length - errors };
+  return node;
+}
+
 /** Mục Báo cáo của project 0.6 (feature 010): danh sách mẫu, mỗi mẫu một editor. */
 function reportsNode(outline: ProjectOutline): TreeNode {
   const list = outline.reports?.reports ?? [];
@@ -358,6 +401,7 @@ function deviceChildren02(
   tags: TreeNode,
   logging: TreeNode,
   screens: TreeNode[],
+  logic: TreeNode | null = null,
 ): TreeNode[] {
   const perDevice = tagsPerDevice((outline.tags?.tags ?? []) as unknown as TagV1[]);
   const channels = outline.connections?.channels ?? [];
@@ -436,6 +480,7 @@ function deviceChildren02(
     { id: 'driverDiag', label: t('tree.driverDiag'), icon: 'check', editor: 'driverDiag' },
     alarm,
     logging,
+    ...(logic ? [logic] : []),
     {
       id: 'screens',
       label: t('tree.screens'),
@@ -510,7 +555,14 @@ function buildNodes(input: TreeInput): TreeNode {
     deviceState: deviceNodeState(device.state),
     children:
       outline.version === '0.2'
-        ? deviceChildren02(alarmNode(input), outline, tags, logging, screens)
+        ? deviceChildren02(
+            alarmNode(input),
+            outline,
+            tags,
+            logging,
+            screens,
+            outline.format10 ? logicNode(input) : null,
+          )
         : [
             phaseNode('connections', 'connections', 'tree.connections'),
             {

@@ -300,6 +300,13 @@ export interface DeviceLink {
    * `E_PKG_*`), `io`.
    */
   extractPackage(packageId: string): Promise<PickResult | null | DeviceError>;
+  // ---- Feature 011 (device-api-011 §4, T145): logic qua phiên có sẵn, không có đường bật lại ghi PLC ----
+  /** `logic_get`: `GET /api/v1/logic` (viewer). */
+  logicGet(id: string): Promise<ApiResult | DeviceError>;
+  /** `logic_writes_stop`: `POST /api/v1/logic/writes {"enabled": false}` (administrator); dừng ngay, giữ qua khởi động lại. */
+  logicStopWrites(id: string): Promise<ApiResult | DeviceError>;
+  /** `logic_reset`: `POST /api/v1/logic/reset {"id", "value"}` (engineer): đặt lại counter, totalizer, giờ chạy. */
+  logicReset(id: string, block: string, value: number): Promise<ApiResult | DeviceError>;
 }
 
 /**

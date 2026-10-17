@@ -143,7 +143,9 @@ export type OnlineDialogSpec =
   | { kind: 'templateUpdate'; tid: string }
   | { kind: 'templateDelete'; tid: string }
   /** `args` của hành động Mở popup ở sự kiện nhấp của item `item` trên màn hình `screen`. */
-  | { kind: 'popupArgs'; screen: string; item: string };
+  | { kind: 'popupArgs'; screen: string; item: string }
+  // Feature 011 (FR-083): "Dừng ghi của logic" trên thiết bị đang Online (administrator).
+  | { kind: 'logicStop' };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<
@@ -190,7 +192,8 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'templateInstance' ||
   d?.kind === 'templateUpdate' ||
   d?.kind === 'templateDelete' ||
-  d?.kind === 'popupArgs';
+  d?.kind === 'popupArgs' ||
+  d?.kind === 'logicStop';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -326,6 +329,8 @@ export class StudioApp {
   /** Trạng thái làm việc của editor Màn hình 0.3 (feature 007): vùng nhìn, lưới, clipboard, xem trước. */
   readonly screens: ScreenWorkspace;
   readonly hooks: AppHooks = {};
+  /** Nhóm đang mở của editor Logic (feature 011): nút nhóm trên cây đổi nhóm của cùng tab `logic`. */
+  logicKind = 'rule';
   /** Lớp nói chuyện với thiết bị qua Rust (feature 005); `null` trong test của 004. */
   readonly link: DeviceLink | null;
   /** FetchFn của "Kiểm tra kết nối" (trang Thiết bị): qua `monitor_get` khi có DeviceLink. */
@@ -1333,6 +1338,7 @@ export class StudioApp {
   selectNode(id: string, open = true): void {
     const node = findNode(this.tree(), id);
     if (!node) return;
+    if (id.startsWith('logic:')) this.logicKind = id.slice('logic:'.length);
     this.u = { ...this.u, treeSel: id, treeDrawer: false };
     if (open && node.editor && (this.store.state.project || node.editor === 'start'))
       this.openEditor(node.editor, false);

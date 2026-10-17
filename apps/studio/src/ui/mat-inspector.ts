@@ -8,7 +8,7 @@ import type { InspectorTab } from '../app/app.ts';
 import { t } from '../i18n/index.ts';
 import { severityOf } from '../model/issue-map.ts';
 import { AppElement, icon } from './base.ts';
-import { renderDiagnostics, renderProps, type InspectorView } from './registry.ts';
+import { renderDiagnostics, renderDock, renderProps, type InspectorView } from './registry.ts';
 
 const TABS: ReadonlyArray<{ id: InspectorTab; label: 'insp.props' | 'insp.info' | 'insp.diag' }> = [
   { id: 'props', label: 'insp.props' },
@@ -177,6 +177,9 @@ export class MatInspector extends AppElement {
 
   protected override render() {
     const app = this.app;
+    // Editor có khung dưới riêng (Logic: Inspector trái, Thông tin và Thử logic phải; feature 011).
+    const dock = app.store.state.project ? renderDock(app) : null;
+    if (dock !== null) return dock;
     const tab = app.ui.inspectorTab;
     const view =
       tab === 'info' ? this.infoView() : tab === 'diag' ? this.diagView() : this.propsView();

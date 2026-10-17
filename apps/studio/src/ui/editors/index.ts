@@ -19,6 +19,7 @@ import './device-page.ts';
 import './logging-editor.ts';
 import './templates-editor.ts';
 import './template-editor.ts';
+import '../logic/logic-editor.ts';
 import './compare-editor.ts';
 import './audit-view.ts';
 import './alarm-upgrade.ts';

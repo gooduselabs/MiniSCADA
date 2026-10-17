@@ -70,6 +70,15 @@ Mục **Alarm** dưới nút thiết bị trong cây project (thay mục khóa "
 - **Đổi tên Tag** cập nhật tham chiếu trong alarm cùng một bước hoàn tác; So sánh theo đối tượng (alarm, lớp, khu vực).
 - **Phím:** chỉ có hiệu lực khi lưới hoặc panel có focus; mọi lệnh có trong bảng lệnh (xem contract §12).
 
+## Logic (feature 011, định dạng 1.0)
+
+Nút **Logic** dưới thiết bị (cạnh Alarm, Lưu trữ) cho project định dạng 1.0, theo mockup [studio-logic.html](../../docs/architecture/mockups/studio-logic.html) (duyệt ở T007, 2026-10-16); ngữ nghĩa: [contracts/logic-engine.md](../../specs/011-pilot-hardening/contracts/logic-engine.md), API: [device-api-011.md §4](../../specs/011-pilot-hardening/contracts/device-api-011.md). Mã: `src/model/logic-doc.ts`, `logic-sim.ts`, `deploy-preview.ts`, `src/ui/logic/`, `src-tauri/src/device/logic.rs`.
+
+- **Một tab "Logic"** cho một `logic.json` (một lịch sử hoàn tác); bảy nhóm trên cây (Luật, Timer, Counter, Cộng dồn, Giờ chạy, Lịch, Ghi PLC) đổi nhóm của cùng tab. Bảng khối có lỗi `E_LOGIC_*` và cảnh báo `W_LOGIC_*` theo ô; Insert thêm, Delete xóa, F2 đổi id (cập nhật hành động `write`/`pulse` và Tag đầu ra theo mẫu `LOGIC.<ID>.*` cùng mọi biểu thức đọc chúng). Project chưa có logic: nút "Tạo logic.json".
+- **Khung dưới:** Inspector bên trái (nhóm rộng tối thiểu 360 px, hẹp thì xếp dọc), bên phải tab Thông tin (validator TS `checkLogic` chạy sau mỗi lần sửa, nhấp đúp tới ô) và tab **Thử logic** (chiếm cả bề ngang): `@mat/logic-engine` trên Tag mô phỏng, đặt tay giá trị và quality, giờ thực giả lập và `timeSynced`, tua ×1/×10/×100 (vẫn quét đủ từng chu kỳ), đường thời gian SVG, nhật ký hành động, Lưu kịch bản thành ca vector. Lệnh ghi chỉ áp vào Tag mô phỏng.
+- **Online (runtime 1.0):** chip "Ghi PLC" (tắt, bật, dừng, chưa hỗ trợ theo `system/info.logic`), cột trạng thái sống (`GET /api/v1/logic` mỗi 3 s; SUSPENDED hổ phách, THROTTLED xanh dương, DISABLED xám, luôn kèm biểu tượng và chữ), cảnh báo `W_LOGIC_WRITES_OFF`; menu của chip có "Dừng ghi của logic…" (administrator, tích xác nhận, không nhập lại mật khẩu), "Bật ghi PLC" luôn khóa (`LOGIC_ENABLE_ROOT_ONLY`).
+- **Nạp xuống:** dòng "Logic sẽ tự động ghi N Tag xuống PLC" kèm bảng Tag, giá trị cho phép, tần suất, luật; nút Nạp xuống khóa tới khi tích "Tôi đã xem danh sách" (kể cả khi thiết bị đang tắt ghi).
+
 ## Cấu trúc mã
 
 ```text
