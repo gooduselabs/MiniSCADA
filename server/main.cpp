@@ -1169,6 +1169,7 @@ int main(int argc, char** argv) {
     int64_t lastAuditError = -kAuditErrorLogMs;
     int64_t nextProcSample = monoMs() + kProcStatsPeriodMs;
     int64_t nextSshAudit = monoMs() + kSshAuditPeriodMs;
+    int64_t nextUpdateSettle = monoMs() + 1000;
 #ifdef MAT_TEST_HOOKS
     g_persistFailArmed = cfg.testPersistFail;
 #endif
@@ -1191,6 +1192,13 @@ int main(int argc, char** argv) {
         if (now >= nextSshAudit) {  // a few small files, read-only (FR-034)
             nextSshAudit = now + kSshAuditPeriodMs;
             publishSshWarning(auditSshConfig(), systemWarnings);
+        }
+        // OTA (feature 011, review T062): a verified package expires; a result of mat-updater that
+        // did not restart the runtime is audited and frees the device. One small file, every
+        // second.
+        if (updateService && now >= nextUpdateSettle) {
+            nextUpdateSettle = now + 1000;
+            updateService->expire();
         }
         if (audit.isOpen() && now >= nextAuditFlush) {
             nextAuditFlush = now + kAuditFlushMs;

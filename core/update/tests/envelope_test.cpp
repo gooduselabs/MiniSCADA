@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "core/update/manifest.hpp"
 #include "core/update/tests/update_test_support.hpp"
 #include "core/update/verify.hpp"
 
@@ -210,7 +211,8 @@ TEST(UpdateVectors, EveryBadPackageIsRefusedWithItsCode) {
         const std::string path = test::vectorPath(c["file"]);
         if (c.value("generated", false))
             ASSERT_TRUE(test::exists(path))
-                << path << " missing: run node tools/release/make-update.mjs --vectors --out --test";
+                << path
+                << " missing: run node tools/release/make-update.mjs --vectors --out --test";
         Verified v;
         const auto err = verifyPackageFile(
             path, keys, deviceOf(meta["device"], c.value("device", nlohmann::json())), v);
@@ -244,6 +246,50 @@ TEST(UpdateVectors, WithoutADeviceOnlyThePackageIsChecked) {
     // the package's own faults stay
     EXPECT_TRUE(
         verifyPackageFile(test::vectorPath("bad/08-path-traversal.matupdate"), trusted(), {}, v));
+}
+
+// mat-updater runs `chmod <mode>` (as root) with the mode of files[]: only 0644 and 0755 may pass
+// (review 011, T062); setuid, setgid, sticky, group or world writable, unreadable all refused.
+TEST(UpdateManifest, OnlyModes0644And0755PassTheFileList) {
+    auto withMode = [](int mode) {
+        Manifest m;
+        m.kind = "runtime";
+        m.payloadSize = 1000;
+        FileEntry bin{"bin/mat-runtime", std::string(64, 'a'), 10, 0755};
+        FileEntry web{"web/index.html", std::string(64, 'b'), 10, mode};
+        m.files = {bin, web};
+        return checkFileList(m, "");
+    };
+    EXPECT_FALSE(withMode(0644));
+    EXPECT_FALSE(withMode(0755));
+    for (int mode : {0, 0400, 0444, 0555, 0600, 0640, 0664, 0666, 0700, 0750, 0775, 0777, 01755,
+                     02755, 04755, 06755, 07777, 0645, 0754}) {
+        const auto err = withMode(mode);
+        ASSERT_TRUE(err) << std::oct << mode;
+        EXPECT_EQ(err->detailCode, "MODE_FORBIDDEN") << std::oct << mode;
+    }
+    // the mode as text: 3 or 4 octal digits, else refused while parsing
+    auto parsed = [](const std::string& mode) {
+        const std::string json =
+            R"({"format":"1.0.0","kind":"runtime","product":"mat-runtime","version":"1.0.1",)"
+            R"("releaseSeq":11,"arch":"armhf","minFromVersion":"1.0.0","projectFormatMax":"1.0.0",)"
+            R"("updaterRequired":1,"createdAt":"2026-10-17T00:00:00Z","payloadSha256":")" +
+            std::string(64, 'c') +
+            R"(","payloadSize":1000,"files":[{"path":"bin/mat-runtime","sha256":")" +
+            std::string(64, 'a') + R"(","size":10,"mode":")" + mode + R"("}]})";
+        Manifest m;
+        auto err = parseManifest(json, m);
+        if (!err) err = checkFileList(m, "");
+        return err;
+    };
+    EXPECT_FALSE(parsed("0755"));
+    EXPECT_FALSE(parsed("755"));
+    for (const char* bad : {"75", "07555", "0758", "-755", "0x1ed", "u+s", "a+rwx", "+0755", " 755",
+                            "0755 ", "4755", "0777"}) {
+        const auto err = parsed(bad);
+        ASSERT_TRUE(err) << bad;
+        EXPECT_EQ(err->detailCode, "MODE_FORBIDDEN") << bad;
+    }
 }
 
 }  // namespace
