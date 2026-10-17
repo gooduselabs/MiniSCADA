@@ -23,6 +23,8 @@ export {
   isPaint,
   isUrlOrNone,
   parseDataImage,
+  MAX_IMAGE_PIXELS,
+  MAX_DOC_IMAGE_PIXELS,
   isDataImage,
   isHref,
   isPathData,

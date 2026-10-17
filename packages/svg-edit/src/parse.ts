@@ -15,6 +15,7 @@ import {
   countEffective,
   hasDoctype,
   parseDataImage,
+  MAX_DOC_IMAGE_PIXELS,
   parseSvg,
   sanitizeStyleAttr,
   sanitizeSvg,
@@ -452,6 +453,7 @@ function addNode(doc: DrawDoc, n: Omit<DrawNode, 'id'>): DrawNode {
 interface Limits {
   images: number;
   imageBytes: number;
+  imagePixels: number;
   filters: number;
   fe: number;
 }
@@ -472,7 +474,7 @@ function buildModel(tok: Tokenized, rep: ParseReport, uid: () => string, text: s
         ? 'Phần tử gốc <svg> không thuộc namespace SVG'
         : 'Phần tử gốc không phải <svg>: ' + root.name.slice(0, 40),
     );
-  const lim: Limits = { images: 0, imageBytes: 0, filters: 0, fe: 0 };
+  const lim: Limits = { images: 0, imageBytes: 0, imagePixels: 0, filters: 0, fe: 0 };
 
   const makeElement = (raw: RawElement, parent: NodeId | null, path: string): DrawNode => {
     const isRoot = parent === null;
@@ -688,10 +690,15 @@ function limitProblem(c: RawElement, lim: Limits): string | null {
         ? 'R_IMAGE_BAD'
         : 'R_IMAGE_LINKED';
     }
-    if (lim.images + 1 > MAX_IMAGES || lim.imageBytes + img.bytes > MAX_IMAGE_BYTES)
+    if (
+      lim.images + 1 > MAX_IMAGES ||
+      lim.imageBytes + img.bytes > MAX_IMAGE_BYTES ||
+      lim.imagePixels + img.pixels > MAX_DOC_IMAGE_PIXELS
+    )
       return 'R_IMAGE_LIMIT';
     lim.images++;
     lim.imageBytes += img.bytes;
+    lim.imagePixels += img.pixels;
   }
   if (local === 'filter') {
     if (lim.filters + 1 > MAX_FILTERS) return 'R_FILTER_LIMIT';

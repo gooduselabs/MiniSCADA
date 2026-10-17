@@ -25,7 +25,7 @@ import {
   ruleFor,
   sanitizeStyleAttr,
 } from './allowlist.ts';
-import { isHref, isName, isTransform, parseDataImage } from './css-value.ts';
+import { isHref, isName, isTransform, MAX_DOC_IMAGE_PIXELS, parseDataImage } from './css-value.ts';
 import { isWs, scanNumberList } from './scan.ts';
 
 export interface SanitizeReport {
@@ -173,7 +173,7 @@ export function sanitizeSvg(root: Element, opts: SanitizeOptions = {}): Sanitize
     attributeDetails: [],
   };
   const detailIndex = new Map<string, number>();
-  const limits = { filters: 0, fe: 0, images: 0, imageBytes: 0 };
+  const limits = { filters: 0, fe: 0, images: 0, imageBytes: 0, imagePixels: 0 };
 
   const note = (code: string, n = 1): void => {
     report.codes[code] = (report.codes[code] ?? 0) + n;
@@ -324,10 +324,15 @@ export function sanitizeSvg(root: Element, opts: SanitizeOptions = {}): Sanitize
         const linked = href.trim().toLowerCase().startsWith('data:') || href.trim().startsWith('#');
         return { kind: 'remove', key, code: linked ? 'R_IMAGE_BAD' : 'R_IMAGE_LINKED' };
       }
-      if (limits.images + 1 > MAX_IMAGES || limits.imageBytes + img.bytes > MAX_IMAGE_BYTES)
+      if (
+        limits.images + 1 > MAX_IMAGES ||
+        limits.imageBytes + img.bytes > MAX_IMAGE_BYTES ||
+        limits.imagePixels + img.pixels > MAX_DOC_IMAGE_PIXELS
+      )
         return { kind: 'remove', key, code: 'R_IMAGE_LIMIT' };
       limits.images++;
       limits.imageBytes += img.bytes;
+      limits.imagePixels += img.pixels;
     }
     if (local === 'filter') {
       if (limits.filters + 1 > MAX_FILTERS) return { kind: 'remove', key, code: 'R_FILTER_LIMIT' };
