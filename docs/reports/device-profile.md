@@ -146,3 +146,15 @@ libstdc++.so.6.0.28
 libz.so.1
 libz.so.1.2.11
 ```
+
+## Cập nhật 2026-10-17 (T206)
+
+Thu thập qua SSH LAN, chỉ đọc. Ảnh chụp ở trên (2026-10-10) vẫn đúng cho phần cứng; thay đổi phần mềm từ đó:
+
+- mat-runtime **1.0.0** (releaseSeq 1) ở `/opt/mat-runtime`, 0.9.0 ở `/opt/mat-runtime.prev`; project `tank-demo` 0.1.0. RSS 9,5–10,7 MB, 99 luồng (`httpsThreads` 64), CPU rảnh 0,7 % một lõi.
+- **mat-updater** ở `/usr/lib/mat-updater` (`mat-updater`, `mat-updater-recover`, `mat-update-verify`), unit `mat-updater.path` (`PathExists=`), `mat-updater.service`, `mat-updater-recover.service` bản làm cứng của rà soát T062/T202; OTA **tắt** (`update.enabled` false), chưa có khóa tin cậy.
+- Công cụ có sẵn mà mat-updater và `deploy.sh` dùng: `openssl` 1.1.1f, `sha256sum`, `runuser`, `timeout`, `flock`; systemd 245. Vẫn không có `mmc` (không đọc được `EXT_CSD`, T013/T082).
+- Bộ nhớ: 993 MB tổng, khoảng 880 MB còn dùng được khi mat chạy rảnh. Đĩa gốc 6,8 GB, đã dùng 14 %.
+- Không đổi: kernel 5.4.61, mật khẩu root và cấu hình sshd (chờ T064 có người dùng ở cạnh).
+
+Mọi thay đổi và cách hoàn tác: [device-changes.md](device-changes.md).
