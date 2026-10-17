@@ -111,11 +111,16 @@ class UpdateService {
     nlohmann::json infoBlock() const;
     // releaseSeq of the running tree (build-info.json), 0 without one.
     int64_t releaseSeq() const { return releaseSeq_; }
-    // Expiry of a verified package; called by status() and the API, and by the runtime's tick.
+    // Expiry of a verified package, and the end of an apply / keyset / rollback that mat-updater
+    // finished without restarting the runtime (last.json of this updateId: audited, device freed);
+    // called by status() and the API, and by the runtime's tick.
     void expire();
 
    private:
     void startLast(nlohmann::json& last, bool& keysetAudited);
+    void syncKeysSeen(bool keysetAudited);
+    // A result of mat-updater in last.json for the update under way: audited, the device freed.
+    void settle();
     struct Impl;
     UpdateServiceOptions o_;
     std::unique_ptr<Impl> impl_;
