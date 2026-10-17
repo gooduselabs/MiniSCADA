@@ -650,6 +650,14 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(rules_logic_test core/project-manager/tests/rules_logic_test.cpp
            core/logic/tests/vector_runner.cpp)
   target_link_libraries(rules_logic_test PRIVATE mat_logic)
+  # Timed fuzz targets of feature 011 (T058, T142; FR-029): logic.json, project loader, expression
+  # language (core/common/tests/fuzz_util.hpp). MAT_FUZZ_SECONDS (5 s by default, 20 s in the
+  # sanitizer run of ctest); tools/fuzz/cpp/run.sh runs them for an hour each under ASan + UBSan.
+  mat_test(logic_fuzz_test core/logic/tests/logic_fuzz_test.cpp)
+  target_link_libraries(logic_fuzz_test PRIVATE mat_logic)
+  mat_test(project_fuzz_test core/project-manager/tests/project_fuzz_test.cpp)
+  mat_test(expression_fuzz_test core/expression/tests/expression_fuzz_test.cpp)
+  target_link_libraries(expression_fuzz_test PRIVATE mat_expression)
   # The scan of the maximum configuration (label perf, FR-095; T147 engine part).
   add_executable(logic_perf_test core/logic/tests/logic_perf_test.cpp)
   target_link_libraries(logic_perf_test PRIVATE mat_logic GTest::gtest_main)
