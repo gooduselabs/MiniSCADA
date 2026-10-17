@@ -2,15 +2,15 @@
   "scenario": "open",
   "checks": [
     {
-      "name": "màn hình chuẩn (20 widget, 100 Tag) có giá trị sống ≤ 2 s kể từ mở trang (đo 230 ms)",
+      "name": "màn hình chuẩn (20 widget, 100 Tag) có giá trị sống ≤ 2 s kể từ mở trang (đo 232 ms)",
       "pass": true
     },
     {
-      "name": "màn hình 250 item dựng xong và có giá trị ≤ 2 s sau khi chọn (đo 64 ms)",
+      "name": "màn hình 250 item dựng xong và có giá trị ≤ 2 s sau khi chọn (đo 66 ms)",
       "pass": true
     },
     {
-      "name": "chuyển lại màn hình đã mở ≤ 500 ms (đo 9 ms)",
+      "name": "chuyển lại màn hình đã mở ≤ 500 ms (đo 13 ms)",
       "pass": true
     },
     {
@@ -19,9 +19,9 @@
     }
   ],
   "measures": {
-    "openStandardMs": 230,
-    "open250Ms": 64,
-    "switchBackMs": 9,
+    "openStandardMs": 232,
+    "open250Ms": 66,
+    "switchBackMs": 13,
     "open250ColdMs": 157
   },
   "pass": true

@@ -4,21 +4,21 @@
     {
       "name": "runtime mở alarm.db 100.000 dòng đã nạp sẵn (logState ok)",
       "pass": true,
-      "detail": "{\"active\":2,\"dbBytes\":26132480,\"disabled\":0,\"droppedChanges\":0,\"evalMaxMs\":0.07,\"evalWindowS\":60,\"instances\":7,\"logState\":\"running\",\"shelved\":0,\"unacked\":2}"
+      "detail": "{\"active\":2,\"dbBytes\":26132480,\"disabled\":0,\"droppedChanges\":0,\"evalMaxMs\":0.06,\"evalWindowS\":60,\"instances\":7,\"logState\":\"running\",\"shelved\":0,\"unacked\":2}"
     },
     {
-      "name": "truy vấn lọc 7 ngày + khu vực Bồn + ưu tiên ≥ Quan trọng (25 lần): p95 12 ms ≤ 1.000 ms",
+      "name": "truy vấn lọc 7 ngày + khu vực Bồn + ưu tiên ≥ Quan trọng (25 lần): p95 13 ms ≤ 1.000 ms",
       "pass": true
     },
     {
       "name": "lật hết trang bộ lọc: 1616 dòng = oracle 1616",
       "pass": true,
-      "detail": "{\"n\":1616,\"pages\":4,\"lat\":[17.409916000000067,16.811083000000053,16.233541999999943,4.665416999999707]}"
+      "detail": "{\"n\":1616,\"pages\":4,\"lat\":[18.88833300000033,15.229874999999993,14.222083999999995,4.350290999999743]}"
     },
     {
       "name": "khu vực \"Chung\" (-) + ưu tiên ≥ Nhỏ: 3609 = oracle 3609",
       "pass": true,
-      "detail": "{\"n\":3609,\"pages\":8,\"lat\":[12.056290999999874,14.529625000000124,11.742874999999913,12.552624999999807,13.27895799999987"
+      "detail": "{\"n\":3609,\"pages\":8,\"lat\":[11.254625000000033,10.818957999999839,10.644332999999733,12.59900000000016,10.61379100000022,"
     },
     {
       "name": "state=active: 71 = oracle 71",
@@ -41,11 +41,11 @@
       "pass": true
     },
     {
-      "name": "trang Lịch sử mở và hiện dòng sau 258 ms (100 dòng đầu)",
+      "name": "trang Lịch sử mở và hiện dòng sau 490 ms (100 dòng đầu)",
       "pass": true
     },
     {
-      "name": "lọc 30 ngày + khu vực Bồn trên giao diện hiện kết quả sau 172 ms ≤ 1.000 ms (gồm render)",
+      "name": "lọc 30 ngày + khu vực Bồn trên giao diện hiện kết quả sau 231 ms ≤ 1.000 ms (gồm render)",
       "pass": true
     },
     {
@@ -54,19 +54,19 @@
       "detail": "progress=49999 file=0"
     },
     {
-      "name": "xuất ≈ 50.000 dòng trong 1157 ms ≤ 10.000 ms (Chrome headless, 100 trang × 500 dòng)",
+      "name": "xuất ≈ 50.000 dòng trong 1224 ms ≤ 10.000 ms (Chrome headless, 100 trang × 500 dòng)",
       "pass": true
     }
   ],
   "measures": {
-    "seedSeconds": 0.809,
+    "seedSeconds": 0.846,
     "seedBytes": 26132480,
     "infoAlarms": {
       "active": 2,
       "dbBytes": 26132480,
       "disabled": 0,
       "droppedChanges": 0,
-      "evalMaxMs": 0.07,
+      "evalMaxMs": 0.06,
       "evalWindowS": 60,
       "instances": 7,
       "logState": "running",
@@ -75,20 +75,20 @@
     },
     "filterQueryMs": {
       "p50": 6,
-      "p95": 12,
+      "p95": 13,
       "max": 15
     },
     "filterPages": {
       "pages": 4,
       "rows": 1616,
-      "maxPageMs": 17
+      "maxPageMs": 19
     },
     "searchFirstPageMs": 2,
     "csvExpectedRows": 49999,
     "browser": "Chrome/155.0.8059.85",
-    "historyPageOpenMs": 258,
-    "uiFilterMs": 172,
-    "csvExportMs": 1157,
+    "historyPageOpenMs": 490,
+    "uiFilterMs": 231,
+    "csvExportMs": 1224,
     "csvProgressText": "Đã xuất 49999 dòngHủy",
     "csvRows": 49999,
     "csvBytes": 0,

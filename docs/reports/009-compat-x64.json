@@ -88,12 +88,12 @@
     {
       "name": "C: 0.1 tank-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,MOTOR01.RUN,MOTOR01.SPEED)",
       "pass": true,
-      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792242016991,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":51.38,\"quality\":\"GOOD\",\"sourceTimestamp\":1792242016979,\"serverTimestamp\":1792242016979,\"rev"
+      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792275409055,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":51.37,\"quality\":\"GOOD\",\"sourceTimestamp\":1792275409041,\"serverTimestamp\":1792275409041,\"rev"
     },
     {
       "name": "C: 0.1 tank-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
       "pass": true,
-      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792242017354,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
+      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792275409418,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
     },
     {
       "name": "C: project 0.2 modbus-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
@@ -111,12 +111,12 @@
     {
       "name": "C: 0.2 modbus-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,TANK01.SP,PUMP01.RUN_CMD)",
       "pass": true,
-      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792242020425,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":null,\"quality\":\"BAD\",\"reason\":\"REFUSED\",\"sourceTimestamp\":1792242019922,\"serverTimestamp\":1"
+      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792275412531,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":null,\"quality\":\"BAD\",\"reason\":\"REFUSED\",\"sourceTimestamp\":1792275412029,\"serverTimestamp\":1"
     },
     {
       "name": "C: 0.2 modbus-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
       "pass": true,
-      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792242020785,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
+      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792275412889,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
     },
     {
       "name": "C: project 0.3 dashboard-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
@@ -134,12 +134,12 @@
     {
       "name": "C: 0.3 dashboard-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,TANK01.SP,PUMP01.RUN_CMD)",
       "pass": true,
-      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792242023836,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":null,\"quality\":\"BAD\",\"reason\":\"REFUSED\",\"sourceTimestamp\":1792242023342,\"serverTimestamp\":1"
+      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792275416006,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":null,\"quality\":\"BAD\",\"reason\":\"REFUSED\",\"sourceTimestamp\":1792275415515,\"serverTimestamp\":1"
     },
     {
       "name": "C: 0.3 dashboard-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
       "pass": true,
-      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792242024198,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
+      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792275416362,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
     },
     {
       "name": "C: project 0.4 dashboard-demo chạy trên runtime 0.8 (GET /api/v1/alarms 200)",
@@ -157,12 +157,12 @@
     {
       "name": "C: 0.4 dashboard-demo: Tag đăng ký có snapshot, không Tag lạ (TANK01.LEVEL,TANK01.SP,PUMP01.RUN_CMD)",
       "pass": true,
-      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792242027232,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":null,\"quality\":\"BAD\",\"reason\":\"REFUSED\",\"sourceTimestamp\":1792242026736,\"serverTimestamp\":1"
+      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"c\",\"sequence\":1,\"ts\":1792275419456,\"tags\":[{\"id\":\"TANK01.LEVEL\",\"value\":null,\"quality\":\"BAD\",\"reason\":\"REFUSED\",\"sourceTimestamp\":1792275418972,\"serverTimestamp\":1"
     },
     {
       "name": "C: 0.4 dashboard-demo: subscribeAlarms trên project không alarm nhận alarmSnapshot rỗng (không lỗi)",
       "pass": true,
-      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792242027587,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
+      "detail": "{\"type\":\"alarmSnapshot\",\"subscriptionId\":\"x\",\"sequence\":1,\"ts\":1792275419809,\"revision\":0,\"instances\":[],\"classes\":[],\"areas\":[],\"counts\":{\"active\":0,\"byPriorit"
     }
   ],
   "measures": {

@@ -4,17 +4,17 @@
     {
       "name": "đặt R.RUN = false",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-17T12:50:30.726Z\",\"readback\":false,\"receivedAt\":\"2026-10-17T12:50:30.655Z\",\"requestId\":\"692cc663-a24f-4de8-bdb1-cc944696142b\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":false}"
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-17T22:07:06.597Z\",\"readback\":false,\"receivedAt\":\"2026-10-17T22:07:06.518Z\",\"requestId\":\"d3da24d3-fe14-44a0-8e78-e1b37b5a9ad2\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":false}"
     },
     {
       "name": "client A (expect false → true): CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-17T12:50:30.982Z\",\"readback\":true,\"receivedAt\":\"2026-10-17T12:50:30.877Z\",\"requestId\":\"1a03afa1-5391-4c9e-983c-3cde99e16e29\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":true}"
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-17T22:07:06.845Z\",\"readback\":true,\"receivedAt\":\"2026-10-17T22:07:06.750Z\",\"requestId\":\"409b19d9-a398-4905-a7a2-dd25e687fdae\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":true}"
     },
     {
       "name": "client B cùng đảo false → true: REJECTED STALE_EXPECTATION",
       "pass": true,
-      "detail": "{\"message\":\"Giá trị của Tag đã đổi so với lúc bạn xem: không ghi gì.\",\"reason\":\"STALE_EXPECTATION\",\"requestId\":\"ad49d31c-0904-41d8-862d-460f899be615\",\"status\":\"REJECTED\"}"
+      "detail": "{\"message\":\"Giá trị của Tag đã đổi so với lúc bạn xem: không ghi gì.\",\"reason\":\"STALE_EXPECTATION\",\"requestId\":\"a0de6ca0-2dcd-4b3e-8c7e-1c287fc1331b\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "client B: không gì tới thiết bị trường",
@@ -29,7 +29,7 @@
     {
       "name": "expect khớp (true → false): ACCEPTED",
       "pass": true,
-      "detail": "{\"old\":{\"quality\":\"GOOD\",\"value\":true},\"phase\":\"queued\",\"receivedAt\":\"2026-10-17T12:50:31.134Z\",\"requestId\":\"58ef6e43-b013-4e0b-ba81-e5e28d7b3534\",\"status\":\"ACCEPTED\",\"tag\":\"R.RUN\",\"value\":false}"
+      "detail": "{\"old\":{\"quality\":\"GOOD\",\"value\":true},\"phase\":\"queued\",\"receivedAt\":\"2026-10-17T22:07:07.011Z\",\"requestId\":\"1b6fcc13-19b1-4d2d-86ae-a4a3b63c6541\",\"status\":\"ACCEPTED\",\"tag\":\"R.RUN\",\"value\":false}"
     },
     {
       "name": "audit: detail có expect",

@@ -1,0 +1,504 @@
+{
+  "scenario": "faceplate",
+  "checks": [
+    {
+      "name": "project mẫu có 20 bản sao của template bom",
+      "pass": true,
+      "detail": "20"
+    },
+    {
+      "name": "mở #/bom, mục menu \"Bơm\" được tô",
+      "pass": true,
+      "detail": "Bơm"
+    },
+    {
+      "name": "pump1: thẻ \"Bơm 1 (lưu lượng)\" hiện PUMP01.FLOW = 5",
+      "pass": true,
+      "detail": "Bơm 1 (lưu lượng) = 5.0"
+    },
+    {
+      "name": "pump1: đèn \"Bơm 1\" theo PUMP01.RUN (Modbus: chỉ nhãn)",
+      "pass": true,
+      "detail": "Bơm 1 on=false"
+    },
+    {
+      "name": "pump2: thẻ \"Bơm 2 (lưu lượng)\" hiện PUMP02.FLOW = 10",
+      "pass": true,
+      "detail": "Bơm 2 (lưu lượng) = 10.0"
+    },
+    {
+      "name": "pump2: đèn \"Bơm 2\" theo PUMP02.RUN = false",
+      "pass": true,
+      "detail": "Bơm 2 on=false"
+    },
+    {
+      "name": "pump3: thẻ \"Bơm 3 (lưu lượng)\" hiện PUMP03.FLOW = 15",
+      "pass": true,
+      "detail": "Bơm 3 (lưu lượng) = 15.0"
+    },
+    {
+      "name": "pump3: đèn \"Bơm 3\" theo PUMP03.RUN = true",
+      "pass": true,
+      "detail": "Bơm 3 on=true"
+    },
+    {
+      "name": "pump4: thẻ \"Bơm 4 (lưu lượng)\" hiện PUMP04.FLOW = 20",
+      "pass": true,
+      "detail": "Bơm 4 (lưu lượng) = 20.0"
+    },
+    {
+      "name": "pump4: đèn \"Bơm 4\" theo PUMP04.RUN = false",
+      "pass": true,
+      "detail": "Bơm 4 on=false"
+    },
+    {
+      "name": "pump5: thẻ \"Bơm 5 (lưu lượng)\" hiện PUMP05.FLOW = 25",
+      "pass": true,
+      "detail": "Bơm 5 (lưu lượng) = 25.0"
+    },
+    {
+      "name": "pump5: đèn \"Bơm 5\" theo PUMP05.RUN = true",
+      "pass": true,
+      "detail": "Bơm 5 on=true"
+    },
+    {
+      "name": "pump6: thẻ \"Bơm 6 (lưu lượng)\" hiện PUMP06.FLOW = 30",
+      "pass": true,
+      "detail": "Bơm 6 (lưu lượng) = 30.0"
+    },
+    {
+      "name": "pump6: đèn \"Bơm 6\" theo PUMP06.RUN = false",
+      "pass": true,
+      "detail": "Bơm 6 on=false"
+    },
+    {
+      "name": "pump7: thẻ \"Bơm 7 (lưu lượng)\" hiện PUMP07.FLOW = 35",
+      "pass": true,
+      "detail": "Bơm 7 (lưu lượng) = 35.0"
+    },
+    {
+      "name": "pump7: đèn \"Bơm 7\" theo PUMP07.RUN = true",
+      "pass": true,
+      "detail": "Bơm 7 on=true"
+    },
+    {
+      "name": "pump8: thẻ \"Bơm 8 (lưu lượng)\" hiện PUMP08.FLOW = 40",
+      "pass": true,
+      "detail": "Bơm 8 (lưu lượng) = 40.0"
+    },
+    {
+      "name": "pump8: đèn \"Bơm 8\" theo PUMP08.RUN = false",
+      "pass": true,
+      "detail": "Bơm 8 on=false"
+    },
+    {
+      "name": "pump9: thẻ \"Bơm 9 (lưu lượng)\" hiện PUMP09.FLOW = 45",
+      "pass": true,
+      "detail": "Bơm 9 (lưu lượng) = 45.0"
+    },
+    {
+      "name": "pump9: đèn \"Bơm 9\" theo PUMP09.RUN = true",
+      "pass": true,
+      "detail": "Bơm 9 on=true"
+    },
+    {
+      "name": "pump10: thẻ \"Bơm 10 (lưu lượng)\" hiện PUMP10.FLOW = 50",
+      "pass": true,
+      "detail": "Bơm 10 (lưu lượng) = 50.0"
+    },
+    {
+      "name": "pump10: đèn \"Bơm 10\" theo PUMP10.RUN = false",
+      "pass": true,
+      "detail": "Bơm 10 on=false"
+    },
+    {
+      "name": "pump11: thẻ \"Bơm 11 (lưu lượng)\" hiện PUMP11.FLOW = 55",
+      "pass": true,
+      "detail": "Bơm 11 (lưu lượng) = 55.0"
+    },
+    {
+      "name": "pump11: đèn \"Bơm 11\" theo PUMP11.RUN = true",
+      "pass": true,
+      "detail": "Bơm 11 on=true"
+    },
+    {
+      "name": "pump12: thẻ \"Bơm 12 (lưu lượng)\" hiện PUMP12.FLOW = 60",
+      "pass": true,
+      "detail": "Bơm 12 (lưu lượng) = 60.0"
+    },
+    {
+      "name": "pump12: đèn \"Bơm 12\" theo PUMP12.RUN = false",
+      "pass": true,
+      "detail": "Bơm 12 on=false"
+    },
+    {
+      "name": "pump13: thẻ \"Bơm 13 (lưu lượng)\" hiện PUMP13.FLOW = 65",
+      "pass": true,
+      "detail": "Bơm 13 (lưu lượng) = 65.0"
+    },
+    {
+      "name": "pump13: đèn \"Bơm 13\" theo PUMP13.RUN = true",
+      "pass": true,
+      "detail": "Bơm 13 on=true"
+    },
+    {
+      "name": "pump14: thẻ \"Bơm 14 (lưu lượng)\" hiện PUMP14.FLOW = 70",
+      "pass": true,
+      "detail": "Bơm 14 (lưu lượng) = 70.0"
+    },
+    {
+      "name": "pump14: đèn \"Bơm 14\" theo PUMP14.RUN = false",
+      "pass": true,
+      "detail": "Bơm 14 on=false"
+    },
+    {
+      "name": "pump15: thẻ \"Bơm 15 (lưu lượng)\" hiện PUMP15.FLOW = 75",
+      "pass": true,
+      "detail": "Bơm 15 (lưu lượng) = 75.0"
+    },
+    {
+      "name": "pump15: đèn \"Bơm 15\" theo PUMP15.RUN = true",
+      "pass": true,
+      "detail": "Bơm 15 on=true"
+    },
+    {
+      "name": "pump16: thẻ \"Bơm 16 (lưu lượng)\" hiện PUMP16.FLOW = 80",
+      "pass": true,
+      "detail": "Bơm 16 (lưu lượng) = 80.0"
+    },
+    {
+      "name": "pump16: đèn \"Bơm 16\" theo PUMP16.RUN = false",
+      "pass": true,
+      "detail": "Bơm 16 on=false"
+    },
+    {
+      "name": "pump17: thẻ \"Bơm 17 (lưu lượng)\" hiện PUMP17.FLOW = 85",
+      "pass": true,
+      "detail": "Bơm 17 (lưu lượng) = 85.0"
+    },
+    {
+      "name": "pump17: đèn \"Bơm 17\" theo PUMP17.RUN = true",
+      "pass": true,
+      "detail": "Bơm 17 on=true"
+    },
+    {
+      "name": "pump18: thẻ \"Bơm 18 (lưu lượng)\" hiện PUMP18.FLOW = 90",
+      "pass": true,
+      "detail": "Bơm 18 (lưu lượng) = 90.0"
+    },
+    {
+      "name": "pump18: đèn \"Bơm 18\" theo PUMP18.RUN = false",
+      "pass": true,
+      "detail": "Bơm 18 on=false"
+    },
+    {
+      "name": "pump19: thẻ \"Bơm 19 (lưu lượng)\" hiện PUMP19.FLOW = 95",
+      "pass": true,
+      "detail": "Bơm 19 (lưu lượng) = 95.0"
+    },
+    {
+      "name": "pump19: đèn \"Bơm 19\" theo PUMP19.RUN = true",
+      "pass": true,
+      "detail": "Bơm 19 on=true"
+    },
+    {
+      "name": "pump20: thẻ \"Bơm 20 (lưu lượng)\" hiện PUMP20.FLOW = 100",
+      "pass": true,
+      "detail": "Bơm 20 (lưu lượng) = 100.0"
+    },
+    {
+      "name": "pump20: đèn \"Bơm 20\" theo PUMP20.RUN = false",
+      "pass": true,
+      "detail": "Bơm 20 on=false"
+    },
+    {
+      "name": "pump1: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump1: tiêu đề \"Bơm 1\", thẻ \"Lưu lượng Bơm 1\" = 5 (PUMP01.FLOW)",
+      "pass": true,
+      "detail": "Bơm 1 | Lưu lượng Bơm 1 = 5.0"
+    },
+    {
+      "name": "faceplate pump1: công tắc \"Chạy Bơm 1\", đèn chạy, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "Chạy Bơm 1: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "pump2: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump2: tiêu đề \"Bơm 2\", thẻ \"Lưu lượng Bơm 2\" = 10 (PUMP02.FLOW)",
+      "pass": true,
+      "detail": "Bơm 2 | Lưu lượng Bơm 2 = 10.0"
+    },
+    {
+      "name": "faceplate pump2: công tắc \"Chạy Bơm 2\", đèn chạy = false, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 2: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "pump3: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump3: tiêu đề \"Bơm 3\", thẻ \"Lưu lượng Bơm 3\" = 15 (PUMP03.FLOW)",
+      "pass": true,
+      "detail": "Bơm 3 | Lưu lượng Bơm 3 = 15.0"
+    },
+    {
+      "name": "faceplate pump3: công tắc \"Chạy Bơm 3\", đèn chạy = true, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 3: Tắt 🔒 Đăng nhập để điều khiển | on=true"
+    },
+    {
+      "name": "pump4: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump4: tiêu đề \"Bơm 4\", thẻ \"Lưu lượng Bơm 4\" = 20 (PUMP04.FLOW)",
+      "pass": true,
+      "detail": "Bơm 4 | Lưu lượng Bơm 4 = 20.0"
+    },
+    {
+      "name": "faceplate pump4: công tắc \"Chạy Bơm 4\", đèn chạy = false, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 4: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "pump5: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump5: tiêu đề \"Bơm 5\", thẻ \"Lưu lượng Bơm 5\" = 25 (PUMP05.FLOW)",
+      "pass": true,
+      "detail": "Bơm 5 | Lưu lượng Bơm 5 = 25.0"
+    },
+    {
+      "name": "faceplate pump5: công tắc \"Chạy Bơm 5\", đèn chạy = true, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 5: Tắt 🔒 Đăng nhập để điều khiển | on=true"
+    },
+    {
+      "name": "pump6: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump6: tiêu đề \"Bơm 6\", thẻ \"Lưu lượng Bơm 6\" = 30 (PUMP06.FLOW)",
+      "pass": true,
+      "detail": "Bơm 6 | Lưu lượng Bơm 6 = 30.0"
+    },
+    {
+      "name": "faceplate pump6: công tắc \"Chạy Bơm 6\", đèn chạy = false, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 6: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "pump7: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump7: tiêu đề \"Bơm 7\", thẻ \"Lưu lượng Bơm 7\" = 35 (PUMP07.FLOW)",
+      "pass": true,
+      "detail": "Bơm 7 | Lưu lượng Bơm 7 = 35.0"
+    },
+    {
+      "name": "faceplate pump7: công tắc \"Chạy Bơm 7\", đèn chạy = true, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 7: Tắt 🔒 Đăng nhập để điều khiển | on=true"
+    },
+    {
+      "name": "pump8: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump8: tiêu đề \"Bơm 8\", thẻ \"Lưu lượng Bơm 8\" = 40 (PUMP08.FLOW)",
+      "pass": true,
+      "detail": "Bơm 8 | Lưu lượng Bơm 8 = 40.0"
+    },
+    {
+      "name": "faceplate pump8: công tắc \"Chạy Bơm 8\", đèn chạy = false, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "Chạy Bơm 8: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "pump9: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump9: tiêu đề \"Bơm 9\", thẻ \"Lưu lượng Bơm 9\" = 45 (PUMP09.FLOW)",
+      "pass": true,
+      "detail": "Bơm 9 | Lưu lượng Bơm 9 = 45.0"
+    },
+    {
+      "name": "faceplate pump9: công tắc \"Chạy Bơm 9\", đèn chạy = true, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 9: Tắt 🔒 Đăng nhập để điều khiển | on=true"
+    },
+    {
+      "name": "pump10: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump10: tiêu đề \"Bơm 10\", thẻ \"Lưu lượng Bơm 10\" = 50 (PUMP10.FLOW)",
+      "pass": true,
+      "detail": "Bơm 10 | Lưu lượng Bơm 10 = 50.0"
+    },
+    {
+      "name": "faceplate pump10: công tắc \"Chạy Bơm 10\", đèn chạy = false, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 10: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "pump11: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump11: tiêu đề \"Bơm 11\", thẻ \"Lưu lượng Bơm 11\" = 55 (PUMP11.FLOW)",
+      "pass": true,
+      "detail": "Bơm 11 | Lưu lượng Bơm 11 = 55.0"
+    },
+    {
+      "name": "faceplate pump11: công tắc \"Chạy Bơm 11\", đèn chạy = true, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 11: Tắt 🔒 Đăng nhập để điều khiển | on=true"
+    },
+    {
+      "name": "pump12: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump12: tiêu đề \"Bơm 12\", thẻ \"Lưu lượng Bơm 12\" = 60 (PUMP12.FLOW)",
+      "pass": true,
+      "detail": "Bơm 12 | Lưu lượng Bơm 12 = 60.0"
+    },
+    {
+      "name": "faceplate pump12: công tắc \"Chạy Bơm 12\", đèn chạy = false, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 12: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "pump13: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump13: tiêu đề \"Bơm 13\", thẻ \"Lưu lượng Bơm 13\" = 65 (PUMP13.FLOW)",
+      "pass": true,
+      "detail": "Bơm 13 | Lưu lượng Bơm 13 = 65.0"
+    },
+    {
+      "name": "faceplate pump13: công tắc \"Chạy Bơm 13\", đèn chạy = true, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "Chạy Bơm 13: Bật 🔒 Đăng nhập để điều khiển | on=true"
+    },
+    {
+      "name": "pump14: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump14: tiêu đề \"Bơm 14\", thẻ \"Lưu lượng Bơm 14\" = 70 (PUMP14.FLOW)",
+      "pass": true,
+      "detail": "Bơm 14 | Lưu lượng Bơm 14 = 70.0"
+    },
+    {
+      "name": "faceplate pump14: công tắc \"Chạy Bơm 14\", đèn chạy = false, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 14: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "pump15: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump15: tiêu đề \"Bơm 15\", thẻ \"Lưu lượng Bơm 15\" = 75 (PUMP15.FLOW)",
+      "pass": true,
+      "detail": "Bơm 15 | Lưu lượng Bơm 15 = 75.0"
+    },
+    {
+      "name": "faceplate pump15: công tắc \"Chạy Bơm 15\", đèn chạy = true, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 15: Tắt 🔒 Đăng nhập để điều khiển | on=true"
+    },
+    {
+      "name": "pump16: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump16: tiêu đề \"Bơm 16\", thẻ \"Lưu lượng Bơm 16\" = 80 (PUMP16.FLOW)",
+      "pass": true,
+      "detail": "Bơm 16 | Lưu lượng Bơm 16 = 80.0"
+    },
+    {
+      "name": "faceplate pump16: công tắc \"Chạy Bơm 16\", đèn chạy = false, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "Chạy Bơm 16: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "pump17: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump17: tiêu đề \"Bơm 17\", thẻ \"Lưu lượng Bơm 17\" = 85 (PUMP17.FLOW)",
+      "pass": true,
+      "detail": "Bơm 17 | Lưu lượng Bơm 17 = 85.0"
+    },
+    {
+      "name": "faceplate pump17: công tắc \"Chạy Bơm 17\", đèn chạy = true, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 17: Tắt 🔒 Đăng nhập để điều khiển | on=true"
+    },
+    {
+      "name": "pump18: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump18: tiêu đề \"Bơm 18\", thẻ \"Lưu lượng Bơm 18\" = 90 (PUMP18.FLOW)",
+      "pass": true,
+      "detail": "Bơm 18 | Lưu lượng Bơm 18 = 90.0"
+    },
+    {
+      "name": "faceplate pump18: công tắc \"Chạy Bơm 18\", đèn chạy = false, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 18: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "pump19: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump19: tiêu đề \"Bơm 19\", thẻ \"Lưu lượng Bơm 19\" = 95 (PUMP19.FLOW)",
+      "pass": true,
+      "detail": "Bơm 19 | Lưu lượng Bơm 19 = 95.0"
+    },
+    {
+      "name": "faceplate pump19: công tắc \"Chạy Bơm 19\", đèn chạy = true, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 19: Tắt 🔒 Đăng nhập để điều khiển | on=true"
+    },
+    {
+      "name": "pump20: bấm \"Chi tiết\"",
+      "pass": true
+    },
+    {
+      "name": "faceplate pump20: tiêu đề \"Bơm 20\", thẻ \"Lưu lượng Bơm 20\" = 100 (PUMP20.FLOW)",
+      "pass": true,
+      "detail": "Bơm 20 | Lưu lượng Bơm 20 = 100.0"
+    },
+    {
+      "name": "faceplate pump20: công tắc \"Chạy Bơm 20\", đèn chạy = false, không có \"Tag không có\"",
+      "pass": true,
+      "detail": "STALE Chạy Bơm 20: Tắt 🔒 Đăng nhập để điều khiển | on=false"
+    },
+    {
+      "name": "không có cảnh báo hay lỗi trong console",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "faceplateOpenMsMax": 75,
+    "faceplateOpenMsMedian": 2
+  },
+  "pass": true
+}

@@ -4,7 +4,7 @@
     {
       "name": "FLOAT TANK01.SP = 50: CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-17T12:50:09.021Z\",\"readback\":50,\"receivedAt\":\"2026-10-17T12:50:09.015Z\",\"requestId\":\"d6035198-de4f-4b69-8e1c-973e1d49b949\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP\",\"value\":50}"
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-17T22:06:46.410Z\",\"readback\":50,\"receivedAt\":\"2026-10-17T22:06:46.206Z\",\"requestId\":\"8b0808db-bdcf-41e5-a9d1-f75dc795a088\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP\",\"value\":50}"
     },
     {
       "name": "FLOAT: đúng 1 lệnh tới giả lập, không gửi hai lần",
@@ -14,27 +14,27 @@
     {
       "name": "BOOL ngoại PUMP01.RUN_CMD = true: CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-17T12:50:09.523Z\",\"receivedAt\":\"2026-10-17T12:50:09.409Z\",\"requestId\":\"669f7463-43e8-4842-8795-0820d811e35a\",\"status\":\"CONFIRMED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":true}"
+      "detail": "{\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-17T22:06:46.659Z\",\"receivedAt\":\"2026-10-17T22:06:46.599Z\",\"requestId\":\"6cdaedda-0c35-4fb3-953e-a7d35fb73547\",\"status\":\"CONFIRMED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":true}"
     },
     {
       "name": "BOOL mô phỏng SIM.FAN_ON = true: CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T12:50:10.022Z\",\"receivedAt\":\"2026-10-17T12:50:09.806Z\",\"requestId\":\"8a3c3812-f3e2-475b-8847-335105d270e4\",\"status\":\"CONFIRMED\",\"tag\":\"SIM.FAN_ON\",\"value\":true}"
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T22:06:47.164Z\",\"receivedAt\":\"2026-10-17T22:06:46.992Z\",\"requestId\":\"dec9b669-c63d-4aed-8954-e8ab90d1255b\",\"status\":\"CONFIRMED\",\"tag\":\"SIM.FAN_ON\",\"value\":true}"
     },
     {
       "name": "INT mô phỏng DEMO.SET = 42: CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T12:50:10.281Z\",\"receivedAt\":\"2026-10-17T12:50:10.206Z\",\"requestId\":\"43e0e7ba-6e4d-498b-ba9c-1ace4678c72a\",\"status\":\"CONFIRMED\",\"tag\":\"DEMO.SET\",\"value\":42}"
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T22:06:47.409Z\",\"receivedAt\":\"2026-10-17T22:06:47.387Z\",\"requestId\":\"f116490e-4653-4713-96c8-85075676a62c\",\"status\":\"CONFIRMED\",\"tag\":\"DEMO.SET\",\"value\":42}"
     },
     {
       "name": "nội bộ TANK01.SP_HI = 70: CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T12:50:10.782Z\",\"receivedAt\":\"2026-10-17T12:50:10.602Z\",\"requestId\":\"82834c93-bfef-4f9f-9237-b9f6937ea01a\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP_HI\",\"value\":70}"
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T22:06:47.910Z\",\"receivedAt\":\"2026-10-17T22:06:47.782Z\",\"requestId\":\"b143a81d-d536-4120-8ec8-673f9f4940fa\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP_HI\",\"value\":70}"
     },
     {
       "name": "vượt giới hạn TANK01.SP = 95: REJECTED OUT_OF_LIMITS",
       "pass": true,
-      "detail": "{\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"062425a4-9148-4bb8-8156-6924a0fce70b\",\"status\":\"REJECTED\"}"
+      "detail": "{\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"07eea07c-2e19-42e1-a56f-e4d4b96e16be\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "vượt giới hạn: 0 lệnh tới giả lập",
@@ -44,7 +44,7 @@
     {
       "name": "Tag chỉ đọc TANK01.LEVEL: REJECTED READ_ONLY",
       "pass": true,
-      "detail": "{\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"bfe11924-bc45-46f5-89c2-040ae9d6166a\",\"status\":\"REJECTED\"}"
+      "detail": "{\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"8d6bbab2-8b26-4af4-a417-02360524d8c4\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "chỉ đọc: 0 lệnh tới giả lập",
@@ -54,17 +54,17 @@
     {
       "name": "Tag lạ: REJECTED NO_SUCH_TAG",
       "pass": true,
-      "detail": "{\"message\":\"Không có Tag này trên thiết bị.\",\"reason\":\"NO_SUCH_TAG\",\"requestId\":\"a7d9391d-8b48-4575-be9f-a99272911ddb\",\"status\":\"REJECTED\"}"
+      "detail": "{\"message\":\"Không có Tag này trên thiết bị.\",\"reason\":\"NO_SUCH_TAG\",\"requestId\":\"fe546433-5319-4387-974d-b655cdc2ac56\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "thiết bị từ chối (exception 03): FAILED DEVICE_EXCEPTION",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-17T12:50:11.780Z\",\"receivedAt\":\"2026-10-17T12:50:11.528Z\",\"requestId\":\"804029ab-bd3b-4d67-8d47-33353449da27\",\"status\":\"FAILED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
+      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-17T22:06:48.914Z\",\"receivedAt\":\"2026-10-17T22:06:48.708Z\",\"requestId\":\"d3dba642-07a8-4970-9be0-f8865dac794d\",\"status\":\"FAILED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
     },
     {
       "name": "thiết bị không trả lời: TIMEOUT WRITE_TIMEOUT",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-17T12:50:13.278Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-17T12:50:12.139Z\",\"requestId\":\"b8437ea1-b67e-4c16-9266-5bf8699ca058\",\"status\":\"TIMEOUT\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
+      "detail": "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-17T22:06:50.159Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-17T22:06:49.110Z\",\"requestId\":\"df5ad43f-72f9-4b2b-9452-a7560b48073a\",\"status\":\"TIMEOUT\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
     },
     {
       "name": "lệnh quá hạn tới giả lập đúng 1 lần, không gửi lại",
@@ -74,7 +74,7 @@
     {
       "name": "cùng requestId lần hai: duplicate",
       "pass": true,
-      "detail": "{\"duplicate\":true,\"old\":{\"quality\":\"GOOD\",\"value\":42},\"phase\":\"queued\",\"receivedAt\":\"2026-10-17T12:50:13.603Z\",\"requestId\":\"b74a8337-bc1f-4a54-a60b-47ac321abbca\",\"status\":\"ACCEPTED\",\"tag\":\"DEMO.SET\",\"value\":7}"
+      "detail": "{\"duplicate\":true,\"old\":{\"quality\":\"GOOD\",\"value\":42},\"phase\":\"queued\",\"receivedAt\":\"2026-10-17T22:06:50.369Z\",\"requestId\":\"f232aec2-52ba-4437-a05a-14015da67564\",\"status\":\"ACCEPTED\",\"tag\":\"DEMO.SET\",\"value\":7}"
     },
     {
       "name": "cùng requestId khác nội dung: REQUEST_ID_CONFLICT",
@@ -103,7 +103,7 @@
     {
       "name": "context sai dạng: lệnh vẫn chạy (context bỏ)",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T12:50:14.523Z\",\"receivedAt\":\"2026-10-17T12:50:14.287Z\",\"requestId\":\"99cf8df5-7574-4891-8c41-5325d59b5ff2\",\"status\":\"CONFIRMED\",\"tag\":\"DEMO.SET\",\"value\":9}"
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-17T22:06:51.161Z\",\"receivedAt\":\"2026-10-17T22:06:51.052Z\",\"requestId\":\"7e661b0b-0d4f-4244-a097-713a95066531\",\"status\":\"CONFIRMED\",\"tag\":\"DEMO.SET\",\"value\":9}"
     },
     {
       "name": "projects/active qua cookie: 200 và có 6 screens",

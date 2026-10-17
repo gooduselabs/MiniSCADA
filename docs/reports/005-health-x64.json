@@ -1,6 +1,6 @@
 {
   "scenario": "health-x64",
-  "at": "2026-10-17T12:33:37Z",
+  "at": "2026-10-17T21:59:40Z",
   "runtime": "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
   "checks": [
     {
@@ -59,11 +59,11 @@
         "code": "HEALTH_CRASH"
       },
       "hang": {
-        "rolledBackAfterS": 20.2,
+        "rolledBackAfterS": 20.1,
         "code": "HEALTH_TIMEOUT"
       }
     }
   },
-  "projectStatus": "Kho project: /data/projects\nĐang chạy: seq 33  tank-demo 4.0.0  sha256:b706880bbfb5c8499cf6ff1e03b2637cf13dd3ba48dccb6c937f4b758bf3eadd\n    nguồn studio; kích hoạt 2026-10-17T12:32:50Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\nBản dự phòng:\n  seq 32  tank-demo 1.1.0  sha256:dd40ddc5bed52e514bba23bb5725f8ab3e7da08ece1fac7db4cd7949ee12c8d1\n    nguồn studio; kích hoạt 2026-10-17T12:32:42Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\n  seq 31  tank-viet 1.0.10  sha256:ae50035721f54beb9ec9b93429beaf6259521fe12a6c9b3ef4f918777e996d29\n    nguồn studio; kích hoạt 2026-10-17T12:32:38Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\n  seq 30  tank-viet 1.0.9  sha256:cac6d24a1a6f883c1eb472bc972b3134b16c83aa89c510dbae5e4da0bf872bbd\n    nguồn studio; kích hoạt 2026-10-17T12:32:34Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\nThao tác dở dang: không",
+  "projectStatus": "Kho project: /data/projects\nĐang chạy: seq 33  tank-demo 4.0.0  sha256:b706880bbfb5c8499cf6ff1e03b2637cf13dd3ba48dccb6c937f4b758bf3eadd\n    nguồn studio; kích hoạt 2026-10-17T21:58:54Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\nBản dự phòng:\n  seq 32  tank-demo 1.1.0  sha256:dd40ddc5bed52e514bba23bb5725f8ab3e7da08ece1fac7db4cd7949ee12c8d1\n    nguồn studio; kích hoạt 2026-10-17T21:58:46Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\n  seq 31  tank-viet 1.0.10  sha256:ae50035721f54beb9ec9b93429beaf6259521fe12a6c9b3ef4f918777e996d29\n    nguồn studio; kích hoạt 2026-10-17T21:58:41Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\n  seq 30  tank-viet 1.0.9  sha256:cac6d24a1a6f883c1eb472bc972b3134b16c83aa89c510dbae5e4da0bf872bbd\n    nguồn studio; kích hoạt 2026-10-17T21:58:37Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\nThao tác dở dang: không",
   "pass": true
 }
