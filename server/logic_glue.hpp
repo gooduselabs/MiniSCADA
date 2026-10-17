@@ -138,6 +138,19 @@ class LogicSubsystem {
     bool reset(const std::string& id, double value, const WriteCaller& who, std::string& code);
 
     bool retainLost() const { return retainLost_; }
+    // T148 (tools: logic_bench): where the last scan spent its time, ms. Not part of the API.
+    struct ScanProfile {
+        double engineMs = 0;    // logic::Engine::step
+        double publishMs = 0;   // the logic Tags into the round
+        double actionsMs = 0;   // setTag/toggle, write/pulse queued or audited
+        double warningsMs = 0;  // LOGIC_WRITES_OFF, LOGIC_THROTTLED
+        double totalMs = 0;     // what scan.lastMs reports
+        uint64_t scans = 0;
+    };
+    ScanProfile lastProfile() const {
+        std::lock_guard<std::mutex> g(mu_);
+        return profile_;
+    }
     // Tests: wait until every queued write was handed over and answered (ACCEPTED or REJECTED).
     void waitIdle();
     // Stops the dispatcher (queued writes that were not handed over are dropped and logged).
@@ -205,6 +218,7 @@ class LogicSubsystem {
     double lastScanMs_ = 0;
     std::vector<double> scanMsWindow_;  // last 100 scan durations (p99)
     uint64_t overruns_ = 0;
+    ScanProfile profile_;
     std::map<std::string, std::string> lastErrorCode_;  // rule -> code of the last refusal
 
     // the dispatcher

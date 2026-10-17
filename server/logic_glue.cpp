@@ -395,11 +395,13 @@ void LogicSubsystem::round(EngineRound& io) {
         wc.synced = opt_.timeSynced ? opt_.timeSynced() : true;
         const logic::ReadTag read = [&](const std::string& id) { return readTag(io, id); };
         const std::vector<logic::ActionOut> actions = engine_->step(now, read, wc);
+        const auto t1 = std::chrono::steady_clock::now();
         for (const auto& [tag, idx] : outputs_) {
             const logic::Output* o = engine_->output(tag);
             if (!o) continue;
             io.publish(idx, o->value, o->good ? Quality::GOOD : Quality::BAD, o->reason);
         }
+        const auto t2 = std::chrono::steady_clock::now();
         for (const logic::ActionOut& a : actions) {
             const auto ti = index_.find(a.tag);
             if (ti == index_.end()) continue;
@@ -440,10 +442,19 @@ void LogicSubsystem::round(EngineRound& io) {
                 lastErrorCode_[a.rule] = a.result;
             }
         }
+        const auto t3 = std::chrono::steady_clock::now();
         updateWarningsLocked(now);
-        const double ms =
-            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0)
-                .count();
+        const auto t4 = std::chrono::steady_clock::now();
+        const auto span = [](auto a, auto b) {
+            return std::chrono::duration<double, std::milli>(b - a).count();
+        };
+        const double ms = span(t0, t4);
+        profile_.engineMs = span(t0, t1);
+        profile_.publishMs = span(t1, t2);
+        profile_.actionsMs = span(t2, t3);
+        profile_.warningsMs = span(t3, t4);
+        profile_.totalMs = ms;
+        ++profile_.scans;
         lastScanMs_ = ms;
         scanMsWindow_.push_back(ms);
         if (scanMsWindow_.size() > 100) scanMsWindow_.erase(scanMsWindow_.begin());
