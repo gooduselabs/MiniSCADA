@@ -41,6 +41,7 @@ HEALTH_S=${MAT_HEALTH_S:-60}
 STABLE_S=${MAT_STABLE_S:-5}
 SLEEP=${MAT_SLEEP:-sleep}
 RATE_S=${MAT_RATE_S:-300}
+READ_S=${MAT_READ_S:-60}
 UPDATER_PROTOCOL=1
 
 log() { echo "[mat-updater] $*"; }
@@ -52,6 +53,13 @@ now_ms() { echo $(($(date +%s) * 1000)); }
 as_user() { $RUNUSER "$@"; }
 # JSON string value (our own simple files only: no escapes in what we read back)
 jget() { sed -n "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$2" | head -1; }
+
+# A file under <dataDir> read as matscada (review 011 T062): a regular file only (never a link, a
+# FIFO or a device), at most $2 bytes plus one (so that a larger file is seen as larger), bounded
+# in time (a file swapped for a FIFO after the test only blocks until the timeout).
+user_read() { # $1 path, $2 max bytes; stdout
+    timeout -k 5 "$READ_S" $RUNUSER sh -c '{ [ -f "$1" ] && [ ! -L "$1" ]; } || exit 3; exec head -c "$2" < "$1"' sh "$1" "$(($2 + 1))"
+}
 
 # A file under <dataDir> written as matscada: temp then rename (a link at the name is replaced).
 user_write() { # $1 path, stdin content
@@ -137,9 +145,20 @@ roll_back() { # $1 reason
     sysctl_ stop mat-runtime
     kp S7 5
     rm -rf "$FAILED"
-    [ -d "$ROOT" ] && mv "$ROOT" "$FAILED"
+    # each rename checked (review 011 T062): never .prev moved INTO a tree that is still there
+    if [ -d "$ROOT" ] && ! mv -T "$ROOT" "$FAILED"; then
+        sysctl_ start mat-runtime
+        finish failed "$1; the rollback could not rename the new tree" SWITCH_FAILED
+        return 0
+    fi
     kp S7 6
-    mv "$PREV" "$ROOT"
+    if ! mv -T "$PREV" "$ROOT"; then
+        mv -T "$FAILED" "$ROOT" || log "$ID: no tree left in place: mat-updater-recover restores .prev at boot"
+        sync
+        sysctl_ start mat-runtime
+        finish failed "$1; the rollback could not put the previous tree back" SWITCH_FAILED
+        return 0
+    fi
     sync
     sysctl_ start mat-runtime
     if healthy "$FROM" "" ""; then
@@ -175,7 +194,7 @@ recover() {
     # S1 to S3 (the runtime's): what was received or checked is dropped, the request too
     as_user sh -c 'rm -f "$1"/incoming/* "$1"/ready/* "$1"/request.json' sh "$UPD" 2>/dev/null || true
     # the key set: a swap cut in the middle goes back to the old set
-    if [ ! -d "$KEYS" ] && [ -d "$KEYS.old" ]; then mv "$KEYS.old" "$KEYS"; fi
+    if [ ! -d "$KEYS" ] && [ -d "$KEYS.old" ]; then mv -T "$KEYS.old" "$KEYS" || log "cannot restore $KEYS"; fi
     rm -rf "$KEYS.new" "$KEYS.old"
     for S in "$STATE"/ops/*.json; do
         [ -f "$S" ] || continue
@@ -187,9 +206,10 @@ recover() {
         if [ "$OP" = rollback ]; then
             # the swap ROOT -> .swap, .prev -> ROOT, .swap -> .prev: complete it, then check health
             if [ -d "$ROOT.swap" ]; then
-                [ -d "$ROOT" ] || mv "$PREV" "$ROOT"
-                [ -d "$PREV" ] || mv "$ROOT.swap" "$PREV"
-                rm -rf "$ROOT.swap"
+                [ -d "$ROOT" ] || mv -T "$PREV" "$ROOT" || mv -T "$ROOT.swap" "$ROOT" || log "$ID: no tree in place"
+                [ -d "$PREV" ] || mv -T "$ROOT.swap" "$PREV" || log "$ID: cannot keep the old tree as .prev"
+                # dropped only when it is no longer the only copy of a tree
+                [ -d "$ROOT" ] && [ -d "$PREV" ] && rm -rf "$ROOT.swap"
             fi
             if [ "$n" -ge 6 ]; then
                 echo "$ID" > "$STATE/resume"
@@ -202,7 +222,7 @@ recover() {
         case "$n" in
         4 | 5)
             rm -rf "$NEW"
-            [ -d "$ROOT" ] || mv "$PREV" "$ROOT"
+            [ -d "$ROOT" ] || mv -T "$PREV" "$ROOT" || log "$ID: cannot restore .prev"
             finish failed "interrupted at S$n" INTERRUPTED
             ;;
         6 | 7)
@@ -210,8 +230,11 @@ recover() {
                 rm -rf "$NEW"
                 finish failed "interrupted at S6 before the switch" INTERRUPTED
             elif [ ! -d "$ROOT" ]; then  # between the two renames
-                rm -rf "$NEW"
-                mv "$PREV" "$ROOT"
+                if mv -T "$PREV" "$ROOT"; then
+                    rm -rf "$NEW"
+                else
+                    mv -T "$NEW" "$ROOT" || log "$ID: no tree in place"
+                fi
                 sync
                 finish rolled-back "interrupted at S6 during the switch" INTERRUPTED
             else  # switched: the new version starts with the boot, then its health check
@@ -228,8 +251,12 @@ recover() {
         esac
     done
     # whatever happened: a runtime tree must be there
-    if [ ! -d "$ROOT" ] && [ -d "$PREV" ]; then mv "$PREV" "$ROOT"; fi
-    rm -rf "$NEW" "$ROOT.swap"
+    if [ ! -d "$ROOT" ] && [ -d "$PREV" ]; then mv -T "$PREV" "$ROOT" || log "cannot restore .prev"; fi
+    if [ -d "$ROOT" ]; then
+        rm -rf "$NEW"
+        if [ -d "$ROOT.swap" ] && [ ! -d "$PREV" ]; then mv -T "$ROOT.swap" "$PREV" || log "cannot keep $ROOT.swap as .prev"; fi
+        [ -d "$PREV" ] && rm -rf "$ROOT.swap"
+    fi
     sync
 }
 
@@ -262,9 +289,11 @@ if [ -f "$STATE/resume" ]; then
 fi
 
 REQ=$UPD/request.json
-REQTEXT=$(as_user head -c 4096 "$REQ" 2>/dev/null) || REQTEXT=""
+REQTEXT=$(user_read "$REQ" 4096 2>/dev/null) || REQTEXT=""
+# taken whatever it was (a FIFO or a link planted there included)
+as_user rm -f "$REQ" 2>/dev/null
 [ -n "$REQTEXT" ] || { log "no request"; exit 0; }
-as_user rm -f "$REQ"
+[ "$(printf '%s' "$REQTEXT" | wc -c)" -le 4096 ] || { log "request ignored: size"; exit 0; }
 field() { printf '%s' "$REQTEXT" | sed -n "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" | head -1; }
 ID=$(field updateId)
 OP=$(field op)
@@ -306,11 +335,22 @@ if [ "$OP" = rollback ]; then
     kp S6 1
     sysctl_ stop mat-runtime
     rm -rf "$ROOT.swap"
-    mv "$ROOT" "$ROOT.swap"
+    # each rename checked (review 011 T062); a failed one puts back what was moved
+    if ! mv -T "$ROOT" "$ROOT.swap"; then
+        sysctl_ start mat-runtime
+        finish failed "cannot rename the installed tree" SWITCH_FAILED
+        exit 0
+    fi
     kp S6 2
-    mv "$PREV" "$ROOT"
+    if ! mv -T "$PREV" "$ROOT"; then
+        mv -T "$ROOT.swap" "$ROOT" || log "$ID: no tree in place: mat-updater-recover restores it at boot"
+        sync
+        sysctl_ start mat-runtime
+        finish failed "cannot put the previous tree in place" SWITCH_FAILED
+        exit 0
+    fi
     kp S6 3
-    mv "$ROOT.swap" "$PREV"
+    mv -T "$ROOT.swap" "$PREV" || log "$ID: the replaced tree stays in $ROOT.swap"
     sync
     sysctl_ start mat-runtime
     step 7
@@ -319,7 +359,14 @@ if [ "$OP" = rollback ]; then
         finish committed ""
     else  # swap back
         sysctl_ stop mat-runtime
-        mv "$ROOT" "$ROOT.swap" && mv "$PREV" "$ROOT" && mv "$ROOT.swap" "$PREV"
+        rm -rf "$ROOT.swap"
+        if mv -T "$ROOT" "$ROOT.swap"; then
+            if mv -T "$PREV" "$ROOT"; then
+                mv -T "$ROOT.swap" "$PREV" || log "$ID: the replaced tree stays in $ROOT.swap"
+            else
+                mv -T "$ROOT.swap" "$ROOT" || log "$ID: no tree in place: mat-updater-recover restores it at boot"
+            fi
+        fi
         sync
         sysctl_ start mat-runtime
         finish rolled-back "the previous version is not healthy" HEALTH_FAILED
@@ -327,9 +374,17 @@ if [ "$OP" = rollback ]; then
     exit 0
 fi
 
-# the copy, read as matscada (no root read through a planted link), then its digest
-if ! as_user cat "$UPD/ready/$ID.matupdate" > "$WORK/pkg" 2>/dev/null; then
+# the copy, read as matscada (no root read through a planted link): a regular file only, at most
+# update.maxPackageMiB (the runtime's default 64), in bounded time; then its digest
+MAXMIB=$(sed -n 's/.*"maxPackageMiB"[^0-9]*\([0-9]*\).*/\1/p' "$CONF" 2>/dev/null | head -1 | cut -c1-4)
+[ "${MAXMIB:-0}" -gt 0 ] 2>/dev/null || MAXMIB=64
+MAXB=$((MAXMIB * 1048576))
+if ! user_read "$UPD/ready/$ID.matupdate" "$MAXB" > "$WORK/pkg" 2>/dev/null; then
     finish failed "package not found" UPDATE_NOT_FOUND
+    exit 0
+fi
+if [ "$(wc -c < "$WORK/pkg")" -gt "$MAXB" ]; then
+    finish failed "package larger than $MAXMIB MiB" UPDATE_TOO_LARGE
     exit 0
 fi
 kp S4 2
@@ -337,8 +392,7 @@ if [ "$(sha256sum "$WORK/pkg" | cut -d' ' -f1)" != "$SHA" ]; then
     finish failed "package changed after its check (sha256)" UPDATE_PACKAGE_INVALID
     exit 0
 fi
-MAXMIB=$(sed -n 's/.*"maxPackageMiB"[^0-9]*\([0-9]*\).*/\1/p' "$CONF" 2>/dev/null | head -1)
-"$VERIFY" "$WORK/pkg" --keys "$KEYS" --installed "$ROOT" ${MAXMIB:+--max-mib "$MAXMIB"} > "$WORK/verify.out" 2>"$WORK/verify.err"
+"$VERIFY" "$WORK/pkg" --keys "$KEYS" --installed "$ROOT" --max-mib "$MAXMIB" > "$WORK/verify.out" 2>"$WORK/verify.err"
 rc=$?
 kp S4 3
 if [ $rc != 0 ]; then
@@ -385,9 +439,22 @@ if [ "$OP" = keyset ]; then
     fi
     kp S5 1
     # the new set in a copy, checked, then swapped in key by key (rename is atomic per file)
-    rm -rf "$KEYS.new" && mkdir -m 755 "$KEYS.new" && cp -p "$KEYS"/*.pem "$KEYS.new"/ 2>/dev/null
+    # every step checked (review 011 T062): a key not copied would be dropped from the new set
+    keyset_fail() { # $1 reason
+        rm -rf "$KEYS.new"
+        finish failed "$1" KEYSET_KEY
+        exit 0
+    }
+    rm -rf "$KEYS.new" && mkdir -m 755 "$KEYS.new" || keyset_fail "cannot stage the key set"
+    have=$(find "$KEYS" -mindepth 1 -maxdepth 1 -name '*.pem' | wc -l)
+    if [ "$have" -gt 0 ]; then
+        cp -p "$KEYS"/*.pem "$KEYS.new"/ || keyset_fail "cannot copy the installed keys"
+    fi
+    copied=$(find "$KEYS.new" -mindepth 1 -maxdepth 1 -type f -name '*.pem' | wc -l)
+    [ "$copied" = "$have" ] || keyset_fail "copied $copied of $have installed keys"
     for f in "$WORK"/keys/*.pem; do
-        [ -f "$f" ] && install -m 644 "$f" "$KEYS.new/$(basename "$f")"
+        [ -f "$f" ] || continue
+        install -m 644 "$f" "$KEYS.new/$(basename "$f")" || keyset_fail "cannot install a new key"
     done
     for id in $(sed -n 's/^keyset-remove\tsha256://p' "$WORK/verify.out"); do
         for k in "$KEYS.new"/*.pem; do
@@ -395,8 +462,9 @@ if [ "$OP" = keyset ]; then
             if [ "$("$VERIFY" --key-id "$k" 2>/dev/null)" = "sha256:$id" ]; then rm -f "$k"; fi
         done
     done
-    printf '%s\n' "$TOSEQ" > "$KEYS.new/keyset-seq" && chmod 644 "$KEYS.new/keyset-seq"
-    n=$(ls "$KEYS.new"/*.pem 2>/dev/null | wc -l)
+    { printf '%s\n' "$TOSEQ" > "$KEYS.new/keyset-seq" && chmod 644 "$KEYS.new/keyset-seq"; } ||
+        keyset_fail "cannot write keyset-seq"
+    n=$(find "$KEYS.new" -mindepth 1 -maxdepth 1 -type f -name '*.pem' | wc -l)
     if [ "$n" -lt 1 ] || [ "$n" -gt 4 ]; then
         rm -rf "$KEYS.new"
         finish failed "the key set would hold $n keys (1 to 4)" KEYSET_KEY
@@ -409,7 +477,12 @@ if [ "$OP" = keyset ]; then
     fi
     kp S5 2
     rm -rf "$KEYS.old"
-    mv "$KEYS" "$KEYS.old" && mv "$KEYS.new" "$KEYS" && rm -rf "$KEYS.old"
+    mv -T "$KEYS" "$KEYS.old" || keyset_fail "cannot set the installed keys aside"
+    if ! mv -T "$KEYS.new" "$KEYS"; then
+        mv -T "$KEYS.old" "$KEYS" || log "$ID: $KEYS missing: mat-updater-recover restores $KEYS.old at boot"
+        keyset_fail "cannot put the new key set in place"
+    fi
+    rm -rf "$KEYS.old"
     sync
     step 8
     finish committed ""
@@ -425,13 +498,16 @@ mkdir -m 755 "$NEW"
 tar -xOf "$WORK/pkg" payload.tar.gz > "$WORK/payload.tar.gz" || { finish failed "envelope" UPDATE_PACKAGE_INVALID; rm -rf "$NEW"; exit 0; }
 # the listing against files[]: only regular files and directories, exactly the files of the manifest
 sed -n 's/^file\t\([^\t]*\)\t.*/\1/p' "$WORK/verify.out" | sort > "$WORK/want"
-LC_ALL=C tar -tvzf "$WORK/payload.tar.gz" > "$WORK/listing" || { finish failed "payload listing" UPDATE_PACKAGE_INVALID; rm -rf "$NEW"; exit 0; }
+# --quoting-style=literal: names as they are (UTF-8 is allowed in files[]; under LC_ALL=C the default
+# style escapes every non-ASCII byte and the comparison would fail). A control character, which
+# files[] refuses, then shows as an extra or broken line: refused below either way.
+LC_ALL=C tar --quoting-style=literal -tvzf "$WORK/payload.tar.gz" > "$WORK/listing" || { finish failed "payload listing" UPDATE_PACKAGE_INVALID; rm -rf "$NEW"; exit 0; }
 if grep -qv '^[-d]' "$WORK/listing"; then
     finish failed "link or special file in the payload" LINK_FORBIDDEN
     rm -rf "$NEW"
     exit 0
 fi
-LC_ALL=C tar -tzf "$WORK/payload.tar.gz" | grep -v '/$' | sort > "$WORK/have"
+LC_ALL=C tar --quoting-style=literal -tzf "$WORK/payload.tar.gz" | grep -v '/$' | sort > "$WORK/have"
 if ! cmp -s "$WORK/want" "$WORK/have"; then
     finish failed "payload files differ from files[]" FILE_LIST
     rm -rf "$NEW"
@@ -444,7 +520,8 @@ bad=""
 while IFS="$(printf '\t')" read -r kind path sha mode size; do
     [ "$kind" = file ] || continue
     [ "$(sha256sum "$NEW/$path" | cut -d' ' -f1)" = "$sha" ] || bad="$path"
-    chmod "$mode" "$NEW/$path"
+    # mat-update-verify passes only 0644 and 0755 (MODE_FORBIDDEN); checked again before chmod as root
+    case "$mode" in 0644 | 0755) chmod "$mode" "$NEW/$path" || bad="$path" ;; *) bad="$path" ;; esac
 done < "$WORK/verify.out"
 if [ -n "$bad" ]; then
     finish failed "digest of $bad after extraction" FILE_DIGEST
@@ -453,7 +530,12 @@ if [ -n "$bad" ]; then
 fi
 # the parts that never come by OTA stay: the project of the tree and the manual scripts
 for d in project deployment; do
-    [ -d "$ROOT/$d" ] && cp -a "$ROOT/$d" "$NEW/$d"
+    [ -d "$ROOT/$d" ] || continue
+    if ! cp -a "$ROOT/$d" "$NEW/$d"; then
+        finish failed "cannot copy $d into the new tree" STAGE_FAILED
+        rm -rf "$NEW"
+        exit 0
+    fi
 done
 chown -R 0:0 "$NEW" 2>/dev/null || true
 find "$NEW" -type d -exec chmod 755 {} +
@@ -476,9 +558,22 @@ kp S6 1
 sysctl_ stop mat-runtime
 kp S6 2
 rm -rf "$PREV"
-mv "$ROOT" "$PREV"
+# each rename checked (review 011 T062): a failed one restarts what was there
+if ! mv -T "$ROOT" "$PREV"; then
+    rm -rf "$NEW"
+    sysctl_ start mat-runtime
+    finish failed "cannot set the installed tree aside" SWITCH_FAILED
+    exit 0
+fi
 kp S6 3
-mv "$NEW" "$ROOT"
+if ! mv -T "$NEW" "$ROOT"; then
+    mv -T "$PREV" "$ROOT" || log "$ID: no tree in place: mat-updater-recover restores .prev at boot"
+    rm -rf "$NEW"
+    sync
+    sysctl_ start mat-runtime
+    finish failed "cannot put the new tree in place" SWITCH_FAILED
+    exit 0
+fi
 sync
 kp S6 4
 if ! sysctl_ start mat-runtime; then

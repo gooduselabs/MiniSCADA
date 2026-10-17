@@ -594,6 +594,15 @@ function updaterFixtures(key, other, arch) {
     'v102.matupdate': m('1.0.2', 12),
     'broken.matupdate': m('1.0.3', 13, 'BROKEN'),
     'selfcheck-fail.matupdate': m('1.0.4', 14, 'SELFCHECK_FAIL'),
+    // a file name that is not ASCII (UTF-8): mat-updater compares its tar listing with files[]
+    'utf8.matupdate': makePackage({
+      files: [
+        ...fakeRuntimeFiles('1.0.5', 15),
+        { path: 'web/sơ-đồ.svg', data: '<svg xmlns="http://www.w3.org/2000/svg"/>\n' },
+      ],
+      key,
+      manifest: { ...BASE, version: '1.0.5', releaseSeq: 15, arch, minFromVersion: '0.9.0' },
+    }).pkg,
     'keyset-add.matupdate': makePackage({
       files: [],
       key,

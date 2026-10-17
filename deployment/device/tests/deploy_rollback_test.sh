@@ -255,6 +255,18 @@ done
 unit_line mat-updater.path 'PathChanged=/var/lib/mat-runtime/update/request.json'
 unit_line mat-updater-recover.service 'Before=mat-runtime.service'
 unit_line mat-updater-recover.service 'Type=oneshot'
+# rà soát 011 (T062): hai unit của root bị giới hạn capability, thiết bị, namespace, SUID
+for u in mat-updater.service mat-updater-recover.service; do
+    for l in 'PrivateDevices=true' 'ProtectKernelLogs=true' 'ProtectClock=true' 'RestrictSUIDSGID=true' \
+             'RestrictNamespaces=true' 'LockPersonality=true' 'NoNewPrivileges=true'; do
+        unit_line "$u" "$l"
+    done
+    caps=$(tr -d '\r' < "$U/$u" | sed -n 's/^CapabilityBoundingSet=//p')
+    [ -n "$caps" ] || fail "$u thiếu CapabilityBoundingSet"
+    for c in CAP_SYS_ADMIN CAP_NET_ADMIN CAP_SYS_MODULE CAP_SYS_PTRACE CAP_MKNOD CAP_SYS_RAWIO CAP_SETPCAP; do
+        case " $caps " in *" $c "*) fail "$u không được giữ $c" ;; esac
+    done
+done
 grep -q 'mat-updater' "$REAL_UNIT" && fail "mat-runtime.service không được đổi vì OTA"
 VERIFY_BIN=${MAT_VERIFY_BIN:-/build/x64/bin/mat-update-verify}
 if [ ! -x "$VERIFY_BIN" ]; then

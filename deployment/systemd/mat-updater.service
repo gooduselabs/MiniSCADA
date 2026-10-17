@@ -13,6 +13,9 @@ TimeoutStartSec=300
 # Chỉ ghi được nơi cập nhật cần: cây cài (/opt), trạng thái của root, thư mục update của runtime và
 # /etc/mat-runtime (khóa tin cậy của gói keyset). Kiểm sức khỏe gọi http://127.0.0.1 nên cần AF_INET,
 # giới hạn ở loopback bằng IPAddressAllow.
+# /opt giữ nguyên, KHÔNG thu hẹp về /opt/mat-runtime{,.prev,.new,.failed,.swap} (rà soát 011 T062):
+# đổi chỗ cây là rename trong thư mục /opt, cần ghi vào chính /opt; một đường dẫn trong ReadWritePaths
+# là điểm gắn (bind mount) nên rename nó báo EBUSY, và .new/.prev chưa có lúc khởi động.
 ProtectSystem=strict
 ReadWritePaths=/opt /var/lib/mat-updater /var/lib/mat-runtime/update /etc/mat-runtime
 ProtectHome=true
@@ -27,3 +30,15 @@ ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
 UMask=0022
+# Rà soát 011 (T062): root nhưng chỉ với quyền cần. CHOWN/FOWNER/DAC_*: cp -a project, chown -R của
+# cây mới, đọc cây và tệp của matscada; SETUID/SETGID: runuser -u matscada (initgroups); KILL: timeout
+# và runuser chuyển tín hiệu tới tiến trình của matscada; AUDIT_WRITE: phiên PAM của runuser.
+# systemctl (stop/start mat-runtime) đi qua socket của systemd, không cần capability.
+CapabilityBoundingSet=CAP_CHOWN CAP_FOWNER CAP_DAC_OVERRIDE CAP_DAC_READ_SEARCH CAP_SETUID CAP_SETGID CAP_KILL CAP_AUDIT_WRITE
+PrivateDevices=true
+ProtectKernelLogs=true
+ProtectClock=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
