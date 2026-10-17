@@ -102,3 +102,21 @@ Tổng ≈ 55 s (gồm SBOM/license với `cargo metadata`). Đây vẫn **khôn
 3. `release.ps1` (không `-Release`) trên Windows với chứng chỉ thử: đủ 9 mục, `verify-release.ps1 -BreakCases` chạy ca 1–5, đo thời gian (SC-018 ≤ 30 phút không tính CI).
 4. `release.ps1 -Release` với chứng chỉ thử phải dừng ở CERT_TEST, CERT_SELF_SIGNED.
 5. Thay bản Node bằng `mat-update-verify` (T096) qua `-Verifier`; `.matupdate` khi có `make-update.mjs` (T106, T117).
+
+## Lượt 2026-10-18: `release.ps1` thật bằng pwsh trên macOS (T191)
+
+Lệnh: `pwsh tools/release/release.ps1 -SkipCi -RuntimeBin ~/build/mac-armhf/armhf/bin/mat-runtime -Force` (chế độ thử, khóa thử sinh ngoài repo), cây `gd6` sạch, phiên bản đồng nhất `1.0.0-rc.1`. Tổng 5,9 s; tạo `release/1.0.0-rc.1/` (thư mục bị bỏ qua bởi git).
+
+| Bước | Kết quả |
+|---|---|
+| 1 cổng | đạt (Authenticode bỏ qua: chỉ Windows) |
+| 2 `ci-local` | bỏ qua (`-SkipCi`; đã chạy riêng, xanh trên cùng commit) |
+| 3 Studio, ký | bỏ qua: chỉ dựng được trên Windows (T102, T104) |
+| 4 gói runtime armhf | đạt (5,9 MB, đủ `schemas/0.1` … `1.0`) |
+| 5 `.matupdate` | đạt (5,8 MB, 106 tệp, runtime `1.0.0-rc.1`) |
+| 7 SBOM, license | đạt |
+| 8 RELEASE-NOTES, build-info | đạt |
+| 6 `SHA256SUMS`, chữ ký | đạt |
+| 9 `verify-release` | đạt; ca 1–5 (Authenticode) bỏ qua: chỉ Windows |
+
+Lần chạy đầu với `-Verifier <mat-update-verify armhf>` dừng ở bước 5 ("mã null"): binary armhf không chạy được trên macOS. Trên máy không phải armhf thì không truyền `-Verifier` (make-update kiểm bằng bộ kiểm Node).
