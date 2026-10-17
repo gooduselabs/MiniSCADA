@@ -42,6 +42,20 @@ pub fn help_url(path: &Path, anchor: &str) -> Result<Url, String> {
     Ok(url)
 }
 
+/// Cửa sổ Trợ giúp chỉ được điều hướng tới tệp `file://` trong `docs` (thư mục `docs-html/` của tài nguyên); mọi
+/// URL khác (http(s), tệp ngoài thư mục, scheme lạ) bị chặn (T202).
+pub fn navigation_allowed(docs: &Path, url: &Url) -> bool {
+    if url.scheme() != "file" || url.host_str().is_some_and(|h| !h.is_empty()) {
+        return false;
+    }
+    let Ok(path) = url.to_file_path() else {
+        return false;
+    };
+    path.components()
+        .all(|c| !matches!(c, std::path::Component::ParentDir))
+        && path.starts_with(docs)
+}
+
 #[tauri::command]
 pub fn open_help(app: AppHandle, page: String, anchor: String) -> Result<(), String> {
     let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
@@ -55,6 +69,10 @@ pub fn open_help(app: AppHandle, page: String, anchor: String) -> Result<(), Str
     let built = WebviewWindowBuilder::new(&app, "help", WebviewUrl::External(url))
         .title("Trợ giúp mAT Studio")
         .inner_size(1000.0, 760.0)
+        .on_navigation({
+            let docs = resources.join(DOCS_DIR);
+            move |url| navigation_allowed(&docs, url)
+        })
         .build();
     match built {
         Ok(_) => Ok(()),
@@ -86,6 +104,29 @@ mod tests {
         assert_eq!(url.scheme(), "file");
         assert_eq!(url.fragment(), Some("help-logic"));
         assert!(help_url(&p, "").unwrap().fragment().is_none());
+        fs::remove_dir_all(d).unwrap();
+    }
+
+    #[test]
+    fn chi_dieu_huong_trong_docs_html() {
+        let d = tmp();
+        let docs = d.join("docs-html");
+        let page = help_url(&docs.join("user/engineer-guide.html"), "x").unwrap();
+        assert!(navigation_allowed(&docs, &page));
+        let other = Url::from_file_path(d.join("secret.html")).unwrap();
+        assert!(!navigation_allowed(&docs, &other));
+        for bad in [
+            "https://example.com/",
+            "http://localhost/x.html",
+            "javascript:alert(1)",
+            "data:text/html,x",
+            "file://server/share/docs-html/x.html",
+        ] {
+            assert!(
+                !navigation_allowed(&docs, &Url::parse(bad).unwrap()),
+                "{bad}"
+            );
+        }
         fs::remove_dir_all(d).unwrap();
     }
 
