@@ -478,7 +478,7 @@ required
         $cc = New-Object System.Collections.ArrayList
         $cdir = "$root/tests/web-it/out/compat"
         New-Item -ItemType Directory -Force $cdir | Out-Null
-        $oldDist = (node "$root/tests/web-it/build-old-web.mjs" 'C:/build/w3b-old' | Select-Object -Last 1)
+        $oldDist = (node "$root/tests/web-it/build-old-web.mjs" (Get-MatBuildDir 'w3b-old') | Select-Object -Last 1)
         Add-Check $cc 'old page (parent of the first 008 commit = 007, runtime 0.6) built from git' (Test-Path "$oldDist/index.html") $oldDist
         $httpsNow = if ($env:MAT_IT_HTTPS_PORT) { $env:MAT_IT_HTTPS_PORT } else { '18443' }
         foreach ($name in @('tank-demo', 'modbus-demo', 'dashboard-demo')) {
