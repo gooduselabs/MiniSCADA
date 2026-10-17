@@ -2,6 +2,7 @@
 // two field devices, a Tag of every shape), a fake backend (the drivers) and a fake audit.
 #pragma once
 #include <chrono>
+#include <functional>
 #include <future>
 #include <map>
 #include <mutex>
@@ -206,6 +207,7 @@ struct FakeAudit : WriteAudit {
     explicit FakeAudit(Events& e) : ev(e) {}
     bool available() override { return up; }
     void started(const WriteRecord& r) override {
+        if (onStarted) onStarted(r);
         if (!up) throw std::runtime_error("audit down");
         ev.add("started:" + r.requestId);
         std::lock_guard<std::mutex> g(mu);
@@ -232,7 +234,8 @@ struct FakeAudit : WriteAudit {
     std::mutex mu;
     Events& ev;
     bool up = true;
-    std::shared_ptr<std::promise<void>> gate;  // finished() waits for it
+    std::shared_ptr<std::promise<void>> gate;           // finished() waits for it
+    std::function<void(const WriteRecord&)> onStarted;  // set before the commands, if at all
     std::vector<WriteRecord> startedRecs;
     std::vector<std::pair<WriteRecord, WriteOutcome>> finishedRecs;
     struct Denied {
