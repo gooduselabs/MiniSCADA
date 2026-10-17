@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <cerrno>
 #include <chrono>
 #include <cstring>
 #include <ctime>
@@ -22,6 +23,7 @@ constexpr const char* kTimedatectl = "/usr/bin/timedatectl";
 constexpr const char* kChronyc = "/usr/bin/chronyc";
 constexpr const char* kRtcHctosys = "/sys/class/rtc/rtc0/hctosys";
 constexpr int kRunTimeoutMs = 2000;
+constexpr int64_t kReapPollMs = 10;  // waiting for the program to end after its output closed
 constexpr size_t kRunMaxBytes = 16 * 1024;
 
 std::string_view trim(std::string_view s) {
@@ -41,7 +43,7 @@ int64_t steadyMs() {
 
 // stdout of `argv` (absolute path, no shell, LC_ALL=C, stdin and stderr /dev/null) when it exits 0
 // within the timeout; killed and nullopt otherwise.
-std::optional<std::string> runReadOnly(const std::vector<std::string>& argv) {
+std::optional<std::string> runReadOnly(const std::vector<std::string>& argv, int timeoutMs) {
     if (argv.empty() || ::access(argv[0].c_str(), X_OK) != 0) return std::nullopt;
     int out[2];
     if (::pipe2(out, O_CLOEXEC) != 0) return std::nullopt;
@@ -65,7 +67,7 @@ std::optional<std::string> runReadOnly(const std::vector<std::string>& argv) {
         return std::nullopt;
     }
     std::string text;
-    const int64_t deadline = steadyMs() + kRunTimeoutMs;
+    const int64_t deadline = steadyMs() + timeoutMs;
     bool timedOut = false;
     for (;;) {
         const int64_t left = deadline - steadyMs();
@@ -87,9 +89,27 @@ std::optional<std::string> runReadOnly(const std::vector<std::string>& argv) {
         if (text.size() < kRunMaxBytes) text.append(buf, static_cast<size_t>(r));
     }
     ::close(out[0]);
-    if (timedOut) ::kill(pid, SIGKILL);
+    // L8: the output closed does not mean the program ended. Wait for it until the deadline, then
+    // kill it; the last waitpid after SIGKILL returns at once.
     int status = 0;
-    while (::waitpid(pid, &status, 0) < 0 && errno == EINTR) {
+    bool reaped = false;
+    while (!timedOut) {
+        const pid_t r = ::waitpid(pid, &status, WNOHANG);
+        if (r == pid) {
+            reaped = true;
+            break;
+        }
+        if (r < 0 && errno != EINTR) return std::nullopt;  // not ours to wait for (ECHILD)
+        if (steadyMs() >= deadline) {
+            timedOut = true;
+            break;
+        }
+        ::usleep(static_cast<useconds_t>(kReapPollMs * 1000));
+    }
+    if (!reaped) {
+        if (timedOut) ::kill(pid, SIGKILL);
+        while (::waitpid(pid, &status, 0) < 0 && errno == EINTR) {
+        }
     }
     if (timedOut || !WIFEXITED(status) || WEXITSTATUS(status) != 0) return std::nullopt;
     return text;
@@ -97,9 +117,13 @@ std::optional<std::string> runReadOnly(const std::vector<std::string>& argv) {
 
 }  // namespace
 
+std::optional<std::string> runReadOnlyCommand(const std::vector<std::string>& argv, int timeoutMs) {
+    return runReadOnly(argv, timeoutMs);
+}
+
 TimeSyncProbes systemTimeSyncProbes() {
     TimeSyncProbes p;
-    p.run = runReadOnly;
+    p.run = [](const std::vector<std::string>& argv) { return runReadOnly(argv, kRunTimeoutMs); };
     p.readFile = [](const std::string& path) -> std::optional<std::string> {
         std::ifstream in(path, std::ios::binary);
         if (!in) return std::nullopt;

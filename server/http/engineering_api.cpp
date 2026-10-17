@@ -277,7 +277,7 @@ int EngineeringApi::handle(mg_connection* c) {
             return sendError(c, 413, "BODY_TOO_LARGE", close);
         }
     }
-    if (path == kIdentityPath) return identity(c, close);
+    if (path == kIdentityPath) return identity(c, r, close);
     if (path == kLoginPath) return login(c, r, close);
     if (path == kLogoutPath) return logout(c, r, close);
     if (path == kSessionPath) return session(c, d, close);
@@ -305,7 +305,7 @@ int EngineeringApi::handle(mg_connection* c) {
     return sendError(c, 501, "NOT_IMPLEMENTED", close);
 }
 
-int EngineeringApi::identity(mg_connection* c, bool close) {
+int EngineeringApi::identity(mg_connection* c, const GateRequest& r, bool close) {
     const DeviceFacts f = device_.facts();
     json body = {
         {"deviceId", f.deviceId},
@@ -320,7 +320,21 @@ int EngineeringApi::identity(mg_connection* c, bool close) {
         {"setupRequired", auth_.setupRequired()},
         {"features", opt_.features},
     };
-    if (opt_.hostPolicy) body["acceptedHosts"] = opt_.hostPolicy->acceptedHosts();  // 011 §1
+    // 011 §1. L6 of the security review of 011: the names the device answers to help a page of
+    // another site aim at it; they go only to a caller with a session (the Studio reads identity
+    // again once signed in), never to an anonymous one.
+    if (opt_.hostPolicy) {
+        bool withSession = false;
+        if (r.authorization) {
+            if (const auto token = bearerToken(*r.authorization))
+                withSession =
+                    auth_.authorize(*token, r.from, Role::Viewer, false).status == AccessStatus::Ok;
+        } else if (const auto web = sessionCookieToken(r.cookie)) {
+            withSession =
+                auth_.authorizeWeb(*web, r.from, Role::Viewer, false).status == AccessStatus::Ok;
+        }
+        if (withSession) body["acceptedHosts"] = opt_.hostPolicy->acceptedHosts();
+    }
     return send(c, 200, jsonText(body), close);
 }
 

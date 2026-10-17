@@ -6,6 +6,7 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <map>
 #include <string>
 #include <vector>
@@ -158,4 +159,22 @@ TEST(TimeSync, RaisesAndClearsTimeNotSynced) {
     EXPECT_TRUE(w.list().empty());
     TimeSync quiet(f.probes(), nullptr);  // no warnings object: still answers
     EXPECT_TRUE(quiet.refresh().synced);
+}
+
+// L8 of the security review of 011: the program a probe runs is bounded as a whole. One that closes
+// its stdout and keeps running is killed at the deadline (the read ended at once, then waitpid
+// waited for it without end); a quick one still answers.
+TEST(TimeSyncRun, AProgramThatClosesItsOutputAndHangsIsKilledAtTheDeadline) {
+    const auto t0 = std::chrono::steady_clock::now();
+    const auto out = runReadOnlyCommand({"/bin/sh", "-c", "exec >&-; exec sleep 30"}, 500);
+    const auto ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0)
+            .count();
+    EXPECT_FALSE(out.has_value());
+    EXPECT_LT(ms, 3000) << "bounded by the timeout, not by the program";
+    const auto echo = runReadOnlyCommand({"/bin/sh", "-c", "echo synced"}, 2000);
+    ASSERT_TRUE(echo.has_value());
+    EXPECT_EQ(*echo, "synced\n");
+    EXPECT_FALSE(runReadOnlyCommand({"/bin/sh", "-c", "exit 3"}, 2000).has_value());
+    EXPECT_FALSE(runReadOnlyCommand({"/no/such/program"}, 2000).has_value());
 }

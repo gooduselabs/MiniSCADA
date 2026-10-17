@@ -25,7 +25,7 @@ services:
   rt1:
     <<: *runtime
     hostname: rt1
-    command: ["sh", "/src/tests/device-it/supervise.sh"]
+    command: ["sh", "/src/tests/device-it/supervise.sh", "--max-live-clients-per-source", "10"]
     volumes:
       - ../..:/src:ro
       - ${MAT_IT_BUILD:?MAT_IT_BUILD}:/build:ro
@@ -36,14 +36,14 @@ services:
   rt2:
     <<: *runtime
     hostname: rt2
-    command: ["sh", "/src/tests/device-it/supervise.sh"]
+    command: ["sh", "/src/tests/device-it/supervise.sh", "--max-live-clients-per-source", "10"]
     networks:
       lan: { ipv4_address: 172.30.5.11 }
 
   rt3:
     <<: *runtime
     hostname: rt3
-    command: ["sh", "/src/tests/device-it/supervise.sh", "--no-discovery"]
+    command: ["sh", "/src/tests/device-it/supervise.sh", "--no-discovery", "--max-live-clients-per-source", "10"]
     networks:
       lan: { ipv4_address: 172.30.5.12 }
 

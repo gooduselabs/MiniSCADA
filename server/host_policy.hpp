@@ -10,7 +10,9 @@
 // the gate or a file. `hostCheck: "off"` disables the table and raises HOST_CHECK_OFF.
 #pragma once
 #include <cstddef>
+#include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -23,6 +25,10 @@ namespace mat {
 
 constexpr size_t kHostMaxBytes = 255;      // a longer Host header is 400
 constexpr size_t kHostAuditMaxBytes = 64;  // detail.host of access.denied
+// L1 of the security review of 011: refusals are written once per (source address, code) and
+// minute; the others of the minute are counted, then summed in one row.
+constexpr int64_t kHostDeniedWindowMs = 60000;
+constexpr size_t kHostDeniedWindows = 256;  // windows kept at once (the oldest go first)
 
 enum class HostVerdict {
     Accept,
@@ -40,6 +46,7 @@ struct HostPolicyOptions {
     bool enabled = true;                    // runtime.json hostCheck: "strict" (true) or "off"
     std::string hostname;                   // gethostname() at start; "" = none
     std::vector<std::string> allowedHosts;  // runtime.json allowedHosts
+    std::function<int64_t()> monoMs;        // the windows of the refusals; empty: steady clock
 };
 
 class HostPolicy {
@@ -51,11 +58,18 @@ class HostPolicy {
 
     bool enabled() const { return enabled_; }
     HostVerdict check(const HostRequest& request) const;
-    // access.denied (coalesced per 60 s by the audit log): target the path, code HOST_NOT_ALLOWED
-    // or BAD_REQUEST, detail {"reason": "host", "host": <first Host, at most 64 bytes, printable>}.
-    // `source` is "IP:port" or "[IPv6]:port".
+    // access.denied, target the path, code HOST_NOT_ALLOWED or BAD_REQUEST, detail
+    // {"reason": "host", "host": <first Host, at most 64 bytes, printable>}. `source` is "IP:port"
+    // or "[IPv6]:port". Thread-safe. Only the first refusal of a (source address, code) in a minute
+    // is written; the others are counted, and when the minute is over (the next refusal, or
+    // flushDenied) one row sums them: source the address, target "*", detail {"reason": "host",
+    // "host": <the last one>, "repeated": n, "windowS": 60}.
     void recordDenied(HostVerdict verdict, const HostRequest& request, const std::string& path,
                       const std::string& source, bool tls) const;
+    // Writes the sums of the minutes that are over (every minute with `all`: the runtime stops)
+    // and forgets those windows. The runtime calls it every few seconds.
+    void flushDenied(bool all = false) const;
+    size_t deniedWindows() const;  // windows open now (tests)
     // device/identity.acceptedHosts: {"names": [...], "ips": ["*"]}; names ["*"] while off.
     nlohmann::json acceptedHosts() const;
     // HOST_CHECK_OFF while the check is off; cleared otherwise.
@@ -66,9 +80,15 @@ class HostPolicy {
     static bool isIpv4Literal(std::string_view name);  // a.b.c.d, each 0-255, no leading zero
 
    private:
+    struct Denied;  // the windows of the refusals, behind their own lock
+
+    void write(const AuditEvent& e) const;
+
     bool enabled_;
     std::vector<std::string> names_;  // lower case, without a trailing dot, in listing order
     Audit audit_;
+    std::function<int64_t()> mono_;
+    std::shared_ptr<Denied> denied_;
 };
 
 }  // namespace mat

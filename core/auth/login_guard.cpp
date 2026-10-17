@@ -15,18 +15,25 @@ constexpr size_t kWatchKeep = 64;  // failures kept per watched name (at least 5
 bool lockedAt(int64_t lockedUntil, int64_t now) { return lockedUntil > now; }
 
 // The entry `match` finds, moved to the most recently used end; `make` when there is none. A full
-// table first drops its least recently used entry that is not locked, so a flood of new pairs or
-// addresses cannot lift a lock; when every entry is locked, the one whose lock ends first goes.
-template <typename Entry, typename Match, typename Make>
-Entry& use(std::vector<Entry>& t, size_t cap, int64_t now, Match match, Make make) {
+// table first drops its least recently used entry that `cheap` names (L5 of the security review of
+// 011: a pair that never locked, so a flood cannot erase the history that doubles a repeated lock),
+// then the least recently used one that is not locked, so a flood of new pairs or addresses cannot
+// lift a lock; when every entry is locked, the one whose lock ends first goes.
+template <typename Entry, typename Match, typename Make, typename Cheap>
+Entry& use(std::vector<Entry>& t, size_t cap, int64_t now, Match match, Make make, Cheap cheap) {
     auto it = std::find_if(t.begin(), t.end(), match);
     if (it != t.end()) {
         if (it + 1 != t.end()) std::rotate(it, it + 1, t.end());
         return t.back();
     }
     if (t.size() >= cap) {
-        auto victim = std::find_if(
-            t.begin(), t.end(), [&](const Entry& e) { return !lockedAt(e.lockedUntilMono, now); });
+        auto victim = std::find_if(t.begin(), t.end(), [&](const Entry& e) {
+            return !lockedAt(e.lockedUntilMono, now) && cheap(e);
+        });
+        if (victim == t.end())
+            victim = std::find_if(t.begin(), t.end(), [&](const Entry& e) {
+                return !lockedAt(e.lockedUntilMono, now);
+            });
         if (victim == t.end())
             victim = std::min_element(t.begin(), t.end(), [](const Entry& a, const Entry& b) {
                 return a.lockedUntilMono < b.lockedUntilMono;
@@ -106,6 +113,9 @@ LockoutNow LoginGuard::recordFailure(const std::string& user, const std::string&
                 p.ip = sourceIp;
                 p.generation = generation;
                 return p;
+            },
+            [&](const PairEntry& p) {  // no lock whose history still counts (24 h)
+                return p.lockCount == 0 || nowMono - p.lastLockMono >= kPairRepeatWindowMs;
             });
         if (e.generation != generation) {
             const std::string u = e.user, ip = e.ip;
@@ -131,6 +141,9 @@ LockoutNow LoginGuard::recordFailure(const std::string& user, const std::string&
             SourceEntry e;
             e.ip = sourceIp;
             return e;
+        },
+        [&](const SourceEntry& e) {  // no failure within the window
+            return e.failuresMono.empty() || e.failuresMono.back() <= nowMono - kSourceWindowMs;
         });
     if (!lockedAt(s.lockedUntilMono, nowMono)) {
         if (s.lockedUntilMono != 0) {  // a lock has ended: the count starts again
@@ -181,7 +194,22 @@ std::optional<DistributedAttack> LoginGuard::noteFailure(const std::string& user
     if (it != watch_.end()) {
         if (it + 1 != watch_.end()) std::rotate(it, it + 1, watch_.end());
     } else {
-        if (watch_.size() >= kWatchTableSize) watch_.erase(watch_.begin());
+        if (watch_.size() >= kWatchTableSize) {
+            // L5 of the review of 011: first a name whose failures are all older than the window,
+            // then the name with the fewest failures (the least recently used among them), so a
+            // flood of names tried once cannot push out a name under attack.
+            const auto aged = [&](const Watch& x) {
+                return x.failures.empty() ||
+                       x.failures.back().first <= nowMono - kDistributedWindowMs;
+            };
+            auto victim = std::find_if(watch_.begin(), watch_.end(), aged);
+            if (victim == watch_.end())
+                victim = std::min_element(watch_.begin(), watch_.end(),
+                                          [](const Watch& a, const Watch& b) {
+                                              return a.failures.size() < b.failures.size();
+                                          });
+            watch_.erase(victim);
+        }
         Watch w;
         w.user = user;
         watch_.push_back(std::move(w));

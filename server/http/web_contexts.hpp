@@ -29,7 +29,8 @@ struct WebOptions {
     // contexts.
     const HostPolicy* hostPolicy = nullptr;
     // Feature 011 (FR-025, conn_limit.hpp): connections at once per source IP, HTTP, HTTPS and
-    // WebSocket together; the same limiter for both contexts. Null: no limit (tests of the other
+    // WebSocket together; the same limiter for both contexts, and a share of each context of at
+    // most 75 % of its workers (set by startHttp / startHttps). Null: no limit (tests of the other
     // features). Must outlive the contexts.
     ConnLimiter* connLimiter = nullptr;
 };
@@ -68,6 +69,7 @@ class WebContexts {
     struct Hooks {
         const HostPolicy* host = nullptr;
         ConnLimiter* limiter = nullptr;
+        int context = -1;  // kHttpContext or kHttpsContext (conn_limit.hpp)
     };
 
    private:

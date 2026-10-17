@@ -3,6 +3,8 @@
 // it at once. The Argon2id hash runs on the PasswordHasher thread and the audit writes on the
 // calling thread, never under the service's lock.
 #pragma once
+#include <sys/types.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -101,6 +103,11 @@ struct AuthOptions {
     // Feature 011 (FR-017): <dataDir>/auth-unlock.req of --user-unlock-all; looked at every 5 s
     // and by loadState, deleted, then every lock is gone. Empty: none.
     std::string unlockRequestFile;
+    // L2 of the security review of 011: the file is used only when it is a regular file of this
+    // owner (root, as --user-unlock-all writes it) with no permission for group or others; anything
+    // else is removed unused, logged and audited (account.unlock denied, UNLOCK_REQUEST_REFUSED).
+    // Tests give the user that runs them.
+    uid_t requestFileOwner = 0;
 };
 
 constexpr const char* kUnlockRequestFileName = "auth-unlock.req";

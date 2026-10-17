@@ -3,8 +3,11 @@
 #include <arpa/inet.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <exception>
+#include <map>
+#include <mutex>
 #include <optional>
 #include <utility>
 
@@ -106,10 +109,62 @@ std::string auditHost(const HostRequest& r) {
     return h;
 }
 
+// "10.0.0.5:51234" -> "10.0.0.5", "[fe80::1]:8443" -> "fe80::1": a window counts an address,
+// whatever the port of each connection.
+std::string addressOf(const std::string& source) {
+    if (!source.empty() && source[0] == '[') {
+        const size_t end = source.find(']');
+        std::string a = end == std::string::npos ? source : source.substr(1, end - 1);
+        if (a.rfind("::ffff:", 0) == 0 && a.find('.') != std::string::npos)
+            a = a.substr(7);  // an IPv4 client of a dual stack listener
+        return a;
+    }
+    const size_t colon = source.find(':');
+    if (colon != std::string::npos && source.find(':', colon + 1) == std::string::npos)
+        return source.substr(0, colon);
+    return source;
+}
+
+int64_t steadyMs() {
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+}  // namespace
+
+struct HostPolicy::Denied {
+    struct Window {
+        int64_t openedMono = 0;
+        int64_t repeated = 0;  // refusals after the first one, not written yet
+        std::string host;      // of the last refusal (detail.host)
+        bool tls = false;      // of the last refusal (the channel)
+    };
+    std::mutex mu;
+    std::map<std::pair<std::string, std::string>, Window> windows;  // (address, code)
+};
+
+namespace {
+
+AuditEvent summaryOf(const std::pair<std::string, std::string>& key, int64_t repeated,
+                     const std::string& host, bool tls) {
+    AuditEvent e(AuditAction::AccessDenied, AuditResult::Denied,
+                 tls ? AuditChannel::Https : AuditChannel::Http, key.first);
+    e.target = "*";
+    e.code = key.second;
+    e.detail = jsonText(nlohmann::json{{"reason", "host"},
+                                       {"host", host},
+                                       {"repeated", repeated},
+                                       {"windowS", kHostDeniedWindowMs / 1000}});
+    return e;
+}
+
 }  // namespace
 
 HostPolicy::HostPolicy(HostPolicyOptions o, Audit audit)
-    : enabled_(o.enabled), audit_(std::move(audit)) {
+    : enabled_(o.enabled),
+      audit_(std::move(audit)),
+      mono_(o.monoMs ? std::move(o.monoMs) : std::function<int64_t()>(steadyMs)),
+      denied_(std::make_shared<Denied>()) {
     const auto add = [this](const std::string& n) {
         if (!n.empty() && std::find(names_.begin(), names_.end(), n) == names_.end())
             names_.push_back(n);
@@ -157,19 +212,87 @@ HostVerdict HostPolicy::check(const HostRequest& r) const {
     return HostVerdict::NotAllowed;
 }
 
-void HostPolicy::recordDenied(HostVerdict verdict, const HostRequest& request,
-                              const std::string& path, const std::string& source, bool tls) const {
-    if (!audit_ || verdict == HostVerdict::Accept) return;
-    AuditEvent e(AuditAction::AccessDenied, AuditResult::Denied,
-                 tls ? AuditChannel::Https : AuditChannel::Http, source);
-    e.target = path;
-    e.code = verdict == HostVerdict::NotAllowed ? "HOST_NOT_ALLOWED" : "BAD_REQUEST";
-    e.detail = jsonText(nlohmann::json{{"reason", "host"}, {"host", auditHost(request)}});
+void HostPolicy::write(const AuditEvent& e) const {
     try {
         audit_(e);
     } catch (const std::exception&) {
         // The refusal stands; the audit log reports its own failures (system/info, stderr).
     }
+}
+
+void HostPolicy::recordDenied(HostVerdict verdict, const HostRequest& request,
+                              const std::string& path, const std::string& source, bool tls) const {
+    if (!audit_ || verdict == HostVerdict::Accept) return;
+    const std::string code =
+        verdict == HostVerdict::NotAllowed ? "HOST_NOT_ALLOWED" : "BAD_REQUEST";
+    const std::string host = auditHost(request);
+    std::vector<AuditEvent> out;  // written after the lock
+    {
+        std::lock_guard<std::mutex> l(denied_->mu);
+        const int64_t now = mono_();
+        auto& windows = denied_->windows;
+        const auto key = std::make_pair(addressOf(source), code);
+        auto it = windows.find(key);
+        if (it != windows.end() && now - it->second.openedMono < kHostDeniedWindowMs) {
+            ++it->second.repeated;  // within the minute: counted only
+            it->second.host = host;
+            it->second.tls = tls;
+            return;
+        }
+        if (it != windows.end()) {  // the minute is over: its sum, then a new minute
+            if (it->second.repeated > 0)
+                out.push_back(summaryOf(key, it->second.repeated, it->second.host, it->second.tls));
+            windows.erase(it);
+        }
+        if (windows.size() >= kHostDeniedWindows) {  // the oldest window goes, its count written
+            auto oldest =
+                std::min_element(windows.begin(), windows.end(), [](const auto& a, const auto& b) {
+                    return a.second.openedMono < b.second.openedMono;
+                });
+            if (oldest->second.repeated > 0)
+                out.push_back(summaryOf(oldest->first, oldest->second.repeated, oldest->second.host,
+                                        oldest->second.tls));
+            windows.erase(oldest);
+        }
+        Denied::Window w;
+        w.openedMono = now;
+        w.host = host;
+        w.tls = tls;
+        windows.emplace(key, std::move(w));
+        AuditEvent e(AuditAction::AccessDenied, AuditResult::Denied,
+                     tls ? AuditChannel::Https : AuditChannel::Http, source);
+        e.target = path;
+        e.code = code;
+        e.detail = jsonText(nlohmann::json{{"reason", "host"}, {"host", host}});
+        out.push_back(std::move(e));
+    }
+    for (const AuditEvent& e : out) write(e);
+}
+
+void HostPolicy::flushDenied(bool all) const {
+    if (!audit_) return;
+    std::vector<AuditEvent> out;
+    {
+        std::lock_guard<std::mutex> l(denied_->mu);
+        const int64_t now = mono_();
+        auto& windows = denied_->windows;
+        for (auto it = windows.begin(); it != windows.end();) {
+            if (!all && now - it->second.openedMono < kHostDeniedWindowMs) {
+                ++it;
+                continue;
+            }
+            if (it->second.repeated > 0)
+                out.push_back(
+                    summaryOf(it->first, it->second.repeated, it->second.host, it->second.tls));
+            it = windows.erase(it);
+        }
+    }
+    for (const AuditEvent& e : out) write(e);
+}
+
+size_t HostPolicy::deniedWindows() const {
+    std::lock_guard<std::mutex> l(denied_->mu);
+    return denied_->windows.size();
 }
 
 nlohmann::json HostPolicy::acceptedHosts() const {

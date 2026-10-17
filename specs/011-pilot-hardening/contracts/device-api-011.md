@@ -25,8 +25,8 @@ Chuẩn hóa `Host`: cắt khoảng trắng, hạ chữ thường, bỏ một d�
 
 - Thân 421: `{"error":{"code":"HOST_NOT_ALLOWED","message":"Tên này chưa được phép. Quản trị viên: thêm vào allowedHosts của runtime.json."}}`, không có dữ liệu khác.
 - `hostCheck: "off"` bỏ toàn bộ bảng; `system/info.warnings` có `HOST_CHECK_OFF`.
-- Audit `access.denied` (gộp theo cửa sổ 60 s của 005), `detail.host` cắt 64 byte, `detail.reason = "host"`.
-- `GET /api/v1/device/identity` thêm `acceptedHosts: { names: [...], ips: ["*"] }` (liệt kê tên đang nhận; IP ghi `*`).
+- Audit `access.denied`, `detail.host` cắt 64 byte, `detail.reason = "host"`. Rà soát bảo mật 011 (L1, T062, 2026-10-17): gộp theo (địa chỉ nguồn, mã) trong 60 s: lần từ chối đầu ghi ngay (`target` là đường dẫn, `source` là `IP:cổng`); các lần sau trong phút đó chỉ đếm trong bộ nhớ (mọi đường dẫn, cả hai cổng); hết phút thì một bản ghi tổng `target = "*"`, `source` là địa chỉ, `detail = {"reason":"host","host":<lần cuối>,"repeated":n,"windowS":60}` (ghi ở chu kỳ 5 s của runtime, ở lần từ chối kế tiếp, hoặc lúc dừng). Tối đa 256 cửa sổ cùng lúc; đầy thì cửa sổ cũ nhất ghi tổng của nó rồi nhường chỗ. Một trận yêu cầu sai `Host` tốn một bản ghi mỗi phút cho mỗi nguồn, không phải một bản ghi mỗi yêu cầu.
+- `GET /api/v1/device/identity` thêm `acceptedHosts: { names: [...], ips: ["*"] }` (liệt kê tên đang nhận; IP ghi `*`). Rà soát bảo mật 011 (L6): **chỉ** khi request có phiên hợp lệ (Bearer, hoặc cookie phiên web); không có phiên thì vắng khóa này (các khóa khác của `identity` vẫn công khai). Studio ≥ 1.0 đọc lại `identity` bằng token ngay sau khi đăng nhập.
 - Không áp cho gói UDP discovery (không phải HTTP).
 
 ## 2. Đăng nhập: khóa và giới hạn
@@ -41,7 +41,9 @@ Thay cho khóa theo tên của 005 (ADR-036):
 
 - Đăng nhập thành công xóa **chỉ** bộ đếm của cặp (tên, IP). Không xóa bộ đếm IP, không xóa bộ đếm cặp khác.
 - Trả lời khi bị khóa: 429 `ACCOUNT_LOCKED` (như 005, `retryAfterS`); thông điệp không phân biệt "tên không tồn tại" với "sai mật khẩu" (như 007).
-- Tối đa 4.096 cặp trong bộ nhớ (LRU); mất khi khởi động lại.
+- Tối đa 4.096 cặp trong bộ nhớ (LRU); mất khi khởi động lại. Rà soát bảo mật 011 (L5): bảng đầy thì bỏ trước cặp chưa từng bị khóa (hoặc lần khóa cuối đã quá 24 giờ), rồi mới tới cặp không đang khóa, cuối cùng cặp có hạn khóa sớm nhất: một trận cặp mới không xóa được lịch sử làm khóa lặp nhân đôi. Bảng IP (1.024) bỏ trước IP không có lần sai nào trong 10 phút. Bảng theo dõi tấn công phân tán (256 tên) bỏ trước tên có mọi lần sai đã quá 10 phút, rồi tên có ít lần sai nhất.
+- IP nguồn của bộ đếm là địa chỉ đã chuẩn hóa: `::ffff:a.b.c.d` (IPv4 qua socket hai ngăn xếp) tính là `a.b.c.d` (L7).
+- `LOGIN_BUSY` (L4): không ghi `auth.login`, không đếm lần sai; runtime ghi audit `auth.busy` (kênh `system`, `denied`, mã `LOGIN_BUSY`, `detail = {"refused": n, "maxConcurrentLogins": m, "windowS": 60}`) ở lần từ chối đầu, rồi tối đa một bản ghi mỗi phút với số lần từ chối kể từ bản ghi trước, kèm một dòng cảnh báo trên stderr.
 - Tấn công phân tán: ≥ 50 lần sai trong 10 phút cho một tên từ ≥ 5 IP: audit `auth.distributed_attack` (gộp 10 phút), không khóa.
 - Hạn khóa dùng đồng hồ monotonic.
 - CLI root (mục 7): `--user-unlock <tên>`, `--user-unlock-all`. Mật khẩu mới 15–128 ký tự (`--user-add`, `--user-passwd`; giữ mức của ADR-011 theo NIST SP 800-63B-4, vẫn đạt yêu cầu ≥ 10 của FR-017; quyết định 2026-10-16, T044); tài khoản có sẵn không bị ép.
@@ -108,7 +110,7 @@ Audit: `logic.write` (mỗi lệnh ghi thật: `ruleId`, `writeId`, `tag`, `old`
 
 ## 5. `system/info`, `system/diagnostics`, `device/identity`
 
-`system/info.warnings` thêm: `HOST_CHECK_OFF`, `SSH_ROOT_PASSWORD`, `PULSE_STUCK`, `LOGIC_WRITES_OFF`, `LOGIC_THROTTLED`, `LOGIC_RETAIN_LOST`, `UPDATE_ROLLED_BACK`, `TIME_NOT_SYNCED`, `UPDATE_KEYS_MISSING` (mỗi cảnh báo: `code`, `message` tiếng Việt, `since`, `detail`). `system/info` thêm `update: {"enabled": bool, "supported": true}` và `logic: {"present": bool, "writes": "off|on|stopped"}` để Studio ẩn hay hiện chức năng; thiết bị cũ không có hai khóa này thì Studio coi là không hỗ trợ.
+`system/info.warnings` thêm: `HOST_CHECK_OFF`, `SSH_ROOT_PASSWORD`, `PULSE_STUCK`, `LOGIC_WRITES_OFF`, `LOGIC_THROTTLED`, `LOGIC_RETAIN_LOST`, `UPDATE_ROLLED_BACK`, `TIME_NOT_SYNCED`, `UPDATE_KEYS_MISSING` (mỗi cảnh báo: `code`, `message` tiếng Việt, `since`, `detail`). Rà soát bảo mật 011 (L6, 2026-10-17): `detail` (đường dẫn thư mục khóa, Tag, nguồn đồng hồ…) chỉ có khi request có phiên hợp lệ (Bearer qua HTTPS hoặc cookie phiên web); request không có phiên vẫn nhận đủ `warnings` và `warningDetails` (`code`, `message` chung, `since`) nhưng `detail` luôn `null`. Studio đọc `system/info` bằng token nên không đổi; trang vận hành không đọc `detail`. `system/info` thêm `update: {"enabled": bool, "supported": true}` và `logic: {"present": bool, "writes": "off|on|stopped"}` để Studio ẩn hay hiện chức năng; thiết bị cũ không có hai khóa này thì Studio coi là không hỗ trợ.
 
 `system/diagnostics` (FR-009) thêm:
 
@@ -133,7 +135,8 @@ Cài đặt (T029, 2026-10-17): khóa cũ của 005 (`cpu`, `memory`, `uptime`, 
 |---|---|---|
 | `allowedHosts` | mảng chuỗi, `[]`, ≤ 32 tên, mỗi tên ≤ 253 byte | tên miền được chấp nhận ở `Host` |
 | `hostCheck` | `"strict"` (mặc định), `"off"` | bật tắt kiểm `Host` |
-| `maxConnPerSource` | số nguyên, 48, 4 đến 64 | kết nối đồng thời tối đa mỗi IP nguồn (HTTP, HTTPS, WebSocket cộng chung, đếm lúc `accept()`, vượt thì đóng ngay); giá trị áp dụng không quá 75 % `httpsThreads` (mặc định 64; đặt cao hơn: runtime dùng 75 % và cảnh báo lúc khởi động). Đổi 2026-10-17 từ 24 và 60 % của 40 worker: 10 trang sau một địa chỉ (NAT, VPN) cùng F5 cần tới 41 kết nối, xem ADR-010 |
+| `maxConnPerSource` | số nguyên, 48, 4 đến 64 | kết nối đồng thời tối đa mỗi IP nguồn (HTTP, HTTPS, WebSocket cộng chung, đếm lúc `accept()`, vượt thì đóng ngay); giá trị áp dụng không quá 75 % `httpsThreads` (mặc định 64; đặt cao hơn: runtime dùng 75 % và cảnh báo lúc khởi động). Đổi 2026-10-17 từ 24 và 60 % của 40 worker: 10 trang sau một địa chỉ (NAT, VPN) cùng F5 cần tới 41 kết nối, xem ADR-010. Rà soát bảo mật 011 (M1): thêm phần của từng cổng, mỗi cổng có nhóm worker riêng: một nguồn giữ tối đa min(`maxConnPerSource`, 75 % worker của cổng đó), mặc định 18 trong 24 worker HTTP (`threads`) và 48 trong 64 worker HTTPS, vẫn tối đa 48 cho cả hai cổng cộng lại |
+| `maxLiveClientsPerSource` | số nguyên, không đặt, 1 đến 10 | phiên dữ liệu sống (WebSocket `/api/v1/live`) đồng thời tối đa của một IP nguồn; không đặt: nửa số phiên tối đa, làm tròn lên (5 của 10); không bao giờ quá `maxClients`. Vượt: bản tin `error` mã `MAX_CLIENTS_REACHED` có thêm `"scope":"source"` và câu "Máy này đã mở tối đa N kết nối dữ liệu sống. Đóng bớt tab hoặc thử lại sau.", rồi đóng 4429 như khi đầy (trang 1.x chờ 30 s rồi thử lại). Thêm 2026-10-17 (rà soát bảo mật 011, M1): trước đó một máy chiếm được cả 10 phiên. Nhiều máy sau một NAT là một nguồn: đặt 10 để giữ cách cũ. Tham số dòng lệnh `--max-live-clients-per-source N` (giàn thử mở 10 trang từ một máy) |
 | `maxConcurrentLogins` | số nguyên, 2, 1 đến 4 | kiểm mật khẩu đồng thời |
 | `pulseRecovery` | `"on"` (mặc định), `"off"` | nhả xung dở khi khởi động |
 | `update.enabled` | bool, `false` | bật OTA |
@@ -152,8 +155,8 @@ Khóa lạ: bỏ qua kèm cảnh báo trên stderr (tương thích ngược). Gi
 | Lệnh | Việc |
 |---|---|
 | `--check-data [--json]` | kiểm chỉ đọc cơ sở dữ liệu và trạng thái (FR-040); thoát 0, 1, 2 |
-| `--user-unlock <tên>`, `--user-unlock-all` | ghi tệp yêu cầu mở khóa, runtime đọc ở chu kỳ tiếp theo (hoặc khởi động lại) |
-| `--logic-writes-reset` | bỏ lệnh dừng ghi PLC của logic do administrator đặt (`POST /logic/writes {"enabled": false}`, §4): audit `logic.writes.enabled` (`started`, `ok`/`failed` mã `LOGIC_RESET_REQUEST_FAILED`), ghi tệp yêu cầu `<dataDir>/logic-writes-reset.req` (0600, không theo symlink); runtime lấy trong 5 s (project có `logic.json`) hoặc lúc khởi động: `writesStopped` của `logic-state.json` về `false` (giữ `edges`), xóa tệp, audit `logic.writes.enabled` kênh `system`. `logic.writes` của `runtime.json` vẫn quyết định. Thêm 2026-10-17 (theo sau T137); trước đó root phải xóa `logic-state.json` rồi khởi động lại |
+| `--user-unlock <tên>`, `--user-unlock-all` | ghi tệp yêu cầu mở khóa, runtime đọc ở chu kỳ tiếp theo (hoặc khởi động lại). Rà soát bảo mật 011: CLI mở `dataDir` bằng `O_DIRECTORY|O_NOFOLLOW` rồi xóa và tạo tệp tương đối với thư mục đó (`unlinkat`, `openat`), nên `dataDir` là liên kết thì lệnh thất bại (mã 4, audit `failed`) (L3); runtime chỉ dùng `<dataDir>/auth-unlock.req` khi là tệp thường của root (uid 0), không có quyền nào cho nhóm và người khác; ngược lại xóa không dùng, ghi một dòng log và audit `account.unlock` kết quả `denied`, mã `UNLOCK_REQUEST_REFUSED`, `detail.reason` là `type`, `owner` hoặc `mode` (L2) |
+| `--logic-writes-reset` | bỏ lệnh dừng ghi PLC của logic do administrator đặt (`POST /logic/writes {"enabled": false}`, §4): audit `logic.writes.enabled` (`started`, `ok`/`failed` mã `LOGIC_RESET_REQUEST_FAILED`), ghi tệp yêu cầu `<dataDir>/logic-writes-reset.req` (0600, không theo symlink; từ rà soát bảo mật 011 L3 ghi qua `openat` trên `dataDir` mở `O_DIRECTORY|O_NOFOLLOW`, như `--user-unlock-all`); runtime lấy trong 5 s (project có `logic.json`) hoặc lúc khởi động: `writesStopped` của `logic-state.json` về `false` (giữ `edges`), xóa tệp, audit `logic.writes.enabled` kênh `system`. `logic.writes` của `runtime.json` vẫn quyết định. Thêm 2026-10-17 (theo sau T137); trước đó root phải xóa `logic-state.json` rồi khởi động lại |
 | `--trust-key add <file.pem>`, `--trust-key remove <keyId>`, `--trust-key list` | quản lý khóa tin cậy (ghi `trusted-keys/`, audit khi runtime chạy lại) |
 | `--update-status` | in `last.json` |
 | `--self-check --config <file>` | kiểm cấu hình, mở chỉ đọc cơ sở dữ liệu, chạy validator trên project đang chạy; không mở cổng, không ghi; thoát 0 hay mã lỗi (dùng bởi `mat-updater` ở bước S5) |
@@ -169,4 +172,4 @@ Tệp thực thi riêng (không phải `mat-runtime`):
 
 ## 8. Mã lỗi mới (đủ để sinh `docs/user/error-codes.md`)
 
-`HOST_NOT_ALLOWED` (421), `LOGIN_BUSY` (429), `PULSE_JOURNAL_FAILED` (FAILED), `PULSE_STUCK` (cảnh báo), `PERSIST_FAILED`, `E_PACKAGE_EXTRA_FILE`, `UPDATE_DISABLED`, `UPDATE_PACKAGE_INVALID`, `UPDATE_SIGNATURE_INVALID`, `UPDATE_KEY_UNKNOWN`, `UPDATE_DOWNGRADE`, `UPDATE_PROJECT_INCOMPATIBLE`, `UPDATE_TOO_LARGE`, `UPDATE_ARCH_MISMATCH`, `UPDATER_MANUAL_ONLY`, `INSUFFICIENT_SPACE`, `UPDATE_RECEIVE_ABORTED`, `REAUTH_FAILED`, `OWNED_BY_LOGIC`, `LOGIC_ENABLE_ROOT_ONLY`, `E_LOGIC_*` (contract logic-engine §11), `E_TEMPLATE_TAG_REF`, `E_POPUP_ARGS`, `E_TEMPLATE_PARAM`.
+`HOST_NOT_ALLOWED` (421), `LOGIN_BUSY` (429), `UNLOCK_REQUEST_REFUSED` (audit, rà soát bảo mật 011 L2), `PULSE_JOURNAL_FAILED` (FAILED), `PULSE_STUCK` (cảnh báo), `PERSIST_FAILED`, `E_PACKAGE_EXTRA_FILE`, `UPDATE_DISABLED`, `UPDATE_PACKAGE_INVALID`, `UPDATE_SIGNATURE_INVALID`, `UPDATE_KEY_UNKNOWN`, `UPDATE_DOWNGRADE`, `UPDATE_PROJECT_INCOMPATIBLE`, `UPDATE_TOO_LARGE`, `UPDATE_ARCH_MISMATCH`, `UPDATER_MANUAL_ONLY`, `INSUFFICIENT_SPACE`, `UPDATE_RECEIVE_ABORTED`, `REAUTH_FAILED`, `OWNED_BY_LOGIC`, `LOGIC_ENABLE_ROOT_ONLY`, `E_LOGIC_*` (contract logic-engine §11), `E_TEMPLATE_TAG_REF`, `E_POPUP_ARGS`, `E_TEMPLATE_PARAM`.

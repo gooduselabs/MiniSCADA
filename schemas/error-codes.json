@@ -1945,7 +1945,7 @@
       "code": "MAX_CLIENTS_REACHED",
       "http": null,
       "group": "live",
-      "message": "Thiết bị đã đạt số kết nối dữ liệu sống tối đa; thử lại sau",
+      "message": "Thiết bị đã đạt số kết nối dữ liệu sống tối đa, hoặc máy này đã mở tối đa số kết nối của một nguồn (scope \"source\"); thử lại sau",
       "usedIn": ["server/websocket"]
     },
     {
@@ -2675,6 +2675,13 @@
       "group": "auth",
       "message": "Không ghi được tệp yêu cầu mở mọi khóa đăng nhập",
       "usedIn": ["server/cli"]
+    },
+    {
+      "code": "UNLOCK_REQUEST_REFUSED",
+      "http": null,
+      "group": "auth",
+      "message": "Tệp yêu cầu mở mọi khóa đăng nhập không phải tệp thường của root quyền 0600: đã xóa, không dùng",
+      "usedIn": ["core/auth"]
     },
     {
       "code": "UNPACKED_TOO_LARGE",

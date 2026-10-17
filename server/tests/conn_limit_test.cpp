@@ -304,3 +304,56 @@ TEST(ConnLimit, ThePlaceIsGivenBackWhenAConnectionEndsAFailedHandshakeIncluded) 
         << "closed by the client: given back";
     EXPECT_EQ(s.limiter.refused(), 0u);
 }
+
+// Security review of 011 (M1, T062): the limiter is shared by both contexts, but each context has
+// its own pool of workers. One source holds at most min(maxConnPerSource, 75 % of the workers) of
+// EACH context: with the defaults 18 of the 24 HTTP workers (it could hold all 24 before), and
+// still at most maxConnPerSource over both contexts together.
+TEST(ConnLimiter, EachContextHasItsOwnShareUnderTheSharedLimit) {
+    ConnLimiter l(10);
+    l.setContextLimit(kHttpContext, 3);
+    for (int i = 0; i < 3; ++i) EXPECT_TRUE(l.acquire("10.0.0.5", kHttpContext)) << i;
+    EXPECT_FALSE(l.acquire("10.0.0.5", kHttpContext)) << "the share of the HTTP workers";
+    EXPECT_EQ(l.count("10.0.0.5", kHttpContext), 3);
+    EXPECT_TRUE(l.acquire("10.0.0.6", kHttpContext)) << "another source has its own share";
+    for (int i = 0; i < 7; ++i) EXPECT_TRUE(l.acquire("10.0.0.5", kHttpsContext)) << i;
+    EXPECT_FALSE(l.acquire("10.0.0.5", kHttpsContext)) << "10 over both contexts";
+    EXPECT_EQ(l.count("10.0.0.5"), 10);
+    EXPECT_EQ(l.refused(), 2u);
+    l.release("10.0.0.5", kHttpContext);
+    EXPECT_EQ(l.count("10.0.0.5", kHttpContext), 2);
+    EXPECT_TRUE(l.acquire("10.0.0.5", kHttpContext));
+    for (int i = 0; i < 3; ++i) l.release("10.0.0.5", kHttpContext);
+    for (int i = 0; i < 7; ++i) l.release("10.0.0.5", kHttpsContext);
+    l.release("10.0.0.5", kHttpsContext);  // one too many: ignored
+    l.release("10.0.0.6", kHttpContext);
+    EXPECT_EQ(l.count("10.0.0.5"), 0);
+    EXPECT_EQ(l.sources(), 0u);
+}
+
+TEST(ConnLimiter, TheDefaultsLeaveAQuarterOfTheHttpWorkersToTheOthers) {
+    const RuntimeConfig defaults;
+    EXPECT_EQ(defaults.threads, 24);
+    const int shared = effectiveMaxConnPerSource(defaults.maxConnPerSource, defaults.httpsThreads);
+    EXPECT_EQ(effectiveMaxConnPerSource(shared, defaults.threads), 18);
+}
+
+// M1: 20 HTTP connections that stay silent from one source, 16 HTTP workers: the source gets 12
+// (75 %), and a request from another source over HTTP is answered within 2 s (it waited for the
+// 10 s request timeout of a worker before).
+TEST(ConnLimit, SilentHttpConnectionsFromOneSourceDoNotTakeEveryHttpWorker) {
+    Server s(48, 64);  // httpThreads 16
+    for (int i = 0; i < 20; ++i) s.keep(connectFrom("127.0.0.1", s.web.httpPort()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    EXPECT_LE(s.limiter.count("127.0.0.1", kHttpContext), 12);
+    const int other = connectFrom("127.0.0.2", s.web.httpPort());
+    ASSERT_GE(other, 0);
+    const auto t0 = Clock::now();
+    const std::string r = roundTrip(
+        other, "GET /ping HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n", 5000);
+    const int64_t took = msSince(t0);
+    ::close(other);
+    EXPECT_NE(r.find("pong"), std::string::npos) << r;
+    EXPECT_LE(took, 2000);
+    EXPECT_GE(s.limiter.refused(), 8u);
+}

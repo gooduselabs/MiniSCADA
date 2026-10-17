@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 442 mã.
+Tổng cộng 443 mã.
 
 ## Mục lục
 
@@ -25,7 +25,7 @@ Tổng cộng 442 mã.
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
 - [Gói project (.matscada)](#package) (16)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
-- [Đăng nhập, phiên và truy cập HTTP](#auth) (24)
+- [Đăng nhập, phiên và truy cập HTTP](#auth) (25)
 - [Ghi Tag](#write) (38)
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
@@ -375,6 +375,7 @@ Tổng cộng 442 mã.
 | `SESSION_SCOPE` | 403 | Phiên đăng nhập của trang này không dùng được cho thao tác này. | `server/http` |
 | `SOURCE_NOT_ALLOWED` | 403 | Địa chỉ nguồn không được phép mở trang xem (viewerAccess = private) | `server/http` |
 | `UNLOCK_REQUEST_FAILED` | — | Không ghi được tệp yêu cầu mở mọi khóa đăng nhập | `server/cli` |
+| `UNLOCK_REQUEST_REFUSED` | — | Tệp yêu cầu mở mọi khóa đăng nhập không phải tệp thường của root quyền 0600: đã xóa, không dùng | `core/auth` |
 | `VIEWER_OFF` | 403 | Trang xem đã bị tắt trên thiết bị này (viewerAccess = off). | `server/http` |
 
 <a id="write"></a>
@@ -475,7 +476,7 @@ Tổng cộng 442 mã.
 | --- | --- | --- | --- |
 | `BAD_MESSAGE` | — | Bản tin gửi lên kênh dữ liệu sống không hợp lệ | `server/websocket` |
 | `HEARTBEAT_TIMEOUT` | — | Kênh dữ liệu sống bị đóng vì client không trả lời nhịp tim | `server/websocket` |
-| `MAX_CLIENTS_REACHED` | — | Thiết bị đã đạt số kết nối dữ liệu sống tối đa; thử lại sau | `server/websocket` |
+| `MAX_CLIENTS_REACHED` | — | Thiết bị đã đạt số kết nối dữ liệu sống tối đa, hoặc máy này đã mở tối đa số kết nối của một nguồn (scope "source"); thử lại sau | `server/websocket` |
 | `MESSAGE_TOO_BIG` | — | Bản tin gửi lên kênh dữ liệu sống quá lớn | `server/websocket` |
 | `NO_VALID_TAGS` | — | Không có Tag hợp lệ trong yêu cầu | `server/websocket` |
 | `PROTOCOL_ERROR` | — | Client gửi sai giao thức nhiều lần liên tiếp nên kênh bị đóng | `server/websocket` |

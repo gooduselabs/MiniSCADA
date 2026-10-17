@@ -5,13 +5,16 @@
 #include <gtest/gtest.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 
 #include "nlohmann/json.hpp"
 #include "server/http/http_api.hpp"
+#include "server/http/viewer_gate.hpp"
 #include "server/system_warnings.hpp"
 #include "server/tests/civet_test_support.hpp"
+#include "server/tests/tls_test_support.hpp"
 
 using namespace mat;
 using json = nlohmann::json;
@@ -117,4 +120,59 @@ TEST(SystemInfo011, UpdateAndLogicBlocksFollowTheConfiguration) {
     const json on = infoOf(o, d);
     EXPECT_EQ(on["update"]["enabled"], true);
     EXPECT_EQ(on["logic"]["writes"], "on");
+}
+
+// L6 of the security review of 011 (reconnaissance through the public system/info): a caller
+// without a session (Bearer or the cookie of a web session) gets the codes and their generic
+// sentences, never the detail of a warning (a path, a tag, a source); a session gets everything.
+TEST(SystemInfo011, WithoutASessionWarningsKeepTheirCodesButNotTheirDetail) {
+    Dirs d;
+    SystemWarnings sw([] { return int64_t{1792000000000}; });
+    sw.set("UPDATE_KEYS_MISSING", json{{"dir", "/etc/mat-runtime/trusted-keys"}});
+    sw.set("PULSE_STUCK", json{{"tag", "TANK01.START"}});
+    // Any source may read; the test server is plain HTTP, the hook makes it count as HTTPS.
+    ViewerGate gate(
+        ViewerAccess::Any,
+        [](const std::string& token, const std::string&, int) { return token == "mats_good"; },
+        ViewerGate::Hooks{nullptr, [](bool) { return true; }});
+    HttpApi::Options o;
+    o.systemWarnings = &sw;
+    o.gate = &gate;
+    o.docroot = (d.root / "docroot").string();
+    o.projectDir = (d.root / "project").string();
+    test::TestServer http;
+    HttpApi api(o, [] { return json{{"runtimeVersion", "1.0.0"}}; });
+    api.install(http.ctx);
+    test::CurlClient c("http://127.0.0.1:" + std::to_string(http.port));
+    const auto get = [&](std::vector<std::string> headers) {
+        test::HttpRequest r;
+        r.path = "/api/v1/system/info";
+        r.headers = std::move(headers);
+        const test::HttpResult res = c.request(r);
+        EXPECT_EQ(res.status, 200) << res.body;
+        return res.body;
+    };
+    for (const auto& headers : {std::vector<std::string>{},
+                                std::vector<std::string>{"Authorization: Bearer mats_wrong"}}) {
+        const std::string body = get(headers);
+        EXPECT_EQ(body.find("trusted-keys"), std::string::npos) << body;
+        EXPECT_EQ(body.find("TANK01"), std::string::npos) << body;
+        const json info = json::parse(body);
+        EXPECT_NE(
+            std::find(info["warnings"].begin(), info["warnings"].end(), "UPDATE_KEYS_MISSING"),
+            info["warnings"].end());
+        ASSERT_EQ(info["warningDetails"].size(), info["warnings"].size());
+        for (const auto& e : info["warningDetails"]) {
+            EXPECT_TRUE(e["detail"].is_null()) << e;
+            EXPECT_EQ(e["message"], warningMessage(e["code"].get<std::string>()));
+        }
+    }
+    const json full = json::parse(get({"Authorization: Bearer mats_good"}));
+    bool found = false;
+    for (const auto& e : full["warningDetails"])
+        if (e["code"] == "UPDATE_KEYS_MISSING") {
+            found = true;
+            EXPECT_EQ(e["detail"]["dir"], "/etc/mat-runtime/trusted-keys");
+        }
+    EXPECT_TRUE(found) << full.dump();
 }

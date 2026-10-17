@@ -19,6 +19,7 @@
 
 #include <gtest/gtest.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <atomic>
@@ -102,6 +103,9 @@ struct Fixture {
     PasswordHasher::HashFn realHash;  // set: Argon2id instead of fakeHash
     size_t maxConcurrentLogins = 2;
     std::string unlockRequestFile;
+    // L2 of the security review of 011: the owner a request file must have (root on the device;
+    // the user that runs the test here, so that the tests also pass without root).
+    uid_t requestFileOwner = ::geteuid();
 
     std::mutex mu;
     std::vector<AuditEvent> events;
@@ -144,6 +148,7 @@ struct Fixture {
         o.bootId = [this] { return bootId; };
         o.maxConcurrentLogins = maxConcurrentLogins;
         o.unlockRequestFile = unlockRequestFile;
+        o.requestFileOwner = requestFileOwner;
         return o;
     }
     void start() { auth = std::make_unique<AuthService>(options()); }
@@ -503,6 +508,67 @@ TEST(AuthUnlock, TheRequestFileClearsEveryLockWithin5s) {
     EXPECT_EQ(f.loginAs("kysu1", "10.0.0.1").status, LoginStatus::Locked) << "no file: no unlock";
 }
 
+// L7 of the security review of 011: an IPv4 client of a dual stack listener ("::ffff:a.b.c.d") is
+// the same source for the lockout as over IPv4: switching listener does not give 5 more tries.
+TEST(AuthLockout, AnIpv4MappedAddressCountsAsTheIpv4Address) {
+    Fixture f;
+    f.writeUsers(f.standard());
+    f.start();
+    for (int i = 0; i < 3; ++i) f.login("kysu1", "wrong", "::ffff:10.0.0.9");
+    for (int i = 0; i < 2; ++i) f.login("kysu1", "wrong", "10.0.0.9");
+    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.9").status, LoginStatus::Locked);
+    EXPECT_EQ(f.loginAs("kysu1", "::ffff:10.0.0.9").status, LoginStatus::Locked);
+    EXPECT_EQ(f.loginAs("kysu1", "10.0.0.10").status, LoginStatus::Ok) << "another address";
+}
+
+// L2 of the security review of 011: only a regular file of root (the owner --user-unlock-all gives
+// it), with no permission for group or others, unlocks. Anything else is removed without being
+// used, logged and audited (account.unlock denied, code UNLOCK_REQUEST_REFUSED, detail.reason).
+TEST(AuthUnlock, ARequestFileOfAnotherOwnerOrModeOrKindIsRemovedUnused) {
+    struct Case {
+        const char* reason;
+        std::function<void(Fixture&)> make;
+    };
+    const Case cases[] = {
+        {"owner",
+         [](Fixture& f) {
+             f.requestFileOwner = ::geteuid() + 1;  // the file is not of the expected owner
+             mat::test::writeFile(f.unlockRequestFile, "unlock-all\n", 0600);
+         }},
+        {"mode",
+         [](Fixture& f) { mat::test::writeFile(f.unlockRequestFile, "unlock-all\n", 0640); }},
+        {"type", [](Fixture& f) { ASSERT_EQ(::mkdir(f.unlockRequestFile.c_str(), 0700), 0); }},
+    };
+    for (const Case& c : cases) {
+        Fixture f;
+        f.unlockRequestFile = f.dir.file("auth-unlock.req");
+        f.writeUsers(f.standard());
+        f.start();
+        for (int i = 0; i < 5; ++i) f.login("kysu1", "wrong", "10.0.0.1");
+        ASSERT_EQ(f.loginAs("kysu1", "10.0.0.1").status, LoginStatus::Locked) << c.reason;
+        c.make(f);
+        f.start();  // the owner is an option of the service (and loadState looks at once)
+        for (int i = 0; i < 5; ++i) f.login("kysu1", "wrong", "10.0.0.1");
+        f.advance(5000);
+        EXPECT_EQ(f.loginAs("kysu1", "10.0.0.1").status, LoginStatus::Locked)
+            << c.reason << ": not used";
+        struct stat st {};
+        EXPECT_NE(::lstat(f.unlockRequestFile.c_str(), &st), 0) << c.reason << ": removed";
+        const auto rows = f.audit(AuditAction::AccountUnlock);
+        ASSERT_EQ(rows.size(), 1u) << c.reason;
+        EXPECT_EQ(rows[0].result, AuditResult::Denied) << c.reason;
+        EXPECT_EQ(rows[0].channel, AuditChannel::System);
+        EXPECT_EQ(rows[0].code.value_or(""), "UNLOCK_REQUEST_REFUSED");
+        EXPECT_EQ(nlohmann::json::parse(rows[0].detail)["reason"], c.reason);
+        bool logged = false;
+        for (const auto& line : f.logs)
+            if (line.find("auth-unlock.req") != std::string::npos &&
+                line.find("not used") != std::string::npos)
+                logged = true;
+        EXPECT_TRUE(logged) << c.reason;
+    }
+}
+
 TEST(AuthUnlock, TheRequestFileIsReadAtStart) {
     Fixture f;
     f.unlockRequestFile = f.dir.file("auth-unlock.req");
@@ -545,7 +611,8 @@ TEST(AuthLockout, UnlockSeqChangeLiftsIt) {
 // --- Concurrent sign-ins (FR-016)
 
 // At most maxConcurrentLogins sign-ins wait for or run their hash; one more is LOGIN_BUSY at once:
-// no hash, no audit record, no failure counted (it locks nobody).
+// no hash, no sign-in record, no failure counted (it locks nobody); auth.busy at most once a
+// minute.
 TEST(AuthLogin, SignInsAboveMaxConcurrentLoginsAreBusy) {
     for (const size_t limit : {size_t{1}, size_t{2}, size_t{4}}) {
         Fixture f;
@@ -585,7 +652,30 @@ TEST(AuthLogin, SignInsAboveMaxConcurrentLoginsAreBusy) {
             EXPECT_STREQ(loginErrorCode(busy.status), "LOGIN_BUSY");
         }
         EXPECT_EQ(f.hashes(), 1u) << "only the first one is hashing";
-        EXPECT_EQ(f.audit().size(), auditBefore) << "a refusal for load is not a sign-in";
+        // L4 of the security review of 011: a refusal for load is not a sign-in (no auth.login),
+        // but the device says it is refusing: one auth.busy (system) at the first refusal, then at
+        // most one a minute with the refusals counted since the last one, and a log line with it.
+        EXPECT_EQ(f.audit().size(), auditBefore + 1) << "a refusal for load is not a sign-in";
+        auto busyRows = f.audit(AuditAction::AuthBusy);
+        ASSERT_EQ(busyRows.size(), 1u) << limit;
+        EXPECT_EQ(busyRows[0].channel, AuditChannel::System);
+        EXPECT_EQ(busyRows[0].result, AuditResult::Denied);
+        EXPECT_EQ(busyRows[0].code.value_or(""), "LOGIN_BUSY");
+        EXPECT_EQ(nlohmann::json::parse(busyRows[0].detail)["refused"], 1);
+        EXPECT_EQ(nlohmann::json::parse(busyRows[0].detail)["maxConcurrentLogins"], limit);
+        f.advance(60000);
+        EXPECT_EQ(f.loginAs("user6", "10.0.0.6").status, LoginStatus::Busy);
+        busyRows = f.audit(AuditAction::AuthBusy);
+        ASSERT_EQ(busyRows.size(), 2u) << limit;
+        EXPECT_EQ(nlohmann::json::parse(busyRows[1].detail)["refused"], 10)
+            << "the 9 counted in the minute and this one";
+        size_t busyLines = 0;
+        {
+            std::lock_guard<std::mutex> l(f.mu);
+            for (const auto& line : f.logs)
+                if (line.find("LOGIN_BUSY") != std::string::npos) ++busyLines;
+        }
+        EXPECT_EQ(busyLines, 2u);
         gate.release();
         for (auto& t : threads) t.join();
         for (size_t i = 0; i < limit; ++i) EXPECT_EQ(results[i].status, LoginStatus::Ok) << i;

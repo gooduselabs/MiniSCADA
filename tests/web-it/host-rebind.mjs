@@ -9,6 +9,7 @@
 //   node tests/web-it/host-rebind.mjs   (cổng: MAT_IT_HTTP_PORT, MAT_IT_HTTPS_PORT; Chrome: CHROME_PATH)
 // In đúng một dòng JSON { scenario, checks, measures, pass }.
 import { existsSync } from 'node:fs';
+import { request as httpsRequest } from 'node:https';
 import puppeteer from 'puppeteer-core';
 
 const HTTP = Number(process.env.MAT_IT_HTTP_PORT ?? 18080);
@@ -52,6 +53,41 @@ const probe = (page, path) =>
       return { status: -1, code: String(e), readable: false };
     }
   }, path);
+
+/** Yêu cầu HTTPS từ Node tới runtime qua loopback (chứng chỉ tự ký của giàn thử: không kiểm); thân JSON hoặc null. */
+function requestOverTls(method, path, json, token) {
+  return new Promise((resolve) => {
+    const body = json ? JSON.stringify(json) : undefined;
+    const headers = { Host: `127.0.0.1:${HTTPS}` };
+    if (body) {
+      headers['Content-Type'] = 'application/json';
+      headers['Content-Length'] = Buffer.byteLength(body);
+    }
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const req = httpsRequest(
+      { host: '127.0.0.1', port: HTTPS, path, method, headers, rejectUnauthorized: false },
+      (res) => {
+        let text = '';
+        res.setEncoding('utf8');
+        res.on('data', (d) => (text += d));
+        res.on('end', () => {
+          let parsed = null;
+          try {
+            parsed = JSON.parse(text);
+          } catch {
+            /* không phải JSON */
+          }
+          resolve({ status: res.statusCode, body: parsed });
+        });
+      },
+    );
+    req.on('error', (e) => resolve({ status: -1, body: null, error: String(e) }));
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
+const identityOverTls = (token) => requestOverTls('GET', '/api/v1/device/identity', null, token);
 
 /** WebSocket cùng origin: true khi mở được. */
 const wsOpens = (page, url) =>
@@ -155,24 +191,29 @@ async function main() {
         await ctx.close();
       }
     }
-    // 4. acceptedHosts của device/identity có tên đã khai.
+    // 4. acceptedHosts của device/identity có tên đã khai, chỉ cho request có phiên (rà soát bảo mật 011, L6):
+    //    không phiên thì vắng khóa; đăng nhập xem1 (MAT_IT_PW_XEM1) rồi đọc lại bằng token.
     {
-      const ctx = await browser.createBrowserContext();
-      const page = await ctx.newPage();
-      await page.goto(`https://127.0.0.1:${HTTPS}/`, { waitUntil: 'domcontentloaded' });
-      const accepted = await page.evaluate(async () => {
-        const r = await fetch('/api/v1/device/identity');
-        return (await r.json()).acceptedHosts ?? null;
-      });
+      const anon = await identityOverTls();
       check(
-        'device/identity.acceptedHosts có scada.nhamay.test, ips ["*"]',
+        'device/identity không phiên: không có acceptedHosts',
+        anon.status === 200 && anon.body && !('acceptedHosts' in anon.body),
+        JSON.stringify(anon),
+      );
+      const pw = process.env.MAT_IT_PW_XEM1;
+      const login = pw
+        ? await requestOverTls('POST', '/api/v1/auth/login', { user: 'xem1', password: pw })
+        : { status: 0, body: null };
+      const token = login.body?.token;
+      const accepted = token ? (await identityOverTls(token)).body?.acceptedHosts ?? null : null;
+      check(
+        'device/identity có phiên: acceptedHosts có scada.nhamay.test, ips ["*"]',
         Array.isArray(accepted?.names) &&
           accepted.names.includes(ALLOWED) &&
           JSON.stringify(accepted.ips) === '["*"]',
-        JSON.stringify(accepted),
+        token ? JSON.stringify(accepted) : `đăng nhập xem1: ${login.status}`,
       );
       measures.acceptedHosts = accepted;
-      await ctx.close();
     }
   } finally {
     await browser.close();

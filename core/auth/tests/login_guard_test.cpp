@@ -248,6 +248,48 @@ TEST(LoginGuard, AFullTableKeeps4096PairsAndDropsTheLeastRecentlyUsedUnlockedOne
     EXPECT_TRUE(fail(h, "kept", "10.9.1.1", 1, kT0 + 2).pair) << "4 kept + 1";
 }
 
+// L5 of the security review of 011: a full table drops first a pair that never locked; a pair whose
+// lock has ended keeps its history (the next lock within 24 h doubles), so a flood of new pairs
+// cannot bring a repeated lock back to 5 minutes.
+TEST(LoginGuard, AFullTableDropsPairsThatNeverLockedFirst) {
+    LoginGuard g;
+    ASSERT_EQ(fail(g, "repeat", "10.9.0.1", 5).pairLockMs, 5 * kMin);
+    const int64_t later = kT0 + 6 * kMin;  // the lock has ended
+    ASSERT_FALSE(g.check("repeat", "10.9.0.1", later, kGen).locked);
+    for (int i = 0; i < 5000; ++i) g.recordFailure("name" + std::to_string(i), ip(i), later, kNone);
+    EXPECT_EQ(g.state().pairs.size(), kPairTableSize);
+    EXPECT_EQ(fail(g, "repeat", "10.9.0.1", 5, later + kMin).pairLockMs, 10 * kMin)
+        << "the history of the pair was kept: the second lock doubles";
+}
+
+// L5: the watch of a distributed attack drops first the names whose failures are older than the
+// window, then the name with the fewest failures: a flood of names tried once cannot push out a
+// name under attack.
+TEST(LoginGuard, AFloodOfNamesDoesNotPushOutANameUnderAttack) {
+    LoginGuard g;
+    for (int i = 0; i < 40; ++i)
+        g.noteFailure("admin", "10.2.0." + std::to_string(i % 10), kT0 + i);
+    for (int i = 0; i < 300; ++i)
+        EXPECT_FALSE(g.noteFailure("n" + std::to_string(i), "10.4.0.1", kT0 + 100 + i));
+    int reports = 0;
+    for (int i = 0; i < 10; ++i)
+        if (g.noteFailure("admin", "10.2.1." + std::to_string(i % 5), kT0 + 500 + i)) ++reports;
+    EXPECT_EQ(reports, 1) << "the 50th failure on admin within 10 minutes is reported";
+    // A name whose failures are all older than the window goes before a recent one.
+    LoginGuard h;
+    for (int i = 0; i < 40; ++i) h.noteFailure("old", "10.2.0." + std::to_string(i % 10), kT0 + i);
+    const int64_t t = kT0 + kDistributedWindowMs + kMin;
+    for (int i = 0; i < 40; ++i) h.noteFailure("admin", "10.2.0." + std::to_string(i % 10), t + i);
+    for (int i = 0; i < static_cast<int>(kWatchTableSize) - 2; ++i)
+        for (int k = 0; k < 2; ++k)
+            h.noteFailure("m" + std::to_string(i), "10.4.0." + std::to_string(k), t + 100 + i);
+    h.noteFailure("one-more", "10.4.0.1", t + 1000);  // the table is full: "old" goes
+    int r = 0;
+    for (int i = 0; i < 10; ++i)
+        if (h.noteFailure("admin", "10.2.1." + std::to_string(i % 5), t + 2000 + i)) ++r;
+    EXPECT_EQ(r, 1);
+}
+
 TEST(LoginGuard, OnlyNamesInNfcFormAreKept) {
     EXPECT_EQ(guardName("kysu1"), "kysu1");
     EXPECT_EQ(guardName("kysu-truong.ca_1"), "kysu-truong.ca_1");
