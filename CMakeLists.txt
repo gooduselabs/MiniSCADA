@@ -711,6 +711,8 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(logic_runtime_test server/tests/logic_runtime_test.cpp)
   target_link_libraries(logic_runtime_test PRIVATE mat_runtime_engine mat_startup)
   mat_test(legacy_vectors_test drivers/simulation/tests/legacy_vectors_test.cpp)
+  # The wake-ups of the tick loop: logic on its own period (feature 011 T148).
+  mat_test(tick_schedule_test server/tests/tick_schedule_test.cpp)
   mat_test(source_filter_test server/tests/source_filter_test.cpp)
   target_link_libraries(source_filter_test PRIVATE mat_viewer_gate)
   mat_test(codec_test drivers/modbus/tests/codec_test.cpp)

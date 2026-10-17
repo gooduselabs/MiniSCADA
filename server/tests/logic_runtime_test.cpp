@@ -258,3 +258,44 @@ TEST(LogicRuntime, ADamagedStoreStartsAtZeroWithAWarningAndOneAudit) {
     EXPECT_EQ(std::count(r.audits.begin(), r.audits.end(), "logic.retain.lost"), 1);
     r.rt->stop();
 }
+
+// T148: the tick loop runs a round at every multiple of logic.scanMs (server/tick_schedule.hpp);
+// the clock of logic (CLOCK_BOOTTIME, ms) and the one of the loop (steady_clock) do not tick
+// together, so a round a millisecond or two before the due time still scans; GET /logic says how
+// often logic really scanned and counts only the scans that were late by a whole period or took
+// longer than one.
+TEST(LogicRuntime, ARoundSlightlyBeforeTheDueTimeStillScansWithoutAnOverrun) {
+    TempDir d("jitter");
+    Rig r(project(d, counterDoc({"c_a"})), (d.path / "retain").string());
+    const int64_t steps[] = {99, 101, 98, 102, 100, 100, 99, 101};
+    int64_t ms = 0;
+    for (int64_t s : steps) {
+        r.mono += s;
+        r.now += s;
+        ms += s;
+        r.rt->tick(r.now);
+    }
+    const json scan = r.rt->logic()->status()["scan"];
+    EXPECT_EQ(scan["overrun"], 0) << scan.dump();
+    EXPECT_EQ(scan["scans"], 1 + 8) << scan.dump();  // the first round and each one after it
+    EXPECT_NEAR(scan["intervalMs"].get<double>(), static_cast<double>(ms) / 8, 0.01) << scan.dump();
+    r.rt->stop();
+}
+
+TEST(LogicRuntime, RoundsSlowerThanTheScanPeriodShowTheRealIntervalAndCountMissedScans) {
+    // a loop that only ran every 250 ms (mat-runtime before T148 under deltaPeriodMs 250): each
+    // scan comes after a whole missed period of 100 ms
+    TempDir d("slow");
+    Rig r(project(d, counterDoc({"c_a"})), (d.path / "retain").string());
+    for (int i = 0; i < 8; ++i) {
+        r.mono += 250;
+        r.now += 250;
+        r.rt->tick(r.now);
+    }
+    const json scan = r.rt->logic()->status()["scan"];
+    EXPECT_EQ(scan["periodMs"], 100);
+    EXPECT_EQ(scan["scans"], 1 + 8) << scan.dump();
+    EXPECT_NEAR(scan["intervalMs"].get<double>(), 250, 0.01) << scan.dump();
+    EXPECT_EQ(scan["overrun"], 8) << scan.dump();
+    r.rt->stop();
+}

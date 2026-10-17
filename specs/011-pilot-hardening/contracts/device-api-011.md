@@ -94,13 +94,15 @@ Cài đặt (T111, T112, T116, 2026-10-17): `update.enabled` false thì 404 `UPD
 {
   "enabled": true,
   "writes": { "configured": "on", "runtimeEnabled": true, "perMinute": 3, "limitPerMinute": 20 },
-  "scan": { "periodMs": 100, "lastMs": 1.8, "p99Ms": 3.1 },
+  "scan": { "periodMs": 100, "lastMs": 1.8, "p99Ms": 3.1, "overrun": 0, "scans": 36000, "intervalMs": 100.0 },
   "blocks": [
     { "id": "pump_low_level", "kind": "rule", "state": "OK", "lastFired": "2026-10-13T08:12:03+07:00", "fired": 14, "reason": null },
     { "id": "pump_hours", "kind": "runhours", "state": "OK", "outputs": { "LOGIC.PUMP01.HOURS": 123.456 } }
   ]
 }
 ```
+
+`scan`: `periodMs` = `logic.scanMs`; `lastMs`, `p99Ms` (100 lần gần nhất) thời gian một lần quét; `overrun` số lần quét lâu hơn `periodMs` hoặc trễ trọn một chu kỳ; `scans` số lần quét từ lúc chạy và `intervalMs` khoảng trung bình giữa 100 lần quét gần nhất (chu kỳ thực; hai khóa thêm ở T148, contracts/logic-engine.md §10).
 
 `state`: `OK`, `SUSPENDED` (kèm `reason`: `INPUT_BAD`, `TIME_NOT_SYNCED`, `EXPR_ERROR`), `THROTTLED`, `DISABLED`. Không có `logic.json` thì `{"enabled": false}`.
 

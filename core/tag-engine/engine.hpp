@@ -76,8 +76,10 @@ class Engine : public drv::EngineSink {
     // FAILED when the value cannot be applied): the answer of a write to an internal Tag (FR-038).
     void setInternal(size_t tag, TagScalar value, uint64_t writeId = 0);
 
-    // The tick loop, one thread.
-    void step(int64_t nowMs);
+    // The tick loop, one thread. `stepDrivers` false (feature 011 T148: a round of the tick loop
+    // for the logic scan only, between two delta rounds): the stepped drivers (simulation) are not
+    // stepped, everything else of the round runs.
+    void step(int64_t nowMs, bool stepDrivers = true);
 
     // Compile errors of calculated Tags (none for a validated project): "tag: code".
     const std::vector<std::string>& compileErrors() const { return compileErrors_; }

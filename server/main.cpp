@@ -80,6 +80,7 @@
 #include "server/serial_probe.hpp"
 #include "server/ssh_audit.hpp"
 #include "server/startup.hpp"
+#include "server/tick_schedule.hpp"
 #include "server/time_sync.hpp"
 #include "server/tls/server_cert.hpp"
 #include "server/tls/tls_init.hpp"
@@ -1187,7 +1188,10 @@ int main(int argc, char** argv) {
     // Step 6 (device-config §7): the threads of the drivers and of the retained store.
     rtEngine.start();
 
-    auto next = std::chrono::steady_clock::now();
+    // T148: with logic the Tag Engine round (and the logic scan in it) also runs at every
+    // multiple of logic.scanMs; the live deltas and the rest of the loop stay at deltaPeriodMs.
+    const auto loopStart = std::chrono::steady_clock::now();
+    TickSchedule schedule(cfg.deltaPeriodMs, rtEngine.logic() ? cfg.logicScanMs : 0);
     int64_t nextAuditFlush = monoMs() + kAuditFlushMs;
     int64_t nextAuditMaintain = monoMs() + kAuditMaintainMs;  // open() ran it once
     int64_t lastAuditError = -kAuditErrorLogMs;
@@ -1198,11 +1202,12 @@ int main(int argc, char** argv) {
     g_persistFailArmed = cfg.testPersistFail;
 #endif
     while (g_run) {
-        next += std::chrono::milliseconds(cfg.deltaPeriodMs);
-        std::this_thread::sleep_until(next);
-        const int64_t commitMono = monoMs();  // FR-009: liveLagP95Ms counts from here
-        rtEngine.tick(epochMs());             // the Tag Engine round, right before the live deltas
-        alarmGlue.tick();                     // the alarm round, right after it (feature 009)
+        const TickSchedule::Wake wake = schedule.next();
+        std::this_thread::sleep_until(loopStart + std::chrono::milliseconds(wake.atMs));
+        const int64_t commitMono = monoMs();   // FR-009: liveLagP95Ms counts from here
+        rtEngine.tick(epochMs(), wake.delta);  // the Tag Engine round, right before the live deltas
+        if (!wake.delta) continue;             // a round for the logic scan only
+        alarmGlue.tick();                      // the alarm round, right after it (feature 009)
         hub.tick(commitMono);
         transport.expire();
         tickCount.fetch_add(1);

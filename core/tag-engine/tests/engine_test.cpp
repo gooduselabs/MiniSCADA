@@ -196,6 +196,31 @@ TEST(Engine, SimulationTagsFollowTheClockOfTheRound) {
     sim->stop();
 }
 
+// T148: the rounds the tick loop runs for the logic scan only, between two delta rounds, do not
+// step the simulation drivers (the simulated Tags keep the deltaPeriodMs resolution they had);
+// the inbox (drivers, commands) and the round hook are handled as in any round.
+TEST(Engine, ARoundWithoutTheSteppedDriversStillTakesTheInboxAndRunsTheHook) {
+    Rig r(json::parse(R"([
+      {"id":"R","kind":"simulation","type":"FLOAT64","sim":{"kind":"ramp","from":0,"to":100,"periodMs":10000}},
+      {"id":"I","kind":"internal","type":"FLOAT64","initial":0}
+    ])"));
+    auto sim = makeSimulationDriver(r.model);
+    sim->start(*r.engine);
+    r.engine->addSteppedDriver(sim.get());
+    int hooks = 0;
+    r.engine->setRoundHook([&hooks](EngineRound&) { ++hooks; });
+    r.engine->step(2500);
+    EXPECT_EQ(dval(r.get("R")), 25.0);
+    r.engine->setInternal(*r.model.tagIndex("I"), 4.0);
+    r.engine->step(5000, false);
+    EXPECT_EQ(dval(r.get("R")), 25.0);  // not stepped
+    EXPECT_EQ(dval(r.get("I")), 4.0);   // the command was applied
+    EXPECT_EQ(hooks, 2);
+    r.engine->step(7500);
+    EXPECT_EQ(dval(r.get("R")), 75.0);
+    sim->stop();
+}
+
 TEST(Engine, InternalTagStartsAtInitialAndTakesCommands) {
     Rig r(json::parse(R"([
       {"id":"I","kind":"internal","type":"INT16","initial":7,"access":"RW"}

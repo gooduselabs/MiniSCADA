@@ -383,8 +383,9 @@ class Engine::Round : public EngineRound {
     int64_t now_;
 };
 
-void Engine::step(int64_t now) {
-    for (drv::Driver* d : stepped_) d->step(now);
+void Engine::step(int64_t now, bool stepDrivers) {
+    if (stepDrivers)
+        for (drv::Driver* d : stepped_) d->step(now);
 
     std::vector<drv::TagUpdate> updates;
     std::vector<drv::WriteResult> results;
