@@ -10,7 +10,7 @@ Ngày 2026-10-17. Phạm vi: `git diff 60b254bc..HEAD -- core server drivers app
 
 Mỗi phát hiện được sửa trên một nhánh riêng (`gd6-review1`, `gd6-sec-ota`, `gd6-sec-auth`, `gd6-sec-logic`, `gd6-sec-studio`, `gd6-sec-tools`, `gd6-sec-paths`), test viết trước (đỏ trên mã cũ), rồi gộp vào `gd6`.
 
-**Kết luận:** không có phát hiện Critical. Hai High (cùng một lỗi phát lại gói keyset) đã sửa. Hai Medium cần người quyết định (O1, O2) được giữ nguyên và ghi là rủi ro chấp nhận tạm.
+**Kết luận:** không có phát hiện Critical. Hai High (cùng một lỗi phát lại gói keyset) đã sửa. Hai Medium thiết kế: O1 chấp nhận là rủi ro còn lại, O2 hoãn sau pilot (người dùng giao quyền quyết định 2026-10-17).
 
 ## 1. OTA phía thiết bị
 
@@ -24,8 +24,8 @@ Mỗi phát hiện được sửa trên một nhánh riêng (`gd6-review1`, `gd6
 | U8 | Low | Unit root của mat-updater thiếu giới hạn capability và các cờ làm cứng | **Đã sửa**: `CapabilityBoundingSet` (8 cap), `ProtectKernelLogs`, `ProtectClock`, `RestrictSUIDSGID`, `RestrictNamespaces`, `RestrictRealtime`, `LockPersonality`. `ReadWritePaths=/opt` giữ nguyên (đổi cây là rename trong `/opt`; bind mount sẽ làm rename EBUSY) | `deploy_rollback_test.sh`; thử trên BL335 2026-10-17 (`docs/reports/device-changes.md`) |
 | U9 | Info | `tar -t` dưới `LC_ALL=C` thoát tên không ASCII → gói hợp lệ bị từ chối | **Đã sửa**: `--quoting-style=literal`, vector `utf8.matupdate` | `updater_test.sh` |
 | U10 | Info | chmod theo mode trong manifest | Verify chỉ cho 0644/0755; thêm test, mat-updater kiểm lại trước `chmod` | ctest `UpdateManifest.OnlyModes0644And0755PassTheFileList` |
-| O1 | Medium | Op `rollback` không cần chữ ký: `matscada` bị chiếm có thể quay về `.prev` (bản cũ đã ký) mỗi 300 s mà không xác thực lại | **Chờ người quyết định**: chấp nhận, hoặc thêm ngưỡng `minReleaseSeq` | đọc mã |
-| O2 | Medium | Một khóa tin cậy bất kỳ ký được keyset gỡ mọi khóa khác (chỉ cấm tự gỡ): khóa lộ chiếm được bộ khóa | **Chờ người quyết định**: đòi 2 chữ ký khác nhau cho keyset có `remove` | đọc mã |
+| O1 | Medium | Op `rollback` không cần chữ ký: `matscada` bị chiếm có thể quay về `.prev` (bản cũ đã ký) mỗi 300 s mà không xác thực lại | **Chấp nhận là rủi ro còn lại** (người dùng giao quyền quyết định, 2026-10-17): chỉ quay về `.prev` là bản đã ký và từng được cài, 1 lần/300 s, có audit; rollback là đường an toàn sau bản lỗi. Xem lại ngưỡng `minReleaseSeq` sau pilot | đọc mã |
+| O2 | Medium | Một khóa tin cậy bất kỳ ký được keyset gỡ mọi khóa khác (chỉ cấm tự gỡ): khóa lộ chiếm được bộ khóa | **Hoãn sau pilot** (người dùng giao quyền quyết định, 2026-10-17): M-of-N cần đổi định dạng envelope. Giảm thiểu: hai khóa phát hành giữ tách biệt (máy/token offline khác nhau), lộ một khóa thì thu hồi ngay bằng khóa còn lại | đọc mã |
 | U11 | Info | Lần cài đầu tin khóa đi kèm gói (TOFU) | Đã ghi trong tài liệu; `deploy.sh` cảnh báo TOFU và có `--expect-key-id` (F1) | — |
 
 ## 2. Xác thực và HTTP
@@ -96,7 +96,7 @@ Còn lại (ghi trong contract): lệnh đã vào WriteCoordinator lúc dừng v
 
 ## 6. Việc còn lại
 
-- O1, O2: người dùng quyết định.
+- O1, O2: đã quyết định 2026-10-17 (O1 chấp nhận, O2 hoãn sau pilot).
 - `maxLiveClientsPerSource` mặc định 5 chặn nhiều máy sau cùng một NAT và lượt đo load-tester 10 client từ một PC: nơi cần thì đặt `10` trong `runtime.json` (compose web-it/device-it/alarm-it đặt 10).
 - Chạy `ci-local` đầy đủ sau khi gộp mọi nhánh; kiểm trên Windows các đường F2, F5, F6, S5.
 - T202 (rà soát lần hai) dùng báo cáo này làm đầu vào.
@@ -122,4 +122,4 @@ Năm lượt chỉ đọc (OTA, xác thực/HTTP, logic, Studio/công cụ/luậ
 
 Info (ghi nhận, sửa khi rẻ): dòng tổng Host có thể bị bộ giới hạn audit bỏ; không kiểm `st_nlink`; `hrefValue` lấy href đầu (lỗi cũ 008); thiếu vài ký tự vô hình; lớp tên `__proto__` trong `svg-state.ts`; lưu SVG có thể mất `xmlns:xlink`; cửa sổ Help không có CSP; `collect.ps1` PS 5.1 để lại callback toàn cục; `release.ps1` không tính keyId của khóa mã hóa; `deploy.sh` giải nén trước khi root kiểm; `seq` = UINT64_MAX tràn. Tên project cũ như `aux.svg` sẽ báo `E_PATH` sau nâng cấp: ghi vào ghi chú phát hành.
 
-**Cổng T202** ("không Critical/High mở; Medium mở chỉ là mục chờ người quyết định"): mọi phát hiện N-* đã sửa và gộp vào `gd6` (test viết trước; unit mat-updater mới thử trên BL335, `docs/reports/device-changes.md`). Medium còn mở chỉ là O1, O2 (chờ người dùng quyết định). `ci-local` đầy đủ xanh trên `gd6` sau khi gộp (2026-10-17, chạy tiếp theo đoạn bằng `-StartAt` sau ba sửa nhỏ: import `own.ts`, `driver-it` với `--max-live-clients-per-source 10`, danh mục mã lỗi): cổng đạt về mặt kỹ thuật, chỉ còn O1, O2 chờ người dùng quyết định. Thêm: `mat-runtime --pulse-ack <rid|all>` (N-L3), mã `UPDATE_READ_TIMEOUT`, `PULSE_ACK_REQUEST_FAILED`, action `pulse.ack`.
+**Cổng T202** ("không Critical/High mở; Medium mở chỉ là mục chờ người quyết định"): mọi phát hiện N-* đã sửa và gộp vào `gd6` (test viết trước; unit mat-updater mới thử trên BL335, `docs/reports/device-changes.md`). Medium còn mở chỉ là O1, O2 (chờ người dùng quyết định). `ci-local` đầy đủ xanh trên `gd6` sau khi gộp (2026-10-17, chạy tiếp theo đoạn bằng `-StartAt` sau ba sửa nhỏ: import `own.ts`, `driver-it` với `--max-live-clients-per-source 10`, danh mục mã lỗi): **cổng T202 đạt**: không Critical/High mở; O1 chấp nhận, O2 hoãn sau pilot (quyết định 2026-10-17 theo ủy quyền của người dùng). Thêm: `mat-runtime --pulse-ack <rid|all>` (N-L3), mã `UPDATE_READ_TIMEOUT`, `PULSE_ACK_REQUEST_FAILED`, action `pulse.ack`.
