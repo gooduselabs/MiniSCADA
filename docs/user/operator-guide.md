@@ -2,7 +2,7 @@
 
 Dành cho người vận hành dùng trang mAT SCADA trên Chrome hằng ngày. Tài liệu ngắn, đọc trong 20 phút. Từ ngữ lạ: xem [Thuật ngữ](glossary.md). Mã lỗi: xem [Mã lỗi và cảnh báo](error-codes.md).
 
-Áp dụng cho runtime 0.9 trở lên. Chữ trên màn hình trong tài liệu này lấy đúng từ phần mềm.
+Áp dụng cho runtime 1.0.0 (bản 1.0); phần lớn cũng đúng với runtime 0.9. Chữ trên màn hình trong tài liệu này lấy đúng từ phần mềm.
 
 ## 1. Mở trang
 
@@ -13,6 +13,8 @@ Dành cho người vận hành dùng trang mAT SCADA trên Chrome hằng ngày. 
 3. Lần đầu Chrome có thể báo chứng chỉ chưa tin cậy. Không tự bấm "tiếp tục". Gọi quản trị viên để cài chứng chỉ cho máy này.
 
 Trang mở ở màn hình đầu. Menu bên trái (hoặc trên) chứa các màn hình. Cửa sổ hẹp thì bấm nút menu ("Mở menu"). Đầu trang hiện "project · màn hình".
+
+Một số nút mở cửa sổ chi tiết (popup) cho từng thiết bị, ví dụ bấm vào bơm P-07 mở cửa sổ chi tiết của đúng bơm P-07. Trước khi điều khiển, kiểm nhãn trên cửa sổ và tên Tag trong hộp xác nhận (mục 5) đúng thiết bị mình muốn. Đóng bằng nút **Đóng** hoặc Esc. Trang báo "tham số của cửa sổ sai (…)" thì cửa sổ không mở: báo kỹ sư.
 
 ## 2. Đăng nhập và đăng xuất
 
@@ -28,7 +30,7 @@ Thông báo khi không đăng nhập được:
 | Thông báo | Ý nghĩa | Việc cần làm |
 |---|---|---|
 | "Sai tài khoản hoặc mật khẩu" | gõ sai | gõ lại, kiểm tra Caps Lock và bộ gõ tiếng Việt |
-| "Đăng nhập bị khóa tạm, thử lại sau N phút" | sai 5 lần liên tiếp từ máy này | chờ hết thời gian; khóa chỉ áp cho tài khoản này **trên máy này**, máy khác vẫn đăng nhập được; cần gấp thì gọi quản trị viên mở khóa |
+| "Đăng nhập bị khóa tạm, thử lại sau N phút" | sai 5 lần liên tiếp từ máy này | chờ hết thời gian (5 phút; lại sai nhiều lần trong ngày thì lâu hơn, tối đa 60 phút); khóa chỉ áp cho tài khoản này **trên máy này**, máy khác vẫn đăng nhập được; cần gấp thì gọi quản trị viên mở khóa |
 | "Thiết bị đang bận kiểm tra đăng nhập khác, thử lại sau giây lát" | nhiều người đăng nhập cùng lúc | chờ 1 giây rồi bấm lại; không bị khóa |
 | "Chỉ đăng nhập được qua HTTPS" | trang mở bằng `http://` | mở lại bằng `https://` |
 
@@ -81,6 +83,8 @@ Kết quả lệnh:
 Lý do thường gặp sau tiêu đề: "Không đủ quyền", "Ngoài giới hạn cho phép", "Mất kết nối với thiết bị", "Ghi quá nhanh", "Giá trị đã đổi so với lúc nhấn", "Thiết bị không trả lời khi ghi", "Giá trị đọc lại khác giá trị đã ghi". Mã trong ngoặc (ví dụ `(OUT_OF_LIMITS)`) để báo cho kỹ sư.
 
 Nút xung (bấm rồi tự nhả): hộp xác nhận ghi "Xung N ms rồi trả về giá trị ngược". Một xung đang chạy thì không bấm được xung khác cho cùng Tag.
+
+**Logic tự động:** project có thể có logic chạy trên thiết bị (hẹn giờ, lịch, đếm giờ chạy, tự bật tắt khi đủ điều kiện). Giá trị do logic đặt có thể tự đổi mà không ai bấm; ghi tay vào chúng bị từ chối với mã `(OWNED_BY_LOGIC)`. Kỹ sư cho biết thiết bị nào do logic điều khiển. Logic không thay khóa liên động và dừng khẩn tại chỗ.
 
 ## 6. Alarm
 
