@@ -211,7 +211,8 @@ TEST(UpdateVectors, EveryBadPackageIsRefusedWithItsCode) {
         const std::string path = test::vectorPath(c["file"]);
         if (c.value("generated", false))
             ASSERT_TRUE(test::exists(path))
-                << path << " missing: run node tools/release/make-update.mjs --vectors --out --test";
+                << path
+                << " missing: run node tools/release/make-update.mjs --vectors --out --test";
         Verified v;
         const auto err = verifyPackageFile(
             path, keys, deviceOf(meta["device"], c.value("device", nlohmann::json())), v);
