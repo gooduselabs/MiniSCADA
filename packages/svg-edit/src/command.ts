@@ -140,6 +140,15 @@ interface AttrRestore {
   rawStart: string | null | undefined;
 }
 
+/**
+ * `xlink:href` chỉ ghi được khi gốc khai báo `xmlns:xlink` (không đổi được bằng lệnh): thiếu thì văn bản ghi ra có tiền
+ * tố không khai báo, không phải XML hợp lệ (fuzz T165, src/fuzz-regress.test.ts). Dùng `href`.
+ */
+function xlinkDeclaredOrFail(doc: DrawDoc): void {
+  if (!doc.nodes.get(doc.root)!.attrs.has('xmlns:xlink'))
+    fail('SVG_INVALID', 'xlink:href cần khai báo xmlns:xlink ở gốc; dùng href');
+}
+
 export class SetAttr implements Atomic {
   readonly kind = 'SetAttr';
   readonly node: NodeId;
@@ -167,6 +176,7 @@ export class SetAttr implements Atomic {
     if (this.name === 'xmlns' || this.name === 'xmlns:xlink')
       fail('SVG_INVALID', 'Không đổi khai báo namespace');
     if (this.value === null) return;
+    if (this.name === 'xlink:href') xlinkDeclaredOrFail(doc);
     if (this.value.length > SVG_MAX_BYTES) fail('SVG_LIMIT', 'Giá trị thuộc tính quá dài');
     const v = checkAttr(n.tag, this.name, this.value, this.node === doc.root);
     if (!v.ok)
@@ -389,6 +399,7 @@ function checkPlacementTree(doc: DrawDoc, parent: DrawNode, sub: Subtree): void 
       placementProblem(p.tag, n.tag);
     if (prob !== null) fail('SVG_UNSAFE', `Phần tử <${n.tag.slice(0, 40)}> ngoài allowlist`, prob);
     for (const [k, v] of [...n.attrs]) {
+      if (k === 'xlink:href') xlinkDeclaredOrFail(doc);
       if (v.length > SVG_MAX_BYTES) fail('SVG_LIMIT', 'Giá trị thuộc tính quá dài');
       const verdict = checkAttr(n.tag, k, v, false);
       if (!verdict.ok)

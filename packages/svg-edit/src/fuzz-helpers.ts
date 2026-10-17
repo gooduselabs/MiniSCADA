@@ -128,6 +128,7 @@ export function evilCommand(doc: DrawDoc, r: () => number): Command {
 export function invariants(doc: DrawDoc): string | null {
   let count = 0;
   const uids = new Set<string>();
+  const xlinkDeclared = doc.nodes.get(doc.root)!.attrs.has('xmlns:xlink');
   for (const n of doc.nodes.values()) {
     if (n.tag === TEXT_NODE || n.tag === COMMENT_NODE) {
       if (hasInvalidXmlChar(n.text ?? '')) return 'ký tự cấm trong chữ';
@@ -136,6 +137,8 @@ export function invariants(doc: DrawDoc): string | null {
     count++;
     if (!ALLOW_ELEMENTS.has(n.tag)) return 'phần tử ngoài allowlist: ' + n.tag;
     if (depthOf(doc, n.id) > SVG_MAX_DEPTH) return 'quá sâu';
+    if (!xlinkDeclared && n.attrs.has('xlink:href'))
+      return 'xlink:href mà gốc không khai báo xmlns:xlink';
     for (const [k, v] of n.attrs) {
       const ver = checkAttr(n.tag, k, v, n.id === doc.root);
       if (!ver.ok) return `thuộc tính ngoài allowlist: ${n.tag} ${k}="${v}"`;

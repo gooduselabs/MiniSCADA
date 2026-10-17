@@ -114,12 +114,33 @@ function renameRefs(v: string, k: string, map: Map<string, string>): string {
 // --- sao chép -------------------------------------------------------------------------------------
 
 /** Sao chép các phần tử (vẽ được) kèm định nghĩa được tham chiếu. */
+/**
+ * Dữ liệu clipboard không mang tiền tố namespace: `xlink:href` thành `href` (đã có `href` thì bỏ, như bộ nhập), vì
+ * tài liệu đích có thể không khai báo `xmlns:xlink` (fuzz T165, src/fuzz-regress.test.ts).
+ */
+function plainHref(spec: NodeSpec): NodeSpec {
+  if (!spec.attrs && !spec.children) return spec;
+  const attrs = spec.attrs?.some(([k]) => k === 'xlink:href')
+    ? spec.attrs
+        .filter(([k]) => !(k === 'xlink:href' && spec.attrs!.some(([h]) => h === 'href')))
+        .map(([k, v]): [string, string] => [k === 'xlink:href' ? 'href' : k, v])
+    : spec.attrs;
+  return {
+    ...spec,
+    ...(attrs ? { attrs } : {}),
+    ...(spec.children ? { children: spec.children.map(plainHref) } : {}),
+  };
+}
+
 export function copyNodes(doc: DrawDoc, ids: readonly NodeId[]): ClipData {
   const order = documentOrder(doc);
   const sel = topLevel(doc, ids)
     .filter((id) => isDrawable(doc, id))
     .sort((a, b) => order.indexOf(a) - order.indexOf(b));
-  const items = sel.map((id) => ({ spec: specOf(doc, id), parentCtm: parentCtm(doc, id) }));
+  const items = sel.map((id) => ({
+    spec: plainHref(specOf(doc, id)),
+    parentCtm: parentCtm(doc, id),
+  }));
   const have = new Set<string>();
   for (const it of items) idsOfSpec(it.spec, have);
   const byIdAttr = new Map<string, NodeId>();
@@ -145,7 +166,7 @@ export function copyNodes(doc: DrawDoc, ids: readonly NodeId[]): ClipData {
     todo.push(...more);
   }
   defNodes.sort((a, b) => order.indexOf(a) - order.indexOf(b));
-  return { items, defs: defNodes.map((id) => specOf(doc, id)) };
+  return { items, defs: defNodes.map((id) => plainHref(specOf(doc, id))) };
 }
 
 // --- dán ------------------------------------------------------------------------------------------
