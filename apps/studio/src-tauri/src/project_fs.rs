@@ -150,10 +150,19 @@ pub fn read_text(root: &Path, rel: &str) -> Result<FileText, ReadError> {
     Ok(FileText { text, hash })
 }
 
+/// Trần ghi/đọc theo đuôi: SVG 5 MiB, JSON 1 MB.
+fn limit_of(rel: &str) -> u64 {
+    if rel.ends_with(".svg") {
+        MAX_SVG_BYTES
+    } else {
+        MAX_FILE_BYTES
+    }
+}
+
 /// Ghi `content` vào `rel` nếu file trên đĩa vẫn như lúc đọc: SHA-256 hiện tại bằng `expected`
 /// (`None`: lúc đọc chưa có file). Khác thì trả `Changed` và không ghi, trừ khi `force` (Ghi đè).
-/// Hash được đọc lại ngay trước khi ghi atomic. Chỉ ghi file .json (SVG chỉ đọc). Trả hash của
-/// nội dung mới.
+/// Hash được đọc lại ngay trước khi ghi atomic. Ghi file .json (≤ 1 MB) và, từ feature 011 (trình vẽ
+/// SVG, contracts/svg-editor.md §6), file .svg (≤ 5 MiB). Trả hash của nội dung mới.
 pub fn write_text_if_unchanged(
     root: &Path,
     rel: &str,
@@ -161,15 +170,20 @@ pub fn write_text_if_unchanged(
     expected: Option<&str>,
     force: bool,
 ) -> Result<String, WriteError> {
-    if !rel.ends_with(".json") {
+    if !(rel.ends_with(".json") || rel.ends_with(".svg")) {
         return Err(WriteError::BadPath);
     }
-    if content.len() as u64 > MAX_FILE_BYTES {
-        return Err(WriteError::Io("nội dung lớn hơn 1 MB".into()));
+    let limit = limit_of(rel);
+    if content.len() as u64 > limit {
+        return Err(WriteError::Io(if limit == MAX_SVG_BYTES {
+            "nội dung lớn hơn 5 MiB".into()
+        } else {
+            "nội dung lớn hơn 1 MB".into()
+        }));
     }
     ensure_parents(root, rel)?;
     let path = resolve_in_root(root, rel)?;
-    if !force && !unchanged(&path, expected)? {
+    if !force && !unchanged(&path, expected, limit)? {
         return Err(WriteError::Changed);
     }
     write_atomic(&path, content.as_bytes()).map_err(io_error)?;
@@ -219,7 +233,7 @@ fn ensure_parents(root: &Path, rel: &str) -> Result<(), WriteError> {
 
 /// File ở `path` còn đúng như lúc đọc không: có file và SHA-256 bằng `expected`, hoặc không có file
 /// và `expected = None`.
-fn unchanged(path: &Path, expected: Option<&str>) -> Result<bool, WriteError> {
+fn unchanged(path: &Path, expected: Option<&str>, limit: u64) -> Result<bool, WriteError> {
     let file = match fs::File::open(path) {
         Ok(f) => f,
         Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(expected.is_none()),
@@ -228,12 +242,54 @@ fn unchanged(path: &Path, expected: Option<&str>) -> Result<bool, WriteError> {
     let Some(expected) = expected else {
         return Ok(false);
     };
-    // Đọc tối đa 1 MB + 1 byte: file lớn hơn trần đọc không thể là file giao diện đã đọc.
+    // Đọc tối đa trần + 1 byte: file lớn hơn trần đọc không thể là file giao diện đã đọc.
     let mut bytes = Vec::new();
-    file.take(MAX_FILE_BYTES + 1)
+    file.take(limit + 1)
         .read_to_end(&mut bytes)
         .map_err(io_error)?;
-    Ok(bytes.len() as u64 <= MAX_FILE_BYTES && sha256_hex(&bytes) == expected)
+    Ok(bytes.len() as u64 <= limit && sha256_hex(&bytes) == expected)
+}
+
+/// mtime của file theo ms từ mốc Unix (0 nếu hệ điều hành không cho).
+pub fn mtime_ms(meta: &fs::Metadata) -> u64 {
+    meta.modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0)
+}
+
+/// Dấu vân tay của file (feature 011, FR-113): mtime (ms), cỡ, SHA-256. Giao diện nhận
+/// `{ mtimeMs, size, hash }`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Fingerprint {
+    pub mtime_ms: u64,
+    pub size: u64,
+    pub hash: String,
+}
+
+/// Dấu vân tay của `rel` (cùng kiểm đường dẫn và trần cỡ như `read_text`): trình vẽ SVG so với bản
+/// đã nạp khi cửa sổ lấy focus và mỗi 5 s (contracts/svg-editor.md §6).
+pub fn file_fingerprint(root: &Path, rel: &str) -> Result<Fingerprint, ReadError> {
+    check_rel(rel).map_err(|_| ReadError::BadPath)?;
+    if !exact_case(root, rel) {
+        return Err(ReadError::Missing);
+    }
+    let path = resolve_in_root(root, rel).map_err(|_| ReadError::BadPath)?;
+    let meta = fs::metadata(&path).map_err(|_| ReadError::Missing)?;
+    if !meta.is_file() {
+        return Err(ReadError::Missing);
+    }
+    if meta.len() > limit_of(rel) {
+        return Err(ReadError::TooLarge);
+    }
+    let bytes = fs::read(&path).map_err(|_| ReadError::Missing)?;
+    Ok(Fingerprint {
+        mtime_ms: mtime_ms(&meta),
+        size: bytes.len() as u64,
+        hash: sha256_hex(&bytes),
+    })
 }
 
 /// Ghi atomic: file tạm cùng thư mục, `fsync`, rồi đổi tên đè lên `path`; lỗi giữa chừng không làm
@@ -681,15 +737,20 @@ mod tests {
     }
 
     #[test]
-    fn writes_atomically_and_only_json() {
+    fn writes_atomically_json_and_svg_only() {
         let t = TempDir::new("write");
         write_text_if_unchanged(&t.root(), "project.json", "{\"a\":2}\n", None, true).unwrap();
         assert_eq!(disk(t.root().join("project.json")), "{\"a\":2}\n");
+        // Feature 011 (svg-editor §6): trình vẽ SVG lưu .svg (ghi tạm rồi đổi tên), có so hash như .json.
         assert_eq!(
-            write_text_if_unchanged(&t.root(), "screens/s.svg", "<x/>", None, true),
-            Err(WriteError::BadPath)
+            write_text_if_unchanged(&t.root(), "screens/s.svg", "<x/>", Some("sai"), false),
+            Err(WriteError::Changed)
         );
         assert_eq!(disk(t.root().join("screens/s.svg")), "<svg/>");
+        let h = sha256_hex(b"<svg/>");
+        write_text_if_unchanged(&t.root(), "screens/s.svg", "<x/>", Some(&h), false).unwrap();
+        assert_eq!(disk(t.root().join("screens/s.svg")), "<x/>");
+        assert!(leftovers(&t.root().join("screens")).is_empty());
         assert_eq!(
             write_text_if_unchanged(&t.root(), "../secret.json", "{\"b\":1}", None, true),
             Err(WriteError::BadPath)
@@ -729,12 +790,14 @@ mod tests {
             Err(WriteError::BadPath)
         );
         assert!(!t.root().join("e").exists());
-        // Chỉ .json (không tạo thư mục cho .svg hay đuôi khác).
+        // Chỉ .json và .svg (không tạo thư mục cho đuôi khác).
         assert_eq!(
-            write_text_if_unchanged(&t.root(), "svgs/a.svg", "<svg/>", None, false),
+            write_text_if_unchanged(&t.root(), "txts/a.txt", "x", None, false),
             Err(WriteError::BadPath)
         );
-        assert!(!t.root().join("svgs").exists());
+        assert!(!t.root().join("txts").exists());
+        write_text_if_unchanged(&t.root(), "graphics/new.svg", "<svg/>", None, false).unwrap();
+        assert_eq!(disk(t.root().join("graphics/new.svg")), "<svg/>");
         // Thư mục cha là một file: lỗi, không đè lên file đó.
         assert!(matches!(
             write_text_if_unchanged(&t.root(), "project.json/x.json", "{}", None, false),
@@ -1112,6 +1175,49 @@ mod tests {
                 "\"no-project\"",
                 "{\"io\":\"Access is denied. (os error 5)\"}"
             ]
+        );
+    }
+    /// Feature 011 (svg-editor §6): SVG ghi tới 5 MiB, JSON vẫn 1 MB; so hash đọc đủ 5 MiB của SVG.
+    #[test]
+    fn svg_write_limit_is_5_mib() {
+        let t = TempDir::new("svg-limit");
+        let big = format!("<svg>{}</svg>", "a".repeat(2 * 1024 * 1024));
+        write_text_if_unchanged(&t.root(), "graphics/big.svg", &big, None, false).unwrap();
+        let h = sha256_hex(big.as_bytes());
+        // file > 1 MB: lần ghi sau vẫn so được hash (không coi là "đã đổi")
+        write_text_if_unchanged(&t.root(), "graphics/big.svg", "<svg/>", Some(&h), false).unwrap();
+        let huge = "a".repeat(5 * 1024 * 1024 + 1);
+        assert!(matches!(
+            write_text_if_unchanged(&t.root(), "graphics/huge.svg", &huge, None, false),
+            Err(WriteError::Io(_))
+        ));
+        assert!(!t.root().join("graphics/huge.svg").exists());
+        let json = format!("{{\"a\":\"{}\"}}", "a".repeat(1024 * 1024));
+        assert!(matches!(
+            write_text_if_unchanged(&t.root(), "big.json", &json, None, false),
+            Err(WriteError::Io(_))
+        ));
+    }
+
+    /// Feature 011 (FR-113): dấu vân tay của file (mtime ms, cỡ, SHA-256) để phát hiện đổi trên đĩa.
+    #[test]
+    fn fingerprint_reports_mtime_size_and_hash() {
+        let t = TempDir::new("fp");
+        let f = file_fingerprint(&t.root(), "screens/s.svg").unwrap();
+        assert_eq!(f.size, 6);
+        assert_eq!(f.hash, sha256_hex(b"<svg/>"));
+        assert!(f.mtime_ms > 1_600_000_000_000);
+        assert_eq!(
+            file_fingerprint(&t.root(), "screens/none.svg"),
+            Err(ReadError::Missing)
+        );
+        assert_eq!(
+            file_fingerprint(&t.root(), "../secret.json"),
+            Err(ReadError::BadPath)
+        );
+        assert_eq!(
+            serde_json::to_value(&f).unwrap()["mtimeMs"].as_u64(),
+            Some(f.mtime_ms)
         );
     }
 }

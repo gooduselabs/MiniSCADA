@@ -2,6 +2,7 @@
 // phím tắt, menu của contract; điều kiện bật và lý do khi bị khóa.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { SVG_COMMANDS } from '../model/svg/keys.ts';
 import { describe, expect, it } from 'vitest';
 import { t } from '../i18n/index.ts';
 import {
@@ -157,6 +158,10 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'screen.explodeInstance',
       'screen.updateInstances',
       'screen.faceplate',
+      // feature 011: trình vẽ SVG (bảng lệnh, thanh công cụ và phím của trình vẽ, menu ngữ cảnh item svg)
+      'svg.new',
+      'svg.editInDrawing',
+      ...SVG_COMMANDS,
     ]);
     expect(extra.every((c) => c.menu === null)).toBe(true);
     expect(t(commandById('open.tags')!.label)).toBe('Mở Bảng Tag mặc định');

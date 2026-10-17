@@ -92,8 +92,9 @@ describe('phím của canvas', () => {
   it('phím của canvas khai ở bảng lệnh (canvasKey) và không trùng phím toàn cục (shortcut)', () => {
     const globals = new Set(COMMANDS.map((c) => c.shortcut).filter(Boolean));
     for (const c of COMMANDS.filter((x) => x.canvasKey)) {
-      // Ctrl+D, Delete và Insert dùng chung chủ ý với lưới và cây (chỉ có hiệu lực khi canvas, lưới alarm có focus).
-      if (['Ctrl+D', 'Delete', 'Insert'].includes(c.canvasKey ?? '')) continue;
+      // Ctrl+D, Delete và Insert dùng chung chủ ý với lưới và cây (chỉ có hiệu lực khi canvas, lưới alarm có focus); F2 của
+      // canvas trình vẽ SVG (feature 011) cùng chủ ý "đổi tên" với F2 của cây.
+      if (['Ctrl+D', 'Delete', 'Insert', 'F2'].includes(c.canvasKey ?? '')) continue;
       expect(globals.has(c.canvasKey), `${c.id} ${c.canvasKey}`).toBe(false);
     }
   });

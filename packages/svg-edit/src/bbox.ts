@@ -292,6 +292,16 @@ function strokeExpand(ctx: Ctx, id: NodeId, m: Matrix, acc: Acc): void {
 }
 
 /** Hộp bao của nút `id` khi hệ của nó (đã gồm transform của nó) là `m`. */
+/** Con của nhóm (và của gốc): bỏ định nghĩa. */
+function groupInto(ctx: Ctx, n: DrawNode, m: Matrix, acc: Acc): void {
+  const doc = ctx.doc;
+  for (const c of n.children) {
+    const k = doc.nodes.get(c)!;
+    if (!isElement(k) || DEFINITION_TAGS.has(k.tag)) continue;
+    nodeInto({ ...ctx, depth: ctx.depth + 1 }, c, multiply(m, transformOf(doc, c)), acc);
+  }
+}
+
 function nodeInto(ctx: Ctx, id: NodeId, m: Matrix, acc: Acc): void {
   const doc = ctx.doc;
   const n = doc.nodes.get(id)!;
@@ -378,15 +388,12 @@ function nodeInto(ctx: Ctx, id: NodeId, m: Matrix, acc: Acc): void {
         );
         break;
       }
-    // gốc: như nhóm
-    // falls through
+      // gốc: như nhóm (không rơi qua case: Studio bật noFallthroughCasesInSwitch)
+      groupInto(ctx, n, m, acc);
+      break;
     case 'g':
     case 'a':
-      for (const c of n.children) {
-        const k = doc.nodes.get(c)!;
-        if (!isElement(k) || DEFINITION_TAGS.has(k.tag)) continue;
-        nodeInto({ ...ctx, depth: ctx.depth + 1 }, c, multiply(m, transformOf(doc, c)), acc);
-      }
+      groupInto(ctx, n, m, acc);
       break;
     case 'use': {
       const href = (n.attrs.get('href') ?? n.attrs.get('xlink:href') ?? '').trim();

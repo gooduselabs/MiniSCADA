@@ -1,6 +1,7 @@
 mod csv;
 mod device;
 mod discovery;
+mod editor_fs;
 mod package;
 mod project_fs;
 mod recent;
@@ -9,9 +10,10 @@ mod svg;
 use device::DeviceManager;
 use device::live::LiveHub;
 use discovery::Discovery;
+use editor_fs::{EditorError, EditorFile};
 use package::PackageStore;
 use project_fs::{
-    BackupDone, BackupError, BackupFile, FileText, ReadError, RemoveError, WriteError,
+    BackupDone, BackupError, BackupFile, FileText, Fingerprint, ReadError, RemoveError, WriteError,
 };
 use recent::{RecentEntry, RecentError, RecentStore};
 use serde::Serialize;
@@ -170,6 +172,39 @@ fn project_remove(
     project_fs::remove_file(&root, &rel, &hash)
 }
 
+/// Feature 011 (contracts/svg-editor.md §6, FR-113): mtime, cỡ và SHA-256 của một file project (phát hiện
+/// file SVG đổi trên đĩa khi đang sửa).
+#[tauri::command]
+fn project_fingerprint(
+    rel: String,
+    state: State<'_, ProjectRoot>,
+) -> Result<Fingerprint, ReadError> {
+    let root = root_of(&state).ok_or(ReadError::Missing)?;
+    project_fs::file_fingerprint(&root, &rel)
+}
+
+/// Feature 011 (FR-097): mọi file `.svg` của project (cây "Đồ họa SVG"), bỏ thư mục bắt đầu bằng dấu chấm.
+#[tauri::command]
+fn project_list_svg(state: State<'_, ProjectRoot>) -> Vec<String> {
+    root_of(&state)
+        .map(|root| editor_fs::list_svg(&root))
+        .unwrap_or_default()
+}
+
+/// Feature 011 (FR-112): bản tự lưu trong `.mat-editor/autosave/`.
+#[tauri::command]
+fn editor_list(dir: String, state: State<'_, ProjectRoot>) -> Result<Vec<EditorFile>, EditorError> {
+    let root = root_of(&state).ok_or(EditorError::Missing)?;
+    editor_fs::editor_list(&root, &dir)
+}
+
+/// Feature 011 (FR-112): xóa một bản tự lưu (giữ tối đa 3 bản, xóa sau khi lưu thật).
+#[tauri::command]
+fn editor_remove(rel: String, state: State<'_, ProjectRoot>) -> Result<(), EditorError> {
+    let root = root_of(&state).ok_or(EditorError::Missing)?;
+    editor_fs::editor_remove(&root, &rel)
+}
+
 /// Mở trang runtime của thiết bị trong trình duyệt mặc định. Feature 011 (L-04 của 005): chỉ
 /// `https://<tên máy>:<cổng HTTPS>/` của một thiết bị đã lưu, URL dựng lại từ bản ghi.
 #[tauri::command]
@@ -248,7 +283,12 @@ pub fn run() {
             // Feature 008: hộp thoại nhập SVG (đọc byte thô ≤ 5 MiB + 64 B).
             svg::svg_open,
             // Feature 010 (studio-010 §2): lưu báo cáo xuất thử (CSV, XLSX, PDF) qua hộp thoại.
-            csv::report_save
+            csv::report_save,
+            // Feature 011 (svg-editor §6): trình vẽ SVG: đổi trên đĩa, danh sách SVG, bản tự lưu.
+            project_fingerprint,
+            project_list_svg,
+            editor_list,
+            editor_remove
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

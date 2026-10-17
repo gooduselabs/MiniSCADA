@@ -1,0 +1,551 @@
+/* Trình vẽ SVG (feature 011, T162, T163; mockup studio-svg-draw cảnh 1, 2). Light DOM: bộ chọn nằm dưới tên thẻ. Chỉ dùng token
+   của theme (sáng/tối). Bố cục: thanh công cụ / [Toolbox | canvas có thước | Lớp + Thuộc tính] / dải trạng thái. */
+mat-svg-editor,
+mat-svg-new {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-svg-editor .sv {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+}
+mat-svg-editor .sv-bar {
+  gap: 2px;
+  padding: 3px 8px;
+  flex-wrap: wrap;
+}
+mat-svg-editor .sv-bar .ibtn {
+  width: 26px;
+  height: 26px;
+}
+mat-svg-editor .sv-bar .ibtn[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--fg);
+}
+mat-svg-editor .sv-bar .tsep {
+  margin: 0 3px;
+}
+mat-svg-editor .sv-undo {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  margin: 0 4px;
+}
+mat-svg-editor .tlabel {
+  font-size: var(--fs-s);
+  color: var(--muted);
+  gap: 4px;
+}
+mat-svg-editor .sv-main {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(280px, 340px);
+  min-height: 0;
+  border-top: 1px solid var(--border);
+}
+mat-svg-editor .sv-toolbox {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 4px;
+  border-right: 1px solid var(--border);
+  background: var(--panel);
+  min-height: 0;
+}
+mat-svg-editor .sv-tool {
+  position: relative;
+  width: 34px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--fg);
+}
+mat-svg-editor .sv-tool:hover {
+  background: var(--hover);
+}
+mat-svg-editor .sv-tool[aria-pressed='true'] {
+  background: var(--sel);
+  border-color: var(--accent);
+}
+mat-svg-editor .sv-tool .k {
+  position: absolute;
+  right: 2px;
+  bottom: 0;
+  font-size: 9px;
+  color: var(--muted);
+}
+mat-svg-editor .sv-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 2px;
+}
+mat-svg-editor .sv-cv {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-rows: 22px minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  background: var(--canvas);
+}
+mat-svg-editor .sv-corner {
+  font-size: 10px;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  background: var(--panel-2);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+mat-svg-editor .sv-vpw {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+mat-svg-editor mat-svg-canvas {
+  position: absolute;
+  inset: 0;
+  cursor: default;
+}
+mat-svg-editor mat-svg-canvas:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+mat-svg-editor mat-svg-canvas.tool-hand {
+  cursor: grab;
+}
+mat-svg-editor mat-svg-canvas.tool-rect,
+mat-svg-editor mat-svg-canvas.tool-ellipse,
+mat-svg-editor mat-svg-canvas.tool-line,
+mat-svg-editor mat-svg-canvas.tool-poly {
+  cursor: crosshair;
+}
+mat-svg-editor mat-svg-canvas.tool-text {
+  cursor: text;
+}
+mat-svg-editor .sv-crumb {
+  position: absolute;
+  left: 8px;
+  top: 6px;
+  z-index: 2;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 10px;
+  font-size: var(--fs-s);
+}
+mat-svg-editor .sv-zoom {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2px 4px;
+  font-size: var(--fs-s);
+}
+mat-svg-editor textarea.sv-text {
+  position: absolute;
+  z-index: 3;
+  resize: none;
+  overflow: hidden;
+  white-space: nowrap;
+  line-height: 1.15;
+  padding: 0 2px;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  color: var(--fg);
+  font-family: sans-serif;
+  height: auto;
+}
+mat-svg-editor .sv-side {
+  display: grid;
+  grid-template-rows: minmax(120px, 42%) minmax(0, 1fr);
+  border-left: 1px solid var(--border);
+  background: var(--panel);
+  min-height: 0;
+}
+mat-svg-editor .sv-sec {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-bottom: 1px solid var(--border);
+}
+mat-svg-editor .sv-hbtns {
+  display: flex;
+  gap: 2px;
+}
+mat-svg-editor .sv-layers,
+mat-svg-editor .lkids {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+mat-svg-editor .sv-layers {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+mat-svg-editor .lrow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  font-weight: 600;
+}
+mat-svg-editor .lyr.cur > .lrow {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+mat-svg-editor .lrow .ibtn.off {
+  color: var(--muted);
+}
+mat-svg-editor .lname,
+mat-svg-editor .lkids .el {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  text-align: left;
+  padding: 2px 4px;
+  border-radius: var(--radius);
+}
+mat-svg-editor .lname:hover,
+mat-svg-editor .lkids .el:hover {
+  background: var(--hover);
+}
+mat-svg-editor .lkids .el {
+  width: 100%;
+  padding-left: 52px;
+  font-weight: 400;
+}
+mat-svg-editor .lkids .el.sel {
+  background: var(--sel);
+}
+mat-svg-editor .lkids .lbl {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-svg-editor .lkids .tag {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+mat-svg-editor .lkids .bnd {
+  margin-left: auto;
+  color: var(--accent);
+}
+mat-svg-editor .lkids .more {
+  padding: 2px 10px 2px 52px;
+  font-size: var(--fs-s);
+}
+mat-svg-editor .lrow .cnt {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-weight: 400;
+}
+mat-svg-editor .foot-note {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  padding: 4px 8px;
+  border-top: 1px solid var(--border);
+}
+mat-svg-editor .sv-insp .ptabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 4px;
+  overflow-x: auto;
+}
+mat-svg-editor .sv-insp .ptabs [role='tab'] {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  padding: 5px 8px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+mat-svg-editor .sv-insp .ptabs [role='tab'][aria-selected='true'] {
+  color: var(--fg);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+mat-svg-editor .sv-insp .ictx {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 10px;
+  font-size: var(--fs-s);
+  border-bottom: 1px solid var(--border);
+}
+mat-svg-editor .sv-insp .ibody {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 4px 0;
+}
+mat-svg-editor .sv-prow {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  min-height: 26px;
+}
+mat-svg-editor .sv-prow > label,
+mat-svg-editor .sv-prow > .lbl {
+  color: var(--muted);
+  font-size: var(--fs-s);
+}
+mat-svg-editor .sv-prow .err-text {
+  grid-column: 2;
+  font-size: var(--fs-xs);
+}
+mat-svg-editor .sv-prow .nin {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+mat-svg-editor .sv-prow .nin input {
+  width: 100%;
+}
+mat-svg-editor .sv-prow input[aria-invalid='true'] {
+  border-color: var(--err);
+}
+mat-svg-editor .sv-color {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+mat-svg-editor .sv-color input[type='color'] {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-2);
+  background: none;
+}
+mat-svg-editor .sv-color .input {
+  flex: 1;
+  min-width: 0;
+}
+mat-svg-editor .pnote {
+  display: flex;
+  gap: 6px;
+  margin: 4px 10px;
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+mat-svg-editor .sv-binds {
+  list-style: none;
+  margin: 0;
+  padding: 4px 10px;
+  display: grid;
+  gap: 4px;
+}
+mat-svg-editor .sv-binds .bind {
+  display: flex;
+  gap: 6px;
+}
+mat-svg-editor .sv-binds small {
+  display: block;
+  color: var(--muted);
+}
+mat-svg-editor .sv-open-bind {
+  margin: 4px 10px;
+}
+mat-svg-editor .sv-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: var(--fs-s);
+  border-top: 1px solid var(--border);
+  background: var(--panel-2);
+  min-height: 22px;
+}
+mat-svg-editor .sv-status .warnc,
+.sv-info .warnc {
+  color: var(--warn);
+}
+.sv-info-line {
+  margin: 6px 10px;
+  font-size: var(--fs-s);
+}
+.sv-issues {
+  list-style: none;
+  margin: 0;
+  padding: 0 10px 6px;
+}
+.sv-issues .issue {
+  display: grid;
+  grid-template-columns: 18px 120px minmax(120px, 220px) 1fr;
+  gap: 6px;
+  align-items: center;
+  font-size: var(--fs-s);
+  padding: 2px 0;
+}
+
+/* ---- Mới: SVG trống ---- */
+mat-svg-new .sv-new {
+  overflow: auto;
+}
+mat-svg-new .newdoc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 380px);
+  gap: 24px;
+  padding: 16px 20px;
+}
+mat-svg-new .sv-new-form {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+mat-svg-new h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+mat-svg-new fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+mat-svg-new .presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+mat-svg-new .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+mat-svg-new .row .input.sm {
+  width: 110px;
+}
+mat-svg-new #svn-name {
+  width: 220px;
+}
+mat-svg-new input[aria-invalid='true'] {
+  border-color: var(--err);
+}
+mat-svg-new pre.code {
+  margin: 0;
+  padding: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: var(--fs-s);
+  white-space: pre-wrap;
+}
+mat-svg-new .sv-new-side {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+mat-svg-new .thumb {
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: var(--canvas);
+  border-radius: var(--radius);
+  color: var(--muted);
+}
+mat-svg-new .card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--panel);
+}
+mat-svg-new .card h3 {
+  margin: 0 0 4px;
+  font-size: var(--fs);
+}
+mat-svg-new .card h3 + .help + h3 {
+  margin-top: 8px;
+}
+
+/* ---- Hộp thoại ---- */
+.sv-dlg {
+  display: grid;
+  gap: 10px;
+  max-width: 760px;
+}
+.sv-dlg .tb {
+  width: 100%;
+}
+.sv-dlg dl.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+.sv-dlg dl.kv dt {
+  color: var(--muted);
+}
+.sv-dlg dl.kv dd {
+  margin: 0;
+}
+.sv-dlg .warnbox,
+.sv-dlg .okbox {
+  padding: 8px 10px;
+  border-radius: var(--radius);
+}
+.sv-dlg .warnbox {
+  background: var(--warn-soft);
+  color: var(--fg);
+}
+.sv-dlg .okbox {
+  background: var(--ok-soft);
+  color: var(--fg);
+}
+.btn.sv-danger {
+  border-color: var(--err);
+  color: var(--err);
+}
+
+/* Nhóm nút chọn một (đầu mút, canh chữ, Khôi phục/Bỏ): như .seg của mockup, màu theo token để đủ tương phản hai theme. */
+mat-svg-editor .seg,
+.sv-dlg .seg {
+  display: inline-flex;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+mat-svg-editor .seg button,
+.sv-dlg .seg button {
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--fg);
+  padding: 2px 8px;
+  font: inherit;
+  font-size: var(--fs-s);
+}
+mat-svg-editor .seg button:first-child,
+.sv-dlg .seg button:first-child {
+  border-left: 0;
+}
+mat-svg-editor .seg button[aria-pressed='true'],
+.sv-dlg .seg button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}

@@ -55,6 +55,24 @@ export type CsvSaveOutcome = { name: string } | null | { error: 'io'; detail: st
 /** Phần mở rộng của file báo cáo xuất thử (feature 010). */
 export type ReportExt = 'csv' | 'xlsx' | 'pdf';
 
+// ---- Feature 011: trình vẽ SVG (contracts/svg-editor.md §6) ----
+
+/** `project_fingerprint`: mtime (ms UTC), cỡ (byte) và SHA-256 của một file project. */
+export interface Fingerprint {
+  mtimeMs: number;
+  size: number;
+  hash: string;
+}
+export type FingerprintOutcome = Fingerprint | { error: ReadFailure };
+/** Một tệp của `.mat-editor/autosave/` (`editor_list`). */
+export interface EditorFileInfo {
+  name: string;
+  mtimeMs: number;
+  size: number;
+}
+export type EditorRemoveOutcome =
+  { ok: true } | { error: 'bad-path' | 'missing' } | { error: 'io'; detail: string };
+
 export interface Platform {
   readonly kind: 'tauri' | 'mock';
   appInfo(): Promise<AppInfo>;
@@ -89,6 +107,15 @@ export interface Platform {
    * dùng chọn qua hộp thoại (không bao giờ ghi tự động); `null` khi hủy.
    */
   reportSave(suggestedName: string, bytes: Uint8Array, ext: ReportExt): Promise<CsvSaveOutcome>;
+  // ---- Feature 011: trình vẽ SVG (contracts/svg-editor.md §6) ----
+  /** mtime, cỡ, SHA-256 của file project (phát hiện file SVG đổi trên đĩa, FR-113). */
+  fingerprint(rel: string): Promise<FingerprintOutcome>;
+  /** Mọi file `.svg` của project (cây "Đồ họa SVG"), bỏ thư mục bắt đầu bằng dấu chấm; tối đa 2000. */
+  listSvg(): Promise<string[]>;
+  /** Tệp của `.mat-editor/autosave/` (bản tự lưu, FR-112); thư mục chưa có thì rỗng. */
+  editorList(dir: 'autosave'): Promise<EditorFileInfo[]>;
+  /** Xóa một bản tự lưu `.mat-editor/autosave/<tên>`; đường dẫn khác bị từ chối. */
+  editorRemove(rel: string): Promise<EditorRemoveOutcome>;
   openDeviceWeb(url: string): Promise<void>;
   /** Handler trả `true` thì cho đóng cửa sổ (FR-024). */
   onCloseRequested(handler: () => Promise<boolean>): void;
