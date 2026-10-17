@@ -25,9 +25,14 @@
 # build/ folders and <build root>/mat-x64-e2. <build root>: MAT_BUILD_ROOT, else C:\build on Windows and ~/build on macOS/Linux
 # (tools/lib/platform.ps1). -Parallel / -BuildJobs go to test-x64.ps1 (ctest -j, build jobs).
 # -StartAt <name>: skip the steps before the first one whose name contains <name> (resume after a fix; the last full run must have passed them).
+# Feature 011 (T059; FR-030, SC-042): steps sast (cppcheck; clang-tidy only with -Full, 1-2 h), audit (npm audit, cargo audit;
+# needs the network), update-it (OTA subset), logic-it (when tools/logic-it.ps1 exists), the C++ fuzz targets for 20 s each
+# (tools/fuzz/cpp/run.sh, only with -Sanitize). A step that cannot run prints "BO QUA (SKIPPED): <reason>" and is listed at the
+# end; with a skipped step the run never ends with "ALL STEPS PASSED" (it ends "PASSED WITH SKIPPED STEPS", exit 0).
 param([switch]$Sanitize, [switch]$Full, [string]$BuildName = '', [int]$Parallel = 1, [int]$BuildJobs = 2, [string]$StartAt = '')
 $ErrorActionPreference = 'Stop'
 $stepTimes = New-Object System.Collections.Generic.List[object]
+$skipped = New-Object System.Collections.Generic.List[object]
 $root = Resolve-Path "$PSScriptRoot/.."
 . "$PSScriptRoot/lib/platform.ps1"
 $armMount = @(); $armB = 'build/armhf'; $armDir = @{}; $x64Dir = @{}; $itDir = Get-MatBuildDir 'mat-x64-e2'
@@ -48,6 +53,14 @@ function Invoke-Step([string]$Name, [scriptblock]$Body) {
         Write-Host "FAILED: $Name (exit $LASTEXITCODE)" -ForegroundColor Red
         exit $LASTEXITCODE
     }
+}
+
+# A step that cannot run here: printed and listed at the end, never counted as passed (T059).
+function Skip-Step([string]$Name, [string]$Reason) {
+    if ($StartAt -and -not $script:reached) { return }
+    Write-Host "`n=== $Name ===" -ForegroundColor Cyan
+    Write-Host "BO QUA (SKIPPED): $Reason" -ForegroundColor Yellow
+    $skipped.Add([pscustomobject]@{ Step = $Name; Reason = $Reason })
 }
 
 Invoke-Step 'clang-format' {
@@ -87,7 +100,14 @@ Invoke-Step 'alarm_*_tests x64' { & "$root/deployment/toolchain/test-x64.ps1" @x
 if ($Sanitize) {
     # The same tests with AddressSanitizer and UndefinedBehaviorSanitizer (feature 006: parsers of the wire, the
     # driver threads, the serial port). A separate build folder: the flags change every object.
-    Invoke-Step 'x64 ASan/UBSan (ctest)' { & "$root/deployment/toolchain/test-x64.ps1" -Sanitize -BuildDir (Get-MatBuildDir 'mat-x64-asan') }
+    # RAM of the Docker VM of a Mac (about 3 GB): an ASan build at -j2 gets cc1plus OOM-killed; -BuildJobs 1 there.
+    Invoke-Step 'x64 ASan/UBSan (ctest)' { & "$root/deployment/toolchain/test-x64.ps1" -Sanitize -BuildDir (Get-MatBuildDir 'mat-x64-asan') -Parallel $Parallel -BuildJobs $BuildJobs }
+    # Feature 011 (T058, T142): the timed C++ fuzz targets, 20 s each (the one-hour runs: tools/fuzz/cpp/run.ps1 -Seconds 3600).
+    Invoke-Step 'C++ fuzz ASan/UBSan (20 s each)' {
+        docker run --rm --name "ci-fuzz-$PID" -v "${root}:/src" -v "$(Get-MatBuildDir 'mat-x64-asan'):/build" mat-armhf sh /src/tools/fuzz/cpp/run.sh /build/x64 20
+    }
+} else {
+    Skip-Step 'x64 ASan/UBSan (ctest) + C++ fuzz' 'only with -Sanitize (an ASan build takes hours on 2 jobs)'
 }
 
 if (Test-Path "$root/tools/load-tester/go.mod") {
@@ -125,6 +145,48 @@ Invoke-Step 'docs-check' {
         if ($LASTEXITCODE) { return }
         node tools/docs-check.mjs
     } finally { Pop-Location }
+}
+
+# Feature 011 (T055, T059): SAST. cppcheck here (about 10 s); clang-tidy (1-2 h, the static analyzer on every file) with -Full.
+Invoke-Step 'sast' {
+    $tool = if ($Full) { 'all' } else { 'cppcheck' }
+    & "$root/tools/sast/run.ps1" -Tool $tool -NoImageBuild -BuildDir (Get-MatBuildDir $(if ($BuildName) { "$BuildName-sast" } else { 'mat-sast' }))
+}
+if (-not $Full) { Skip-Step 'sast clang-tidy' 'only with -Full (1-2 h)' }
+
+# Feature 011 (T056, T059): dependency audit. Needs the network (the advisory databases): without it the step is skipped.
+function Test-Online {
+    try {
+        $c = New-Object Net.Sockets.TcpClient
+        $ok = $c.ConnectAsync('registry.npmjs.org', 443).Wait(5000) -and $c.Connected
+        $c.Dispose()
+        return $ok
+    } catch { return $false }
+}
+if (Test-Online) {
+    Invoke-Step 'audit (npm, cargo)' {
+        Push-Location $root
+        try {
+            npm audit --omit=dev --audit-level=high
+            if ($LASTEXITCODE) { return }
+            npm audit --audit-level=high
+            if ($LASTEXITCODE) { return }
+            $ca = Get-Command cargo-audit -ErrorAction SilentlyContinue
+            if (-not $ca) { $p = Join-Path (Get-MatBuildDir 'cargo-tools') "bin/cargo-audit$MatExe"; if (Test-Path $p) { $ca = $p } }
+            if ($ca) {
+                Push-Location "$root/apps/studio/src-tauri"
+                # the advisories accepted in docs/reports/011-audit-cargo.json ("decisions") are ignored; any other one fails
+                $accepted = @((Get-Content -Raw "$root/docs/reports/011-audit-cargo.json" | ConvertFrom-Json).decisions.PSObject.Properties.Name)
+                $ignore = @($accepted | ForEach-Object { '--ignore'; $_ })
+                try { & $ca audit @ignore } finally { Pop-Location }
+            } else {
+                Write-Host 'BO QUA (SKIPPED): cargo-audit not installed (cargo install cargo-audit --root <build root>/cargo-tools)' -ForegroundColor Yellow
+                $skipped.Add([pscustomobject]@{ Step = 'audit cargo'; Reason = 'cargo-audit not installed' })
+            }
+        } finally { Pop-Location }
+    }
+} else {
+    Skip-Step 'audit (npm, cargo)' 'no network (registry.npmjs.org:443 unreachable)'
 }
 
 # Modbus TCP simulator of feature 006 (tools/modbus-sim): its own tests, independent of the C++ code.
@@ -214,6 +276,37 @@ Invoke-Step 'alarm-it' {
     }
 }
 
+# Feature 011 (T120, T059): OTA on x64 (tools/update-it.ps1), the fast subset. By hand: ok (20 updates), kill (40 kill -9 points).
+Invoke-Step 'update-it' {
+    try {
+        & "$root/tools/update-it.ps1" -Scenario bad,downgrade,busy,keyset,auth,health -BuildDir (Get-MatBuildDir $(if ($BuildName) { "$BuildName-update-it" } else { 'mat-x64-update-it' }))
+    } catch {
+        Write-Host $_ -ForegroundColor Red
+        $global:LASTEXITCODE = 1
+    }
+}
+
+# Feature 011 (T146, T059): logic v2 on x64 with the Modbus simulator (tools/logic-it.ps1), the fast scenarios.
+# By hand: retain-kill (100 rounds of kill -9), load (a measurement).
+if (Test-Path "$root/tools/logic-it.ps1") {
+    Invoke-Step 'logic-it' {
+        try {
+            & "$root/tools/logic-it.ps1" -Scenario rules,writes-off,throttle,stop,retain-lost,deploy-keep -NoBuild -BuildDir $itDir
+        } catch {
+            Write-Host $_ -ForegroundColor Red
+            $global:LASTEXITCODE = 1
+        }
+    }
+} else {
+    Skip-Step 'logic-it' 'tools/logic-it.ps1 does not exist yet (T146)'
+}
+
 Write-Host "`nTime of the steps:" -ForegroundColor Cyan
 $stepTimes | ForEach-Object { Write-Host ("  {0,6} s  {1}" -f $_.Seconds, $_.Step) }
+if ($skipped.Count) {
+    Write-Host "`nSkipped steps (not passed):" -ForegroundColor Yellow
+    $skipped | ForEach-Object { Write-Host ("  BO QUA  {0}: {1}" -f $_.Step, $_.Reason) -ForegroundColor Yellow }
+    Write-Host "`nci-local: PASSED WITH SKIPPED STEPS ($($skipped.Count)), not all green" -ForegroundColor Yellow
+    exit 0
+}
 Write-Host "`nci-local: ALL STEPS PASSED" -ForegroundColor Green
