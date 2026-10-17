@@ -18,7 +18,8 @@ export CXXFLAGS='-fsanitize=address,undefined -fno-sanitize-recover=undefined -f
 export CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer'
 export LDFLAGS='-fsanitize=address,undefined'
 if [ "${MAT_FUZZ_NO_BUILD:-0}" != 1 ]; then
-    cmake -S "$SRC" -B "$B" -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo > /dev/null || exit 1
+    # configure only once: each configure stamps a new MAT_BUILD_EPOCH_S and rebuilds what links mat_historian
+    [ -f "$B/build.ninja" ] || cmake -S "$SRC" -B "$B" -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo > /dev/null || exit 1
     BIN="logic_fuzz_test package_fuzz_test project_fuzz_test expression_fuzz_test modbus_fuzz_test update_fuzz_test"
     # shellcheck disable=SC2086
     cmake --build "$B" --target $BIN -j2 -- -k 0 > "$B/fuzz-build.log" 2>&1 ||
