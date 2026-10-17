@@ -207,7 +207,7 @@ if (cmd === 'start') {
     '--check-data',
     join(out, 'check-data.json'),
   ]);
-  let analysis = null;
+  let analysis;
   try {
     analysis = JSON.parse(readFileSync(join(out, 'analyze.json'), 'utf8'));
   } catch {
