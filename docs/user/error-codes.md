@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 443 mã.
+Tổng cộng 444 mã.
 
 ## Mục lục
 
@@ -26,7 +26,7 @@ Tổng cộng 443 mã.
 - [Gói project (.matscada)](#package) (16)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
 - [Đăng nhập, phiên và truy cập HTTP](#auth) (25)
-- [Ghi Tag](#write) (38)
+- [Ghi Tag](#write) (39)
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
@@ -406,8 +406,9 @@ Tổng cộng 443 mã.
 | `OUT_OF_TYPE_RANGE` | — | Giá trị ngoài khoảng của kiểu dữ liệu. | `core/tag-engine` |
 | `OWNED_BY_LOGIC` | — | Tag này do logic của project đặt: không ghi tay được. | `core/tag-engine` |
 | `PROJECT_CHANGING` | — | Thiết bị đang đổi project. | `core/tag-engine` |
+| `PULSE_ACK_REQUEST_FAILED` | — | Không ghi được tệp yêu cầu đóng mục PULSE_STUCK của nhật ký xung (mat-runtime --pulse-ack) | `server/cli` |
 | `PULSE_IN_PROGRESS` | — | Tag này đang có một xung chưa kết thúc. | `core/tag-engine` |
-| `PULSE_JOURNAL_FAILED` | — | Không ghi được nhật ký xung: lệnh xung bị hủy, chưa ghi gì xuống thiết bị. | `core/tag-engine` |
+| `PULSE_JOURNAL_FAILED` | — | Không ghi được nhật ký xung: lệnh xung bị hủy, chưa ghi gì xuống thiết bị. | `core/tag-engine`, `server` |
 | `PULSE_NOT_BOOL` | — | Chỉ Tag BOOL mới ghi dạng xung (pulseMs). | `core/tag-engine` |
 | `PULSE_RANGE` | — | Độ dài xung phải từ 100 đến 10.000 ms. | `core/tag-engine` |
 | `PULSE_RELEASE_FAILED` | — | Đã ghi bật nhưng không ghi được giá trị trả về: bit lệnh có thể đang bật. | `core/tag-engine` |

@@ -261,7 +261,8 @@ Logic của project (định dạng 1.0.0, runtime 1.0.0) có thể ghi xuống 
 
 Nút xung bật bit rồi tự nhả sau N ms. Runtime ghi nhật ký xung `/var/lib/mat-runtime/pulse.journal`. Nếu runtime bị dừng hay mất điện giữa xung, lần khởi động sau runtime **nhả lại** bit đó khi nối được PLC (thử mỗi 5 s, tối đa 10 phút), ghi audit nguồn `pulse-recovery`.
 
-- Hết 10 phút chưa nhả được: cảnh báo `PULSE_STUCK` kèm danh sách Tag. Kiểm PLC bằng tay.
+- Hết 10 phút chưa nhả được: cảnh báo `PULSE_STUCK` kèm danh sách Tag. Kiểm PLC bằng tay, rồi root chạy `mat-runtime --pulse-ack all` (hoặc `--pulse-ack <mã yêu cầu>`) để đóng mục và tắt cảnh báo (có audit `pulse.ack`, hiệu lực trong 5 s).
+- Project mới đổi đích của Tag (kênh, thiết bị, địa chỉ, `host`, `unitId`, `addressBase`): runtime không nhả bit cũ (có thể là bit khác, PLC khác), báo `PULSE_STUCK`; xử lý như trên.
 - `"pulseRecovery": "off"`: không tự nhả, chỉ báo `PULSE_STUCK`.
 - **PLC phải tự nhả bit lệnh xung** sau một thời gian (ví dụ gấp đôi xung dài nhất). Nhật ký xung chỉ rút ngắn thời gian kẹt, không thay được bảo vệ trong PLC.
 
@@ -288,7 +289,7 @@ Mỗi runtime có `minRuntimeVersion` của project: runtime cũ hơn từ chố
 | 403 `SOURCE_NOT_ALLOWED` trên trang xem | truy cập từ ngoài mạng riêng | VPN; hoặc `viewerAccess` (mục 5.2) |
 | Đăng nhập, ghi bị từ chối `AUDIT_UNAVAILABLE` | `df -h /var/lib`; `journalctl` | giải phóng chỗ; audit phải ghi được thì mới cho thay đổi |
 | Cảnh báo `SSH_ROOT_PASSWORD` | `/etc/ssh/sshd_config` | mục 5.3 |
-| Cảnh báo `PULSE_STUCK` | Tag trong `detail` | kiểm PLC, nhả bit bằng tay (mục 10) |
+| Cảnh báo `PULSE_STUCK` | Tag trong `detail` | kiểm PLC, nhả bit bằng tay, rồi `mat-runtime --pulse-ack all` (mục 10) |
 | Lưu trữ dừng ghi | `system/info` mục `historian` | kiểm `historianMinFreeMB`, dung lượng |
 | Sau mất điện nghi hỏng dữ liệu | `--check-data` (mục 6.3), `--check-history`, `--alarm-db-check` | tệp hỏng được đổi tên `*.corrupt-<thời điểm>`; khôi phục từ sao lưu nếu cần |
 | Nhiều trạm sau một NAT/VPN: trang chậm hoặc thiếu dữ liệu sống | log khởi động có dòng `maxConnPerSource`; giá trị `maxConnPerSource`, `httpsThreads` | về mặc định 48 và 64 (mục 5.2) |

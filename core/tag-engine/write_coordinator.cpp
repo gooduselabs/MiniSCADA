@@ -276,6 +276,7 @@ void pulseTargetOf(const ProjectModel& model, const TagModel& t, PulseArm& a) {
     a.channel.clear();
     a.device.clear();
     a.address.clear();
+    a.targetHash = pulseTargetHash(model, t);
     if (t.kind != TagKind::External) return;
     if (t.channel < model.channels.size()) a.channel = model.channels[t.channel].id;
     if (t.device < model.devices.size()) a.device = model.devices[t.device].id;
@@ -283,6 +284,33 @@ void pulseTargetOf(const ProjectModel& model, const TagModel& t, PulseArm& a) {
 }
 
 }  // namespace
+
+std::string pulseTargetHash(const ProjectModel& model, const TagModel& t) {
+    std::string key = "-";
+    if (t.kind == TagKind::External) {
+        key = "ext";
+        if (t.channel < model.channels.size()) {
+            const ChannelModel& c = model.channels[t.channel];
+            key += c.rtu ? "|rtu|" + c.serialPort : "|tcp|" + c.host + ":" + std::to_string(c.port);
+        }
+        if (t.device < model.devices.size()) {
+            const DeviceModel& d = model.devices[t.device];
+            key += "|unit|" + std::to_string(d.unitId) + "|base|" + std::to_string(d.addressBase);
+        }
+        const modbus::AddressResult& r = t.source.addr;
+        key += "|addr|" + t.source.address + "|" + (r.ok ? "ok" : "raw") + "|" +
+               std::to_string(static_cast<int>(r.area)) + "|" + std::to_string(r.offset) + "|" +
+               std::to_string(r.bit);
+    }
+    uint64_t h = 1469598103934665603ULL;  // FNV-1a 64: a fingerprint, not a secret
+    for (const unsigned char ch : key) {
+        h ^= ch;
+        h *= 1099511628211ULL;
+    }
+    char b[17];
+    std::snprintf(b, sizeof b, "%016llx", static_cast<unsigned long long>(h));
+    return b;
+}
 
 // Feature 011 (FR-019): a pulse whose release the runtime still owes: an entry the journal held
 // armed at start, or a release that failed in this run. Pending: tried every pulseRetryMs until
@@ -1464,12 +1492,16 @@ void WriteCoordinator::addRecoveryLocked(const PulseArm& arm, const WriteCaller*
         if (arm.hasTarget) {  // T062: the Tag now points at another bit: nothing is written
             PulseArm now;
             pulseTargetOf(model_, model_.tags[*idx], now);
+            // T202 (N-L2): the ids alone are not enough: a new unitId, addressBase or host under
+            // the same ids sends the release to another bit or another PLC
+            const bool moved = !arm.targetHash.empty() && now.targetHash != arm.targetHash;
             if (now.channel != arm.channel || now.device != arm.device ||
-                now.address != arm.address) {
+                now.address != arm.address || moved) {
                 rc->known = false;
                 logLine("pulse recovery: Tag " + arm.tag + " of pulse " + arm.rid +
                         " no longer points at " + arm.channel + "/" + arm.device + "/" +
-                        arm.address + ": nothing written, PULSE_STUCK");
+                        arm.address + (moved ? " (endpoint, unitId or addressBase changed)" : "") +
+                        ": nothing written, PULSE_STUCK");
             }
         }
     }
@@ -1665,6 +1697,34 @@ void WriteCoordinator::recoverPulses(const std::vector<PulseArm>& armed, bool en
     }
     pulseCv_.notify_all();
     notifyStuck();
+}
+
+std::vector<PulseArm> WriteCoordinator::ackStuck(const std::string& rid,
+                                                 std::vector<std::string>* errors) {
+    std::vector<PulseArm> closed;
+    {
+        std::lock_guard<std::mutex> g(mu_);
+        for (auto it = recoveries_.begin(); it != recoveries_.end();) {
+            const Recovery& rc = *it->second;
+            if (rc.state == Recovery::State::Stuck && !rc.inFlight &&
+                (rid == "all" || it->first == rid)) {
+                closed.push_back(rc.arm);
+                it = recoveries_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+    if (opt_.pulseLog != nullptr)
+        for (const PulseArm& a : closed) {
+            std::string error;
+            if (!opt_.pulseLog->done(a.rid, error)) {
+                logLine("pulse journal: cannot close " + a.rid + " (acknowledged): " + error);
+                if (errors) errors->push_back(a.rid);
+            }
+        }
+    if (!closed.empty()) notifyStuck();
+    return closed;
 }
 
 WriteCoordinator::PulseRecoveryState WriteCoordinator::pulseRecovery() const {

@@ -2334,6 +2334,13 @@
       "usedIn": ["server/websocket"]
     },
     {
+      "code": "PULSE_ACK_REQUEST_FAILED",
+      "http": null,
+      "group": "write",
+      "message": "Không ghi được tệp yêu cầu đóng mục PULSE_STUCK của nhật ký xung (mat-runtime --pulse-ack)",
+      "usedIn": ["server/cli"]
+    },
+    {
       "code": "PULSE_IN_PROGRESS",
       "http": null,
       "group": "write",
@@ -2345,7 +2352,7 @@
       "http": null,
       "group": "write",
       "message": "Không ghi được nhật ký xung: lệnh xung bị hủy, chưa ghi gì xuống thiết bị.",
-      "usedIn": ["core/tag-engine"]
+      "usedIn": ["core/tag-engine", "server"]
     },
     {
       "code": "PULSE_NOT_BOOL",

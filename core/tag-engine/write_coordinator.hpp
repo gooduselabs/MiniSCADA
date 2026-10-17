@@ -33,6 +33,13 @@
 
 namespace mat {
 
+// Second review T202 (N-L2): a hash (16 hex digits) of where a write of `t` goes once resolved: the
+// endpoint of its channel (host:port, or the serial port), the unitId and addressBase of its field
+// device, and the area, offset and bit its address resolves to. Kept in the `arm` line of a pulse:
+// a recovery whose Tag now resolves to another bit or another PLC writes nothing (PULSE_STUCK).
+// A Tag that is not External has the hash of "-".
+std::string pulseTargetHash(const ProjectModel& model, const TagModel& t);
+
 // The value of a request as the client wrote it. Numbers keep their kind so that INT64 and UINT64
 // stay exact; a decimal string (required for 64-bit values beyond 2^53) is Text.
 struct WriteValue {
@@ -227,6 +234,15 @@ class WriteCoordinator {
         std::vector<std::string> stuck;    // Tags of the entries kept (PULSE_STUCK)
     };
     PulseRecoveryState pulseRecovery() const;
+
+    // Second review T202 (N-L3): root acknowledged entries reported as PULSE_STUCK (mat-runtime
+    // --pulse-ack <rid|all>: the bit was checked on the PLC by hand). `rid` "all": every stuck
+    // entry. Each one closed gets its `done` line in the journal (synchronously; an fdatasync each)
+    // and leaves the warning; entries still being tried, or a pulse that runs, are not touched.
+    // Returns the entries closed; `errors`: the ones whose `done` line could not be written (gone
+    // from this run, back as PULSE_STUCK at the next start).
+    std::vector<PulseArm> ackStuck(const std::string& rid,
+                                   std::vector<std::string>* errors = nullptr);
 
     // Feature 011 (T209): `writeMinRole` of the Tag ("" for none or an unknown Tag). The HTTP layer
     // refuses a batch with 403 when one of its Tags needs more than the caller's role; submit()

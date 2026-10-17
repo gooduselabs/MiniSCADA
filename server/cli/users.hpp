@@ -6,6 +6,7 @@
 //   mat-runtime --user-disable <name> | --user-enable <name> | --user-unlock <name>
 //   mat-runtime --user-unlock-all
 //   mat-runtime --logic-writes-reset   (feature 011: clear an administrator stop of logic writes)
+//   mat-runtime --pulse-ack <rid|all>  (feature 011, T202: close pulses reported PULSE_STUCK)
 //   mat-runtime --user-list
 // each with [--users-file <file>] [--data-dir <dir>] [--config <runtime.json>].
 //
@@ -24,6 +25,10 @@
 // - --logic-writes-reset (feature 011, follow-up of T137): <dataDir>/logic-writes-reset.req (0600),
 //   which the runtime takes within 5 s (a project with logic.json runs) or at start, then clears
 //   writesStopped of logic-state.json (edges kept); audit logic.writes.enabled.
+// - --pulse-ack <rid|all> (feature 011, second review T202): <dataDir>/pulse-ack.req (0600), which
+//   the runtime takes within 5 s (a project runs) or at start, then closes the pulse journal
+//   entries reported PULSE_STUCK (that request id, or all); audit pulse.ack. Exit 2 for a value
+//   that is neither "all" nor a request id.
 // - New passwords (--user-add, --user-passwd) keep the rule of 15 characters (feature 011 asks for
 //   at least 10); accounts made before are not forced to change.
 // - The last enabled administrator can be neither disabled nor given another role.

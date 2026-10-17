@@ -7,12 +7,18 @@
 //     journal still holds armed to the coordinator, which releases them as their channels connect;
 //   - the tick loop: the results of the drivers (and of internal Tags) reach the coordinator
 //     through the engine's write result handler; maintain() cleans the table of request ids every
-//     10 minutes;
+//     10 minutes, and takes the request of `mat-runtime --pulse-ack` every 5 s (T202: a stat of
+//     one path; the rare request costs two audit rows and a `done` line);
 //   - before the execv: beforeRestart() quiesces the coordinator (FR-042), then stops the engine
 //     as device-config §7 says (the retained Tags are written, the drivers stop).
 #pragma once
+#include <sys/types.h>
+
 #include <cstdint>
+#include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "core/audit/audit_log.hpp"
 #include "core/tag-engine/pulse_journal.hpp"
@@ -24,12 +30,33 @@
 
 namespace mat {
 
+// Second review T202 (N-L3): the request of `mat-runtime --pulse-ack <rid|all>` (root): close
+// the pulse journal entries reported as PULSE_STUCK once the bits were checked on the PLC by hand.
+constexpr const char* kPulseAckFile = "pulse-ack.req";
+constexpr int64_t kPulseAckPollMs = 5000;  // how often the runtime looks for it
+
 // Feature 011 (FR-018, FR-019): the journal of pulses and what the start does with it.
 struct PulseOptions {
     std::string journalPath;  // <dataDir>/pulse.journal; "" = no journal (the behaviour of 007)
     bool recovery = true;     // pulseRecovery "on"
     SystemWarnings* warnings = nullptr;  // PULSE_STUCK goes here
+    // T202 (N-L3): <dataDir>/pulse-ack.req; "" = none. The owner the request must have (root);
+    // tests: their own uid.
+    std::string ackRequestPath;
+    uid_t ackUid = 0;
 };
+
+// T202 (N-L3): takes the request of --pulse-ack at `path`, when there is one. A file that is not a
+// regular file of `uid` without any group or other permission, or whose line does not read
+// ("pulse-ack <rid|all> …"), is deleted and ignored. Otherwise: audit pulse.ack `started` (system)
+// first, durably; without it nothing changes and the request stays (tried again); then `close`
+// (the rid or "all"; it returns the entries closed and puts in `errors` the ones whose `done` line
+// failed); then audit `ok` (or `failed` when a `done` line failed) with what was closed; the file
+// is deleted. true when a request was applied. `log`: one line each time.
+bool applyPulseAckRequest(const std::string& path, uid_t uid, AuditLog& audit,
+                          const std::function<std::vector<PulseArm>(
+                              const std::string& rid, std::vector<std::string>& errors)>& close,
+                          const std::function<void(const std::string&)>& log);
 
 class WriteSubsystem {
    public:
@@ -61,6 +88,10 @@ class WriteSubsystem {
     // CLOCK_BOOTTIME).
     void maintain(int64_t monoMs);
 
+    // T202 (N-L3): the request of --pulse-ack (PulseOptions::ackRequestPath), applied to the
+    // coordinator (WriteCoordinator::ackStuck). maintain() calls it every kPulseAckPollMs.
+    bool applyPulseAck();
+
    private:
     RuntimeEngine& runtime_;
     AuditLog& audit_;
@@ -72,6 +103,7 @@ class WriteSubsystem {
     std::unique_ptr<WriteCoordinator> coordinator_;
     bool recovered_ = false;
     int64_t nextMaintainMs_ = 0;
+    int64_t nextAckPollMs_ = 0;
 };
 
 }  // namespace mat

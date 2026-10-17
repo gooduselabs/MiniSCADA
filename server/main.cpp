@@ -622,6 +622,10 @@ int main(int argc, char** argv) {
         po.journalPath = pulseJournalPath;
         po.recovery = cfg.pulseRecovery != "off";
         po.warnings = &systemWarnings;
+        // T202 (N-L3): mat-runtime --pulse-ack (root) closes PULSE_STUCK entries; maintain()
+        // takes the request within 5 s
+        po.ackRequestPath = cfg.dataDir + "/" + kPulseAckFile;
+        po.ackUid = 0;
         writes = std::make_unique<WriteSubsystem>(rtEngine, store, audit, co, po);
         writes->recoverPulses();
         parts.writes.store(writes.get());
@@ -629,8 +633,25 @@ int main(int argc, char** argv) {
     } else {
         // No project runs: nothing can release a pulse of the last run; say so (PULSE_STUCK).
         PulseJournal journal(pulseJournalPath);
+        std::vector<PulseArm> armed = journal.load();
+        if (audit.isOpen()) {  // T202 (N-L3): a --pulse-ack request (no project: only at start)
+            applyPulseAckRequest(
+                cfg.dataDir + "/" + kPulseAckFile, 0, audit,
+                [&journal](const std::string& rid, std::vector<std::string>& errors) {
+                    std::vector<PulseArm> closed;
+                    for (const PulseArm& a : journal.armed()) {
+                        if (rid != "all" && a.rid != rid) continue;
+                        std::string error;
+                        if (!journal.done(a.rid, error)) errors.push_back(a.rid);
+                        closed.push_back(a);
+                    }
+                    return closed;
+                },
+                [](const std::string& line) { std::fprintf(stderr, "%s\n", line.c_str()); });
+            armed = journal.armed();
+        }
         std::vector<std::string> tags;
-        for (const PulseArm& a : journal.load()) tags.push_back(a.tag);
+        for (const PulseArm& a : armed) tags.push_back(a.tag);
         if (!tags.empty())
             systemWarnings.set("PULSE_STUCK", {{"tags", tags}, {"pulseRecovery", "no-project"}});
     }

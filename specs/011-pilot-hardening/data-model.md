@@ -90,7 +90,7 @@ Tệp có mà không đọc được (không mở được, không phải JSON o
 
 ### 1.5 Audit mới (`audit.db`, lược đồ không đổi; thêm loại bản ghi)
 
-Cột `kind` có thêm các giá trị (chuỗi): `access.denied` (với `detail.reason` = `host`), `auth.distributed_attack`, `tag.write` (với `detail.source` thêm `pulse-recovery`, `logic`), `system.update.*`, `system.keys.updated`, `logic.write`, `logic.write.suppressed`, `logic.throttled`, `logic.writes.disabled`, `logic.reset`, `logic.retain.lost`. Bản ghi `logic.write` có `detail`: `{"rule", "write", "tag", "old", "new", "inputs": [["TANK01.LEVEL", 19.0]…≤ 8], "result"}`. Không có bí mật (mật khẩu xác nhận không bao giờ vào audit).
+Cột `kind` có thêm các giá trị (chuỗi): `access.denied` (với `detail.reason` = `host`), `auth.distributed_attack`, `tag.write` (với `detail.source` thêm `pulse-recovery`, `logic`), `system.update.*`, `system.keys.updated`, `logic.write`, `logic.write.suppressed`, `logic.throttled`, `logic.writes.disabled`, `logic.reset`, `logic.retain.lost`, `logic.writes.enabled`, `auth.busy`, `pulse.ack` (root đóng mục `PULSE_STUCK` bằng `--pulse-ack`, T202). Bản ghi `logic.write` có `detail`: `{"rule", "write", "tag", "old", "new", "inputs": [["TANK01.LEVEL", 19.0]…≤ 8], "result"}`. Không có bí mật (mật khẩu xác nhận không bao giờ vào audit).
 
 ### 1.6 `diagnostics` (bộ đếm trong runtime)
 
