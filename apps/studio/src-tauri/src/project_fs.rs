@@ -203,6 +203,9 @@ pub fn write_text_if_unchanged(
     if !(rel.ends_with(".json") || rel.ends_with(".svg")) || in_backup_store(rel) {
         return Err(WriteError::BadPath);
     }
+    if reaches_backup_store(root, rel) {
+        return Err(WriteError::BadPath);
+    }
     let limit = limit_of(rel);
     if content.len() as u64 > limit {
         return Err(WriteError::Io(if limit == MAX_SVG_BYTES {
@@ -213,6 +216,10 @@ pub fn write_text_if_unchanged(
     }
     ensure_parents(root, rel)?;
     let path = resolve_in_root(root, rel)?;
+    // Kiểm lại trên đường dẫn thật sau khi tạo thư mục cha (symlink đổi giữa chừng).
+    if reaches_backup_store(root, rel) {
+        return Err(WriteError::BadPath);
+    }
     if !force && !unchanged(&path, expected, limit)? {
         return Err(WriteError::Changed);
     }
@@ -225,6 +232,53 @@ pub fn write_text_if_unchanged(
 fn in_backup_store(rel: &str) -> bool {
     rel.split_once('/')
         .is_some_and(|(first, _)| first.eq_ignore_ascii_case(BACKUP_DIR))
+}
+
+/// Đường dẫn tương đối (nối bằng `/`) của `real` so với root thật `root`; `None` nếu ra ngoài.
+fn rel_of_real(root: &Path, real: &Path) -> Option<String> {
+    let rest = real.strip_prefix(root).ok()?;
+    let parts: Vec<String> = rest
+        .components()
+        .map(|c| c.as_os_str().to_string_lossy().into_owned())
+        .collect();
+    Some(parts.join("/"))
+}
+
+/// `rel` đi tới (qua symlink, junction hay tên ngắn 8.3 `MAT-BA~1` trên Windows) một vị trí trong
+/// `.mat-backup/` không: so trên đường dẫn thật của phần dài nhất đã có của `root/rel` (T202 N-S1).
+/// Đường dẫn ra ngoài root hay không đọc được root coi như `true` (từ chối).
+fn reaches_backup_store(root: &Path, rel: &str) -> bool {
+    if in_backup_store(rel) {
+        return true;
+    }
+    let Ok(root) = fs::canonicalize(root) else {
+        return true;
+    };
+    let mut existing = root.clone();
+    let mut rest: Vec<&str> = Vec::new();
+    let parts: Vec<&str> = rel.split('/').collect();
+    for (i, part) in parts.iter().enumerate() {
+        let next = existing.join(part);
+        if fs::symlink_metadata(&next).is_ok() {
+            existing = next;
+        } else {
+            rest.extend_from_slice(&parts[i..]);
+            break;
+        }
+    }
+    let Ok(real) = fs::canonicalize(&existing) else {
+        return true;
+    };
+    let Some(mut real_rel) = rel_of_real(&root, &real) else {
+        return true;
+    };
+    for part in rest {
+        if !real_rel.is_empty() {
+            real_rel.push('/');
+        }
+        real_rel.push_str(part);
+    }
+    in_backup_store(&real_rel) || real_rel.eq_ignore_ascii_case(BACKUP_DIR)
 }
 
 /// Thư mục sao lưu trong project (feature 006).
@@ -575,7 +629,10 @@ pub fn remove_file(root: &Path, rel: &str, hash: &str) -> Result<(), RemoveError
     if !rel.ends_with(".json") || check_rel(rel).is_err() {
         return Err(RemoveError::BadPath);
     }
-    if rel == "project.json" || rel == tag_file_of(root) {
+    let tag_file = tag_file_of(root);
+    let is_core =
+        |r: &str| r.eq_ignore_ascii_case("project.json") || r.eq_ignore_ascii_case(&tag_file);
+    if is_core(rel) || reaches_backup_store(root, rel) {
         return Err(RemoveError::BadPath);
     }
     let path = resolve_in_root(root, rel).map_err(|e| match e {
@@ -583,6 +640,14 @@ pub fn remove_file(root: &Path, rel: &str, hash: &str) -> Result<(), RemoveError
         // Thư mục cha không còn thì file cũng không còn.
         _ => RemoveError::Missing,
     })?;
+    // So trên đường dẫn thật (T202 N-S1): symlink/junction/tên 8.3 tới file lõi hay `.mat-backup/`.
+    let real_rel = fs::canonicalize(root)
+        .ok()
+        .and_then(|r| rel_of_real(&r, &path))
+        .ok_or(RemoveError::BadPath)?;
+    if is_core(&real_rel) || in_backup_store(&real_rel) {
+        return Err(RemoveError::BadPath);
+    }
     let bytes = match read_limited(&path, MAX_FILE_BYTES) {
         Ok(Some(b)) => b,
         Ok(None) => return Err(RemoveError::Changed(rel.to_string())),
@@ -715,6 +780,96 @@ mod tests {
         }
         assert!(!t.root().join(".mat-backup").exists());
         assert!(!t.root().join(".MAT-Backup").exists());
+    }
+
+    /// T202 (N-S1): `project_remove` không xóa file trong `.mat-backup/` (kể cả khác hoa thường).
+    #[test]
+    fn remove_inside_the_backup_store_is_refused() {
+        let t = TempDir::new("rm-backup");
+        fs::create_dir_all(t.root().join(".mat-backup/0.1.0-x")).unwrap();
+        fs::write(t.root().join(".mat-backup/0.1.0-x/backup.json"), "{}").unwrap();
+        let h = sha256_hex(b"{}");
+        for rel in [
+            ".mat-backup/0.1.0-x/backup.json",
+            ".MAT-Backup/0.1.0-x/backup.json",
+        ] {
+            assert_eq!(
+                remove_file(&t.root(), rel, &h),
+                Err(RemoveError::BadPath),
+                "{rel}"
+            );
+        }
+        assert!(t.root().join(".mat-backup/0.1.0-x/backup.json").exists());
+    }
+
+    /// T202 (N-S1): symlink trong project trỏ vào `.mat-backup/` (hay junction, tên 8.3 `MAT-BA~1` trên
+    /// Windows): so trên đường dẫn thật, từ chối cả ghi lẫn xóa.
+    #[cfg(unix)]
+    #[test]
+    fn backup_store_reached_through_a_symlink_is_refused() {
+        let t = TempDir::new("link-backup");
+        fs::create_dir_all(t.root().join(".mat-backup/0.1.0-x")).unwrap();
+        fs::write(t.root().join(".mat-backup/0.1.0-x/backup.json"), "{}").unwrap();
+        std::os::unix::fs::symlink(t.root().join(".mat-backup"), t.root().join("bk")).unwrap();
+        let h = sha256_hex(b"{}");
+        assert_eq!(
+            remove_file(&t.root(), "bk/0.1.0-x/backup.json", &h),
+            Err(RemoveError::BadPath)
+        );
+        assert!(t.root().join(".mat-backup/0.1.0-x/backup.json").exists());
+        for rel in ["bk/0.1.0-x/backup.json", "bk/new.json", "bk/n/x.json"] {
+            assert_eq!(
+                write_text_if_unchanged(&t.root(), rel, "{\"x\":1}", None, true),
+                Err(WriteError::BadPath),
+                "{rel}"
+            );
+        }
+        assert_eq!(disk(t.root().join(".mat-backup/0.1.0-x/backup.json")), "{}");
+        assert!(!t.root().join(".mat-backup/new.json").exists());
+        assert!(!t.root().join(".mat-backup/n").exists());
+    }
+
+    /// T202 (N-S1): symlink tới `project.json`/file Tag không mở đường xóa file lõi.
+    #[cfg(unix)]
+    #[test]
+    fn remove_through_an_alias_of_a_core_file_is_refused() {
+        let t = TempDir::new("rm-alias");
+        fs::write(t.root().join("tags.json"), "{}").unwrap();
+        std::os::unix::fs::symlink(t.root().join("project.json"), t.root().join("p.json")).unwrap();
+        std::os::unix::fs::symlink(t.root().join("tags.json"), t.root().join("t.json")).unwrap();
+        let hp = sha256_hex(&fs::read(t.root().join("project.json")).unwrap());
+        assert_eq!(
+            remove_file(&t.root(), "p.json", &hp),
+            Err(RemoveError::BadPath)
+        );
+        assert_eq!(
+            remove_file(&t.root(), "t.json", &sha256_hex(b"{}")),
+            Err(RemoveError::BadPath)
+        );
+        assert!(t.root().join("project.json").exists());
+        assert!(t.root().join("tags.json").exists());
+    }
+
+    /// T202 (N-S1): Windows — tên ngắn 8.3 của `.mat-backup` (`MAT-BA~1`) dẫn tới cùng thư mục.
+    #[cfg(windows)]
+    #[test]
+    fn backup_store_reached_through_a_short_name_is_refused() {
+        let t = TempDir::new("short-backup");
+        fs::create_dir_all(t.root().join(".mat-backup")).unwrap();
+        fs::write(t.root().join(".mat-backup/x.json"), "{}").unwrap();
+        let h = sha256_hex(b"{}");
+        // Tên 8.3 có thể bị tắt trên ổ: chỉ kiểm khi tên ngắn tồn tại.
+        if t.root().join("MAT-BA~1").exists() {
+            assert_eq!(
+                remove_file(&t.root(), "MAT-BA~1/x.json", &h),
+                Err(RemoveError::BadPath)
+            );
+            assert_eq!(
+                write_text_if_unchanged(&t.root(), "MAT-BA~1/y.json", "{}", None, true),
+                Err(WriteError::BadPath)
+            );
+        }
+        assert!(t.root().join(".mat-backup/x.json").exists());
     }
 
     /// T062 (S3): đọc có trần ngay khi đọc (không chỉ theo metadata): file lớn hơn trần → `None`.
