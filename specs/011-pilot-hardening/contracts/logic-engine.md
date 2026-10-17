@@ -89,6 +89,7 @@ Mỗi lần quét (chu kỳ `logic.scanMs`, thời gian monotonic `now`):
 - Mỗi quét hợp lệ `k` có `rate_k` (từ `source`, đơn vị gốc theo `rateUnit` = `s`, `min`, `h`, `d`) và `t_k` monotonic.
 - `dt = t_k - t_{k-1}` (giây). Nếu `source` `unknown` ở một trong hai quét, hoặc `dt > maxGapMs/1000`: **không cộng**; `gapSeconds += dt`; `t_{k-1}` cập nhật theo quét hiện tại.
 - Ngược lại: `r_k = (rate_k < cutoff) ? 0 : rate_k` (và `r_{k-1}` tương tự), `total += factor * ((r_{k-1} + r_k) / 2) * dt / unitSeconds`, với `unitSeconds` = 1, 60, 3600, 86400.
+- Tràn số: nếu tổng mới không hữu hạn (tốc độ hữu hạn nhưng rất lớn, ví dụ 1e308): **không cộng**, `gapSeconds += dt` như khoảng unknown; `total` luôn hữu hạn (quyết định khi fuzz T142).
 - `reset`: cạnh lên đặt `total = 0`, `gapSeconds = 0`; `rolloverAt` (số, tùy chọn): khi `total ≥ rolloverAt` thì `total -= rolloverAt` (ví dụ đồng hồ cơ 99.999,9).
 - Số học: `double`; thứ tự phép toán cố định (không FMA) như ADR-015, để TS và C++ trùng bit.
 - Sai số: dòng hằng, quét đều: ≤ 0,1 % (thực tế ≤ sai số làm tròn); dòng đổi chậm hơn chu kỳ quét: sai số hình thang, ghi rõ.

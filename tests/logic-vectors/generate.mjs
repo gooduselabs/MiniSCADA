@@ -1283,7 +1283,12 @@ function refTotalizer(p, sets, to, opt = {}) {
     if (prev !== null) {
       const dt = t - prev.t;
       if (rate === null || prev.rate === null || dt > maxGap) gapMs += dt;
-      else total = total + (factor * ((cut(prev.rate) + cut(rate)) / 2) * (dt / 1000)) / unit;
+      else {
+        const next = total + (factor * ((cut(prev.rate) + cut(rate)) / 2) * (dt / 1000)) / unit;
+        // tràn số: không cộng, là khoảng trống
+        if (Number.isFinite(next)) total = next;
+        else gapMs += dt;
+      }
       if (p.rolloverAt !== undefined && total >= p.rolloverAt) total = total - p.rolloverAt;
     }
     prev = { t, rate };
@@ -1418,6 +1423,17 @@ function refTotalizer(p, sets, to, opt = {}) {
       { t: 2000, v: 10 },
     ],
     [1000, 2000, 2100, 3000],
+  );
+  simple(
+    'totalizer-overflow-gap',
+    'tốc độ hữu hạn rất lớn: khoảng cộng ra không hữu hạn (tràn số) không cộng, là khoảng trống',
+    { rateUnit: 's' },
+    [
+      { t: 0, v: 1e307 },
+      { t: 20000, v: 1e308 },
+      { t: 22000, v: 1 },
+    ],
+    [10000, 17900, 18000, 20000, 21000, 22000, 23000],
   );
   simple(
     'totalizer-no-value-start',

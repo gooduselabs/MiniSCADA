@@ -42,7 +42,7 @@ TEST(LogicVectors, AtLeast200CasesWithTheMinimumOfEachGroupAndUniqueIds) {
     }
     for (const auto& [g, min] : kMin) EXPECT_GE(n[g], min) << g;
     EXPECT_GE(all().size(), 200u);
-    EXPECT_EQ(all().size(), 279u) << "the TS runner has 279 cases";
+    EXPECT_EQ(all().size(), 280u) << "the TS runner has 280 cases";
 }
 
 TEST(LogicVectors, EveryErrorCodeHasAFailingCaseAndEveryWarningACase) {

@@ -11,14 +11,14 @@ Sinh bằng `node tests/logic-vectors/generate.mjs` (tất định, không impor
 | `rules.json` | luật: hold, cạnh, fireOnStart, repeatMs, SUSPENDED, thứ tự, hành động, edgeId | 43 |
 | `timers.json` | ton, tof, tp, làm tròn pt, đầu vào unknown | 30 |
 | `counters.json` | cạnh, preset, down, reset, unknown, tràn | 26 |
-| `totalizers.json` | hình thang, đơn vị, cutoff, khoảng trống, rolloverAt, reset | 27 |
+| `totalizers.json` | hình thang, đơn vị, cutoff, khoảng trống, tràn số, rolloverAt, reset | 28 |
 | `runhours.json` | giờ, số lần khởi động, due, reset | 16 |
 | `schedules.json` | khung, nửa đêm, ngoại lệ, múi giờ, đồng bộ giờ | 56 |
 | `writes.json` | ghi PLC và giới hạn (minIntervalMs, maxPerHour, maxWritesPerMin, off, allowed) | 16 |
 | `static.json` | kiểm tra tĩnh: mỗi mã `E_LOGIC_*` ≥ 1 ca sai và ≥ 1 ca đúng gần nó; mọi `W_LOGIC_*` | 53 |
 | `retain.json` | lưu trạng thái qua khởi động lại | 12 |
 
-Tổng 279 ca. Mỗi tệp: `{ "group": "<nhóm>", "cases": [ … ] }`, mỗi ca một dòng.
+Tổng 280 ca. Mỗi tệp: `{ "group": "<nhóm>", "cases": [ … ] }`, mỗi ca một dòng.
 
 ## Một ca
 
@@ -90,7 +90,7 @@ Khóa `logic/<id>/<trường>`: counter `value` (chuỗi thập phân INT64), `o
 
 **Counter (§4)**: cạnh lên khi giá trị hợp lệ trước đó là `false` và hiện tại `true`; mốc trước chỉ cập nhật khi hợp lệ; lần thấy hợp lệ đầu không phải cạnh. Cùng quét: reset (bỏ up và down) > up > down. `overflow` đặt khi một cạnh up bị bỏ vì đã ở max; reset xóa `overflow`. `reached` chỉ khi có `preset`.
 
-**Totalizer (§5)**: `total = total + ((factor * ((r0 + r1) / 2)) * (dtMs / 1000)) / unitSeconds` (đúng thứ tự, không FMA: C++ biên dịch `-ffp-contract=off`), `r = rate < cutoff ? 0 : rate`. Khoảng có đầu mút unknown hoặc `dtMs > maxGapMs` (mặc định 5.000): cộng `dtMs` vào khoảng trống (ms nguyên; `gapSeconds = gapMs / 1000`). Quét đầu của engine chỉ ghi mốc (khoảng tắt máy không cộng và không là khoảng trống). Cùng quét: cộng → `rolloverAt` (trừ một lần) → cạnh lên reset (`total = 0`, `gap = 0`). Mặc định `factor` 1, `cutoff` 0.
+**Totalizer (§5)**: `total = total + ((factor * ((r0 + r1) / 2)) * (dtMs / 1000)) / unitSeconds` (đúng thứ tự, không FMA: C++ biên dịch `-ffp-contract=off`), `r = rate < cutoff ? 0 : rate`. Khoảng có đầu mút unknown hoặc `dtMs > maxGapMs` (mặc định 5.000), hoặc tổng mới không hữu hạn (tràn số với tốc độ hữu hạn rất lớn, tìm ra bởi fuzz T142): không cộng, cộng `dtMs` vào khoảng trống (ms nguyên; `gapSeconds = gapMs / 1000`). Quét đầu của engine chỉ ghi mốc (khoảng tắt máy không cộng và không là khoảng trống). Cùng quét: cộng → `rolloverAt` (trừ một lần) → cạnh lên reset (`total = 0`, `gap = 0`). Mặc định `factor` 1, `cutoff` 0.
 
 **Giờ chạy (§6)**: khoảng (k-1, k] tính khi cả hai quét hợp lệ và `run` ở k-1 là `true`; giữ bằng ms nguyên, `hours = runMs / 3.600.000`; retain `hours` khôi phục `runMs = round(hours × 3.600.000)`. `starts` theo cạnh lên (mốc trước = `lastRun` của retain nếu có). Cùng quét: cộng → đếm khởi động → cạnh lên reset (`hours = 0`; `starts` giữ).
 
