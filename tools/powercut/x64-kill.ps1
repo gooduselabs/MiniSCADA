@@ -12,7 +12,7 @@
     4. wait READY at most -ReadyTimeoutS s (time recorded);
     5. docker exec <Container> mat-runtime --check-data --json (exit 0, or 1 only for pulse.journal entries or a
        WAL needing recovery), then the audit cross-check: every requestId of the -CommandLog logged ACCEPTED
-       before the kill must be in `mat-runtime --export-audit --json`;
+       before the kill must be in `mat-runtime --export-audit --format jsonl` (--json is not an option of it);
     6. append the round to <Out>.rounds.jsonl; stop at the first failure and keep the container as it is.
   Writes the summary to -Out (default docs/reports/011-powercut-x64.json).
 
@@ -104,13 +104,13 @@ function Exec-In([string]$Cmd) {
 # Waits for the event of a point inside the container; returns a description or $null on timeout.
 function Wait-Event([string]$Point, [int]$Round) {
     $t0 = Now-Ms
-    $steps = @('activate', 'restart', 'health')
+    $steps = @('activate', 'health', 'validate')
     $retainMark = (Exec-In "find '$DataDir/retain' -type f -exec stat -c %Y {} + 2>/dev/null | sort -n | tail -n 1").out
     while (((Now-Ms) - $t0) -lt $EventTimeoutS * 1000) {
         switch ($Point) {
             'D1' {
                 $step = $steps[($Round - 1) % 3]
-                $r = Exec-In "grep -l '\b$step\b' '$DataDir'/ops/*.json 2>/dev/null | head -n 1"
+                $r = Exec-In "grep -l '`"result`": `"running`"' '$DataDir'/projects/ops/*.json 2>/dev/null | xargs -r grep -l '\b$step\b' | head -n 1"
                 if ($r.out) { return "ops step $step in $($r.out)" }
             }
             'D3' {
@@ -207,14 +207,14 @@ foreach ($point in $plan) {
         $r.readyAfter = $ready
         if (-not $ready.ok) { $fail = "not READY within $ReadyTimeoutS s after the restart" }
         if (-not $fail) {
-            $c = Exec-In "$Runtime --check-data --json"
+            $c = Exec-In "$Runtime --check-data --json --data-dir $DataDir"
             $r.check = Test-CheckData $c.out $c.code
             $r.check.exitCode = $c.code
             if (-not $r.check.ok) { $fail = $r.check.reason }
         }
         if (-not $fail) {
             if ($null -ne $accepted) {
-                $exported = Get-RequestIds (Exec-In "$Runtime --export-audit --json").out
+                $exported = Get-RequestIds (Exec-In "$Runtime --export-audit --format jsonl --data-dir $DataDir").out
                 $missing = @($accepted | Where-Object { -not $exported.Contains($_) })
                 $r.audit = [ordered]@{ status = $(if ($missing.Count) { 'fail' } else { 'pass' }); accepted = $accepted.Count; exported = $exported.Count; missing = $missing }
                 if ($missing.Count) { $fail = "audit: $($missing.Count) ACCEPTED requestId missing from audit.db" }
