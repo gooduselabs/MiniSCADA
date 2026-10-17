@@ -209,4 +209,36 @@ expect v2 B
 has "HTTPS tắt (httpsPort = 0)" "httpsPort = 0: phải báo HTTPS tắt"
 hasnt "SHA256 Fingerprint" "httpsPort = 0: không in fingerprint"
 rm -f "$W/https-down"
+
+# Feature 011 (T051, FR-013, FR-017, FR-033): lời nhắc allowedHosts, mật khẩu 15–128 ký tự, cảnh báo SSH khi
+# root đăng nhập được bằng mật khẩu (đọc sshd_config chỉ đọc; không bao giờ sửa). MAT_SSHD_CONFIG trỏ file giả;
+# không có `sshd` trong PATH của container nên script đọc file.
+SSHD=$W/sshd_config
+export MAT_SSHD_CONFIG="$SSHD"
+fresh
+printf '# giả\nPermitRootLogin yes\n' > "$SSHD"
+deploy v1 < /dev/null
+has "allowedHosts" "thiếu lời nhắc allowedHosts"
+has "mật khẩu 15–128 ký tự" "thiếu lời nhắc mật khẩu tối thiểu 15 ký tự"
+has "SSH_ROOT_PASSWORD" "PermitRootLogin yes: phải cảnh báo SSH"
+has "hardening.md" "cảnh báo SSH phải chỉ tài liệu gia cố"
+cmp -s "$SSHD" - <<'EOF' || fail "deploy.sh không được sửa sshd_config"
+# giả
+PermitRootLogin yes
+EOF
+# Giá trị đầu tiên thắng (như sshd); PasswordAuthentication no thì root không vào được bằng mật khẩu.
+printf 'PermitRootLogin prohibit-password\nPermitRootLogin yes\n' > "$SSHD"
+deploy v2 < /dev/null
+hasnt "SSH_ROOT_PASSWORD" "PermitRootLogin prohibit-password đứng trước: không cảnh báo"
+printf 'PasswordAuthentication no\npermitrootlogin YES\n' > "$SSHD"
+deploy v3 < /dev/null
+hasnt "SSH_ROOT_PASSWORD" "PasswordAuthentication no: không cảnh báo"
+# Dòng trong khối Match không đặt giá trị chung.
+printf 'Match User x\n  PermitRootLogin yes\n' > "$SSHD"
+deploy v1 < /dev/null
+hasnt "SSH_ROOT_PASSWORD" "PermitRootLogin trong Match: không cảnh báo"
+rm -f "$SSHD"
+deploy v2 < /dev/null
+hasnt "SSH_ROOT_PASSWORD" "không đọc được sshd_config: không cảnh báo"
+unset MAT_SSHD_CONFIG
 echo "deploy/rollback: OK"

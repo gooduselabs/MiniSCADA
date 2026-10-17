@@ -1,0 +1,10 @@
+{
+  "code": "E_PACKAGE_EXTRA_FILE",
+  "path": "screens/big.svg",
+  "stage": "project",
+  "extra": [
+    "screens/big.svg"
+  ],
+  "digest": "sha256:084cc5232c1ee295259fced419557a7df350aff85548e2cf4c45fb95c632879f",
+  "generated": "out/extra-large-file.matscada"
+}

@@ -45,6 +45,9 @@ struct TagModel {
     std::string description, unit;
     std::optional<double> min, max;  // display range
     bool writable = false;           // access RW
+    // Feature 011 (T209, format 1.0): the least role that may write the Tag ("engineer",
+    // "administrator"; "operator" or "" for none: any role that may write at all).
+    std::string writeMinRole;
     TagLimits limits;
     std::string valueTable;
     std::optional<double> deadband;

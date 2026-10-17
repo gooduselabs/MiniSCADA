@@ -1,0 +1,41 @@
+{
+  "scenario": "pulse-recovery-x64",
+  "at": "2026-10-17T04:33:24Z",
+  "runtime": "chạy tay bằng docker compose + client như tools/*-it.ps1 (pwsh bị chặn trong sandbox của agent), x64 image mat-armhf",
+  "checks": [
+    {
+      "name": "20 rounds of kill -9 during a pulse: the bit is released (≤ 10 s after the restart)",
+      "pass": true,
+      "detail": "20/20; "
+    },
+    {
+      "name": "every release is audited tag.write, source pulse-recovery, pulseOf, account of the pulse",
+      "pass": true,
+      "detail": "20/20"
+    },
+    {
+      "name": "20 pulses while the journal cannot be written: refused PULSE_JOURNAL_FAILED",
+      "pass": true,
+      "detail": "20/20; "
+    },
+    {
+      "name": "0 bit set at the simulator while the journal cannot be written",
+      "pass": true,
+      "detail": "0"
+    }
+  ],
+  "measures": {
+    "pulse": {
+      "rounds": 20,
+      "released": 20,
+      "audited": 20,
+      "releaseMs": {
+        "median": 7144,
+        "max": 7207
+      },
+      "journalRefused": 20,
+      "bitsWhileJournalBroken": 0
+    }
+  },
+  "pass": true
+}

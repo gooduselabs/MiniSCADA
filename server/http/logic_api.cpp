@@ -60,8 +60,8 @@ int EngineeringApi::logicRoute(mg_connection* c, const GateRequest& r, const Gat
             return sendError(
                 c, 403, "LOGIC_ENABLE_ROOT_ONLY", close, "",
                 {{"message",
-                  "Chỉ root bật lại ghi PLC từ logic (logic.writes trong runtime.json, xóa "
-                  "logic-state.json rồi khởi động lại)."}});
+                  "Chỉ root bật lại ghi PLC từ logic: mat-runtime --logic-writes-reset trên "
+                  "thiết bị (logic.writes của runtime.json phải là \"on\")."}});
         if (!logic->stopWrites(who, code))
             return sendError(c, 500, code, close, "",
                              {{"message", "Không lưu được trạng thái dừng ghi."}});

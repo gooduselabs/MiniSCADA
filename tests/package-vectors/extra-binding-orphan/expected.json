@@ -1,0 +1,9 @@
+{
+  "code": "E_PACKAGE_EXTRA_FILE",
+  "path": "screens/old.bindings.json",
+  "stage": "project",
+  "extra": [
+    "screens/old.bindings.json"
+  ],
+  "digest": "sha256:3816475098d47c605318cdbf59d39a5703cc6d7b1ac9b2c0bb13d0192084bd90"
+}

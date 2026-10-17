@@ -12,7 +12,9 @@ import type { Theme } from '../app/workspace.ts';
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
 import { isLive, type SessionState } from '../model/device-session.ts';
+import { warningChips } from '../model/device.ts';
 import { AppElement, icon } from './base.ts';
+import { chipAction, chipLabel } from './device-warnings.ts';
 import './screen/mat-screen-status.ts';
 import {
   projectIcon,
@@ -322,6 +324,28 @@ export class MatStatusbar extends AppElement {
     >`;
   }
 
+  /**
+   * Cảnh báo của feature 011 (T052): một chip mỗi mã (màu theo mức, icon, chữ), title là hướng dẫn hành động;
+   * bấm mở trang Thiết bị (danh sách đủ, tên Host thiết bị nhận).
+   */
+  private deviceWarnings() {
+    const s = this.app.session;
+    if (!isLive(s.state)) return nothing;
+    return warningChips(s.info).map(
+      (c) =>
+        html`<button
+          class="sb sb-devwarn chip ${c.tone}"
+          type="button"
+          data-role="devwarn"
+          data-code=${c.code}
+          title=${chipAction(c)}
+          @click=${() => void this.app.run('online.device')}
+        >
+          ${icon(c.tone === 'err' ? 'err' : 'warn', c.tone)}${chipLabel(c)}
+        </button>`,
+    );
+  }
+
   protected override render() {
     const app = this.app;
     const { errors, warnings } = app.counts();
@@ -351,7 +375,7 @@ export class MatStatusbar extends AppElement {
             </button>`
           : nothing
       }
-      ${this.simPill()} ${this.compareChip()} ${this.viewerWarning()}
+      ${this.simPill()} ${this.compareChip()} ${this.viewerWarning()} ${this.deviceWarnings()}
       <span class="sb-grow"></span>
       <mat-screen-status .app=${app}></mat-screen-status>
       ${

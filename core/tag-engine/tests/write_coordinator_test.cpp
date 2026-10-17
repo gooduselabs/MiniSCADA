@@ -96,6 +96,36 @@ TEST(WriteCoordinator, NoSuchTagAndReadOnlyTags) {
     EXPECT_EQ(r.backend.count(), 0u);
 }
 
+// Feature 011 (T209, report 008 F5): `writeMinRole` of a Tag is checked by the coordinator too
+// (the HTTP layer refuses the whole batch first with 403): a person below it is REJECTED
+// FORBIDDEN and nothing reaches a driver; a rule of logic (authorized by the engineer who deployed
+// it, Constitution V) is not a person and is not refused.
+TEST(WriteCoordinator, WriteMinRoleOfTheTag) {
+    Rig r;
+    r.model.tags[INT_SET].writeMinRole = "engineer";
+    EXPECT_EQ(r.coord->writeMinRole("INT_SET"), "engineer");
+    EXPECT_EQ(r.coord->writeMinRole("SP"), "");
+    EXPECT_EQ(r.coord->writeMinRole("NOPE"), "");
+    const WriteView v = r.fresh("INT_SET", WriteValue::number(7));
+    EXPECT_EQ(v.status, "REJECTED");
+    EXPECT_EQ(v.code, "FORBIDDEN");
+    EXPECT_FALSE(v.message.empty());
+    EXPECT_EQ(r.backend.count(), 0u);
+    WriteCaller eng = r.who("kysu1", "sess-2");
+    eng.role = "engineer";
+    EXPECT_EQ(r.one("INT_SET", WriteValue::number(7), idN(2), &eng).status, "ACCEPTED");
+    WriteCaller admin = r.who("admin1", "sess-3");
+    admin.role = "administrator";
+    admin.administrator = true;
+    EXPECT_EQ(r.one("INT_SET", WriteValue::number(8), idN(3), &admin).status, "ACCEPTED");
+    WriteCaller logic = r.who("logic:r1", "logic");
+    logic.role = "logic";
+    logic.channel = "logic";
+    EXPECT_EQ(r.one("INT_SET", WriteValue::number(9), idN(4), &logic).status, "ACCEPTED");
+    r.model.tags[INT_SET].writeMinRole = "administrator";
+    EXPECT_EQ(r.one("INT_SET", WriteValue::number(6), idN(5), &eng).code, "FORBIDDEN");
+}
+
 TEST(WriteCoordinator, TheValueMustHaveTheTypeOfTheTag) {
     Rig r;
     EXPECT_EQ(r.fresh("SP", WriteValue::boolean(true)).code, "BAD_TYPE");

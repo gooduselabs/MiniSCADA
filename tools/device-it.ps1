@@ -16,6 +16,11 @@
 #   health:    --test-health die|hang: tự quay về bản cũ, rolled-back (US2-5). Cần build -DMAT_TEST_HOOKS=ON.
 #   kill:      -Rounds vòng (mặc định 24 = 6 bước x 4): SIGKILL ở từng bước nạp xuống; lần chạy sau luôn là bản
 #              cũ hoặc bản mới hoàn chỉnh, --project-status hết pending <= 20 s (SC-004, FR-023). Cần hook.
+#   deploy-extra-file: (011, T054, SC-006) 30 lan nap xuong tank-demo: 1/3 co tep khong tham chieu (validate:
+#              E_PACKAGE_EXTRA_FILE), 1/3 co .mat-editor/ (verify-package), 1/3 sach (committed, digest phuc vu = digest goi);
+#              0 HEALTH_TIMEOUT. Ket qua docs/reports/011-extra-file-x64.json.
+#   persist-slow: (011, T054, SC-007) fsync cua kho cham 500 ms: GET projects/active p99 <= 50 ms trong luc nap xuong;
+#              fsync loi ENOSPC: PERSIST_FAILED, ban cu chay. Can hook (-DMAT_TEST_HOOKS=ON). Ket qua 011-persist-x64.json.
 #   reload:    10 tab Chrome headless xem trang của rt1; nạp xuống thì mọi tab tải lại <= 10 s (FR-025, SC-006).
 #              Mở 127.0.0.1:18080 và 18443 của máy chạy (compose.ports.yaml); cần Chrome và puppeteer-core.
 # health và kill build runtime với -DMAT_TEST_HOOKS=ON (thư mục build riêng, mặc định C:\build\mat-x64-e2) rồi
@@ -25,7 +30,7 @@
 # Kết quả: docs/reports/005-<scenario>-x64.json. Dọn khi dùng -Keep: docker compose -p mat-dev-it down -v
 # (Thông báo in ra không dấu: Windows PowerShell 5.1 đọc file .ps1 không BOM theo codepage ANSI.)
 param(
-    [ValidateSet('auth', 'tls-idle', 'secrets', 'discovery', 'deploy', 'packages', 'busy', 'health', 'kill', 'reload')][string[]]$Scenario = @('auth'),
+    [ValidateSet('auth', 'tls-idle', 'secrets', 'discovery', 'deploy', 'packages', 'busy', 'health', 'kill', 'reload', 'deploy-extra-file', 'persist-slow')][string[]]$Scenario = @('auth'),
     [int]$Rounds = 24,
     [switch]$Keep,
     [string]$BuildDir = '',
@@ -185,13 +190,16 @@ function Invoke-Reload([string]$Fp) {
 
 function Write-Result([string]$Name, $Result) {
     $json = $Result | ConvertTo-Json -Depth 10
-    [IO.File]::WriteAllText("$root/docs/reports/005-$Name-x64.json", $json + "`n", $utf8)
+    # feature 011: deploy-extra-file -> docs/reports/011-extra-file-x64.json
+    $file = @{ 'deploy-extra-file' = '011-extra-file'; 'persist-slow' = '011-persist' }[$Name]
+    if (-not $file) { $file = "005-$Name" }
+    [IO.File]::WriteAllText("$root/docs/reports/$file-x64.json", $json + "`n", $utf8)
     Write-Host $json
     if ($Result.pass) { Write-Host "$Name scenario PASS" -ForegroundColor Green }
     else { Write-Host "$Name scenario FAILED" -ForegroundColor Red }
 }
 
-$hooks = @($Scenario | Where-Object { $_ -in @('health', 'kill') }).Count -gt 0
+$hooks = @($Scenario | Where-Object { $_ -in @('health', 'kill', 'persist-slow') }).Count -gt 0
 if ($hooks -and -not $BuildDir) { $BuildDir = (Get-MatBuildDir 'mat-x64-e2') }
 $withPorts = $Scenario -contains 'reload'
 $failed = @()
@@ -233,7 +241,7 @@ try {
             $result.checks = @($r.checks) + $extra
             $pass = $pass -and (@($extra | Where-Object { -not $_.pass }).Count -eq 0)
         }
-        if ($name -in @('deploy', 'kill', 'health', 'busy')) {
+        if ($name -in @('deploy', 'kill', 'health', 'busy', 'deploy-extra-file', 'persist-slow')) {
             $result.projectStatus = (docker exec $rt1 $bin --project-status --data-dir /data --project-store-dir /data/projects) -join "`n"
         }
         if ($name -eq 'secrets') {

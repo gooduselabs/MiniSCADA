@@ -20,7 +20,9 @@ import {
   type WatchAdapter,
   type WatchTagInfo,
 } from '../../model/watch-table.ts';
+import { pulseStuckTags, warningChips } from '../../model/device.ts';
 import { AppElement, icon } from '../base.ts';
+import { chipAction, chipLabel } from '../device-warnings.ts';
 import '../grid/mat-grid.ts';
 import type { MatGrid } from '../grid/mat-grid.ts';
 import { registerEditor } from '../registry.ts';
@@ -49,6 +51,8 @@ export class WatchTableEditor extends AppElement {
 
   private offValues: (() => void) | null = null;
   private offWrites: (() => void) | null = null;
+  private offInfo: (() => void) | null = null;
+  private stuckKey = '';
   private cache: { key: unknown[]; adapter: WatchAdapter } | null = null;
   private declared = '';
 
@@ -159,6 +163,14 @@ export class WatchTableEditor extends AppElement {
       if (app.valuesLive()) this.ticks++;
     });
     this.offWrites = app.writes.flow.subscribe(() => this.ticks++);
+    // Feature 011 (T052): Tag có xung kẹt (PULSE_STUCK của system/info) đổi thì vẽ lại ô Tag.
+    this.offInfo = app.session.subscribe((e) => {
+      if (e.type !== 'info') return;
+      const key = pulseStuckTags(app.session.info).join('\n');
+      if (key === this.stuckKey) return;
+      this.stuckKey = key;
+      this.ticks++;
+    });
     this.addEventListener('focusin', this.onFocus);
     this.addEventListener('focusout', this.onFocus);
     this.requestUpdate();
@@ -175,6 +187,8 @@ export class WatchTableEditor extends AppElement {
     this.offValues = null;
     this.offWrites?.();
     this.offWrites = null;
+    this.offInfo?.();
+    this.offInfo = null;
     this.removeEventListener('focusin', this.onFocus);
     this.removeEventListener('focusout', this.onFocus);
     this.releaseLive();
@@ -373,6 +387,15 @@ export class WatchTableEditor extends AppElement {
           class="ww-text"
           >${text}</span
         >`;
+    }
+    if (col.key === 'tag' && text) {
+      // Feature 011 (T052, FR-019): lệnh nhả của một xung chưa gửi được sau khi runtime khởi động lại.
+      const chip = warningChips(this.app.session.info).find((c) => c.code === 'PULSE_STUCK');
+      if (chip && pulseStuckTags(this.app.session.info).includes(text))
+        return html`${text}
+          <span class="chip err" data-chip="pulse-stuck" title=${chipAction(chip)}
+            >${icon('err', 'err')}${chipLabel(chip)}</span
+          >`;
     }
     if (col.key === 'value' && a.deviceMissing(row))
       return html`<span class="ww-none">${text}</span>`;

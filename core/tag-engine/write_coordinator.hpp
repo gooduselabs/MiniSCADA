@@ -228,6 +228,11 @@ class WriteCoordinator {
     };
     PulseRecoveryState pulseRecovery() const;
 
+    // Feature 011 (T209): `writeMinRole` of the Tag ("" for none or an unknown Tag). The HTTP layer
+    // refuses a batch with 403 when one of its Tags needs more than the caller's role; submit()
+    // refuses such a request too (FORBIDDEN), except for a rule of logic (channel "logic").
+    std::string writeMinRole(const std::string& tag) const;
+
     // A new request id (UUID v4, or the one of CoordinatorOptions::newRequestId): for the commands
     // the runtime makes itself (feature 011: the writes of logic).
     std::string makeRequestId() { return newRequestId(); }

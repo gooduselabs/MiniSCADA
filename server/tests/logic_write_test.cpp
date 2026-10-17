@@ -8,6 +8,8 @@
 // stop of an administrator holds over a restart; a pulse goes through the pulse journal; the edge
 // of a command is durable before the command; a damaged retain store warns and audits once.
 #include <gtest/gtest.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <atomic>
 #include <fstream>
@@ -309,6 +311,70 @@ TEST(LogicWrite, TheStopOfAnAdministratorHoldsOverARestart) {
         EXPECT_EQ(r.backend.count(), 0u);
         EXPECT_EQ(r.count("logic.write.suppressed"), 1u);
     }
+}
+
+// Follow-up of T137 (device-api-011 §7): root clears the stop with `mat-runtime
+// --logic-writes-reset`, which leaves <dataDir>/logic-writes-reset.req. The runtime takes it at
+// start, or within 5 s while it runs (applyWritesReset() is what the dispatcher calls):
+// writesStopped false in logic-state.json (the edges kept), the request deleted, audit
+// logic.writes.enabled, LOGIC_WRITES_OFF cleared when logic.writes is "on". A symbolic link in its
+// place is deleted, never followed.
+TEST(LogicWrite, RootClearsTheStopWithARequestFile) {
+    const auto pathExists = [](const std::string& p) {
+        struct stat st {};
+        return ::lstat(p.c_str(), &st) == 0;
+    };
+    EXPECT_STREQ(kLogicWritesResetFile, "logic-writes-reset.req")
+        << "the file of the CLI (users.cpp)";
+    mat::test::TempDir dir;
+    LogicOptions o = on();
+    o.statePath = dir.file(kLogicStateFile);
+    o.writesResetRequestPath = dir.file(kLogicWritesResetFile);
+    WriteCaller admin;
+    admin.user = "quanly";
+    admin.role = "administrator";
+    {
+        Rig r(docWith(json::array({lowRule()})), o);
+        std::string code;
+        ASSERT_TRUE(r.logic->stopWrites(admin, code)) << code;
+        fall(r, 0);
+        EXPECT_EQ(r.backend.count(), 0u);
+        EXPECT_FALSE(r.logic->applyWritesReset()) << "no request: nothing changes";
+        EXPECT_EQ(r.logic->writesState(), "stopped");
+        // A link in place of the request is removed, not followed.
+        mat::test::writeFile(dir.file("elsewhere"), "x", 0600);
+        ASSERT_EQ(::symlink(dir.file("elsewhere").c_str(), o.writesResetRequestPath.c_str()), 0);
+        EXPECT_FALSE(r.logic->applyWritesReset());
+        EXPECT_EQ(r.logic->writesState(), "stopped");
+        EXPECT_FALSE(pathExists(o.writesResetRequestPath));
+        EXPECT_TRUE(pathExists(dir.file("elsewhere")));
+        // The request while running.
+        mat::test::writeFile(o.writesResetRequestPath, "logic-writes-reset\n", 0600);
+        EXPECT_TRUE(r.logic->applyWritesReset());
+        EXPECT_EQ(r.logic->writesState(), "on");
+        EXPECT_FALSE(pathExists(o.writesResetRequestPath));
+        EXPECT_EQ(r.count("logic.writes.enabled"), 1u);
+        EXPECT_FALSE(r.warned("LOGIC_WRITES_OFF"));
+        fall(r, 10000);
+        EXPECT_EQ(r.backend.count(), 1u) << "the rule writes again";
+    }
+    std::ifstream f(o.statePath);
+    std::stringstream ss;
+    ss << f.rdbuf();
+    const json st = json::parse(ss.str());
+    EXPECT_EQ(st["writesStopped"], false);
+    EXPECT_GE(st["edges"]["r_low"].get<int64_t>(), 1) << "the edges are kept";
+    // At start: a request left while the runtime was down is taken before the first scan.
+    {
+        Rig r(docWith(json::array({lowRule()})), o);
+        std::string code;
+        ASSERT_TRUE(r.logic->stopWrites(admin, code)) << code;
+    }
+    mat::test::writeFile(o.writesResetRequestPath, "logic-writes-reset\n", 0600);
+    Rig r(docWith(json::array({lowRule()})), o);
+    EXPECT_EQ(r.logic->writesState(), "on");
+    EXPECT_FALSE(pathExists(o.writesResetRequestPath));
+    EXPECT_EQ(r.count("logic.writes.enabled"), 1u);
 }
 
 TEST(LogicWrite, APulseGoesThroughThePulseJournalBeforeTheBitIsSet) {

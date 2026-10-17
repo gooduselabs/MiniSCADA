@@ -329,6 +329,10 @@ interface FakeDev {
   audit: MockAuditRow[];
   /** Lần đọc audit kế tiếp trả lỗi này (cho tới khi `null`). */
   auditError: string | null;
+  /** Cảnh báo của feature 011 trong `system/info` (`warnings`, `warningDetails`; T052). */
+  warnings011: Array<{ code: string; message: string; detail: unknown }>;
+  /** `device/identity.acceptedHosts` (feature 011, device-api-011 §1); `null`: runtime cũ không có khóa. */
+  acceptedHosts: { names: string[]; ips: string[] } | null;
 }
 
 /** Một bản ghi audit giả (device-api §7, dạng JSON của `GET /api/v1/audit`). */
@@ -456,6 +460,13 @@ export interface MockDeviceControl {
   setRuntime(name: string, version: string): void;
   /** `viewerAccess` của thiết bị giả (ADR-018); `any` thì `system/info.warnings` có `VIEWER_PUBLIC`. */
   setViewerAccess(name: string, access: 'private' | 'any' | 'off'): void;
+  /** Cảnh báo của feature 011 trong `system/info` (T052): mã, thông điệp, `detail`. */
+  setWarnings(
+    name: string,
+    list: Array<{ code: string; message?: string; detail?: unknown }>,
+  ): void;
+  /** `device/identity.acceptedHosts` (feature 011); `null` để bỏ khóa (runtime cũ). */
+  setAcceptedHosts(name: string, hosts: { names: string[]; ips: string[] } | null): void;
   /** Theo dõi theo địa chỉ bị 403 vì lọc nguồn (lý do của Rust: `viewer-private`, `viewer-off`); `null` để bỏ. */
   setViewerBlock(name: string, block: 'viewer-private' | 'viewer-off' | null): void;
   /** Đặt mẫu sống của một Tag (giá trị, quality, lý do); `null` để về giá trị mặc định. */
@@ -663,6 +674,8 @@ function fakeDevices(): FakeDev[] {
     diag: defaultDiagnostics(),
     audit: seedAudit(),
     auditError: null,
+    warnings011: [],
+    acceptedHosts: null,
   });
   const devices = [
     make({
@@ -1054,6 +1067,16 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
     setViewerAccess(name, access) {
       m6.stateOf(byName(name)).viewerAccess = access;
     },
+    setWarnings(name, list) {
+      byName(name).warnings011 = list.map((w) => ({
+        code: w.code,
+        message: w.message ?? '',
+        detail: w.detail ?? null,
+      }));
+    },
+    setAcceptedHosts(name, hosts) {
+      byName(name).acceptedHosts = hosts;
+    },
     setViewerBlock(name, block) {
       m6.stateOf(byName(name)).viewerBlock = block;
     },
@@ -1243,6 +1266,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       fingerprint: f.fingerprint ?? '',
       setupRequired: f.setupRequired || f.accounts.size === 0,
       features: is05(f) ? [...FEATURES, 'tag-write', 'drivers', 'serial-ports'] : FEATURES,
+      ...(f.acceptedHosts ? { acceptedHosts: f.acceptedHosts } : {}),
     };
   }
 
@@ -1259,6 +1283,30 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       return { error: t.device === 'expired' ? 'session-expired' : 'session-invalid' };
     }
     return { f, t };
+  }
+
+  /** `warnings` (mã) và `warningDetails` (feature 011) của `system/info`; vắng khi không có cảnh báo. */
+  function warningsBlock(f: FakeDev): Record<string, unknown> {
+    const list = [
+      ...(is05(f) && m6.stateOf(f).viewerAccess === 'any'
+        ? [{ code: 'VIEWER_PUBLIC', message: '', detail: null }]
+        : []),
+      ...f.warnings011,
+    ];
+    if (list.length === 0) return {};
+    return {
+      warnings: list.map((w) => w.code),
+      ...(f.warnings011.length > 0
+        ? {
+            warningDetails: list.map((w) => ({
+              code: w.code,
+              message: w.message,
+              since: 1,
+              detail: w.detail,
+            })),
+          }
+        : {}),
+    };
   }
 
   function systemInfo(f: FakeDev): Record<string, unknown> {
@@ -1295,9 +1343,7 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
               ...(is05(f) ? { viewerAccess: m6.stateOf(f).viewerAccess } : {}),
             },
             ...(compareSemver(f.runtime, '1.0.0') >= 0 ? { logic: mlogic.systemInfoBlock(f) } : {}),
-            ...(is05(f) && m6.stateOf(f).viewerAccess === 'any'
-              ? { warnings: ['VIEWER_PUBLIC'] }
-              : {}),
+            ...warningsBlock(f),
             operation:
               f.op && f.op.result === 'running'
                 ? {

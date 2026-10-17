@@ -391,6 +391,200 @@ export function deployScenarios(ctx) {
     check('đường dẫn đang phục vụ vẫn là bản cũ', (await servedDigest()) === cur.digest);
   }
 
+  // --------------------------------------------------------------------------- deploy-extra-file
+
+  /**
+   * Feature 011 (T023, T054; SC-006, FR-024, research R9): 30 deploys of tank-demo. Every third one
+   * carries a file the project does not reference (validate: E_PACKAGE_EXTRA_FILE, nothing
+   * activated), every third one a file of an excluded folder (verify-package: E_PACKAGE_EXTRA_FILE),
+   * the rest are clean: committed, and the digest the runtime serves is the package digest. Before 011
+   * the first kind was committed with a digest the runtime never served, and the health check ended
+   * HEALTH_TIMEOUT then rolled back: 0 HEALTH_TIMEOUT is the criterion.
+   */
+  async function scenarioDeployExtraFile() {
+    let token = await signIn();
+    let cur = await activeInfo(token);
+    const tank = readProjectDir('/src/projects/tank-demo');
+    const kinds = { extra: 0, excluded: 0, clean: 0 };
+    const ok = { extra: 0, excluded: 0, clean: 0 };
+    let healthTimeouts = 0;
+    const times = [];
+    const wrong = [];
+    for (let i = 1; i <= 30; i++) {
+      const kind = i % 3 === 1 ? 'extra' : i % 3 === 2 ? 'excluded' : 'clean';
+      kinds[kind]++;
+      const add =
+        kind === 'extra'
+          ? { 'notes.json': Buffer.from(`{"round":${i}}\n`) }
+          : kind === 'excluded'
+            ? { '.mat-editor/state.json': Buffer.from(`{"round":${i}}\n`) }
+            : {};
+      const pkg = buildPackage(variant(tank, { projectVersion: `2.0.${i}`, add }));
+      const t0 = performance.now();
+      const r = await deployPackage(BASE, fp, token, pkg.bytes, pkg.digest, cur.digest, {
+        timeoutMs: 60000,
+      });
+      if (r.status === 401) {
+        token = await signIn();
+        i--;
+        kinds[kind]--;
+        continue;
+      }
+      if (r.status !== 202) {
+        wrong.push(`${i} ${kind}: ${r.status} ${r.json?.error}`);
+        continue;
+      }
+      const w = await waitOperation(BASE, fp, token, r.json.opId, { timeoutMs: 90000 });
+      times.push(performance.now() - t0);
+      const op = w.op;
+      if (op?.error?.code === 'HEALTH_TIMEOUT' || /HEALTH_TIMEOUT/.test(JSON.stringify(op ?? {})))
+        healthTimeouts++;
+      const failedStep = (op?.steps ?? []).find((s) => s.state === 'failed')?.id;
+      if (kind === 'clean') {
+        const served = await servedDigest();
+        if (op?.result === 'committed' && served === pkg.digest) ok.clean++;
+        else wrong.push(`${i} clean: ${op?.result} ${op?.error?.code} served ${served}`);
+        cur = await activeInfo(token);
+      } else {
+        const step = kind === 'extra' ? 'validate' : 'verify-package';
+        const named = kind === 'extra' ? /notes\.json/ : /\.mat-editor\/state\.json/;
+        if (
+          op?.result === 'failed' &&
+          op.error?.code === 'E_PACKAGE_EXTRA_FILE' &&
+          failedStep === step &&
+          named.test(JSON.stringify(op.error))
+        )
+          ok[kind]++;
+        else
+          wrong.push(
+            `${i} ${kind}: ${op?.result} ${op?.error?.code} step ${failedStep} ${JSON.stringify(op?.error?.issues ?? [])}`,
+          );
+        const now = await activeInfo(token);
+        if (now.digest !== cur.digest) wrong.push(`${i} ${kind}: bản đang chạy đổi ${now.digest}`);
+      }
+    }
+    check('30 lần nạp xuống đều kết thúc (không treo)', times.length === 30, wrong.join('; '));
+    check(
+      'tệp không được tham chiếu: 100% failed E_PACKAGE_EXTRA_FILE ở validate, nêu tên tệp',
+      ok.extra === kinds.extra,
+      `${ok.extra}/${kinds.extra}`,
+    );
+    check(
+      'tệp trong .mat-editor/: 100% failed E_PACKAGE_EXTRA_FILE ở verify-package',
+      ok.excluded === kinds.excluded,
+      `${ok.excluded}/${kinds.excluded}`,
+    );
+    check(
+      'gói sạch: committed, digest runtime phục vụ = digest gói',
+      ok.clean === kinds.clean,
+      `${ok.clean}/${kinds.clean}`,
+    );
+    check(
+      'SC-006: 0 lần HEALTH_TIMEOUT trong 30 lần nạp xuống',
+      healthTimeouts === 0,
+      String(healthTimeouts),
+    );
+    check(
+      'staging rỗng sau cùng',
+      listDir(`${STORE}/staging`).length === 0,
+      listDir(`${STORE}/staging`).join(','),
+    );
+    measures.extraFile = {
+      deploys: times.length,
+      kinds,
+      refusedOrCommittedAsExpected: ok,
+      healthTimeouts,
+      deployMs: { median: round1(median(times)), max: round1(Math.max(0, ...times)) },
+      mismatches: wrong,
+    };
+  }
+
+  // ------------------------------------------------------------------------------- persist-slow
+
+  /**
+   * Feature 011 (T054; SC-007, FR-023, research R8): the records of an operation are written outside the mutex
+   * of the pipeline. With every fsync of the store 500 ms slow (--test-persist-delay-ms, MAT_TEST_HOOKS), a deploy
+   * runs while GET /api/v1/projects/active is asked every 20 ms: p99 ≤ 50 ms (x64). Then every fsync of the store
+   * fails ENOSPC (--test-persist-fail): the deploy fails PERSIST_FAILED, nothing is activated, the old version runs.
+   */
+  async function scenarioPersistSlow() {
+    const tank = readProjectDir('/src/projects/tank-demo');
+    setArgs(['--test-persist-delay-ms', '500']);
+    check('chạy lại với fsync chậm 500 ms', await restartRuntime());
+    let token = await signIn();
+    let cur = await activeInfo(token);
+    const pkg = buildPackage(variant(tank, { projectVersion: '3.0.1' }));
+    const lat = [];
+    let polling = true;
+    let pollErrors = 0;
+    const poller = (async () => {
+      while (polling) {
+        const t = performance.now();
+        const r = await httpGet(RT1, 8080, '/api/v1/projects/active').catch(() => null);
+        if (r?.status === 200) lat.push(performance.now() - t);
+        else pollErrors++;
+        await sleep(20);
+      }
+    })();
+    const t0 = performance.now();
+    const r = await deployPackage(BASE, fp, token, pkg.bytes, pkg.digest, cur.digest, {
+      timeoutMs: 60000,
+    });
+    // the operation runs while the old process serves, until the restart into the new version
+    const w =
+      r.status === 202
+        ? await waitOperation(BASE, fp, token, r.json.opId, { timeoutMs: 180000 })
+        : { op: null };
+    polling = false;
+    await poller;
+    const sorted = [...lat].sort((a, b) => a - b);
+    const p99 = sorted.length
+      ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.99))]
+      : -1;
+    check(
+      'fsync chậm: nạp xuống vẫn committed',
+      w.op?.result === 'committed',
+      `${r.status} ${w.op?.result} ${w.op?.error?.code ?? ''}`,
+    );
+    check(
+      'SC-007 (x64): GET projects/active p99 ≤ 50 ms trong lúc nạp xuống với fsync 500 ms',
+      sorted.length >= 20 && p99 >= 0 && p99 <= 50,
+      `p99 ${round1(p99)} ms trên ${sorted.length} lần (${pollErrors} lần không trả lời: lúc chạy lại)`,
+    );
+    measures.persist = {
+      fsyncDelayMs: 500,
+      reads: sorted.length,
+      readsWithoutAnswer: pollErrors,
+      p50Ms: round1(sorted[Math.floor(sorted.length / 2)] ?? -1),
+      p99Ms: round1(p99),
+      maxMs: round1(sorted.at(-1) ?? -1),
+      deployMs: round1(performance.now() - t0),
+    };
+
+    setArgs(['--test-persist-fail']);
+    check('chạy lại với fsync lỗi ENOSPC', await restartRuntime());
+    token = await signIn();
+    cur = await activeInfo(token);
+    const pkg2 = buildPackage(variant(tank, { projectVersion: '3.0.2' }));
+    const r2 = await deployPackage(BASE, fp, token, pkg2.bytes, pkg2.digest, cur.digest, {
+      timeoutMs: 60000,
+    });
+    let code = r2.json?.error;
+    if (r2.status === 202) {
+      const w2 = await waitOperation(BASE, fp, token, r2.json.opId, { timeoutMs: 60000 });
+      code = w2.op?.result === 'failed' ? w2.op.error?.code : `result ${w2.op?.result}`;
+    }
+    check(
+      'ENOSPC: nạp xuống thất bại PERSIST_FAILED',
+      code === 'PERSIST_FAILED',
+      `${r2.status} ${code}`,
+    );
+    check('ENOSPC: bản đang chạy không đổi', (await activeInfo(token)).digest === cur.digest);
+    check('ENOSPC: digest đang phục vụ không đổi', (await servedDigest()) === cur.digest);
+    measures.persist.enospc = { status: r2.status, code };
+    check('kết thúc: bỏ cờ test, runtime chạy lại', await resetRuntime());
+  }
+
   // -------------------------------------------------------------------------------------- busy
 
   async function scenarioBusy() {
@@ -638,6 +832,8 @@ export function deployScenarios(ctx) {
 
   return {
     deploy: scenarioDeploy,
+    'deploy-extra-file': scenarioDeployExtraFile,
+    'persist-slow': scenarioPersistSlow,
     packages: scenarioPackages,
     busy: scenarioBusy,
     health: scenarioHealth,

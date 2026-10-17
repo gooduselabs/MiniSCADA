@@ -204,6 +204,22 @@ std::optional<PackageError> packageTypeError(std::string_view path) {
                         "Gói chỉ chứa file .json và .svg (đuôi chữ thường)"};
 }
 
+bool packageExcludedPath(std::string_view path) {
+    size_t start = 0;
+    std::string_view name = path;
+    while (true) {
+        const size_t end = std::min(path.find('/', start), path.size());
+        const std::string_view seg = path.substr(start, end - start);
+        if ((!seg.empty() && seg[0] == '.') || seg == "node_modules") return true;
+        name = seg;
+        if (end == path.size()) break;
+        start = end + 1;
+    }
+    const std::string lower = lowerAscii(name);
+    return lower == "thumbs.db" || lower == "desktop.ini" || (!name.empty() && name[0] == '~') ||
+           endsWith(lower, ".tmp");
+}
+
 std::string packagePathKey(std::string_view path) { return lowerAscii(path); }
 
 std::optional<PackageError> packageEntryLimitError(std::string_view path, uint64_t size,

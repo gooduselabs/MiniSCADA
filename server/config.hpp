@@ -99,6 +99,11 @@ struct RuntimeConfig {
     // runtime of tools/device-it.ps1) accepts the arguments; the armhf build never has them.
     std::string testKillAtStep;  // --test-kill-at <step>: SIGKILL just before that deploy step
     std::string testHealth;      // --test-health die|hang: the version being tried dies or hangs
+    // Feature 011 (T054 persist-slow, SC-007): every fsync of the project store waits this long;
+    // --test-persist-fail: every fsync of the store fails ENOSPC once the runtime serves (both only
+    // with MAT_TEST_HOOKS).
+    int testPersistDelayMs = 0;
+    bool testPersistFail = false;
 };
 
 struct ConfigResult {

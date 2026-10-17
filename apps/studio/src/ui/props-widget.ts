@@ -929,6 +929,10 @@ export class MatWidgetProps extends AppElement {
       <div class="banner info wi-note" role="note">
         ${icon('shield')}
         <div>${t('wi.role.always')}</div>
+      </div>
+      <div class="banner warn wi-note" role="note" data-note="role-not-auth">
+        ${icon('warn')}
+        <div>${t('wi.role.notAuth')}</div>
       </div>`;
   }
 

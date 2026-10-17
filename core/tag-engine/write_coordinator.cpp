@@ -21,6 +21,15 @@ namespace {
 
 constexpr size_t kNpos = static_cast<size_t>(-1);
 constexpr int64_t kMaxExactDouble = 9007199254740992LL;  // 2^53
+
+// The order of the roles (core/auth/roles.hpp) for `writeMinRole`: "" (none) and "operator" ask
+// for no more than writing at all; an unknown role of a caller ranks lowest.
+int roleRank(const std::string& r) {
+    if (r.empty() || r == "operator") return 1;
+    if (r == "engineer") return 2;
+    if (r == "administrator") return 3;
+    return 0;
+}
 constexpr int64_t kQuiesceCapMs = 25000;
 constexpr int64_t kAuditDrainMs = 10000;
 
@@ -371,6 +380,13 @@ void WriteCoordinator::waitAuditIdle() {
 // ---- views ----
 
 WriteView WriteCoordinator::viewOf(const Entry& e) const { return e.view; }
+
+std::string WriteCoordinator::writeMinRole(const std::string& tag) const {
+    const auto idx = model_.tagIndex(tag);
+    if (!idx) return "";
+    const std::string& r = model_.tags[*idx].writeMinRole;
+    return r == "operator" ? std::string() : r;
+}
 
 size_t WriteCoordinator::outstanding() const {
     std::lock_guard<std::mutex> g(mu_);
@@ -756,6 +772,14 @@ std::vector<WriteView> WriteCoordinator::submit(const WriteCaller& who,
         }
         if (t.kind == TagKind::Calculated || !t.writable) {
             out.push_back(reject(who, req, "READ_ONLY", ""));
+            continue;
+        }
+        // Feature 011 (T209, report 008 F5): the role the Tag needs. A rule of logic is authorized
+        // by the engineer who deployed it (Constitution V, 2.0.2), not by a role of its own.
+        if (who.channel != "logic" && roleRank(who.role) < roleRank(t.writeMinRole)) {
+            out.push_back(
+                reject(who, req, "FORBIDDEN",
+                       "Tag này chỉ ghi được từ vai trò " + t.writeMinRole + " trở lên."));
             continue;
         }
         // Feature 007 (FR-046): what only a BOOL Tag can have, before the value is looked at.

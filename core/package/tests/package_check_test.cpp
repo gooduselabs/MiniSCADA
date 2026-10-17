@@ -324,6 +324,28 @@ TEST(FileSet, UnlistedBeforeMissing) {
     EXPECT_PKG_ERROR(check(pack(baseProject(), m)), "E_PKG_MISSING", "listed.json");
 }
 
+// Feature 011 (contract project-format-1.0 §6, FR-024): what the Studio never packs and the
+// runtime refuses even when listed: E_PACKAGE_EXTRA_FILE, after the checksums, before
+// E_PKG_UNLISTED.
+TEST(FileSet, ExcludedPathsAreExtraFiles) {
+    for (const char* p : {".mat-editor/state.json", ".mat-backup/1/project.json", "a/.git/x.json",
+                          ".vs/x.json", "node_modules/x/package.json", "screens/.hidden.json",
+                          ".x.svg", "Thumbs.db", "screens/THUMBS.DB", "desktop.ini", "~$tags.json",
+                          "screens/~main.svg", "a.tmp", "screens/b.TMP"})
+        EXPECT_TRUE(packageExcludedPath(p)) << p;
+    for (const char* p : {"project.json", "screens/main.svg", "a.b/c.json", "tags~.json",
+                          "tmp.json", "screens/x.tmp.svg", "node_modules.json", "git/x.json"})
+        EXPECT_FALSE(packageExcludedPath(p)) << p;
+
+    auto files = baseProject();
+    files[".mat-editor/state.json"] = "{}\n";
+    EXPECT_PKG_ERROR(check(pack(files)), "E_PACKAGE_EXTRA_FILE", ".mat-editor/state.json");
+    // Listed or not, the excluded file is named first.
+    PackOptions o;
+    o.entries = [](std::vector<ZEntry>& l) { insertSorted(l, storedEntry("~x.json", "{}\n")); };
+    EXPECT_PKG_ERROR(check(pack(baseProject(), o)), "E_PACKAGE_EXTRA_FILE", "~x.json");
+}
+
 // ---- Digest (§4, §6)
 
 TEST(Digest, RecomputedFromFilesThenAgainstTheExpectedOne) {

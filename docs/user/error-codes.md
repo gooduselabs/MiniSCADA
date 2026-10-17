@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 401 mã.
+Tổng cộng 403 mã.
 
 ## Mục lục
 
@@ -23,14 +23,14 @@ Tổng cộng 401 mã.
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (32)
 - [Alarm](#alarm) (46)
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
-- [Gói project (.matscada)](#package) (15)
+- [Gói project (.matscada)](#package) (16)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
 - [Đăng nhập, phiên và truy cập HTTP](#auth) (24)
 - [Ghi Tag](#write) (38)
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
-- [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (30)
+- [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (31)
 - [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (20)
 
 <a id="format"></a>
@@ -301,6 +301,7 @@ Tổng cộng 401 mã.
 
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
+| `E_PACKAGE_EXTRA_FILE` | — | Gói hoặc project có tệp không thuộc project (tệp không được tham chiếu, thư mục ẩn như .mat-editor/, .mat-backup/, node_modules/, Thumbs.db, desktop.ini, ~*, *.tmp) | `core/package`, `core/project-store`, `packages/project-schema`, `server` |
 | `E_PKG_CHECKSUM` | — | CRC32, SHA-256 hoặc kích thước khác manifest | `core/package` |
 | `E_PKG_DIGEST` | — | `digest` khác giá trị tính lại; khác header `X-Mat-Digest` (nạp xuống) hoặc khác digest mong đợi (đọc lên) | `core/package` |
 | `E_PKG_ENTRIES` | — | Gói phải có 1–1024 entry (gồm manifest) | `core/package` |
@@ -506,8 +507,9 @@ Tổng cộng 401 mã.
 | `E_LOGIC_WRITE_TARGET` | — | Tag của mục writes không phải Tag thiết bị ghi được (RW) | `core/project-manager`, `packages/project-schema` |
 | `E_LOGIC_WRITE_UNDECLARED` | — | Hành động ghi PLC tham chiếu mục writes không có | `core/project-manager`, `packages/project-schema` |
 | `E_LOGIC_WRITE_VALUE` | — | Giá trị ghi PLC sai kiểu hoặc ngoài danh sách cho phép (allowed) | `core/project-manager`, `packages/project-schema` |
-| `LOGIC_ENABLE_ROOT_ONLY` | 403 | Chỉ root bật lại ghi PLC từ logic (logic.writes trong runtime.json, xóa logic-state.json rồi khởi động lại). | `server/http` |
+| `LOGIC_ENABLE_ROOT_ONLY` | 403 | Chỉ root bật lại ghi PLC từ logic: mat-runtime --logic-writes-reset trên thiết bị (logic.writes của runtime.json phải là "on"). | `server/http` |
 | `LOGIC_NOT_PRESENT` | 404 | Project đang chạy không có logic. | `server/http` |
+| `LOGIC_RESET_REQUEST_FAILED` | — | Không ghi được tệp yêu cầu bỏ lệnh dừng ghi PLC của logic (mat-runtime --logic-writes-reset) | `server/cli` |
 | `LOGIC_WRITER_MISSING` | — | Lệnh ghi của logic không gửi được: runtime không có bộ điều phối ghi (không có project chạy). | `server` |
 | `LOGIC_WRITES_STOPPED` | — | Ghi PLC từ logic đã bị quản trị viên dừng: lệnh ghi bị bỏ qua. | `server` |
 | `NOT_RESETTABLE` | 409 | Chỉ đặt lại được counter, totalizer, giờ chạy. | `server` |

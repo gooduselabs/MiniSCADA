@@ -1,0 +1,9 @@
+{
+  "code": "E_PACKAGE_EXTRA_FILE",
+  "path": "screens/old.svg",
+  "stage": "project",
+  "extra": [
+    "screens/old.svg"
+  ],
+  "digest": "sha256:52427721baf619b27c4ca0d83e6a11de6bdc4b049702190d4ab9695bff3f0925"
+}

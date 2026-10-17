@@ -1105,6 +1105,13 @@
       "usedIn": ["server"]
     },
     {
+      "code": "E_PACKAGE_EXTRA_FILE",
+      "http": null,
+      "group": "package",
+      "message": "Gói hoặc project có tệp không thuộc project (tệp không được tham chiếu, thư mục ẩn như .mat-editor/, .mat-backup/, node_modules/, Thumbs.db, desktop.ini, ~*, *.tmp)",
+      "usedIn": ["core/package", "core/project-store", "packages/project-schema", "server"]
+    },
+    {
       "code": "E_PATH",
       "http": null,
       "group": "format",
@@ -1770,7 +1777,7 @@
       "code": "LOGIC_ENABLE_ROOT_ONLY",
       "http": 403,
       "group": "logic",
-      "message": "Chỉ root bật lại ghi PLC từ logic (logic.writes trong runtime.json, xóa logic-state.json rồi khởi động lại).",
+      "message": "Chỉ root bật lại ghi PLC từ logic: mat-runtime --logic-writes-reset trên thiết bị (logic.writes của runtime.json phải là \"on\").",
       "usedIn": ["server/http"]
     },
     {
@@ -1779,6 +1786,13 @@
       "group": "logic",
       "message": "Project đang chạy không có logic.",
       "usedIn": ["server/http"]
+    },
+    {
+      "code": "LOGIC_RESET_REQUEST_FAILED",
+      "http": null,
+      "group": "logic",
+      "message": "Không ghi được tệp yêu cầu bỏ lệnh dừng ghi PLC của logic (mat-runtime --logic-writes-reset)",
+      "usedIn": ["server/cli"]
     },
     {
       "code": "LOGIC_RETAIN_LOST",

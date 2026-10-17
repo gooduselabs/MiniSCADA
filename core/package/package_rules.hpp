@@ -42,6 +42,12 @@ std::optional<PackageError> packagePathError(std::string_view path);
 // Rule 6 (E_PKG_TYPE): the name ends with ".json" or ".svg", lower case. The reader checks it
 // after rules 1–5, 7 and 8 (§8a).
 std::optional<PackageError> packageTypeError(std::string_view path);
+// Feature 011 (contracts/project-format-1.0.md §6, FR-024): a path the Studio never packs and the
+// runtime refuses even when the manifest lists it (E_PACKAGE_EXTRA_FILE): a segment that is
+// hidden (starts with '.': .mat-backup/, .mat-editor/, .git/, .vs/…) or is node_modules; a name
+// Thumbs.db or desktop.ini (any case), starting with '~' or ending with ".tmp" (any case).
+bool packageExcludedPath(std::string_view path);
+
 // Key of rule 7: two paths with the same key are duplicates (A–Z lowered, ASCII only).
 std::string packagePathKey(std::string_view path);
 

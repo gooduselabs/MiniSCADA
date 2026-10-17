@@ -1,0 +1,58 @@
+{
+  "scenario": "deploy-extra-file-x64",
+  "at": "2026-10-17T04:33:24Z",
+  "runtime": "chạy tay bằng docker compose + client như tools/*-it.ps1 (pwsh bị chặn trong sandbox của agent), x64 image mat-armhf",
+  "checks": [
+    {
+      "name": "30 lần nạp xuống đều kết thúc (không treo)",
+      "pass": true
+    },
+    {
+      "name": "tệp không được tham chiếu: 100% failed E_PACKAGE_EXTRA_FILE ở validate, nêu tên tệp",
+      "pass": true,
+      "detail": "10/10"
+    },
+    {
+      "name": "tệp trong .mat-editor/: 100% failed E_PACKAGE_EXTRA_FILE ở verify-package",
+      "pass": true,
+      "detail": "10/10"
+    },
+    {
+      "name": "gói sạch: committed, digest runtime phục vụ = digest gói",
+      "pass": true,
+      "detail": "10/10"
+    },
+    {
+      "name": "SC-006: 0 lần HEALTH_TIMEOUT trong 30 lần nạp xuống",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "staging rỗng sau cùng",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "extraFile": {
+      "deploys": 30,
+      "kinds": {
+        "extra": 10,
+        "excluded": 10,
+        "clean": 10
+      },
+      "refusedOrCommittedAsExpected": {
+        "extra": 10,
+        "excluded": 10,
+        "clean": 10
+      },
+      "healthTimeouts": 0,
+      "deployMs": {
+        "median": 286.3,
+        "max": 3705.6
+      },
+      "mismatches": []
+    }
+  },
+  "pass": true,
+  "projectStatus": "Kho project: /data/projects\nĐang chạy: seq 11  tank-demo 2.0.30  sha256:c90d33941c8aa099fb3327d9aa56739b7241179cc1a2e22a55c41d4a4314bc96\n    nguồn studio; kích hoạt 2026-10-17T04:16:05Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\nBản dự phòng:\n  seq 10  tank-demo 2.0.27  sha256:853a7658aa4e50d3792320811342f7fc39a2c1e1defe328cc0a54dcf39610376\n    nguồn studio; kích hoạt 2026-10-17T04:16:00Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\n  seq 9  tank-demo 2.0.24  sha256:da09a5a5a80b267d46bd7eacb39f4e264f76ce41a58891af92230df16a645e04\n    nguồn studio; kích hoạt 2026-10-17T04:15:56Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\n  seq 8  tank-demo 2.0.21  sha256:277f7b928874055ec4b165d697ee069341d0e7a75fcd609f73f359031de24440\n    nguồn studio; kích hoạt 2026-10-17T04:15:52Z (đồng hồ thiết bị chưa đồng bộ); bởi kysu2 từ 172.30.5.50\nThao tác dở dang: không"
+}

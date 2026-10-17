@@ -65,9 +65,12 @@ TEST_P(PackageVector, GivesTheExpectedCodeAndPath) {
     ASSERT_NE(src, nullptr) << error;
     const PackageCheck r = checkPackage(*src, schema());
     EXPECT_EQ(r.packageBytes, src->size());
-    if (v.expected.value("ok", false)) {
+    // Feature 011: an extra file of the project level (stage "project") is a valid package; the
+    // project check after extraction refuses it (core/project-manager/tests/package_files_test).
+    if (v.expected.value("ok", false) || v.expected.value("stage", "") == "project") {
         ASSERT_TRUE(r.ok) << describe(r);
-        EXPECT_EQ(r.manifest.digest, v.expected["digest"].get<std::string>());
+        if (v.expected.contains("digest"))
+            EXPECT_EQ(r.manifest.digest, v.expected["digest"].get<std::string>());
         if (v.expected.contains("files")) {
             EXPECT_EQ(filesJson(r.manifest.files), v.expected["files"]);
         }
@@ -103,50 +106,25 @@ INSTANTIATE_TEST_SUITE_P(Vectors, PackageVector, ::testing::ValuesIn(packageVect
 
 TEST(PackageVectors, EveryRequiredVectorIsThere) {
     const auto names = packageVectorNames();
-    for (const char* n : {"valid-tank-demo-deflate",
-                          "valid-tank-demo-stored",
-                          "valid-vietnamese-names",
-                          "valid-manifest-extensions",
-                          "valid-entries-1024",
-                          "valid-device-tank-demo",
-                          "bomb-ratio",
-                          "bomb-total-size",
-                          "bomb-overlap",
-                          "bomb-declared-size",
-                          "path-dotdot",
-                          "path-absolute",
-                          "path-backslash",
-                          "path-drive",
-                          "path-device-name",
-                          "path-trailing-dot",
-                          "path-case-duplicate",
-                          "path-symlink",
-                          "path-directory",
-                          "path-depth-9",
-                          "type-js",
-                          "struct-zip64",
-                          "struct-encrypted",
-                          "struct-data-descriptor",
-                          "struct-extra-field",
-                          "struct-archive-comment",
-                          "struct-entry-comment",
-                          "struct-junk-before",
-                          "struct-junk-after",
-                          "struct-local-name",
-                          "content-crc",
-                          "content-size",
-                          "content-sha256",
-                          "content-unlisted",
-                          "content-missing",
-                          "content-digest",
-                          "content-identity",
-                          "content-format-version",
-                          "secret-password-key",
-                          "secret-pem-svg",
-                          "size-too-large",
-                          "size-entries-1025"})
+    for (const char* n :
+         {"valid-tank-demo-deflate", "valid-tank-demo-stored", "valid-vietnamese-names",
+          "valid-manifest-extensions", "valid-entries-1024", "valid-device-tank-demo", "bomb-ratio",
+          "bomb-total-size", "bomb-overlap", "bomb-declared-size", "path-dotdot", "path-absolute",
+          "path-backslash", "path-drive", "path-device-name", "path-trailing-dot",
+          "path-case-duplicate", "path-symlink", "path-directory", "path-depth-9", "type-js",
+          "struct-zip64", "struct-encrypted", "struct-data-descriptor", "struct-extra-field",
+          "struct-archive-comment", "struct-entry-comment", "struct-junk-before",
+          "struct-junk-after", "struct-local-name", "content-crc", "content-size", "content-sha256",
+          "content-unlisted", "content-missing", "content-digest", "content-identity",
+          "content-format-version", "secret-password-key", "secret-pem-svg", "size-too-large",
+          "size-entries-1025",
+          // feature 011 (SC-006): extra files
+          "extra-mat-editor", "extra-mat-backup", "extra-hidden-file", "extra-node-modules",
+          "extra-tilde-file", "extra-case-variant", "extra-root-file", "extra-screen-file",
+          "extra-svg-unreferenced", "extra-binding-orphan", "extra-template-unlisted",
+          "extra-strange-dir", "extra-large-file"})
         EXPECT_NE(std::find(names.begin(), names.end(), n), names.end()) << n;
-    EXPECT_GE(names.size(), 59u);
+    EXPECT_GE(names.size(), 72u);
 }
 
 TEST(PackageVectors, GeneratedPackagesArePresent) {

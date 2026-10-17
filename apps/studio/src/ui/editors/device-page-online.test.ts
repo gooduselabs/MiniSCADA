@@ -6,7 +6,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StudioApp } from '../../app/app.ts';
 import '../mat-shell.ts';
 import type { MatShell } from '../mat-shell.ts';
-import { buttonByText, newOnlineApp, textOf, typeInto } from '../online-test-helpers.ts';
+import {
+  buttonByText,
+  newOnlineApp,
+  pinnedDevice,
+  textOf,
+  typeInto,
+} from '../online-test-helpers.ts';
 import { cleanup, mount, settled } from '../test-helpers.ts';
 
 const apps: StudioApp[] = [];
@@ -98,6 +104,47 @@ describe('trang Thiết bị (feature 005)', () => {
     expect(calls('live_open').at(-1)?.args.target).toEqual({ address: '192.168.1.117:8080' });
     expect(calls('device_probe')).toHaveLength(0);
     expect(textOf(page)).toContain('Đang theo dõi');
+  });
+
+  // T052 (feature 011, FR-036, FR-013): cảnh báo mới thành chip kèm hướng dẫn hành động; tên Host thiết bị nhận.
+  it('Online: chip cho cảnh báo 011 kèm hướng dẫn, danh sách acceptedHosts', async () => {
+    const { app, dev, page, advance, pw } = await openPage();
+    dev.control.setRuntime('BL335-01', '1.0.0');
+    dev.control.setAcceptedHosts('BL335-01', {
+      names: ['localhost', 'bl335-01', 'bl335-01.local', 'scada.nhamay.vn'],
+      ips: ['*'],
+    });
+    dev.control.setWarnings('BL335-01', [
+      { code: 'HOST_CHECK_OFF', message: 'Kiểm Host đang tắt' },
+      { code: 'SSH_ROOT_PASSWORD' },
+      { code: 'PULSE_STUCK', detail: { tags: ['PUMP01.RUN_CMD'], pulseRecovery: 'on' } },
+      { code: 'TIME_NOT_SYNCED' },
+      { code: 'LOGIC_THROTTLED' },
+      { code: 'UPDATE_ROLLED_BACK' },
+    ]);
+    app.session.goOnline(await pinnedDevice(dev, 'BL335-01'));
+    await advance(60);
+    await app.login('kysu1', pw('kysu1'));
+    await advance(300);
+    const chips = [...page.querySelectorAll('[data-role="devwarn"]')];
+    expect(chips.map((c) => c.getAttribute('data-code'))).toEqual([
+      'HOST_CHECK_OFF',
+      'SSH_ROOT_PASSWORD',
+      'PULSE_STUCK',
+      'TIME_NOT_SYNCED',
+      'LOGIC_THROTTLED',
+      'UPDATE_ROLLED_BACK',
+    ]);
+    const text = textOf(page);
+    // hướng dẫn hành động
+    expect(text).toContain('allowedHosts');
+    expect(text).toContain('PermitRootLogin');
+    expect(text).toContain('PUMP01.RUN_CMD');
+    expect(text).toContain('NTP');
+    // tên Host thiết bị nhận
+    const hosts = page.querySelector('[data-role="accepted-hosts"]');
+    expect(textOf(hosts)).toContain('scada.nhamay.vn');
+    expect(textOf(hosts)).toContain('bl335-01.local');
   });
 
   it('chưa mở project: phần thiết bị của project nhắc mở project', async () => {

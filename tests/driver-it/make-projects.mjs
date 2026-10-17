@@ -227,4 +227,41 @@ base(
     },
   },
 );
+// ---- gateway-3 (feature 011, T054: gateway-multiunit, pulse-recovery): one Modbus TCP gateway (the simulator)
+// with three field devices g1, g2, g3 (unit 1, 2, 3), one INT16 Tag each at HR0 in the normal group (500 ms here:
+// 1.000 cycles in about 8 minutes), and a BOOL coil of g1 written as a pulse (PULSE.CMD, C20).
+const gatewayConn = {
+  schemaVersion: '0.2.0',
+  scanGroups: { fast: 250, normal: 500, slow: 5000 },
+  channels: [
+    {
+      id: 'gw1',
+      name: 'Gateway Modbus TCP (giả lập)',
+      kind: 'modbus-tcp',
+      tcp: { host: 'sim', port: 1502, connectTimeoutMs: 1000, reconnectMaxS: 4 },
+      devices: [1, 2, 3].map((u) => ({
+        id: `g${u}`,
+        name: `Thiết bị ${u} sau gateway`,
+        unitId: u,
+        timeoutMs: 400,
+      })),
+    },
+  ],
+};
+base('gateway-3', 'driver-it-gateway', gatewayConn, [
+  sim,
+  ...[1, 2, 3].map((u) => ({
+    id: `G${u}.V`,
+    kind: 'external',
+    type: 'INT16',
+    source: { device: `g${u}`, address: 'HR0' },
+  })),
+  {
+    id: 'PULSE.CMD',
+    kind: 'external',
+    type: 'BOOL',
+    access: 'RW',
+    source: { device: 'g1', address: 'C20' },
+  },
+]);
 console.log('projects written');

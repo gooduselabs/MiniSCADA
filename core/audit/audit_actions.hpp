@@ -62,6 +62,8 @@ enum class AuditAction {
     LogicWritesDisabled,   // logic.writes.disabled: an administrator stopped the writes of logic
     LogicReset,            // logic.reset: a counter, totalizer or run-hours block reset (engineer)
     LogicRetainLost,       // logic.retain.lost: the retained state of logic was damaged at start
+    LogicWritesEnabled,    // logic.writes.enabled: root cleared the stop (mat-runtime
+                           // --logic-writes-reset)
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -72,7 +74,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 enum class AuditChannel { Https, Http, Cli, System, Web, Logic };
 
 // clang-format off
-inline constexpr std::array<AuditAction, 41> kAuditActions = {
+inline constexpr std::array<AuditAction, 42> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -93,7 +95,7 @@ inline constexpr std::array<AuditAction, 41> kAuditActions = {
     AuditAction::AuthDistributedAttack, AuditAction::LogicWrite,
     AuditAction::LogicWriteSuppressed,  AuditAction::LogicThrottled,
     AuditAction::LogicWritesDisabled,   AuditAction::LogicReset,
-    AuditAction::LogicRetainLost,
+    AuditAction::LogicRetainLost,       AuditAction::LogicWritesEnabled,
 };
 // clang-format on
 
@@ -181,6 +183,8 @@ constexpr const char* auditActionName(AuditAction a) {
             return "logic.reset";
         case AuditAction::LogicRetainLost:
             return "logic.retain.lost";
+        case AuditAction::LogicWritesEnabled:
+            return "logic.writes.enabled";
     }
     return "";
 }

@@ -1,0 +1,21 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "0.2.0",
+  "projectId": "driver-it-gateway",
+  "projectName": "Kiểm thử driver: gateway-3",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "0.5.0",
+  "entryScreen": "main",
+  "screens": [
+    "main"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "valueTables": [
+    "TrangThaiBom"
+  ],
+  "watchTables": [
+    "van-hanh"
+  ],
+  "maxClients": 10
+}

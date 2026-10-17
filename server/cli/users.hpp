@@ -5,6 +5,7 @@
 //   mat-runtime --user-role <name> <role>
 //   mat-runtime --user-disable <name> | --user-enable <name> | --user-unlock <name>
 //   mat-runtime --user-unlock-all
+//   mat-runtime --logic-writes-reset   (feature 011: clear an administrator stop of logic writes)
 //   mat-runtime --user-list
 // each with [--users-file <file>] [--data-dir <dir>] [--config <runtime.json>].
 //
@@ -20,6 +21,9 @@
 // - --user-unlock-all (feature 011, FR-017): <dataDir>/auth-unlock.req (0600), which the runtime
 //   deletes within 5 s or at start, then clears every pair and address lock; audit account.unlock
 //   with target "*". users.json is not touched.
+// - --logic-writes-reset (feature 011, follow-up of T137): <dataDir>/logic-writes-reset.req (0600),
+//   which the runtime takes within 5 s (a project with logic.json runs) or at start, then clears
+//   writesStopped of logic-state.json (edges kept); audit logic.writes.enabled.
 // - New passwords (--user-add, --user-passwd) keep the rule of 15 characters (feature 011 asks for
 //   at least 10); accounts made before are not forced to change.
 // - The last enabled administrator can be neither disabled nor given another role.

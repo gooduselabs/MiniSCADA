@@ -21,8 +21,8 @@ use manifest::{
 pub use rules::PackageError;
 use rules::{
     MANIFEST_NAME, MAX_JSON_BYTES, MAX_MANIFEST_BYTES, MAX_SVG_BYTES, MAX_TOTAL_BYTES,
-    entry_limit_error, find_secret, path_key, path_rule_error, path_type_error,
-    read_project_identity,
+    entry_limit_error, excluded_path, extra_file_error, find_secret, path_key, path_rule_error,
+    path_type_error, read_project_identity,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -162,8 +162,11 @@ pub fn check_package(bytes: &[u8], expected_digest: Option<&str>) -> Result<Chec
         }
     }
 
-    // 7. Tập file.
+    // 7. Tập file: tệp bị loại (feature 011, `E_PACKAGE_EXTRA_FILE`), rồi tệp không liệt kê, rồi tệp thiếu.
     let present: HashSet<&str> = entries.iter().skip(1).map(|e| e.name.as_str()).collect();
+    if let Some(e) = entries.iter().skip(1).find(|e| excluded_path(&e.name)) {
+        return Err(extra_file_error(&e.name));
+    }
     for e in entries.iter().skip(1) {
         if !listed.contains_key(e.name.as_str()) {
             return Err(PackageError::at(
@@ -275,6 +278,11 @@ pub fn build_package(
         }
         if let Some(e) = path_type_error(path) {
             return Err(e);
+        }
+        // Feature 011: giao diện chỉ đưa tập file của project (`projectFiles`); project tham chiếu tệp bị
+        // loại (`.mat-editor/`, tệp ẩn, `~*`…) thì thiết bị sẽ từ chối: báo ngay.
+        if excluded_path(path) {
+            return Err(extra_file_error(path));
         }
         let size = data.len() as u64;
         if let Some(e) = entry_limit_error(path, size, size, false) {
@@ -676,10 +684,13 @@ mod tests {
     #[test]
     fn every_shared_vector_gives_the_expected_result() {
         let all = vectors();
-        assert!(all.len() >= 59, "chỉ thấy {} vector", all.len());
+        assert!(all.len() >= 72, "chỉ thấy {} vector", all.len());
         for v in &all {
             let got = check_package(&v.bytes, None);
-            if v.expected.get("ok").and_then(Value::as_bool) == Some(true) {
+            // Feature 011: tệp thừa tầng project (`stage: project`) là gói hợp lệ; bước kiểm project sau
+            // khi giải nén (C++ `projectExtraFiles`, TS `extraProjectFiles`) mới từ chối.
+            let project_stage = v.expected.get("stage").and_then(Value::as_str) == Some("project");
+            if project_stage || v.expected.get("ok").and_then(Value::as_bool) == Some(true) {
                 let ok = got.unwrap_or_else(|e| panic!("{}: mong đợi hợp lệ, nhận {e}", v.name));
                 assert_eq!(
                     Some(ok.manifest.digest.as_str()),
@@ -874,6 +885,15 @@ mod tests {
         assert_eq!(code(with("CON.json", "{}")), "E_PKG_PATH");
         assert_eq!(code(with("x.js", "{}")), "E_PKG_TYPE");
         assert_eq!(code(with("matscada.json", "{}")), "E_PKG_PATH");
+        // Feature 011 (T024): tệp bị loại không bao giờ vào gói.
+        for p in [
+            ".mat-editor/state.json",
+            ".mat-backup/1/tags.json",
+            "~x.json",
+            "s/.h.svg",
+        ] {
+            assert_eq!(code(with(p, "{}")), "E_PACKAGE_EXTRA_FILE", "{p}");
+        }
         assert_eq!(
             code(with("TAGS.json", "{}")),
             "E_PKG_PATH",

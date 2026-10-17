@@ -10,6 +10,12 @@
 //   - hợp lệ: { "ok": true, "digest": "sha256:…", "files"?: [mục files[] của manifest] }
 //   - hỏng: { "code": "E_PKG_…", "path"?: "…" }. Có `path` thì so cả path của lỗi; không có thì chỉ so mã
 //     (lỗi của cả gói, hoặc entry nào báo lỗi tùy thứ tự kiểm).
+//   - tệp thừa ở tầng project (feature 011, contract project-format-1.0 §6, FR-024):
+//     { "code": "E_PACKAGE_EXTRA_FILE", "path", "stage": "project", "extra": [...], "digest" }: gói hợp lệ ở mọi bước
+//     của §8a (bộ đọc gói trả ok), nhưng sau khi giải nén và kiểm project, tập tệp của gói khác tập tệp
+//     project tham chiếu (LoadedProject::files() / projectFiles()); `extra` là mọi tệp thừa theo byte UTF-8,
+//     `path` là tệp đầu. Không có `stage`: lỗi của bộ đọc gói (kể cả E_PACKAGE_EXTRA_FILE của thư mục, tệp
+//     bị loại: `.mat-editor/`, tệp ẩn, `~*`…).
 // - Digest (không có gói): { "digest", "text" (chuỗi đem băm), "files" (không theo thứ tự), "contents" }.
 //
 // Mỗi gói hỏng chỉ phạm một luật, phần còn lại hợp lệ (manifest, CRC, SHA-256, digest khớp nhau), để mã
@@ -828,6 +834,88 @@ vector('secret-url-credentials', () =>
     },
     { methods: { 'logging.json': 'deflate' } },
   ),
+);
+
+// Tệp thừa (feature 011, contract project-format-1.0 §6, research R9, SC-006): E_PACKAGE_EXTRA_FILE.
+// Tầng gói: thư mục, tệp bị loại (Studio không đóng gói, runtime từ chối) dù đã liệt kê trong manifest.
+vector('extra-mat-editor', () =>
+  fail('E_PACKAGE_EXTRA_FILE', '.mat-editor/state.json', {
+    ...base(),
+    '.mat-editor/state.json': '{"zoom":1}\n',
+  }),
+);
+vector('extra-mat-backup', () =>
+  fail('E_PACKAGE_EXTRA_FILE', '.mat-backup/20261017-0800/project.json', {
+    ...base(),
+    '.mat-backup/20261017-0800/project.json': json(PROJECT()),
+  }),
+);
+vector('extra-hidden-file', () =>
+  fail('E_PACKAGE_EXTRA_FILE', 'screens/.main.json', {
+    ...base(),
+    'screens/.main.json': '{}\n',
+  }),
+);
+vector('extra-node-modules', () =>
+  fail('E_PACKAGE_EXTRA_FILE', 'node_modules/x/package.json', {
+    ...base(),
+    'node_modules/x/package.json': '{"name":"x"}\n',
+  }),
+);
+vector('extra-tilde-file', () =>
+  fail('E_PACKAGE_EXTRA_FILE', '~$tags.json', { ...base(), '~$tags.json': '{}\n' }),
+);
+// Hai bản trùng tên khác hoa thường: luật 7 của §5 (E_PKG_PATH) bắt trước bước tập tệp.
+vector('extra-case-variant', () =>
+  fail('E_PKG_PATH', undefined, { ...base(), 'screens/Main.svg': SVG }),
+);
+// Tầng project: gói hợp lệ, tệp không thuộc tập project tham chiếu.
+const extra = (files) => {
+  const names = Object.keys(files)
+    .filter((p) => !(p in base()))
+    .sort(byUtf8);
+  const { pkg, manifest } = pack({ ...base(), ...files });
+  return {
+    pkg,
+    expected: {
+      code: 'E_PACKAGE_EXTRA_FILE',
+      path: names[0],
+      stage: 'project',
+      extra: names,
+      digest: manifest.digest,
+    },
+  };
+};
+vector('extra-root-file', () => extra({ 'notes.json': '{"note":"ghi chú"}\n' }));
+vector('extra-screen-file', () =>
+  extra({
+    'screens/old.screen.json': json({ schemaVersion: '0.1.0', id: 'old', name: 'Old' }),
+  }),
+);
+vector('extra-svg-unreferenced', () => extra({ 'screens/old.svg': SVG }));
+vector('extra-binding-orphan', () =>
+  extra({
+    'screens/old.bindings.json': json({ schemaVersion: '0.1.0', screenId: 'old', elements: [] }),
+  }),
+);
+vector('extra-template-unlisted', () =>
+  extra({
+    'templates/bom.template.json': json({
+      schemaVersion: '1.0.0',
+      id: 'bom',
+      name: 'Bơm',
+      size: { width: 100, height: 100 },
+      params: [],
+      items: [],
+    }),
+  }),
+);
+vector('extra-strange-dir', () => extra({ 'docs/readme.json': '{}\n', 'docs/sub/x.svg': SVG }));
+// Tệp thừa lớn (4 MiB, nội dung giả ngẫu nhiên: tỉ lệ nén thấp) vẫn là tệp thừa: sinh vào out/.
+vector(
+  'extra-large-file',
+  () => extra({ 'screens/big.svg': padSvg(4 * MiB, pseudoRandomText('extra-large-file', 30000)) }),
+  true,
 );
 
 // Manifest (§3, §6): E_PKG_MANIFEST.

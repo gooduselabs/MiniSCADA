@@ -1,6 +1,9 @@
 #include "server/project_glue.hpp"
 
+#include <algorithm>
+
 #include "core/package/extract.hpp"
+#include "core/package/project_digest.hpp"
 #include "core/package/zip_reader.hpp"
 #include "core/package/zip_writer.hpp"
 
@@ -40,6 +43,31 @@ ValidateOutcome validateStep(const std::string& projectDir, const std::string& s
     ValidateOutcome out;
     out.ok = v.valid;
     out.issues = v.errors;
+    if (!v.valid || !v.project) return out;
+    // Feature 011 (T023, FR-024, research R9): the directory holds exactly the project's files, so
+    // the digest the runtime shows (projectDirDigest over files()) is the package digest and the
+    // health check after the restart finds it.
+    std::string error;
+    const auto extra = projectExtraFiles(projectDir, v.project->files(), &error);
+    if (!extra || !extra->empty()) {
+        out.ok = false;
+        out.code = "E_PACKAGE_EXTRA_FILE";
+        if (!extra) {
+            out.issues.push_back(
+                {"E_PACKAGE_EXTRA_FILE", "", "", "Không đọc được thư mục: " + error});
+            return out;
+        }
+        std::string list;
+        const size_t shown = std::min<size_t>(extra->size(), 20);
+        for (size_t i = 0; i < shown; ++i) list += (i ? ", " : "") + (*extra)[i];
+        if (extra->size() > shown)
+            list += " (và " + std::to_string(extra->size() - shown) + " tệp khác)";
+        for (size_t i = 0; i < shown; ++i)
+            out.issues.push_back(
+                {"E_PACKAGE_EXTRA_FILE", (*extra)[i], "",
+                 i == 0 ? "Tệp không thuộc project (project không tham chiếu): " + list
+                        : "Tệp không thuộc project"});
+    }
     return out;
 }
 

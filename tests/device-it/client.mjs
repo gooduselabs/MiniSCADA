@@ -810,6 +810,8 @@ const deploys = deployScenarios({
 const scenarios = {
   ready: waitReady,
   deploy: deploys.deploy,
+  'deploy-extra-file': deploys['deploy-extra-file'],
+  'persist-slow': deploys['persist-slow'],
   packages: deploys.packages,
   busy: deploys.busy,
   health: deploys.health,

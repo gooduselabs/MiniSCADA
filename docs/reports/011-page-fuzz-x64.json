@@ -1,0 +1,12 @@
+{
+  "feature": "008-svg-import-binding",
+  "task": "T112",
+  "cases": 4000,
+  "seed": 1,
+  "parsed": 524,
+  "rejectedAtParse": 3476,
+  "violations": 0,
+  "pwned": null,
+  "externalRequests": 0,
+  "pass": true
+}

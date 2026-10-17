@@ -584,6 +584,10 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
                 r.error = "--test-health nhận die hoặc hang";
                 return r;
             }
+        } else if (a == "--test-persist-delay-ms") {
+            ok = intArg(c.testPersistDelayMs);
+        } else if (a == "--test-persist-fail") {
+            c.testPersistFail = true;
 #endif
         } else {
             r.error = "tham số không hỗ trợ: " + a;

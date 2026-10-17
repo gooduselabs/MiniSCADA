@@ -1,0 +1,10 @@
+{
+  "code": "E_PACKAGE_EXTRA_FILE",
+  "path": "docs/readme.json",
+  "stage": "project",
+  "extra": [
+    "docs/readme.json",
+    "docs/sub/x.svg"
+  ],
+  "digest": "sha256:16c7b70e1d1108b8d069d0b9588542d700771547f47239bee9082bd2bcf56c1e"
+}

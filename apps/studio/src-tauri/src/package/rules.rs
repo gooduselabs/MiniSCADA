@@ -141,6 +141,35 @@ pub fn path_type_error(path: &str) -> Option<PackageError> {
     }
 }
 
+/// Tệp bị loại (feature 011, contract project-format-1.0 §6, FR-024): Studio không đóng gói, thiết bị từ
+/// chối kể cả khi manifest liệt kê (`E_PACKAGE_EXTRA_FILE`): một đoạn ẩn (bắt đầu bằng `.`: `.mat-backup/`,
+/// `.mat-editor/`, `.git/`, `.vs/`…) hoặc `node_modules`; tên `Thumbs.db`, `desktop.ini` (mọi kiểu chữ), bắt
+/// đầu bằng `~` hoặc kết thúc `.tmp` (mọi kiểu chữ). Bản C++ `packageExcludedPath`, TS `isPackExcluded`.
+pub fn excluded_path(path: &str) -> bool {
+    if path
+        .split('/')
+        .any(|s| s.starts_with('.') || s == "node_modules")
+    {
+        return true;
+    }
+    let name = path.rsplit('/').next().unwrap_or(path);
+    let lower = name.to_ascii_lowercase();
+    lower == "thumbs.db"
+        || lower == "desktop.ini"
+        || name.starts_with('~')
+        || lower.ends_with(".tmp")
+}
+
+/// `E_PACKAGE_EXTRA_FILE` của một tệp bị loại.
+pub fn extra_file_error(path: &str) -> PackageError {
+    PackageError::at(
+        "E_PACKAGE_EXTRA_FILE",
+        &display_name(path.as_bytes()),
+        "Tệp không thuộc project (thư mục ẩn như .mat-editor/, .mat-backup/, node_modules/, Thumbs.db, \
+         desktop.ini, ~*, *.tmp không được đóng gói)",
+    )
+}
+
 /// Khóa của luật 7: hai đường dẫn cùng khóa là trùng (chỉ đổi A–Z).
 pub fn path_key(path: &str) -> String {
     path.to_ascii_lowercase()
@@ -443,4 +472,77 @@ pub fn read_project_identity(project_json: &[u8]) -> Option<ProjectIdentity> {
         project_version: scan.identity.project_version,
         min_runtime_version: scan.identity.min_runtime_version,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::Value;
+    use std::fs;
+    use std::path::Path;
+
+    /// T022 (feature 011): cùng danh sách với `FileSet.ExcludedPathsAreExtraFiles` (C++) và
+    /// `isPackExcluded` (TS).
+    #[test]
+    fn excluded_paths() {
+        for p in [
+            ".mat-editor/state.json",
+            ".mat-backup/1/project.json",
+            "a/.git/x.json",
+            ".vs/x.json",
+            "node_modules/x/package.json",
+            "screens/.hidden.json",
+            ".x.svg",
+            "Thumbs.db",
+            "screens/THUMBS.DB",
+            "desktop.ini",
+            "~$tags.json",
+            "screens/~main.svg",
+            "a.tmp",
+            "screens/b.TMP",
+        ] {
+            assert!(excluded_path(p), "{p}");
+        }
+        for p in [
+            "project.json",
+            "screens/main.svg",
+            "a.b/c.json",
+            "tags~.json",
+            "tmp.json",
+            "screens/x.tmp.svg",
+            "node_modules.json",
+            "git/x.json",
+        ] {
+            assert!(!excluded_path(p), "{p}");
+        }
+    }
+
+    /// Vector chung tầng gói (`E_PACKAGE_EXTRA_FILE` không có `stage`): đường dẫn lỗi là tệp bị loại;
+    /// vector tầng project: không tệp nào bị loại (gói hợp lệ).
+    #[test]
+    fn shared_extra_file_vectors() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../tests/package-vectors");
+        let mut package_stage = 0;
+        let mut project_stage = 0;
+        for e in fs::read_dir(&dir).unwrap().filter_map(Result::ok) {
+            let Ok(text) = fs::read(e.path().join("expected.json")) else {
+                continue;
+            };
+            let v: Value = serde_json::from_slice(&text).unwrap();
+            if v.get("code").and_then(Value::as_str) != Some("E_PACKAGE_EXTRA_FILE") {
+                continue;
+            }
+            if v.get("stage").and_then(Value::as_str) == Some("project") {
+                project_stage += 1;
+                for p in v["extra"].as_array().unwrap() {
+                    assert!(!excluded_path(p.as_str().unwrap()), "{p}");
+                }
+            } else {
+                package_stage += 1;
+                assert!(excluded_path(v["path"].as_str().unwrap()), "{v}");
+            }
+        }
+        assert!(package_stage >= 5, "{package_stage}");
+        assert!(project_stage >= 7, "{project_stage}");
+    }
 }

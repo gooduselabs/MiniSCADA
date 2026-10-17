@@ -317,6 +317,72 @@ export function warningList(
   });
 }
 
+/** Một chip cảnh báo của feature 011 (T052): `key` chọn chữ và hướng dẫn (`devwarn.<key>`). */
+export interface WarningChip {
+  code: string;
+  /** Mã đã biết, hoặc nhóm `LOGIC`/`UPDATE` cho mã mới cùng nhóm. */
+  key: string;
+  tone: 'warn' | 'err';
+  message: string;
+  detail: unknown;
+}
+
+const CHIP_KEYS = new Set([
+  'HOST_CHECK_OFF',
+  'SSH_ROOT_PASSWORD',
+  'PULSE_STUCK',
+  'TIME_NOT_SYNCED',
+  'LOGIC_WRITES_OFF',
+  'LOGIC_WRITES_STOPPED',
+  'LOGIC_THROTTLED',
+  'LOGIC_RETAIN_LOST',
+  'UPDATE_ROLLED_BACK',
+  'UPDATE_KEYS_MISSING',
+]);
+/** Cảnh báo cần người xử lý ngay (máy chưa ở trạng thái an toàn): chip đỏ. */
+const CHIP_ERR = new Set(['PULSE_STUCK', 'LOGIC_RETAIN_LOST', 'UPDATE_ROLLED_BACK']);
+
+/**
+ * Cảnh báo của feature 011 trong `system/info` (device-api-011 §5) thành chip, theo thứ tự của thiết bị:
+ * `HOST_CHECK_OFF`, `SSH_ROOT_PASSWORD`, `PULSE_STUCK`, `TIME_NOT_SYNCED`, `LOGIC_*`, `UPDATE_*`. Mã khác (của
+ * 005 đến 010) có chỗ hiện riêng.
+ */
+export function warningChips(info: Parameters<typeof warningList>[0]): WarningChip[] {
+  const out: WarningChip[] = [];
+  for (const w of warningList(info)) {
+    const group = w.code.startsWith('LOGIC_')
+      ? 'LOGIC'
+      : w.code.startsWith('UPDATE_')
+        ? 'UPDATE'
+        : null;
+    if (!CHIP_KEYS.has(w.code) && group === null) continue;
+    out.push({
+      code: w.code,
+      key: CHIP_KEYS.has(w.code) ? w.code : group!,
+      tone: CHIP_ERR.has(w.code) ? 'err' : 'warn',
+      message: w.message,
+      detail: w.detail,
+    });
+  }
+  return out;
+}
+
+/** Tag có lệnh nhả xung còn kẹt (`PULSE_STUCK`, `detail.tags`). */
+export function pulseStuckTags(info: Parameters<typeof warningList>[0]): string[] {
+  const w = warningList(info).find((x) => x.code === 'PULSE_STUCK');
+  const tags = isObj(w?.detail) ? w.detail.tags : undefined;
+  return Array.isArray(tags) ? tags.filter((x): x is string => typeof x === 'string') : [];
+}
+
+/** `device/identity.acceptedHosts` (device-api-011 §1): tên và IP thiết bị nhận ở `Host`; runtime cũ: `null`. */
+export function acceptedHostsOf(identity: unknown): { names: string[]; ips: string[] } | null {
+  const a = isObj(identity) ? identity.acceptedHosts : undefined;
+  if (!isObj(a)) return null;
+  const strs = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  return { names: strs(a.names), ips: strs(a.ips) };
+}
+
 /** Dung lượng: KB, MB, GB; số thập phân theo `locale` (mặc định tiếng Việt: dấu phẩy). */
 export function formatBytes(n: number | undefined, locale = 'vi-VN'): string {
   if (n === undefined || !Number.isFinite(n)) return '?';

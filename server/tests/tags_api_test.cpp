@@ -116,6 +116,38 @@ TEST(TagsApi, OperatorEngineerAndAdministratorWriteAViewerDoesNot) {
     EXPECT_EQ(r.st->backend.count(), 3u) << "nothing of the viewer reached a driver";
 }
 
+// Feature 011 (T209, report 008 F5): a Tag with `writeMinRole` is written only from that role up,
+// whatever the page shows (the `minRole` of a button or an SVG event is a lock of the page only).
+// One request below its role refuses the whole batch with 403 FORBIDDEN before anything is sent;
+// every request is audited as tag.write denied.
+TEST(TagsApi, AWriteMinRoleTagRefusesTheWholeBatchBelowItsRole) {
+    Rig r;
+    r.st->model.tags[INT_SET].writeMinRole = "engineer";
+    const HttpResult res =
+        r.write("vh1", Rig::body({Rig::req(idN(1), "SP", 75), Rig::req(idN(2), "INT_SET", 10)}));
+    ASSERT_EQ(res.status, 403) << res.body;
+    const json b = bodyJson(res);
+    EXPECT_EQ(b["error"], "FORBIDDEN");
+    ASSERT_EQ(b["results"].size(), 2u);
+    for (const json& x : b["results"]) {
+        EXPECT_EQ(x["status"], "REJECTED");
+        EXPECT_EQ(x["reason"], "FORBIDDEN");
+    }
+    EXPECT_NE(b["results"][1].value("message", "").find("engineer"), std::string::npos) << b.dump();
+    EXPECT_EQ(r.st->backend.count(), 0u) << "nothing of the batch reached a driver";
+    const auto denied = r.records("tag.write");
+    ASSERT_EQ(denied.size(), 2u);
+    for (const auto& d : denied) {
+        EXPECT_EQ(d.result, "denied");
+        EXPECT_EQ(d.code.value_or(""), "FORBIDDEN");
+    }
+    // An engineer and an administrator write it.
+    EXPECT_EQ(first(r.write1("kysu1", "INT_SET", 10, idN(3)))["status"], "ACCEPTED");
+    EXPECT_EQ(first(r.write1("admin1", "INT_SET", 11, idN(4)))["status"], "ACCEPTED");
+    // The operator still writes the Tags without it.
+    EXPECT_EQ(first(r.write1("vh1", "SP", 75, idN(5)))["status"], "ACCEPTED");
+}
+
 TEST(TagsApi, ARefusedViewerIsAuditedAsTagWriteDeniedWithTheTagTheValueAndTheAccount) {
     Rig r;
     const HttpResult res = r.write1("xem1", "SP", 75, idN(5));
