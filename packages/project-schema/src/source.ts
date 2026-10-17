@@ -32,8 +32,19 @@ export const textOf = (r: ReadResult): string | null => ('text' in r ? r.text : 
 export const stripBom = (s: string): string => (s.charCodeAt(0) === 0xfeff ? s.slice(1) : s);
 
 /**
+ * Tên thiết bị của Windows: `CON`, `PRN`, `AUX`, `NUL`, `COM1`-`COM9`, `LPT1`-`LPT9`, kèm đuôi hay
+ * không (`nul.svg`), mọi kiểu chữ; khoảng trắng trước đuôi cũng bị Windows bỏ (`con .json`).
+ */
+function isWindowsDeviceName(segment: string): boolean {
+  const stem = segment.split('.')[0].replace(/ +$/, '');
+  return /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(stem);
+}
+
+/**
  * Đường dẫn an toàn (data-model.md): tương đối, dùng `/`, không `..`, không bắt đầu `/` hay ổ đĩa,
- * không `\`, `:`, ký tự điều khiển; dài ≤ 128.
+ * không `\`, `:`, ký tự điều khiển; dài ≤ 128 byte. T062 (rà soát bảo mật S2): không đoạn nào kết
+ * thúc bằng `.` hoặc khoảng trắng (Windows bỏ đi, nên hai tên khác nhau trỏ cùng một file) hay là tên
+ * thiết bị của Windows. Cùng luật với bản C++ (project_validator, project-store) và Rust (check_rel).
  */
 export function isSafeRelPath(p: string): boolean {
   // Độ dài tính theo byte UTF-8, giống bản C++ và Rust (review minor-5).
@@ -42,7 +53,17 @@ export function isSafeRelPath(p: string): boolean {
   // eslint-disable-next-line no-control-regex
   if (/[\\:\u0000-\u001f\u007f]/.test(p)) return false;
   if (p.startsWith('/')) return false;
-  return p.split('/').every((seg) => seg !== '' && seg !== '.' && seg !== '..');
+  return p
+    .split('/')
+    .every(
+      (seg) =>
+        seg !== '' &&
+        seg !== '.' &&
+        seg !== '..' &&
+        !seg.endsWith('.') &&
+        !seg.endsWith(' ') &&
+        !isWindowsDeviceName(seg),
+    );
 }
 
 export class MemorySource implements ProjectSource {

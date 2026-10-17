@@ -883,6 +883,8 @@ mod tests {
         assert_eq!(code(with("a.json", r#"{"apiKey":"x"}"#)), "E_PKG_SECRET");
         assert_eq!(code(with("../x.json", "{}")), "E_PKG_PATH");
         assert_eq!(code(with("CON.json", "{}")), "E_PKG_PATH");
+        assert_eq!(code(with("con .json", "{}")), "E_PKG_PATH");
+        assert_eq!(code(with("screens/Com1 .svg", "{}")), "E_PKG_PATH");
         assert_eq!(code(with("x.js", "{}")), "E_PKG_TYPE");
         assert_eq!(code(with("matscada.json", "{}")), "E_PKG_PATH");
         // Feature 011 (T024): tệp bị loại không bao giờ vào gói.

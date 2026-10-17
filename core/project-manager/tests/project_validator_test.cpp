@@ -244,6 +244,21 @@ TEST(ProjectValidator, SafePath) {
     EXPECT_FALSE(isSafeRelPath(std::string("a\x01.svg")));
 }
 
+// T062 (security review S2), like check_rel of the Studio and packagePathError: no segment ending
+// with '.' or ' ' (Windows drops them, so two names reach one file) and no Windows device name
+// (CON, PRN, AUX, NUL, COM1-9, LPT1-9, any case, with or without extension, spaces before it).
+TEST(ProjectValidator, SafePathRefusesWindowsTrailingDotSpaceAndDeviceNames) {
+    for (const char* bad :
+         {"a./b.json", "a /b.json", "screens /s.svg", "a.json.", "a.json ", "screens/CON.json",
+          "con.svg", "nul.json", "nul.svg", "Prn.json", "aux/x.json", "Com1.json",
+          "screens/lpt9.x.json", "COM9.svg", "con .json", "LPT1 .svg", "Con"})
+        EXPECT_FALSE(isSafeRelPath(bad)) << bad;
+    for (const char* ok : {"screens/console.json", "console.json", "com10.json", "com0.json",
+                           "contact.json", "lpt.json", "nul-x.json", "auxiliary/x.svg",
+                           ".mat-editor/autosave/a.svg", "value-tables/TrangThai.json"})
+        EXPECT_TRUE(isSafeRelPath(ok)) << ok;
+}
+
 // ---- feature 006 (format 0.2) ----
 
 TEST(ProjectValidator02, SchemaSetFollowsTheSchemaVersionOfProjectJson) {
