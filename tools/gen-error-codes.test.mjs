@@ -2,7 +2,7 @@
 // `schemas/error-codes.json`, mỗi mã có thông điệp tiếng Việt, và `docs/user/error-codes.md` sinh từ danh mục không lệch.
 //
 // Phạm vi quét: `server/`, `core/`, `drivers/`, `packages/*/src`; chỉ `.cpp`, `.hpp`, `.h`, `.ts`. Bỏ thư mục `tests/`,
-// `test/`, `node_modules/`, `third_party/`, `dist/`, `out/`, thư mục bắt đầu bằng `poc` (server/poc, server/poc-drogon:
+// `test/`, `bench/` (server/bench: đo, không đóng gói), `node_modules/`, `third_party/`, `dist/`, `out/`, thư mục bắt đầu bằng `poc` (server/poc, server/poc-drogon:
 // bản thử 001, không chạy trên thiết bị), và file `*.test.ts`, `*_test.cpp`, `*.d.ts`. `apps/` (Studio, trang web) ngoài
 // phạm vi: chúng đọc mã do thiết bị và các gói trả về, không sinh mã mới.
 //
@@ -64,7 +64,7 @@ const GROUPS = [
   'update',
 ];
 
-const SKIP_DIRS = new Set(['tests', 'test', 'node_modules', 'third_party', 'dist', 'out']);
+const SKIP_DIRS = new Set(['tests', 'test', 'bench', 'node_modules', 'third_party', 'dist', 'out']);
 
 function walk(dir, acc = []) {
   let entries;
