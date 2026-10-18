@@ -342,3 +342,7 @@ Trạng thái cuối: như mục 09:00 (runtime `1.0.0-rc.1` releaseSeq 12, `tan
 | 13:38 | Khôi phục `runtime.json` (SHA-256 gốc `0e979c42…`), tắt tài khoản, xóa `/root/mat-stage-011/t148d` | — |
 
 Trạng thái cuối: runtime `1.0.0-rc.1` releaseSeq 13 active, `tank-demo` 0.1.0 active.
+
+### 14:04–14:06 — L3 `-reentry` (FR-038) trên releaseSeq 13
+
+`maxLiveClientsPerSource` 10 tạm thời (sao lưu `runtime.json` vào `/root/mat-stage-011/l3`), `load-tester -tags demo -clients 10 -extra 1 -reentry 5` trên `tank-demo`; 14:06 khôi phục `runtime.json` (SHA-256 gốc), khởi động lại, xóa thư mục sao lưu.

@@ -101,6 +101,10 @@ Runtime 1.0.0, đo 2026-10-17 20:12 đến 2026-10-18 01:40 (+07) từ máy dev 
 | L5 | Màn `anim` 400 phần tử SVG, 50 hoạt ảnh trên runtime thật (project `svg-l5`) | 10 tiến trình Chrome riêng: 53,4–54,3 FPS; 1 trang + 9 client 500 Tag: 60 FPS; 10 trang trong một tiến trình: 10,7 FPS (giới hạn của máy đo, CPU runtime 2,8 % một lõi) | **Đạt** (RSS tab chưa đo) |
 | L8 | 40 TLS im lặng từ IP A giữ liên tục 120 s, đăng nhập thật từ IP B (giao diện mạng thứ hai) mỗi ≈ 2,7 s | 43/43 đăng nhập 200, tệ nhất 1.198 ms; đăng nhập từ chính IP A 616 ms; máy chủ đóng TLS im lặng sau ≈ 10,4 s; RSS ổn định +0,3–0,7 MB; CPU 36,5 % một lõi do bắt tay lặp lại | **Đạt** |
 
+### 3.1a L3 bằng `load-tester -reentry` (FR-038)
+
+2026-10-18 14:04, BL335 `1.0.0-rc.1` releaseSeq 13, `tank-demo`, 10 client + 1 thừa, 5 vòng mỗi cách: client 1 **đóng sạch** → client mới vào sau 9 ms (5/5); client 1 **im lặng** (không trả ping) → 14,9–15,1 s (5/5, đúng hạn heartbeat 15 s); ngưỡng ≤ 35 s: **Đạt**. Client 11 bị từ chối 4429, 0 mất sequence. `011-load-bl335.json` khóa `L3reentryTool`.
+
 ### 3.1b T080: L2 1.000 Tag (SC-012)
 
 2026-10-18 09:51–10:51, BL335, runtime `1.0.0-rc.1` releaseSeq 12, project `bench-1000` (1.000 Tag mô phỏng, định dạng 0.6 — kiểm luôn bản sửa gói thiếu `schemas/0.6`), `load-tester` 10 client + 1 thừa, 1 giờ, CPU tính theo một lõi:

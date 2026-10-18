@@ -519,5 +519,140 @@
     },
     "pass": true,
     "note": "cùng lúc kiểm bản sửa gói: project 0.6 được runtime 1.0.0-rc.1 nhận (gói có schemas/0.6)"
+  },
+  "L3reentryTool": {
+    "date": "2026-10-18 14:04–14:06",
+    "runtime": "1.0.0-rc.1",
+    "releaseSeq": 13,
+    "project": "tank-demo (maxClients 10)",
+    "tool": "load-tester -reentry 5 (FR-038)",
+    "reentry": {
+      "method": "every slot held, extra client must get 4429; client 1 (oldest) closes (close frame 1000) or goes silent (no heartbeat, no read, TCP open); reentryMs: from that moment to the snapshot of a new client (attempt every 250ms)",
+      "clients": 10,
+      "rounds": 5,
+      "limitMs": 35000,
+      "close": {
+        "rounds": 5,
+        "reentered": 5,
+        "failed": 0,
+        "overLimit": 0,
+        "reentryMs": {
+          "count": 5,
+          "p50Ms": 9,
+          "p95Ms": 9,
+          "maxMs": 9
+        },
+        "pass": true
+      },
+      "silent": {
+        "rounds": 5,
+        "reentered": 5,
+        "failed": 0,
+        "overLimit": 0,
+        "reentryMs": {
+          "count": 5,
+          "p50Ms": 14868,
+          "p95Ms": 15115,
+          "maxMs": 15115
+        },
+        "pass": true
+      },
+      "events": [
+        {
+          "mode": "close",
+          "round": 1,
+          "extraCloseCode": 4429,
+          "reentryMs": 8,
+          "attempts": 1,
+          "reentered": true,
+          "pass": true
+        },
+        {
+          "mode": "close",
+          "round": 2,
+          "extraCloseCode": 4429,
+          "reentryMs": 9,
+          "attempts": 1,
+          "reentered": true,
+          "pass": true
+        },
+        {
+          "mode": "close",
+          "round": 3,
+          "extraCloseCode": 4429,
+          "reentryMs": 8,
+          "attempts": 1,
+          "reentered": true,
+          "pass": true
+        },
+        {
+          "mode": "close",
+          "round": 4,
+          "extraCloseCode": 4429,
+          "reentryMs": 9,
+          "attempts": 1,
+          "reentered": true,
+          "pass": true
+        },
+        {
+          "mode": "close",
+          "round": 5,
+          "extraCloseCode": 4429,
+          "reentryMs": 9,
+          "attempts": 1,
+          "reentered": true,
+          "pass": true
+        },
+        {
+          "mode": "silent",
+          "round": 1,
+          "extraCloseCode": 4429,
+          "reentryMs": 15115,
+          "attempts": 60,
+          "reentered": true,
+          "pass": true
+        },
+        {
+          "mode": "silent",
+          "round": 2,
+          "extraCloseCode": 4429,
+          "reentryMs": 14872,
+          "attempts": 59,
+          "reentered": true,
+          "pass": true
+        },
+        {
+          "mode": "silent",
+          "round": 3,
+          "extraCloseCode": 4429,
+          "reentryMs": 14856,
+          "attempts": 59,
+          "reentered": true,
+          "pass": true
+        },
+        {
+          "mode": "silent",
+          "round": 4,
+          "extraCloseCode": 4429,
+          "reentryMs": 14862,
+          "attempts": 59,
+          "reentered": true,
+          "pass": true
+        },
+        {
+          "mode": "silent",
+          "round": 5,
+          "extraCloseCode": 4429,
+          "reentryMs": 14868,
+          "attempts": 59,
+          "reentered": true,
+          "pass": true
+        }
+      ],
+      "pass": true
+    },
+    "extraRejectedCorrectly": true,
+    "seqGaps": 0,
+    "pass": true
   }
 }
