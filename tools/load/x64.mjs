@@ -4,11 +4,12 @@
 // projects/soak-standard (500 Tag, tools/gen-bench-projects.mjs; generated into <build dir>/bench-projects).
 //
 //   node tools/load/x64.mjs [--scenario L1,L3,L4,L5,L8,L6] [--build-dir <dir>] [--l1-seconds 3600] [--rounds 50]
-//        [--flap 50] [--flap-off-s 10] [--keep]
+//        [--flap 50] [--flap-off-s 10] [--reentry 3] [--keep]
 //
 //   L1  load-tester 10 clients x 500 Tag (ws 8080) for --l1-seconds, --latency; CPU/RSS of mat-runtime sampled every 5 s
 //       from the client container (tests/web-it/proc-sample.mjs, % of one core); diagnostics liveLagP95Ms at the end
-//   L3  10 clients held, 50 successive extra clients: close 4429 each
+//   L3  10 clients held, 50 successive extra clients: close 4429 each; then -reentry --reentry rounds each of
+//       'client 1 closes' and 'client 1 goes silent', a new client within 35 s (0 = skip)
 //   L4  tests/web-it/f5-storm.mjs on the host: 10 Chrome headless pages, F5 together, --rounds rounds, screen 250 items
 //   L5  tests/web-it/svg-load.mjs (fake runtime of the e2e, real page): 400 SVG elements, 50 animations, 10 pages, 60 s
 //   L8  40 silent TLS connections from the lan address of the client container, then a login from its pub address
@@ -39,6 +40,7 @@ const buildRoot = process.env.MAT_BUILD_ROOT ?? join(homedir(), 'build');
 const buildDir = resolve(opt('--build-dir', join(buildRoot, 'mat-x64-e2')));
 const l1Seconds = Number(opt('--l1-seconds', '3600'));
 const rounds = opt('--rounds', '50');
+const reentryN = opt('--reentry', '3');
 const flapN = Number(opt('--flap', '50'));
 const flapOffS = Number(opt('--flap-off-s', '10'));
 const compose = join(root, 'tests/web-it/compose.yaml');
@@ -268,6 +270,8 @@ try {
         '50',
         '-duration',
         '120',
+        '-reentry',
+        reentryN,
         '-out',
         '/tmp/l3.json',
       ]);
@@ -275,6 +279,7 @@ try {
       res = {
         startedAt,
         l3: l3?.l3 ?? null,
+        reentry: l3?.reentry ?? null,
         summary: l3?.summary ?? null,
         checks: l3?.checks ?? [{ name: 'load-tester ran', pass: false }],
         notMeasured: l3?.notMeasured ?? [],
