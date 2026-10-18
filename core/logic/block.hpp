@@ -28,11 +28,28 @@ struct Slot {
     // of each scan); `version` grows when it changes (T148: Expr skips the VM when no input moved).
     expr::InputValue cur;
     uint64_t version = 0;
+    uint64_t source = 0;  // VersionAt of the snapshot's Tag when `cur` was read (0: none)
 };
 
 inline bool sameInput(const expr::InputValue& a, const expr::InputValue& b) {
     return a.quality == b.quality && a.value == b.value && a.reason == b.reason;
 }
+
+// T148 (the CPU of the BL335): what the engine keeps beside the slots so that a scan touches only
+// what moved. A block is stepped when it is due: a slot its step reads changed (the readers of a
+// slot are woken when its version moves), or its last step said its state moves with time
+// (Block::step returned true), or it never ran. `changed` lists the slots whose Slot::changed
+// went up (Engine::takeChanged reads only those).
+struct SlotTracker {
+    std::vector<uint32_t> readerStart;  // slot s: readers[readerStart[s] .. readerStart[s + 1])
+    std::vector<uint32_t> readers;      // scan positions of the blocks whose step reads the slot
+    std::vector<uint8_t> due;           // scan position -> step it at the next scan
+    std::vector<uint32_t> changed;      // slots whose `changed` flag went up, in that order
+    void wake(uint32_t slot) {
+        if (slot + 1 >= readerStart.size()) return;
+        for (uint32_t i = readerStart[slot]; i < readerStart[slot + 1]; ++i) due[readers[i]] = 1;
+    }
+};
 
 struct ScanCtx;
 
@@ -56,6 +73,8 @@ class Expr {
     std::optional<bool> evalBool(const ScanCtx& ctx) const;
     const std::vector<std::string>& inputs() const { return program_.inputs; }
     const std::string& src() const { return src_; }
+    // The slots of the inputs (after bind).
+    const std::vector<uint32_t>& slots() const { return slots_; }
 
    private:
     Result compute(const std::vector<expr::InputValue>& vals, const expr::TableSet& tables) const;
@@ -69,37 +88,48 @@ class Expr {
     mutable bool hasLast_ = false;
 };
 
-// Sets a slot as the engine's setOut did (value, GOOD when `bad` is empty, else BAD `bad`).
-void setSlot(Slot& s, TagScalar value, const char* bad);
+// Sets slot `i` as the engine's setOut did (value, GOOD when `bad` is empty, else BAD `bad`); when
+// it changed, its readers are woken and it is listed for takeChanged.
+void setSlot(std::vector<Slot>& slots, SlotTracker& track, uint32_t i, TagScalar value,
+             const char* bad);
+
+class SetOut;
 
 struct ScanCtx {
     int64_t now = 0;
+    // the time of the previous scan of the engine (none: this is the first)
+    bool hasPrev = false;
+    int64_t prev = 0;
     const WallClock* wall = nullptr;
     const expr::TableSet* tables = nullptr;
     const Config* config = nullptr;
     std::vector<Slot>* slots = nullptr;
-    const ReadAt* readAt = nullptr;
+    SlotTracker* track = nullptr;
     std::vector<ActionOut>* actions = nullptr;
 
     // A logic Tag a block set (in this scan or an earlier one), else the snapshot.
     const expr::InputValue& read(uint32_t slot) const { return (*slots)[slot].cur; }
     void setOut(uint32_t slot, TagScalar value, const char* bad = "") const {
-        setSlot((*slots)[slot], std::move(value), bad);
+        setSlot(*slots, *track, slot, std::move(value), bad);
     }
+    inline SetOut out() const;
     void emit(ActionOut&& a) const { actions->push_back(std::move(a)); }
 };
 
-// The outputs outside a scan (init, POST /logic/reset).
+// The outputs of a block (a scan, init, POST /logic/reset).
 class SetOut {
    public:
-    explicit SetOut(std::vector<Slot>& slots) : slots_(slots) {}
+    SetOut(std::vector<Slot>& slots, SlotTracker& track) : slots_(slots), track_(track) {}
     void operator()(uint32_t slot, TagScalar value, const char* bad = "") const {
-        setSlot(slots_[slot], std::move(value), bad);
+        setSlot(slots_, track_, slot, std::move(value), bad);
     }
 
    private:
     std::vector<Slot>& slots_;
+    SlotTracker& track_;
 };
+
+SetOut ScanCtx::out() const { return SetOut(*slots, *track); }
 
 // Resolves a Tag name to its slot (engine construction).
 using SlotOf = std::function<uint32_t(const std::string&)>;
@@ -115,7 +145,14 @@ class Block {
     virtual const std::string& id() const = 0;
     // The slots of the Tags the block reads and sets (once, before init()).
     virtual void bind(const SlotOf& slotOf) = 0;
-    virtual void step(ScanCtx& ctx) = 0;
+    // The slots of the expressions step() evaluates (after bind): a change of one makes the block
+    // due (SlotTracker).
+    virtual void stepInputs(std::vector<uint32_t>& out) const = 0;
+    // One scan. true: the state moves with time (a timer running, a pending hold, a repeat, run
+    // hours counting, a totalizer, a schedule), so the block is due at the next scan even when no
+    // input changes; false: another step with the same inputs, at any later time, would change
+    // nothing (no state, output, action).
+    virtual bool step(ScanCtx& ctx) = 0;
     virtual BlockState state(int64_t now) const = 0;
     // The retained fields of the block into `out` (only when the block is retained).
     virtual void retain(RetainMap& out) const = 0;

@@ -154,18 +154,19 @@ ScheduleBlock::ScheduleBlock(const nlohmann::json& def)
 
 void ScheduleBlock::init(const SetOut& setOut) { setOut(outSlot_, TagScalar{}, "TIME_NOT_SYNCED"); }
 
-void ScheduleBlock::step(ScanCtx& ctx) {
+bool ScheduleBlock::step(ScanCtx& ctx) {
     const WallClock* w = ctx.wall;
     const auto last = [&]() { return value_ ? TagScalar{*value_} : TagScalar{}; };
     if (!w || !w->synced || !w->epochMs) {
         bad_ = true;
         ctx.setOut(outSlot_, last(), "TIME_NOT_SYNCED");
-        return;
+        return true;
     }
     bad_ = false;
     const int tz = tz_ ? *tz_ : ctx.config->tzOffsetMin;
     value_ = compiled_ ? compiled_->at(*w->epochMs, tz) : scheduleAt(def_, *w->epochMs, tz);
     ctx.setOut(outSlot_, TagScalar{*value_});
+    return true;  // the real-time clock: at every scan
 }
 
 BlockState ScheduleBlock::state(int64_t) const {

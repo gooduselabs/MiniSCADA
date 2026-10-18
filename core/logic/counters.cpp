@@ -57,7 +57,7 @@ void CounterBlock::bind(const SlotOf& slotOf) {
     reachedSlot_ = optionalSlot(slotOf, reachedTag_);
 }
 
-void CounterBlock::step(ScanCtx& ctx) {
+bool CounterBlock::step(ScanCtx& ctx) {
     bool edges[3] = {false, false, false};
     for (int i = 0; i < 3; ++i) {
         if (!exprs_[i]) continue;
@@ -78,7 +78,13 @@ void CounterBlock::step(ScanCtx& ctx) {
         }
         if (edges[1] && value_ > 0) --value_;
     }
-    publish(SetOut(*ctx.slots));
+    publish(ctx.out());
+    return false;  // edges only: the same inputs again make none
+}
+
+void CounterBlock::stepInputs(std::vector<uint32_t>& out) const {
+    for (const auto& e : exprs_)
+        if (e) out.insert(out.end(), e->slots().begin(), e->slots().end());
 }
 
 void CounterBlock::publish(const SetOut& setOut) const {

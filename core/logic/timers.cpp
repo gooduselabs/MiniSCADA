@@ -20,15 +20,16 @@ void TimerBlock::bind(const SlotOf& slotOf) {
     etSlot_ = optionalSlot(slotOf, etTag_);
 }
 
-void TimerBlock::step(ScanCtx& ctx) {
+bool TimerBlock::step(ScanCtx& ctx) {
     const std::optional<bool> cur = input_.evalBool(ctx);
     if (!cur) {
         degraded_ = true;
         lastValid_ = false;
-        lastT_ = ctx.now;
-        return;
+        return false;
     }
-    const int64_t dt = lastValid_ && lastT_ ? ctx.now - *lastT_ : 0;
+    // the interval since the previous scan of the engine (T148: a block not due is not stepped,
+    // and its last step was then that previous scan or one with the same outcome)
+    const int64_t dt = lastValid_ && ctx.hasPrev ? ctx.now - ctx.prev : 0;
     const int64_t pt = pt_;
     if (k_ == Kind::Ton) {
         if (*cur) {
@@ -67,10 +68,17 @@ void TimerBlock::step(ScanCtx& ctx) {
         et_ = 0;
     }
     prevIn_ = *cur;
-    lastT_ = ctx.now;
     lastValid_ = true;
     degraded_ = false;
-    publish(SetOut(*ctx.slots));
+    publish(ctx.out());
+    // with the same input: ton counts until pt, tof and tp while running, and tp clears `et` the
+    // scan after its pulse when the input is already false; nothing else moves
+    return running_ || (k_ == Kind::Ton && *cur && et_ < pt) ||
+           (k_ == Kind::Tp && !*cur && et_ != 0);
+}
+
+void TimerBlock::stepInputs(std::vector<uint32_t>& out) const {
+    out.insert(out.end(), input_.slots().begin(), input_.slots().end());
 }
 
 void TimerBlock::publish(const SetOut& setOut) const {

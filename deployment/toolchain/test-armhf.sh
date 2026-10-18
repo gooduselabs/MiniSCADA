@@ -21,7 +21,7 @@ alarm_text_test alarm_defs_test alarm_engine_test alarm_state_table_test alarm_e
 alarm_store_test alarm_service_test
 proc_stats_test diagnostics_011_test time_sync_test check_data_test
 logic_vectors_test logic_timers_test logic_counters_test logic_totalizer_test logic_runhours_test
-logic_schedule_test logic_rules_test rules_logic_test logic_write_test logic_runtime_test
+logic_schedule_test logic_rules_test logic_skip_test rules_logic_test logic_write_test logic_runtime_test
 update_envelope_test update_signature_test update_fuzz_test"
 TESTS=${*:-$DEFAULT}
 cmake -S . -B "$B" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=deployment/toolchain/armhf.cmake \

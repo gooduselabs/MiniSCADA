@@ -12,7 +12,8 @@ class TimerBlock : public Block {
     TimerBlock(const nlohmann::json& def, Expr input, int scanMs);
     const std::string& id() const override { return id_; }
     void bind(const SlotOf& slotOf) override;
-    void step(ScanCtx& ctx) override;
+    void stepInputs(std::vector<uint32_t>& out) const override;
+    bool step(ScanCtx& ctx) override;
     BlockState state(int64_t now) const override;
     void retain(RetainMap&) const override {}
     void init(const SetOut& setOut) override { publish(setOut); }
@@ -31,8 +32,7 @@ class TimerBlock : public Block {
     int64_t et_ = 0;
     bool prevIn_ = false;
     bool running_ = false;
-    std::optional<int64_t> lastT_;
-    bool lastValid_ = false;
+    bool lastValid_ = false;  // the last step had a valid input (the interval since counts)
     bool degraded_ = false;
 };
 

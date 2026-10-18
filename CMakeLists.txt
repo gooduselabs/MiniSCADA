@@ -647,10 +647,11 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   # Logic v2 (feature 011 T125, T126, T127, T128, T134): the shared vectors and the unit tests of
   # each kind of block, on the engine and the validator (the armhf list is in test-armhf.sh).
   set(MAT_LOGIC_TEST_NAMES logic_vectors_test logic_timers_test logic_counters_test
-      logic_totalizer_test logic_runhours_test logic_schedule_test logic_rules_test rules_logic_test)
+      logic_totalizer_test logic_runhours_test logic_schedule_test logic_rules_test logic_skip_test
+      rules_logic_test)
   mat_test(logic_vectors_test core/logic/tests/vectors_test.cpp core/logic/tests/vector_runner.cpp)
   target_link_libraries(logic_vectors_test PRIVATE mat_logic)
-  foreach(t timers counters totalizer runhours schedule rules)
+  foreach(t timers counters totalizer runhours schedule rules skip)
     mat_test(logic_${t}_test core/logic/tests/${t}_test.cpp core/logic/tests/vector_runner.cpp)
     target_link_libraries(logic_${t}_test PRIVATE mat_logic)
   endforeach()

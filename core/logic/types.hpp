@@ -88,6 +88,9 @@ struct BlockState {
 using ReadTag = std::function<expr::InputValue(const std::string&)>;
 // The same by slot (Engine::tags(): the Tag of each slot), what mat-runtime gives (T148).
 using ReadAt = std::function<expr::InputValue(size_t slot)>;
+// T148: a number of the snapshot's Tag at `slot` that moves whenever its value, quality or reason
+// changes (EngineRound::version); 0: unknown. The engine reads a slot again only when it moved.
+using VersionAt = std::function<uint64_t(size_t slot)>;
 
 // The type of a Tag type name of 006 ("BOOL", ...); nullopt when unknown.
 std::optional<TagType> tagTypeOf(const std::string& name);

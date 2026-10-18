@@ -78,10 +78,15 @@ std::optional<bool> Expr::evalBool(const ScanCtx& ctx) const {
     return b != nullptr && *b;
 }
 
-void setSlot(Slot& s, TagScalar value, const char* bad) {
+void setSlot(std::vector<Slot>& slots, SlotTracker& track, uint32_t i, TagScalar value,
+             const char* bad) {
+    Slot& s = slots[i];
     const bool good = bad[0] == 0;
     if (s.set && s.out.good == good && s.out.reason == bad && s.out.value == value) return;
-    s.changed = true;
+    if (!s.changed) {
+        s.changed = true;
+        track.changed.push_back(i);
+    }
     s.out.value = std::move(value);
     s.out.good = good;
     s.out.reason = bad;
@@ -90,6 +95,7 @@ void setSlot(Slot& s, TagScalar value, const char* bad) {
     s.cur.reason = bad;
     ++s.version;
     s.set = true;
+    track.wake(i);
 }
 
 double retainNum(const RetainMap* store, const std::string& key) {

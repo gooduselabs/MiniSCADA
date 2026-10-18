@@ -55,7 +55,8 @@ class ScheduleBlock : public Block {
     explicit ScheduleBlock(const nlohmann::json& def);
     const std::string& id() const override { return id_; }
     void bind(const SlotOf& slotOf) override { outSlot_ = slotOf(outTag_); }
-    void step(ScanCtx& ctx) override;
+    void stepInputs(std::vector<uint32_t>&) const override {}
+    bool step(ScanCtx& ctx) override;
     BlockState state(int64_t now) const override;
     void retain(RetainMap&) const override {}
     void init(const SetOut& setOut) override;

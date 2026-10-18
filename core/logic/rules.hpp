@@ -74,6 +74,8 @@ struct RuleEnv {
     const expr::TableSet* tables = nullptr;
     const Config* config = nullptr;
     Bucket* bucket = nullptr;
+    // the last RATE_LIMITED of any rule (Engine::throttledRules: none within 60 s, none THROTTLED)
+    std::optional<int64_t>* lastThrottledAt = nullptr;
 };
 
 class RuleBlock : public Block {
@@ -82,10 +84,12 @@ class RuleBlock : public Block {
               std::vector<CompiledAction> onFall, const RuleEnv& env, const RetainMap* store);
     const std::string& id() const override { return id_; }
     void bind(const SlotOf& slotOf) override;
-    void step(ScanCtx& ctx) override;
+    void stepInputs(std::vector<uint32_t>& out) const override;
+    bool step(ScanCtx& ctx) override;
     BlockState state(int64_t now) const override;
     // state(now).state == "THROTTLED", without building the state (every scan, T148).
     bool throttled(int64_t now) const;
+    static constexpr int64_t kThrottleHoldMs = 60000;  // THROTTLED after the last refusal
     void retain(RetainMap& out) const override;
     void init(const SetOut&) override {}
     // The final result of a write (FAILED, REJECTED ...) the WriteCoordinator reported.
@@ -93,6 +97,7 @@ class RuleBlock : public Block {
     const Expr& when() const { return when_; }
 
    private:
+    bool timed() const;
     void fire(ScanCtx& ctx, bool rise);
     std::string run(ScanCtx& ctx, const CompiledAction& a, ActionOut& out);
 

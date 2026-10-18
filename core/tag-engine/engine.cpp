@@ -204,6 +204,7 @@ Engine::Engine(TagStore& store, const ProjectModel& model) : store_(store), mode
 void Engine::applyRetained(const std::map<size_t, TagScalar>& values, bool lost) {
     for (size_t i : retained_) {
         State& s = state_[i];
+        ++s.version;
         if (lost) {
             s.quality = Quality::UNCERTAIN;
             s.reason = "RETAIN_LOST";
@@ -251,6 +252,7 @@ void Engine::commit(size_t i, Candidate c, int64_t now) {
     cur.quality = c.quality;
     cur.reason = std::move(c.reason);
     cur.sourceTs = c.sourceTs;
+    ++cur.version;
     changed_[i] = 1;
 }
 
@@ -358,6 +360,9 @@ class Engine::Round : public EngineRound {
         v.quality = s.quality;
         v.reason = s.reason;
         return v;
+    }
+    uint64_t version(size_t tag) const override {
+        return tag < e_.state_.size() ? e_.state_[tag].version : 0;
     }
     void publish(size_t tag, TagScalar value, Quality quality, const std::string& reason) override {
         if (tag >= e_.state_.size()) return;
