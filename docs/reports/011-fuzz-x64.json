@@ -580,62 +580,37 @@
         "invariants": "gói hợp lệ hoặc mã E_PKG_*; giải nén cùng kết quả với kiểm tra; không còn tệp ngoài staging khi lỗi"
       },
       "project-json": {
-        "date": "2026-10-17",
+        "date": "2026-10-18T12:32:56",
+        "seconds": 3600,
+        "elapsedS": 3600,
         "seed": 20261017,
-        "sanitizers": "ASan + UBSan (RelWithDebInfo, -fno-sanitize-recover=undefined, halt_on_error)",
-        "machine": "Docker mat-armhf, Linux arm64 trên Apple Silicon (không phải x64 thật); hai tiến trình fuzz chạy song song cùng lúc với một build ASan",
-        "runner": "tools/fuzz/cpp/run.sh (tools/fuzz/cpp/run.ps1 chưa chạy được ở phiên này: không có pwsh)",
+        "sanitizers": "ASan + UBSan (RelWithDebInfo, halt_on_error)",
+        "summary": "fuzz project-json: 199263 inputs, 7036 valid, seed 20261017, 3600 s",
         "crashes": 0,
         "exitCode": 0,
-        "task": "T058",
-        "binary": "project_fuzz_test (core/project-manager/tests/project_fuzz_test.cpp)",
-        "seconds": 1800,
-        "elapsedS": 1800,
-        "inputs": 76775,
-        "valid": 2722,
-        "corpus": "tests/fuzz-corpus/project-json.json (51 project 0.1–1.0)",
-        "invariants": "valid ⇔ không lỗi; mã E_*/W_*; tất định (cứ 16 ca); project hợp lệ có files() chứa project.json",
-        "note": "30 phút (≥ 20 phút theo yêu cầu lượt này), không phải 1 giờ của T058: validateProject nạp lại schema mỗi lần, ~43 ca/s dưới ASan."
+        "runner": "tools/fuzz/cpp/run.ps1 (tools/fuzz/cpp/run.sh)"
       },
       "expression": {
-        "date": "2026-10-17",
+        "date": "2026-10-18T12:32:56",
+        "seconds": 3600,
+        "elapsedS": 3600,
         "seed": 20261017,
-        "sanitizers": "ASan + UBSan (RelWithDebInfo, -fno-sanitize-recover=undefined, halt_on_error)",
-        "machine": "Docker mat-armhf, Linux arm64 trên Apple Silicon (không phải x64 thật); hai tiến trình fuzz chạy song song cùng lúc với một build ASan",
-        "runner": "tools/fuzz/cpp/run.sh (tools/fuzz/cpp/run.ps1 chưa chạy được ở phiên này: không có pwsh)",
+        "sanitizers": "ASan + UBSan (RelWithDebInfo, halt_on_error)",
+        "summary": "fuzz expression: 26924588 inputs, 1761684 compiled, 7046736 evaluated, longest 19092 bytes, seed 20261017, 3600 s",
         "crashes": 0,
         "exitCode": 0,
-        "task": "T058",
-        "binary": "expression_fuzz_test",
-        "seconds": 1800,
-        "elapsedS": 1800,
-        "inputs": 11428637,
-        "compiled": 748625,
-        "evaluated": 2994500,
-        "longestBytes": 19092,
-        "kinds": "text, splice, nest (sâu tới 3.000), chain (chuỗi toán tử 64…12.000 ký tự, quanh trần 8.192)",
-        "invariants": "compile không ném, đúng một lỗi khi hỏng, tất định; GOOD luôn có giá trị; đầu vào hữu hạn không ra số không hữu hạn GOOD/UNCERTAIN",
-        "note": "30 phút, không phải 1 giờ."
+        "runner": "tools/fuzz/cpp/run.ps1 (tools/fuzz/cpp/run.sh)"
       },
       "modbus": {
-        "date": "2026-10-17",
+        "date": "2026-10-18T12:32:56",
+        "seconds": 3600,
+        "elapsedS": 3600,
         "seed": 20261017,
-        "sanitizers": "ASan + UBSan (RelWithDebInfo, -fno-sanitize-recover=undefined, halt_on_error)",
-        "machine": "Docker mat-armhf, Linux arm64 trên Apple Silicon (không phải x64 thật); hai tiến trình fuzz chạy song song cùng lúc với một build ASan",
-        "runner": "tools/fuzz/cpp/run.sh (tools/fuzz/cpp/run.ps1 chưa chạy được ở phiên này: không có pwsh)",
+        "sanitizers": "ASan + UBSan (RelWithDebInfo, halt_on_error)",
+        "summary": "",
         "crashes": 0,
         "exitCode": 0,
-        "task": "T058 (mục tiêu có từ 006 T101)",
-        "binary": "modbus_fuzz_test (4 mục tiêu, mỗi mục 1/4 thời gian)",
-        "seconds": 1800,
-        "elapsedS": 1800,
-        "inputs": {
-          "tcpDecoders": 275187500,
-          "tcpDriverExchanges": 20149643,
-          "rtuDecoders": 257685500,
-          "rtuDriverReplies": 19814449
-        },
-        "note": "30 phút tổng (7,5 phút mỗi mục tiêu)."
+        "runner": "tools/fuzz/cpp/run.ps1 (tools/fuzz/cpp/run.sh)"
       }
     }
   }
