@@ -14,7 +14,7 @@
   },
   "runtime": {
     "task": "T147",
-    "date": "2026-10-17T20:37:57.946Z",
+    "date": "2026-10-18T00:08:08.270Z",
     "machine": "Darwin arm64; Docker mat-armhf aarch64 (Linux aarch64 on Apple Silicon, not a real x64)",
     "project": "projects/logic-load (tools/gen-bench-projects.mjs --only logic-load) vs. the same project without logic.json",
     "clients": 10,
@@ -24,11 +24,13 @@
       "seconds": 600,
       "clients": 10,
       "tags": 300,
-      "cpuAvgPct": 1.67,
-      "cpuMaxPct": 2,
-      "rssAvgKb": 11685,
-      "rssMaxKb": 12372,
-      "liveUpdates": 2283930,
+      "cpuAvgPct": 1.34,
+      "cpuMaxPct": 1.97,
+      "rssAvgKb": 13606,
+      "rssMaxKb": 14456,
+      "rssAnonAvgKb": 6480,
+      "rssAnonMaxKb": 7212,
+      "liveUpdates": 2290650,
       "sequenceGaps": 0
     },
     "logic": {
@@ -36,20 +38,37 @@
       "seconds": 600,
       "clients": 10,
       "tags": 300,
-      "cpuAvgPct": 2.89,
+      "cpuAvgPct": 2.77,
       "cpuMaxPct": 3.38,
-      "rssAvgKb": 41715,
-      "rssMaxKb": 48056,
-      "liveUpdates": 2316650,
+      "rssAvgKb": 18236,
+      "rssMaxKb": 19736,
+      "rssAnonAvgKb": 10738,
+      "rssAnonMaxKb": 12108,
+      "liveUpdates": 2316560,
       "sequenceGaps": 0,
-      "scanLastMsMax": 4.19,
-      "scanP99MsMax": 3.3,
-      "scanOverrun": 2430,
+      "scanLastMsMax": 1.3,
+      "scanP99MsMax": 1.38,
+      "scanOverrun": 0,
       "scanPeriodMs": 100
     },
-    "extraCpuPoints": 1.22,
-    "extraRssKb": 30030,
-    "extraRssMaxKb": 35684,
+    "extraCpuPoints": 1.43,
+    "extraRssKb": 4630,
+    "extraRssMaxKb": 5280,
+    "extraRssAnonKb": 4258,
+    "rssFindings": {
+      "before": "gd6 4de0f636 (gd6-logic-perf included), 180 s: logic RSS avg 28.9 MB, max 41 MB vs baseline 11.6 MB; smaps: 31 glibc arenas x ~0.9 MB = 24.6 MB, each grown by GET /api/v1/logic (77 KB of text, ~1 MB of JSON nodes) built on a different HTTPS worker thread; 80 more GET /logic in a row: +6 MB",
+      "fixes": [
+        "mallopt(M_ARENA_MAX, 2) at the start of main (server/malloc_tuning.hpp): 180 s run +17.2 -> +7.8 MB",
+        "malloc_trim(0) once a minute in the main loop and right after building the GET /logic answer (0.045 ms)",
+        "LogicSubsystem keeps no copy of logic.json; the project's copy is freed after RuntimeEngine::firstRound (0.65 MB live each)",
+        "runner: the baseline asks GET /api/v1/system/info over HTTPS every 5 s as the logic side asks GET /logic (TLS and session memory on both sides); RssAnon recorded (file pages of the same binary vary with the page cache)"
+      ],
+      "liveHeapInProcess": "scratch probe (not committed), mallinfo in use after start + 3000 scans: baseline 0.72 MB, logic-load 3.12 MB",
+      "idleAfterStartKb": {
+        "baseline": { "rss": 12956, "heap": 2460, "stacks": 1192, "file": 9096 },
+        "logic": { "rss": 16468, "heap": 5744, "stacks": 1208, "file": 9308 }
+      }
+    },
     "checks": [
       {
         "name": "120 samples over 600 s",
@@ -63,7 +82,7 @@
       {
         "name": "the project runs: the clients get live updates",
         "pass": true,
-        "detail": "2283930"
+        "detail": "2290650"
       },
       {
         "name": "120 samples over 600 s",
@@ -77,19 +96,19 @@
       {
         "name": "the project runs: the clients get live updates",
         "pass": true,
-        "detail": "2316650"
+        "detail": "2316560"
       },
       {
         "name": "logic scan p99 <= 5 ms (FR-095)",
         "pass": true,
-        "detail": "3.3"
+        "detail": "1.38"
       },
       {
         "name": "x64 logic maximum: <= +3 CPU points, <= +5 MB RSS (SC-028; x64 pre-check, BL335 is T148)",
-        "pass": false,
-        "detail": "+1.22 points, +30030 kB"
+        "pass": true,
+        "detail": "+1.43 points, +4630 kB"
       }
     ],
-    "pass": false
+    "pass": true
   }
 }
