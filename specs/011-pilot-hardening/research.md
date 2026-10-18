@@ -90,11 +90,53 @@ Bảng truy vết đầy đủ ở plan ("Phát hiện tồn"). Nguyên tắc: m
 
 ## R15. Authenticode
 
-- **Công cụ:** `signtool` (Windows SDK 26100, có trên máy dev). Tauri 2 hỗ trợ `bundle.windows.signCommand`/`certificateThumbprint`; dùng `signCommand` để chạy `sign.ps1` (đủ ba chế độ).
+- **Công cụ:** `signtool` (Windows SDK 26100, có trên máy dev). Tauri 2 hỗ trợ `bundle.windows.signCommand`/`certificateThumbprint`; dùng `signCommand` để chạy `sign.ps1` (đủ ba chế độ). Chi tiết hành vi của bundler: mục "Kết quả spike T010" bên dưới.
 - **Loại chứng chỉ:** OV hay EV: từ 2023, CA/Browser Forum yêu cầu khóa riêng ký mã nằm trong thiết bị phần cứng (FIPS 140-2 L2) hoặc dịch vụ ký đám mây; không còn tệp PFX phát hành để bỏ vào CI. Do đó có ba chế độ và máy ký riêng. SmartScreen: danh tiếng theo chứng chỉ và lượt tải; EV từng được hưởng danh tiếng tức thì nhưng chính sách do Microsoft quyết định và đổi theo thời gian: **không cam kết** hết cảnh báo ngay; ghi kết quả thật (SC-019).
 - **Dấu thời gian:** bắt buộc (RFC 3161) để chữ ký sống sau khi chứng chỉ hết hạn.
 - **Chứng chỉ thử:** `New-SelfSignedCertificate -Type CodeSigningCert` vào kho người dùng, không vào kho tin cậy: kiểm `NotTrusted` (đúng) thay vì sửa kho của Windows. Kiểm với gốc tin cậy trong cô lập là tùy chọn ⚠️🔌.
 - **Cổng `-Release`:** từ chối chứng chỉ thử, tự ký, hết hạn, sai EKU, thiếu dấu thời gian: ngăn "phát hành nhầm bản thử".
+
+### Kết quả spike T010 (2026-10-18)
+
+Phiên bản đọc: `@tauri-apps/cli` 2.12.1 (khóa trong `package-lock.json`) → crate `tauri-cli` 2.12.1, phụ thuộc `tauri-bundler = "=2.10.1"`, `tauri-utils ~2.10.1` (crates.io). Mã nguồn tải từ `static.crates.io` (không có sẵn trong cache cargo vì app chỉ phụ thuộc `tauri`, không phụ thuộc bundler); `tauri-utils` 2.10.1 có trong `~/.cargo/registry/src/index.crates.io-*/`. NSIS do bundler tải là 3.11 (`nsis/mod.rs:38-39`), đọc mã ở tag `v311` của `kichik/nsis`. Đường dẫn dưới đây tương đối với gốc từng crate. Trang tài liệu `v2.tauri.app/distribute/sign/windows` chỉ nêu khóa `bundle > windows > signCommand` dạng chuỗi với `%1` ở cuối, không nói tệp nào được ký: mọi câu trả lời dưới đây lấy từ mã.
+
+**1. Tên khóa, dạng giá trị.** `bundle.windows.signCommand` (bí danh `sign-command`), `tauri-utils/src/config.rs:1083`. Kiểu `CustomSignCommandConfig` (`config.rs:1008-1032`, serde `untagged`) nhận **hai dạng**:
+- chuỗi: `tauri-cli/src/helpers/config.rs:120-135` tách bằng **một dấu cách** (`command.split(' ')`), phần đầu là chương trình, phần sau là đối số. Không có xử lý nháy: `-Path "%1"` cho ra đối số `"%1"` (có nháy), hai dấu cách liền nhau cho ra đối số rỗng.
+- đối tượng `{ "cmd": "...", "args": ["...", "%1"] }`: chuyển nguyên (`config.rs:131-133`). Dùng khi đường dẫn hay đối số có khoảng trắng.
+
+**2. Chỗ giữ chỗ `%1`.** `tauri-bundler/src/bundle/windows/sign.rs:135-159`: chỉ đối số **bằng đúng** `"%1"` mới được thay bằng đường dẫn tệp (`if arg == "%1"`, dòng 145); `"%1"` có nháy, `--file=%1` hay `x%1` **không** được thay khi bundler gọi trực tiếp. Đối số khác nếu là đường dẫn tương đối **tồn tại** thì đổi thành tuyệt đối theo thư mục hiện tại (dòng 148-152; lý do ghi trong mã: `!uninstfinalize` của NSIS chạy ở thư mục khác). Thư mục hiện tại là `apps/studio/src-tauri` (`tauri-cli/src/build.rs:166`, `bundle.rs:149`: `set_current_dir(dirs.tauri)`), nên `../../tools/...` trỏ tới `apps/tools/...` (sai); đúng là `../../../tools/release/sign.ps1`.
+
+**3. Cách gọi và môi trường.** `Command::new(cmd)` + `args` (`sign.rs:143`), **không qua shell**: `%MAT_SIGN_MODE%` hay `$env:...` trong `signCommand` không được mở rộng khi bundler gọi trực tiếp. Không gọi `env_clear`/`env`, nên tiến trình ký **thừa hưởng toàn bộ biến môi trường** của `tauri build` (kể cả `MAT_SIGN_MODE`, `MAT_SIGN_THUMBPRINT`, `MAT_SIGN_COMMAND`, `MAT_SIGNING_LOG`, `MAT_SIGN_RELEASE` do `release.ps1:97-100` đặt). Chạy bằng `output_ok` (`tauri-bundler/src/utils/mod.rs:48-107`): stdout/stderr bị bắt, chỉ in ở mức debug (cần `tauri build -v` để xem khi lỗi); thành công thì in stdout ở mức info (`sign.rs:210-213`). Không có stdin tương tác (stdin mặc định thừa hưởng; hộp PIN của trình điều khiển token là GUI nên không bị ảnh hưởng).
+
+**4. Ký tệp nào, theo thứ tự nào (target `nsis`, máy Windows).** Điều kiện chung `can_sign()` = có `signCommand` **hoặc** `certificateThumbprint` (`settings.rs:620-622`); cờ `--no-sign` bỏ qua tất cả (`sign.rs:249-256`, `bundle.rs:348-351`, `nsis/mod.rs:306-309`).
+1. `sign_binaries_if_needed` (`bundle.rs:129`, `345-388`): các binary **không phải** binary chính của Cargo (Studio chỉ có `mat-studio`: không có), rồi sidecar `externalBin` (không có; trên Windows sidecar đã có chữ ký thì bỏ qua qua `signtool verify /pa`, `TAURI_SKIP_SIDECAR_SIGNATURE_CHECK=true` bỏ hẳn: dòng 362-375).
+2. Binary chính `mat-studio.exe`, **sau khi vá** (binary patching) cho từng loại gói (`bundle.rs:153-170`).
+3. Năm DLL plugin NSIS (`NSISdl.dll`, `StartMenu.dll`, `System.dll`, `nsDialogs.dll`, `additional/nsis_tauri_utils.dll`) trong bản sao `target/release/nsis/x64/Plugins/x86-unicode` (`nsis/mod.rs:61-67`, `200-262`, `672-684`).
+4. Tài nguyên có đuôi `.exe`/`.dll` chưa ký (`should_sign`, `sign.rs:266-284`; `nsis/mod.rs:838-839`): `docs-html/` không có tệp như vậy. `WebView2Loader.dll` chỉ với toolchain `-gnu` (`nsis/mod.rs:793-799`). Bộ cài WebView2 offline **không** bị bundler ký lại (giữ chữ ký Microsoft).
+5. **Trình gỡ** `uninstall.exe`: bundler dựng chuỗi lệnh bằng `format!("{:?}", sign_command("%1", ...))` (`nsis/mod.rs:310-311`; `Debug` của `Command` trên Windows in chương trình và từng đối số trong nháy kép, gạch chéo ngược nhân đôi: `rust 1.99.1 library/std/src/sys/process/windows.rs:442-454`), đưa vào `!uninstfinalize '${UNINSTALLERSIGNCOMMAND}'` (`installer.nsi:70`, `101-103`). `makensis` thay mọi `%1` trong chuỗi bằng đường dẫn tạm của trình gỡ (`nsis build.cpp:4196-4221`) rồi chạy qua `%COMSPEC% /C IF 1==1 <lệnh>` (`util.cpp:1216-1237`): ở bước này lệnh **đi qua cmd.exe**, nên `%VAR%` được mở rộng (khác bước 2, 3, 6), và vì `makensis` thay `%1` theo chuỗi con nên nếu dùng chuỗi giữ chỗ khác `%1` đúng nguyên dạng thì hai đường ký sẽ khác nhau.
+6. **Bộ cài** `bundle/nsis/mAT Studio_<ver>_x64-setup.exe`, sau khi `makensis` xong và đổi tên (`nsis/mod.rs:717-718`).
+
+Mỗi tệp một lần gọi, `%1` đúng một đường dẫn: `sign.ps1` sẽ được gọi khoảng 8 lần (1 exe + 5 DLL + trình gỡ + bộ cài) cho mỗi lần dựng, mỗi lần một mục trong `signing-log.json`.
+
+**5. Lỗi ký có dừng bản dựng không.** Bước 1, 2, 3, 4, 6: **có**. `output_ok` trả `Err("failed to run <cmd>")` khi mã thoát khác 0 (`utils/mod.rs:102-107`), lan qua `?` ở `try_sign` (`sign.rs:259`) và mọi chỗ gọi (`bundle.rs:169`, `359`, `379`; `nsis/mod.rs:679`, `718`, `839`). Bước 5 (trình gỡ): **không**. `!uninstfinalize` chỉ có một đối số nên NSIS đặt `cmpop = 4` "Just a command, ignore the exit code" (`scriptpp.cpp:1136-1137`), `check_external_exitcode` trả `-1` (`build.cpp:4240`), `makensis` chỉ in "UninstFinalize command returned N" và đóng gói **trình gỡ chưa ký** vào bộ cài đã ký. Hệ quả: phải kiểm `uninstall.exe` sau khi dựng (contract §4 đã có, nay là bắt buộc chứ không phải phòng xa).
+
+**6. Binary chính trong cây dựng không có chữ ký.** Bundler sao binary chính chưa ký ra tệp tạm (`bundle.rs:133-144`) và **chép đè lại bản chưa ký, chưa vá** sau mỗi loại gói (`bundle.rs:212-218`). Vậy `target/release/mat-studio.exe` sau `tauri build` là bản **NotSigned**; bản có chữ ký chỉ nằm trong bộ cài. `mat-studio.exe` để kiểm (SC-017, `verify-release.ps1 -StudioExe`) phải lấy từ bản cài thử im lặng (`/S /D=...`), cùng chỗ lấy `uninstall.exe`.
+
+**7. Quan hệ với `certificateThumbprint`, `digestAlgorithm`, `timestampUrl`, `tsp`.** Chỉ dùng cho lệnh mặc định `signtool sign /fd <digest> /sha1 <thumbprint> /d <productName> [/tr <url> /td <digest> | /t <url>] <file>` (`sign.rs:161-186`; digest mặc định `sha256`, dòng 20-25). Có `signCommand` thì `sign()`/`sign_command()` luôn chọn lệnh tùy biến (`sign.rs:188-198`, `237-247`): ba khóa kia bị **bỏ qua** khi ký; `certificateThumbprint` chỉ còn tác dụng bật `can_sign()`. `signtool` vẫn được tìm (`TAURI_WINDOWS_SIGNTOOL_PATH` hoặc Windows SDK, `sign.rs:52-119`) cho `verify` của sidecar và tài nguyên `.exe`/`.dll` (bước 1, 4); Studio không có loại tệp đó. Ngoài Windows, chỉ ký được khi có `signCommand` (`sign.rs:194-196`, `244-245`).
+
+**Đối chiếu với tích hợp hiện có (T093 chưa làm, `tauri.conf.json` chưa có `signCommand`):**
+
+| # | Hiện trạng | Bundler làm gì | Cần đổi |
+|---|---|---|---|
+| a | contract §4 ghi `powershell -NoProfile -File ../../tools/release/sign.ps1 -Mode %MAT_SIGN_MODE% -Path "%1"` | dạng chuỗi tách theo dấu cách, `"%1"` có nháy không được thay (mục 2); `%MAT_SIGN_MODE%` không mở rộng khi gọi trực tiếp nhưng có mở rộng ở `!uninstfinalize` (mục 3, 4.5); `../../` sai gốc (mục 2) | dùng dạng đối tượng, `%1` trơn, bỏ `-Mode` (sign.ps1 đọc `MAT_SIGN_MODE` từ môi trường, `sign.ps1:35`): `{"cmd": "powershell", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "../../../tools/release/sign.ps1", "-Path", "%1"]}`. Đã sửa contract §4 (chỉ tài liệu) |
+| b | contract §4: "Tauri gọi lệnh này cho tệp thực thi, bộ cài và trình gỡ" | còn ký 5 DLL plugin NSIS (mục 4.3) | đã ghi vào contract; `sign.ps1` ký được DLL như exe, không cần đổi mã |
+| c | contract §4, `release.ps1:157`: `mat-studio.exe` lấy từ `target/release/` | bản đó chưa ký (mục 6) | T093/T098: lấy `mat-studio.exe` và `uninstall.exe` từ bản cài thử im lặng; `release.ps1:157-168` đang truyền `$env:CARGO_TARGET_DIR/release/mat-studio.exe` cho `verify-release.ps1` sẽ báo `NotSigned`. Chưa sửa (chỉ chạy trên Windows) |
+| d | ký trình gỡ lỗi thì bản dựng vẫn qua (mục 5) | | `release.ps1` phải coi `uninstall.exe` `NotSigned` là lỗi dừng (T093) |
+| e | `release.ps1:158-166` ký bộ cài khi bộ cài `NotSigned` | khi đã có `signCommand`, bộ cài luôn được ký hoặc bản dựng dừng | giữ làm đường lùi; không ký lại bộ cài đã ký (ký hai lần tạo chữ ký kép) |
+| f | máy dev Windows chưa có chứng chỉ thử | có `signCommand` thì mọi `tauri build` gọi `sign.ps1` (mặc định `test`), không có chứng chỉ thử thì `sign.ps1` thoát 2 và bản dựng dừng | T093: ghi trong `studio-install`/README "chạy `make-test-cert.ps1` hoặc `tauri build --no-sign`"; `npm run tauri dev` không bị ảnh hưởng (chỉ bundler ký) |
+| g | lỗi ký chỉ hiện "failed to run powershell" | stdout/stderr chỉ ở mức debug (mục 3) | `release.ps1` gọi `studio:build` với `-- --verbose` hoặc đọc `signing-log.json` khi lỗi (T093) |
+
+Không đổi `tauri.conf.json` trong spike: thêm `signCommand` làm mọi bản dựng Windows phụ thuộc chứng chỉ thử (mục f), không kiểm được trên macOS; việc này thuộc T093 cùng bản dựng thử bằng chứng chỉ thử và kiểm ba tệp (SC-017).
 
 ## R16. Khóa phát hành ECDSA P-256
 
