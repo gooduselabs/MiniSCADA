@@ -311,3 +311,13 @@ Trạng thái cuối (02:50): mat-runtime active, NRestarts 0, `system/info` `up
 | 09:00 | Khôi phục `runtime.json` (SHA-256 bằng bản gốc `0e979c42…`), khởi động lại, tắt hai tài khoản thử, xóa `/root/mat-stage-011/t148c` | — |
 
 Trạng thái cuối: runtime `1.0.0-rc.1` releaseSeq 12 active (NRestarts 0), `tank-demo` 0.1.0 active, OTA tắt, không khóa tin cậy. Không reboot; không đụng `atscada-*`, `piano-edtech-*`, mật khẩu root, sshd.
+
+### 09:43–09:47 — T013 (chỉ đọc) và T063 trên 1.0.0-rc.1
+
+| Giờ | Thay đổi | Hoàn tác |
+|---|---|---|
+| 09:43 | T013: chỉ đọc (`sysfs`, `mount`, `df`, `timedatectl`, `sshd -T`, phiên bản công cụ) | — |
+| 09:44 | Đổi mật khẩu ngẫu nhiên và bật `mat-t079-eng`; chép bộ lấy mẫu `/proc` vào `/root/mat-stage-011/t063` | 09:47 đã tắt tài khoản, xóa thư mục |
+| 09:44–09:47 | L8: 40 kết nối TLS im lặng từ địa chỉ thứ hai của máy dev, đăng nhập 43 lần; kiểm Host bằng `curl` | — |
+
+Trạng thái cuối: như mục 09:00 (runtime `1.0.0-rc.1` releaseSeq 12, `tank-demo`, `runtime.json` gốc).

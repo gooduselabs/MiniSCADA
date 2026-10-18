@@ -158,3 +158,12 @@ Thu thập qua SSH LAN, chỉ đọc. Ảnh chụp ở trên (2026-10-10) vẫn 
 - Không đổi: kernel 5.4.61, mật khẩu root và cấu hình sshd (chờ T064 có người dùng ở cạnh).
 
 Mọi thay đổi và cách hoàn tác: [device-changes.md](device-changes.md).
+
+## 011 (T013, 2026-10-18): kiểm chỉ đọc cho feature 011
+
+- **eMMC:** `mmc-utils` không có, nhưng kernel có thuộc tính sysfs: `/sys/block/mmcblk0/device/life_time` = `0x01 0x01` (loại A và B: đã dùng 0–10 %), `pre_eol_info` = `0x01` (bình thường), tên chip `S0311D`, `manfid` `0x0000ea`, kiểu `MMC`. Đường đọc tuổi thọ cho runtime: `core/diagnostics/emmc_life.cpp` đọc đúng các tệp này. Thống kê khối `/sys/block/mmcblk0/stat` có sẵn (đọc ghi toàn hệ). `EXT_CSD` đầy đủ (T082) vẫn cần `mmc-utils` hoặc datasheet.
+- **Phân vùng:** `/` là `/dev/mmcblk0p5` ext4 `rw,relatime`, 6,8 GB, đã dùng 14 %; không có phân vùng `/var` riêng.
+- **Giờ:** `systemd-timesyncd`, `NTPSynchronized=yes`, máy chủ `ntp.ubuntu.com` (stratum 2), múi giờ `Asia/Ho_Chi_Minh`; không có `chronyc`. Runtime phát hiện đồng bộ giờ qua `timedatectl show` (R23).
+- **sshd:** `sshd -T`: `permitrootlogin yes`, `passwordauthentication yes`, `kbdinteractiveauthentication no`; `Include /etc/ssh/sshd_config.d/*.conf` (không có tệp nào thêm luật). Đúng cảnh báo `SSH_ROOT_PASSWORD`; gia cố chờ T064 (cần người ở cạnh).
+- **Công cụ:** systemd 245, GNU tar 1.30 (`--quoting-style=literal` có), coreutils 8.30 (`sha256sum`), OpenSSL 1.1.1f.
+- **mat:** `/etc/mat-runtime` có `runtime.json`, `runtime.json.bak-20261013`, `trusted-keys/` (trống), `users.json`; `NRestarts=0`.

@@ -1,0 +1,53 @@
+{
+  "task": "T063 (SC-008)",
+  "date": "2026-10-18",
+  "device": "BL335 (2x Cortex-A7, kernel 5.4.61)",
+  "runtime": "1.0.0-rc.1",
+  "releaseSeq": 12,
+  "silentTls": {
+    "connections": 40,
+    "fromSecondAddressOfSameHost": true,
+    "heldS": 120,
+    "handshakesCompleted": 480,
+    "closedByServer": 480,
+    "firstCloseAtMs": 10450,
+    "note": "server closes a silent TLS connection after ~10 s (request timeout); the tool reopens to keep 40"
+  },
+  "loginsDuring": {
+    "count": 43,
+    "ok": 43,
+    "maxMs": 837,
+    "thresholdMs": 2000,
+    "pass": true
+  },
+  "rss": {
+    "startKb": 9544,
+    "endKb": 8188,
+    "peakKb": 27936,
+    "note": "peaks are Argon2id password hashing at each login (also without silent connections, T079 L8); no lasting growth",
+    "pass": true,
+    "thresholdMbGrowth": 1
+  },
+  "host": {
+    "evil.test": {
+      "http": 421,
+      "https": 421
+    },
+    "ip": {
+      "http": 200,
+      "https": 200
+    },
+    "name.local": {
+      "http": 200,
+      "https": 200
+    },
+    "localhost": {
+      "http": 200,
+      "https": 200
+    },
+    "pass": true
+  },
+  "warnings": ["VIEWER_PUBLIC", "TLS_NO_IP_SAN", "SSH_ROOT_PASSWORD"],
+  "sshRootPasswordExpected": true,
+  "pass": true
+}
