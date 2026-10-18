@@ -1,10 +1,65 @@
 # Bàn giao — từ GĐ 0–5 sang GĐ 6 (feature 011 "pilot-hardening")
 
-Trạng thái ngày **2026-10-16**. Dành cho người tiếp nhận: kỹ sư hoặc phiên Claude mới trên **máy mới**. Máy cũ có bộ nhớ riêng (memory) mà máy mới không có, nên mọi điều cần biết nằm ở đây. Đọc theo thứ tự: tài liệu này, `CLAUDE.md`, `.specify/memory/constitution.md` (2.0.2), `docs/plans/roadmap-v2.md`, `docs/architecture/studio-ux.md`.
+Lập ngày **2026-10-16**; **mục 0 (trạng thái GĐ 6) cập nhật 2026-10-18**. Dành cho người tiếp nhận: kỹ sư hoặc phiên Claude mới trên **máy mới**. Máy cũ có bộ nhớ riêng (memory) mà máy mới không có, nên mọi điều cần biết nằm ở đây. Đọc theo thứ tự: tài liệu này, `CLAUDE.md`, `.specify/memory/constitution.md` (2.0.2), `docs/plans/roadmap-v2.md`, `docs/architecture/studio-ux.md`.
 
 Ngôn ngữ trao đổi và tài liệu: tiếng Việt. Code và identifier: tiếng Anh.
 
 **Quan trọng về bảo mật:** repo này **công khai** (`github.com/gooduselabs/MiniSCADA`). Không bao giờ commit mật khẩu, token, địa chỉ IP công khai hoặc cổng SSH của thiết bị, hay vân tay chứng chỉ. Thông tin truy cập thiết bị do người dùng cung cấp trực tiếp, không nằm trong repo. Lịch sử đã được làm sạch các giá trị này (xem mục 9).
+
+## 0. Trạng thái GĐ 6 ngày 2026-10-18 (đọc trước)
+
+Nhánh làm việc `gd6` (HEAD `3b1508f3` lúc cập nhật), chưa push. Phiên bản: Studio và runtime **`1.0.0-rc.1`**; API 1.5.0, live 1.3.0, định dạng project 1.0.0, `.matupdate` 1.0.0. Chi tiết từng task ở "Ghi chú khi làm" của `specs/011-pilot-hardening/tasks.md`; tổng hợp ở `docs/reports/011-acceptance.md` (bản nháp) và `011-fr-matrix.md` (đếm lại 2026-10-18: FR 101 Đạt, 4 Không đạt, 8 Chưa đo, 30 Chờ người; SC 23, 1, 5, 14). Người dùng giao toàn quyền hoàn thành GĐ 6 (2026-10-16) và cho phép SSH qua LAN tới BL335 (thông tin truy cập: xem memory, không ở repo).
+
+### 0.1 Đã xong
+
+- **Rà soát bảo mật hai lần:** T062 (lần 1, năm lượt song song) và T202 (lần 2). 0 Critical/High mở; K1 (High, phát lại `keyset`), mọi Medium (U3, U4, M1, LG1–LG6, F1–F3, N-OTA1–3) và Low đã sửa kèm test, gộp vào `gd6`. **O1** (rollback không ký) chấp nhận là rủi ro còn lại, **O2** (một khóa gỡ mọi khóa) hoãn sau pilot (ADR-035). `docs/reports/011-security-review.md`.
+- **OTA thật trên BL335 (T122):** 10/10 cập nhật `committed`, ngừng 13,2–15,9 s (trung bình 14,5 s), toàn bộ 21,1–24,0 s, quay về bằng tay đạt; `011-ota-bl335.json`.
+- **`1.0.0-rc.1` (T191):** nâng phiên bản, ghi chú phát hành `docs/release/notes/1.0.0-rc.1.md`; `ci-local` đầy đủ xanh trên rc.1 ("ALL STEPS PASSED"); `release.ps1` chế độ thử chạy bằng pwsh trên macOS, tạo `release/1.0.0-rc.1/` (không commit). Bộ cài Studio và Authenticode chuyển sang T102/T104 (Windows).
+- **Đo trên BL335:** T079 (runtime 1.0.0) L1 4 giờ: CPU 28,9 % một lõi (14,5 % cả máy), đỉnh 50,4 %, RSS ≤ 19,5 MB, 0 mất sequence; L3 50/50 4429; L4 F5 tối đa 935 ms; L5 ≥ 53,4 FPS; L8 đăng nhập tệ nhất 1.198 ms (T079 chưa tick: `mat-sample` chưa cài, chưa xen kẽ 8443, RSS tab). T063 trên rc.1: 40 TLS im lặng, 43/43 đăng nhập từ địa chỉ khác ≤ 837 ms, `Host: evil.test` → 421. T013 chỉ đọc: không có `mmc-utils`, tuổi thọ eMMC qua sysfs (`life_time` `0x01 0x01`, `pre_eol_info` `0x01`), `systemd-timesyncd` đồng bộ, sshd cho root bằng mật khẩu. **T148 đo lại trên rc.1 (logic 550 khối dưới L1): vòng quét trung vị 2,5 ms, p99 3,8 ms (Đạt), RSS +3,9 MB (Đạt), CPU +3,3 điểm một lõi: vượt ngưỡng +3 là 0,3 (Không đạt)**; phương án `logic.scanMs` 200–250 ms, tối ưu VM, hoặc đọc theo cả máy (+1,65): cần quyết định ở T201.
+- **Tối ưu logic (T148, T147):** vòng quét BL335 8,5 → 2,3 ms (slot theo chỉ số, chỉ publish đầu ra đổi, VM không cấp phát), logic quét đúng `scanMs`; RSS x64 +30 → +4,6 MB nhờ `M_ARENA_MAX 2` + `malloc_trim`.
+- **Lượt x64** (Docker Linux arm64 trên Apple Silicon, không phải x64 thật): T075 tải L1 1 giờ, L3, L4, L5, L8 đạt; T077 mất điện `kill -9` 130/130 (chưa tick: D3 một phần, D2/D4 ngoài rig); T078 cắt mạng 500/500 nối lại ≤ 35 s; T146 `logic-it` mọi kịch bản xanh (retain-kill 100 vòng); T147 L7 x64 đạt sau sửa (chưa tick: chưa đủ L1 1 giờ 500 Tag).
+- **Fuzz:** TS mọi mục tiêu ≥ 1 giờ (T058, T142, T165, 0 sự cố sau khi sửa các lỗi tìm được); C++ dưới ASan + UBSan: gói `.matscada`, `logic-json`, `update-envelope` ≥ 1 giờ, project-json, expression, modbus mới 30 phút (T058 chưa tick).
+- **ASan + UBSan ctest (T059, chạy riêng):** 5.888 ca, 56 đỏ lần đầu: 1 lỗi thật của runtime (429 cho truy vấn lịch sử kế tiếp cùng nguồn, đã sửa cả alarm và lịch sử 010), 53 lỗi trong mã test, 2 ngân sách thời gian; đã sửa. Chưa có lượt `ci-local -Sanitize`.
+- Khác: T010 (spike Tauri `signCommand` từ mã nguồn bundler), T203 phần chữ, T206 `device-changes.md` mọi thay đổi 2026-10-17/18 kèm hoàn tác.
+
+### 0.2 Đang chạy
+
+- **Soak x64 S0 24 giờ (T076)**, bắt đầu 2026-10-17 20:38:45 UTC, **xong khoảng 03:38 ngày 2026-10-19 (+07)**. Chạy tách rời trong Docker, compose project `mat-soak-x64` (container `mat-soak-x64-rt-1`, `mat-soak-x64-client-1`), khởi động từ worktree `.claude/worktrees/agent-ab685efd9d9cffea5`. Lệnh (chạy trong worktree đó hoặc checkout có `tools/soak/x64-soak.mjs`): `node tools/soak/x64-soak.mjs status`; khi xong `node tools/soak/x64-soak.mjs collect --out docs/reports/011-soak-x64.json`; chỉ sau khi đã collect mới `node tools/soak/x64-soak.mjs stop` (xóa dữ liệu). Kết quả điền vào `011-soak.md` §2a. Không chạy build C++ nặng song song khi soak còn chạy nếu muốn số sạch.
+
+### 0.3 Thiết bị BL335 lúc này
+
+Runtime **`1.0.0-rc.1` releaseSeq 12** (cài bằng `deploy.sh` 2026-10-18 07:54), `.prev` là bản thử T122 releaseSeq 11 (bản 1.0.0 gốc releaseSeq 1 không còn); project `tank-demo` 0.1.0; `runtime.json` gốc; OTA tắt; không khóa tin cậy; tài khoản tạm `mat-t079-*`, `mat-t122-adm` ở trạng thái tắt. **OTA chỉ nhận gói có `releaseSeq` > 12**, trừ khi cài lại bằng `deploy.sh` (không chặn releaseSeq thấp hơn).
+
+### 0.4 Bẫy môi trường học được ở GĐ 6
+
+- **Máy ảo Docker khoảng 2,8 GB RAM:** build C++ dùng `-j1` hoặc `-j2` (build ASan `-j2` bị OOM-kill `cc1plus` 25 lần); `test-armhf.sh` đọc `MAT_BUILD_JOBS` (mặc định 2). Hai build C++ cùng lúc hoặc build cạnh tải đo làm số đo sai (lượt cắt mạng đầu có 16 lần > 35 s vì vậy).
+- **`pwsh` bị chặn trong agent con chạy ở worktree:** script `.ps1` (`ci-local.ps1`, `release.ps1`, `web-it.ps1`, …) phải do phiên chính chạy; agent con dùng bản Node tương ứng (`tools/logic-it/run.mjs`, `tools/powercut/x64-run.mjs`, `tools/load/x64.mjs`) hoặc bản shell của `package-runtime.ps1`.
+- **`release.ps1` trên macOS:** không truyền `-Verifier` (bản `mat-update-verify` armhf không chạy được trên máy này; dùng bộ kiểm Node).
+- **`maxLiveClientsPerSource` mặc định 5:** bàn đo 10 client từ một máy phải đặt `"maxLiveClientsPerSource": 10` trong `runtime.json` (thiết bị: đặt tạm rồi khôi phục, ghi `device-changes.md`); `driver-it` truyền `--max-live-clients-per-source 10`.
+- **Sinh lại vector trước test:** `node tests/package-vectors/generate.mjs --out` trước ctest trên cây mới (thiếu thì 14 ca `PackageVector` đỏ); mỗi lần `cmake` configure đóng dấu `MAT_BUILD_EPOCH_S` mới nên build lại gần hết cây: configure một lần.
+- Dưới ASan, `RulesLogic.TheOrderOfALongChainNeedsNoDeepStack` cần chạy riêng (hết RAM khi `-j3`); `AlarmStorm` bỏ kiểm thời gian khi có ASan.
+- Gói runtime phải chép mọi bộ `schemas/<bản>/` (lỗi thiếu `schemas/0.6` ở 1.0.0 đã sửa, `deploy.sh` đòi `schemas/0.6`).
+
+### 0.5 Việc còn lại
+
+**Tự làm được (không cần người; BL335 qua LAN đã được phép):**
+
+- T076: thu kết quả soak x64 sau 03:38 ngày 2026-10-19, điền `011-soak.md`.
+- T080: L2 1.000 Tag × 10 client × 1 giờ trên BL335 (`projects/bench-1000`).
+- T079 phần còn lại: cài `mat-sample` lên BL335, L1 xen kẽ 8443 (cần `wss://` trong `load-tester`), RSS tab L5.
+- T148/T201: quyết định cách xử lý CPU logic +3,3 điểm (đổi `scanMs` cho cấu hình tối đa, tối ưu VM, hay đọc ngưỡng theo cả máy) và tổng hợp ngân sách (ADR-005 "Cập nhật 011", kết luận eMMC khi nền thiết bị đã > 2 GB/ngày).
+- T058: chạy project-json, expression, modbus C++ đủ 1 giờ mỗi mục tiêu.
+- T059: một lượt `pwsh tools/ci-local.ps1 -Sanitize -BuildName mac -Parallel 2 -BuildJobs 1` ở phiên chính.
+- T077: D3 định vị được lúc WAL đầy; D2, D4 qua rig `x64-kill`.
+- T147: L7 x64 với L1 đầy đủ (1 giờ, 500 Tag).
+- T071/FR-038: phần L3 "client mới vào ≤ 35 s" trong `load-tester`.
+- T087, T200 (so cặp 0.6/1.0), T205 (đóng bản nháp nghiệm thu), T208 (`/speckit-analyze` cuối), T189 (collector dùng viewer nhưng `audit` đòi administrator).
+
+**Cần Windows:** T009 (spike signtool), T088, T091–T094, T098, T102 (dựng bộ cài NSIS, ký thử, `release.ps1` đủ 9 bước, ca hỏng 1–5), T167 (Telex/Unikey, NVDA), ảnh chụp Studio cho T203, đo lại `screen-perf` trên Windows.
+
+**Cần người, công ty hoặc khách hàng:** T064 (gia cố SSH, đổi mật khẩu root, có người ở cạnh), T082 (datasheet eMMC), T083–T086 và T123 (bộ điều khiển nguồn, cắt mạng), T149 (PLC hoặc giả lập do người dùng chọn), T103–T105 (chứng chỉ ký mã thật, khóa phát hành ngoại tuyến, Windows sạch), T150, T186 (người thử, huấn luyện), T192–T198 (pilot, Go/No-Go).
+
+**Không làm ở GĐ 6:** T081 (soak 7 ngày BL335): **hủy theo quyết định người dùng 2026-10-18**; thay bằng T076, T079 L1 4 giờ và soak 30 ngày bàn thử khi pilot (T196). SC-013 ghi "Chưa đo — hoãn theo quyết định người dùng".
 
 ## 1. Tóm tắt
 
@@ -22,11 +77,11 @@ mAT SCADA là SCADA mini chạy trên BL335 (Allwinner T113-i, armhf, 1 GB RAM):
 | 4 | 009 alarms | Alarm theo ISA-18.2, `alarm.db`, banner, trang alarm |
 | 5 | 010 history-reports | Lịch sử, tổng hợp, biểu đồ, báo cáo XLSX/PDF |
 
-**Phiên bản hiện tại:** runtime 0.9.0; API 1.4.0; live 1.3.0; định dạng project 0.6.0 (schema 0.3–0.5 đóng băng trong `schemas/`); Studio 0.8.0; `@mat/ui-components` 0.3.0.
+**Phiên bản lúc bàn giao GĐ 5 (2026-10-16):** runtime 0.9.0; API 1.4.0; live 1.3.0; định dạng project 0.6.0 (schema 0.3–0.5 đóng băng trong `schemas/`); Studio 0.8.0; `@mat/ui-components` 0.3.0. **Hiện tại (2026-10-18):** xem mục 0 (`1.0.0-rc.1`).
 
-**Triển khai:** runtime 0.9.0 đã chạy trên BL335 (ngày 2026-10-16), project `tank-demo` 0.1.0. Số đo ở `docs/reports/device-changes.md` (mục cuối) và `docs/reports/release-0.9.0.md`.
+**Triển khai:** ngày 2026-10-16 BL335 chạy runtime 0.9.0, project `tank-demo` 0.1.0 (`docs/reports/release-0.9.0.md`). Hiện chạy `1.0.0-rc.1` releaseSeq 12 (mục 0.3; `docs/reports/device-changes.md` mục 2026-10-18).
 
-**Chưa bắt đầu:** GĐ 6 (feature 011): spec/plan/tasks có sẵn tại `specs/011-pilot-hardening/` (220 task chưa xong). Constitution 2.0.2 (PATCH, 2026-10-16) đã mở khóa ghi PLC từ logic và OTA.
+**GĐ 6 (feature 011):** đang làm từ 2026-10-16, trạng thái ở mục 0; spec/plan/tasks tại `specs/011-pilot-hardening/`. Constitution 2.0.2 (PATCH, 2026-10-16) đã mở khóa ghi PLC từ logic và OTA.
 
 ## 2. Bắt đầu trên máy mới
 
@@ -109,7 +164,7 @@ export CHROME_PATH=~/.cache/mat-chrome/chrome-headless-shell/<bản>/chrome-head
 - **Không bao giờ:** reboot hoặc cắt điện (cần người ở cạnh), đụng unit `atscada-*` (kể cả timer `atscada-admin-recover`) hay container `piano-edtech-*`, đổi mật khẩu root hay cấu hình sshd.
 - Cách triển khai: `deployment/device/deploy.sh` (atomic, giữ bản trước ở `/opt/mat-runtime.prev`, `deployment/device/rollback.sh`). Xem `docs/deployment/mat-runtime.md` và `docs/reports/release-0.9.0.md`. Thiết bị không có `curl` (có `wget`). Chép thư mục lên bằng `tar -C <dir> -cf - . | ssh ... 'cd <đích> && tar xf -'`. Trên Git Bash có thể dùng `SSH_ASKPASS` với script `.cmd` ở thư mục tạm ngoài repo.
 - Nạp project dùng `tools/measure/device-api.mjs` (login, deploy, restore). Tài khoản tạm tạo bằng `mat-runtime --user-add ... --password-stdin` rồi tắt (`--user-disable`).
-- Trạng thái cuối 2026-10-16: runtime 0.9.0, `tank-demo` 0.1.0, RSS rảnh 8,1 MB, CPU rảnh 0,94%, dịch vụ ổn định (`NRestarts=0`). Giữ `viewerAccess:any` và `simLoad:true` (cảnh báo `VIEWER_PUBLIC`); đổi về `private` khi không demo.
+- Trạng thái cuối 2026-10-16: runtime 0.9.0, `tank-demo` 0.1.0, RSS rảnh 8,1 MB, CPU rảnh 0,94%, dịch vụ ổn định (`NRestarts=0`). **Trạng thái 2026-10-18:** mục 0.3 (`1.0.0-rc.1` releaseSeq 12, `mat-updater` đã cài, OTA tắt). Giữ `viewerAccess:any` và `simLoad:true` (cảnh báo `VIEWER_PUBLIC`); đổi về `private` khi không demo.
 - **Cần người dùng xử lý (ngoài khả năng của phiên làm việc):**
   - Thiết bị bị dò mật khẩu root từ Internet: cần đổi mật khẩu root hoặc đóng chuyển tiếp cổng SSH trên router.
   - Thiết bị khởi động lại ngày 2026-10-16 lúc khoảng 08:13 không rõ nguyên nhân (nghi mất điện hoặc watchdog phần cứng 16 giây).
@@ -138,7 +193,7 @@ export CHROME_PATH=~/.cache/mat-chrome/chrome-headless-shell/<bản>/chrome-head
    - **`screen-perf` "kéo 100 item"**: xanh trên Mac (2 lượt Studio e2e đều đạt ngưỡng 16,7 ms); số đo Windows 20–22 ms/khung trước đây chưa đo lại trên máy Windows rảnh. Số Mac không thay số Windows.
 2. **Build lại gói runtime** (VFS đếm byte ghi mới, ADR-039 chưa vào gói 0.9.0 đã triển khai) và triển khai lại lên BL335; đo ghi eMMC thật bằng `io.sqliteVfs` (SC-022, T130/T143 của 010). **2026-10-16:** gói đã build lại trên Mac (`package-runtime.ps1`, entry chủ root, không metadata macOS, GNU tar giải nén sạch); **chưa triển khai**: BL335 không liên lạc được (LAN: ping mất 100 %, ARP không phân giải; cổng chuyển tiếp từ Internet hết giờ). Cần người kiểm tra nguồn điện và mạng của thiết bị.
 3. **Cập nhật tài liệu 011 theo Constitution 2.0.2: xong 2026-10-16** (plan, tasks, ADR-035, mục lục ADR, Sync Impact Report).
-4. **GĐ 6 / feature 011: đang làm (từ 2026-10-16, nhánh `gd6`).** Trạng thái chi tiết từng task và quyết định ở "Ghi chú khi làm" trong `tasks.md`. Cách làm: nhiều agent song song, mỗi agent một git worktree và một nhánh `gd6-<việc>` tách từ `gd6`, phiên chính gộp (`git merge --no-ff`), xử lý xung đột (thường chỉ `docs/user/error-codes.md`: sinh lại bằng `node tools/gen-error-codes.mjs`), rồi chạy `pwsh tools/ci-local.ps1 -BuildName mac -Parallel 4 -BuildJobs 3` đầy đủ. Lưu ý: worktree của agent có thể được tạo từ `main` thay vì `gd6`; agent phải `git checkout -B <nhánh> gd6` và kiểm commit đầu. Đã gộp lô 1: Phase 1–2 (trừ T009, T010 cần Windows, T013 cần BL335), US1 phần Host, khóa đăng nhập, nhật ký xung, SSH, các mục Low của 008, định dạng 1.0.0 TS và C++. `ci-local` toàn bộ xanh 2026-10-17. Phạm vi gốc: `specs/011-pilot-hardening/tasks.md` (12 phase, 9 user story): rà soát bảo mật tổng và xử lý mọi phát hiện (gồm T209–T220 từ rà soát 008 và các phát hiện Medium của 005/006/007: kiểm tra Host chống DNS rebinding, khóa đăng nhập theo tên bị DoS, bit xung sau `kill -9`), tải/soak 7 ngày/cắt điện 100 lần, bộ cài Studio có chữ ký số, OTA, logic v2, trình vẽ SVG đầy đủ, faceplate/template, tài liệu và huấn luyện, nghiệm thu pilot, phát hành 1.0.0.
+4. **GĐ 6 / feature 011: đang làm (từ 2026-10-16, nhánh `gd6`). Trạng thái và việc còn lại cập nhật 2026-10-18 ở mục 0; đoạn dưới là lịch sử lô 1.** Trạng thái chi tiết từng task và quyết định ở "Ghi chú khi làm" trong `tasks.md`. Cách làm: nhiều agent song song, mỗi agent một git worktree và một nhánh `gd6-<việc>` tách từ `gd6`, phiên chính gộp (`git merge --no-ff`), xử lý xung đột (thường chỉ `docs/user/error-codes.md`: sinh lại bằng `node tools/gen-error-codes.mjs`), rồi chạy `pwsh tools/ci-local.ps1 -BuildName mac -Parallel 4 -BuildJobs 3` đầy đủ. Lưu ý: worktree của agent có thể được tạo từ `main` thay vì `gd6`; agent phải `git checkout -B <nhánh> gd6` và kiểm commit đầu. Đã gộp lô 1: Phase 1–2 (trừ T009, T010 cần Windows, T013 cần BL335), US1 phần Host, khóa đăng nhập, nhật ký xung, SSH, các mục Low của 008, định dạng 1.0.0 TS và C++. `ci-local` toàn bộ xanh 2026-10-17. Phạm vi gốc: `specs/011-pilot-hardening/tasks.md` (12 phase, 9 user story): rà soát bảo mật tổng và xử lý mọi phát hiện (gồm T209–T220 từ rà soát 008 và các phát hiện Medium của 005/006/007: kiểm tra Host chống DNS rebinding, khóa đăng nhập theo tên bị DoS, bit xung sau `kill -9`), tải/soak 7 ngày/cắt điện 100 lần, bộ cài Studio có chữ ký số, OTA, logic v2, trình vẽ SVG đầy đủ, faceplate/template, tài liệu và huấn luyện, nghiệm thu pilot, phát hành 1.0.0.
 5. **Việc hoãn của 009/010** (kèm lệnh chạy lại trong `tasks.md` và báo cáo nghiệm thu): mô phỏng 500 Tag (T140), `kill -9` đủ 100 lần (FR-058), T143–T145 dữ liệu 7 ngày trên thiết bị, SC-020 (nạp project dựng bằng Studio lên runtime x64 rồi so khớp trang báo cáo), rollback thật trên BL335.
 6. **Phát hiện chưa sửa:** 010 M2, M5–M8; 008 M2 (giao diện chưa báo `skippedSvg`) và các mục Low; 009 R3 phần còn lại; spec 008 còn chữ `pointer-events: all` ở FR-049, D16, research (đã đổi thành `visible` trong mã).
 
@@ -153,6 +208,7 @@ Gói và bộ cài là nhị phân, không commit. Tái tạo trên máy mới:
 - **Gói runtime armhf:** `deployment/toolchain/build.ps1 -BuildDir C:\build\armhf` rồi `deployment/package-runtime.ps1` → `build/mat-runtime-armhf.tar.gz`. Bản 0.9.0 đã build: SHA-256 `654b6de3527f8b8eba8fd34597c70c7191f8391516054e829ad0022215922cd0` (chưa có VFS đếm byte ghi).
 - **Bộ cài Studio 0.8.0:** `apps/studio`, `npm run tauri build` với `CARGO_TARGET_DIR` ngoài repo; ra `bundle/nsis/mAT Studio_0.8.0_x64-setup.exe`. Bản đã build: SHA-256 `5462a20750330602c161315c5768a9cecab21d5d8e5ec4f3becaa41e24dfc86d`. Smoke: `node tools/measure/studio-smoke.mjs --exe <mat-studio.exe>`.
 - Chi tiết: `docs/reports/release-0.9.0.md`.
+- **`1.0.0-rc.1` (2026-10-18):** `pwsh tools/release/release.ps1` chế độ thử (không `-Release`, `-SkipCi`, khóa thử ngoài repo; trên macOS không `-Verifier`) tạo `release/1.0.0-rc.1/` (không commit). Gói runtime armhf cài lên BL335 dựng từ commit `8db76073` (releaseSeq 12). Bộ cài Studio rc.1 chưa dựng (Windows). Xem `docs/reports/011-release-dryrun.md` mục "Lượt T191".
 
 ## 9. Về lịch sử git
 
