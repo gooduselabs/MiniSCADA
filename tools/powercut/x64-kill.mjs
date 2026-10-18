@@ -25,6 +25,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import http from 'node:http';
 import https from 'node:https';
 import { dirname } from 'node:path';
 
@@ -56,14 +57,21 @@ const cfg = {
   offS: Number(opt('--off-s', '5')),
   walBytes: Number(opt('--wal-bytes', String(4 * 1024 * 1024))),
   pauseFile: opt('--pause-file', ''),
+  // D4: the control port of the Modbus simulator (tools/modbus-sim) holding the pulsed coil, and that coil
+  simControl: opt('--sim-control', '').replace(/\/$/, ''),
+  pulseCoil: opt('--pulse-coil', '1:20'),
+  pulseReleaseS: Number(opt('--pulse-release-s', '20')),
+  // D3: the largest gap between the cut and the newest history row before it (commitMs 5 s + minIntervalMs 1 s
+  // of the logging group + 2 s of margin)
+  historyLossMs: Number(opt('--history-loss-ms', '8000')),
 };
 cfg.storeDir ||= `${cfg.dataDir}/projects`;
 const limitation =
   'docker kill -s KILL chỉ giết tiến trình; nhân Linux của máy chủ vẫn ghi page cache xuống đĩa, nên không mô phỏng mất dữ liệu chưa fsync ở tầng đĩa; không thay thế cắt điện thật trên BL335 (FR-043)';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const now = () => Date.now();
-const docker = (args) => {
-  const r = spawnSync('docker', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+const docker = (args, input) => {
+  const r = spawnSync('docker', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, input });
   return { code: r.status, out: (r.stdout ?? '').trim(), err: r.stderr ?? '' };
 };
 const execIn = (cmd) => docker(['exec', container, 'sh', '-c', cmd]);
@@ -111,6 +119,74 @@ async function waitStable() {
   }
 }
 
+/**
+ * D3: how full the WAL of history.db is. The file keeps its size after a checkpoint (journal_size_limit 64 MiB of
+ * local_store.cpp: SQLite rewrites it from the start), so its size says nothing once it filled up once; the frames of
+ * the current generation do: the header holds the salts (bytes 16 to 23), every frame of this generation repeats them
+ * (bytes 8 to 15 of its 24-byte header), and these frames are a prefix of the file. Binary search with od, read inside
+ * the container (sh, dd/od of busybox or coreutils).
+ */
+function walFill() {
+  const f = `${cfg.dataDir}/history.db-wal`;
+  const r = execIn(
+    `f='${f}'; [ -s "$f" ] || exit 0; sz=$(stat -c %s "$f"); rd() { od -An -tx1 -j "$1" -N "$2" "$f" | tr -d ' \\n'; }; ` +
+      `ps=$((0x$(rd 8 4))); salt=$(rd 16 8); fs=$((ps + 24)); lo=0; hi=$(( (sz - 32) / fs )); ` +
+      `while [ $lo -lt $hi ]; do mid=$(( (lo + hi + 1) / 2 )); ` +
+      `if [ "$(rd $((32 + (mid - 1) * fs + 8)) 8)" = "$salt" ]; then lo=$mid; else hi=$((mid - 1)); fi; done; ` +
+      `echo "$sz $ps $lo"`,
+  );
+  const m = /^(\d+) (\d+) (\d+)$/.exec(r.out);
+  if (!m) return null;
+  const [fileBytes, pageSize, frames] = m.slice(1).map(Number);
+  return { fileBytes, pageSize, frames, bytes: 32 + frames * (pageSize + 24) };
+}
+/** D4: the request ids of the pulses the journal holds armed (an `arm` line without its `done`). */
+function pulseArmed() {
+  const r = execIn(
+    `f='${cfg.dataDir}/pulse.journal'; [ -s "$f" ] || exit 0; awk 'match($0, /"rid":"[^"]*"/) { r = substr($0, RSTART + 7, RLENGTH - 8); ` +
+      `if ($0 ~ /"op":"arm"/) a[r] = 1; else if ($0 ~ /"op":"done"/) delete a[r] } END { for (k in a) print k }' "$f"`,
+  );
+  return r.out.split('\n').filter(Boolean);
+}
+function simGet(path) {
+  return new Promise((resolve) => {
+    const req = http.get(`${cfg.simControl}${path}`, { timeout: 3000 }, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+        } catch {
+          resolve(null);
+        }
+      });
+    });
+    req.on('timeout', () => req.destroy());
+    req.on('error', () => resolve(null));
+  });
+}
+async function coil() {
+  const [unit, address] = cfg.pulseCoil.split(':');
+  const j = await simGet(`/mem?unit=${unit}&area=coils&address=${address}&count=1`);
+  return j?.values ? Number(j.values[0]) : null;
+}
+/** D3, after the restart: the newest history row before the cut, and PRAGMA integrity_check (python3 in the container). */
+function historyAfterCut(cutMs) {
+  const py =
+    'import sqlite3,sys,json\n' +
+    `c=sqlite3.connect("file:${cfg.dataDir}/history.db?mode=ro",uri=True,timeout=10)\n` +
+    'ts=[r[0] for r in c.execute("select name from sqlite_master where type=\'table\' and name like \'log_%\'")]\n' +
+    `m=max([c.execute("select max(ts) from \\""+t+"\\" where ts<=${cutMs}").fetchone()[0] or 0 for t in ts] or [0])\n` +
+    'ic=c.execute("pragma integrity_check").fetchone()[0]\n' +
+    'print(json.dumps({"tables":len(ts),"maxTsBeforeCut":m,"integrity":ic}))\n';
+  const r = docker(['exec', '-i', container, 'python3', '-'], py);
+  try {
+    return JSON.parse(r.out);
+  } catch {
+    return { error: (r.out + r.err).slice(0, 300) };
+  }
+}
+
 const retainMark = () =>
   execIn(
     `find '${cfg.dataDir}/retain' -type f -exec stat -c %Y {} + 2>/dev/null | sort -n | tail -n 1`,
@@ -138,12 +214,12 @@ async function waitEvent(point, round) {
           return `deploy ${op.opId} at step ${cur.id}`;
       }
     } else if (point === 'D3') {
-      const r = execIn(`stat -c %s '${cfg.dataDir}/history.db-wal' 2>/dev/null`);
-      if (/^\d+$/.test(r.out) && Number(r.out) > cfg.walBytes)
-        return `history.db-wal ${r.out} bytes`;
+      const w = walFill();
+      if (w && w.bytes > cfg.walBytes)
+        return `history.db-wal ${w.frames} frames of the current generation (${w.bytes} bytes; file ${w.fileBytes})`;
     } else if (point === 'D4') {
-      if (execIn(`test -s '${cfg.dataDir}/pulse.journal' && echo yes`).out === 'yes')
-        return 'pulse.journal not empty';
+      const armed = pulseArmed();
+      if (armed.length) return { text: `pulse.journal armed: ${armed.join(',')}`, armed };
     } else if (point === 'D5') {
       const m = retainMark();
       if (m && m !== mark) return `retain written at ${m}`;
@@ -221,7 +297,8 @@ for (const point of plan) {
       const ev = await waitEvent(point, perPointIndex[point]);
       if (!ev) fail = `event ${point} not seen in ${cfg.eventTimeoutS} s`;
       else {
-        r.event = ev;
+        r.event = typeof ev === 'string' ? ev : ev.text;
+        if (ev.armed) r.pulseArmed = ev.armed;
         // D5: before the next write of the store; D1: 0 to 2.5 s into the running deploy (the steps after the one seen:
         // validate, backup, activate with its restart, health)
         r.cutDelayMs =
@@ -230,6 +307,7 @@ for (const point of plan) {
             : point === 'D1'
               ? Math.floor(Math.random() * 2500)
               : 0;
+        if (point === 'D4' && cfg.simControl) r.coilAtCut = await coil();
       }
     }
   }
@@ -273,6 +351,50 @@ for (const point of plan) {
         if (missing.length)
           fail = `audit: ${missing.length} ACCEPTED requestId missing from audit.db`;
       } else r.audit = { status: 'not-measured', detail: 'no --command-log' };
+    }
+    if (!fail && point === 'D3') {
+      // the protocol: integrity_check ok, at most the data of one commit cycle lost
+      const h = historyAfterCut(Date.parse(r.cutAt));
+      r.history = h;
+      if (h.error) r.history.status = 'not-measured';
+      else {
+        h.lossMs = Date.parse(r.cutAt) - h.maxTsBeforeCut;
+        h.status = h.integrity === 'ok' && h.lossMs <= cfg.historyLossMs ? 'pass' : 'fail';
+        if (h.status === 'fail')
+          fail = `history: integrity ${h.integrity}, newest row ${h.lossMs} ms before the cut (limit ${cfg.historyLossMs})`;
+      }
+    }
+    if (!fail && point === 'D4') {
+      // FR-018: the bit is released after the restart, every pulse armed at the cut is released by the journal
+      // (audit tag.write detail.source pulse-recovery, pulseOf), and no entry is left armed
+      const t0 = now();
+      let c = cfg.simControl ? await coil() : null;
+      while (cfg.simControl && c !== 0 && now() - t0 < cfg.pulseReleaseS * 1000) {
+        await sleep(200);
+        c = await coil();
+      }
+      let left = pulseArmed();
+      while (left.length && now() - t0 < cfg.pulseReleaseS * 1000) {
+        await sleep(500);
+        left = pulseArmed();
+      }
+      const ex = execIn(`${cfg.runtime} --export-audit --format jsonl --data-dir ${cfg.dataDir}`).out.split('\n');
+      const recovered = (r.pulseArmed ?? []).filter((id) =>
+        ex.some((l) => l.includes('pulse-recovery') && l.includes(id)),
+      );
+      r.pulse = {
+        armedAtCut: r.pulseArmed ?? [],
+        coilAtCut: r.coilAtCut ?? null,
+        coilAfter: c,
+        releasedAfterReadyMs: now() - t0,
+        recoveryAudited: recovered.length,
+        armedLeft: left,
+      };
+      if (cfg.simControl && c !== 0) fail = `pulse: coil ${cfg.pulseCoil} still ${c} ${cfg.pulseReleaseS} s after READY`;
+      else if (recovered.length !== (r.pulseArmed ?? []).length)
+        fail = `pulse: ${recovered.length}/${r.pulseArmed.length} armed pulses with a pulse-recovery audit`;
+      else if (left.length) fail = `pulse: ${left.length} entries still armed in pulse.journal`;
+      r.pulse.status = fail ? 'fail' : cfg.simControl ? 'pass' : 'partial (no --sim-control: coil not read)';
     }
   }
   if (cfg.pauseFile) rmSync(cfg.pauseFile, { force: true });

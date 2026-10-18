@@ -65,8 +65,18 @@
       ],
       "liveHeapInProcess": "scratch probe (not committed), mallinfo in use after start + 3000 scans: baseline 0.72 MB, logic-load 3.12 MB",
       "idleAfterStartKb": {
-        "baseline": { "rss": 12956, "heap": 2460, "stacks": 1192, "file": 9096 },
-        "logic": { "rss": 16468, "heap": 5744, "stacks": 1208, "file": 9308 }
+        "baseline": {
+          "rss": 12956,
+          "heap": 2460,
+          "stacks": 1192,
+          "file": 9096
+        },
+        "logic": {
+          "rss": 16468,
+          "heap": 5744,
+          "stacks": 1208,
+          "file": 9308
+        }
       }
     },
     "checks": [
@@ -110,5 +120,119 @@
       }
     ],
     "pass": true
+  },
+  "runtimeL1": {
+    "task": "T147",
+    "date": "2026-10-18T13:18:36.562Z",
+    "machine": "Darwin arm64; Docker mat-armhf aarch64 (Linux aarch64 on Apple Silicon, not a real x64)",
+    "project": "soak-std10 (soak-standard of tools/gen-bench-projects.mjs in format 1.0: 500 Tag, 200 logged, 3 screens) vs. soak-logic (the same + logic.json of projects/logic-load: 550 blocks + 200 internal Tag INT.R*); the clients subscribe to the same 500 Tag on both sides",
+    "clients": 10,
+    "seconds": 3600,
+    "baseline": {
+      "label": "baseline",
+      "seconds": 3600,
+      "clients": 10,
+      "tags": 500,
+      "cpuAvgPct": 4.23,
+      "cpuMaxPct": 5.58,
+      "rssAvgKb": 22559,
+      "rssMaxKb": 27144,
+      "rssAnonAvgKb": 15112,
+      "rssAnonMaxKb": 19684,
+      "liveUpdates": 68958540,
+      "sequenceGaps": 0
+    },
+    "logic": {
+      "label": "logic",
+      "seconds": 3600,
+      "clients": 10,
+      "tags": 500,
+      "cpuAvgPct": 5.34,
+      "cpuMaxPct": 6.77,
+      "rssAvgKb": 28134,
+      "rssMaxKb": 32904,
+      "rssAnonAvgKb": 20594,
+      "rssAnonMaxKb": 25348,
+      "liveUpdates": 68905740,
+      "sequenceGaps": 0,
+      "scanLastMsMax": 1.67,
+      "scanP99MsMax": 2.92,
+      "scanOverrun": 1,
+      "scanPeriodMs": 100,
+      "scanLastMsMedian": 0.32,
+      "scanP99MsMedian": 0.56,
+      "scanP99MsEnd": 0.51,
+      "scanIntervalMs": 99.99,
+      "scans": 36047,
+      "scanSamples": 716
+    },
+    "extraCpuPoints": 1.11,
+    "extraRssKb": 5575,
+    "extraRssMaxKb": 5760,
+    "extraRssAnonKb": 5482,
+    "checks": [
+      {
+        "name": "718 samples over 3600 s",
+        "pass": false
+      },
+      {
+        "name": "0 live sequence gaps",
+        "pass": true,
+        "detail": "0"
+      },
+      {
+        "name": "the project runs: the clients get live updates",
+        "pass": true,
+        "detail": "68958540"
+      },
+      {
+        "name": "716 samples over 3600 s",
+        "pass": false
+      },
+      {
+        "name": "0 live sequence gaps",
+        "pass": true,
+        "detail": "0"
+      },
+      {
+        "name": "the project runs: the clients get live updates",
+        "pass": true,
+        "detail": "68905740"
+      },
+      {
+        "name": "logic scan p99 <= 5 ms (FR-095)",
+        "pass": true,
+        "detail": "2.92"
+      },
+      {
+        "name": "logic scan overrun 0",
+        "pass": false,
+        "detail": "1"
+      },
+      {
+        "name": "x64 logic maximum: <= +3 CPU points, <= +5 MB RSS (SC-028; x64 pre-check, BL335 is T148)",
+        "pass": false,
+        "detail": "+1.11 points, +5575 kB"
+      }
+    ],
+    "pass": false,
+    "scenario": "L1 (T147): 1 h each side, 500 Tag, 10 live clients (tests/logic-it/logic-it.mjs load), both sides ask HTTPS every 5 s",
+    "command": "node tools/logic-it/run.mjs --scenario load --load-base soak --seconds 3600 --clients 10 --report-key runtimeL1 --build-dir <dir>",
+    "runtimeBuild": "Release of gd6 9895c7c3 (includes gd6-vm-perf event-driven scan and gd6-logic-rss glibc arena fix)",
+    "budget": {
+      "extraCpuPointsOneCore": 3,
+      "extraRssMB": 5,
+      "scanMs": 5
+    },
+    "verdict": {
+      "cpu": "pass (+1.11 points of one core: 4.23 -> 5.34 %)",
+      "rss": "FAIL (+5,575 kB average = 5.4 MiB, max +5,760 kB; RssAnon +5,482 kB; budget 5 MB = 5,120 kB)",
+      "scan": "pass (p99 max 2.92 ms, median p99 0.56 ms, longest scan 1.67 ms; 36,047 scans at 99.99 ms)",
+      "overrun": "1 of 36,047 scans (the check \"overrun 0\" fails; once in the hour)",
+      "seqGaps": 0,
+      "pass": false
+    },
+    "checkNotes": "\"718/716 samples over 3600 s\" failed the rule >= 719: each sample waits 5 s and then makes one HTTPS request, so the loop drifts; a rig check, not a measure. The rule is now >= 95 % (684); with it both pass. The verdict above does not depend on it.",
+    "rssNotes": "RSS grows over the hour on both sides (baseline: 15.8 MB in a 30 s try, 22.6 MB average, 27.1 MB max over 1 h), so the hour-long run sees more than the 600 s run of key runtime (+4.6 MB on the 300-Tag logic-load). The extra of logic is about the same at the average and at the max (+5.4 / +5.6 MiB), so it is not a slope of logic alone; its source in the hour-long run was not analysed (smaps not sampled). On the BL335 (32 bit, T148 remeasureEventDriven) the same pair gave +3.8 MB."
   }
 }

@@ -5,10 +5,13 @@
 // (operator vh1 writes CMD.SP every --write-ms and logs every ACCEPTED requestId to <build dir>/powercut/commands.jsonl;
 // engineer kysu1 deploys a new projectVersion every --deploy-s so D1 has deploy steps), and tools/powercut/x64-kill.mjs
 // with that command log for the audit cross-check.
-//   node tools/powercut/x64-run.mjs [--rounds 100] [--point-rounds 10] [--points D1,D3,D5] [--stable-s 10]
+//   node tools/powercut/x64-run.mjs [--rounds 100] [--point-rounds 10] [--points D1,D3,D4,D5] [--stable-s 10]
 //        [--max-delay-s 60] [--build-dir <dir>] [--out docs/reports/011-powercut-x64.json] [--keep]
-// D4 (pulse.journal not empty) needs an external Tag on a Modbus PLC with a pulse command: not in this rig (the report
-// says so). Passwords are random per run (docker exec -e, --password-stdin).
+// D4 (a pulse armed in pulse.journal): the rig also runs the Modbus simulator of tools/modbus-sim (container
+// mat-powercut-x64-sim, alias `sim` on the network mat-powercut-x64-net, its control port on --port + 1), the project
+// gets a channel to it and the external Tag PULSE.CMD (coil 20 of unit 1), and operator vh1 sends a pulse of
+// --pulse-ms on it every --pulse-every-s; x64-kill.mjs reads the coil after the restart (--sim-control).
+// Passwords are random per run (docker exec -e, --password-stdin).
 import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -29,6 +32,11 @@ const port = opt('--port', '58443');
 const BASE = `https://127.0.0.1:${port}`;
 const writeMs = Number(opt('--write-ms', '3000'));
 const deployS = Number(opt('--deploy-s', '45'));
+const pulseMs = Number(opt('--pulse-ms', '3000'));
+const pulseEveryS = Number(opt('--pulse-every-s', '5'));
+const simName = `${name}-sim`;
+const net = `${name}-net`;
+const simPort = String(Number(port) + 1);
 const out = resolve(opt('--out', join(root, 'docs/reports/011-powercut-x64.json')));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const sh = (c, a, o = {}) => {
@@ -65,13 +73,73 @@ tags.tags.push({
   initial: 0,
   retain: true,
 });
+// D4: a pulsed coil on the simulator
+tags.tags.push({
+  id: 'PULSE.CMD',
+  kind: 'external',
+  type: 'BOOL',
+  access: 'RW',
+  source: { device: 'g1', address: 'C20' },
+});
 writeFileSync(join(pdir, 'tags.json'), `${JSON.stringify(tags, null, 2)}\n`);
+const connections = {
+  schemaVersion: tags.schemaVersion,
+  scanGroups: { fast: 250, normal: 500, slow: 5000 },
+  channels: [
+    {
+      id: 'sim1',
+      name: 'Giả lập Modbus TCP',
+      kind: 'modbus-tcp',
+      tcp: { host: 'sim', port: 1502, connectTimeoutMs: 1000, reconnectMaxS: 4 },
+      devices: [{ id: 'g1', name: 'Thiết bị 1', unitId: 1, timeoutMs: 400 }],
+    },
+  ],
+};
+writeFileSync(join(pdir, 'connections.json'), `${JSON.stringify(connections, null, 2)}\n`);
+const pj = JSON.parse(readFileSync(join(pdir, 'project.json'), 'utf8'));
+pj.connectionFile = 'connections.json';
+writeFileSync(join(pdir, 'project.json'), `${JSON.stringify(pj, null, 2)}\n`);
+writeFileSync(
+  join(work, 'sim-map.json'),
+  `${JSON.stringify({ units: { 1: { coils: { 0: new Array(32).fill(0) } } } }, null, 2)}\n`,
+);
 const cmdLog = join(work, 'commands.jsonl');
 const pauseFile = join(work, 'pause');
 writeFileSync(cmdLog, '');
 
-sh('docker', ['rm', '-f', name]);
+sh('docker', ['rm', '-f', name, simName]);
 sh('docker', ['volume', 'rm', '-f', `${name}-data`]);
+sh('docker', ['network', 'rm', net]);
+sh('docker', ['network', 'create', net]);
+const simRun = sh('docker', [
+  'run',
+  '-d',
+  '--name',
+  simName,
+  '--network',
+  net,
+  '--network-alias',
+  'sim',
+  '--init',
+  '-v',
+  `${root}:/src:ro`,
+  '-v',
+  `${work}:/work:ro`,
+  '-p',
+  `127.0.0.1:${simPort}:1503`,
+  'node:22.23.3-alpine',
+  'node',
+  '/src/tools/modbus-sim/sim.mjs',
+  '--tcp',
+  '1502',
+  '--control',
+  '1503',
+  '--control-host',
+  '0.0.0.0',
+  '--map',
+  '/work/sim-map.json',
+]);
+if (simRun.code) throw new Error(simRun.err);
 const run = sh('docker', [
   'run',
   '-d',
@@ -85,6 +153,8 @@ const run = sh('docker', [
   `${buildDir}:/build:ro`,
   '-v',
   `${name}-data:/data`,
+  '--network',
+  net,
   '-p',
   `127.0.0.1:${port}:8443`,
   'mat-armhf',
@@ -122,7 +192,15 @@ const fpOut = sh('docker', [
 const fp = /Fingerprint=([0-9A-Fa-f:]+)/.exec(fpOut)?.[1].replace(/:/g, '').toLowerCase();
 
 let stop = false;
-const stats = { writesSent: 0, accepted: 0, errors: 0, deploys: 0, deploysAccepted: 0 };
+const stats = {
+  writesSent: 0,
+  accepted: 0,
+  errors: 0,
+  deploys: 0,
+  deploysAccepted: 0,
+  pulsesSent: 0,
+  pulsesAccepted: 0,
+};
 async function tokenOf(user) {
   const r = await login(BASE, fp, user, pw[`MAT_IT_PW_${user.toUpperCase()}`], { timeoutMs: 4000 });
   return r.status === 200 ? r.json.token : null;
@@ -156,6 +234,33 @@ async function writer() {
     await sleep(writeMs);
   }
 }
+// D4: a pulse on PULSE.CMD every --pulse-every-s, its requestId logged like the writes (audit cross-check)
+async function pulser() {
+  let token = null;
+  while (!stop) {
+    await sleep(pulseEveryS * 1000);
+    try {
+      token ??= await tokenOf('vh1');
+      if (!token) continue;
+      const requestId = randomUUID();
+      stats.pulsesSent++;
+      const r = await pinnedRequest(BASE, fp, 'POST', '/api/v1/tags/write', {
+        token,
+        timeoutMs: 4000,
+        body: { requests: [{ requestId, tag: 'PULSE.CMD', value: true, pulseMs }] },
+      });
+      if (r.status === 401) token = null;
+      const st = r.json?.results?.[0]?.status;
+      if (st === 'ACCEPTED') stats.pulsesAccepted++;
+      appendFileSync(
+        cmdLog,
+        `${JSON.stringify({ at: new Date().toISOString(), requestId, pulse: true, status: st ?? `HTTP ${r.status}` })}\n`,
+      );
+    } catch {
+      token = null;
+    }
+  }
+}
 async function deployer() {
   const files = readProjectDir(pdir);
   let token = null;
@@ -184,7 +289,7 @@ async function deployer() {
     }
   }
 }
-const bg = [writer(), deployer()];
+const bg = [writer(), deployer(), pulser()];
 await sleep(15000);
 const killArgs = [
   join(root, 'tools/powercut/x64-kill.mjs'),
@@ -222,6 +327,10 @@ const killArgs = [
   '5',
   '--wal-bytes',
   opt('--wal-bytes', String(3 * 1024 * 1024)),
+  '--sim-control',
+  `http://127.0.0.1:${simPort}`,
+  '--pulse-coil',
+  '1:20',
 ];
 const code = await new Promise((res) => {
   const p = spawn('node', killArgs, { stdio: 'inherit' });
@@ -235,17 +344,17 @@ report.runner = 'tools/powercut/x64-run.mjs (tools/powercut/x64-kill.mjs)';
 report.machine = 'Docker mat-armhf on Apple Silicon (Linux arm64, not a real x64)';
 report.rig = {
   container: name,
-  project: 'projects/soak-standard (500 Tag, 200 logged by change) + CMD.SP internal retained RW',
-  commands: { everyMs: writeMs, ...stats },
+  project:
+    'projects/soak-standard (500 Tag, 200 logged by change) + CMD.SP internal retained RW + PULSE.CMD external coil 20 of unit 1 on the simulator',
+  simulator: `${simName} (tools/modbus-sim, alias sim on ${net})`,
+  commands: { everyMs: writeMs, pulseEveryS, pulseMs, ...stats },
   deployEveryS: deployS,
-};
-report.notRun = {
-  D4: 'pulse.journal not empty: needs an external Tag on a Modbus PLC with a pulse command, not in this rig',
 };
 writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
 if (!argv.includes('--keep') && code === 0) {
-  sh('docker', ['rm', '-f', name]);
+  sh('docker', ['rm', '-f', name, simName]);
   sh('docker', ['volume', 'rm', '-f', `${name}-data`]);
+  sh('docker', ['network', 'rm', net]);
 }
 console.log(`powercut x64: exit ${code}, ${JSON.stringify(stats)} -> ${out}`);
 process.exit(code ?? 1);

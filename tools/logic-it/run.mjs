@@ -4,6 +4,7 @@
 //
 //   node tools/logic-it/run.mjs [--scenario rules,writes-off,throttle,stop,retain-kill,retain-lost,deploy-keep,load]
 //        [--build-dir <dir>] [--no-build] [--rounds 100] [--seconds 600] [--clients 10] [--keep]
+//        [--load-base logic-load|soak] [--report-key runtime]
 //
 //   rules        pump rules: commands at the simulator, audit (rule, Tag, old/new, inputs) before each command
 //   writes-off   logic.writes "off" (the default of runtime.json): 0 commands, logic.write.suppressed
@@ -20,7 +21,7 @@
 // passed with docker exec -e and --password-stdin; nothing is written to a file. Exit 0 when every scenario passed.
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,6 +50,11 @@ const buildDir = resolve(opt('--build-dir', join(buildRoot, 'mat-x64-e2')));
 const rounds = opt('--rounds', '100');
 const seconds = opt('--seconds', '600');
 const clients = opt('--clients', '10');
+// load: logic-load (300 Tag: 100 simulated + 200 internal, the default) or soak (L1: soak-standard 500 Tag vs. the
+// same plus the logic.json of logic-load and its 200 internal Tag, as soak-std10 / soak-logic of T148 on the BL335)
+const loadBase = opt('--load-base', 'logic-load');
+if (!['logic-load', 'soak'].includes(loadBase)) throw new Error(`unknown --load-base ${loadBase}`);
+const reportKey = opt('--report-key', 'runtime');
 const compose = join(root, 'tests/driver-it/compose.yaml');
 const project = 'mat-logic-it';
 const rt = `${project}-rt-1`;
@@ -194,6 +200,79 @@ async function restartWith(list) {
   await sleep(800);
 }
 
+const readJson = (f) => JSON.parse(readFileSync(f, 'utf8'));
+const writeJson = (f, v) => writeFileSync(f, `${JSON.stringify(v, null, 2)}\n`);
+const genBench = (out, only) =>
+  sh('node', [join(root, 'tools/gen-bench-projects.mjs'), '--out', out, '--only', only]);
+
+/** projects/logic-load (FR-095 maximum) and the same project without logic.json. */
+function makeLogicLoadPair(out) {
+  genBench(out, 'logic-load');
+  const base = join(out, 'logic-load-baseline');
+  mkdirSync(base, { recursive: true });
+  sh('cp', ['-R', `${join(out, 'logic-load')}/.`, base]);
+  rmSync(join(base, 'logic.json'));
+  const pj = readJson(join(base, 'project.json'));
+  delete pj.logic;
+  pj.projectId = 'logic-load-baseline';
+  writeJson(join(base, 'project.json'), pj);
+  // the screen shows a logic Tag: without logic.json it must show a Tag of tags.json
+  const scr = join(base, 'screens/tong-quan.screen.json');
+  writeFileSync(scr, readFileSync(scr, 'utf8').replace(/LOGIC\.C001\.VALUE/g, 'INT.R001'));
+  return {
+    runs: [
+      ['baseline', 'logic-load-baseline'],
+      ['logic', 'logic-load'],
+    ],
+    what: 'projects/logic-load (tools/gen-bench-projects.mjs --only logic-load) vs. the same project without logic.json',
+  };
+}
+
+/**
+ * L1 (T147): soak-standard (500 Tag, 200 logged, 3 screens) in format 1.0 without logic, vs. the same project plus
+ * the logic.json of logic-load (550 blocks reading SIM.T0001..T0100) and its 200 internal Tag INT.R001..R200.
+ */
+function makeSoakPair(out) {
+  genBench(out, 'soak-standard');
+  genBench(out, 'logic-load');
+  const base = join(out, 'soak-std10');
+  rmSync(base, { recursive: true, force: true });
+  sh('cp', ['-R', join(out, 'soak-standard'), base]);
+  const to10 = (f) => {
+    const j = readJson(f);
+    if (j.schemaVersion) j.schemaVersion = '1.0.0';
+    return j;
+  };
+  for (const f of ['tags.json', 'logging.json']) writeJson(join(base, f), to10(join(base, f)));
+  for (const f of readdirSync(join(base, 'screens')))
+    writeJson(join(base, 'screens', f), to10(join(base, 'screens', f)));
+  const pj = to10(join(base, 'project.json'));
+  pj.minRuntimeVersion = '1.0.0';
+  pj.projectId = 'soak-std10';
+  writeJson(join(base, 'project.json'), pj);
+  const lg = join(out, 'soak-logic');
+  rmSync(lg, { recursive: true, force: true });
+  sh('cp', ['-R', base, lg]);
+  const ll = readJson(join(out, 'logic-load/tags.json')).tags.filter((t) => t.id.startsWith('INT.R'));
+  const tags = readJson(join(lg, 'tags.json'));
+  tags.tags.push(...ll);
+  writeJson(join(lg, 'tags.json'), tags);
+  sh('cp', [join(out, 'logic-load/logic.json'), join(lg, 'logic.json')]);
+  const lpj = readJson(join(lg, 'project.json'));
+  lpj.logic = 'logic.json';
+  lpj.projectId = 'soak-logic';
+  writeJson(join(lg, 'project.json'), lpj);
+  return {
+    runs: [
+      ['baseline', 'soak-std10'],
+      ['logic', 'soak-logic'],
+    ],
+    clientDir: 'soak-std10',
+    what:
+      'soak-std10 (soak-standard of tools/gen-bench-projects.mjs in format 1.0: 500 Tag, 200 logged, 3 screens) vs. soak-logic (the same + logic.json of projects/logic-load: 550 blocks + 200 internal Tag INT.R*); the clients subscribe to the same 500 Tag on both sides',
+  };
+}
+
 function merge(parts, name) {
   const checks = parts.flatMap((p) => p.checks ?? []);
   const measures = Object.assign({}, ...parts.map((p) => p.measures ?? {}));
@@ -230,35 +309,15 @@ try {
     console.log(`--- ${s}`);
     let res;
     if (s === 'load') {
-      // projects/logic-load (FR-095 maximum) and the same project without logic.json
       const out = join(buildDir, 'logic-load-projects');
       rmSync(out, { recursive: true, force: true });
-      sh('node', [
-        join(root, 'tools/gen-bench-projects.mjs'),
-        '--out',
-        out,
-        '--only',
-        'logic-load',
-      ]);
-      const base = join(out, 'logic-load-baseline');
-      mkdirSync(base, { recursive: true });
-      sh('cp', ['-R', `${join(out, 'logic-load')}/.`, base]);
-      rmSync(join(base, 'logic.json'));
-      const pj = JSON.parse(readFileSync(join(base, 'project.json'), 'utf8'));
-      delete pj.logic;
-      pj.projectId = 'logic-load-baseline';
-      writeFileSync(join(base, 'project.json'), `${JSON.stringify(pj, null, 2)}\n`);
-      // the screen shows a logic Tag: without logic.json it must show a Tag of tags.json
-      const scr = join(base, 'screens/tong-quan.screen.json');
-      writeFileSync(scr, readFileSync(scr, 'utf8').replace(/LOGIC\.C001\.VALUE/g, 'INT.R001'));
+      const pairs = loadBase === 'soak' ? makeSoakPair(out) : makeLogicLoadPair(out);
       const runs = [];
-      for (const [label, dir] of [
-        ['baseline', 'logic-load-baseline'],
-        ['logic', 'logic-load'],
-      ]) {
+      for (const [label, dir] of pairs.runs) {
         const fp = await startRig(`/build/logic-load-projects/${dir}`, logicMap);
-        // the client container does not mount the build dir: its copy of the project (the Tag list)
-        docker(['cp', join(out, dir), `${client}:/tmp/load-project`]);
+        // the client container does not mount the build dir: its copy of the project (the Tag list;
+        // with --load-base soak both sides subscribe to the same 500 Tag of the baseline)
+        docker(['cp', join(out, pairs.clientDir ?? dir), `${client}:/tmp/load-project`]);
         const r = runClient(fp, [
           'load',
           '--seconds',
@@ -294,12 +353,11 @@ try {
       res.pass = res.checks.every((c) => c.pass);
       const reportPath = join(root, 'docs/reports/011-logic-load-x64.json');
       const prev = existsSync(reportPath) ? JSON.parse(readFileSync(reportPath, 'utf8')) : {};
-      prev.runtime = {
+      prev[reportKey] = {
         task: 'T147',
         date: new Date().toISOString(),
         machine: `${machine}; Docker mat-armhf ${arch} (Linux ${arch} on Apple Silicon, not a real x64)`,
-        project:
-          'projects/logic-load (tools/gen-bench-projects.mjs --only logic-load) vs. the same project without logic.json',
+        project: pairs.what,
         clients: Number(clients),
         seconds: Number(seconds),
         ...res.measures,

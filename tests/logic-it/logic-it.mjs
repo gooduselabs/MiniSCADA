@@ -665,11 +665,26 @@ async function runLoad() {
     measures.scanP99MsMax = Math.max(...scans.map((s) => s.p99Ms));
     measures.scanOverrun = scans.at(-1).overrun;
     measures.scanPeriodMs = scans.at(-1).periodMs;
+    // T147 (L1 1 h): the typical scan too, not only the worst sample of the run
+    const med = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
+    measures.scanLastMsMedian = med(scans.map((s) => s.lastMs));
+    measures.scanP99MsMedian = med(scans.map((s) => s.p99Ms));
+    measures.scanP99MsEnd = scans.at(-1).p99Ms;
+    measures.scanIntervalMs = scans.at(-1).intervalMs;
+    measures.scans = scans.at(-1).scans;
+    measures.scanSamples = scans.length;
   }
-  check(`${samples.length} samples over ${seconds} s`, samples.length >= Math.floor(seconds / 5) - 1);
+  // each sample waits 5 s and then one HTTPS request: over 1 h the samples drift (718 of 720 in the T147 L1 run)
+  check(
+    `${samples.length} samples over ${seconds} s (>= 95 % of one per 5 s)`,
+    samples.length >= Math.floor((seconds / 5) * 0.95),
+  );
   check('0 live sequence gaps', gaps === 0, `${gaps}`);
   check('the project runs: the clients get live updates', updates > 0, `${updates}`);
-  if (scans.length) check('logic scan p99 <= 5 ms (FR-095)', measures.scanP99MsMax <= 5, `${measures.scanP99MsMax}`);
+  if (scans.length) {
+    check('logic scan p99 <= 5 ms (FR-095)', measures.scanP99MsMax <= 5, `${measures.scanP99MsMax}`);
+    check('logic scan overrun 0', measures.scanOverrun === 0, `${measures.scanOverrun}`);
+  }
 }
 
 // ------------------------------------------------------------------------------------- main
