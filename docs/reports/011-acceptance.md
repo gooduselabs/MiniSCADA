@@ -34,7 +34,7 @@ Cách đọc: **Đạt** là test hoặc kịch bản tự động xanh, số đ
 | SC-009 | audit, license, SAST, fuzz 7 mục tiêu ≥ 1 giờ | Chưa đo | audit, license, SAST đạt; fuzz TS mọi mục tiêu ≥ 1 giờ (T058, T142, T165), C++ ASan + UBSan `update-envelope`, gói `.matscada`, `logic-json` ≥ 1 giờ; **project-json, expression, modbus C++ mới 30 phút** (0 sự cố mọi lượt; T058 chưa đóng) |
 | SC-010 | 0 Critical/High mở; Medium mở chỉ chờ người | Đạt | T062 và T202 (lần 2): 0 Critical/High mở; K1, N-OTA1–3 đã sửa; O1 chấp nhận, O2 hoãn sau pilot; `web-it attack` trong `ci-local` xanh |
 | SC-011 | BL335 500 Tag × 10 client × 4 giờ | Đạt (BL335) | T079 (runtime 1.0.0): CPU 28,9 % một lõi (14,5 % cả máy), đỉnh 50,4 %; RSS ≤ 19,5 MB đi ngang; 0 mất sequence; client 11 4429 50/50; F5 10 trang × 50 vòng tối đa 935 ms. T079 chưa đóng: `mat-sample` chưa cài, chưa xen kẽ 8443, RSS tab L5 |
-| SC-012 | BL335 1.000 Tag | Chưa đo | T080 |
+| SC-012 | BL335 1.000 Tag | **Đạt**: CPU 43,8 % một lõi (≤ 50 %), RSS 12,8 MB, 0 mất sequence (1 giờ, 10 client, rc.1) | T080 |
 | SC-013 | Soak 7 ngày BL335 | Chưa đo | **Hoãn theo quyết định người dùng 2026-10-18** (T081 không chạy ở GĐ 6); thay bằng soak x64 24 giờ (T076, đang chạy), L1 4 giờ BL335 (T079), soak 30 ngày bàn thử khi pilot (T196). Rủi ro: ghi khối toàn máy nền 2,6–4,7 GB/ngày khi mat tắt (`011-soak.md` §4) |
 | SC-014 | Mất điện 100 vòng + 5 điểm | Chờ người | x64 (T077): 130/130 vòng `kill -9` (100 ngẫu nhiên + D1, D3, D5 × 10), 0 lệnh ACCEPTED thiếu audit trên 1.781; D2 40/40, D4 20/20 ở lab; BL335 cần bộ điều khiển nguồn (B4) |
 | SC-015 | Cắt mạng 50 lần | Chờ người | x64 (T078): 500/500 nối lại, 0 lần > 35 s (tối đa 8,7 s), 0 slot rò; BL335 cần người cắt mạng (T086, B7) |
@@ -67,7 +67,7 @@ Cách đọc: **Đạt** là test hoặc kịch bản tự động xanh, số đ
 | SC-042 | Hồi quy `ci-local` với bước mới | Chưa đo | `ci-local` đầy đủ xanh trên rc.1 2026-10-18 ("ALL STEPS PASSED", gồm SAST, audit, docs-check, `update-it`, `logic-it`); ctest ASan + UBSan chạy riêng (T059: 5.888 ca, 56 đỏ đã sửa); **chưa có** lượt `ci-local -Sanitize` (T059) và so cặp 0.6/1.0 (T200) |
 | SC-043 | Go/No-Go | Chờ người | T198, P4 |
 
-Tổng: 23 Đạt, 1 Không đạt (SC-028), 5 Chưa đo, 14 Chờ người (lần trước 2026-10-17: 17, 0, 13, 13).
+Tổng: 24 Đạt, 1 Không đạt (SC-028), 4 Chưa đo, 14 Chờ người (SC-012 đạt 2026-10-18 sau T080; lần trước 2026-10-17: 17, 0, 13, 13).
 
 ## 3. Hạn chế còn lại
 

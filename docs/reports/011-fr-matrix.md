@@ -193,7 +193,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 | SC-009 | audit, license, SAST sạch; fuzz ≥ 1 giờ × 7 mục tiêu | T055–T058 | audit, license, SAST đạt (`ci-local` rc.1: SAST PASS); fuzz TS mọi mục tiêu ≥ 1 giờ, 0 sự cố; C++ ASan + UBSan: `update-envelope`, gói `.matscada`, `logic-json` ≥ 1 giờ; project-json, expression, modbus mỗi mục 30 phút (0 sự cố) | Chưa đo — ba mục tiêu C++ chưa đủ 1 giờ (T058) |
 | SC-010 | 0 Critical/High mở; Medium mở chỉ chờ người; 30 ca tấn công 007 | T062, T202 | `R:011-security-review.md`: lần 1 (T062) và lần 2 (T202) 0 Critical/High mở; O1 chấp nhận, O2 hoãn sau pilot (quyết định 2026-10-17); `web-it attack` trong `ci-local` đầy đủ xanh (2026-10-17 và trên rc.1 2026-10-18) | Đạt |
 | SC-011 | BL335 500 Tag × 10 client × 4 giờ; client 11; F5 50 vòng | T075, T079 | BL335 1.0.0 (T079): L1 4 giờ, CPU 28,9 % một lõi (14,5 % cả máy), đỉnh 50,4 % một lõi, RSS ≤ 19,5 MB, 0 mất sequence; client 11 4429 50/50; F5 10 trang × 50 vòng màn 250 item tối đa 935 ms (`R:011-load-bl335.json`); T079 chưa đóng vì `mat-sample` chưa cài, 8443 xen kẽ, RSS tab | Đạt (BL335) |
-| SC-012 | BL335 1.000 Tag × 10 client × 1 giờ | T080 | — | Chưa đo — T080 |
+| SC-012 | BL335 1.000 Tag × 10 client × 1 giờ | T080 | `011-load.md` §3.1b, `011-load-bl335.json` `L2`: CPU 43,8 % một lõi, RSS 12,8 MB, 0 mất sequence | Đạt |
 | SC-013 | Soak 7 ngày BL335 | T076, T081 | Không chạy 7 ngày trên BL335 ở GĐ 6 (quyết định người dùng 2026-10-18; T081); thay bằng soak x64 24 giờ (T076, đang chạy), L1 4 giờ BL335 (T079), soak 30 ngày bàn thử khi pilot (T196); lưu ý: ghi khối toàn máy nền 2,6–4,7 GB/ngày khi mat tắt (`R:011-soak.md` §4) | Chưa đo — hoãn theo quyết định người dùng |
 | SC-014 | Mất điện 100 vòng + 5 điểm × 10 | T077, T083–T085 | x64 (T077): 130/130 vòng `kill -9` (100 ngẫu nhiên + D1, D3, D5 × 10), 0 lệnh ACCEPTED thiếu audit; D2 40/40, D4 20/20 ở lab; BL335 cần bộ điều khiển nguồn | Chờ người (bộ điều khiển nguồn B4) |
 | SC-015 | Cắt mạng 50 lần, nối lại ≤ 35 s | T078, T086 | x64 (T078): 500/500 nối lại, 0 lần > 35 s (tối đa 8,7 s), 0 slot rò (`R:011-flap-x64.json`) · BL335 cần người cắt mạng | Đạt (x64) · Chờ người BL335 (T086, B7) |
@@ -231,10 +231,10 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 | Nhóm | Đạt trọn | Không đạt | Chưa đo | Chờ người |
 |---|---|---|---|---|
 | FR (143) | 101 | 4 (FR-005, 038, 095, 135) | 8 | 30 |
-| SC (43) | 23 | 1 (SC-028) | 5 | 14 |
+| SC (43) | 24 | 1 (SC-028) | 4 | 14 |
 
 Cách đếm: mỗi FR/SC tính một lần theo phần yếu nhất của dòng, thứ tự Không đạt, Chưa đo, Chờ người, Đạt (dòng "Đạt (x64) · Chưa đo BL335" tính là Chưa đo); dòng gộp (ví dụ FR-014, 015, 016) tính đủ số FR.
 
 **Số đo vượt ngưỡng:** một mục, CPU thêm của logic tối đa trên BL335 (T148, rc.1): +3,3 điểm một lõi so với ngưỡng +3 (vòng quét 2,5 ms và RSS +3,9 MB đạt). Kéo theo FR-005, FR-095, SC-028. Phương án ở `R:011-load.md` §3.2. Các mục Không đạt khác là việc chưa xong: FR-038 (`load-tester` thiếu phần L3 nối lại), FR-135 (nghiệm thu còn nháp).
 
-So với lần đếm 2026-10-17 (FR 89/5/22/27, SC 17/0/13/13): chuyển Đạt nhờ T063 (SC-008, FR-025), T079 (SC-011), T122 (FR-070, phần OTA thật của SC-023), T146 (SC-026, SC-027, FR-078–082, FR-090, 091), T202 và quyết định O1/O2 (SC-010, FR-032, FR-066), T175 trên runtime x64 (SC-037, FR-125), T013 (FR-009); FR-128, 129 sang Chờ người (chỉ còn ảnh chụp trên Windows); FR-030, FR-003 từ Không đạt/Chưa đo sang Chưa đo chờ lượt `ci-local -Sanitize` (T059) và T200. SC-013 ghi "Chưa đo — hoãn theo quyết định người dùng" (T081 không chạy ở GĐ 6). Đếm lại khi T076, T080, T059, T198 xong.
+So với lần đếm 2026-10-17 (FR 89/5/22/27, SC 17/0/13/13): chuyển Đạt nhờ T063 (SC-008, FR-025), T079 (SC-011), T122 (FR-070, phần OTA thật của SC-023), T146 (SC-026, SC-027, FR-078–082, FR-090, 091), T202 và quyết định O1/O2 (SC-010, FR-032, FR-066), T175 trên runtime x64 (SC-037, FR-125), T013 (FR-009); FR-128, 129 sang Chờ người (chỉ còn ảnh chụp trên Windows); FR-030, FR-003 từ Không đạt/Chưa đo sang Chưa đo chờ lượt `ci-local -Sanitize` (T059) và T200. SC-013 ghi "Chưa đo — hoãn theo quyết định người dùng" (T081 không chạy ở GĐ 6). Đếm lại khi T076, T059, T198 xong. Cập nhật 2026-10-18 trưa: SC-012 sang Đạt (T080).
