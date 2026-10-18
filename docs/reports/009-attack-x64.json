@@ -244,7 +244,7 @@
     {
       "name": "A15i history q chứa % _ \\ ' (thoát phía máy chủ): 200, không lỗi SQL",
       "pass": true,
-      "detail": "200 {\"hasMore\":false,\"items\":[],\"limit\":100,\"nextBeforeId\":null,\"ts\":1792287040120}"
+      "detail": "200 {\"hasMore\":false,\"items\":[],\"limit\":100,\"nextBeforeId\":null,\"ts\":1792317251504}"
     },
     {
       "name": "A16 giới hạn tần suất: 30 POST/phiên đồng thời có 429 (20)",

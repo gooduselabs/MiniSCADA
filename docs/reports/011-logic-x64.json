@@ -1,23 +1,23 @@
 {
   "scenarios": {
     "rules": {
-      "date": "2026-10-18T01:37:21.378Z",
+      "date": "2026-10-18T10:01:09.689Z",
       "scenario": "rules",
       "checks": [
         {
           "name": "pump_low: LEVEL 10 -> PUMP.CMD true at the simulator",
           "pass": true,
-          "detail": "1351 ms"
+          "detail": "1297 ms"
         },
         {
           "name": "the command waits out the hold (1 s) and comes within hold + 2 scans + a poll (<= 2.5 s)",
           "pass": true,
-          "detail": "1351 ms"
+          "detail": "1297 ms"
         },
         {
           "name": "pump_high: LEVEL 95 -> PUMP.CMD false",
           "pass": true,
-          "detail": "1357 ms"
+          "detail": "1410 ms"
         },
         {
           "name": "exactly 2 commands for the 2 edges (no repeat while the condition holds)",
@@ -37,7 +37,7 @@
         {
           "name": "every row has the rule, the Tag, old/new and the condition inputs (actor logic:<rule>, channel logic)",
           "pass": true,
-          "detail": "[{\"user\":\"logic:pump_high\",\"ch\":\"logic\",\"d\":{\"channel\":\"plc1\",\"device\":\"d1\",\"edgeId\":1,\"inputs\":[[\"LEVEL\",95]],\"kind\":\"external\",\"new\":false,\"old\":{\"quality\":\"GOOD\",\"value\":true},\"requestId\":\"a787a26b-4b8b-405c-acc2-43b6556a47e1\",\"rule\":\"pump_high\",\"source\":\"logic\",\"write\":\"w_pump\"}},{\"user\":\"logic:pump_low\",\"ch\":\"logic\",\"d\":{\"channel\":\"plc1\",\"device\":\"d1\",\"edgeId\":1,\"inputs\":[[\"LEVEL\",10]],\"kind\":\"external\",\"new\":true,\"old\":{\"quality\":\"GOOD\",\"value\":false},\"requestId\":\"84335216-c64f-4bae-a97b-951266ec3fd1\",\"rule\":\"pump_low\",\"source\":\"logic\",\"write\":\"w_pump\"}}]"
+          "detail": "[{\"user\":\"logic:pump_high\",\"ch\":\"logic\",\"d\":{\"channel\":\"plc1\",\"device\":\"d1\",\"edgeId\":1,\"inputs\":[[\"LEVEL\",95]],\"kind\":\"external\",\"new\":false,\"old\":{\"quality\":\"GOOD\",\"value\":true},\"requestId\":\"844695ad-9b8e-468d-912f-48b2fff087f5\",\"rule\":\"pump_high\",\"source\":\"logic\",\"write\":\"w_pump\"}},{\"user\":\"logic:pump_low\",\"ch\":\"logic\",\"d\":{\"channel\":\"plc1\",\"device\":\"d1\",\"edgeId\":1,\"inputs\":[[\"LEVEL\",10]],\"kind\":\"external\",\"new\":true,\"old\":{\"quality\":\"GOOD\",\"value\":false},\"requestId\":\"be9b0647-6b6f-4334-8a2b-b035549d53ed\",\"rule\":\"pump_low\",\"source\":\"logic\",\"write\":\"w_pump\"}}]"
         },
         {
           "name": "the \"started\" row is written before the command reaches the simulator",
@@ -46,11 +46,11 @@
         {
           "name": "GET /logic: rules OK, edgeId and fired counted",
           "pass": true,
-          "detail": "{\"edgeId\":2,\"fired\":2,\"id\":\"pump_low\",\"kind\":\"rule\",\"lastError\":null,\"lastErrorCode\":null,\"lastFired\":\"2026-10-18T08:35:09+07:00\",\"reason\":null,\"stable\":false,\"state\":\"OK\"}"
+          "detail": "{\"edgeId\":2,\"fired\":2,\"id\":\"pump_low\",\"kind\":\"rule\",\"lastError\":null,\"lastErrorCode\":null,\"lastFired\":\"2026-10-18T16:58:58+07:00\",\"reason\":null,\"stable\":false,\"state\":\"OK\"}"
         }
       ],
       "measures": {
-        "riseToCommandMs": 1351,
+        "riseToCommandMs": 1297,
         "auditSample": {
           "action": "logic.write",
           "channel": "logic",
@@ -73,7 +73,7 @@
               "quality": "GOOD",
               "value": true
             },
-            "requestId": "a787a26b-4b8b-405c-acc2-43b6556a47e1",
+            "requestId": "844695ad-9b8e-468d-912f-48b2fff087f5",
             "rule": "pump_high",
             "source": "logic",
             "write": "w_pump"
@@ -83,22 +83,22 @@
           "role": "logic",
           "source": "logic",
           "target": "PUMP.CMD",
-          "ts": 1792287309873,
+          "ts": 1792317538256,
           "user": "logic:pump_high"
         },
         "scan": {
-          "intervalMs": 100.11,
-          "lastMs": 0.04,
+          "intervalMs": 100.13,
+          "lastMs": 0.03,
           "overrun": 0,
-          "p99Ms": 0.32,
+          "p99Ms": 0.31,
           "periodMs": 100,
-          "scans": 74
+          "scans": 73
         }
       },
       "pass": true
     },
     "throttle": {
-      "date": "2026-10-18T01:37:21.384Z",
+      "date": "2026-10-18T10:01:09.696Z",
       "scenario": "throttle",
       "checks": [
         {
@@ -109,7 +109,7 @@
         {
           "name": "minIntervalMs 5000: no two commands closer than 5 s (less a poll)",
           "pass": true,
-          "detail": "5494,5507,5495,5201"
+          "detail": "5003,5193,5503,5498"
         },
         {
           "name": "100 % of the edges over the limit are refused with an audit (RATE_LIMITED)",
@@ -119,19 +119,19 @@
         {
           "name": "GET /logic: fast_toggle THROTTLED or lastErrorCode RATE_LIMITED",
           "pass": true,
-          "detail": "{\"edgeId\":40,\"fired\":40,\"id\":\"fast_toggle\",\"kind\":\"rule\",\"lastError\":\"RATE_LIMITED\",\"lastErrorCode\":null,\"lastFired\":\"2026-10-18T08:36:05+07:00\",\"reason\":null,\"stable\":false,\"state\":\"THROTTLED\"}"
+          "detail": "{\"edgeId\":40,\"fired\":40,\"id\":\"fast_toggle\",\"kind\":\"rule\",\"lastError\":\"RATE_LIMITED\",\"lastErrorCode\":null,\"lastFired\":\"2026-10-18T16:59:53+07:00\",\"reason\":null,\"stable\":false,\"state\":\"THROTTLED\"}"
         }
       ],
       "measures": {
         "edges": 40,
         "commands": 5,
-        "minGapMs": 5201,
+        "minGapMs": 5003,
         "throttledAudit": 35
       },
       "pass": true
     },
     "writes-off": {
-      "date": "2026-10-18T01:37:21.384Z",
+      "date": "2026-10-18T10:01:09.696Z",
       "scenario": "writes-off",
       "checks": [
         {
@@ -157,7 +157,7 @@
       "pass": true
     },
     "stop": {
-      "date": "2026-10-18T01:37:21.384Z",
+      "date": "2026-10-18T10:01:09.696Z",
       "scenario": "stop",
       "checks": [
         {
@@ -219,13 +219,13 @@
       "pass": true
     },
     "deploy-keep": {
-      "date": "2026-10-18T01:37:21.384Z",
+      "date": "2026-10-18T10:01:09.696Z",
       "scenario": "deploy-keep",
       "checks": [
         {
           "name": "deploy of version 0.2.0 accepted (202)",
           "pass": true,
-          "detail": "202 {\"opId\":\"ade42185-8c44-4ad6-a47f-423b9e5d913c\",\"status\":\"/api/v1/project/deployments/ade42185-8c44-4ad6-a47f-423b9e5d913c\"}"
+          "detail": "202 {\"opId\":\"6ec93bfa-4e4a-485c-ad52-0072444757e8\",\"status\":\"/api/v1/project/deployments/6ec93bfa-4e4a-485c-ad52-0072444757e8\"}"
         },
         {
           "name": "deploy committed",
@@ -235,23 +235,23 @@
         {
           "name": "the retained values are kept across the deploy (blocks kept by id)",
           "pass": true,
-          "detail": "{\"count\":4,\"total\":0.5142499999999999,\"hours\":0.0007736111111111111,\"starts\":4,\"retainLost\":false,\"edgeId\":0} -> {\"count\":4,\"total\":0.8150499999999999,\"hours\":0.0007736111111111111,\"starts\":4,\"retainLost\":false,\"edgeId\":0}"
+          "detail": "{\"count\":4,\"total\":0.5054500000000001,\"hours\":0.0007530555555555555,\"starts\":4,\"retainLost\":false,\"edgeId\":0} -> {\"count\":4,\"total\":0.7955500000000003,\"hours\":0.0007530555555555555,\"starts\":4,\"retainLost\":false,\"edgeId\":0}"
         }
       ],
       "measures": {
-        "deployMs": 3436,
+        "deployMs": 3428,
         "before": {
           "count": 4,
-          "total": 0.5142499999999999,
-          "hours": 0.0007736111111111111,
+          "total": 0.5054500000000001,
+          "hours": 0.0007530555555555555,
           "starts": 4,
           "retainLost": false,
           "edgeId": 0
         },
         "after": {
           "count": 4,
-          "total": 0.8150499999999999,
-          "hours": 0.0007736111111111111,
+          "total": 0.7955500000000003,
+          "hours": 0.0007530555555555555,
           "starts": 4,
           "retainLost": false,
           "edgeId": 0
@@ -260,13 +260,13 @@
       "pass": true
     },
     "retain-lost": {
-      "date": "2026-10-18T01:37:21.384Z",
+      "date": "2026-10-18T10:01:09.696Z",
       "scenario": "retain-lost",
       "checks": [
         {
           "name": "a counter value before the damage",
           "pass": true,
-          "detail": "{\"count\":3,\"total\":0,\"hours\":0.0005816666666666666,\"starts\":3,\"retainLost\":false,\"edgeId\":0}"
+          "detail": "{\"count\":3,\"total\":0,\"hours\":0.0005555555555555556,\"starts\":3,\"retainLost\":false,\"edgeId\":0}"
         },
         {
           "name": "retain damaged: the blocks start at 0 (counter, totalizer, run hours)",
@@ -292,7 +292,7 @@
         "before": {
           "count": 3,
           "total": 0,
-          "hours": 0.0005816666666666666,
+          "hours": 0.0005555555555555556,
           "starts": 3,
           "retainLost": false,
           "edgeId": 0

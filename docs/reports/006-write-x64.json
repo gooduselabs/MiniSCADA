@@ -4,7 +4,7 @@
     {
       "name": "FLOAT32 R.SP = 75: CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T01:14:35.045Z\",\"readback\":75,\"receivedAt\":\"2026-10-18T01:14:34.806Z\",\"requestId\":\"110d2777-86de-46d0-88f0-af1124992777\",\"status\":\"CONFIRMED\",\"tag\":\"R.SP\",\"value\":75}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T09:38:03.177Z\",\"readback\":75,\"receivedAt\":\"2026-10-18T09:38:02.980Z\",\"requestId\":\"12da1825-1efe-4c01-86e2-9e5c9a601825\",\"status\":\"CONFIRMED\",\"tag\":\"R.SP\",\"value\":75}"
     },
     {
       "name": "FLOAT32 R.SP = 75: the simulator holds [17046,0]",
@@ -14,7 +14,7 @@
     {
       "name": "INT16 R.CNT = -5: CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T01:14:35.297Z\",\"readback\":-5,\"receivedAt\":\"2026-10-18T01:14:35.238Z\",\"requestId\":\"110d2778-9752-4c19-8237-794ff7362778\",\"status\":\"CONFIRMED\",\"tag\":\"R.CNT\",\"value\":-5}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T09:38:03.426Z\",\"readback\":-5,\"receivedAt\":\"2026-10-18T09:38:03.199Z\",\"requestId\":\"12da1826-512a-4975-8d8e-a0671fde1826\",\"status\":\"CONFIRMED\",\"tag\":\"R.CNT\",\"value\":-5}"
     },
     {
       "name": "INT16 R.CNT = -5: the simulator holds [65531]",
@@ -24,7 +24,7 @@
     {
       "name": "coil R.RUN = true (05, readback): CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T01:14:35.546Z\",\"readback\":true,\"receivedAt\":\"2026-10-18T01:14:35.469Z\",\"requestId\":\"110d2779-a510-4de8-8173-e3b110532779\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":true}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T09:38:03.676Z\",\"readback\":true,\"receivedAt\":\"2026-10-18T09:38:03.654Z\",\"requestId\":\"12da1827-57e3-4b31-85b0-7d5a6b2a1827\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":true}"
     },
     {
       "name": "coil R.RUN = true (05, readback): the simulator holds [1]",
@@ -34,7 +34,7 @@
     {
       "name": "coil R.PULSE = true (no readback): CONFIRMED (NO_READBACK)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-18T01:14:35.801Z\",\"receivedAt\":\"2026-10-18T01:14:35.699Z\",\"requestId\":\"110d277a-806a-4c85-8f79-3e3bba03277a\",\"status\":\"CONFIRMED\",\"tag\":\"R.PULSE\",\"value\":true}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-18T09:38:03.927Z\",\"receivedAt\":\"2026-10-18T09:38:03.887Z\",\"requestId\":\"12da1828-506e-4d5a-8fb1-5f066ae21828\",\"status\":\"CONFIRMED\",\"tag\":\"R.PULSE\",\"value\":true}"
     },
     {
       "name": "coil R.PULSE = true (no readback): the simulator holds [1]",
@@ -44,7 +44,7 @@
     {
       "name": "bit R.FLAG = true (mask, function 22): CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T01:14:36.046Z\",\"readback\":true,\"receivedAt\":\"2026-10-18T01:14:35.927Z\",\"requestId\":\"110d277b-66c2-43bb-822d-944ead19277b\",\"status\":\"CONFIRMED\",\"tag\":\"R.FLAG\",\"value\":true}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T09:38:04.177Z\",\"readback\":true,\"receivedAt\":\"2026-10-18T09:38:04.114Z\",\"requestId\":\"12da1829-a077-46a9-8ec9-81c3460f1829\",\"status\":\"CONFIRMED\",\"tag\":\"R.FLAG\",\"value\":true}"
     },
     {
       "name": "bit R.FLAG = true (mask, function 22): the simulator holds [8]",
@@ -54,7 +54,7 @@
     {
       "name": "scaled R.SCALED_SP = 50 (raw 13824): CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T01:14:36.302Z\",\"readback\":13824,\"receivedAt\":\"2026-10-18T01:14:36.151Z\",\"requestId\":\"110d277c-e52b-43fa-88f6-20434d21277c\",\"status\":\"CONFIRMED\",\"tag\":\"R.SCALED_SP\",\"value\":50}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T09:38:04.435Z\",\"readback\":13824,\"receivedAt\":\"2026-10-18T09:38:04.344Z\",\"requestId\":\"12da182a-64eb-49f6-83da-fa920aaf182a\",\"status\":\"CONFIRMED\",\"tag\":\"R.SCALED_SP\",\"value\":50}"
     },
     {
       "name": "scaled R.SCALED_SP = 50 (raw 13824): the simulator holds [13824]",
@@ -64,7 +64,7 @@
     {
       "name": "STRING R.NAMEW: CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T01:14:36.549Z\",\"readback\":\"Bơm 2\",\"receivedAt\":\"2026-10-18T01:14:36.378Z\",\"requestId\":\"110d277d-756b-441a-87ea-2b12b227277d\",\"status\":\"CONFIRMED\",\"tag\":\"R.NAMEW\",\"value\":\"Bơm 2\"}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T09:38:04.676Z\",\"readback\":\"Bơm 2\",\"receivedAt\":\"2026-10-18T09:38:04.573Z\",\"requestId\":\"12da182b-bec0-4284-83b7-10314806182b\",\"status\":\"CONFIRMED\",\"tag\":\"R.NAMEW\",\"value\":\"Bơm 2\"}"
     },
     {
       "name": "STRING R.NAMEW: the simulator holds [17094,41325,8242,0]",
@@ -74,57 +74,57 @@
     {
       "name": "internal R.INT = 33: CONFIRMED (APPLIED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-18T01:14:36.803Z\",\"receivedAt\":\"2026-10-18T01:14:36.609Z\",\"requestId\":\"110d277e-2ef1-4ea4-84aa-401d09c1277e\",\"status\":\"CONFIRMED\",\"tag\":\"R.INT\",\"value\":33}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-18T09:38:04.926Z\",\"receivedAt\":\"2026-10-18T09:38:04.798Z\",\"requestId\":\"12da182c-492a-479a-8014-1796b4de182c\",\"status\":\"CONFIRMED\",\"tag\":\"R.INT\",\"value\":33}"
     },
     {
       "name": "simulation manual R.SIMMAN = 9: CONFIRMED (APPLIED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-18T01:14:37.045Z\",\"receivedAt\":\"2026-10-18T01:14:36.832Z\",\"requestId\":\"110d277f-1cad-45f1-8987-28cad5df277f\",\"status\":\"CONFIRMED\",\"tag\":\"R.SIMMAN\",\"value\":9}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-18T09:38:05.184Z\",\"receivedAt\":\"2026-10-18T09:38:05.018Z\",\"requestId\":\"12da182d-55a3-4165-8cc6-1bcdc383182d\",\"status\":\"CONFIRMED\",\"tag\":\"R.SIMMAN\",\"value\":9}"
     },
     {
       "name": "the Tag carries the value read back at once",
       "pass": true,
-      "detail": "{\"value\":75,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792286075045}"
+      "detail": "{\"value\":75,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792316283177}"
     },
     {
       "name": "no such Tag: REJECTED NO_SUCH_TAG",
       "pass": true,
-      "detail": "200 {\"message\":\"Không có Tag này trên thiết bị.\",\"reason\":\"NO_SUCH_TAG\",\"requestId\":\"110d2780-7807-44bd-8ca3-c730ac8c2780\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Không có Tag này trên thiết bị.\",\"reason\":\"NO_SUCH_TAG\",\"requestId\":\"12da182e-5260-45f8-8c9d-e5836ee6182e\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "read only: REJECTED READ_ONLY",
       "pass": true,
-      "detail": "200 {\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"110d2781-e623-4b89-8afa-ce94afb22781\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"12da182f-e538-4cd5-8610-5120d9fa182f\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "bad type: REJECTED BAD_TYPE",
       "pass": true,
-      "detail": "200 {\"message\":\"Giá trị không đúng kiểu của Tag.\",\"reason\":\"BAD_TYPE\",\"requestId\":\"110d2782-2768-42f4-84c9-70cb6e252782\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Giá trị không đúng kiểu của Tag.\",\"reason\":\"BAD_TYPE\",\"requestId\":\"12da1830-025b-42bd-8d42-94566cd61830\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "not finite: REJECTED NOT_FINITE",
       "pass": true,
-      "detail": "200 {\"message\":\"Giá trị phải là số hữu hạn.\",\"reason\":\"NOT_FINITE\",\"requestId\":\"110d2783-7db8-433b-8c35-a8a9d8b02783\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Giá trị phải là số hữu hạn.\",\"reason\":\"NOT_FINITE\",\"requestId\":\"12da1831-6dec-455a-82a9-6ea004221831\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "out of limits: REJECTED OUT_OF_LIMITS",
       "pass": true,
-      "detail": "200 {\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"110d2784-7269-4126-8d58-2c4093d72784\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"12da1832-127b-4e21-8499-8203d4521832\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "out of type range: REJECTED OUT_OF_TYPE_RANGE",
       "pass": true,
-      "detail": "200 {\"message\":\"Giá trị ngoài khoảng của kiểu dữ liệu.\",\"reason\":\"OUT_OF_TYPE_RANGE\",\"requestId\":\"110d2785-ff57-447a-8f15-86bf0a602785\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Giá trị ngoài khoảng của kiểu dữ liệu.\",\"reason\":\"OUT_OF_TYPE_RANGE\",\"requestId\":\"12da1833-5930-4cb0-8e56-856819551833\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "out of raw range: REJECTED OUT_OF_RAW_RANGE",
       "pass": true,
-      "detail": "200 {\"message\":\"Giá trị ngoài khoảng thô của thiết bị trường sau khi đổi thang.\",\"reason\":\"OUT_OF_RAW_RANGE\",\"requestId\":\"110d2786-3f1c-41a3-8505-b33b6ff12786\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Giá trị ngoài khoảng thô của thiết bị trường sau khi đổi thang.\",\"reason\":\"OUT_OF_RAW_RANGE\",\"requestId\":\"12da1834-014a-4907-88c6-b22da55b1834\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "string too long: REJECTED STRING_TOO_LONG",
       "pass": true,
-      "detail": "200 {\"message\":\"Chuỗi dài hơn mức cho phép.\",\"reason\":\"STRING_TOO_LONG\",\"requestId\":\"110d2787-5b0a-45f7-83c0-5e6e1a792787\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Chuỗi dài hơn mức cho phép.\",\"reason\":\"STRING_TOO_LONG\",\"requestId\":\"12da1835-15a9-48f5-879d-8e575af11835\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "the same request id again: duplicate, run once",
@@ -137,12 +137,12 @@
     {
       "name": "a device exception on the write: FAILED DEVICE_EXCEPTION 03",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-18T01:14:38.044Z\",\"receivedAt\":\"2026-10-18T01:14:37.919Z\",\"requestId\":\"110d278a-3932-45df-8031-dfe31101278a\",\"status\":\"FAILED\",\"tag\":\"R.CNT\",\"value\":21}"
+      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-18T09:38:06.182Z\",\"receivedAt\":\"2026-10-18T09:38:06.105Z\",\"requestId\":\"12da1838-5402-4791-8819-aa1130a41838\",\"status\":\"FAILED\",\"tag\":\"R.CNT\",\"value\":21}"
     },
     {
       "name": "no answer to the write: TIMEOUT WRITE_TIMEOUT, never sent twice",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-18T01:14:41.546Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-18T01:14:40.922Z\",\"requestId\":\"110d278c-43df-4635-8e96-e08c86d4278c\",\"status\":\"TIMEOUT\",\"tag\":\"R.SP\",\"value\":60}"
+      "detail": "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-18T09:38:09.677Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-18T09:38:09.096Z\",\"requestId\":\"12da183a-0dd3-4d95-808f-b61d1ace183a\",\"status\":\"TIMEOUT\",\"tag\":\"R.SP\",\"value\":60}"
     },
     {
       "name": "the write that timed out reached the simulator exactly once",
@@ -152,7 +152,7 @@
     {
       "name": "connection lost: REJECTED CONNECTION_BAD",
       "pass": true,
-      "detail": "200 {\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"110d278d-9845-41c3-8706-58792e67278d\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"12da183b-aac0-4523-8247-aeef07b0183b\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "more than the burst in a moment: RATE_LIMITED with retryAfterMs",
@@ -232,7 +232,7 @@
     {
       "name": "audit: the record of receipt has the facts of FR-039",
       "pass": true,
-      "detail": "{\"action\":\"tag.write\",\"channel\":\"https\",\"clockOk\":false,\"code\":\"ACCEPTED\",\"count\":1,\"detail\":{\"kind\":\"internal\",\"new\":44,\"old\":{\"quality\":\"GOOD\",\"value\":33},\"requestId\":\"110d2797-f7d1-4092-8aca-ef8e7a932797\"},\"id\":66,\"result\":\"started\",\"role\":\"operator\",\"source\":\"172.30.6.50:55592\",\"target\":\"R.INT\",\"ts\":1792286145628,\"user\":\"vh1\"}"
+      "detail": "{\"action\":\"tag.write\",\"channel\":\"https\",\"clockOk\":false,\"code\":\"ACCEPTED\",\"count\":1,\"detail\":{\"kind\":\"internal\",\"new\":44,\"old\":{\"quality\":\"GOOD\",\"value\":33},\"requestId\":\"12da1845-b922-46ab-8519-a201fd321845\"},\"id\":66,\"result\":\"started\",\"role\":\"operator\",\"source\":\"172.30.6.50:39124\",\"target\":\"R.INT\",\"ts\":1792316353754,\"user\":\"vh1\"}"
     },
     {
       "name": "at least 95 % of the confirmed commands took 2 s or less (SC-007)",
@@ -244,15 +244,15 @@
     "writesAtTheSimulator": 10,
     "commandsAccepted": 22,
     "confirmedMs": [
+      220,
       223,
-      223,
-      223,
-      224,
+      226,
       226,
       228,
-      229,
-      231,
-      445
+      228,
+      228,
+      234,
+      451
     ],
     "keys": 10
   },

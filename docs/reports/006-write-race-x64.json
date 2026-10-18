@@ -83,7 +83,7 @@
     {
       "name": "round 6: the simulator keeps the value of the command that ran last",
       "pass": true,
-      "detail": "110 then 111, holds 111"
+      "detail": "111 then 110, holds 110"
     },
     {
       "name": "two audit records of receipt per round, each with its own old value",

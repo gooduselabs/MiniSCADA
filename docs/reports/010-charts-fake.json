@@ -1,8 +1,8 @@
 {
   "note": "Đo trên runtime GIẢ (tests/e2e/history-fake.mjs), Chrome headless; số với runtime x64 thật: chờ runtime (010-charts-x64.json).",
-  "date": "2026-10-18T01:08:29.416Z",
-  "firstChartMs": 88,
-  "frameP95Ms": 17.9,
+  "date": "2026-10-18T09:31:45.126Z",
+  "firstChartMs": 89,
+  "frameP95Ms": 17.3,
   "seriesCalls": 10,
   "maxInflight": 1,
   "tableRowsSeen": 1320

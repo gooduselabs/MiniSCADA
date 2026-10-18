@@ -9,7 +9,7 @@
     {
       "name": "khoảng giữa hai lần ghi ≈ pulseMs (500 ms, 480…1000)",
       "pass": true,
-      "detail": "519…722"
+      "detail": "524…728"
     },
     {
       "name": "có thấy phase release khi chờ",
@@ -49,8 +49,8 @@
   ],
   "measures": {
     "gapMs": {
-      "min": 519,
-      "max": 722
+      "min": 524,
+      "max": 728
     }
   },
   "pass": true

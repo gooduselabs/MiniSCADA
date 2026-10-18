@@ -2,7 +2,7 @@
   "scenario": "quality",
   "checks": [
     {
-      "name": "mất kết nối thiết bị: IT_PLC1_LINK ACTIVE_UNACK sau 923 ms",
+      "name": "mất kết nối thiết bị: IT_PLC1_LINK ACTIVE_UNACK sau 943 ms",
       "pass": true
     },
     {
@@ -24,7 +24,7 @@
       "pass": true
     },
     {
-      "name": "kết nối lại: IT_PLC1_LINK RTN_UNACK sau 3711 ms",
+      "name": "kết nối lại: IT_PLC1_LINK RTN_UNACK sau 3856 ms",
       "pass": true
     },
     {
@@ -41,8 +41,8 @@
     }
   ],
   "measures": {
-    "deviceLinkAlarmMs": 923,
-    "deviceLinkRecoveryMs": 3711
+    "deviceLinkAlarmMs": 943,
+    "deviceLinkRecoveryMs": 3856
   },
   "pass": true
 }

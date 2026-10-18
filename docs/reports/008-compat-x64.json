@@ -42,7 +42,7 @@
       "detail": ""
     },
     {
-      "name": "tank-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.161 % trên 988984 điểm ảnh, ngưỡng lệch kênh > 8/255)",
+      "name": "tank-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.039 % trên 988984 điểm ảnh, ngưỡng lệch kênh > 8/255)",
       "pass": true,
       "detail": ""
     },
@@ -147,7 +147,7 @@
       "detail": ""
     },
     {
-      "name": "dashboard-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.305 % trên 821016 điểm ảnh, ngưỡng lệch kênh > 8/255)",
+      "name": "dashboard-demo [vs trang truoc 008]: ảnh chụp khác ≤ 0,5 % điểm ảnh (đo 0.329 % trên 821016 điểm ảnh, ngưỡng lệch kênh > 8/255)",
       "pass": true,
       "detail": ""
     }
@@ -167,24 +167,8 @@
       "unexpectedDiffs": [],
       "unexpectedDiffDetail": [],
       "screenshot": {
-        "diffPct": 0.16097328167088648,
+        "diffPct": 0.039232181713758765,
         "pixels": 988984
-      }
-    },
-    "dashboard-demo": {
-      "liveTags": 19,
-      "cũConsole": [],
-      "mớiConsole": [],
-      "elements": 3,
-      "sameElements": 3,
-      "differentElements": 0,
-      "intendedTransformDiffs": [],
-      "equivalentStyleDiffs": [],
-      "unexpectedDiffs": [],
-      "unexpectedDiffDetail": [],
-      "screenshot": {
-        "diffPct": 0.30523156674169566,
-        "pixels": 821016
       }
     },
     "modbus-demo": {
@@ -201,6 +185,22 @@
       "screenshot": {
         "diffPct": 0,
         "pixels": 988984
+      }
+    },
+    "dashboard-demo": {
+      "liveTags": 19,
+      "cũConsole": [],
+      "mớiConsole": [],
+      "elements": 3,
+      "sameElements": 3,
+      "differentElements": 0,
+      "intendedTransformDiffs": [],
+      "equivalentStyleDiffs": [],
+      "unexpectedDiffs": [],
+      "unexpectedDiffDetail": [],
+      "screenshot": {
+        "diffPct": 0.32934802732224466,
+        "pixels": 821016
       }
     }
   },

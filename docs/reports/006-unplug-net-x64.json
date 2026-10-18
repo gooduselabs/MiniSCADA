@@ -3,18 +3,18 @@
   "checks": [
     {
       "pass": true,
-      "detail": "1402 ms, reasons TIMEOUT",
-      "name": "network cut: every Tag BAD with a reason within 2 cycles + timeout"
+      "name": "network cut: every Tag BAD with a reason within 2 cycles + timeout",
+      "detail": "1444 ms, reasons TIMEOUT"
     },
     {
       "pass": true,
-      "detail": "1064 ms",
-      "name": "network back: every Tag GOOD within 12 s"
+      "name": "network back: every Tag GOOD within 12 s",
+      "detail": "835 ms"
     }
   ],
   "measures": {
-    "goodMs": 1064,
-    "badMs": 1402
+    "badMs": 1444,
+    "goodMs": 835
   },
   "pass": true
 }
