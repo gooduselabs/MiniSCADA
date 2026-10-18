@@ -3619,7 +3619,931 @@
     },
     "deployEveryS": 45
   },
-  "notRun": {
-    "D4": "pulse.journal not empty: needs an external Tag on a Modbus PLC with a pulse command, not in this rig"
-  }
+  "rerunD3D4": {
+    "schema": "mat-powercut/1",
+    "target": "x64",
+    "driver": "docker-kill",
+    "container": "mat-powercut-x64",
+    "config": {
+      "rounds": 0,
+      "pointRounds": 10,
+      "points": [
+        "D3",
+        "D4"
+      ],
+      "baseUrl": "https://127.0.0.1:58443",
+      "runtime": "/build/x64/bin/mat-runtime",
+      "dataDir": "/data",
+      "storeDir": "/data/projects",
+      "commandLog": "~/build/x64-final/powercut/commands.jsonl",
+      "out": "(build dir)/pc-d3d4.json",
+      "stableS": 10,
+      "maxDelayS": 60,
+      "readyTimeoutS": 90,
+      "eventTimeoutS": 900,
+      "retainPeriodS": 5,
+      "offS": 5,
+      "walBytes": 4000000,
+      "pauseFile": "~/build/x64-final/powercut/pause",
+      "simControl": "http://127.0.0.1:58444",
+      "pulseCoil": "1:20",
+      "pulseReleaseS": 20,
+      "historyLossMs": 8000
+    },
+    "startedAt": "2026-10-18T10:20:12.390Z",
+    "finishedAt": "2026-10-18T11:17:45.562Z",
+    "roundsPlanned": 20,
+    "roundsRun": 20,
+    "roundsOk": 20,
+    "stoppedOnFailure": false,
+    "failure": null,
+    "result": "pass",
+    "readyAfterMs": {
+      "max": 523,
+      "median": 517,
+      "limit": 90000
+    },
+    "perPoint": {
+      "D3": {
+        "run": 10,
+        "ok": 10
+      },
+      "D4": {
+        "run": 10,
+        "ok": 10
+      }
+    },
+    "auditNotMeasuredRounds": 0,
+    "limitations": [
+      "docker kill -s KILL chỉ giết tiến trình; nhân Linux của máy chủ vẫn ghi page cache xuống đĩa, nên không mô phỏng mất dữ liệu chưa fsync ở tầng đĩa; không thay thế cắt điện thật trên BL335 (FR-043)"
+    ],
+    "rounds": [
+      {
+        "round": 1,
+        "point": "D3",
+        "startedAt": "2026-10-18T10:20:12.391Z",
+        "event": "history.db-wal 976 frames of the current generation (4021152 bytes; file 4021152)",
+        "cutDelayMs": 0,
+        "cutAt": "2026-10-18T10:28:41.512Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 523
+        },
+        "pendingOpMs": 141,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 258,
+          "exported": 258,
+          "missing": []
+        },
+        "history": {
+          "tables": 1,
+          "maxTsBeforeCut": 1792319320377,
+          "integrity": "ok",
+          "lossMs": 1135,
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 2,
+        "point": "D3",
+        "startedAt": "2026-10-18T10:28:47.683Z",
+        "event": "history.db-wal 1006 frames of the current generation (4144752 bytes; file 4144752)",
+        "cutDelayMs": 0,
+        "cutAt": "2026-10-18T10:28:58.014Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 510
+        },
+        "pendingOpMs": 117,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 263,
+          "exported": 266,
+          "missing": []
+        },
+        "history": {
+          "tables": 1,
+          "maxTsBeforeCut": 1792319336100,
+          "integrity": "ok",
+          "lossMs": 1914,
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 3,
+        "point": "D3",
+        "startedAt": "2026-10-18T10:29:04.109Z",
+        "event": "history.db-wal 973 frames of the current generation (4008792 bytes; file 4152992)",
+        "cutDelayMs": 0,
+        "cutAt": "2026-10-18T10:37:56.136Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 519
+        },
+        "pendingOpMs": 134,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 532,
+          "exported": 537,
+          "missing": []
+        },
+        "history": {
+          "tables": 1,
+          "maxTsBeforeCut": 1792319875326,
+          "integrity": "ok",
+          "lossMs": 810,
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 4,
+        "point": "D3",
+        "startedAt": "2026-10-18T10:38:02.318Z",
+        "event": "history.db-wal 1003 frames of the current generation (4132392 bytes; file 4152992)",
+        "cutDelayMs": 0,
+        "cutAt": "2026-10-18T10:38:12.553Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 516
+        },
+        "pendingOpMs": 153,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 538,
+          "exported": 542,
+          "missing": []
+        },
+        "history": {
+          "tables": 1,
+          "maxTsBeforeCut": 1792319890866,
+          "integrity": "ok",
+          "lossMs": 1687,
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 5,
+        "point": "D3",
+        "startedAt": "2026-10-18T10:38:18.661Z",
+        "event": "history.db-wal 981 frames of the current generation (4041752 bytes; file 4152992)",
+        "cutDelayMs": 0,
+        "cutAt": "2026-10-18T10:47:05.346Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 518
+        },
+        "pendingOpMs": 137,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 804,
+          "exported": 812,
+          "missing": []
+        },
+        "history": {
+          "tables": 1,
+          "maxTsBeforeCut": 1792320424092,
+          "integrity": "ok",
+          "lossMs": 1254,
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 6,
+        "point": "D3",
+        "startedAt": "2026-10-18T10:47:11.524Z",
+        "event": "history.db-wal 973 frames of the current generation (4008792 bytes; file 4152992)",
+        "cutDelayMs": 0,
+        "cutAt": "2026-10-18T10:56:08.346Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 522
+        },
+        "pendingOpMs": 137,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1068,
+          "exported": 1079,
+          "missing": []
+        },
+        "history": {
+          "tables": 1,
+          "maxTsBeforeCut": 1792320966998,
+          "integrity": "ok",
+          "lossMs": 1348,
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 7,
+        "point": "D3",
+        "startedAt": "2026-10-18T10:56:14.564Z",
+        "event": "history.db-wal 1004 frames of the current generation (4136512 bytes; file 4152992)",
+        "cutDelayMs": 0,
+        "cutAt": "2026-10-18T10:56:24.782Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 516
+        },
+        "pendingOpMs": 145,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1073,
+          "exported": 1085,
+          "missing": []
+        },
+        "history": {
+          "tables": 1,
+          "maxTsBeforeCut": 1792320983105,
+          "integrity": "ok",
+          "lossMs": 1677,
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 8,
+        "point": "D3",
+        "startedAt": "2026-10-18T10:56:30.932Z",
+        "event": "history.db-wal 973 frames of the current generation (4008792 bytes; file 4152992)",
+        "cutDelayMs": 0,
+        "cutAt": "2026-10-18T11:05:00.579Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 520
+        },
+        "pendingOpMs": 1934,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1331,
+          "exported": 1346,
+          "missing": []
+        },
+        "history": {
+          "tables": 1,
+          "maxTsBeforeCut": 1792321499868,
+          "integrity": "ok",
+          "lossMs": 711,
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 9,
+        "point": "D3",
+        "startedAt": "2026-10-18T11:05:08.633Z",
+        "event": "history.db-wal 992 frames of the current generation (4087072 bytes; file 4152992)",
+        "cutDelayMs": 0,
+        "cutAt": "2026-10-18T11:05:18.855Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 518
+        },
+        "pendingOpMs": 140,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1337,
+          "exported": 1352,
+          "missing": []
+        },
+        "history": {
+          "tables": 1,
+          "maxTsBeforeCut": 1792321515132,
+          "integrity": "ok",
+          "lossMs": 3723,
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 10,
+        "point": "D3",
+        "startedAt": "2026-10-18T11:05:25.021Z",
+        "event": "history.db-wal 979 frames of the current generation (4033512 bytes; file 4161232)",
+        "cutDelayMs": 0,
+        "cutAt": "2026-10-18T11:14:00.483Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 513
+        },
+        "pendingOpMs": 1887,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1596,
+          "exported": 1614,
+          "missing": []
+        },
+        "history": {
+          "tables": 1,
+          "maxTsBeforeCut": 1792322039656,
+          "integrity": "ok",
+          "lossMs": 827,
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 11,
+        "point": "D4",
+        "startedAt": "2026-10-18T11:14:08.430Z",
+        "event": "pulse.journal armed: 536af43d-136e-4079-b00a-940d30ffea90",
+        "pulseArmed": [
+          "536af43d-136e-4079-b00a-940d30ffea90"
+        ],
+        "cutDelayMs": 0,
+        "coilAtCut": 1,
+        "cutAt": "2026-10-18T11:14:18.692Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 514
+        },
+        "pendingOpMs": 175,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1604,
+          "exported": 1621,
+          "missing": []
+        },
+        "pulse": {
+          "armedAtCut": [
+            "536af43d-136e-4079-b00a-940d30ffea90"
+          ],
+          "coilAtCut": 1,
+          "coilAfter": 0,
+          "releasedAfterReadyMs": 5125,
+          "recoveryAudited": 1,
+          "armedLeft": [],
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 12,
+        "point": "D4",
+        "startedAt": "2026-10-18T11:14:29.935Z",
+        "event": "pulse.journal armed: 5079620e-5096-4294-a208-e29be83a317d",
+        "pulseArmed": [
+          "5079620e-5096-4294-a208-e29be83a317d"
+        ],
+        "cutDelayMs": 0,
+        "coilAtCut": 1,
+        "cutAt": "2026-10-18T11:14:41.960Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 516
+        },
+        "pendingOpMs": 147,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1613,
+          "exported": 1631,
+          "missing": []
+        },
+        "pulse": {
+          "armedAtCut": [
+            "5079620e-5096-4294-a208-e29be83a317d"
+          ],
+          "coilAtCut": 1,
+          "coilAfter": 0,
+          "releasedAfterReadyMs": 5113,
+          "recoveryAudited": 1,
+          "armedLeft": [],
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 13,
+        "point": "D4",
+        "startedAt": "2026-10-18T11:14:53.210Z",
+        "event": "pulse.journal armed: 6a1c302e-38e3-459f-b844-9d6fb816997d",
+        "pulseArmed": [
+          "6a1c302e-38e3-459f-b844-9d6fb816997d"
+        ],
+        "cutDelayMs": 0,
+        "coilAtCut": 1,
+        "cutAt": "2026-10-18T11:15:03.443Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 520
+        },
+        "pendingOpMs": 154,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1620,
+          "exported": 1640,
+          "missing": []
+        },
+        "pulse": {
+          "armedAtCut": [
+            "6a1c302e-38e3-459f-b844-9d6fb816997d"
+          ],
+          "coilAtCut": 1,
+          "coilAfter": 0,
+          "releasedAfterReadyMs": 5130,
+          "recoveryAudited": 1,
+          "armedLeft": [],
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 14,
+        "point": "D4",
+        "startedAt": "2026-10-18T11:15:14.712Z",
+        "event": "pulse.journal armed: a55b4a24-bdfc-4f9b-9f8b-3dc2a49dac39",
+        "pulseArmed": [
+          "a55b4a24-bdfc-4f9b-9f8b-3dc2a49dac39"
+        ],
+        "cutDelayMs": 0,
+        "coilAtCut": 1,
+        "cutAt": "2026-10-18T11:15:24.936Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 512
+        },
+        "pendingOpMs": 120,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1628,
+          "exported": 1651,
+          "missing": []
+        },
+        "pulse": {
+          "armedAtCut": [
+            "a55b4a24-bdfc-4f9b-9f8b-3dc2a49dac39"
+          ],
+          "coilAtCut": 1,
+          "coilAfter": 0,
+          "releasedAfterReadyMs": 5109,
+          "recoveryAudited": 1,
+          "armedLeft": [],
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 15,
+        "point": "D4",
+        "startedAt": "2026-10-18T11:15:36.137Z",
+        "event": "pulse.journal armed: 3cbab801-9425-48c9-9a9c-5837248c3c03",
+        "pulseArmed": [
+          "3cbab801-9425-48c9-9a9c-5837248c3c03"
+        ],
+        "cutDelayMs": 0,
+        "coilAtCut": 1,
+        "cutAt": "2026-10-18T11:15:47.531Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 517
+        },
+        "pendingOpMs": 139,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1637,
+          "exported": 1661,
+          "missing": []
+        },
+        "pulse": {
+          "armedAtCut": [
+            "3cbab801-9425-48c9-9a9c-5837248c3c03"
+          ],
+          "coilAtCut": 1,
+          "coilAfter": 0,
+          "releasedAfterReadyMs": 4494,
+          "recoveryAudited": 1,
+          "armedLeft": [],
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 16,
+        "point": "D4",
+        "startedAt": "2026-10-18T11:15:58.133Z",
+        "event": "pulse.journal armed: 857ea166-7c05-4c4e-bcb2-252fa7b9e702",
+        "pulseArmed": [
+          "857ea166-7c05-4c4e-bcb2-252fa7b9e702"
+        ],
+        "cutDelayMs": 0,
+        "coilAtCut": 1,
+        "cutAt": "2026-10-18T11:16:08.385Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 517
+        },
+        "pendingOpMs": 156,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1644,
+          "exported": 1670,
+          "missing": []
+        },
+        "pulse": {
+          "armedAtCut": [
+            "857ea166-7c05-4c4e-bcb2-252fa7b9e702"
+          ],
+          "coilAtCut": 1,
+          "coilAfter": 0,
+          "releasedAfterReadyMs": 4532,
+          "recoveryAudited": 1,
+          "armedLeft": [],
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 17,
+        "point": "D4",
+        "startedAt": "2026-10-18T11:16:19.056Z",
+        "event": "pulse.journal armed: 23cef88b-bae6-47b5-8bb0-7a0369d0cba2",
+        "pulseArmed": [
+          "23cef88b-bae6-47b5-8bb0-7a0369d0cba2"
+        ],
+        "cutDelayMs": 0,
+        "coilAtCut": 1,
+        "cutAt": "2026-10-18T11:16:29.287Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 515
+        },
+        "pendingOpMs": 160,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1651,
+          "exported": 1679,
+          "missing": []
+        },
+        "pulse": {
+          "armedAtCut": [
+            "23cef88b-bae6-47b5-8bb0-7a0369d0cba2"
+          ],
+          "coilAtCut": 1,
+          "coilAfter": 0,
+          "releasedAfterReadyMs": 4503,
+          "recoveryAudited": 1,
+          "armedLeft": [],
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 18,
+        "point": "D4",
+        "startedAt": "2026-10-18T11:16:39.956Z",
+        "event": "pulse.journal armed: c7e1cffb-ff5e-4dec-9b3d-3fab6a48a71b",
+        "pulseArmed": [
+          "c7e1cffb-ff5e-4dec-9b3d-3fab6a48a71b"
+        ],
+        "cutDelayMs": 0,
+        "coilAtCut": 1,
+        "cutAt": "2026-10-18T11:16:50.193Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 513
+        },
+        "pendingOpMs": 179,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1658,
+          "exported": 1688,
+          "missing": []
+        },
+        "pulse": {
+          "armedAtCut": [
+            "c7e1cffb-ff5e-4dec-9b3d-3fab6a48a71b"
+          ],
+          "coilAtCut": 1,
+          "coilAfter": 0,
+          "releasedAfterReadyMs": 5112,
+          "recoveryAudited": 1,
+          "armedLeft": [],
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 19,
+        "point": "D4",
+        "startedAt": "2026-10-18T11:17:01.460Z",
+        "event": "pulse.journal armed: cca6c25d-5072-4235-bd81-49e77de79818",
+        "pulseArmed": [
+          "cca6c25d-5072-4235-bd81-49e77de79818"
+        ],
+        "cutDelayMs": 0,
+        "coilAtCut": 1,
+        "cutAt": "2026-10-18T11:17:12.881Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 515
+        },
+        "pendingOpMs": 120,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1666,
+          "exported": 1698,
+          "missing": []
+        },
+        "pulse": {
+          "armedAtCut": [
+            "cca6c25d-5072-4235-bd81-49e77de79818"
+          ],
+          "coilAtCut": 1,
+          "coilAfter": 0,
+          "releasedAfterReadyMs": 5080,
+          "recoveryAudited": 1,
+          "armedLeft": [],
+          "status": "pass"
+        },
+        "ok": true
+      },
+      {
+        "round": 20,
+        "point": "D4",
+        "startedAt": "2026-10-18T11:17:24.111Z",
+        "event": "pulse.journal armed: 7ac067a1-976c-4d2c-b3bd-5f524419b8ff",
+        "pulseArmed": [
+          "7ac067a1-976c-4d2c-b3bd-5f524419b8ff"
+        ],
+        "cutDelayMs": 0,
+        "coilAtCut": 1,
+        "cutAt": "2026-10-18T11:17:34.332Z",
+        "readyAfter": {
+          "ok": true,
+          "ms": 519
+        },
+        "pendingOpMs": 149,
+        "check": {
+          "ok": true,
+          "acceptedWarnings": [
+            "history.db",
+            "audit.db",
+            "pulse.journal"
+          ],
+          "exitCode": 1
+        },
+        "audit": {
+          "status": "pass",
+          "accepted": 1673,
+          "exported": 1707,
+          "missing": []
+        },
+        "pulse": {
+          "armedAtCut": [
+            "7ac067a1-976c-4d2c-b3bd-5f524419b8ff"
+          ],
+          "coilAtCut": 1,
+          "coilAfter": 0,
+          "releasedAfterReadyMs": 5116,
+          "recoveryAudited": 1,
+          "armedLeft": [],
+          "status": "pass"
+        },
+        "ok": true
+      }
+    ],
+    "task": "T077 (FR-043; SC-014): x64 pre-check of the power cut",
+    "runner": "tools/powercut/x64-run.mjs (tools/powercut/x64-kill.mjs)",
+    "machine": "Docker mat-armhf on Apple Silicon (Linux arm64, not a real x64)",
+    "rig": {
+      "container": "mat-powercut-x64",
+      "project": "projects/soak-standard (500 Tag, 200 logged by change) + CMD.SP internal retained RW + PULSE.CMD external coil 20 of unit 1 on the simulator",
+      "simulator": "mat-powercut-x64-sim (tools/modbus-sim, alias sim on mat-powercut-x64-net)",
+      "commands": {
+        "everyMs": 3000,
+        "pulseEveryS": 5,
+        "pulseMs": 3000,
+        "writesSent": 1135,
+        "accepted": 1060,
+        "errors": 87,
+        "deploys": 66,
+        "deploysAccepted": 66,
+        "pulsesSent": 690,
+        "pulsesAccepted": 616
+      },
+      "deployEveryS": 45
+    },
+    "date": "2026-10-18",
+    "branch": "gd6-x64-final (runtime gd6 9895c7c3, Release; no runtime change)",
+    "command": "node tools/powercut/x64-run.mjs --build-dir <dir> --rounds 0 --point-rounds 10 --points D3,D4 --stable-s 10 --event-timeout-s 900 --wal-bytes 4000000",
+    "why": {
+      "D3": "the previous run cut on the size of history.db-wal, which stays at 4,190,072 bytes after the first checkpoint (journal_size_limit 64 MiB: SQLite rewrites the file from the start), so every D3 round cut at a random fill. Now: frames of the current WAL generation (salts of the header repeated in each frame header), cut when > 4,000,000 bytes (protocol: > 4 MB; auto-checkpoint at 1,000 pages = 4.12 MB). After the restart: PRAGMA integrity_check and the gap between the cut and the newest history row before it. A rig problem, not a runtime bug.",
+      "D4": "the rig now has the Modbus simulator (mat-powercut-x64-sim) and the external Tag PULSE.CMD (coil 20 of unit 1); operator vh1 sends a 3 s pulse every 5 s; cut when pulse.journal holds an arm without its done (\"file not empty\" is always true: done lines stay until compaction). After the restart: coil back to 0, tag.write audit with source pulse-recovery and pulseOf for every pulse armed at the cut, no entry left armed."
+    },
+    "summary": {
+      "D3": {
+        "rounds": 10,
+        "ok": 10,
+        "walFramesAtCut": [
+          976,
+          1006,
+          973,
+          1003,
+          981,
+          973,
+          1004,
+          973,
+          992,
+          979
+        ],
+        "integrityOk": 10,
+        "historyLossMs": {
+          "max": 3723,
+          "median": 1348,
+          "limit": 8000,
+          "commitMs": 5000
+        }
+      },
+      "D4": {
+        "rounds": 10,
+        "ok": 10,
+        "coilOnAtCut": 10,
+        "coilReleased": 10,
+        "releasedAfterReadyMs": {
+          "max": 5130,
+          "median": 5112,
+          "limit": 20000
+        },
+        "recoveryAudited": 10,
+        "armedLeft": 0
+      },
+      "commandsAcceptedMissingFromAudit": 0
+    }
+  },
+  "note": "rounds/perPoint above: the run of 2026-10-17 (100 random + D1, D3, D5 x 10). D3 and D4 again on 2026-10-18 with the fixed rig: key rerunD3D4 (10/10 each)."
 }
