@@ -29,17 +29,17 @@
     {
       "name": "Set-Cookie không có Domain",
       "pass": true,
-      "detail": "__Host-mat_sid=matw_EnjNbCyNWo4p7xglijV532tc55_3owbnck9MMrn65Wg; Secure; HttpOnly; SameSite=Strict; Path=/"
+      "detail": "__Host-mat_sid=matw_hpGisV6QNp2A9LV7CyOOgoRXRZU3vP09CIK3Y2zCBTw; Secure; HttpOnly; SameSite=Strict; Path=/"
     },
     {
       "name": "Set-Cookie không có Max-Age",
       "pass": true,
-      "detail": "__Host-mat_sid=matw_EnjNbCyNWo4p7xglijV532tc55_3owbnck9MMrn65Wg; Secure; HttpOnly; SameSite=Strict; Path=/"
+      "detail": "__Host-mat_sid=matw_hpGisV6QNp2A9LV7CyOOgoRXRZU3vP09CIK3Y2zCBTw; Secure; HttpOnly; SameSite=Strict; Path=/"
     },
     {
       "name": "Set-Cookie không có Expires",
       "pass": true,
-      "detail": "__Host-mat_sid=matw_EnjNbCyNWo4p7xglijV532tc55_3owbnck9MMrn65Wg; Secure; HttpOnly; SameSite=Strict; Path=/"
+      "detail": "__Host-mat_sid=matw_hpGisV6QNp2A9LV7CyOOgoRXRZU3vP09CIK3Y2zCBTw; Secure; HttpOnly; SameSite=Strict; Path=/"
     },
     {
       "name": "Set-Cookie dùng tiền tố __Host-",

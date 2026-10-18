@@ -2,19 +2,19 @@
   "scenario": "unplug-net",
   "checks": [
     {
-      "name": "network cut: every Tag BAD with a reason within 2 cycles + timeout",
       "pass": true,
-      "detail": "1441 ms, reasons TIMEOUT"
+      "detail": "1402 ms, reasons TIMEOUT",
+      "name": "network cut: every Tag BAD with a reason within 2 cycles + timeout"
     },
     {
-      "name": "network back: every Tag GOOD within 12 s",
       "pass": true,
-      "detail": "869 ms"
+      "detail": "1064 ms",
+      "name": "network back: every Tag GOOD within 12 s"
     }
   ],
   "measures": {
-    "badMs": 1441,
-    "goodMs": 869
+    "goodMs": 1064,
+    "badMs": 1402
   },
   "pass": true
 }

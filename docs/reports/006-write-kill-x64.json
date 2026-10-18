@@ -21,7 +21,7 @@
     "rounds": 6,
     "commandsSent": 36,
     "accepted": 36,
-    "interrupted": 24,
+    "interrupted": 18,
     "writesAtTheSimulator": 36
   },
   "pass": true

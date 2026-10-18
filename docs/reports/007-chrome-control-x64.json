@@ -31,7 +31,7 @@
       "detail": "Xác nhận ghi giá trị Tag SIM.FAN_ON Mô tả Quạt làm mát (nhập tay) Giá trị Tắt → Bật Đơn vị — Giới hạn — Tài khoản vh1 Hủy Xác nhận"
     },
     {
-      "name": "ghi từ Chrome: CONFIRMED (đo 221 ms, từ lúc bấm)",
+      "name": "ghi từ Chrome: CONFIRMED (đo 220 ms, từ lúc bấm)",
       "pass": true
     },
     {
@@ -52,8 +52,8 @@
     }
   ],
   "measures": {
-    "loginMs": 82,
-    "writeFromChromeMs": 221
+    "loginMs": 77,
+    "writeFromChromeMs": 220
   },
   "pass": true
 }

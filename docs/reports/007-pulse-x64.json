@@ -9,12 +9,12 @@
     {
       "name": "khoảng giữa hai lần ghi ≈ pulseMs (500 ms, 480…1000)",
       "pass": true,
-      "detail": "535…719"
+      "detail": "519…722"
     },
     {
       "name": "có thấy phase release khi chờ",
       "pass": true,
-      "detail": "release"
+      "detail": "release,queued"
     },
     {
       "name": "đóng trang ngay sau ACCEPTED: bit vẫn được nhả (5/5)",
@@ -49,8 +49,8 @@
   ],
   "measures": {
     "gapMs": {
-      "min": 535,
-      "max": 719
+      "min": 519,
+      "max": 722
     }
   },
   "pass": true

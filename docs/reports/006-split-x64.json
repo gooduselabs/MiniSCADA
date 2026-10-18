@@ -4,7 +4,7 @@
     {
       "name": "only the Tag over the hole turns BAD EXCEPTION_02",
       "pass": true,
-      "detail": "{\"value\":4000000000,\"quality\":\"BAD\",\"reason\":\"EXCEPTION_02\",\"ts\":1792274422296}"
+      "detail": "{\"value\":4000000000,\"quality\":\"BAD\",\"reason\":\"EXCEPTION_02\",\"ts\":1792286068302}"
     },
     {
       "name": "the other Tags of the block are GOOD again from the next rounds (US1-8)",
@@ -21,7 +21,7 @@
     }
   ],
   "measures": {
-    "splitToBadMs": 4100
+    "splitToBadMs": 4112
   },
   "pass": true
 }
