@@ -3,6 +3,7 @@
 - **Trạng thái:** Accepted **một phần**. Các chỉ số đã đo ở Sprint 0 được xác nhận; mọi chỉ số còn lại ghi "chưa đo" kèm sprint chịu trách nhiệm. Ngân sách **giữ nguyên**, không đề xuất đổi. Phê duyệt chính thức ghi cùng quyết định Go/No-Go (T034).
 - **Ngày:** 2026-10-10
 - **Liên quan:** Master Plan §6 (ngân sách), §13 (Go/No-Go); Constitution III ("thay đổi làm vượt ngân sách phải có số đo và ADR"); spec SC-002, SC-003; [ADR-001](001-web-server.md), [ADR-002](002-commercial-os.md).
+- **Cập nhật 011 (2026-10-19, T087, T201):** ngân sách giữ nguyên; số đo trên BL335 với runtime 1.0.0 / `1.0.0-rc.1` (CPU tính theo một lõi): rảnh RSS 9,5 MB; L1 (500 Tag × 10 client × 4 giờ) CPU 28,9 % một lõi (14,5 % cả máy), RSS tối đa 19,5 MB; L2 (1.000 Tag) CPU 43,8 %, RSS 12,8 MB; logic tối đa 550 khối trên L1 thêm +2,5 điểm CPU, +3,8 MB RSS, vòng quét trung vị 1,05 ms: mọi dòng RAM/CPU **Đạt**, không cần ADR mới. eMMC: **không tách được trên thiết bị này** — ghi khối toàn máy 2,6–4,7 GB/ngày khi mat tắt (dịch vụ khác), phần của mat ước < ~1 GB/ngày; **quyết định:** ngưỡng 2 GB/ngày kết luận theo phần ghi của chính mat (bộ đếm `sqlite-vfs`, [ADR-039](039-sqlite-write-meter.md)), ghi toàn máy là điều kiện môi trường; số đo chờ soak bàn thử (T196). Soak S1 7 ngày trên BL335 **hủy theo quyết định người dùng** (2026-10-18), thay bằng soak x64 24 giờ và soak 30 ngày ở bàn thử khi pilot. Bố cục phân vùng A/B vẫn chưa khớp thiết kế (phụ thuộc ADR-002). Chi tiết: [011-load.md](../reports/011-load.md) §1, [011-soak.md](../reports/011-soak.md) §4.
 
 ## Bối cảnh
 
