@@ -11,12 +11,14 @@
 #include "server/host_policy.hpp"
 
 #include <gtest/gtest.h>
+#include <unistd.h>
 
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
 
+#include "core/audit/audit_log.hpp"
 #include "nlohmann/json.hpp"
 #include "server/http/http_api.hpp"
 #include "server/system_warnings.hpp"
@@ -304,6 +306,68 @@ TEST(HostPolicy, TheRefusalWindowsAreBounded) {
             repeated += json::parse(e.detail)["repeated"].get<int64_t>();
     EXPECT_EQ(repeated, 1000) << "no count is lost";
     EXPECT_EQ(p.deniedWindows(), 0u);
+}
+
+// T200 finding: the refusals carry the Host budget of the audit log, so that a flood of wrong
+// Host requests written into a real AuditLog never folds a failed sign-in into audit.suppressed.
+TEST(HostPolicy, AFloodOfWrongHostsLeavesEveryFailedSignInItsOwnRow) {
+    std::vector<AuditEvent> events;
+    const HostPolicy p = policy({}, true, [&](const AuditEvent& e) { events.push_back(e); });
+    HostRequest r;
+    r.hosts = {"evil.example"};
+    p.recordDenied(k421, r, "/", "192.168.1.31:1", false);
+    ASSERT_EQ(events.size(), 1u);
+    EXPECT_EQ(events[0].budget, AuditBudget::HostPolicy);
+
+    char tmpl[] = "/tmp/mat-hostaudit-XXXXXX";
+    const char* dir = mkdtemp(tmpl);
+    ASSERT_NE(dir, nullptr);
+    int64_t mono = 1000;
+    AuditOptions ao;
+    ao.dataDir = dir;
+    ao.clock.wallMs = [&] { return int64_t{1791594000000} + mono; };
+    ao.clock.monoMs = [&] { return mono; };
+    ao.clock.synced = [](int64_t) { return true; };
+    AuditLog log(ao);
+    std::string err;
+    ASSERT_TRUE(log.open(err)) << err;
+    int64_t now = 1000;
+    HostPolicyOptions o;
+    o.hostname = "bl335-a";
+    o.monoMs = [&] { return now; };
+    const HostPolicy flood(o, [&](const AuditEvent& e) { log.append(e); });
+    auto login = [&](int i) {
+        AuditEvent e(AuditAction::AuthLogin, AuditResult::Failed, AuditChannel::Https,
+                     "192.168.1.50:4000");
+        e.user = "admin" + std::to_string(i);
+        e.code = "AUTH_FAILED";
+        log.append(e);
+    };
+    for (int i = 0; i < 2000; ++i) {  // many sources, as a page rebinding many clients would
+        const std::string src = "10.1." + std::to_string(i / 250) + "." + std::to_string(i % 250);
+        flood.recordDenied(k421, r, "/api/v1/system/info", src + ":1", false);
+        flood.recordDenied(k421, r, "/api/v1/system/info", src + ":2", true);
+        if (i % 200 == 0) login(i);  // 10 failed sign-ins in the same minute
+    }
+    flood.flushDenied(true);
+    int64_t loginRows = 0, hostRows = 0, hostEvents = 0;
+    for (const auto& rec : log.query({}).records) {
+        if (rec.action == "auth.login") {
+            ++loginRows;
+            EXPECT_EQ(rec.count, 1);
+        }
+        if (rec.action == "access.denied") ++hostRows;
+        if (rec.action == "access.denied" || rec.action == "audit.suppressed")
+            hostEvents += rec.count;
+        if (rec.action == "audit.suppressed") {
+            EXPECT_EQ(json::parse(rec.detail.value_or("null")).value("budget", ""), "host");
+        }
+    }
+    EXPECT_EQ(loginRows, 10) << "every failed sign-in is written on its own";
+    EXPECT_LE(hostRows, kAuditHostRowsPerWindow) << "the Host rows stay bounded";
+    EXPECT_GT(hostEvents, 0);
+    log.close();
+    std::filesystem::remove_all(dir);
 }
 
 TEST(HostPolicy, TheBodyOf421IsTheContractsAndNothingElse) {

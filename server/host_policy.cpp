@@ -155,6 +155,7 @@ AuditEvent summaryOf(const std::pair<std::string, std::string>& key, int64_t rep
                                        {"host", host},
                                        {"repeated", repeated},
                                        {"windowS", kHostDeniedWindowMs / 1000}});
+    e.budget = AuditBudget::HostPolicy;  // T200 of 011: never the budget of failed sign-ins
     return e;
 }
 
@@ -264,6 +265,7 @@ void HostPolicy::recordDenied(HostVerdict verdict, const HostRequest& request,
         e.target = path;
         e.code = code;
         e.detail = jsonText(nlohmann::json{{"reason", "host"}, {"host", host}});
+        e.budget = AuditBudget::HostPolicy;
         out.push_back(std::move(e));
     }
     for (const AuditEvent& e : out) write(e);

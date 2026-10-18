@@ -650,6 +650,87 @@ TEST(AuditLog, TheSuppressedRowKeepsTheSourcesOfTheEventsItCounts) {
     EXPECT_EQ(d["sources"]["*"], 23 - 2 - 1 - 14);
 }
 
+// T200 finding (docs/reports/011-regression-pair.md): the refusals of the Host policy have a
+// budget of their own (AuditBudget::HostPolicy, kAuditHostRowsPerWindow rows a minute, then one
+// audit.suppressed row with detail.budget "host"). A flood of requests with a wrong Host never
+// folds a failed sign-in or a refused access of the gate into audit.suppressed.
+AuditEvent hostRefusal(const std::string& source) {
+    AuditEvent e(AuditAction::AccessDenied, AuditResult::Denied, AuditChannel::Http, source);
+    e.target = "/";
+    e.code = "HOST_NOT_ALLOWED";
+    e.detail = R"({"reason":"host","host":"evil.example"})";
+    e.budget = AuditBudget::HostPolicy;
+    return e;
+}
+
+TEST(AuditLog, HostPolicyRefusalsDoNotSpendTheBudgetOfFailedSignIns) {
+    Opened f;
+    for (int i = 0; i < 300; ++i)  // 300 sources in the same minute, before any sign-in
+        f.log->append(
+            hostRefusal("10.9." + std::to_string(i / 250) + "." + std::to_string(i % 250) + ":1"));
+    for (int i = 0; i < 8; ++i) f.log->append(failedLogin("u" + std::to_string(i), "10.0.0.9:1"));
+    AuditEvent gate(AuditAction::AccessDenied, AuditResult::Denied, AuditChannel::Https,
+                    "10.0.0.9:2");
+    gate.target = "/api/v1/project/deploy";
+    gate.code = "FORBIDDEN";
+    f.log->append(gate);
+    AuditEvent locked(AuditAction::AuthLocked, AuditResult::Denied, AuditChannel::Https,
+                      "10.0.0.9:3");
+    locked.user = "eng1";
+    locked.code = "ACCOUNT_LOCKED";
+    f.log->append(locked);
+    for (int i = 0; i < 50; ++i) f.log->append(hostRefusal("10.8.0." + std::to_string(i) + ":1"));
+    const AuditPage page = f.log->query({});
+    int64_t loginRows = 0, hostRows = 0, gateRows = 0, lockedRows = 0, total = 0;
+    std::vector<AuditRecord> suppressed;
+    for (const auto& r : page.records) {
+        total += r.count;
+        if (r.action == "auth.login") ++loginRows;
+        if (r.action == "auth.locked") ++lockedRows;
+        if (r.action == "access.denied" && r.code == std::optional<std::string>("FORBIDDEN"))
+            ++gateRows;
+        if (r.action == "access.denied" && r.code == std::optional<std::string>("HOST_NOT_ALLOWED"))
+            ++hostRows;
+        if (r.action == "audit.suppressed") suppressed.push_back(r);
+    }
+    EXPECT_EQ(loginRows, 8) << "every failed sign-in has a row of its own";
+    EXPECT_EQ(gateRows, 1);
+    EXPECT_EQ(lockedRows, 1);
+    EXPECT_EQ(hostRows, kAuditHostRowsPerWindow) << "the Host rows stay bounded";
+    ASSERT_EQ(suppressed.size(), 1u);
+    EXPECT_EQ(suppressed[0].count, 350 - kAuditHostRowsPerWindow);
+    const auto d = nlohmann::json::parse(suppressed[0].detail.value_or("null"));
+    EXPECT_EQ(d["budget"], "host");
+    EXPECT_EQ(d["access.denied"], 350 - kAuditHostRowsPerWindow);
+    EXPECT_FALSE(d.contains("auth.login"));
+    EXPECT_EQ(total, 350 + 8 + 1 + 1) << "every event is still counted";
+}
+
+TEST(AuditLog, TheSharedBudgetStillSuppressesOnItsOwnRowBesideTheHostOne) {
+    Opened f;
+    for (int i = 0; i < 15; ++i) f.log->append(hostRefusal("10.9.0." + std::to_string(i) + ":1"));
+    for (int i = 0; i < 12; ++i) f.log->append(failedLogin("u" + std::to_string(i), "10.0.0.9:1"));
+    std::vector<AuditRecord> suppressed;
+    int64_t loginRows = 0;
+    for (const auto& r : f.log->query({}).records) {
+        if (r.action == "auth.login") ++loginRows;
+        if (r.action == "audit.suppressed") suppressed.push_back(r);
+    }
+    EXPECT_EQ(loginRows, kAuditLimitedRowsPerWindow);
+    ASSERT_EQ(suppressed.size(), 2u) << "one row per budget and minute";
+    std::map<std::string, nlohmann::json> byBudget;
+    for (const auto& r : suppressed) {
+        auto d = nlohmann::json::parse(r.detail.value_or("null"));
+        byBudget[d.value("budget", std::string("shared"))] = d;
+    }
+    ASSERT_EQ(byBudget.count("host"), 1u);
+    ASSERT_EQ(byBudget.count("shared"), 1u);
+    EXPECT_EQ(byBudget["host"]["access.denied"], 15 - kAuditHostRowsPerWindow);
+    EXPECT_EQ(byBudget["shared"],
+              nlohmann::json::parse(R"({"auth.login":2,"sources":{"10.0.0.9":2}})"))
+        << "the row of the shared budget keeps the format of 005";
+}
+
 TEST(AuditLog, ChangesAndSuccessfulSignInsAreNeverLimited) {
     Opened f;
     for (int i = 0; i < 20; ++i) f.log->append(failedLogin("u" + std::to_string(i), "10.0.0.9:1"));

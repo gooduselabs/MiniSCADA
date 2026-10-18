@@ -14,6 +14,13 @@
 // flushExpired() once the 60 s are over, by query(), maintain() and close(). At most 10 such rows
 // per minute; beyond that events are counted in one audit.suppressed row per minute. A power cut
 // can lose only counts still in memory, never a row append() has returned.
+//
+// T200 finding of 011: the refusals of the Host policy (server/host_policy.cpp, already one row
+// per source and code a minute, 256 windows at most) have a budget of their own,
+// AuditBudget::HostPolicy: kAuditHostRowsPerWindow rows a minute, then their own audit.suppressed
+// row (detail.budget "host"). A flood of requests with a wrong Host never folds a failed sign-in,
+// a refusal while locked or a refused access of the gate into audit.suppressed. At most
+// 10 + 10 limited rows and two audit.suppressed rows a minute.
 #pragma once
 #include <cstddef>
 #include <cstdint>
@@ -31,6 +38,7 @@ namespace mat {
 constexpr const char* kAuditFileName = "audit.db";
 constexpr int64_t kAuditWindowMs = 60000;       // coalescing window and rate-limit period
 constexpr int kAuditLimitedRowsPerWindow = 10;  // rows of auditLimited() kinds per 60 s
+constexpr int kAuditHostRowsPerWindow = 10;     // of those, of AuditBudget::HostPolicy, per 60 s
 constexpr size_t kAuditMaxDetailBytes = 1024;
 constexpr int kAuditQueryDefaultLimit = 100;
 constexpr int kAuditQueryMaxLimit = 200;
@@ -50,6 +58,12 @@ class AuditUnavailable : public std::runtime_error {
 
 // One event to record. There is no field for a password, a token or a hash: `user` is a name,
 // and append() refuses a `detail` with a key that looks like a secret.
+// Which rate limit a limited event (auditLimited()) spends; other events ignore it.
+enum class AuditBudget {
+    Shared,      // failed sign-ins, refusals while locked, refused accesses of the gate, ...
+    HostPolicy,  // access.denied of the Host policy (contracts/device-api-011.md §1)
+};
+
 struct AuditEvent {
     AuditEvent(AuditAction a, AuditResult r, AuditChannel c, std::string src)
         : action(a), result(r), channel(c), source(std::move(src)) {}
@@ -63,6 +77,7 @@ struct AuditEvent {
     std::optional<std::string> target;  // digest, seq, account name, API path
     std::optional<std::string> code;    // error code: AUTH_FAILED, E_PKG_PATH, ...
     std::string detail;                 // JSON object text (build it with mat::jsonText), "" = none
+    AuditBudget budget = AuditBudget::Shared;
 };
 
 // A stored row. Text columns come back as stored, so rows of a later version read fine.
