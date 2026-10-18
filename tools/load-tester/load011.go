@@ -5,7 +5,7 @@
 //
 //	load-tester -host H -tags 500  -clients 10 -extra 1 -duration 14400 -latency -out l1.json   # L1
 //	load-tester -host H -tags 1000 -clients 10 -extra 0 -duration 3600 -latency -out l2.json    # L2
-//	load-tester -host H -tags 500  -clients 10 -extra 1 -extra-attempts 50 -duration 120 -out l3.json
+//	load-tester -host H -tags 500  -clients 10 -extra 1 -extra-attempts 50 -duration 120 -reentry 5 -out l3.json
 //	load-tester -host H -tags 500  -clients 10 -flap 50 -out l6.json                            # tool-side close
 //	load-tester -host H -tags 500  -clients 10 -flap 50 -flap-mode external -out l6.json        # ip link / switch / docker network
 //
@@ -17,11 +17,15 @@
 //	  "format": "mat-load-011", "formatVersion": 1,
 //	  "scenario": "L1" | "L2" | "L3" | "L6" | "custom",
 //	  "config":  { "tags": "500", "tagCount": 500, "clients": 10, "extra": 1, "extraAttempts": 0,
-//	               "flap": 0, "flapMode": "", "durationS": 14400, "latency": true },
+//	               "flap": 0, "flapMode": "", "reentry": 0, "durationS": 14400, "latency": true },
 //	  "latency": { "method": "...", "clockShared": false,
 //	               "relative": {"count","p50Ms","p95Ms","maxMs"}, "absolute": {...}, "note": "..." },
 //	  "l3":      { "attempts": 50, "closeCodes": [4429, ...], "rejected4429": 50, "accepted": 0,
 //	               "errors": 0, "pass": true },
+//	  "reentry": { "method": "...", "clients": 10, "rounds": 5, "limitMs": 35000,
+//	               "close":  { "rounds": 5, "reentered": 5, "failed": 0, "overLimit": 0, "reentryMs": {...}, "pass": true },
+//	               "silent": { ... }, "events": [ { "mode", "round", "extraCloseCode", "reentryMs", "attempts", ... } ],
+//	               "pass": true },     (-reentry N, reentry.go)
 //	  "flap":    { "mode": "close", "clients": 10, "cycles": 50, "expected": 500, "reconnects": 500,
 //	               "failed": 0, "overLimit": 0, "limitMs": 35000, "reconnectMs": {...},
 //	               "slotsOpenAfter": 0, "slotsLeaked": 0, "slotsMeasured": true, "events": [...], "pass": true },
@@ -41,6 +45,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -83,6 +88,7 @@ type loadConfig struct {
 	Extra         int    `json:"extra"`
 	ExtraAttempts int    `json:"extraAttempts"`
 	Flap          int    `json:"flap"`
+	Reentry       int    `json:"reentry"`
 	FlapMode      string `json:"flapMode,omitempty"`
 	DurationS     int    `json:"durationS"`
 	Latency       bool   `json:"latency"`
@@ -139,7 +145,15 @@ type session struct {
 	c       *websocket.Conn
 	cancel  context.CancelFunc
 	dropped chan struct{}
+	// silence(): the session stops heartbeating and reading (so it answers no ping either) but
+	// keeps the TCP connection open, like a client whose cable was pulled on the far side.
+	mute     atomic.Bool
+	silenced chan struct{}
 }
+
+// sessionHeartbeat: how often a session sends {"type":"heartbeat"} (the runtime drops a session
+// silent for 15 s with 4408). A variable so the tests can use a short one.
+var sessionHeartbeat = 5 * time.Second
 
 // openSession dials, waits for hello, subscribes and waits for the snapshot (at most timeout).
 // It returns the time from the dial to the snapshot in ms. dropAfter > 0 treats a silence that
@@ -181,7 +195,7 @@ func openSessionIdle(ctx context.Context, o options, timeout, dropAfter time.Dur
 	}
 	ms := time.Since(start).Milliseconds()
 	sctx, cancel := context.WithCancel(ctx)
-	s := &session{c: c, cancel: cancel, dropped: make(chan struct{})}
+	s := &session{c: c, cancel: cancel, dropped: make(chan struct{}), silenced: make(chan struct{})}
 	go s.run(sctx, dropAfter)
 	return s, ms, nil
 }
@@ -189,13 +203,16 @@ func openSessionIdle(ctx context.Context, o options, timeout, dropAfter time.Dur
 func (s *session) run(ctx context.Context, dropAfter time.Duration) {
 	defer close(s.dropped)
 	go func() {
-		t := time.NewTicker(5 * time.Second)
+		t := time.NewTicker(sessionHeartbeat)
 		defer t.Stop()
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-t.C:
+				if s.mute.Load() {
+					return
+				}
 				wctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 				_ = s.c.Write(wctx, websocket.MessageText, []byte(`{"type":"heartbeat","ts":0}`))
 				cancel()
@@ -213,7 +230,36 @@ func (s *session) run(ctx context.Context, dropAfter time.Duration) {
 			s.c.CloseNow()
 			return
 		}
+		if s.mute.Load() {
+			// Stop reading without closing (cancelling a Read would close the connection):
+			// nothing is read, no ping answered, until close().
+			close(s.silenced)
+			<-ctx.Done()
+			s.c.CloseNow()
+			return
+		}
 	}
+}
+
+// silence makes the session go silent (see session.mute) and returns when its reader has stopped:
+// the reader notices at its next message (the runtime sends deltas and heartbeats), at most wait.
+func (s *session) silence(wait time.Duration) (time.Time, error) {
+	s.mute.Store(true)
+	select {
+	case <-s.silenced:
+		return time.Now(), nil
+	case <-s.dropped:
+		return time.Time{}, errors.New("connection dropped before it went silent")
+	case <-time.After(wait):
+		return time.Time{}, fmt.Errorf("no message from the server in %s: reader not stopped", wait)
+	}
+}
+
+// closeClean ends the session with a close frame (1000) and waits for the close handshake.
+func (s *session) closeClean() {
+	_ = s.c.Close(websocket.StatusNormalClosure, "reentry")
+	s.cancel()
+	<-s.dropped
 }
 
 // close drops the connection without a close frame (abrupt, like a cable pull from this side).
