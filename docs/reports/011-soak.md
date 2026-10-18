@@ -29,7 +29,7 @@ Quy trình và ngưỡng: [contracts/test-protocols.md](../../specs/011-pilot-ha
 | Dữ liệu | `--check-data` cuối kỳ mã 0; số dòng `history` ±1 % | Chưa đo | Chưa đo | Chưa đo |
 | Soak 30 ngày (S2) | như trên | — | — | Chờ người — pilot (T196, P2) |
 
-### 2a. S0 x64 24 giờ (T076): đang chạy
+### 2a. S0 x64 24 giờ (T076): xong 2026-10-19
 
 - **Rig** (tách rời, không phụ thuộc phiên đã khởi động nó): compose project `mat-soak-x64` (`tests/web-it/compose.yaml`, mạng 172.30.57.0/24 và 203.0.57.0/24, cổng 127.0.0.1:48080/48443), container `mat-soak-x64-rt-1` (runtime Release 1.0.0 của nhánh `gd6-docker-runs`, chép vào `~/build/mat-soak-x64/x64/bin`, chạy dưới `supervise.sh`, project soak-standard: 500 Tag, lưu 200 Tag theo thay đổi) và `mat-soak-x64-client-1` (bộ điều khiển `tests/soak/x64-driver.mjs`). Docker `mat-armhf` Linux arm64 trên Apple Silicon, không phải x64 thật.
 - **Tải**: L1 rút gọn — `load-tester` 10 client × 500 Tag (ws 8080) theo từng đoạn ~29 phút kết thúc trước mỗi lần kill; **`kill -9` runtime mỗi 30 phút** (`supervise.sh` chạy lại sau 2 s); **nạp xuống một projectVersion mới mỗi 2 giờ** (tài khoản kỹ sư, ngay sau một lần khởi động lại); `deployment/device/mat-sample.sh` mỗi 60 s trong rt (`MAT_SAMPLE_DIR=/data/mat-sample`, `MAT_TMP_DIR=/dev/shm`). Mật khẩu thử sinh ngẫu nhiên, chỉ nằm trong biến môi trường của các tiến trình trong container.
@@ -38,6 +38,21 @@ Quy trình và ngưỡng: [contracts/test-protocols.md](../../specs/011-pilot-ha
 - **Thu và phân tích** (chạy được bất kỳ lúc nào, lúc chưa xong thì báo `running`): `node tools/soak/x64-soak.mjs collect --out docs/reports/011-soak-x64.json` — chép `/data/mat-sample` và `/rt-data/soak` ra `~/build/mat-soak-x64/soak-collect/<thời điểm>/`, chạy `mat-runtime --check-data --json` lúc đó, rồi `node tools/soak/analyze.mjs <dir>/mat-sample --skip-hours 1 --planned-restarts <số kill + số nạp xuống> --check-data <dir>/check-data.json --svg <dir>/soak.svg`; tóm tắt bộ điều khiển (số kill, nạp xuống committed, đoạn tải đạt, mất sequence, thời gian lên lại lớn nhất) ở khóa `driver` của báo cáo.
 - **Dừng và dọn** (xóa cả dữ liệu, chỉ sau khi đã collect): `node tools/soak/x64-soak.mjs stop`.
 - Hạn chế đã biết trước: trong container không có `/sys/block/mmcblk*`, `/proc/<pid>/io` không đọc được và `dmesg` bị chặn, nên ghi đĩa/ngày, ghi của tiến trình, `dmesg`, eMMC sẽ là `not-measured`; độ dốc RSS cần ≥ 24 giờ sau giờ đầu (`--skip-hours 1`) nên chỉ có khi chạy đủ 25 giờ hoặc dùng `--skip-hours 0`; FD/luồng cần dữ liệu ngày 2 (24 giờ không đủ).
+
+**Kết quả** (2026-10-17 20:38 → 2026-10-18 20:38 UTC, thu 20:46 UTC, `docs/reports/011-soak-x64.json`):
+
+| Mục | Kết quả | Ngưỡng / ghi chú | Trạng thái |
+|---|---|---|---|
+| Đoạn tải L1 rút gọn (10 client × 500 Tag) | 48/48 đạt, 0 mất sequence, p95 trễ tương đối tối đa 195 ms | 0 mất sequence | **Đạt** |
+| `kill -9` mỗi 30 phút | 47 lần; phục vụ lại trung vị 1,04 s, 46/47 ≤ 1,2 s; một lần 25,7 s (05:08 UTC ngày 18, trùng lúc Docker build ASan và bản tối ưu VM cùng lúc trên cùng VM 2,8 GB) | — | Đạt (ghi chú lần chậm) |
+| Nạp xuống projectVersion mới mỗi 2 giờ | 9/9 `committed` (≈ 4,2 s) | — | **Đạt** |
+| RSS tối đa | 34,1 MB (cuối 33,6 MB) | ≤ 150 MB | **Đạt** |
+| WAL `history.db` | 4,3 MB | ≤ 64 MiB | **Đạt** |
+| tmpfs | 0 KiB | ≤ 64 MiB | **Đạt** |
+| `--check-data` cuối kỳ | `quick_check ok` cho `history.db` và `audit.db`; `warning` chỉ vì WAL chưa checkpoint khi chạy lúc runtime đang ghi (lần mở sau tự phục hồi); project digest khớp | không hỏng dữ liệu | Đạt (bộ phân tích tính `warning` là `fail` nên `overall` ghi `fail`) |
+| Độ dốc RSS, FD/luồng, ghi đĩa/ngày, ghi tiến trình, `dmesg`, eMMC, NRestarts | không đo được trong container (xem hạn chế ở trên) | — | Chưa đo |
+
+Kết luận T076: đạt các tiêu chí đo được trên x64; các tiêu chí phụ thuộc thiết bị (eMMC, ghi đĩa, độ dốc nhiều ngày) thuộc soak trên BL335 — S1 7 ngày không chạy ở GĐ 6 theo quyết định người dùng (T081), chuyển sang soak 30 ngày ở bàn thử pilot (T196).
 
 Số tham khảo không thay soak: x64 soak 7 ngày giả của 010 (runtime 0.9.0, 200 Tag lưu trữ, có tổng hợp): ghi ~795 MB/ngày, DB 602 MB (`010-soak-x64.json`).
 

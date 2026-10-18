@@ -1,0 +1,179 @@
+{
+  "task": "T076 (FR-039): accelerated soak S0 on x64",
+  "machine": "Docker mat-armhf on Apple Silicon (Linux arm64, not a real x64); not BL335 numbers",
+  "state": "finished",
+  "startedAt": "2026-10-17T20:38:45.744Z",
+  "plannedHours": 24,
+  "collectedAt": "2026-10-18T20:46:24.721Z",
+  "collectDir": "/Users/lab/build/mat-soak-x64/soak-collect/2026-10-18T20-46-22-734Z",
+  "driver": {
+    "kills": 47,
+    "deploys": 9,
+    "deploysCommitted": 9,
+    "loadSegments": 48,
+    "loadSegmentsPassed": 48,
+    "sequenceGapsTotal": 0,
+    "maxRestartMs": 25661,
+    "done": {
+      "at": "2026-10-18T20:38:46.402Z",
+      "event": "done",
+      "hours": 24,
+      "startedAt": "2026-10-17T20:38:45.801Z",
+      "finishedAt": "2026-10-18T20:38:46.402Z",
+      "kills": 47,
+      "deploys": 9,
+      "segments": 48,
+      "segmentsPassed": 48
+    }
+  },
+  "analyzeExitCode": 1,
+  "analysis": {
+    "schema": "mat-soak-report/1",
+    "generatedAt": "2026-10-18T20:46:24.698Z",
+    "input": {
+      "samples": 1446,
+      "firstT": "2026-10-17T20:39:18Z",
+      "lastT": "2026-10-18T20:45:26Z",
+      "spanHours": 24.1,
+      "boots": [
+        "2b4c3907-cb18-4491-bcda-4917ea9bcab3"
+      ],
+      "files": [
+        "/Users/lab/build/mat-soak-x64/soak-collect/2026-10-18T20-46-22-734Z/mat-sample/samples-0.jsonl"
+      ],
+      "badLines": 0
+    },
+    "thresholds": {
+      "rssSlopeMbPerDay": 0.5,
+      "rssMaxMb": 150,
+      "fdThreadsChange": 0.05,
+      "diskWriteBytesPerDay": 2147483648,
+      "walBytes": 67108864,
+      "tmpfsUsedKb": 65536,
+      "dmesgErrors": 0,
+      "emmcStepsPerPeriod": 1,
+      "lifeYears": 5,
+      "waf": 5
+    },
+    "criteria": {
+      "rssSlope": {
+        "status": "not-measured",
+        "value": null,
+        "detail": "cần ≥ 24 giờ dữ liệu RSS sau 1 giờ đầu"
+      },
+      "rssMax": {
+        "status": "pass",
+        "value": 34.07421875,
+        "unit": "MB",
+        "threshold": 150,
+        "last": 33.58984375
+      },
+      "restarts": {
+        "status": "not-measured",
+        "value": null,
+        "detail": "thiếu restarts (systemctl NRestarts)",
+        "partial": {
+          "bootChanges": 0,
+          "serviceRestarts": 0,
+          "plannedRestarts": 56,
+          "bootMeasured": true,
+          "restartsMeasured": false
+        }
+      },
+      "fd": {
+        "status": "not-measured",
+        "value": null,
+        "detail": "cần fd của ngày 2 và sau ngày 2"
+      },
+      "threads": {
+        "status": "not-measured",
+        "value": null,
+        "detail": "cần threads của ngày 2 và sau ngày 2"
+      },
+      "diskWriteDaily": {
+        "status": "not-measured",
+        "value": null,
+        "detail": "không có blkSectorsWritten",
+        "days": []
+      },
+      "diskWriteProcess": {
+        "status": "not-measured",
+        "value": null,
+        "detail": "không có ioWrite (/proc/<pid>/io)",
+        "days": []
+      },
+      "dmesg": {
+        "status": "not-measured",
+        "value": null,
+        "detail": "dmesg không đọc được"
+      },
+      "wal": {
+        "status": "pass",
+        "value": 4338392,
+        "unit": "bytes",
+        "threshold": 67108864,
+        "last": 4338392
+      },
+      "tmpfs": {
+        "status": "pass",
+        "value": 0,
+        "unit": "KiB used",
+        "threshold": 65536,
+        "last": 0
+      },
+      "checkData": {
+        "status": "fail",
+        "value": {
+          "exitCode": 1,
+          "result": "warning"
+        },
+        "threshold": 0
+      },
+      "emmcHealth": {
+        "status": "not-measured",
+        "value": null,
+        "detail": "không có DEVICE_LIFE_TIME_EST / PRE_EOL_INFO (không hỗ trợ hoặc không đọc được)"
+      },
+      "emmcStep": {
+        "status": "not-measured",
+        "value": null,
+        "detail": "cần life time đầu và cuối kỳ"
+      },
+      "emmcLife": {
+        "status": "not-measured",
+        "value": null,
+        "detail": "chưa tính được tuổi thọ tuyệt đối: cần datasheet của eMMC"
+      }
+    },
+    "emmc": {
+      "start": null,
+      "end": null
+    },
+    "life": {
+      "tbw": {
+        "status": "not-measured",
+        "years": null,
+        "text": "chưa tính được tuổi thọ tuyệt đối: cần datasheet của eMMC"
+      },
+      "extCsd": {
+        "status": "not-measured",
+        "years": null,
+        "text": "chưa tính được: cần EXT_CSD (life time) đầu và cuối kỳ"
+      },
+      "pessimisticYears": null
+    },
+    "overall": "fail",
+    "notMeasured": [
+      "rssSlope",
+      "restarts",
+      "fd",
+      "threads",
+      "diskWriteDaily",
+      "diskWriteProcess",
+      "dmesg",
+      "emmcHealth",
+      "emmcStep",
+      "emmcLife"
+    ]
+  }
+}
