@@ -140,6 +140,19 @@ Giới hạn và phương án:
 
 Còn lại: một biểu thức tốn ≈ 1 µs VM trên Cortex-A7, một khối không chạy VM ≈ 1–1,5 µs (không do cache); quét 550 khối ≈ 2,3 ms khi rảnh. Dưới L1 lần đo trước thời gian quét gấp ≈ 1,9 lần lúc rảnh, nên dự kiến ≈ 4–4,5 ms (sát ngưỡng 5 ms) và CPU ≈ +2,7 điểm một lõi; **phải đo lại A/B/A/B L1 với runtime build từ nhánh này** trước khi kết luận T148.
 
+**Đo lại trên BL335 với 1.0.0-rc.1 (2026-10-18 07:55–09:00, releaseSeq 12, gồm `gd6-logic-perf` và `gd6-logic-rss`).** Cùng cách đo A/B/A/B 4 × 15 phút, 10 client, 500 Tag; CPU tính theo **một lõi**:
+
+| Tiêu chí | Không logic (pha 1, 3) | Có logic 550 khối (pha 2, 4) | Chênh | Ngưỡng | Trạng thái |
+|---|---|---|---|---|---|
+| CPU trung bình | 28,9 / 29,5 % | 32,7 / 32,3 % | **+3,3 điểm** một lõi (+1,65 cả máy) | ≤ +3 | **Không đạt** (vượt 0,3) |
+| RSS trung bình | 16,6 / 17,2 MB | 20,6 / 21,0 MB | **+3,9 MB** | ≤ +5 MB | **Đạt** |
+| Vòng quét | — | trung vị 2,5 ms, p99 3,8 ms (một lần p99 6,5 ms ở đầu pha 2) | — | ≤ 5 ms | **Đạt** |
+| Chu kỳ quét thật | — | `intervalMs` 100, khoảng 9.370 quét mỗi pha | — | `scanMs` 100 | đúng |
+
+0 mất sequence trong cả 4 pha, 550/550 khối OK, p95 trễ client 53–57 ms. So với lần đo trước tối ưu: vòng quét 16 → 2,5 ms, RSS +4,5 → +3,9 MB, CPU +4,9 → +3,3 điểm, trong khi logic nay quét đủ 10 lần/giây (trước đây bị kéo về 4 lần/giây theo vòng 250 ms).
+
+Giới hạn và phương án cho CPU: (a) project ở mức tối đa 550 khối đặt `logic.scanMs` 200–250 ms (ước tính +1,3 đến +1,7 điểm); (b) tối ưu tiếp VM (≈ 1 µs mỗi biểu thức trên Cortex-A7); (c) đọc ngưỡng theo cả máy (2 lõi) như Master Plan §6.2 ghi "2 × Cortex-A7" (+1,65 điểm, đạt). Quyết định hiện hành: tính theo một lõi, T148 **chưa đạt** phần CPU; ghi vào ghi chú phát hành 1.0.0-rc.1.
+
 ### 3.3 T122: OTA thật (SC-023)
 
 2026-10-18 01:56–02:48, runtime 1.0.0, project `tank-demo` 0.1.0 (rảnh). 10 gói `.matupdate` armhf 5,8 MB (releaseSeq 2 đến 11, khóa thử) gửi qua API của Studio (tải lên, `apply` có mật khẩu, `GET /system/update`), quay về bằng tay sau lần thứ 5. Chi tiết: `011-ota-bl335.json`; số đo và quyết định ở ADR-035 mục "Số đo".

@@ -627,5 +627,89 @@
         "tags": 1350
       }
     }
+  },
+  "remeasureRc1": {
+    "date": "2026-10-18",
+    "runtime": "1.0.0-rc.1",
+    "releaseSeq": 12,
+    "commit": "8db76073",
+    "includes": [
+      "gd6-logic-perf (slots, publish changed, logic on its own scanMs period)",
+      "gd6-logic-rss (M_ARENA_MAX 2, malloc_trim)"
+    ],
+    "method": "A/B/A/B 4 x 900 s, load-tester 10 clients 500 Tag (soak-std10) vs soak-logic (550 blocks), /proc sampler every 5 s, GET /api/v1/logic every 30 s; CPU read per ONE core",
+    "phases": [
+      {
+        "n": 1,
+        "logic": false,
+        "cpuAvgPctOneCore": 28.9,
+        "cpuPeakPctOneCore": 32.9,
+        "rssAvgMB": 16.6,
+        "rssMaxMB": 18.1,
+        "seqGaps": 0,
+        "latencyP95Ms": 54
+      },
+      {
+        "n": 2,
+        "logic": true,
+        "cpuAvgPctOneCore": 32.7,
+        "cpuPeakPctOneCore": 35.7,
+        "rssAvgMB": 20.6,
+        "rssMaxMB": 22.2,
+        "seqGaps": 0,
+        "latencyP95Ms": 57,
+        "scan": {
+          "lastMsMedian": 2.59,
+          "lastMsMax": 3.72,
+          "p99MsMax": 6.49,
+          "p99MsEnd": 3.83,
+          "intervalMs": 100,
+          "scans": 9371,
+          "overrun": 1
+        }
+      },
+      {
+        "n": 3,
+        "logic": false,
+        "cpuAvgPctOneCore": 29.5,
+        "cpuPeakPctOneCore": 31.9,
+        "rssAvgMB": 17.2,
+        "rssMaxMB": 18.3,
+        "seqGaps": 0,
+        "latencyP95Ms": 53
+      },
+      {
+        "n": 4,
+        "logic": true,
+        "cpuAvgPctOneCore": 32.3,
+        "cpuPeakPctOneCore": 35.8,
+        "rssAvgMB": 21.0,
+        "rssMaxMB": 22.9,
+        "seqGaps": 0,
+        "latencyP95Ms": 56,
+        "scan": {
+          "lastMsMedian": 2.48,
+          "lastMsMax": 4.46,
+          "p99MsMax": 4.46,
+          "p99MsEnd": 3.83,
+          "intervalMs": 100,
+          "scans": 9375,
+          "overrun": 1
+        }
+      }
+    ],
+    "result": {
+      "cpuDeltaPointsOneCore": 3.3,
+      "cpuDeltaPointsMachine": 1.65,
+      "rssDeltaMB": 3.9,
+      "scanMedianMs": 2.5,
+      "scanP99Ms": 3.83,
+      "criteria": {
+        "cpu<=+3 (one core)": "fail (3.3)",
+        "rss<=+5MB": "pass",
+        "scan<=5ms": "pass (one transient p99 6.49 early in phase 2)"
+      },
+      "note": "logic now really scans every 100 ms (10/s); before gd6-logic-perf it ran at the 250 ms Tag Engine round (4/s). Before optimisation: scan median 16 ms, CPU +4.9, RSS +4.5 MB."
+    }
   }
 }

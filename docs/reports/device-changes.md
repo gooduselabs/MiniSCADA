@@ -299,3 +299,15 @@ Agent OTA (nhánh `gd6-t122`), người dùng cho phép 2026-10-17 ("bạn tự 
 Trạng thái cuối (02:50): mat-runtime active, NRestarts 0, `system/info` `update.enabled:false`, project `tank-demo` 0.1.0 active, digest `sha256:9ba112c6…` như trước; `runtime.json` giống hệt lúc đầu; không còn khóa tin cậy; `mat-t122-adm` tắt; `update/incoming`, `update/ready` rỗng; `/root/mat-stage-011` chỉ còn `etc`, `mat-runtime.service`, `updater-prev`.
 
 **Runtime đang chạy đã đổi:** `/opt/mat-runtime` là bản build thử của T122 (runtime 1.0.0, **releaseSeq 11**, `gd6` 95effeb5, không strip); `/opt/mat-runtime.prev` là bản thử releaseSeq 10. Bản cài gốc 1.0.0 releaseSeq 1 (commit `f1167449`) **không còn trên thiết bị** (mỗi OTA ghi đè `.prev`). Cùng mã runtime 1.0.0 với chênh lệch nhỏ của `gd6` sau đó (sửa rà soát T202, gói có đủ `schemas/0.6`). Muốn về đúng bản gốc: chạy `deploy.sh` với gói `mat-runtime-armhf.tar.gz` của commit đó (hoặc gói mới hơn; `deploy.sh` không chặn `releaseSeq` thấp hơn); `rollback.sh` hay "Quay về bản trước" chỉ về releaseSeq 10. Lưu ý: OTA sau này chỉ nhận gói có `releaseSeq` > 11, trừ khi cài lại bằng `deploy.sh`.
+
+## 2026-10-18 (sáng): cài 1.0.0-rc.1 và đo lại T148 (người dùng cho phép SSH)
+
+| Giờ | Thay đổi | Hoàn tác |
+|---|---|---|
+| 07:54 | Sao lưu `/etc/mat-runtime/runtime.json` vào `/root/mat-stage-011/t148c/` | — (đã xóa sau khi khôi phục) |
+| 07:54 | `deploy.sh` gói `1.0.0-rc.1` releaseSeq 12 (commit `8db76073`); bản thử T122 releaseSeq 11 chuyển sang `/opt/mat-runtime.prev`; kiểm sức khỏe OK sau 1 s | `sh /opt/mat-runtime/deployment/rollback.sh` (về releaseSeq 11) |
+| 07:54 | Đổi mật khẩu ngẫu nhiên và bật `mat-t079-eng` (engineer), `mat-t079-xem` (viewer); `maxLiveClientsPerSource` 10; khởi động lại mat-runtime | 09:00 đã khôi phục |
+| 07:55–09:00 | Nạp xuống qua API: soak-std10, soak-logic, soak-std10, soak-logic, tank-demo (5 lần `committed`); bộ lấy mẫu `/proc` chỉ đọc | — |
+| 09:00 | Khôi phục `runtime.json` (SHA-256 bằng bản gốc `0e979c42…`), khởi động lại, tắt hai tài khoản thử, xóa `/root/mat-stage-011/t148c` | — |
+
+Trạng thái cuối: runtime `1.0.0-rc.1` releaseSeq 12 active (NRestarts 0), `tank-demo` 0.1.0 active, OTA tắt, không khóa tin cậy. Không reboot; không đụng `atscada-*`, `piano-edtech-*`, mật khẩu root, sshd.
