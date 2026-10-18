@@ -74,6 +74,7 @@
 #include "server/http/http_api.hpp"
 #include "server/http/viewer_gate.hpp"
 #include "server/http/web_contexts.hpp"
+#include "server/malloc_tuning.hpp"
 #include "server/project_glue.hpp"
 #include "server/runtime_engine.hpp"
 #include "server/serial_policy.hpp"
@@ -162,6 +163,9 @@ constexpr int64_t kAuditErrorLogMs = 60000;
 
 int main(int argc, char** argv) {
     using namespace mat;
+    // T147: before any thread, at most kMallocArenaMax glibc arenas (one per HTTPS worker kept the
+    // pages of its largest answer: +30 MB RSS on 64 bit with the logic maximum)
+    limitMallocArenas();
     // No core file and no ptrace by the same user: a dump would hold the secrets of the external
     // databases (security review of the fixes; LimitCORE=0 in the unit too).
     ::prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
@@ -572,6 +576,9 @@ int main(int argc, char** argv) {
     engineOptions.logicOptions.audit = [&audit](const AuditEvent& e) { audit.append(e); };
     RuntimeEngine rtEngine(active.model, store, engineOptions);
     rtEngine.firstRound(epochMs());
+    // T147: the logic engine has its blocks and retained keys; logic.json (~0.7 MB as JSON for
+    // the maximum of FR-095) is not read again (a deploy starts the process again)
+    if (validation.project) validation.project->logic = nlohmann::json();
     parts.engine.store(&rtEngine);
     // The alarm engine (feature 009 T038): alarm.db opened and the state rebuilt from it, then
     // from the conditions of the Tags (FR-022). One round per tick, right after the Tag Engine's.
@@ -1198,6 +1205,7 @@ int main(int argc, char** argv) {
     int64_t nextProcSample = monoMs() + kProcStatsPeriodMs;
     int64_t nextSshAudit = monoMs() + kSshAuditPeriodMs;
     int64_t nextUpdateSettle = monoMs() + 1000;
+    int64_t nextMallocTrim = monoMs() + kMallocTrimPeriodMs;
 #ifdef MAT_TEST_HOOKS
     g_persistFailArmed = cfg.testPersistFail;
 #endif
@@ -1217,6 +1225,10 @@ int main(int argc, char** argv) {
             nextProcSample = now + kProcStatsPeriodMs;
             procStats.sample();
             sampleWrites();
+        }
+        if (now >= nextMallocTrim) {  // T147: the free pages of the arenas back to the kernel
+            nextMallocTrim = now + kMallocTrimPeriodMs;
+            trimMalloc();
         }
         if (now >= nextSshAudit) {  // a few small files, read-only (FR-034)
             nextSshAudit = now + kSshAuditPeriodMs;

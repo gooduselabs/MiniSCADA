@@ -10,6 +10,7 @@
 #include "server/http/engineering_api.hpp"
 #include "server/http/engineering_api_internal.hpp"
 #include "server/logic_glue.hpp"
+#include "server/malloc_tuning.hpp"
 
 namespace mat {
 
@@ -35,7 +36,12 @@ int EngineeringApi::logicRoute(mg_connection* c, const GateRequest& r, const Gat
     LogicSubsystem* logic = logic_.logic ? logic_.logic() : nullptr;
     if (path == "/api/v1/logic") {
         if (!logic) return send(c, 200, jsonText(json{{"enabled", false}}), close);
-        return send(c, 200, jsonText(logic->status()), close);
+        const std::string text = jsonText(logic->status());
+        // T147: the tree of the maximum (550 blocks) is ~1 MB of small blocks for 77 KB of text,
+        // in the arena of this worker; its pages go back to the kernel now, not at the next
+        // trim of the main loop (the Studio's online view asks every few seconds)
+        trimMalloc();
+        return send(c, 200, text, close);
     }
     // the two POST routes: a JSON object
     std::string body;

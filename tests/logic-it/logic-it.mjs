@@ -579,9 +579,12 @@ function procStat(pid) {
   const f = s.slice(s.lastIndexOf(')') + 2).split(' ');
   return { ticks: Number(f[11]) + Number(f[12]) };
 }
+/** VmRSS and RssAnon (kB): the file pages of the binary and libraries come and go with the page cache of the host. */
 function rssKb(pid) {
-  const m = /VmRSS:\s+(\d+)/.exec(readFileSync(`/proc/${pid}/status`, 'utf8'));
-  return m ? Number(m[1]) : 0;
+  const s = readFileSync(`/proc/${pid}/status`, 'utf8');
+  const m = /VmRSS:\s+(\d+)/.exec(s);
+  const a = /RssAnon:\s+(\d+)/.exec(s);
+  return { rss: m ? Number(m[1]) : 0, anon: a ? Number(a[1]) : 0 };
 }
 
 /** CPU (% of one core), RSS and the logic scan of the runtime with `clients` live clients for `seconds`. */
@@ -624,12 +627,18 @@ async function runLoad() {
     await sleep(5000);
     const t2 = procStat(pid).ticks;
     const at2 = performance.now();
-    samples.push({ cpu: ((t2 - t) / hz / ((at2 - at) / 1000)) * 100, rss: rssKb(pid) });
+    const mem = rssKb(pid);
+    samples.push({ cpu: ((t2 - t) / hz / ((at2 - at) / 1000)) * 100, rss: mem.rss, anon: mem.anon });
     t = t2;
     at = at2;
+    // T147: both sides ask the runtime over HTTPS every 5 s (the logic side GET /logic, as the
+    // Studio's online view; the baseline system/info), so that the extra RSS is that of logic and
+    // not that of the TLS and session machinery the baseline would otherwise never use
     if (label !== 'baseline') {
       const st = await logicStatus().catch(() => undefined);
       if (st?.scan) scans.push(st.scan);
+    } else {
+      await api('admin', 'GET', '/api/v1/system/info').catch(() => undefined);
     }
   }
   for (const s of socks) {
@@ -647,6 +656,8 @@ async function runLoad() {
   measures.cpuMaxPct = Math.round(Math.max(...cpu) * 100) / 100;
   measures.rssAvgKb = Math.round(avg(rss));
   measures.rssMaxKb = Math.max(...rss);
+  measures.rssAnonAvgKb = Math.round(avg(samples.map((s) => s.anon)));
+  measures.rssAnonMaxKb = Math.max(...samples.map((s) => s.anon));
   measures.liveUpdates = updates;
   measures.sequenceGaps = gaps;
   if (scans.length) {

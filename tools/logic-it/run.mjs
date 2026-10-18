@@ -14,7 +14,8 @@
 //   retain-lost  both files of the retain store damaged while the runtime is down: blocks at 0, warning, audit
 //   deploy-keep  a deploy of a new version of the project keeps the retained values
 //   load         projects/logic-load (gen-bench-projects) with --clients live clients for --seconds, and the same
-//                project without logic.json (baseline): extra CPU, RSS, scan (T147) -> 011-logic-load-x64.json
+//                project without logic.json (baseline): extra CPU, RSS, scan (T147) -> 011-logic-load-x64.json;
+//                both sides ask over HTTPS every 5 s (GET /logic, the baseline system/info)
 // Results: docs/reports/011-logic-x64.json (and 011-logic-load-x64.json for load). Test passwords are random per run,
 // passed with docker exec -e and --password-stdin; nothing is written to a file. Exit 0 when every scenario passed.
 import { spawnSync } from 'node:child_process';
@@ -31,7 +32,16 @@ const opt = (name, def) => {
   return i >= 0 ? argv[i + 1] : def;
 };
 const flag = (name) => argv.includes(name);
-const ALL = ['rules', 'writes-off', 'throttle', 'stop', 'retain-kill', 'retain-lost', 'deploy-keep', 'load'];
+const ALL = [
+  'rules',
+  'writes-off',
+  'throttle',
+  'stop',
+  'retain-kill',
+  'retain-lost',
+  'deploy-keep',
+  'load',
+];
 const scenarios = opt('--scenario', ALL.filter((s) => s !== 'load').join(',')).split(',');
 for (const s of scenarios) if (!ALL.includes(s)) throw new Error(`unknown scenario ${s}`);
 const buildRoot = process.env.MAT_BUILD_ROOT ?? join(homedir(), 'build');
@@ -68,15 +78,27 @@ const users = [
 const secrets = Object.fromEntries(
   users.map(([, , v]) => [
     v,
-    [...randomBytes(24)].map((b) => 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'[b % 57]).join(''),
+    [...randomBytes(24)]
+      .map((b) => 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'[b % 57])
+      .join(''),
   ]),
 );
 
 function build() {
   mkdirSync(buildDir, { recursive: true });
   const r = docker([
-    'run', '--rm', '--name', `logic-it-build-${process.pid}`, '-v', `${root}:/src`, '-v', `${buildDir}:/build`, 'mat-armhf',
-    'sh', '-c', 'cmake -S /src -B /build/x64 -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null && cmake --build /build/x64 --target mat-runtime -j 2',
+    'run',
+    '--rm',
+    '--name',
+    `logic-it-build-${process.pid}`,
+    '-v',
+    `${root}:/src`,
+    '-v',
+    `${buildDir}:/build`,
+    'mat-armhf',
+    'sh',
+    '-c',
+    'cmake -S /src -B /build/x64 -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null && cmake --build /build/x64 --target mat-runtime -j 2',
   ]);
   if (r.code) throw new Error('build failed');
 }
@@ -84,7 +106,9 @@ function build() {
 async function waitLog(pattern, count, ms) {
   const t0 = Date.now();
   while (Date.now() - t0 < ms) {
-    const r = docker(['exec', rt, 'sh', '-c', `grep -c '${pattern}' /logs/runtime.log`], { quiet: true });
+    const r = docker(['exec', rt, 'sh', '-c', `grep -c '${pattern}' /logs/runtime.log`], {
+      quiet: true,
+    });
     if (Number(r.out.trim() || 0) >= count) return true;
     await sleep(500);
   }
@@ -101,9 +125,12 @@ async function startRig(projectDir, map) {
     throw new Error(`runtime did not start:\n${log}`);
   }
   for (const [name, role, v] of users) {
-    const r = docker(['exec', '-e', v, rt, 'sh', '/src/tests/device-it/add-user.sh', name, role, v], {
-      env: { [v]: secrets[v] },
-    });
+    const r = docker(
+      ['exec', '-e', v, rt, 'sh', '/src/tests/device-it/add-user.sh', name, role, v],
+      {
+        env: { [v]: secrets[v] },
+      },
+    );
     if (r.code) throw new Error(`--user-add ${name}: ${r.err}`);
   }
   const f = docker(['exec', rt, bin, '--cert-fingerprint', '--data-dir', '/data']).out;
@@ -122,19 +149,47 @@ function stopRig() {
 function runClient(fp, clientArgs) {
   const envArgs = users.flatMap(([, , v]) => ['-e', v]);
   const r = docker(
-    ['exec', ...envArgs, client, 'node', '--no-warnings', '/src/tests/logic-it/logic-it.mjs', ...clientArgs, '--fp', fp],
+    [
+      'exec',
+      ...envArgs,
+      client,
+      'node',
+      '--no-warnings',
+      '/src/tests/logic-it/logic-it.mjs',
+      ...clientArgs,
+      '--fp',
+      fp,
+    ],
     { env: secrets },
   );
-  const line = r.out.split('\n').filter((l) => l.trim().startsWith('{')).at(-1);
-  if (!line) return { scenario: clientArgs[0], checks: [{ name: 'client wrote a result', pass: false, detail: (r.out + r.err).slice(-2000) }], pass: false };
+  const line = r.out
+    .split('\n')
+    .filter((l) => l.trim().startsWith('{'))
+    .at(-1);
+  if (!line)
+    return {
+      scenario: clientArgs[0],
+      checks: [
+        { name: 'client wrote a result', pass: false, detail: (r.out + r.err).slice(-2000) },
+      ],
+      pass: false,
+    };
   return JSON.parse(line);
 }
 
 /** Restarts the runtime with these extra arguments (supervise.sh reads /data/extra-args at each start). */
 async function restartWith(list) {
-  const before = Number(docker(['exec', rt, 'sh', '-c', "grep -c 'https ok on :8443' /logs/runtime.log"]).out.trim());
+  const before = Number(
+    docker(['exec', rt, 'sh', '-c', "grep -c 'https ok on :8443' /logs/runtime.log"]).out.trim(),
+  );
   const words = list.map((w) => `'${w}'`).join(' ');
-  docker(['exec', rt, 'sh', '-c', `printf '%s\\n' ${words} > /data/extra-args; kill -TERM $(cat /run/mat-runtime.pid)`]);
+  docker([
+    'exec',
+    rt,
+    'sh',
+    '-c',
+    `printf '%s\\n' ${words} > /data/extra-args; kill -TERM $(cat /run/mat-runtime.pid)`,
+  ]);
   if (!(await waitLog('https ok on :8443', before + 1, 60000))) throw new Error('restart failed');
   await sleep(800);
 }
@@ -142,14 +197,22 @@ async function restartWith(list) {
 function merge(parts, name) {
   const checks = parts.flatMap((p) => p.checks ?? []);
   const measures = Object.assign({}, ...parts.map((p) => p.measures ?? {}));
-  return { scenario: name, checks, measures, pass: checks.length > 0 && checks.every((c) => c.pass) };
+  return {
+    scenario: name,
+    checks,
+    measures,
+    pass: checks.length > 0 && checks.every((c) => c.pass),
+  };
 }
 
 function show(res) {
   const bad = res.checks.filter((c) => !c.pass);
-  console.log(`${res.scenario}: ${res.checks.length} checks, ${bad.length} failed${res.pass ? ' - PASS' : ' - FAILED'}`);
+  console.log(
+    `${res.scenario}: ${res.checks.length} checks, ${bad.length} failed${res.pass ? ' - PASS' : ' - FAILED'}`,
+  );
   for (const b of bad) console.log(`  FAIL ${b.name}: ${b.detail ?? ''}`);
-  if (res.measures && Object.keys(res.measures).length) console.log(`  measures: ${JSON.stringify(res.measures).slice(0, 1500)}`);
+  if (res.measures && Object.keys(res.measures).length)
+    console.log(`  measures: ${JSON.stringify(res.measures).slice(0, 1500)}`);
 }
 
 const machine = sh('uname', ['-sm']).out.trim();
@@ -160,7 +223,8 @@ const logicProject = '/src/tests/logic-it/projects/logic-it';
 let failed = 0;
 try {
   if (!flag('--no-build')) build();
-  if (!existsSync(join(buildDir, 'x64/bin/mat-runtime'))) throw new Error(`no runtime in ${buildDir}/x64/bin`);
+  if (!existsSync(join(buildDir, 'x64/bin/mat-runtime')))
+    throw new Error(`no runtime in ${buildDir}/x64/bin`);
   sh('node', [join(root, 'tests/logic-it/make-project.mjs')]);
   for (const s of scenarios) {
     console.log(`--- ${s}`);
@@ -169,7 +233,13 @@ try {
       // projects/logic-load (FR-095 maximum) and the same project without logic.json
       const out = join(buildDir, 'logic-load-projects');
       rmSync(out, { recursive: true, force: true });
-      sh('node', [join(root, 'tools/gen-bench-projects.mjs'), '--out', out, '--only', 'logic-load']);
+      sh('node', [
+        join(root, 'tools/gen-bench-projects.mjs'),
+        '--out',
+        out,
+        '--only',
+        'logic-load',
+      ]);
       const base = join(out, 'logic-load-baseline');
       mkdirSync(base, { recursive: true });
       sh('cp', ['-R', `${join(out, 'logic-load')}/.`, base]);
@@ -182,11 +252,24 @@ try {
       const scr = join(base, 'screens/tong-quan.screen.json');
       writeFileSync(scr, readFileSync(scr, 'utf8').replace(/LOGIC\.C001\.VALUE/g, 'INT.R001'));
       const runs = [];
-      for (const [label, dir] of [['baseline', 'logic-load-baseline'], ['logic', 'logic-load']]) {
+      for (const [label, dir] of [
+        ['baseline', 'logic-load-baseline'],
+        ['logic', 'logic-load'],
+      ]) {
         const fp = await startRig(`/build/logic-load-projects/${dir}`, logicMap);
         // the client container does not mount the build dir: its copy of the project (the Tag list)
         docker(['cp', join(out, dir), `${client}:/tmp/load-project`]);
-        const r = runClient(fp, ['load', '--seconds', seconds, '--clients', clients, '--label', label, '--project', '/tmp/load-project']);
+        const r = runClient(fp, [
+          'load',
+          '--seconds',
+          seconds,
+          '--clients',
+          clients,
+          '--label',
+          label,
+          '--project',
+          '/tmp/load-project',
+        ]);
         r.scenario = `load-${label}`;
         show(r);
         runs.push(r);
@@ -200,6 +283,8 @@ try {
         extraCpuPoints: Math.round((l.cpuAvgPct - b.cpuAvgPct) * 100) / 100,
         extraRssKb: l.rssAvgKb - b.rssAvgKb,
         extraRssMaxKb: l.rssMaxKb - b.rssMaxKb,
+        // the anonymous part only (heap, stacks): the file pages of the same binary vary with the page cache
+        extraRssAnonKb: l.rssAnonAvgKb - b.rssAnonAvgKb,
       };
       res.checks.push({
         name: 'x64 logic maximum: <= +3 CPU points, <= +5 MB RSS (SC-028; x64 pre-check, BL335 is T148)',
@@ -213,7 +298,8 @@ try {
         task: 'T147',
         date: new Date().toISOString(),
         machine: `${machine}; Docker mat-armhf ${arch} (Linux ${arch} on Apple Silicon, not a real x64)`,
-        project: 'projects/logic-load (tools/gen-bench-projects.mjs --only logic-load) vs. the same project without logic.json',
+        project:
+          'projects/logic-load (tools/gen-bench-projects.mjs --only logic-load) vs. the same project without logic.json',
         clients: Number(clients),
         seconds: Number(seconds),
         ...res.measures,
@@ -227,7 +313,13 @@ try {
       // logic.writes is "off" by default (device-config): every scenario but writes-off runs with a runtime.json
       // that turns it on (what root does on a device), and flushS 10 (the minimum) for retain-kill
       if (s !== 'writes-off') {
-        docker(['exec', rt, 'sh', '-c', `printf '{"logic":{"writes":"on","flushS":10}}\\n' > /data/runtime-on.json`]);
+        docker([
+          'exec',
+          rt,
+          'sh',
+          '-c',
+          `printf '{"logic":{"writes":"on","flushS":10}}\\n' > /data/runtime-on.json`,
+        ]);
         await restartWith(['--config', '/data/runtime-on.json']);
       }
       if (s === 'writes-off') {
@@ -236,7 +328,11 @@ try {
         const a = runClient(fp, ['stop']);
         const reset = docker(['exec', rt, bin, '--logic-writes-reset', '--data-dir', '/data']);
         const b = runClient(fp, ['stop-after']);
-        b.checks.unshift({ name: 'root: mat-runtime --logic-writes-reset exits 0', pass: reset.code === 0, detail: (reset.out + reset.err).trim().slice(0, 300) });
+        b.checks.unshift({
+          name: 'root: mat-runtime --logic-writes-reset exits 0',
+          pass: reset.code === 0,
+          detail: (reset.out + reset.err).trim().slice(0, 300),
+        });
         res = merge([a, b], 'stop');
       } else if (s === 'retain-lost') {
         const a = runClient(fp, ['retain-lost', '--phase', 'break']);
@@ -259,12 +355,15 @@ try {
 }
 if (!scenarios.every((s) => s === 'load')) {
   const reportPath = join(root, 'docs/reports/011-logic-x64.json');
-  const prev = existsSync(reportPath) ? JSON.parse(readFileSync(reportPath, 'utf8')) : { scenarios: {} };
+  const prev = existsSync(reportPath)
+    ? JSON.parse(readFileSync(reportPath, 'utf8'))
+    : { scenarios: {} };
   prev.task = 'T146 (SC-025 to SC-028)';
   prev.runner = 'tools/logic-it.ps1 (tools/logic-it/run.mjs, tests/logic-it/logic-it.mjs)';
   prev.machine = `${machine}; Docker mat-armhf ${arch} (Linux ${arch} on Apple Silicon, not a real x64)`;
   prev.scenarios = prev.scenarios ?? {};
-  for (const [k, v] of Object.entries(results)) if (k !== 'load') prev.scenarios[k] = { date: new Date().toISOString(), ...v };
+  for (const [k, v] of Object.entries(results))
+    if (k !== 'load') prev.scenarios[k] = { date: new Date().toISOString(), ...v };
   writeFileSync(reportPath, `${JSON.stringify(prev, null, 2)}\n`);
   console.log(`-> ${reportPath}`);
 }
