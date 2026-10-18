@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <chrono>
 #include <cstdio>
@@ -266,8 +267,9 @@ struct Row {
 };
 
 // (action, result, code, target, source address, user): R11 coalesces per (action, source,
-// account); result, code and target are added so that one row never mixes two refusals.
-using WindowKey = std::tuple<AuditAction, AuditResult, std::optional<std::string>,
+// account); result, code and target are added so that one row never mixes two refusals, the
+// budget so that a refusal of the Host policy never counts in a row of the gate (T200 of 011).
+using WindowKey = std::tuple<AuditBudget, AuditAction, AuditResult, std::optional<std::string>,
                              std::optional<std::string>, std::string, std::optional<std::string>>;
 
 struct Window {
@@ -276,9 +278,18 @@ struct Window {
     int64_t count = 0;    // events counted in the row
     int64_t written = 0;  // count already in the file
     Row row;
-    std::map<std::string, int64_t> byAction;  // audit.suppressed only
-    std::map<std::string, int64_t> bySource;  // audit.suppressed only (feature 011)
+    std::map<std::string, int64_t> byAction;   // audit.suppressed only
+    std::map<std::string, int64_t> bySource;   // audit.suppressed only (feature 011)
+    AuditBudget budget = AuditBudget::Shared;  // audit.suppressed only: the budget it counts for
 };
+
+constexpr size_t kAuditBudgets = 2;  // AuditBudget::Shared, AuditBudget::HostPolicy
+
+size_t budgetIndex(AuditBudget b) { return b == AuditBudget::HostPolicy ? 1 : 0; }
+
+int budgetRows(AuditBudget b) {
+    return b == AuditBudget::HostPolicy ? kAuditHostRowsPerWindow : kAuditLimitedRowsPerWindow;
+}
 
 // Feature 011 (L-06 of 005): audit.suppressed keeps where its events came from, by address (the
 // port would make every connection a source of its own), at most this many, the rest under "*".
@@ -296,9 +307,12 @@ std::string sourceAddressOf(const std::string& source) {
     return source;
 }
 
+// The row of the shared budget keeps the format of 005 (+ sources); that of the Host policy adds
+// "budget": "host" (T200 of 011).
 std::string suppressedDetail(const Window& w) {
     nlohmann::json d(w.byAction);
     d["sources"] = nlohmann::json(w.bySource);
+    if (w.budget == AuditBudget::HostPolicy) d["budget"] = "host";
     return jsonText(d);
 }
 
@@ -324,10 +338,12 @@ struct AuditLog::Impl {
     sqlite3_stmt* insert = nullptr;
     sqlite3_stmt* update = nullptr;
     std::map<WindowKey, Window> windows;
-    std::optional<Window> suppressed;
-    std::deque<int64_t> limitedRows;  // mono time of each limited row of the last 60 s
-    std::string boot;                 // boot id of this run (the table of tag write requests)
-    int64_t openedMono = 0;           // when this run opened the log
+    // Per budget (budgetIndex()): its audit.suppressed row of the current minute, and the mono
+    // time of each of its limited rows of the last 60 s.
+    std::array<std::optional<Window>, kAuditBudgets> suppressed;
+    std::array<std::deque<int64_t>, kAuditBudgets> limitedRows;
+    std::string boot;        // boot id of this run (the table of tag write requests)
+    int64_t openedMono = 0;  // when this run opened the log
     std::map<std::string, int64_t> writeMono;  // request id -> mono time of its receipt (this run)
     int lastCode = 0;
     std::string lastError;
@@ -388,8 +404,8 @@ struct AuditLog::Impl {
         if (db) sqlite3_close(db);
         db = nullptr;
         windows.clear();
-        suppressed.reset();
-        limitedRows.clear();
+        for (auto& s : suppressed) s.reset();
+        for (auto& l : limitedRows) l.clear();
     }
 
     Row rowOf(const AuditEvent& e, std::optional<std::string> detail, bool limited) const {
@@ -444,7 +460,9 @@ struct AuditLog::Impl {
         };
         for (const auto& kv : windows)
             if (due(kv.second)) return true;
-        return suppressed && due(*suppressed);
+        for (const auto& s : suppressed)
+            if (s && due(*s)) return true;
+        return false;
     }
 
     // Windows that are over and fully written are done with.
@@ -453,10 +471,10 @@ struct AuditLog::Impl {
             it = expired(it->second, mono) && it->second.count == it->second.written
                      ? windows.erase(it)
                      : std::next(it);
-        if (suppressed && expired(*suppressed, mono) && suppressed->count == suppressed->written)
-            suppressed.reset();
-        while (!limitedRows.empty() && mono - limitedRows.front() >= kAuditWindowMs)
-            limitedRows.pop_front();
+        for (auto& s : suppressed)
+            if (s && expired(*s, mono) && s->count == s->written) s.reset();
+        for (auto& l : limitedRows)
+            while (!l.empty() && mono - l.front() >= kAuditWindowMs) l.pop_front();
     }
 
     // One synced transaction: the counts still in memory (every window, or only those whose
@@ -499,7 +517,8 @@ struct AuditLog::Impl {
         };
         bool ok = true;
         for (auto& kv : windows) ok = ok && flushOne(kv.second, false);
-        if (suppressed) ok = ok && flushOne(*suppressed, true);
+        for (auto& s : suppressed)
+            if (s) ok = ok && flushOne(*s, true);
         int64_t id = 0;
         if (ok && row) {
             id = insertRow(*row);
@@ -517,9 +536,11 @@ struct AuditLog::Impl {
         return id;
     }
 
-    // Over 10 limited rows in the last 60 s: the event counts in the audit.suppressed row of the
-    // current minute.
-    int64_t suppress(AuditAction action, const std::string& source, int64_t mono) {
+    // Over the rows of its budget in the last 60 s: the event counts in the audit.suppressed row of
+    // the current minute of that budget.
+    int64_t suppress(AuditAction action, const std::string& source, AuditBudget budget,
+                     int64_t mono) {
+        std::optional<Window>& current = suppressed[budgetIndex(budget)];
         const std::string name = auditActionName(action);
         auto countSource = [&](Window& w) {
             const std::string a = sourceAddressOf(source);
@@ -529,13 +550,14 @@ struct AuditLog::Impl {
             else
                 ++w.bySource["*"];
         };
-        if (suppressed && !expired(*suppressed, mono)) {
-            ++suppressed->count;
-            ++suppressed->byAction[name];
-            countSource(*suppressed);
-            return suppressed->rowId;
+        if (current && !expired(*current, mono)) {
+            ++current->count;
+            ++current->byAction[name];
+            countSource(*current);
+            return current->rowId;
         }
         Window w;
+        w.budget = budget;
         w.byAction[name] = 1;
         countSource(w);
         w.row.source = "system";
@@ -548,7 +570,7 @@ struct AuditLog::Impl {
         w.rowId = id;
         w.openedMono = mono;
         w.count = w.written = 1;
-        suppressed = std::move(w);
+        current = std::move(w);
         return id;
     }
 
@@ -565,15 +587,16 @@ struct AuditLog::Impl {
             return commit(&r, false, mono);
         }
         Row r = rowOf(e, std::move(detail), true);
-        WindowKey key{r.action, r.result, r.code, r.target, r.source, r.user};
+        WindowKey key{e.budget, r.action, r.result, r.code, r.target, r.source, r.user};
         auto it = windows.find(key);
         if (it != windows.end() && !expired(it->second, mono)) {
             ++it->second.count;
             return it->second.rowId;
         }
         prune(mono);
-        if (limitedRows.size() >= static_cast<size_t>(kAuditLimitedRowsPerWindow))
-            return suppress(e.action, e.source, mono);
+        std::deque<int64_t>& rows = limitedRows[budgetIndex(e.budget)];
+        if (rows.size() >= static_cast<size_t>(budgetRows(e.budget)))
+            return suppress(e.action, e.source, e.budget, mono);
         stamp(r);
         const int64_t id = commit(&r, false, mono);  // writes the count of the window that is over
         Window w;
@@ -582,7 +605,7 @@ struct AuditLog::Impl {
         w.count = w.written = 1;
         w.row = std::move(r);
         windows[key] = std::move(w);
-        limitedRows.push_back(mono);
+        rows.push_back(mono);
         return id;
     }
 
