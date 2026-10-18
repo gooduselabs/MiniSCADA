@@ -297,6 +297,7 @@ int HistoryApi::catalogJson(mg_connection* c, bool close) {
         }
         body["groups"].push_back(std::move(gj));
     }
+    lease.reset();  // the answer is sent without the read connection (see series)
     return eapi::send(c, 200, jsonText(body), close);
 }
 
@@ -396,6 +397,11 @@ int HistoryApi::series(mg_connection* c, const GateRequest& r, const GateDecisio
     SeriesResult res;
     if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = querySeries(*lease, sp); }))
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    // The query holds the session's slot and the read connection, the sending of the answer does
+    // not: a client that reads the whole answer and asks again at once must find both free (as
+    // T059 in the alarm history: before, they were given back after the answer was written).
+    lease.reset();
+    ticket.reset();
     if (res.status != QueryStatus::Ok) {
         if (res.status == QueryStatus::ScanLimit)
             limiter_.recordRejectedLimit();
@@ -474,6 +480,8 @@ int HistoryApi::aggregate(mg_connection* c, const GateRequest& r, const GateDeci
     AggregateResult res;
     if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = queryAggregate(*lease, ap); }))
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    lease.reset();  // the answer is sent without the slot and the connection (see series)
+    ticket.reset();
     if (res.status != QueryStatus::Ok) {
         if (res.status == QueryStatus::RangeTooLarge)
             limiter_.recordRejectedLimit();
@@ -574,6 +582,8 @@ int HistoryApi::rows(mg_connection* c, const GateRequest& r, const GateDecision&
     RowsResult res;
     if (!runLowPriority(c, cancel, opt_.testHold, [&] { res = queryRows(*lease, rp); }))
         return fail(c, 503, "HISTORY_UNAVAILABLE", close);
+    lease.reset();  // the answer is sent without the slot and the connection (see series)
+    ticket.reset();
     if (res.status != QueryStatus::Ok) {
         if (res.status == QueryStatus::Timeout)
             limiter_.recordTimeout(opt_.nowUtc ? opt_.nowUtc() : 0);
@@ -705,6 +715,8 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
             },
             rowsOut);
     });
+    lease.reset();  // before the terminator and the audit record (see series)
+    ticket.reset();
     const bool complete = ran && st == QueryStatus::Ok && writeOk;
     if (complete)
         mg_write(c, "0\r\n\r\n", 5);  // no terminator on a failure: an incomplete file

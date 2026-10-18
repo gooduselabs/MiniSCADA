@@ -37,7 +37,8 @@ struct RuntimeEngineOptions {
     std::function<std::string(const std::string& port)> checkPort;
     // Feature 011 (logic v2, T136, T139): logic.json of the project (null: none) and the logic.*
     // keys of runtime.json. Its retained values share the store of the retained Tags (keys
-    // logic/<id>/<field>); its round runs inside the engine's, after the calculated Tags.
+    // logic/<id>/<field>); its round runs inside the engine's, after the calculated Tags. Read
+    // only by firstRound(): the caller may free the document after it (T147).
     const nlohmann::json* logic = nullptr;
     LogicOptions logicOptions;
 };

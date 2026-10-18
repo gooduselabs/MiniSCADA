@@ -216,7 +216,7 @@ RetainValue logicRetainToStore(const std::string& key, const json& v) {
 
 LogicSubsystem::LogicSubsystem(const ProjectModel& model, const json& doc, LogicOptions options,
                                const logic::RetainMap& retain, bool retainLost)
-    : model_(model), doc_(doc), opt_(std::move(options)), retainLost_(retainLost) {
+    : model_(model), opt_(std::move(options)), retainLost_(retainLost) {
     logic::TagInfoMap tags;
     for (size_t i = 0; i < model_.tags.size(); ++i) {
         const TagModel& t = model_.tags[i];
@@ -249,15 +249,15 @@ LogicSubsystem::LogicSubsystem(const ProjectModel& model, const json& doc, Logic
     eo.retain = &start;
     eo.retainLost = retainLost_;
     eo.tables = &model_.tables;
-    engine_ = std::make_unique<logic::Engine>(doc_, eo);
+    engine_ = std::make_unique<logic::Engine>(doc, eo);
     for (const std::string& tag : engine_->tags()) {  // T148: the model index of each slot
         const auto it = index_.find(tag);
         slotModel_.push_back(it != index_.end() ? static_cast<int64_t>(it->second) : -1);
         slotPublish_.push_back(it != index_.end() && engine_->outputTags().count(tag) > 0);
     }
-    hasWrites_ = !logic::blocksOf(doc_, "writes").empty() ||
-                 (doc_.contains("writes") && doc_["writes"].is_array() && !doc_["writes"].empty());
-    for (const json* r : logic::blocksOf(doc_, "rules")) {
+    hasWrites_ = !logic::blocksOf(doc, "writes").empty() ||
+                 (doc.contains("writes") && doc["writes"].is_array() && !doc["writes"].empty());
+    for (const json* r : logic::blocksOf(doc, "rules")) {
         const std::string id = logic::blockId(*r);
         ruleInputs_[id] = engine_->inputsOf(id);
     }

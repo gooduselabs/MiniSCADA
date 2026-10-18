@@ -104,6 +104,7 @@ void RuntimeEngine::firstRound(int64_t epochMs) {
             logic_.reset();
         }
     }
+    options_.logic = nullptr;  // not read again: the caller may free the document (T147)
     engine_->step(epochMs);
 }
 

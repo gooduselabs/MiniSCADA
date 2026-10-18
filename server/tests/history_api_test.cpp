@@ -618,3 +618,31 @@ TEST(HistoryApi, OneTokenHasOneSessionWhateverTheSpacingOrCaseOfTheHeader) {  //
     auto a = r.api->limiter().tryAcquire(QueryLimiter::Kind::Query, "same");
     EXPECT_FALSE(r.api->limiter().tryAcquire(QueryLimiter::Kind::Query, "same").has_value());
 }
+
+// Feature 011 (same fault as T059 in the alarm history): a session that waits for each answer
+// before asking again is never refused. The handlers held the session's slot and the read
+// connection until after the answer was written (and, for an export, the audit record), so the
+// next request of the same session could arrive first and get 429 BUSY. As a browser does: one
+// token, two connections kept open (each served by its own worker thread), the next request on the
+// other one. A fresh sign-in (getAs) is a new session and a new TLS connection is a handshake
+// later: both hide the fault.
+TEST(HistoryApi, ARequestAfterTheAnswerOfTheLastOneIsNever429) {
+    Rig r;
+    const std::string tok = r.bearer("xem1");
+    const std::vector<std::string> paths = {
+        r.q("series", "group=dien&tags=METER1.KW&res=raw&maxPoints=5000&" + kRange),
+        r.q("rows", "group=dien&tags=METER1.KW,METER1.NOTE&limit=500&" + kRange),
+        r.q("aggregate", "group=dien&tags=METER1.KW&bucketMs=60000&" + kRange),
+        r.q("export.csv", "group=dien&tags=METER1.KW,METER1.NOTE&" + kRange)};
+    CurlClient a(r.https());
+    CurlClient b(r.https());
+    int refused = 0;
+    for (int i = 0; i < 200; ++i) {
+        CurlClient& c = i % 2 ? b : a;
+        const HttpResult res =
+            c.request(getReq(paths[static_cast<size_t>(i / 2) % paths.size()], {tok}));
+        if (res.status == 429) ++refused;
+        EXPECT_TRUE(res.status == 200 || res.status == 429) << i << " " << res.body;
+    }
+    EXPECT_EQ(refused, 0) << "of 200 requests one after the other";
+}

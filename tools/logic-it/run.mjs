@@ -14,7 +14,8 @@
 //   retain-lost  both files of the retain store damaged while the runtime is down: blocks at 0, warning, audit
 //   deploy-keep  a deploy of a new version of the project keeps the retained values
 //   load         projects/logic-load (gen-bench-projects) with --clients live clients for --seconds, and the same
-//                project without logic.json (baseline): extra CPU, RSS, scan (T147) -> 011-logic-load-x64.json
+//                project without logic.json (baseline): extra CPU, RSS, scan (T147) -> 011-logic-load-x64.json;
+//                both sides ask over HTTPS every 5 s (GET /logic, the baseline system/info)
 // Results: docs/reports/011-logic-x64.json (and 011-logic-load-x64.json for load). Test passwords are random per run,
 // passed with docker exec -e and --password-stdin; nothing is written to a file. Exit 0 when every scenario passed.
 import { spawnSync } from 'node:child_process';
@@ -282,6 +283,8 @@ try {
         extraCpuPoints: Math.round((l.cpuAvgPct - b.cpuAvgPct) * 100) / 100,
         extraRssKb: l.rssAvgKb - b.rssAvgKb,
         extraRssMaxKb: l.rssMaxKb - b.rssMaxKb,
+        // the anonymous part only (heap, stacks): the file pages of the same binary vary with the page cache
+        extraRssAnonKb: l.rssAnonAvgKb - b.rssAnonAvgKb,
       };
       res.checks.push({
         name: 'x64 logic maximum: <= +3 CPU points, <= +5 MB RSS (SC-028; x64 pre-check, BL335 is T148)',

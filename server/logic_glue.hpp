@@ -176,7 +176,6 @@ class LogicSubsystem {
     void logLine(const std::string& line);
 
     const ProjectModel& model_;
-    nlohmann::json doc_;
     LogicOptions opt_;
     bool retainLost_ = false;
     std::unordered_map<std::string, size_t> index_;  // Tag id -> model index
