@@ -12,7 +12,7 @@ Mọi phép đo ghi: phiên bản (`system/info`), mã commit, cấu hình (`run
 |---|---|---|---|---|
 | L1 | 500 Tag (Tag tính toán + mô phỏng `SIM.*`), 10 client, 4 giờ | cổng 8080 (HTTP) và 8443 xen kẽ | CPU (từ `/proc/stat` và `/proc/<pid>/stat`), RSS, `liveLagP95Ms`, mất sequence | CPU trung bình ≤ 30 %, đỉnh ≤ 60 %; RSS ≤ 150 MB; 0 mất sequence |
 | L2 | 1.000 Tag, 10 client, 1 giờ | như L1 | như L1 | CPU trung bình mục tiêu ≤ 50 %; RSS ≤ 150 MB; không đạt thì báo giới hạn và phương án |
-| L3 | Client 11 | 10 client đang chạy | mã đóng của client 11 | 4429 ở 100 % lần thử (50 lần); client 1 ngắt thì client mới vào được trong ≤ 35 s |
+| L3 | Client 11 | 10 client đang chạy | mã đóng của client 11; thời gian tới khi client mới vào được sau khi client 1 đóng sạch và sau khi client 1 im lặng (`load-tester -extra-attempts 50 -reentry N`) | 4429 ở 100 % lần thử (50 lần); client 1 ngắt thì client mới vào được trong ≤ 35 s |
 | L4 | F5 đồng loạt: 10 trang Chrome headless mở màn hình 250 item, F5 cùng lúc, 50 vòng | cache trống | thời gian tới dữ liệu sống đầu tiên của từng trang | mọi trang ≤ 5 s (007 SC-003) |
 | L5 | Màn hình 300 đến 500 phần tử SVG, 10 client | Chrome headless | FPS animation, RSS tab | ≥ 30 FPS với 50 animation (Master Plan §6.4) |
 | L6 | Cắt mạng 50 lần (tắt cổng switch hoặc `ip link` ⚠️🔌) | 10 client | thời gian nối lại, số slot rò | 100 % nối lại ≤ 35 s; 0 slot rò |

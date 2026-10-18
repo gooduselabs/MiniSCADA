@@ -7,6 +7,7 @@
 //	load-tester -host ... -resub 100                            # snapshot/subscribe race (FR-020)
 //	load-tester -host ... -slot-test                            # heartbeat timeout frees the slot
 //	load-tester -host ... -tags 500|1000 -extra-attempts 50 -flap 50 -latency  # feature 011, see load011.go
+//	load-tester -host ... -tags 500 -extra-attempts 50 -reentry 5               # L3 with re-entry, see reentry.go
 package main
 
 import (
@@ -104,6 +105,7 @@ func main() {
 	resub := flag.Int("resub", 0, "run the resubscribe race test with N subscriptions instead")
 	duration := flag.Int("duration", 60, "seconds to hold regular clients")
 	extraAttemptsN := flag.Int("extra-attempts", 0, "feature 011 L3: N successive extra clients (instead of -extra parallel ones), each must get close 4429")
+	reentryN := flag.Int("reentry", 0, "feature 011 L3: after the hold, N rounds each of 'client 1 closes' and 'client 1 goes silent' with every slot held; a new client must get in within 35 s (see reentry.go)")
 	flapN := flag.Int("flap", 0, "feature 011 L6: N disconnect/reconnect cycles of the -clients sessions instead of the hold")
 	flapMode := flag.String("flap-mode", "close", "close: this tool drops the sockets | external: wait for cuts made outside (ip link, switch port, docker network)")
 	flapHold := flag.Int("flap-hold", 5, "close mode: seconds connected before each drop")
@@ -133,7 +135,7 @@ func main() {
 		os.Exit(2)
 	}
 	cfg := loadConfig{Tags: o.tags, TagCount: len(o.tagList()), Clients: *clients, Extra: *extra,
-		ExtraAttempts: *extraAttemptsN, Flap: *flapN, DurationS: *duration, Latency: *latency}
+		ExtraAttempts: *extraAttemptsN, Flap: *flapN, Reentry: *reentryN, DurationS: *duration, Latency: *latency}
 	if *flapN > 0 {
 		cfg.FlapMode = *flapMode
 	}
@@ -234,6 +236,12 @@ func main() {
 		go func() { defer wg.Done(); results[idx] = runClient(ctx, o, idx+1, 5*time.Second, modeNormal) }()
 	}
 	wg.Wait()
+	var reentry *reentryResult
+	if *reentryN > 0 {
+		// The hold's clients have closed: reentryTest fills every slot with its own sessions.
+		r := reentryTest(ctx, o, reentryConfig{Clients: *clients, Rounds: *reentryN, Limit: 35 * time.Second})
+		reentry = &r
+	}
 	var queryDoc any
 	if queryDone != nil {
 		close(stopQueries)
@@ -245,9 +253,12 @@ func main() {
 	if queryDoc != nil {
 		doc["query"] = queryDoc
 	}
-	checks := buildChecks(scenario, s, l3, nil)
+	checks, nm := withReentry(buildChecks(scenario, s, l3, nil), notMeasured(scenario), reentry)
 	if l3 != nil {
 		doc["l3"] = l3
+	}
+	if reentry != nil {
+		doc["reentry"] = reentry
 	}
 	if *latency {
 		doc["latency"] = aggregateLatency(results, o)
@@ -258,7 +269,7 @@ func main() {
 		"scenario":      scenario,
 		"config":        cfg,
 		"checks":        checks,
-		"notMeasured":   notMeasured(scenario),
+		"notMeasured":   nm,
 		"pass":          allPass(checks),
 		"scenarioId":    fmt.Sprintf("load-%dx+%dslow+%d-%s", *clients, *slow, *extra, o.tags),
 		"durationS":     *duration,
@@ -272,7 +283,7 @@ func main() {
 		doc[k] = v
 	}
 	writeDoc(doc, *out)
-	if s.ProtocolMismatch > 0 || (scenario != "custom" && !allPass(checks)) {
+	if s.ProtocolMismatch > 0 || ((scenario != "custom" || reentry != nil) && !allPass(checks)) {
 		os.Exit(1)
 	}
 }

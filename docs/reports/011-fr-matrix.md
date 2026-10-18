@@ -58,7 +58,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 | FR | Nội dung | Task | Bằng chứng | Trạng thái |
 |---|---|---|---|---|
 | FR-037 | `mat-sample` chỉ đọc, tmpfs, quay vòng | T067, T070 | `tools/soak/mat-sample.test.mjs` (cây `/proc` giả); `node --test` soak + powercut 55/55; chạy trong container của soak x64 (T076, đang chạy); chưa cài trên BL335 (T079 dùng script lấy mẫu riêng) | Đạt (công cụ) · Chưa đo trên BL335 (T079) |
-| FR-038 | `load-tester` 500/1.000 Tag, client 11, F5, SVG, `--latency` | T071, T072 | Go 18/18; `tests/web-it/f5-storm.mjs`, `svg-load.mjs`; `tools/gen-bench-projects.mjs` 6/6; dùng ở T075 (x64) và T079 (BL335); phần thứ hai L3 (client mới vào ≤ 35 s) chưa có trong `load-tester` (T079 đo bằng script riêng trên BL335: 28–83 ms, 15,2 s khi client 1 im lặng) | Không đạt — `load-tester` thiếu phần L3 nối lại (T071) |
+| FR-038 | `load-tester` 500/1.000 Tag, client 11, F5, SVG, `--latency` | T071, T072 | Go 22/22; `tests/web-it/f5-storm.mjs`, `svg-load.mjs`; `tools/gen-bench-projects.mjs` 6/6; dùng ở T075 (x64) và T079 (BL335); phần thứ hai L3 có từ 2026-10-18: `load-tester -reentry N` (client 1 đóng sạch và client 1 im lặng, N vòng mỗi cách, p50/max, ngưỡng 35 s vào tổng đạt/không đạt; `reentry_test.go` 4 test với máy chủ giả có hết hạn heartbeat 4408; `tools/load/x64.mjs --reentry`). Chưa chạy lại bằng công cụ trên x64/BL335; số BL335 của T079 đo bằng script riêng `reentry.mjs` cùng cách: đóng sạch 28–83 ms, im lặng 15,19–15,20 s (10 vòng) | Đạt (công cụ) |
 | FR-039 | Soak S0 x64 24 giờ, S1 BL335 7 ngày, S2 30 ngày | T076, T081, T196 | `R:011-soak.md` §2a: S0 x64 24 giờ đang chạy từ 2026-10-17 20:38 UTC (`tools/soak/x64-soak.mjs`); S1 BL335 7 ngày **không chạy ở GĐ 6 theo quyết định người dùng 2026-10-18** (thay bằng S0, L1 4 giờ BL335, S2 khi pilot) | Chưa đo — S0 (T076) · S1 hoãn theo quyết định người dùng (T081) · S2 Chờ người (P2) |
 | FR-040 | `--check-data` chỉ đọc ≤ 30 s | T066, T069 | ctest `check_data_test` 13/13, armhf qemu 13/13; `history.db` 500 MiB: 0,79 s (x64) | Đạt (x64) · Chưa đo BL335 |
 | FR-041 | `powercut.mjs` (Tasmota, rơ-le, tay), chu trình 6 bước | T068, T073 | `tools/powercut/powercut.test.mjs` (thiết bị giả); chưa chạy với nguồn thật; bản Node `x64-run.mjs`/`x64-kill.mjs` đã chạy ở T077 | Đạt (công cụ) · Chờ người (T083, B4) |
@@ -230,11 +230,11 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 
 | Nhóm | Đạt trọn | Không đạt | Chưa đo | Chờ người |
 |---|---|---|---|---|
-| FR (143) | 103 | 2 (FR-038, 135) | 8 | 30 |
+| FR (143) | 104 | 1 (FR-135) | 8 | 30 |
 | SC (43) | 25 | 0 | 4 | 14 |
 
 Cách đếm: mỗi FR/SC tính một lần theo phần yếu nhất của dòng, thứ tự Không đạt, Chưa đo, Chờ người, Đạt (dòng "Đạt (x64) · Chưa đo BL335" tính là Chưa đo); dòng gộp (ví dụ FR-014, 015, 016) tính đủ số FR.
 
-**Số đo vượt ngưỡng:** không còn (T148 đạt sau quét theo sự kiện, 2026-10-18: CPU +2,5 điểm một lõi). Các mục Không đạt là việc chưa xong: FR-038 (`load-tester` thiếu phần L3 nối lại), FR-135 (nghiệm thu còn nháp).
+**Số đo vượt ngưỡng:** không còn (T148 đạt sau quét theo sự kiện, 2026-10-18: CPU +2,5 điểm một lõi). Mục Không đạt còn lại là việc chưa xong: FR-135 (nghiệm thu còn nháp).
 
-So với lần đếm 2026-10-17 (FR 89/5/22/27, SC 17/0/13/13): chuyển Đạt nhờ T063 (SC-008, FR-025), T079 (SC-011), T122 (FR-070, phần OTA thật của SC-023), T146 (SC-026, SC-027, FR-078–082, FR-090, 091), T202 và quyết định O1/O2 (SC-010, FR-032, FR-066), T175 trên runtime x64 (SC-037, FR-125), T013 (FR-009); FR-128, 129 sang Chờ người (chỉ còn ảnh chụp trên Windows); FR-030, FR-003 từ Không đạt/Chưa đo sang Chưa đo chờ lượt `ci-local -Sanitize` (T059) và T200. SC-013 ghi "Chưa đo — hoãn theo quyết định người dùng" (T081 không chạy ở GĐ 6). Đếm lại khi T076, T059, T198 xong. Cập nhật 2026-10-18 trưa: SC-012 sang Đạt (T080); FR-030 sang Đạt (T059).
+So với lần đếm 2026-10-17 (FR 89/5/22/27, SC 17/0/13/13): chuyển Đạt nhờ T063 (SC-008, FR-025), T079 (SC-011), T122 (FR-070, phần OTA thật của SC-023), T146 (SC-026, SC-027, FR-078–082, FR-090, 091), T202 và quyết định O1/O2 (SC-010, FR-032, FR-066), T175 trên runtime x64 (SC-037, FR-125), T013 (FR-009); FR-128, 129 sang Chờ người (chỉ còn ảnh chụp trên Windows); FR-030, FR-003 từ Không đạt/Chưa đo sang Chưa đo chờ lượt `ci-local -Sanitize` (T059) và T200. SC-013 ghi "Chưa đo — hoãn theo quyết định người dùng" (T081 không chạy ở GĐ 6). Đếm lại khi T076, T059, T198 xong. Cập nhật 2026-10-18 trưa: SC-012 sang Đạt (T080); FR-030 sang Đạt (T059). Cập nhật 2026-10-18 chiều: FR-038 sang Đạt (công cụ) nhờ `load-tester -reentry` (nhánh `gd6-lt-l3`).

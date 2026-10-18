@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 type fakeLive struct {
 	srv    *httptest.Server
 	max    int
+	idle   time.Duration // > 0: a session that sends nothing this long is closed with 4408 (heartbeat timeout)
 	mu     sync.Mutex
 	active map[*websocket.Conn]context.CancelFunc
 }
@@ -74,6 +76,8 @@ func (f *fakeLive) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	subscribed := make(chan struct{})
+	var lastMsg atomic.Int64
+	lastMsg.Store(time.Now().UnixNano())
 	go func() {
 		once := sync.Once{}
 		for {
@@ -82,6 +86,7 @@ func (f *fakeLive) handle(w http.ResponseWriter, r *http.Request) {
 				cancel()
 				return
 			}
+			lastMsg.Store(time.Now().UnixNano())
 			var m msg
 			if json.Unmarshal(data, &m) == nil && m.Type == "subscribe" {
 				once.Do(func() { close(subscribed) })
@@ -110,6 +115,16 @@ func (f *fakeLive) handle(w http.ResponseWriter, r *http.Request) {
 		case <-ctx.Done():
 			return
 		case <-t.C:
+			if f.idle > 0 && time.Since(time.Unix(0, lastMsg.Load())) > f.idle {
+				// Like civet_transport expire(): the close frame may not get through to a client
+				// that stopped reading, so the slot is released here, not after the handshake.
+				f.mu.Lock()
+				delete(f.active, c)
+				f.mu.Unlock()
+				go c.Close(4408, "HEARTBEAT_TIMEOUT")
+				<-ctx.Done()
+				return
+			}
 			if send("delta") != nil {
 				return
 			}
