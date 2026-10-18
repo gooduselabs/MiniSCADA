@@ -356,8 +356,9 @@ void LogicSubsystem::auditLocked(AuditAction action, AuditResult result, const s
 
 void LogicSubsystem::updateWarningsLocked(int64_t now) {
     if (!opt_.warnings) return;
+    static const std::string kStopped = "stopped", kOn = "on";
     const bool hasWrites = hasWrites_;
-    const std::string state = stopped_ ? "stopped" : opt_.writes;
+    const std::string& state = stopped_ ? kStopped : opt_.writes;
     if (hasWrites && state != "on") {
         if (writesKey_ != state)
             opt_.warnings->set("LOGIC_WRITES_OFF",
@@ -368,7 +369,8 @@ void LogicSubsystem::updateWarningsLocked(int64_t now) {
     } else if (!writesKey_.empty() && writesKey_ != "on") {
         opt_.warnings->clear("LOGIC_WRITES_OFF");
     }
-    writesKey_ = hasWrites ? state : "on";
+    const std::string& key = hasWrites ? state : kOn;
+    if (writesKey_ != key) writesKey_ = key;
     const std::vector<std::string> throttled = engine_->throttledRules(now);
     if (!throttled.empty()) {
         opt_.warnings->set("LOGIC_THROTTLED", json{{"rules", throttled}});
@@ -400,7 +402,12 @@ void LogicSubsystem::round(EngineRound& io) {
             v.reason = "NO_VALUE";
             return v;
         };
-        const std::vector<logic::ActionOut> actions = engine_->step(now, readAt, wc);
+        // T148: a Tag whose version did not move since the last scan is not read again
+        const logic::VersionAt versionAt = [&](size_t slot) -> uint64_t {
+            const int64_t idx = slotModel_[slot];
+            return idx >= 0 ? io.version(static_cast<size_t>(idx)) : 0;
+        };
+        const std::vector<logic::ActionOut> actions = engine_->step(now, readAt, wc, versionAt);
         const auto t1 = std::chrono::steady_clock::now();
         // only the logic Tags that changed (the Tag Engine ignores an unchanged one anyway)
         engine_->takeChanged([&](size_t slot, const std::string&, const logic::Output& o) {

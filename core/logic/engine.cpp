@@ -1,5 +1,6 @@
 #include "core/logic/engine.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "core/logic/counters.hpp"
@@ -30,7 +31,7 @@ std::vector<const json*> arrayOf(const json& doc, const char* key) {
 }  // namespace
 
 Engine::Engine(const json& doc, const EngineOptions& opt)
-    : config_(opt.config), retainLost_(opt.retainLost) {
+    : config_(opt.config), retainLost_(opt.retainLost), scanEveryBlock_(opt.scanEveryBlock) {
     tables_ = opt.tables ? opt.tables : &noTables_;
     const RetainMap* store = opt.retainLost ? nullptr : opt.retain;
     for (const LogicOutput& o : logicOutputs(doc))
@@ -65,6 +66,7 @@ Engine::Engine(const json& doc, const EngineOptions& opt)
     ruleEnv.tables = tables_;
     ruleEnv.config = &config_;
     ruleEnv.bucket = bucket_.get();
+    ruleEnv.lastThrottledAt = &lastThrottledAt_;
     const auto compileActions = [&](const json& rule, const char* edge) {
         std::vector<CompiledAction> out;
         const json* list = member(rule, edge);
@@ -151,8 +153,29 @@ Engine::Engine(const json& doc, const EngineOptions& opt)
         b->bind(slotOfFn);
         if (const auto* r = dynamic_cast<const RuleBlock*>(b)) rules_.push_back(r);
     }
-    const SetOut init(slots_);
+    // T148: the readers of each slot (scan positions, each once per slot), every block due at the
+    // first scan
+    std::vector<std::vector<uint32_t>> readers(slots_.size());
+    std::vector<uint32_t> in;
+    for (size_t k = 0; k < order_.size(); ++k) {
+        in.clear();
+        order_[k]->stepInputs(in);
+        std::sort(in.begin(), in.end());
+        in.erase(std::unique(in.begin(), in.end()), in.end());
+        for (uint32_t s : in) readers[s].push_back(static_cast<uint32_t>(k));
+    }
+    track_.readerStart.reserve(slots_.size() + 1);
+    for (const auto& r : readers) {
+        track_.readerStart.push_back(static_cast<uint32_t>(track_.readers.size()));
+        track_.readers.insert(track_.readers.end(), r.begin(), r.end());
+    }
+    track_.readerStart.push_back(static_cast<uint32_t>(track_.readers.size()));
+    track_.due.assign(order_.size(), 1);
+    track_.changed.reserve(slots_.size());
+    const SetOut init(slots_, track_);
     for (Block* b : order_) b->init(init);
+    for (uint32_t i = 0; i < slots_.size(); ++i)
+        if (!slots_[i].set) snapshot_.push_back(i);
 }
 
 Engine::~Engine() = default;
@@ -173,6 +196,16 @@ std::vector<ActionOut> Engine::step(int64_t now, const ReadTag& read, const Wall
 }
 
 std::vector<ActionOut> Engine::step(int64_t now, const ReadAt& read, const WallClock& wall) {
+    return scan(now, read, wall, nullptr);
+}
+
+std::vector<ActionOut> Engine::step(int64_t now, const ReadAt& read, const WallClock& wall,
+                                    const VersionAt& version) {
+    return scan(now, read, wall, &version);
+}
+
+std::vector<ActionOut> Engine::scan(int64_t now, const ReadAt& read, const WallClock& wall,
+                                    const VersionAt* version) {
     now_ = now;
     std::vector<ActionOut> actions;
     ScanCtx ctx;
@@ -181,19 +214,38 @@ std::vector<ActionOut> Engine::step(int64_t now, const ReadAt& read, const WallC
     ctx.tables = tables_;
     ctx.config = &config_;
     ctx.slots = &slots_;
-    ctx.readAt = &read;
+    ctx.track = &track_;
     ctx.actions = &actions;
+    ctx.hasPrev = prevScan_.has_value();
+    ctx.prev = prevScan_.value_or(0);
     // the snapshot once per scan: every slot no block has set (a Tag of tags.json, a logic Tag
-    // before its first value); its version moves only when its value, quality or reason does
-    for (size_t i = 0; i < slots_.size(); ++i) {
+    // before its first value; a slot once set stays set and leaves the list); its version moves
+    // only when its value, quality or reason does, and then its readers are due. With `version`:
+    // read again only when the Tag's version moved since the last read (or is unknown, 0).
+    size_t keep = 0;
+    for (const uint32_t i : snapshot_) {
         Slot& s = slots_[i];
         if (s.set) continue;
+        snapshot_[keep++] = i;
+        const uint64_t src = version ? (*version)(i) : 0;
+        if (src != 0 && src == s.source) continue;
+        s.source = src;
         expr::InputValue v = read(i);
         if (sameInput(v, s.cur)) continue;
         s.cur = std::move(v);
         ++s.version;
+        track_.wake(i);
     }
-    for (Block* b : order_) b->step(ctx);
+    snapshot_.resize(keep);
+    // T148: only the due blocks (an input changed, or their state moves with time), in scan
+    // order; a block that a later one wakes (never: the order is topological) runs next scan
+    std::vector<uint8_t>& due = track_.due;
+    for (size_t k = 0; k < order_.size(); ++k) {
+        if (!due[k] && !scanEveryBlock_) continue;
+        due[k] = 0;
+        if (order_[k]->step(ctx)) due[k] = 1;
+    }
+    prevScan_ = now;
     return actions;
 }
 
@@ -206,6 +258,8 @@ std::vector<std::string> Engine::tags() const {
 
 std::vector<std::string> Engine::throttledRules(int64_t now) const {
     std::vector<std::string> out;
+    // T148: no refusal in the last 60 s (the latest of every rule's): no rule is THROTTLED
+    if (!lastThrottledAt_ || now - *lastThrottledAt_ >= RuleBlock::kThrottleHoldMs) return out;
     for (const RuleBlock* r : rules_)
         if (r->throttled(now)) out.push_back(r->id());
     return out;
@@ -251,7 +305,7 @@ std::vector<std::string> Engine::inputsOf(const std::string& rule) const {
 bool Engine::reset(const std::string& id, double value) {
     const auto it = blocks_.find(id);
     if (it == blocks_.end()) return false;
-    return it->second->reset(value, SetOut(slots_));
+    return it->second->reset(value, SetOut(slots_, track_));
 }
 
 }  // namespace mat::logic

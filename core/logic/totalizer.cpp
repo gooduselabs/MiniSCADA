@@ -55,7 +55,7 @@ void TotalizerBlock::bind(const SlotOf& slotOf) {
     gapSlot_ = optionalSlot(slotOf, gapTag_);
 }
 
-void TotalizerBlock::step(ScanCtx& ctx) {
+bool TotalizerBlock::step(ScanCtx& ctx) {
     const Expr::Result& s = source_.eval(ctx);
     std::optional<double> rate;
     if (s.ok) rate = scalarNumber(s.value);
@@ -92,7 +92,13 @@ void TotalizerBlock::step(ScanCtx& ctx) {
             prevReset_ = *v;
         }
     }
-    publish(SetOut(*ctx.slots));
+    publish(ctx.out());
+    return true;  // integrates (or counts the gap) at every scan
+}
+
+void TotalizerBlock::stepInputs(std::vector<uint32_t>& out) const {
+    out.insert(out.end(), source_.slots().begin(), source_.slots().end());
+    if (reset_) out.insert(out.end(), reset_->slots().begin(), reset_->slots().end());
 }
 
 void TotalizerBlock::publish(const SetOut& setOut) const {

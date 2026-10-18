@@ -221,6 +221,55 @@ TEST(Engine, ARoundWithoutTheSteppedDriversStillTakesTheInboxAndRunsTheHook) {
     sim->stop();
 }
 
+// T148: the round hook (logic) reads a Tag again only when its version moved; the version moves
+// with every change of value, quality or reason (a command, a driver value, a publish of the hook)
+// and never otherwise.
+TEST(Engine, TheVersionOfATagMovesWhenItsValueQualityOrReasonDoes) {
+    Rig r(json::parse(R"([
+      {"id":"I","kind":"internal","type":"INT16","initial":7,"access":"RW"},
+      {"id":"E","kind":"external","type":"FLOAT64","source":{"device":"d1","address":"HR1"}},
+      {"id":"L","kind":"internal","type":"BOOL","initial":false}
+    ])"));
+    std::vector<uint64_t> v;
+    bool publish = false;
+    r.engine->setRoundHook([&](EngineRound& io) {
+        v = {io.version(r.idx("I")), io.version(r.idx("E")), io.version(r.idx("L")),
+             io.version(99)};
+        if (publish) io.publish(r.idx("L"), TagScalar{true}, Quality::GOOD, "");
+    });
+    r.engine->step(kT0);
+    ASSERT_EQ(v.size(), 4u);
+    EXPECT_NE(v[0], 0u);
+    EXPECT_EQ(v[3], 0u) << "no such Tag: unknown";
+    const std::vector<uint64_t> first = v;
+    r.engine->step(kT0 + 100);
+    EXPECT_EQ(v, first) << "nothing changed";
+    r.engine->setInternal(r.idx("I"), int64_t{7});  // the same value
+    r.engine->step(kT0 + 200);
+    EXPECT_EQ(v, first);
+    r.engine->setInternal(r.idx("I"), int64_t{8});
+    r.engine->publish({r.good("E", 1.5)});
+    r.engine->step(kT0 + 300);
+    EXPECT_NE(v[0], first[0]);
+    EXPECT_NE(v[1], first[1]);
+    EXPECT_EQ(v[2], first[2]);
+    std::vector<uint64_t> before = v;
+    r.engine->publish({r.good("E", 1.5)});  // the same value again
+    r.engine->step(kT0 + 400);
+    EXPECT_EQ(v, before);
+    r.engine->publish({r.bad("E", "COMM")});  // the quality alone
+    r.engine->step(kT0 + 500);
+    EXPECT_NE(v[1], before[1]);
+    publish = true;
+    r.engine->step(kT0 + 600);
+    before = v;
+    r.engine->step(kT0 + 700);
+    EXPECT_NE(v[2], before[2]) << "the hook's own publish of the last round";
+    before = v;
+    r.engine->step(kT0 + 800);
+    EXPECT_EQ(v[2], before[2]) << "published again with the same value";
+}
+
 TEST(Engine, InternalTagStartsAtInitialAndTakesCommands) {
     Rig r(json::parse(R"([
       {"id":"I","kind":"internal","type":"INT16","initial":7,"access":"RW"}

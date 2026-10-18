@@ -36,6 +36,13 @@ class EngineRound {
    public:
     virtual ~EngineRound() = default;
     virtual expr::InputValue read(size_t tag) const = 0;
+    // T148: a number that moves whenever the value, quality or reason of `tag` changes (never
+    // otherwise), so a reader that saw it reads the Tag again only when it moved; 0: unknown
+    // (read it).
+    virtual uint64_t version(size_t tag) const {
+        (void)tag;
+        return 0;
+    }
     virtual void publish(size_t tag, TagScalar value, Quality quality,
                          const std::string& reason) = 0;
     virtual void setInternal(size_t tag, TagScalar value) = 0;
@@ -99,6 +106,7 @@ class Engine : public drv::EngineSink {
         Quality quality = Quality::BAD;
         std::string reason = "NO_VALUE";
         int64_t sourceTs = 0;
+        uint64_t version = 1;  // EngineRound::version: moves with value, quality or reason
     };
     struct Calc {
         size_t tag;

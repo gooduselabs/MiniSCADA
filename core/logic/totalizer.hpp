@@ -21,7 +21,8 @@ class TotalizerBlock : public Block {
                    const RetainMap* store);
     const std::string& id() const override { return id_; }
     void bind(const SlotOf& slotOf) override;
-    void step(ScanCtx& ctx) override;
+    void stepInputs(std::vector<uint32_t>& out) const override;
+    bool step(ScanCtx& ctx) override;
     BlockState state(int64_t now) const override;
     void retain(RetainMap& out) const override;
     void init(const SetOut& setOut) override { publish(setOut); }

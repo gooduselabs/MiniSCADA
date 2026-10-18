@@ -37,17 +37,17 @@ void RunhoursBlock::bind(const SlotOf& slotOf) {
     dueSlot_ = optionalSlot(slotOf, dueTag_);
 }
 
-void RunhoursBlock::step(ScanCtx& ctx) {
+bool RunhoursBlock::step(ScanCtx& ctx) {
     const std::optional<bool> v = run_.evalBool(ctx);
     if (!v) {
         lastValid_ = false;
     } else {
-        if (lastValid_ && lastT_ && prevRun_ && *prevRun_) runMs_ += ctx.now - *lastT_;
+        // the interval since the previous scan of the engine (T148: as in TimerBlock::step)
+        if (lastValid_ && ctx.hasPrev && prevRun_ && *prevRun_) runMs_ += ctx.now - ctx.prev;
         if (prevRun_ && !*prevRun_ && *v) ++starts_;
         prevRun_ = *v;
         lastValid_ = true;
     }
-    lastT_ = ctx.now;
     if (reset_) {
         const std::optional<bool> r = reset_->evalBool(ctx);
         if (r) {
@@ -55,7 +55,13 @@ void RunhoursBlock::step(ScanCtx& ctx) {
             prevReset_ = *r;
         }
     }
-    publish(SetOut(*ctx.slots));
+    publish(ctx.out());
+    return lastValid_ && *prevRun_;  // running: counts at every scan
+}
+
+void RunhoursBlock::stepInputs(std::vector<uint32_t>& out) const {
+    out.insert(out.end(), run_.slots().begin(), run_.slots().end());
+    if (reset_) out.insert(out.end(), reset_->slots().begin(), reset_->slots().end());
 }
 
 void RunhoursBlock::publish(const SetOut& setOut) const {

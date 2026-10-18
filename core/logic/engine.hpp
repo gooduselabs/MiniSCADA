@@ -13,7 +13,13 @@
 // T148: each Tag name the document reads or sets is a slot (tags(), resolved once here); the
 // runtime reads its snapshot by slot (step with ReadAt) and publishes only the logic Tags that
 // changed (takeChanged). step with ReadTag reads by name (tests, vectors) with the same result.
+// A scan steps only the blocks that are due (SlotTracker): one of the slots their step reads
+// changed, or their state moves with time (a timer running, a hold pending, a repeat, run hours
+// running, every totalizer and schedule). A block that is not due would change nothing if stepped,
+// so the results are those of stepping every block (EngineOptions::scanEveryBlock, the tests'
+// reference); the timers and run hours count the interval since the previous scan of the engine.
 #pragma once
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
@@ -36,6 +42,9 @@ struct EngineOptions {
     const RetainMap* retain = nullptr;
     bool retainLost = false;
     const expr::TableSet* tables = nullptr;  // null: no value table
+    // Tests (core/logic/tests/skip_test.cpp): step every block at every scan, the reference
+    // the skipping of blocks that are not due is compared with. Same results, slower.
+    bool scanEveryBlock = false;
 };
 
 class Engine {
@@ -49,18 +58,24 @@ class Engine {
     std::vector<ActionOut> step(int64_t now, const ReadTag& read, const WallClock& wall);
     // The same, the snapshot read by slot: read(i) is the value of tags()[i].
     std::vector<ActionOut> step(int64_t now, const ReadAt& read, const WallClock& wall);
+    // The same; read(i) is called only when version(i) is 0 or moved since the last read of i.
+    std::vector<ActionOut> step(int64_t now, const ReadAt& read, const WallClock& wall,
+                                const VersionAt& version);
     // The Tag of each slot (the Tags of tags.json the document reads and the logic Tags).
     std::vector<std::string> tags() const;
     // The logic Tags whose value, quality or reason changed since the last call (all of them the
     // first time): fn(slot, tag, output). Then they count as unchanged.
+    // In slot order; only the listed slots are looked at (T148).
     template <class F>
     void takeChanged(F&& fn) {
-        for (size_t i = 0; i < slots_.size(); ++i) {
+        std::vector<uint32_t>& list = track_.changed;
+        std::sort(list.begin(), list.end());
+        for (const uint32_t i : list) {
             Slot& s = slots_[i];
-            if (!s.set || !s.changed) continue;
             s.changed = false;
-            fn(i, s.tag, static_cast<const Output&>(s.out));
+            if (s.set) fn(static_cast<size_t>(i), s.tag, static_cast<const Output&>(s.out));
         }
+        list.clear();
     }
     // The rules THROTTLED at `now` (LOGIC_THROTTLED), in scan order.
     std::vector<std::string> throttledRules(int64_t now) const;
@@ -92,6 +107,8 @@ class Engine {
 
    private:
     uint32_t slotOf(const std::string& tag);
+    std::vector<ActionOut> scan(int64_t now, const ReadAt& read, const WallClock& wall,
+                                const VersionAt* version);
 
     Config config_;
     bool retainLost_ = false;
@@ -99,6 +116,11 @@ class Engine {
     const expr::TableSet* tables_ = nullptr;
     std::map<std::string, LogicOutput> outputDefs_;
     std::vector<Slot> slots_;
+    SlotTracker track_;               // the readers of each slot, the due blocks, changed slots
+    std::vector<uint32_t> snapshot_;  // the slots read from the caller's snapshot (never set)
+    std::optional<int64_t> prevScan_;
+    std::optional<int64_t> lastThrottledAt_;
+    bool scanEveryBlock_ = false;
     std::unordered_map<std::string, uint32_t> slotIndex_;
     std::vector<std::unique_ptr<WriteGate>> gates_;
     std::unique_ptr<Bucket> bucket_;

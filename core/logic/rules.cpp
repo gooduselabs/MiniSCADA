@@ -6,7 +6,6 @@ namespace mat::logic {
 
 namespace {
 
-constexpr int64_t kThrottleHoldMs = 60000;
 constexpr int64_t kHourMs = 3600000;
 constexpr int64_t kToken = 60000;
 
@@ -84,13 +83,23 @@ void RuleBlock::bind(const SlotOf& slotOf) {
         }
 }
 
-void RuleBlock::step(ScanCtx& ctx) {
-    if (!enabled_) return;
+void RuleBlock::stepInputs(std::vector<uint32_t>& out) const {
+    // the actions' values and toggles are read only when an edge fires, in a scan that runs
+    out.insert(out.end(), when_.slots().begin(), when_.slots().end());
+}
+
+bool RuleBlock::timed() const {
+    // a candidate waiting for its hold, or a repeat: both move with time alone
+    return candidate_.has_value() || (stable_ && *stable_ && repeatMs_ > 0 && lastRun_);
+}
+
+bool RuleBlock::step(ScanCtx& ctx) {
+    if (!enabled_) return false;
     const Expr::Result& r = when_.eval(ctx);
     if (!r.ok) {
         suspended_ = r.reason;
         candidate_.reset();
-        return;
+        return false;
     }
     suspended_.clear();
     const bool* b = std::get_if<bool>(&r.value);
@@ -98,7 +107,7 @@ void RuleBlock::step(ScanCtx& ctx) {
     if (!stable_) {
         stable_ = cond;
         if (cond && fireOnStart_) fire(ctx, true);
-        return;
+        return timed();
     }
     if (cond == *stable_) {
         candidate_.reset();
@@ -112,10 +121,11 @@ void RuleBlock::step(ScanCtx& ctx) {
             candidate_.reset();
             fire(ctx, cond);
             if (!cond) lastRun_.reset();
-            return;
+            return timed();
         }
     }
     if (*stable_ && repeatMs_ > 0 && lastRun_ && ctx.now - *lastRun_ >= repeatMs_) fire(ctx, true);
+    return timed();
 }
 
 void RuleBlock::fire(ScanCtx& ctx, bool rise) {
@@ -168,6 +178,7 @@ std::string RuleBlock::run(ScanCtx& ctx, const CompiledAction& a, ActionOut& out
     if (!env_.config->writesOn) return "SUPPRESSED";
     if (!gate.allows(ctx.now) || !env_.bucket->allows(ctx.now)) {
         throttledAt_ = ctx.now;
+        if (env_.lastThrottledAt) *env_.lastThrottledAt = ctx.now;
         return "RATE_LIMITED";
     }
     gate.take(ctx.now);
