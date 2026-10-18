@@ -59,9 +59,24 @@ New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=mAT SCADA TEST - NO
 
 ## 4. Ký Tauri/NSIS
 
-`apps/studio/src-tauri/tauri.conf.json`: `bundle.windows.signCommand` = `powershell -NoProfile -File ../../tools/release/sign.ps1 -Mode %MAT_SIGN_MODE% -Path "%1"` (tên chính xác theo tài liệu Tauri 2 khi làm task; Tauri gọi lệnh này cho tệp thực thi, bộ cài và trình gỡ). Biến `MAT_SIGN_MODE` mặc định `test` ở máy dev, `store` hoặc `command` trên máy ký. Không đặt `certificateThumbprint` trong repo.
+`apps/studio/src-tauri/tauri.conf.json` (đã xác nhận bằng mã `tauri-cli` 2.12.1/`tauri-bundler` 2.10.1, spike T010, [research R15](../research.md#r15-authenticode)):
 
-Sau khi dựng, `release.ps1` tự kiểm cả ba tệp: `mat-studio.exe` (trích từ cây dựng `release/`), `mAT Studio_<ver>_x64-setup.exe`, `uninstall.exe` (trích khi cài thử im lặng vào thư mục tạm bằng `/S /D=...` rồi gỡ).
+```json
+"signCommand": {
+  "cmd": "powershell",
+  "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "../../../tools/release/sign.ps1", "-Path", "%1"]
+}
+```
+
+- Dạng đối tượng, không dạng chuỗi: dạng chuỗi bị tách theo từng dấu cách, không hiểu nháy.
+- `%1` phải là **một đối số trơn**, không nháy, không ghép: bundler chỉ thay đối số bằng đúng `%1`.
+- Không đặt `%VAR%` trong lệnh: bundler gọi trực tiếp (không mở rộng), còn trình gỡ NSIS chạy qua `cmd.exe` (có mở rộng). Chế độ, dấu vân tay, lệnh ngoài, log, cờ phát hành đi qua biến môi trường `MAT_SIGN_MODE` (mặc định `test` ở máy dev, `store` hoặc `command` trên máy ký), `MAT_SIGN_THUMBPRINT`, `MAT_SIGN_COMMAND`, `MAT_SIGNING_LOG`, `MAT_SIGN_RELEASE`; tiến trình ký thừa hưởng môi trường của `tauri build`.
+- Đường dẫn tương đối tính từ `apps/studio/src-tauri` (thư mục hiện tại của `tauri build`), bundler đổi thành tuyệt đối.
+- Không đặt `certificateThumbprint`, `digestAlgorithm`, `timestampUrl` trong repo: có `signCommand` thì bundler bỏ qua chúng.
+
+Tệp Tauri gọi lệnh này, theo thứ tự: `mat-studio.exe` (sau khi vá binary), 5 DLL plugin NSIS trong bản sao `target/release/nsis/x64/Plugins/`, `uninstall.exe` (qua `!uninstfinalize` trong lúc `makensis`), bộ cài `mAT Studio_<ver>_x64-setup.exe`. Ký lỗi làm dừng bản dựng, **trừ trình gỡ**: NSIS bỏ qua mã thoát của `!uninstfinalize` và đóng gói trình gỡ chưa ký.
+
+Sau khi dựng, `release.ps1` tự kiểm cả ba tệp: `mAT Studio_<ver>_x64-setup.exe`, `mat-studio.exe` và `uninstall.exe`. Hai tệp sau **trích từ bản cài thử im lặng** vào thư mục tạm bằng `/S /D=...` rồi gỡ: `target/release/mat-studio.exe` trong cây dựng là bản **chưa ký** vì bundler chép lại binary gốc sau khi đóng gói. `uninstall.exe` `NotSigned` là lỗi dừng.
 
 ## 5. Khóa phát hành ECDSA
 
