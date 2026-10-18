@@ -1,0 +1,5670 @@
+{
+  "task": "T200 so cặp (SC-042, FR-003)",
+  "date": "2026-10-18",
+  "old": {
+    "commit": "60b254bc",
+    "runtime": "0.9.0",
+    "build": "x64 (image mat-armhf, Release, MAT_TEST_HOOKS=OFF)"
+  },
+  "new": {
+    "commit": "aa7c0a94 (gd6)",
+    "runtime": "1.0.0-rc.1",
+    "build": "x64 (image mat-armhf, Release, MAT_TEST_HOOKS=OFF)"
+  },
+  "project": "projects/training-demo (schemaVersion 0.6.0), viewerAccess private, giả lập Modbus maps/training-demo.json",
+  "noise": {
+    "note": "hai lần chạy cùng bản 0.9.0: chỉ các đường dẫn này khác (pha sin của giả lập, thời điểm thăm dò, id thiết bị, chỗ trống)",
+    "diff": [
+      "viewer.lan./api/v1/system/info.bytes",
+      "viewer.http./api/v1/system/info.bytes",
+      "viewer.live.lan.snapshot.bonMuc",
+      "viewer.live.lan.deltaCount",
+      "viewer.systemInfo.value.alarms.evalMaxMs",
+      "viewer.systemInfo.value.device.deviceId",
+      "viewer.systemInfo.value.historian.freeBytes",
+      "deploy.steps.12.ms",
+      "deploy.steps.17.stepTrace"
+    ]
+  },
+  "diffOldNew": {
+    "same": 1194,
+    "diff": [
+      {
+        "path": "viewer.lan./api/v1/system/info.bytes",
+        "old": "2127",
+        "new": "2283"
+      },
+      {
+        "path": "viewer.lan./api/v1/device/identity.bytes",
+        "old": "467",
+        "new": "489"
+      },
+      {
+        "path": "viewer.lan./api/v1/alarms.bytes",
+        "old": "1337",
+        "new": "960"
+      },
+      {
+        "path": "viewer.pub./api/v1/device/identity.bytes",
+        "old": "467",
+        "new": "489"
+      },
+      {
+        "path": "viewer.host.evil.example.root.status",
+        "old": "200",
+        "new": "421"
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.content-type",
+        "old": "\"text/html; charset=utf-8\"",
+        "new": "\"application/json; charset=utf-8\""
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.cache-control",
+        "old": "\"no-cache\"",
+        "new": "\"no-store\""
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.content-security-policy",
+        "old": "\"<193 ký tự>\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.etag",
+        "old": "\"<14 ký tự>\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.vary",
+        "old": "\"Accept-Encoding\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.root.bytes",
+        "old": "3410",
+        "new": "145"
+      },
+      {
+        "path": "viewer.host.evil.example.active.status",
+        "old": "200",
+        "new": "421"
+      },
+      {
+        "path": "viewer.host.evil.example.active.bytes",
+        "old": "2919",
+        "new": "145"
+      },
+      {
+        "path": "viewer.http./api/v1/system/info.bytes",
+        "old": "2127",
+        "new": "2283"
+      },
+      {
+        "path": "viewer.live.lan.hello.serverVersion",
+        "old": "\"0.9.0\"",
+        "new": "\"1.0.0-rc.1\""
+      },
+      {
+        "path": "viewer.live.lan.snapshot.bonMuc",
+        "old": "80.9570312",
+        "new": "15.104167"
+      },
+      {
+        "path": "viewer.live.lan Host evil.status",
+        "old": "101",
+        "new": "421"
+      },
+      {
+        "path": "viewer.live.lan Host evil.statusLine",
+        "old": "\"HTTP/1.1 101 Switching Protocols\"",
+        "new": "\"HTTP/1.1 421 Misdirected Request\""
+      },
+      {
+        "path": "viewer.live.lan Host evil.firstMessage",
+        "old": "\"hello\"",
+        "new": "null"
+      },
+      {
+        "path": "viewer.root.gzip.bytes",
+        "old": "1049",
+        "new": "1051"
+      },
+      {
+        "path": "viewer.systemInfo.shape.schemaVersions",
+        "old": "[\"string\",\"len=5\"]",
+        "new": "[\"string\",\"len=7\"]"
+      },
+      {
+        "path": "viewer.systemInfo.value.alarms.active",
+        "old": "1",
+        "new": "0"
+      },
+      {
+        "path": "viewer.systemInfo.value.alarms.evalMaxMs",
+        "old": "1.2",
+        "new": "1.22"
+      },
+      {
+        "path": "viewer.systemInfo.value.alarms.unacked",
+        "old": "1",
+        "new": "0"
+      },
+      {
+        "path": "viewer.systemInfo.value.device.apiVersion",
+        "old": "\"1.4.0\"",
+        "new": "\"1.5.0\""
+      },
+      {
+        "path": "viewer.systemInfo.value.device.deviceId",
+        "old": "\"1ae8ff2b-232b-4440-9793-ebe13a08fe1d\"",
+        "new": "\"a5dd39be-5829-495e-bce4-b823b7ffae3b\""
+      },
+      {
+        "path": "viewer.systemInfo.value.historian.freeBytes",
+        "old": "57093312512",
+        "new": "57093275648"
+      },
+      {
+        "path": "viewer.systemInfo.value.runtimeVersion",
+        "old": "\"0.9.0\"",
+        "new": "\"1.0.0-rc.1\""
+      },
+      {
+        "path": "viewer.systemInfo.value.schemaVersions",
+        "old": "[\"0.1\",\"0.2\",\"0.3\",\"0.4\",\"0.5\"]",
+        "new": "[\"0.1\",\"0.2\",\"0.3\",\"0.4\",\"0.5\",\"0.6\",\"1.0\"]"
+      },
+      {
+        "path": "viewer.identity.shape.features",
+        "old": "[\"string\",\"len=15\"]",
+        "new": "[\"string\",\"len=17\"]"
+      },
+      {
+        "path": "viewer.identity.features",
+        "old": "[\"auth\",\"web-login\",\"screens-v1\",\"deploy\",\"upload\",\"restore\",\"diagnostics\",\"audit\",\"drivers\",\"serial-ports\",\"tag-write\",\"write-pulse\",\"write-expect\",\"alarms\",\"history\"]",
+        "new": "[\"auth\",\"web-login\",\"screens-v1\",\"deploy\",\"upload\",\"restore\",\"diagnostics\",\"audit\",\"drivers\",\"serial-ports\",\"tag-write\",\"write-pulse\",\"write-expect\",\"alarms\",\"logic\",\"update\",\"history\"]"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.alarmId",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.area",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.class",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.clockOk",
+        "old": "\"boolean\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.disabled",
+        "old": "\"boolean\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.id",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.inputBad",
+        "old": "\"boolean\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.limit",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.name",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.occurrence",
+        "old": "\"number\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.priority",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.qualityActive",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.rev",
+        "old": "\"number\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.startup",
+        "old": "\"boolean\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.state",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.text",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.tsActive",
+        "old": "\"number\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.type",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.valueActive",
+        "old": "\"number\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.1",
+        "old": "\"len=1\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "deploy.steps.12.stepTrace",
+        "old": "[\"receive:ok,verify-package:running,validate:pending,backup:pending,activate:pending,health:pending\",\"receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:running\",\"receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:ok\"]",
+        "new": "[\"receive:ok,verify-package:pending,validate:pending,backup:pending,activate:pending,health:pending\",\"receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:running\",\"receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:ok\"]"
+      },
+      {
+        "path": "deploy.steps.12.ms",
+        "old": "4200",
+        "new": "4217"
+      },
+      {
+        "path": "deploy.audit.rows",
+        "old": "[\"project.adopt | - | - | system | ok | - | <digest>\",\"cert.generate | - | - | system | ok | - | <digest>\",\"account.create | - | - | cli | started | - | admin\",\"account.create | - | - | cli | ok | - | admin\",\"account.create | - | - | cli | started | - | kysu\",\"account.create | - | - | cli | ok | - | kysu\",\"account.create | - | - | cli | started | - | xem\",\"account.create | - | - | cli | ok | - | xem\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/web/session\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/history/catalog\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/diagnostics\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/project/versions\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/web/session\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/history/catalog\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/diagnostics\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/project/versions\",\"tag.write | - | - | http | denied | LIVE_WRITE_NOT_ALLOWED | BON.MUC_DAT\",\"auth.login | kysu | - | https | failed | AUTH_FAILED | \",\"auth.login | kysu | engineer | https | ok | - | \",\"auth.login | xem | viewer | https | ok | - | \",\"auth.login | admin | administrator | https | ok | - | \",\"project.read | kysu | engineer | https | ok | - | <digest>\",\"audit.suppressed | - | - | system | ok | - | \",\"project.deploy | kysu | engineer | https | failed | BASE_CHANGED | <digest>\",\"project.deploy | kysu | engineer | https | started | - | <digest>\",\"project.deploy | kysu | engineer | https | ok | - | <digest>\",\"project.read | kysu | engineer | https | ok | - | <digest>\",\"project.deploy | kysu | engineer | https | started | - | <digest>\",\"project.deploy | kysu | engineer | https | failed | E_PKG_DIGEST | <digest>\",\"project.deploy | kysu | engineer | https | started | - | <digest>\",\"project.deploy | kysu | engineer | https | failed | E_VALIDATION | <digest>\",\"project.deploy | kysu | engineer | https | started | - | <digest>\",\"project.deploy | kysu | engineer | https | ok | - | <digest>\",\"project.restore | kysu | engineer | https | failed | ALREADY_ACTIVE | 3\",\"project.restore | kysu | engineer | https | failed | NO_SUCH_VERSION | 999\",\"project.restore | kysu | engineer | https | started | - | <digest>\",\"project.restore | kysu | engineer | https | ok | - | <digest>\",\"project.read | kysu | engineer | https | ok | - | <digest>\",\"project.read | kysu | engineer | https | ok | - | <digest>\"]",
+        "new": "[\"project.adopt | - | - | system | ok | - | <digest>\",\"cert.generate | - | - | system | ok | - | <digest>\",\"account.create | - | - | cli | started | - | admin\",\"account.create | - | - | cli | ok | - | admin\",\"account.create | - | - | cli | started | - | kysu\",\"account.create | - | - | cli | ok | - | kysu\",\"account.create | - | - | cli | started | - | xem\",\"account.create | - | - | cli | ok | - | xem\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/web/session\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/history/catalog\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/diagnostics\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/project/versions\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/web/session\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/history/catalog\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/diagnostics\",\"access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/project/versions\",\"access.denied | - | - | https | denied | HOST_NOT_ALLOWED | /\",\"tag.write | - | - | http | denied | LIVE_WRITE_NOT_ALLOWED | BON.MUC_DAT\",\"audit.suppressed | - | - | system | ok | - | \",\"auth.login | kysu | engineer | https | ok | - | \",\"auth.login | xem | viewer | https | ok | - | \",\"auth.login | admin | administrator | https | ok | - | \",\"project.read | kysu | engineer | https | ok | - | <digest>\",\"project.deploy | kysu | engineer | https | failed | BASE_CHANGED | <digest>\",\"project.deploy | kysu | engineer | https | started | - | <digest>\",\"project.deploy | kysu | engineer | https | ok | - | <digest>\",\"project.read | kysu | engineer | https | ok | - | <digest>\",\"project.deploy | kysu | engineer | https | started | - | <digest>\",\"project.deploy | kysu | engineer | https | failed | E_PKG_DIGEST | <digest>\",\"project.deploy | kysu | engineer | https | started | - | <digest>\",\"project.deploy | kysu | engineer | https | failed | E_VALIDATION | <digest>\",\"project.deploy | kysu | engineer | https | started | - | <digest>\",\"project.deploy | kysu | engineer | https | ok | - | <digest>\",\"project.restore | kysu | engineer | https | failed | ALREADY_ACTIVE | 3\",\"project.restore | kysu | engineer | https | failed | NO_SUCH_VERSION | 999\",\"project.restore | kysu | engineer | https | started | - | <digest>\",\"project.restore | kysu | engineer | https | ok | - | <digest>\",\"project.read | kysu | engineer | https | ok | - | <digest>\",\"project.read | kysu | engineer | https | ok | - | <digest>\"]"
+      },
+      {
+        "path": "deploy.audit.suppressed.0.count",
+        "old": "3",
+        "new": "4"
+      },
+      {
+        "path": "viewer.lan./.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./index.html.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./login.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./device.crt.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/system/info.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/device/identity.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/projects/active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/project.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/tags.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/screens/tong-quan.screen.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/screens/xu-huong.screen.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/connections.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/alarms.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/khong-co.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/web/session.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/alarms.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/history/catalog.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/diagnostics.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/project/versions.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./khong-co-trang-nay.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./index.html.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./login.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./device.crt.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/system/info.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/device/identity.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/projects/active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/project.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/tags.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/screens/tong-quan.screen.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/screens/xu-huong.screen.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/connections.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/alarms.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/khong-co.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/web/session.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/alarms.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/history/catalog.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/diagnostics.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/project/versions.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./khong-co-trang-nay.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.xff./.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.xff./api/v1/projects/active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.xff./api/v1/system/info.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.hostname rt:8443.root.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.hostname rt:8443.active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.hostname rt.local.root.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.hostname rt.local.active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.localhost.root.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.localhost.active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.evil.example.root.error.code",
+        "old": "(không có)",
+        "new": "\"HOST_NOT_ALLOWED\""
+      },
+      {
+        "path": "viewer.host.evil.example.root.error.message",
+        "old": "(không có)",
+        "new": "\"Tên này chưa được phép. Quản trị viên: thêm vào allowedHosts của runtime.json.\""
+      },
+      {
+        "path": "viewer.host.evil.example.active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.evil.example.active.error.code",
+        "old": "(không có)",
+        "new": "\"HOST_NOT_ALLOWED\""
+      },
+      {
+        "path": "viewer.host.evil.example.active.error.message",
+        "old": "(không có)",
+        "new": "\"Tên này chưa được phép. Quản trị viên: thêm vào allowedHosts của runtime.json.\""
+      },
+      {
+        "path": "viewer.host.ip no port.root.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.ip no port.active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.http./.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.http./api/v1/projects/active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.http./api/v1/system/info.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.http./project/project.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.root.gzip.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.logic.present",
+        "old": "(không có)",
+        "new": "\"boolean\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.logic.writes",
+        "old": "(không có)",
+        "new": "\"string\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.releaseSeq",
+        "old": "(không có)",
+        "new": "\"number\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.timeSynced",
+        "old": "(không có)",
+        "new": "\"boolean\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.update.enabled",
+        "old": "(không có)",
+        "new": "\"boolean\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.update.supported",
+        "old": "(không có)",
+        "new": "\"boolean\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.warningDetails",
+        "old": "(không có)",
+        "new": "[]"
+      },
+      {
+        "path": "viewer.systemInfo.value.logic.present",
+        "old": "(không có)",
+        "new": "false"
+      },
+      {
+        "path": "viewer.systemInfo.value.logic.writes",
+        "old": "(không có)",
+        "new": "\"off\""
+      },
+      {
+        "path": "viewer.systemInfo.value.releaseSeq",
+        "old": "(không có)",
+        "new": "0"
+      },
+      {
+        "path": "viewer.systemInfo.value.timeSynced",
+        "old": "(không có)",
+        "new": "true"
+      },
+      {
+        "path": "viewer.systemInfo.value.update.enabled",
+        "old": "(không có)",
+        "new": "false"
+      },
+      {
+        "path": "viewer.systemInfo.value.update.supported",
+        "old": "(không có)",
+        "new": "true"
+      },
+      {
+        "path": "viewer.systemInfo.value.warningDetails",
+        "old": "(không có)",
+        "new": "[]"
+      },
+      {
+        "path": "viewer.alarms.shape.instances",
+        "old": "(không có)",
+        "new": "[]"
+      },
+      {
+        "path": "deploy.audit.suppressed.0.byAction.auth.login",
+        "old": "(không có)",
+        "new": "1"
+      },
+      {
+        "path": "deploy.audit.suppressed.0.byAction.sources.172.30.71.50",
+        "old": "(không có)",
+        "new": "4"
+      }
+    ]
+  },
+  "diffOldControl": {
+    "same": 1189,
+    "diff": [
+      {
+        "path": "viewer.lan./api/v1/system/info.bytes",
+        "old": "2127",
+        "new": "2283"
+      },
+      {
+        "path": "viewer.lan./api/v1/device/identity.bytes",
+        "old": "467",
+        "new": "489"
+      },
+      {
+        "path": "viewer.lan./api/v1/alarms.bytes",
+        "old": "1337",
+        "new": "960"
+      },
+      {
+        "path": "viewer.pub./api/v1/device/identity.bytes",
+        "old": "467",
+        "new": "489"
+      },
+      {
+        "path": "viewer.host.evil.example.root.status",
+        "old": "200",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.content-type",
+        "old": "\"text/html; charset=utf-8\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.cache-control",
+        "old": "\"no-cache\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.x-content-type-options",
+        "old": "\"nosniff\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.content-security-policy",
+        "old": "\"<193 ký tự>\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.etag",
+        "old": "\"<14 ký tự>\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.root.headers.vary",
+        "old": "\"Accept-Encoding\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.root.bytes",
+        "old": "3410",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.active.status",
+        "old": "200",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.active.headers.content-type",
+        "old": "\"application/json; charset=utf-8\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.active.headers.cache-control",
+        "old": "\"no-store\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.active.headers.x-content-type-options",
+        "old": "\"nosniff\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.host.evil.example.active.bytes",
+        "old": "2919",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.http./api/v1/system/info.bytes",
+        "old": "2127",
+        "new": "2283"
+      },
+      {
+        "path": "viewer.live.lan.hello.serverVersion",
+        "old": "\"0.9.0\"",
+        "new": "\"1.0.0-rc.1\""
+      },
+      {
+        "path": "viewer.live.lan.snapshot.bonMuc",
+        "old": "80.9570312",
+        "new": "40.1367188"
+      },
+      {
+        "path": "viewer.live.lan Host evil.status",
+        "old": "101",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.live.lan Host evil.error",
+        "old": "null",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.live.lan Host evil.statusLine",
+        "old": "\"HTTP/1.1 101 Switching Protocols\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.live.lan Host evil.bodyBytes",
+        "old": "0",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.live.lan Host evil.firstMessage",
+        "old": "\"hello\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.live.lan Host evil.close",
+        "old": "null",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.root.gzip.bytes",
+        "old": "1049",
+        "new": "1051"
+      },
+      {
+        "path": "viewer.systemInfo.shape.schemaVersions",
+        "old": "[\"string\",\"len=5\"]",
+        "new": "[\"string\",\"len=7\"]"
+      },
+      {
+        "path": "viewer.systemInfo.value.alarms.active",
+        "old": "1",
+        "new": "0"
+      },
+      {
+        "path": "viewer.systemInfo.value.alarms.evalMaxMs",
+        "old": "1.2",
+        "new": "0.97"
+      },
+      {
+        "path": "viewer.systemInfo.value.alarms.unacked",
+        "old": "1",
+        "new": "0"
+      },
+      {
+        "path": "viewer.systemInfo.value.device.apiVersion",
+        "old": "\"1.4.0\"",
+        "new": "\"1.5.0\""
+      },
+      {
+        "path": "viewer.systemInfo.value.device.deviceId",
+        "old": "\"1ae8ff2b-232b-4440-9793-ebe13a08fe1d\"",
+        "new": "\"991b2a50-bc44-417b-8d33-1c185f37d192\""
+      },
+      {
+        "path": "viewer.systemInfo.value.historian.freeBytes",
+        "old": "57093312512",
+        "new": "57093300224"
+      },
+      {
+        "path": "viewer.systemInfo.value.runtimeVersion",
+        "old": "\"0.9.0\"",
+        "new": "\"1.0.0-rc.1\""
+      },
+      {
+        "path": "viewer.systemInfo.value.schemaVersions",
+        "old": "[\"0.1\",\"0.2\",\"0.3\",\"0.4\",\"0.5\"]",
+        "new": "[\"0.1\",\"0.2\",\"0.3\",\"0.4\",\"0.5\",\"0.6\",\"1.0\"]"
+      },
+      {
+        "path": "viewer.identity.shape.features",
+        "old": "[\"string\",\"len=15\"]",
+        "new": "[\"string\",\"len=17\"]"
+      },
+      {
+        "path": "viewer.identity.features",
+        "old": "[\"auth\",\"web-login\",\"screens-v1\",\"deploy\",\"upload\",\"restore\",\"diagnostics\",\"audit\",\"drivers\",\"serial-ports\",\"tag-write\",\"write-pulse\",\"write-expect\",\"alarms\",\"history\"]",
+        "new": "[\"auth\",\"web-login\",\"screens-v1\",\"deploy\",\"upload\",\"restore\",\"diagnostics\",\"audit\",\"drivers\",\"serial-ports\",\"tag-write\",\"write-pulse\",\"write-expect\",\"alarms\",\"logic\",\"update\",\"history\"]"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.alarmId",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.area",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.class",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.clockOk",
+        "old": "\"boolean\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.disabled",
+        "old": "\"boolean\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.id",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.inputBad",
+        "old": "\"boolean\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.limit",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.name",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.occurrence",
+        "old": "\"number\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.priority",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.qualityActive",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.rev",
+        "old": "\"number\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.startup",
+        "old": "\"boolean\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.state",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.text",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.tsActive",
+        "old": "\"number\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.type",
+        "old": "\"string\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.0.valueActive",
+        "old": "\"number\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "viewer.alarms.shape.instances.1",
+        "old": "\"len=1\"",
+        "new": "(không có)"
+      },
+      {
+        "path": "deploy.steps.12.stepTrace",
+        "old": "[\"receive:ok,verify-package:running,validate:pending,backup:pending,activate:pending,health:pending\",\"receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:running\",\"receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:ok\"]",
+        "new": "[\"receive:ok,verify-package:running,validate:pending,backup:pending,activate:pending,health:pending\",\"receive:ok,verify-package:ok,validate:ok,backup:ok,activate:running,health:pending\",\"receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:running\",\"receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:ok\"]"
+      },
+      {
+        "path": "deploy.steps.12.ms",
+        "old": "4200",
+        "new": "4173"
+      },
+      {
+        "path": "viewer.lan./.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./index.html.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./login.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./device.crt.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/system/info.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/device/identity.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/projects/active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/project.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/tags.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/screens/tong-quan.screen.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/screens/xu-huong.screen.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/connections.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/alarms.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./project/khong-co.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/web/session.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/alarms.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/history/catalog.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/diagnostics.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./api/v1/project/versions.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.lan./khong-co-trang-nay.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./index.html.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./login.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./device.crt.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/system/info.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/device/identity.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/projects/active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/project.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/tags.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/screens/tong-quan.screen.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/screens/xu-huong.screen.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/connections.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/alarms.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./project/khong-co.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/web/session.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/alarms.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/history/catalog.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/diagnostics.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./api/v1/project/versions.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.pub./khong-co-trang-nay.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.xff./.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.xff./api/v1/projects/active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.xff./api/v1/system/info.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.hostname rt:8443.root.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.hostname rt:8443.active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.hostname rt.local.root.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.hostname rt.local.active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.localhost.root.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.localhost.active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.ip no port.root.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.host.ip no port.active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.http./.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.http./api/v1/projects/active.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.http./api/v1/system/info.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.http./project/project.json.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.root.gzip.headers.referrer-policy",
+        "old": "(không có)",
+        "new": "\"no-referrer\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.logic.present",
+        "old": "(không có)",
+        "new": "\"boolean\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.logic.writes",
+        "old": "(không có)",
+        "new": "\"string\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.releaseSeq",
+        "old": "(không có)",
+        "new": "\"number\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.timeSynced",
+        "old": "(không có)",
+        "new": "\"boolean\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.update.enabled",
+        "old": "(không có)",
+        "new": "\"boolean\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.update.supported",
+        "old": "(không có)",
+        "new": "\"boolean\""
+      },
+      {
+        "path": "viewer.systemInfo.shape.warningDetails",
+        "old": "(không có)",
+        "new": "[]"
+      },
+      {
+        "path": "viewer.systemInfo.value.logic.present",
+        "old": "(không có)",
+        "new": "false"
+      },
+      {
+        "path": "viewer.systemInfo.value.logic.writes",
+        "old": "(không có)",
+        "new": "\"off\""
+      },
+      {
+        "path": "viewer.systemInfo.value.releaseSeq",
+        "old": "(không có)",
+        "new": "0"
+      },
+      {
+        "path": "viewer.systemInfo.value.timeSynced",
+        "old": "(không có)",
+        "new": "true"
+      },
+      {
+        "path": "viewer.systemInfo.value.update.enabled",
+        "old": "(không có)",
+        "new": "false"
+      },
+      {
+        "path": "viewer.systemInfo.value.update.supported",
+        "old": "(không có)",
+        "new": "true"
+      },
+      {
+        "path": "viewer.systemInfo.value.warningDetails",
+        "old": "(không có)",
+        "new": "[]"
+      },
+      {
+        "path": "viewer.alarms.shape.instances",
+        "old": "(không có)",
+        "new": "[]"
+      },
+      {
+        "path": "deploy.audit.suppressed.0.byAction.sources.172.30.71.50",
+        "old": "(không có)",
+        "new": "3"
+      }
+    ]
+  },
+  "control": {
+    "label": "newctl",
+    "auditRows": [
+      "project.adopt | - | - | system | ok | - | <digest>",
+      "cert.generate | - | - | system | ok | - | <digest>",
+      "account.create | - | - | cli | started | - | admin",
+      "account.create | - | - | cli | ok | - | admin",
+      "account.create | - | - | cli | started | - | kysu",
+      "account.create | - | - | cli | ok | - | kysu",
+      "account.create | - | - | cli | started | - | xem",
+      "account.create | - | - | cli | ok | - | xem",
+      "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/web/session",
+      "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/history/catalog",
+      "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/diagnostics",
+      "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/project/versions",
+      "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/web/session",
+      "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/history/catalog",
+      "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/diagnostics",
+      "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/project/versions",
+      "tag.write | - | - | http | denied | LIVE_WRITE_NOT_ALLOWED | BON.MUC_DAT",
+      "auth.login | kysu | - | https | failed | AUTH_FAILED | ",
+      "auth.login | kysu | engineer | https | ok | - | ",
+      "auth.login | xem | viewer | https | ok | - | ",
+      "auth.login | admin | administrator | https | ok | - | ",
+      "project.read | kysu | engineer | https | ok | - | <digest>",
+      "audit.suppressed | - | - | system | ok | - | ",
+      "project.deploy | kysu | engineer | https | failed | BASE_CHANGED | <digest>",
+      "project.deploy | kysu | engineer | https | started | - | <digest>",
+      "project.deploy | kysu | engineer | https | ok | - | <digest>",
+      "project.read | kysu | engineer | https | ok | - | <digest>",
+      "project.deploy | kysu | engineer | https | started | - | <digest>",
+      "project.deploy | kysu | engineer | https | failed | E_PKG_DIGEST | <digest>",
+      "project.deploy | kysu | engineer | https | started | - | <digest>",
+      "project.deploy | kysu | engineer | https | failed | E_VALIDATION | <digest>",
+      "project.deploy | kysu | engineer | https | started | - | <digest>",
+      "project.deploy | kysu | engineer | https | ok | - | <digest>",
+      "project.restore | kysu | engineer | https | failed | ALREADY_ACTIVE | 3",
+      "project.restore | kysu | engineer | https | failed | NO_SUCH_VERSION | 999",
+      "project.restore | kysu | engineer | https | started | - | <digest>",
+      "project.restore | kysu | engineer | https | ok | - | <digest>",
+      "project.read | kysu | engineer | https | ok | - | <digest>",
+      "project.read | kysu | engineer | https | ok | - | <digest>"
+    ],
+    "suppressed": [
+      {
+        "count": 3,
+        "byAction": {
+          "access.denied": 3,
+          "sources": {
+            "172.30.71.50": 3
+          }
+        }
+      }
+    ]
+  },
+  "records": {
+    "old": {
+      "label": "old",
+      "runtimeVersionCli": "2 config error: tham số không hỗ trợ: --version",
+      "fp": "<pinned>",
+      "tagIds": [
+        "BON.MUC",
+        "BON.LUU_LUONG",
+        "BON.MUC_DAT",
+        "BOM.LENH_CHAY",
+        "BOM.LOI",
+        "BON.NGUONG_CAO",
+        "BON.THE_TICH",
+        "BON.CAO",
+        "HL.SONG"
+      ],
+      "viewer": {
+        "lan": {
+          "/": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 3410
+          },
+          "/index.html": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 3410
+          },
+          "/login": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 527
+          },
+          "/device.crt": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/x-x509-ca-cert",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 558
+          },
+          "/api/v1/system/info": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "vary": "Origin"
+            },
+            "bytes": 2127
+          },
+          "/api/v1/device/identity": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 467
+          },
+          "/api/v1/projects/active": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 2919
+          },
+          "/project/project.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 9
+          },
+          "/project/tags.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 9
+          },
+          "/project/screens/tong-quan.screen.json": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<69 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 2493
+          },
+          "/project/screens/xu-huong.screen.json": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<69 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 854
+          },
+          "/project/connections.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 9
+          },
+          "/project/alarms.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 9
+          },
+          "/project/khong-co.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 9
+          },
+          "/api/v1/web/session": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/alarms": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 1337
+          },
+          "/api/v1/history/catalog": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/diagnostics": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/project/versions": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/khong-co-trang-nay": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain; charset=utf-8",
+              "cache-control": "no-cache, no-store, must-revalidate, private, max-age=0",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 30
+          }
+        },
+        "pub": {
+          "/": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/index.html": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/login": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 527
+          },
+          "/device.crt": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/x-x509-ca-cert",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 558
+          },
+          "/api/v1/system/info": {
+            "status": 403,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "error": "SOURCE_NOT_ALLOWED",
+            "bytes": 161
+          },
+          "/api/v1/device/identity": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 467
+          },
+          "/api/v1/projects/active": {
+            "status": 403,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "error": "SOURCE_NOT_ALLOWED",
+            "bytes": 161
+          },
+          "/project/project.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/tags.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/screens/tong-quan.screen.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/screens/xu-huong.screen.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/connections.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/alarms.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/khong-co.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/api/v1/web/session": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/alarms": {
+            "status": 403,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "error": "SOURCE_NOT_ALLOWED",
+            "bytes": 161
+          },
+          "/api/v1/history/catalog": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/diagnostics": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/project/versions": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/khong-co-trang-nay": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain; charset=utf-8",
+              "cache-control": "no-cache, no-store, must-revalidate, private, max-age=0",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 30
+          }
+        },
+        "xff": {
+          "/": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/api/v1/projects/active": {
+            "status": 403,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "error": "SOURCE_NOT_ALLOWED",
+            "bytes": 161
+          },
+          "/api/v1/system/info": {
+            "status": 403,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "error": "SOURCE_NOT_ALLOWED",
+            "bytes": 161
+          }
+        },
+        "host": {
+          "hostname rt:8443": {
+            "root": {
+              "status": 200,
+              "headers": {
+                "content-type": "text/html; charset=utf-8",
+                "cache-control": "no-cache",
+                "x-content-type-options": "nosniff",
+                "content-security-policy": "<193 ký tự>",
+                "etag": "<14 ký tự>",
+                "vary": "Accept-Encoding"
+              },
+              "bytes": 3410
+            },
+            "active": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff"
+              },
+              "bytes": 2919
+            }
+          },
+          "hostname rt.local": {
+            "root": {
+              "status": 200,
+              "headers": {
+                "content-type": "text/html; charset=utf-8",
+                "cache-control": "no-cache",
+                "x-content-type-options": "nosniff",
+                "content-security-policy": "<193 ký tự>",
+                "etag": "<14 ký tự>",
+                "vary": "Accept-Encoding"
+              },
+              "bytes": 3410
+            },
+            "active": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff"
+              },
+              "bytes": 2919
+            }
+          },
+          "localhost": {
+            "root": {
+              "status": 200,
+              "headers": {
+                "content-type": "text/html; charset=utf-8",
+                "cache-control": "no-cache",
+                "x-content-type-options": "nosniff",
+                "content-security-policy": "<193 ký tự>",
+                "etag": "<14 ký tự>",
+                "vary": "Accept-Encoding"
+              },
+              "bytes": 3410
+            },
+            "active": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff"
+              },
+              "bytes": 2919
+            }
+          },
+          "evil.example": {
+            "root": {
+              "status": 200,
+              "headers": {
+                "content-type": "text/html; charset=utf-8",
+                "cache-control": "no-cache",
+                "x-content-type-options": "nosniff",
+                "content-security-policy": "<193 ký tự>",
+                "etag": "<14 ký tự>",
+                "vary": "Accept-Encoding"
+              },
+              "bytes": 3410
+            },
+            "active": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff"
+              },
+              "bytes": 2919
+            }
+          },
+          "ip no port": {
+            "root": {
+              "status": 200,
+              "headers": {
+                "content-type": "text/html; charset=utf-8",
+                "cache-control": "no-cache",
+                "x-content-type-options": "nosniff",
+                "content-security-policy": "<193 ký tự>",
+                "etag": "<14 ký tự>",
+                "vary": "Accept-Encoding"
+              },
+              "bytes": 3410
+            },
+            "active": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff"
+              },
+              "bytes": 2919
+            }
+          }
+        },
+        "http": {
+          "/": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 3410
+          },
+          "/api/v1/projects/active": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 2919
+          },
+          "/api/v1/system/info": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "vary": "Origin"
+            },
+            "bytes": 2127
+          },
+          "/project/project.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff"
+            },
+            "bytes": 9
+          }
+        },
+        "live": {
+          "lan": {
+            "status": 101,
+            "helloShape": {
+              "features": [
+                "string",
+                "len=1"
+              ],
+              "heartbeatMs": "number",
+              "maxClients": "number",
+              "project": "undefined",
+              "protocolVersion": "string",
+              "serverVersion": "string",
+              "timeoutMs": "number",
+              "type": "string"
+            },
+            "hello": {
+              "protocolVersion": "1.3.0",
+              "serverVersion": "0.9.0",
+              "maxClients": 10,
+              "heartbeatMs": 5000,
+              "timeoutMs": 15000,
+              "features": [
+                "alarms"
+              ],
+              "projectShape": {
+                "digest": "string",
+                "projectId": "string",
+                "projectVersion": "string"
+              },
+              "project": {
+                "projectId": "training-demo",
+                "projectVersion": "0.1.0",
+                "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0"
+              }
+            },
+            "snapshot": {
+              "shape": {
+                "sequence": "number",
+                "subscriptionId": "string",
+                "tags": "undefined",
+                "ts": "number",
+                "type": "string",
+                "unknown": [
+                  "string",
+                  "len=1"
+                ]
+              },
+              "tagCount": 9,
+              "tagShape": {
+                "id": "string",
+                "quality": "string",
+                "revision": "number",
+                "serverTimestamp": "number",
+                "sourceTimestamp": "number",
+                "value": "number"
+              },
+              "tagIds": [
+                "BON.MUC",
+                "BON.LUU_LUONG",
+                "BON.MUC_DAT",
+                "BOM.LENH_CHAY",
+                "BOM.LOI",
+                "BON.NGUONG_CAO",
+                "BON.THE_TICH",
+                "BON.CAO",
+                "HL.SONG"
+              ],
+              "bonMuc": 80.9570312,
+              "qualities": {
+                "BON.MUC": "GOOD",
+                "BON.LUU_LUONG": "GOOD",
+                "BON.MUC_DAT": "GOOD",
+                "BOM.LENH_CHAY": "GOOD",
+                "BOM.LOI": "GOOD",
+                "BON.NGUONG_CAO": "GOOD",
+                "BON.THE_TICH": "GOOD",
+                "BON.CAO": "GOOD",
+                "HL.SONG": "GOOD"
+              },
+              "unknown": [
+                "KHONG.CO"
+              ]
+            },
+            "deltaCount": 28,
+            "deltaShape": {
+              "sequence": "number",
+              "subscriptionId": "string",
+              "tags": "undefined",
+              "ts": "number",
+              "type": "string"
+            },
+            "deltaTagShape": [
+              "number",
+              "len=3"
+            ],
+            "deltaTagPositions": [
+              0,
+              1,
+              6,
+              8
+            ],
+            "deltaSequenceMonotonic": true,
+            "errors": [
+              {
+                "code": "BAD_MESSAGE",
+                "requestId": "pair-w"
+              }
+            ],
+            "messageTypes": [
+              "delta",
+              "error",
+              "heartbeat",
+              "hello",
+              "snapshot"
+            ],
+            "close": null
+          },
+          "lan no Origin": {
+            "status": 101,
+            "error": null,
+            "statusLine": "HTTP/1.1 101 Switching Protocols",
+            "bodyBytes": 0,
+            "firstMessage": "hello",
+            "close": null
+          },
+          "lan Origin evil": {
+            "status": 403,
+            "error": null,
+            "statusLine": "HTTP/1.1 403 Forbidden",
+            "bodyBytes": 0,
+            "firstMessage": null,
+            "close": null
+          },
+          "lan Origin http": {
+            "status": 101,
+            "error": null,
+            "statusLine": "HTTP/1.1 101 Switching Protocols",
+            "bodyBytes": 0,
+            "firstMessage": "hello",
+            "close": null
+          },
+          "lan Host evil": {
+            "status": 101,
+            "error": null,
+            "statusLine": "HTTP/1.1 101 Switching Protocols",
+            "bodyBytes": 0,
+            "firstMessage": "hello",
+            "close": null
+          },
+          "pub (public source)": {
+            "status": 403,
+            "error": null,
+            "statusLine": "HTTP/1.1 403 Forbidden",
+            "bodyBytes": 0,
+            "firstMessage": null,
+            "close": null
+          }
+        },
+        "root": {
+          "gzip": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "content-encoding": "gzip",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<17 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 1049
+          },
+          "title": "mAT SCADA",
+          "assetCount": 2,
+          "assetKinds": [
+            "index-<hash>.css",
+            "index-<hash>.js"
+          ]
+        },
+        "assets": {
+          "/assets/index-<hash>.js": {
+            "status": 200,
+            "contentType": "text/javascript; charset=utf-8",
+            "cacheControl": "public, max-age=31536000, immutable",
+            "gzipStatus": 200,
+            "gzipEncoding": "gzip"
+          },
+          "/assets/index-<hash>.css": {
+            "status": 200,
+            "contentType": "text/css; charset=utf-8",
+            "cacheControl": "public, max-age=31536000, immutable",
+            "gzipStatus": 200,
+            "gzipEncoding": "gzip"
+          }
+        },
+        "systemInfo": {
+          "status": 200,
+          "shape": {
+            "alarms": {
+              "active": "number",
+              "dbBytes": "number",
+              "disabled": "number",
+              "droppedChanges": "number",
+              "evalMaxMs": "number",
+              "evalWindowS": "number",
+              "instances": "number",
+              "logState": "string",
+              "shelved": "number",
+              "unacked": "number"
+            },
+            "clients": "number",
+            "device": {
+              "apiVersion": "string",
+              "deviceId": "string",
+              "discovery": "boolean",
+              "https": "string",
+              "httpsPort": "number",
+              "model": "string",
+              "name": "string",
+              "viewerAccess": "string"
+            },
+            "historian": {
+              "aggregates": {
+                "backfill": {
+                  "active": "boolean",
+                  "group": "null",
+                  "progress": "null"
+                },
+                "capRowsDeleted": {
+                  "hour": "number",
+                  "minute": "number",
+                  "raw": "number"
+                },
+                "enabled": "boolean",
+                "groups": "number",
+                "rows": {
+                  "hour": "number",
+                  "minute": "number"
+                },
+                "schema": "number"
+              },
+              "capPurges": "number",
+              "capRowsDeleted": "number",
+              "clock": "string",
+              "clockJumps": "number",
+              "commitMs": "number",
+              "dbBytes": "number",
+              "dbMaxBytes": "number",
+              "destinations": [],
+              "enabled": "boolean",
+              "freeBytes": "number",
+              "groups": "number",
+              "groupsInfo": [
+                {
+                  "aggregates": "boolean",
+                  "id": "string",
+                  "mode": "string",
+                  "rows24h": "number",
+                  "triggerState": "null"
+                },
+                "len=1"
+              ],
+              "io": {
+                "budgetBytesPerDay": "number",
+                "bytesPerDay": "null",
+                "coverageS": "number",
+                "estimateBytesPerDay": "number",
+                "procSelfIo": {
+                  "available": "boolean",
+                  "bytesPerDay": "null",
+                  "coverageS": "number",
+                  "writeBytes1h": "number",
+                  "writeBytes24h": "number"
+                },
+                "source": "string",
+                "sqliteVfs": {
+                  "available": "boolean",
+                  "bytesPerDay": "null",
+                  "coverageS": "number",
+                  "sinceStart": {
+                    "alarm": "number",
+                    "audit": "number",
+                    "history": "number"
+                  },
+                  "sinceStartTotal": "number",
+                  "writeBytes1h": "number",
+                  "writeBytes24h": "number"
+                },
+                "writeBytes1h": "number",
+                "writeBytes24h": "number"
+              },
+              "lastCommitAt": "null",
+              "lastError": "null",
+              "lastRetention": {
+                "at": "number",
+                "rowsDeleted": "number"
+              },
+              "query": {
+                "enabled": "boolean",
+                "errors": "number",
+                "inFlight": "number",
+                "lastError": "null",
+                "p95Ms": "number",
+                "rejectedBusy": "number",
+                "rejectedLimit": "number",
+                "served": "number",
+                "timeouts": "number"
+              },
+              "rowsDropped": "number",
+              "rowsWritten": "number",
+              "state": "string",
+              "stringsTruncated": "number",
+              "warnings": []
+            },
+            "maxClients": "number",
+            "operation": "null",
+            "originRejectedTotal": "number",
+            "overflowClosedTotal": "number",
+            "project": {
+              "digest": "string",
+              "errors": [],
+              "projectId": "string",
+              "projectVersion": "string",
+              "status": "string"
+            },
+            "protocolVersion": "string",
+            "rejectedTotal": "number",
+            "runtimeVersion": "string",
+            "schemaVersions": [
+              "string",
+              "len=5"
+            ],
+            "tagCount": "number",
+            "timeoutClosedTotal": "number",
+            "uptimeS": "number",
+            "warnings": [],
+            "web": {
+              "https": "boolean",
+              "httpsPort": "number",
+              "login": "boolean",
+              "viewerLogin": "string"
+            },
+            "writeFailedTotal": "number"
+          },
+          "value": {
+            "alarms": {
+              "active": 1,
+              "dbBytes": 32768,
+              "disabled": 0,
+              "droppedChanges": 0,
+              "evalMaxMs": 1.2,
+              "evalWindowS": 60,
+              "instances": 4,
+              "logState": "running",
+              "shelved": 0,
+              "unacked": 1
+            },
+            "clients": 0,
+            "device": {
+              "apiVersion": "1.4.0",
+              "deviceId": "1ae8ff2b-232b-4440-9793-ebe13a08fe1d",
+              "discovery": false,
+              "https": "ok",
+              "httpsPort": 8443,
+              "model": "BL335",
+              "name": "rt",
+              "viewerAccess": "private"
+            },
+            "historian": {
+              "aggregates": {
+                "backfill": {
+                  "active": false,
+                  "group": null,
+                  "progress": null
+                },
+                "capRowsDeleted": {
+                  "hour": 0,
+                  "minute": 0,
+                  "raw": 0
+                },
+                "enabled": true,
+                "groups": 1,
+                "rows": {
+                  "hour": 0,
+                  "minute": 0
+                },
+                "schema": 2
+              },
+              "capPurges": 0,
+              "capRowsDeleted": 0,
+              "clock": "ok",
+              "clockJumps": 0,
+              "commitMs": 5000,
+              "dbBytes": 65536,
+              "dbMaxBytes": 2147483648,
+              "destinations": [],
+              "enabled": true,
+              "freeBytes": 57093312512,
+              "groups": 1,
+              "groupsInfo": [
+                {
+                  "aggregates": true,
+                  "id": "bon",
+                  "mode": "onChange",
+                  "rows24h": 3,
+                  "triggerState": null
+                }
+              ],
+              "io": {
+                "budgetBytesPerDay": 2147483648,
+                "bytesPerDay": null,
+                "coverageS": 0,
+                "estimateBytesPerDay": 432605491,
+                "procSelfIo": {
+                  "available": true,
+                  "bytesPerDay": null,
+                  "coverageS": 0,
+                  "writeBytes1h": 0,
+                  "writeBytes24h": 0
+                },
+                "source": "proc-self-io",
+                "sqliteVfs": {
+                  "available": true,
+                  "bytesPerDay": null,
+                  "coverageS": 0,
+                  "sinceStart": {
+                    "alarm": 74692,
+                    "audit": 17300,
+                    "history": 140612
+                  },
+                  "sinceStartTotal": 232604,
+                  "writeBytes1h": 0,
+                  "writeBytes24h": 0
+                },
+                "writeBytes1h": 0,
+                "writeBytes24h": 0
+              },
+              "lastCommitAt": null,
+              "lastError": null,
+              "lastRetention": {
+                "at": "<number>",
+                "rowsDeleted": 0
+              },
+              "query": {
+                "enabled": true,
+                "errors": 0,
+                "inFlight": 0,
+                "lastError": null,
+                "p95Ms": 0,
+                "rejectedBusy": 0,
+                "rejectedLimit": 0,
+                "served": 0,
+                "timeouts": 0
+              },
+              "rowsDropped": 0,
+              "rowsWritten": 0,
+              "state": "running",
+              "stringsTruncated": 0,
+              "warnings": []
+            },
+            "maxClients": 10,
+            "operation": null,
+            "originRejectedTotal": 0,
+            "overflowClosedTotal": 0,
+            "project": {
+              "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0",
+              "errors": [],
+              "projectId": "training-demo",
+              "projectVersion": "0.1.0",
+              "status": "<string>"
+            },
+            "protocolVersion": "1.3.0",
+            "rejectedTotal": 0,
+            "runtimeVersion": "0.9.0",
+            "schemaVersions": [
+              "0.1",
+              "0.2",
+              "0.3",
+              "0.4",
+              "0.5"
+            ],
+            "tagCount": 509,
+            "timeoutClosedTotal": 0,
+            "uptimeS": "<number>",
+            "warnings": [],
+            "web": {
+              "https": true,
+              "httpsPort": 8443,
+              "login": true,
+              "viewerLogin": "off"
+            },
+            "writeFailedTotal": 0
+          }
+        },
+        "projectsActive": {
+          "status": 200,
+          "shape": {
+            "connections": [
+              {
+                "id": "string",
+                "kind": "string",
+                "name": "string"
+              },
+              "len=1"
+            ],
+            "digest": "string",
+            "navigation": {
+              "items": [
+                {
+                  "icon": "string",
+                  "label": "string",
+                  "screen": "string"
+                },
+                "len=2"
+              ],
+              "position": "string"
+            },
+            "project": {
+              "alarmClassFile": "string",
+              "alarmFile": "string",
+              "connectionFile": "string",
+              "entryScreen": "string",
+              "format": "string",
+              "loggingFile": "string",
+              "maxClients": "number",
+              "minRuntimeVersion": "string",
+              "navigation": {
+                "items": [
+                  {
+                    "icon": "string",
+                    "label": "string",
+                    "screen": "string"
+                  },
+                  "len=2"
+                ],
+                "position": "string"
+              },
+              "projectId": "string",
+              "projectName": "string",
+              "projectVersion": "string",
+              "schemaVersion": "string",
+              "screens": [
+                "string",
+                "len=2"
+              ],
+              "tagFile": "string"
+            },
+            "screens": [
+              {
+                "file": "string",
+                "id": "string",
+                "kind": "string",
+                "name": "string"
+              },
+              "len=2"
+            ],
+            "tags": {
+              "schemaVersion": "string",
+              "tags": [
+                {
+                  "deadband": "number",
+                  "description": "string",
+                  "id": "string",
+                  "kind": "string",
+                  "max": "number",
+                  "min": "number",
+                  "scaling": {
+                    "clamp": "boolean",
+                    "engMax": "number",
+                    "engMin": "number",
+                    "rawMax": "number",
+                    "rawMin": "number"
+                  },
+                  "source": {
+                    "address": "string",
+                    "device": "string",
+                    "rawType": "string"
+                  },
+                  "type": "string",
+                  "unit": "string"
+                },
+                "len=9"
+              ]
+            },
+            "valueTables": {}
+          },
+          "value": {
+            "connections": [
+              {
+                "id": "plc-hl",
+                "kind": "modbus-tcp",
+                "name": "PLC giả lập (huấn luyện)"
+              }
+            ],
+            "navigation": {
+              "items": [
+                {
+                  "icon": "home",
+                  "label": "Tổng quan",
+                  "screen": "tong-quan"
+                },
+                {
+                  "icon": "chart",
+                  "label": "Xu hướng",
+                  "screen": "xu-huong"
+                }
+              ],
+              "position": "left"
+            },
+            "project": {
+              "alarmClassFile": "alarm-classes.json",
+              "alarmFile": "alarms.json",
+              "connectionFile": "connections.json",
+              "entryScreen": "tong-quan",
+              "format": "matscada-project",
+              "loggingFile": "logging.json",
+              "maxClients": 10,
+              "minRuntimeVersion": "0.9.0",
+              "navigation": {
+                "items": [
+                  {
+                    "icon": "home",
+                    "label": "Tổng quan",
+                    "screen": "tong-quan"
+                  },
+                  {
+                    "icon": "chart",
+                    "label": "Xu hướng",
+                    "screen": "xu-huong"
+                  }
+                ],
+                "position": "left"
+              },
+              "projectId": "training-demo",
+              "projectName": "Dự án huấn luyện",
+              "projectVersion": "0.1.0",
+              "schemaVersion": "0.6.0",
+              "screens": [
+                "tong-quan",
+                "xu-huong"
+              ],
+              "tagFile": "tags.json"
+            },
+            "screens": [
+              {
+                "file": "screens/tong-quan.screen.json",
+                "id": "tong-quan",
+                "kind": "screen",
+                "name": "Tổng quan"
+              },
+              {
+                "file": "screens/xu-huong.screen.json",
+                "id": "xu-huong",
+                "kind": "screen",
+                "name": "Xu hướng"
+              }
+            ],
+            "tags": {
+              "schemaVersion": "0.6.0",
+              "tags": [
+                {
+                  "deadband": 0.5,
+                  "description": "Mức nước bồn",
+                  "id": "BON.MUC",
+                  "kind": "external",
+                  "max": 100,
+                  "min": 0,
+                  "scaling": {
+                    "clamp": true,
+                    "engMax": 100,
+                    "engMin": 0,
+                    "rawMax": 27648,
+                    "rawMin": 0
+                  },
+                  "source": {
+                    "address": "HR100",
+                    "device": "plc-hl",
+                    "rawType": "INT16"
+                  },
+                  "type": "FLOAT32",
+                  "unit": "%"
+                },
+                {
+                  "deadband": 0.2,
+                  "description": "Lưu lượng vào bồn",
+                  "id": "BON.LUU_LUONG",
+                  "kind": "external",
+                  "max": 50,
+                  "min": 0,
+                  "scaling": {
+                    "clamp": true,
+                    "engMax": 50,
+                    "engMin": 0,
+                    "rawMax": 27648,
+                    "rawMin": 0
+                  },
+                  "source": {
+                    "address": "HR101",
+                    "device": "plc-hl",
+                    "rawType": "INT16"
+                  },
+                  "type": "FLOAT32",
+                  "unit": "m3/h"
+                },
+                {
+                  "access": "RW",
+                  "description": "Mức đặt của bồn",
+                  "id": "BON.MUC_DAT",
+                  "kind": "external",
+                  "limits": {
+                    "max": 90,
+                    "min": 0
+                  },
+                  "source": {
+                    "address": "HR200",
+                    "device": "plc-hl"
+                  },
+                  "type": "FLOAT32",
+                  "unit": "%"
+                },
+                {
+                  "access": "RW",
+                  "description": "Lệnh chạy bơm",
+                  "id": "BOM.LENH_CHAY",
+                  "kind": "external",
+                  "source": {
+                    "address": "C10",
+                    "device": "plc-hl"
+                  },
+                  "type": "BOOL"
+                },
+                {
+                  "description": "Bơm báo lỗi",
+                  "id": "BOM.LOI",
+                  "kind": "external",
+                  "source": {
+                    "address": "HR12.3",
+                    "device": "plc-hl"
+                  },
+                  "type": "BOOL"
+                },
+                {
+                  "access": "RW",
+                  "description": "Ngưỡng mức cao (người vận hành chỉnh)",
+                  "id": "BON.NGUONG_CAO",
+                  "initial": 85,
+                  "kind": "internal",
+                  "limits": {
+                    "max": 100,
+                    "min": 50
+                  },
+                  "retain": true,
+                  "type": "FLOAT32",
+                  "unit": "%"
+                },
+                {
+                  "description": "Thể tích nước (bồn 12,5 m3)",
+                  "expression": "BON.MUC * 0.125",
+                  "id": "BON.THE_TICH",
+                  "kind": "calculated",
+                  "type": "FLOAT32",
+                  "unit": "m3"
+                },
+                {
+                  "description": "Mức vượt ngưỡng cao",
+                  "expression": "BON.MUC > BON.NGUONG_CAO",
+                  "id": "BON.CAO",
+                  "kind": "calculated",
+                  "type": "BOOL"
+                },
+                {
+                  "description": "Tín hiệu mô phỏng cho bài tập không có PLC",
+                  "id": "HL.SONG",
+                  "kind": "simulation",
+                  "max": 100,
+                  "min": 0,
+                  "sim": {
+                    "amplitude": 40,
+                    "center": 50,
+                    "kind": "sine",
+                    "periodMs": 60000
+                  },
+                  "type": "FLOAT32",
+                  "unit": "%"
+                }
+              ]
+            },
+            "valueTables": {},
+            "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0"
+          }
+        },
+        "identity": {
+          "status": 200,
+          "shape": {
+            "apiVersion": "string",
+            "deviceId": "string",
+            "features": [
+              "string",
+              "len=15"
+            ],
+            "fingerprint": "string",
+            "httpPort": "number",
+            "httpsPort": "number",
+            "model": "string",
+            "name": "string",
+            "protocolVersion": "string",
+            "runtimeVersion": "string",
+            "setupRequired": "boolean"
+          },
+          "features": [
+            "auth",
+            "web-login",
+            "screens-v1",
+            "deploy",
+            "upload",
+            "restore",
+            "diagnostics",
+            "audit",
+            "drivers",
+            "serial-ports",
+            "tag-write",
+            "write-pulse",
+            "write-expect",
+            "alarms",
+            "history"
+          ]
+        },
+        "alarms": {
+          "status": 200,
+          "shape": {
+            "areas": [
+              {
+                "id": "string",
+                "name": "string"
+              },
+              "len=2"
+            ],
+            "classes": [
+              {
+                "ackReturn": "boolean",
+                "blink": "boolean",
+                "chatterLimit": "number",
+                "color": "string",
+                "id": "string",
+                "name": "string",
+                "priority": "string",
+                "requiresAck": "boolean",
+                "sound": "string"
+              },
+              "len=4"
+            ],
+            "counts": {
+              "active": "number",
+              "byPriority": {
+                "advisory": {
+                  "active": "number",
+                  "unack": "number"
+                },
+                "critical": {
+                  "active": "number",
+                  "unack": "number"
+                },
+                "major": {
+                  "active": "number",
+                  "unack": "number"
+                },
+                "minor": {
+                  "active": "number",
+                  "unack": "number"
+                }
+              },
+              "disabled": "number",
+              "rtnUnack": "number",
+              "shelved": "number",
+              "unack": "number"
+            },
+            "instances": [
+              {
+                "alarmId": "string",
+                "area": "string",
+                "class": "string",
+                "clockOk": "boolean",
+                "disabled": "boolean",
+                "id": "string",
+                "inputBad": "boolean",
+                "limit": "string",
+                "name": "string",
+                "occurrence": "number",
+                "priority": "string",
+                "qualityActive": "string",
+                "rev": "number",
+                "startup": "boolean",
+                "state": "string",
+                "text": "string",
+                "tsActive": "number",
+                "type": "string",
+                "valueActive": "number"
+              },
+              "len=1"
+            ],
+            "revision": "number",
+            "ts": "number"
+          },
+          "active": []
+        },
+        "webSession": {
+          "status": 401,
+          "value": {
+            "error": "AUTH_REQUIRED",
+            "message": "Cần đăng nhập."
+          }
+        },
+        "screenFile": {
+          "status": 200,
+          "sameBytesAsProjectDir": true
+        }
+      },
+      "deploy": {
+        "steps": [
+          {
+            "step": "login sai mật khẩu",
+            "status": 401,
+            "error": "AUTH_FAILED"
+          },
+          {
+            "step": "login engineer",
+            "status": 200,
+            "shape": {
+              "idleTimeoutS": "number",
+              "maxLifetimeS": "number",
+              "role": "string",
+              "token": "string",
+              "user": "string"
+            },
+            "role": "engineer",
+            "user": "kysu"
+          },
+          {
+            "step": "auth/session",
+            "status": 200,
+            "value": {
+              "idleRemainingS": 1799,
+              "lifetimeRemainingS": 43199,
+              "role": "engineer",
+              "user": "kysu"
+            }
+          },
+          {
+            "step": "versions lúc đầu",
+            "status": 200,
+            "shape": {
+              "active": "number",
+              "backupsMax": "number",
+              "versions": [
+                {
+                  "activatedAt": "string",
+                  "clockOk": "boolean",
+                  "deployedBy": "null",
+                  "deployedFrom": "null",
+                  "digest": "string",
+                  "minRuntimeVersion": "string",
+                  "projectId": "string",
+                  "projectName": "string",
+                  "projectVersion": "string",
+                  "seq": "number",
+                  "size": "number",
+                  "source": "string",
+                  "state": "string"
+                },
+                "len=1"
+              ]
+            },
+            "versions": [
+              {
+                "seq": 1,
+                "state": "active",
+                "projectId": "training-demo",
+                "projectVersion": "0.1.0",
+                "source": "runtime-package",
+                "deployedBy": null,
+                "restorable": null,
+                "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0"
+              }
+            ]
+          },
+          {
+            "step": "đọc lên bản đầu",
+            "status": 200,
+            "contentType": "application/zip",
+            "disposition": "attachment; filename=\"training-demo-0.1.0.matscada\"",
+            "digestHeaderIsActive": true,
+            "files": [
+              "alarm-classes.json",
+              "alarms.json",
+              "connections.json",
+              "logging.json",
+              "project.json",
+              "screens/tong-quan.screen.json",
+              "screens/xu-huong.screen.json",
+              "tags.json"
+            ]
+          },
+          {
+            "step": "project/manifest",
+            "status": 200,
+            "shape": {
+              "createdAt": "string",
+              "digest": "string",
+              "files": [
+                {
+                  "path": "string",
+                  "sha256": "string",
+                  "size": "number"
+                },
+                "len=8"
+              ],
+              "format": "string",
+              "formatVersion": "string",
+              "generator": {
+                "name": "string",
+                "version": "string"
+              },
+              "project": {
+                "minRuntimeVersion": "string",
+                "projectId": "string",
+                "projectName": "string",
+                "projectVersion": "string"
+              }
+            }
+          },
+          {
+            "step": "project/operation lúc đầu",
+            "status": 200,
+            "value": null
+          },
+          {
+            "step": "nạp xuống không đăng nhập",
+            "status": 401,
+            "error": "AUTH_REQUIRED"
+          },
+          {
+            "step": "nạp xuống role viewer",
+            "status": 403,
+            "error": "FORBIDDEN"
+          },
+          {
+            "step": "versions qua HTTP 8080",
+            "status": 403,
+            "error": "HTTPS_REQUIRED"
+          },
+          {
+            "step": "nạp xuống BASE_CHANGED",
+            "status": 409,
+            "error": "BASE_CHANGED"
+          },
+          {
+            "step": "nạp xuống X-Mat-Digest sai dạng",
+            "status": 400,
+            "error": "BAD_REQUEST"
+          },
+          {
+            "step": "nạp xuống 0.2.0",
+            "status": 202,
+            "accepted": {
+              "opId": "<string>",
+              "status": "<string>"
+            },
+            "result": "committed",
+            "error": null,
+            "stepTrace": [
+              "receive:ok,verify-package:running,validate:pending,backup:pending,activate:pending,health:pending",
+              "receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:running",
+              "receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:ok"
+            ],
+            "op": {
+              "opId": "<string>",
+              "kind": "deploy",
+              "user": "kysu",
+              "role": "engineer",
+              "source": "172.30.71.50",
+              "startedAt": "<string>",
+              "endedAt": "<string>",
+              "clockOk": false,
+              "result": "committed",
+              "from": {
+                "seq": 1,
+                "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0",
+                "projectVersion": "0.1.0"
+              },
+              "to": {
+                "seq": 2,
+                "digest": "sha256:ea00ae4b4dc247aa6d5c88d4078281140af3880d31e55a6e4f23fee2ab7d3f80",
+                "projectId": "training-demo",
+                "projectVersion": "0.2.0"
+              },
+              "steps": [
+                {
+                  "id": "receive",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "verify-package",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "validate",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "backup",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "activate",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "health",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                }
+              ],
+              "error": null,
+              "clientsNotified": 0
+            },
+            "ms": 4200
+          },
+          {
+            "step": "đọc lên 0.2.0",
+            "status": 200,
+            "sameBytes": true,
+            "digestHeader": true
+          },
+          {
+            "step": "projects/active sau 0.2.0 (khách)",
+            "status": 200,
+            "projectVersion": "0.2.0",
+            "digestMatches": true
+          },
+          {
+            "step": "nạp xuống digest khác gói",
+            "status": 202,
+            "result": "failed",
+            "opError": {
+              "code": "E_PKG_DIGEST",
+              "message": "Digest của gói khác digest mong đợi"
+            },
+            "stepTrace": [
+              "receive:ok,verify-package:running,validate:pending,backup:pending,activate:pending,health:pending",
+              "receive:ok,verify-package:failed,validate:pending,backup:pending,activate:pending,health:pending"
+            ]
+          },
+          {
+            "step": "nạp xuống project lỗi kiểm",
+            "status": 202,
+            "result": "failed",
+            "opErrorCode": "E_VALIDATION",
+            "issueCodes": [
+              "E_REF_TAG screens/tong-quan.screen.json /items/1/tags/value"
+            ],
+            "stepTrace": [
+              "receive:ok,verify-package:running,validate:pending,backup:pending,activate:pending,health:pending",
+              "receive:ok,verify-package:ok,validate:failed,backup:pending,activate:pending,health:pending"
+            ]
+          },
+          {
+            "step": "nạp xuống 0.3.0",
+            "status": 202,
+            "result": "committed",
+            "stepTrace": [
+              "receive:ok,verify-package:running,validate:pending,backup:pending,activate:pending,health:pending",
+              "receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:running",
+              "receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:ok"
+            ]
+          },
+          {
+            "step": "versions sau 0.3.0",
+            "status": 200,
+            "shape": {
+              "active": "number",
+              "backupsMax": "number",
+              "versions": [
+                {
+                  "activatedAt": "string",
+                  "clockOk": "boolean",
+                  "deployedBy": "string",
+                  "deployedFrom": "string",
+                  "digest": "string",
+                  "minRuntimeVersion": "string",
+                  "projectId": "string",
+                  "projectName": "string",
+                  "projectVersion": "string",
+                  "seq": "number",
+                  "size": "number",
+                  "source": "string",
+                  "state": "string"
+                },
+                "len=3"
+              ]
+            },
+            "versions": [
+              {
+                "seq": 3,
+                "state": "active",
+                "projectId": "training-demo",
+                "projectVersion": "0.3.0",
+                "source": "studio",
+                "deployedBy": "kysu",
+                "restorable": null,
+                "digest": "sha256:2457d3c911f6fe84fb59544d295f247c00ca24b8d4d726b22a172f09cd65605d"
+              },
+              {
+                "seq": 2,
+                "state": "backup",
+                "projectId": "training-demo",
+                "projectVersion": "0.2.0",
+                "source": "studio",
+                "deployedBy": "kysu",
+                "restorable": true,
+                "digest": "sha256:ea00ae4b4dc247aa6d5c88d4078281140af3880d31e55a6e4f23fee2ab7d3f80"
+              },
+              {
+                "seq": 1,
+                "state": "backup",
+                "projectId": "training-demo",
+                "projectVersion": "0.1.0",
+                "source": "runtime-package",
+                "deployedBy": null,
+                "restorable": true,
+                "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0"
+              }
+            ]
+          },
+          {
+            "step": "khôi phục bản đang chạy",
+            "status": 409,
+            "error": "ALREADY_ACTIVE"
+          },
+          {
+            "step": "khôi phục seq không có",
+            "status": 404,
+            "error": "NO_SUCH_VERSION"
+          },
+          {
+            "step": "khôi phục 0.2.0",
+            "status": 202,
+            "result": "committed",
+            "kind": "restore",
+            "stepTrace": [
+              "receive:skipped,verify-package:skipped,validate:running,backup:pending,activate:pending,health:pending",
+              "receive:skipped,verify-package:skipped,validate:ok,backup:ok,activate:ok,health:running",
+              "receive:skipped,verify-package:skipped,validate:ok,backup:ok,activate:ok,health:ok"
+            ],
+            "op": {
+              "opId": "<string>",
+              "kind": "restore",
+              "user": "kysu",
+              "role": "engineer",
+              "source": "172.30.71.50",
+              "startedAt": "<string>",
+              "endedAt": "<string>",
+              "clockOk": false,
+              "result": "committed",
+              "from": {
+                "seq": 3,
+                "digest": "sha256:2457d3c911f6fe84fb59544d295f247c00ca24b8d4d726b22a172f09cd65605d",
+                "projectVersion": "0.3.0"
+              },
+              "to": {
+                "seq": 2,
+                "digest": "sha256:ea00ae4b4dc247aa6d5c88d4078281140af3880d31e55a6e4f23fee2ab7d3f80",
+                "projectId": "training-demo",
+                "projectVersion": "0.2.0"
+              },
+              "steps": [
+                {
+                  "id": "receive",
+                  "state": "skipped",
+                  "startedAt": null,
+                  "endedAt": null
+                },
+                {
+                  "id": "verify-package",
+                  "state": "skipped",
+                  "startedAt": null,
+                  "endedAt": null
+                },
+                {
+                  "id": "validate",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "backup",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "activate",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "health",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                }
+              ],
+              "error": null,
+              "clientsNotified": 0
+            }
+          },
+          {
+            "step": "versions sau khôi phục",
+            "status": 200,
+            "shape": {
+              "active": "number",
+              "backupsMax": "number",
+              "versions": [
+                {
+                  "activatedAt": "string",
+                  "clockOk": "boolean",
+                  "deployedBy": "string",
+                  "deployedFrom": "string",
+                  "digest": "string",
+                  "minRuntimeVersion": "string",
+                  "projectId": "string",
+                  "projectName": "string",
+                  "projectVersion": "string",
+                  "seq": "number",
+                  "size": "number",
+                  "source": "string",
+                  "state": "string"
+                },
+                "len=3"
+              ]
+            },
+            "versions": [
+              {
+                "seq": 2,
+                "state": "active",
+                "projectId": "training-demo",
+                "projectVersion": "0.2.0",
+                "source": "restore",
+                "deployedBy": "kysu",
+                "restorable": null,
+                "digest": "sha256:ea00ae4b4dc247aa6d5c88d4078281140af3880d31e55a6e4f23fee2ab7d3f80"
+              },
+              {
+                "seq": 3,
+                "state": "backup",
+                "projectId": "training-demo",
+                "projectVersion": "0.3.0",
+                "source": "studio",
+                "deployedBy": "kysu",
+                "restorable": true,
+                "digest": "sha256:2457d3c911f6fe84fb59544d295f247c00ca24b8d4d726b22a172f09cd65605d"
+              },
+              {
+                "seq": 1,
+                "state": "backup",
+                "projectId": "training-demo",
+                "projectVersion": "0.1.0",
+                "source": "runtime-package",
+                "deployedBy": null,
+                "restorable": true,
+                "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0"
+              }
+            ]
+          },
+          {
+            "step": "đọc lên sau khôi phục",
+            "status": 200,
+            "sameBytesAs020": true
+          },
+          {
+            "step": "đọc lên seq 1 (bản dự phòng)",
+            "status": 200
+          },
+          {
+            "step": "audit với role viewer",
+            "status": 403,
+            "error": "FORBIDDEN"
+          }
+        ],
+        "audit": {
+          "status": 200,
+          "recordShape": {
+            "action": "string",
+            "channel": "string",
+            "clockOk": "boolean",
+            "code": "null",
+            "count": "number",
+            "detail": {
+              "projectId": "string",
+              "projectVersion": "string",
+              "seq": "number"
+            },
+            "id": "number",
+            "result": "string",
+            "role": "null",
+            "source": "string",
+            "target": "string",
+            "ts": "number",
+            "user": "null"
+          },
+          "rows": [
+            "project.adopt | - | - | system | ok | - | <digest>",
+            "cert.generate | - | - | system | ok | - | <digest>",
+            "account.create | - | - | cli | started | - | admin",
+            "account.create | - | - | cli | ok | - | admin",
+            "account.create | - | - | cli | started | - | kysu",
+            "account.create | - | - | cli | ok | - | kysu",
+            "account.create | - | - | cli | started | - | xem",
+            "account.create | - | - | cli | ok | - | xem",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/web/session",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/history/catalog",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/diagnostics",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/project/versions",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/web/session",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/history/catalog",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/diagnostics",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/project/versions",
+            "tag.write | - | - | http | denied | LIVE_WRITE_NOT_ALLOWED | BON.MUC_DAT",
+            "auth.login | kysu | - | https | failed | AUTH_FAILED | ",
+            "auth.login | kysu | engineer | https | ok | - | ",
+            "auth.login | xem | viewer | https | ok | - | ",
+            "auth.login | admin | administrator | https | ok | - | ",
+            "project.read | kysu | engineer | https | ok | - | <digest>",
+            "audit.suppressed | - | - | system | ok | - | ",
+            "project.deploy | kysu | engineer | https | failed | BASE_CHANGED | <digest>",
+            "project.deploy | kysu | engineer | https | started | - | <digest>",
+            "project.deploy | kysu | engineer | https | ok | - | <digest>",
+            "project.read | kysu | engineer | https | ok | - | <digest>",
+            "project.deploy | kysu | engineer | https | started | - | <digest>",
+            "project.deploy | kysu | engineer | https | failed | E_PKG_DIGEST | <digest>",
+            "project.deploy | kysu | engineer | https | started | - | <digest>",
+            "project.deploy | kysu | engineer | https | failed | E_VALIDATION | <digest>",
+            "project.deploy | kysu | engineer | https | started | - | <digest>",
+            "project.deploy | kysu | engineer | https | ok | - | <digest>",
+            "project.restore | kysu | engineer | https | failed | ALREADY_ACTIVE | 3",
+            "project.restore | kysu | engineer | https | failed | NO_SUCH_VERSION | 999",
+            "project.restore | kysu | engineer | https | started | - | <digest>",
+            "project.restore | kysu | engineer | https | ok | - | <digest>",
+            "project.read | kysu | engineer | https | ok | - | <digest>",
+            "project.read | kysu | engineer | https | ok | - | <digest>"
+          ],
+          "suppressed": [
+            {
+              "count": 3,
+              "byAction": {
+                "access.denied": 3
+              }
+            }
+          ]
+        }
+      },
+      "supervisorStarts": 1
+    },
+    "new": {
+      "label": "new",
+      "runtimeVersionCli": "2 config error: tham số không hỗ trợ: --version",
+      "fp": "<pinned>",
+      "tagIds": [
+        "BON.MUC",
+        "BON.LUU_LUONG",
+        "BON.MUC_DAT",
+        "BOM.LENH_CHAY",
+        "BOM.LOI",
+        "BON.NGUONG_CAO",
+        "BON.THE_TICH",
+        "BON.CAO",
+        "HL.SONG"
+      ],
+      "viewer": {
+        "lan": {
+          "/": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 3410
+          },
+          "/index.html": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 3410
+          },
+          "/login": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 527
+          },
+          "/device.crt": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/x-x509-ca-cert",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 558
+          },
+          "/api/v1/system/info": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "vary": "Origin"
+            },
+            "bytes": 2283
+          },
+          "/api/v1/device/identity": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 489
+          },
+          "/api/v1/projects/active": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 2919
+          },
+          "/project/project.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 9
+          },
+          "/project/tags.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 9
+          },
+          "/project/screens/tong-quan.screen.json": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<69 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 2493
+          },
+          "/project/screens/xu-huong.screen.json": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<69 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 854
+          },
+          "/project/connections.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 9
+          },
+          "/project/alarms.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 9
+          },
+          "/project/khong-co.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 9
+          },
+          "/api/v1/web/session": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/alarms": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 960
+          },
+          "/api/v1/history/catalog": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/diagnostics": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/project/versions": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/khong-co-trang-nay": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain; charset=utf-8",
+              "cache-control": "no-cache, no-store, must-revalidate, private, max-age=0",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 30
+          }
+        },
+        "pub": {
+          "/": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/index.html": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/login": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 527
+          },
+          "/device.crt": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/x-x509-ca-cert",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 558
+          },
+          "/api/v1/system/info": {
+            "status": 403,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "error": "SOURCE_NOT_ALLOWED",
+            "bytes": 161
+          },
+          "/api/v1/device/identity": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 489
+          },
+          "/api/v1/projects/active": {
+            "status": 403,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "error": "SOURCE_NOT_ALLOWED",
+            "bytes": 161
+          },
+          "/project/project.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/tags.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/screens/tong-quan.screen.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/screens/xu-huong.screen.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/connections.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/alarms.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/project/khong-co.json": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/api/v1/web/session": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/alarms": {
+            "status": 403,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "error": "SOURCE_NOT_ALLOWED",
+            "bytes": 161
+          },
+          "/api/v1/history/catalog": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/diagnostics": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/api/v1/project/versions": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "www-authenticate": "Bearer"
+            },
+            "error": "AUTH_REQUIRED",
+            "bytes": 58
+          },
+          "/khong-co-trang-nay": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain; charset=utf-8",
+              "cache-control": "no-cache, no-store, must-revalidate, private, max-age=0",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 30
+          }
+        },
+        "xff": {
+          "/": {
+            "status": 403,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<18 ký tự>"
+            },
+            "bytes": 354
+          },
+          "/api/v1/projects/active": {
+            "status": 403,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "error": "SOURCE_NOT_ALLOWED",
+            "bytes": 161
+          },
+          "/api/v1/system/info": {
+            "status": 403,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "error": "SOURCE_NOT_ALLOWED",
+            "bytes": 161
+          }
+        },
+        "host": {
+          "hostname rt:8443": {
+            "root": {
+              "status": 200,
+              "headers": {
+                "content-type": "text/html; charset=utf-8",
+                "cache-control": "no-cache",
+                "x-content-type-options": "nosniff",
+                "referrer-policy": "no-referrer",
+                "content-security-policy": "<193 ký tự>",
+                "etag": "<14 ký tự>",
+                "vary": "Accept-Encoding"
+              },
+              "bytes": 3410
+            },
+            "active": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff",
+                "referrer-policy": "no-referrer"
+              },
+              "bytes": 2919
+            }
+          },
+          "hostname rt.local": {
+            "root": {
+              "status": 200,
+              "headers": {
+                "content-type": "text/html; charset=utf-8",
+                "cache-control": "no-cache",
+                "x-content-type-options": "nosniff",
+                "referrer-policy": "no-referrer",
+                "content-security-policy": "<193 ký tự>",
+                "etag": "<14 ký tự>",
+                "vary": "Accept-Encoding"
+              },
+              "bytes": 3410
+            },
+            "active": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff",
+                "referrer-policy": "no-referrer"
+              },
+              "bytes": 2919
+            }
+          },
+          "localhost": {
+            "root": {
+              "status": 200,
+              "headers": {
+                "content-type": "text/html; charset=utf-8",
+                "cache-control": "no-cache",
+                "x-content-type-options": "nosniff",
+                "referrer-policy": "no-referrer",
+                "content-security-policy": "<193 ký tự>",
+                "etag": "<14 ký tự>",
+                "vary": "Accept-Encoding"
+              },
+              "bytes": 3410
+            },
+            "active": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff",
+                "referrer-policy": "no-referrer"
+              },
+              "bytes": 2919
+            }
+          },
+          "evil.example": {
+            "root": {
+              "status": 421,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff",
+                "referrer-policy": "no-referrer"
+              },
+              "error": {
+                "code": "HOST_NOT_ALLOWED",
+                "message": "Tên này chưa được phép. Quản trị viên: thêm vào allowedHosts của runtime.json."
+              },
+              "bytes": 145
+            },
+            "active": {
+              "status": 421,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff",
+                "referrer-policy": "no-referrer"
+              },
+              "error": {
+                "code": "HOST_NOT_ALLOWED",
+                "message": "Tên này chưa được phép. Quản trị viên: thêm vào allowedHosts của runtime.json."
+              },
+              "bytes": 145
+            }
+          },
+          "ip no port": {
+            "root": {
+              "status": 200,
+              "headers": {
+                "content-type": "text/html; charset=utf-8",
+                "cache-control": "no-cache",
+                "x-content-type-options": "nosniff",
+                "referrer-policy": "no-referrer",
+                "content-security-policy": "<193 ký tự>",
+                "etag": "<14 ký tự>",
+                "vary": "Accept-Encoding"
+              },
+              "bytes": 3410
+            },
+            "active": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff",
+                "referrer-policy": "no-referrer"
+              },
+              "bytes": 2919
+            }
+          }
+        },
+        "http": {
+          "/": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<14 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 3410
+          },
+          "/api/v1/projects/active": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 2919
+          },
+          "/api/v1/system/info": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "vary": "Origin"
+            },
+            "bytes": 2283
+          },
+          "/project/project.json": {
+            "status": 404,
+            "headers": {
+              "content-type": "text/plain",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer"
+            },
+            "bytes": 9
+          }
+        },
+        "live": {
+          "lan": {
+            "status": 101,
+            "helloShape": {
+              "features": [
+                "string",
+                "len=1"
+              ],
+              "heartbeatMs": "number",
+              "maxClients": "number",
+              "project": "undefined",
+              "protocolVersion": "string",
+              "serverVersion": "string",
+              "timeoutMs": "number",
+              "type": "string"
+            },
+            "hello": {
+              "protocolVersion": "1.3.0",
+              "serverVersion": "1.0.0-rc.1",
+              "maxClients": 10,
+              "heartbeatMs": 5000,
+              "timeoutMs": 15000,
+              "features": [
+                "alarms"
+              ],
+              "projectShape": {
+                "digest": "string",
+                "projectId": "string",
+                "projectVersion": "string"
+              },
+              "project": {
+                "projectId": "training-demo",
+                "projectVersion": "0.1.0",
+                "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0"
+              }
+            },
+            "snapshot": {
+              "shape": {
+                "sequence": "number",
+                "subscriptionId": "string",
+                "tags": "undefined",
+                "ts": "number",
+                "type": "string",
+                "unknown": [
+                  "string",
+                  "len=1"
+                ]
+              },
+              "tagCount": 9,
+              "tagShape": {
+                "id": "string",
+                "quality": "string",
+                "revision": "number",
+                "serverTimestamp": "number",
+                "sourceTimestamp": "number",
+                "value": "number"
+              },
+              "tagIds": [
+                "BON.MUC",
+                "BON.LUU_LUONG",
+                "BON.MUC_DAT",
+                "BOM.LENH_CHAY",
+                "BOM.LOI",
+                "BON.NGUONG_CAO",
+                "BON.THE_TICH",
+                "BON.CAO",
+                "HL.SONG"
+              ],
+              "bonMuc": 15.104167,
+              "qualities": {
+                "BON.MUC": "GOOD",
+                "BON.LUU_LUONG": "GOOD",
+                "BON.MUC_DAT": "GOOD",
+                "BOM.LENH_CHAY": "GOOD",
+                "BOM.LOI": "GOOD",
+                "BON.NGUONG_CAO": "GOOD",
+                "BON.THE_TICH": "GOOD",
+                "BON.CAO": "GOOD",
+                "HL.SONG": "GOOD"
+              },
+              "unknown": [
+                "KHONG.CO"
+              ]
+            },
+            "deltaCount": 28,
+            "deltaShape": {
+              "sequence": "number",
+              "subscriptionId": "string",
+              "tags": "undefined",
+              "ts": "number",
+              "type": "string"
+            },
+            "deltaTagShape": [
+              "number",
+              "len=3"
+            ],
+            "deltaTagPositions": [
+              0,
+              1,
+              6,
+              8
+            ],
+            "deltaSequenceMonotonic": true,
+            "errors": [
+              {
+                "code": "BAD_MESSAGE",
+                "requestId": "pair-w"
+              }
+            ],
+            "messageTypes": [
+              "delta",
+              "error",
+              "heartbeat",
+              "hello",
+              "snapshot"
+            ],
+            "close": null
+          },
+          "lan no Origin": {
+            "status": 101,
+            "error": null,
+            "statusLine": "HTTP/1.1 101 Switching Protocols",
+            "bodyBytes": 0,
+            "firstMessage": "hello",
+            "close": null
+          },
+          "lan Origin evil": {
+            "status": 403,
+            "error": null,
+            "statusLine": "HTTP/1.1 403 Forbidden",
+            "bodyBytes": 0,
+            "firstMessage": null,
+            "close": null
+          },
+          "lan Origin http": {
+            "status": 101,
+            "error": null,
+            "statusLine": "HTTP/1.1 101 Switching Protocols",
+            "bodyBytes": 0,
+            "firstMessage": "hello",
+            "close": null
+          },
+          "lan Host evil": {
+            "status": 421,
+            "error": null,
+            "statusLine": "HTTP/1.1 421 Misdirected Request",
+            "bodyBytes": 0,
+            "firstMessage": null,
+            "close": null
+          },
+          "pub (public source)": {
+            "status": 403,
+            "error": null,
+            "statusLine": "HTTP/1.1 403 Forbidden",
+            "bodyBytes": 0,
+            "firstMessage": null,
+            "close": null
+          }
+        },
+        "root": {
+          "gzip": {
+            "status": 200,
+            "headers": {
+              "content-type": "text/html; charset=utf-8",
+              "content-encoding": "gzip",
+              "cache-control": "no-cache",
+              "x-content-type-options": "nosniff",
+              "referrer-policy": "no-referrer",
+              "content-security-policy": "<193 ký tự>",
+              "etag": "<17 ký tự>",
+              "vary": "Accept-Encoding"
+            },
+            "bytes": 1051
+          },
+          "title": "mAT SCADA",
+          "assetCount": 2,
+          "assetKinds": [
+            "index-<hash>.css",
+            "index-<hash>.js"
+          ]
+        },
+        "assets": {
+          "/assets/index-<hash>.js": {
+            "status": 200,
+            "contentType": "text/javascript; charset=utf-8",
+            "cacheControl": "public, max-age=31536000, immutable",
+            "gzipStatus": 200,
+            "gzipEncoding": "gzip"
+          },
+          "/assets/index-<hash>.css": {
+            "status": 200,
+            "contentType": "text/css; charset=utf-8",
+            "cacheControl": "public, max-age=31536000, immutable",
+            "gzipStatus": 200,
+            "gzipEncoding": "gzip"
+          }
+        },
+        "systemInfo": {
+          "status": 200,
+          "shape": {
+            "alarms": {
+              "active": "number",
+              "dbBytes": "number",
+              "disabled": "number",
+              "droppedChanges": "number",
+              "evalMaxMs": "number",
+              "evalWindowS": "number",
+              "instances": "number",
+              "logState": "string",
+              "shelved": "number",
+              "unacked": "number"
+            },
+            "clients": "number",
+            "device": {
+              "apiVersion": "string",
+              "deviceId": "string",
+              "discovery": "boolean",
+              "https": "string",
+              "httpsPort": "number",
+              "model": "string",
+              "name": "string",
+              "viewerAccess": "string"
+            },
+            "historian": {
+              "aggregates": {
+                "backfill": {
+                  "active": "boolean",
+                  "group": "null",
+                  "progress": "null"
+                },
+                "capRowsDeleted": {
+                  "hour": "number",
+                  "minute": "number",
+                  "raw": "number"
+                },
+                "enabled": "boolean",
+                "groups": "number",
+                "rows": {
+                  "hour": "number",
+                  "minute": "number"
+                },
+                "schema": "number"
+              },
+              "capPurges": "number",
+              "capRowsDeleted": "number",
+              "clock": "string",
+              "clockJumps": "number",
+              "commitMs": "number",
+              "dbBytes": "number",
+              "dbMaxBytes": "number",
+              "destinations": [],
+              "enabled": "boolean",
+              "freeBytes": "number",
+              "groups": "number",
+              "groupsInfo": [
+                {
+                  "aggregates": "boolean",
+                  "id": "string",
+                  "mode": "string",
+                  "rows24h": "number",
+                  "triggerState": "null"
+                },
+                "len=1"
+              ],
+              "io": {
+                "budgetBytesPerDay": "number",
+                "bytesPerDay": "null",
+                "coverageS": "number",
+                "estimateBytesPerDay": "number",
+                "procSelfIo": {
+                  "available": "boolean",
+                  "bytesPerDay": "null",
+                  "coverageS": "number",
+                  "writeBytes1h": "number",
+                  "writeBytes24h": "number"
+                },
+                "source": "string",
+                "sqliteVfs": {
+                  "available": "boolean",
+                  "bytesPerDay": "null",
+                  "coverageS": "number",
+                  "sinceStart": {
+                    "alarm": "number",
+                    "audit": "number",
+                    "history": "number"
+                  },
+                  "sinceStartTotal": "number",
+                  "writeBytes1h": "number",
+                  "writeBytes24h": "number"
+                },
+                "writeBytes1h": "number",
+                "writeBytes24h": "number"
+              },
+              "lastCommitAt": "null",
+              "lastError": "null",
+              "lastRetention": {
+                "at": "number",
+                "rowsDeleted": "number"
+              },
+              "query": {
+                "enabled": "boolean",
+                "errors": "number",
+                "inFlight": "number",
+                "lastError": "null",
+                "p95Ms": "number",
+                "rejectedBusy": "number",
+                "rejectedLimit": "number",
+                "served": "number",
+                "timeouts": "number"
+              },
+              "rowsDropped": "number",
+              "rowsWritten": "number",
+              "state": "string",
+              "stringsTruncated": "number",
+              "warnings": []
+            },
+            "logic": {
+              "present": "boolean",
+              "writes": "string"
+            },
+            "maxClients": "number",
+            "operation": "null",
+            "originRejectedTotal": "number",
+            "overflowClosedTotal": "number",
+            "project": {
+              "digest": "string",
+              "errors": [],
+              "projectId": "string",
+              "projectVersion": "string",
+              "status": "string"
+            },
+            "protocolVersion": "string",
+            "rejectedTotal": "number",
+            "releaseSeq": "number",
+            "runtimeVersion": "string",
+            "schemaVersions": [
+              "string",
+              "len=7"
+            ],
+            "tagCount": "number",
+            "timeSynced": "boolean",
+            "timeoutClosedTotal": "number",
+            "update": {
+              "enabled": "boolean",
+              "supported": "boolean"
+            },
+            "uptimeS": "number",
+            "warningDetails": [],
+            "warnings": [],
+            "web": {
+              "https": "boolean",
+              "httpsPort": "number",
+              "login": "boolean",
+              "viewerLogin": "string"
+            },
+            "writeFailedTotal": "number"
+          },
+          "value": {
+            "alarms": {
+              "active": 0,
+              "dbBytes": 32768,
+              "disabled": 0,
+              "droppedChanges": 0,
+              "evalMaxMs": 1.22,
+              "evalWindowS": 60,
+              "instances": 4,
+              "logState": "running",
+              "shelved": 0,
+              "unacked": 0
+            },
+            "clients": 0,
+            "device": {
+              "apiVersion": "1.5.0",
+              "deviceId": "a5dd39be-5829-495e-bce4-b823b7ffae3b",
+              "discovery": false,
+              "https": "ok",
+              "httpsPort": 8443,
+              "model": "BL335",
+              "name": "rt",
+              "viewerAccess": "private"
+            },
+            "historian": {
+              "aggregates": {
+                "backfill": {
+                  "active": false,
+                  "group": null,
+                  "progress": null
+                },
+                "capRowsDeleted": {
+                  "hour": 0,
+                  "minute": 0,
+                  "raw": 0
+                },
+                "enabled": true,
+                "groups": 1,
+                "rows": {
+                  "hour": 0,
+                  "minute": 0
+                },
+                "schema": 2
+              },
+              "capPurges": 0,
+              "capRowsDeleted": 0,
+              "clock": "ok",
+              "clockJumps": 0,
+              "commitMs": 5000,
+              "dbBytes": 65536,
+              "dbMaxBytes": 2147483648,
+              "destinations": [],
+              "enabled": true,
+              "freeBytes": 57093275648,
+              "groups": 1,
+              "groupsInfo": [
+                {
+                  "aggregates": true,
+                  "id": "bon",
+                  "mode": "onChange",
+                  "rows24h": 3,
+                  "triggerState": null
+                }
+              ],
+              "io": {
+                "budgetBytesPerDay": 2147483648,
+                "bytesPerDay": null,
+                "coverageS": 0,
+                "estimateBytesPerDay": 432605491,
+                "procSelfIo": {
+                  "available": true,
+                  "bytesPerDay": null,
+                  "coverageS": 0,
+                  "writeBytes1h": 0,
+                  "writeBytes24h": 0
+                },
+                "source": "proc-self-io",
+                "sqliteVfs": {
+                  "available": true,
+                  "bytesPerDay": null,
+                  "coverageS": 0,
+                  "sinceStart": {
+                    "alarm": 74692,
+                    "audit": 17300,
+                    "history": 140612
+                  },
+                  "sinceStartTotal": 232604,
+                  "writeBytes1h": 0,
+                  "writeBytes24h": 0
+                },
+                "writeBytes1h": 0,
+                "writeBytes24h": 0
+              },
+              "lastCommitAt": null,
+              "lastError": null,
+              "lastRetention": {
+                "at": "<number>",
+                "rowsDeleted": 0
+              },
+              "query": {
+                "enabled": true,
+                "errors": 0,
+                "inFlight": 0,
+                "lastError": null,
+                "p95Ms": 0,
+                "rejectedBusy": 0,
+                "rejectedLimit": 0,
+                "served": 0,
+                "timeouts": 0
+              },
+              "rowsDropped": 0,
+              "rowsWritten": 0,
+              "state": "running",
+              "stringsTruncated": 0,
+              "warnings": []
+            },
+            "logic": {
+              "present": false,
+              "writes": "off"
+            },
+            "maxClients": 10,
+            "operation": null,
+            "originRejectedTotal": 0,
+            "overflowClosedTotal": 0,
+            "project": {
+              "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0",
+              "errors": [],
+              "projectId": "training-demo",
+              "projectVersion": "0.1.0",
+              "status": "<string>"
+            },
+            "protocolVersion": "1.3.0",
+            "rejectedTotal": 0,
+            "releaseSeq": 0,
+            "runtimeVersion": "1.0.0-rc.1",
+            "schemaVersions": [
+              "0.1",
+              "0.2",
+              "0.3",
+              "0.4",
+              "0.5",
+              "0.6",
+              "1.0"
+            ],
+            "tagCount": 509,
+            "timeSynced": true,
+            "timeoutClosedTotal": 0,
+            "update": {
+              "enabled": false,
+              "supported": true
+            },
+            "uptimeS": "<number>",
+            "warningDetails": [],
+            "warnings": [],
+            "web": {
+              "https": true,
+              "httpsPort": 8443,
+              "login": true,
+              "viewerLogin": "off"
+            },
+            "writeFailedTotal": 0
+          }
+        },
+        "projectsActive": {
+          "status": 200,
+          "shape": {
+            "connections": [
+              {
+                "id": "string",
+                "kind": "string",
+                "name": "string"
+              },
+              "len=1"
+            ],
+            "digest": "string",
+            "navigation": {
+              "items": [
+                {
+                  "icon": "string",
+                  "label": "string",
+                  "screen": "string"
+                },
+                "len=2"
+              ],
+              "position": "string"
+            },
+            "project": {
+              "alarmClassFile": "string",
+              "alarmFile": "string",
+              "connectionFile": "string",
+              "entryScreen": "string",
+              "format": "string",
+              "loggingFile": "string",
+              "maxClients": "number",
+              "minRuntimeVersion": "string",
+              "navigation": {
+                "items": [
+                  {
+                    "icon": "string",
+                    "label": "string",
+                    "screen": "string"
+                  },
+                  "len=2"
+                ],
+                "position": "string"
+              },
+              "projectId": "string",
+              "projectName": "string",
+              "projectVersion": "string",
+              "schemaVersion": "string",
+              "screens": [
+                "string",
+                "len=2"
+              ],
+              "tagFile": "string"
+            },
+            "screens": [
+              {
+                "file": "string",
+                "id": "string",
+                "kind": "string",
+                "name": "string"
+              },
+              "len=2"
+            ],
+            "tags": {
+              "schemaVersion": "string",
+              "tags": [
+                {
+                  "deadband": "number",
+                  "description": "string",
+                  "id": "string",
+                  "kind": "string",
+                  "max": "number",
+                  "min": "number",
+                  "scaling": {
+                    "clamp": "boolean",
+                    "engMax": "number",
+                    "engMin": "number",
+                    "rawMax": "number",
+                    "rawMin": "number"
+                  },
+                  "source": {
+                    "address": "string",
+                    "device": "string",
+                    "rawType": "string"
+                  },
+                  "type": "string",
+                  "unit": "string"
+                },
+                "len=9"
+              ]
+            },
+            "valueTables": {}
+          },
+          "value": {
+            "connections": [
+              {
+                "id": "plc-hl",
+                "kind": "modbus-tcp",
+                "name": "PLC giả lập (huấn luyện)"
+              }
+            ],
+            "navigation": {
+              "items": [
+                {
+                  "icon": "home",
+                  "label": "Tổng quan",
+                  "screen": "tong-quan"
+                },
+                {
+                  "icon": "chart",
+                  "label": "Xu hướng",
+                  "screen": "xu-huong"
+                }
+              ],
+              "position": "left"
+            },
+            "project": {
+              "alarmClassFile": "alarm-classes.json",
+              "alarmFile": "alarms.json",
+              "connectionFile": "connections.json",
+              "entryScreen": "tong-quan",
+              "format": "matscada-project",
+              "loggingFile": "logging.json",
+              "maxClients": 10,
+              "minRuntimeVersion": "0.9.0",
+              "navigation": {
+                "items": [
+                  {
+                    "icon": "home",
+                    "label": "Tổng quan",
+                    "screen": "tong-quan"
+                  },
+                  {
+                    "icon": "chart",
+                    "label": "Xu hướng",
+                    "screen": "xu-huong"
+                  }
+                ],
+                "position": "left"
+              },
+              "projectId": "training-demo",
+              "projectName": "Dự án huấn luyện",
+              "projectVersion": "0.1.0",
+              "schemaVersion": "0.6.0",
+              "screens": [
+                "tong-quan",
+                "xu-huong"
+              ],
+              "tagFile": "tags.json"
+            },
+            "screens": [
+              {
+                "file": "screens/tong-quan.screen.json",
+                "id": "tong-quan",
+                "kind": "screen",
+                "name": "Tổng quan"
+              },
+              {
+                "file": "screens/xu-huong.screen.json",
+                "id": "xu-huong",
+                "kind": "screen",
+                "name": "Xu hướng"
+              }
+            ],
+            "tags": {
+              "schemaVersion": "0.6.0",
+              "tags": [
+                {
+                  "deadband": 0.5,
+                  "description": "Mức nước bồn",
+                  "id": "BON.MUC",
+                  "kind": "external",
+                  "max": 100,
+                  "min": 0,
+                  "scaling": {
+                    "clamp": true,
+                    "engMax": 100,
+                    "engMin": 0,
+                    "rawMax": 27648,
+                    "rawMin": 0
+                  },
+                  "source": {
+                    "address": "HR100",
+                    "device": "plc-hl",
+                    "rawType": "INT16"
+                  },
+                  "type": "FLOAT32",
+                  "unit": "%"
+                },
+                {
+                  "deadband": 0.2,
+                  "description": "Lưu lượng vào bồn",
+                  "id": "BON.LUU_LUONG",
+                  "kind": "external",
+                  "max": 50,
+                  "min": 0,
+                  "scaling": {
+                    "clamp": true,
+                    "engMax": 50,
+                    "engMin": 0,
+                    "rawMax": 27648,
+                    "rawMin": 0
+                  },
+                  "source": {
+                    "address": "HR101",
+                    "device": "plc-hl",
+                    "rawType": "INT16"
+                  },
+                  "type": "FLOAT32",
+                  "unit": "m3/h"
+                },
+                {
+                  "access": "RW",
+                  "description": "Mức đặt của bồn",
+                  "id": "BON.MUC_DAT",
+                  "kind": "external",
+                  "limits": {
+                    "max": 90,
+                    "min": 0
+                  },
+                  "source": {
+                    "address": "HR200",
+                    "device": "plc-hl"
+                  },
+                  "type": "FLOAT32",
+                  "unit": "%"
+                },
+                {
+                  "access": "RW",
+                  "description": "Lệnh chạy bơm",
+                  "id": "BOM.LENH_CHAY",
+                  "kind": "external",
+                  "source": {
+                    "address": "C10",
+                    "device": "plc-hl"
+                  },
+                  "type": "BOOL"
+                },
+                {
+                  "description": "Bơm báo lỗi",
+                  "id": "BOM.LOI",
+                  "kind": "external",
+                  "source": {
+                    "address": "HR12.3",
+                    "device": "plc-hl"
+                  },
+                  "type": "BOOL"
+                },
+                {
+                  "access": "RW",
+                  "description": "Ngưỡng mức cao (người vận hành chỉnh)",
+                  "id": "BON.NGUONG_CAO",
+                  "initial": 85,
+                  "kind": "internal",
+                  "limits": {
+                    "max": 100,
+                    "min": 50
+                  },
+                  "retain": true,
+                  "type": "FLOAT32",
+                  "unit": "%"
+                },
+                {
+                  "description": "Thể tích nước (bồn 12,5 m3)",
+                  "expression": "BON.MUC * 0.125",
+                  "id": "BON.THE_TICH",
+                  "kind": "calculated",
+                  "type": "FLOAT32",
+                  "unit": "m3"
+                },
+                {
+                  "description": "Mức vượt ngưỡng cao",
+                  "expression": "BON.MUC > BON.NGUONG_CAO",
+                  "id": "BON.CAO",
+                  "kind": "calculated",
+                  "type": "BOOL"
+                },
+                {
+                  "description": "Tín hiệu mô phỏng cho bài tập không có PLC",
+                  "id": "HL.SONG",
+                  "kind": "simulation",
+                  "max": 100,
+                  "min": 0,
+                  "sim": {
+                    "amplitude": 40,
+                    "center": 50,
+                    "kind": "sine",
+                    "periodMs": 60000
+                  },
+                  "type": "FLOAT32",
+                  "unit": "%"
+                }
+              ]
+            },
+            "valueTables": {},
+            "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0"
+          }
+        },
+        "identity": {
+          "status": 200,
+          "shape": {
+            "apiVersion": "string",
+            "deviceId": "string",
+            "features": [
+              "string",
+              "len=17"
+            ],
+            "fingerprint": "string",
+            "httpPort": "number",
+            "httpsPort": "number",
+            "model": "string",
+            "name": "string",
+            "protocolVersion": "string",
+            "runtimeVersion": "string",
+            "setupRequired": "boolean"
+          },
+          "features": [
+            "auth",
+            "web-login",
+            "screens-v1",
+            "deploy",
+            "upload",
+            "restore",
+            "diagnostics",
+            "audit",
+            "drivers",
+            "serial-ports",
+            "tag-write",
+            "write-pulse",
+            "write-expect",
+            "alarms",
+            "logic",
+            "update",
+            "history"
+          ]
+        },
+        "alarms": {
+          "status": 200,
+          "shape": {
+            "areas": [
+              {
+                "id": "string",
+                "name": "string"
+              },
+              "len=2"
+            ],
+            "classes": [
+              {
+                "ackReturn": "boolean",
+                "blink": "boolean",
+                "chatterLimit": "number",
+                "color": "string",
+                "id": "string",
+                "name": "string",
+                "priority": "string",
+                "requiresAck": "boolean",
+                "sound": "string"
+              },
+              "len=4"
+            ],
+            "counts": {
+              "active": "number",
+              "byPriority": {
+                "advisory": {
+                  "active": "number",
+                  "unack": "number"
+                },
+                "critical": {
+                  "active": "number",
+                  "unack": "number"
+                },
+                "major": {
+                  "active": "number",
+                  "unack": "number"
+                },
+                "minor": {
+                  "active": "number",
+                  "unack": "number"
+                }
+              },
+              "disabled": "number",
+              "rtnUnack": "number",
+              "shelved": "number",
+              "unack": "number"
+            },
+            "instances": [],
+            "revision": "number",
+            "ts": "number"
+          },
+          "active": []
+        },
+        "webSession": {
+          "status": 401,
+          "value": {
+            "error": "AUTH_REQUIRED",
+            "message": "Cần đăng nhập."
+          }
+        },
+        "screenFile": {
+          "status": 200,
+          "sameBytesAsProjectDir": true
+        }
+      },
+      "deploy": {
+        "steps": [
+          {
+            "step": "login sai mật khẩu",
+            "status": 401,
+            "error": "AUTH_FAILED"
+          },
+          {
+            "step": "login engineer",
+            "status": 200,
+            "shape": {
+              "idleTimeoutS": "number",
+              "maxLifetimeS": "number",
+              "role": "string",
+              "token": "string",
+              "user": "string"
+            },
+            "role": "engineer",
+            "user": "kysu"
+          },
+          {
+            "step": "auth/session",
+            "status": 200,
+            "value": {
+              "idleRemainingS": 1799,
+              "lifetimeRemainingS": 43199,
+              "role": "engineer",
+              "user": "kysu"
+            }
+          },
+          {
+            "step": "versions lúc đầu",
+            "status": 200,
+            "shape": {
+              "active": "number",
+              "backupsMax": "number",
+              "versions": [
+                {
+                  "activatedAt": "string",
+                  "clockOk": "boolean",
+                  "deployedBy": "null",
+                  "deployedFrom": "null",
+                  "digest": "string",
+                  "minRuntimeVersion": "string",
+                  "projectId": "string",
+                  "projectName": "string",
+                  "projectVersion": "string",
+                  "seq": "number",
+                  "size": "number",
+                  "source": "string",
+                  "state": "string"
+                },
+                "len=1"
+              ]
+            },
+            "versions": [
+              {
+                "seq": 1,
+                "state": "active",
+                "projectId": "training-demo",
+                "projectVersion": "0.1.0",
+                "source": "runtime-package",
+                "deployedBy": null,
+                "restorable": null,
+                "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0"
+              }
+            ]
+          },
+          {
+            "step": "đọc lên bản đầu",
+            "status": 200,
+            "contentType": "application/zip",
+            "disposition": "attachment; filename=\"training-demo-0.1.0.matscada\"",
+            "digestHeaderIsActive": true,
+            "files": [
+              "alarm-classes.json",
+              "alarms.json",
+              "connections.json",
+              "logging.json",
+              "project.json",
+              "screens/tong-quan.screen.json",
+              "screens/xu-huong.screen.json",
+              "tags.json"
+            ]
+          },
+          {
+            "step": "project/manifest",
+            "status": 200,
+            "shape": {
+              "createdAt": "string",
+              "digest": "string",
+              "files": [
+                {
+                  "path": "string",
+                  "sha256": "string",
+                  "size": "number"
+                },
+                "len=8"
+              ],
+              "format": "string",
+              "formatVersion": "string",
+              "generator": {
+                "name": "string",
+                "version": "string"
+              },
+              "project": {
+                "minRuntimeVersion": "string",
+                "projectId": "string",
+                "projectName": "string",
+                "projectVersion": "string"
+              }
+            }
+          },
+          {
+            "step": "project/operation lúc đầu",
+            "status": 200,
+            "value": null
+          },
+          {
+            "step": "nạp xuống không đăng nhập",
+            "status": 401,
+            "error": "AUTH_REQUIRED"
+          },
+          {
+            "step": "nạp xuống role viewer",
+            "status": 403,
+            "error": "FORBIDDEN"
+          },
+          {
+            "step": "versions qua HTTP 8080",
+            "status": 403,
+            "error": "HTTPS_REQUIRED"
+          },
+          {
+            "step": "nạp xuống BASE_CHANGED",
+            "status": 409,
+            "error": "BASE_CHANGED"
+          },
+          {
+            "step": "nạp xuống X-Mat-Digest sai dạng",
+            "status": 400,
+            "error": "BAD_REQUEST"
+          },
+          {
+            "step": "nạp xuống 0.2.0",
+            "status": 202,
+            "accepted": {
+              "opId": "<string>",
+              "status": "<string>"
+            },
+            "result": "committed",
+            "error": null,
+            "stepTrace": [
+              "receive:ok,verify-package:pending,validate:pending,backup:pending,activate:pending,health:pending",
+              "receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:running",
+              "receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:ok"
+            ],
+            "op": {
+              "opId": "<string>",
+              "kind": "deploy",
+              "user": "kysu",
+              "role": "engineer",
+              "source": "172.30.71.50",
+              "startedAt": "<string>",
+              "endedAt": "<string>",
+              "clockOk": false,
+              "result": "committed",
+              "from": {
+                "seq": 1,
+                "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0",
+                "projectVersion": "0.1.0"
+              },
+              "to": {
+                "seq": 2,
+                "digest": "sha256:ea00ae4b4dc247aa6d5c88d4078281140af3880d31e55a6e4f23fee2ab7d3f80",
+                "projectId": "training-demo",
+                "projectVersion": "0.2.0"
+              },
+              "steps": [
+                {
+                  "id": "receive",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "verify-package",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "validate",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "backup",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "activate",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "health",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                }
+              ],
+              "error": null,
+              "clientsNotified": 0
+            },
+            "ms": 4217
+          },
+          {
+            "step": "đọc lên 0.2.0",
+            "status": 200,
+            "sameBytes": true,
+            "digestHeader": true
+          },
+          {
+            "step": "projects/active sau 0.2.0 (khách)",
+            "status": 200,
+            "projectVersion": "0.2.0",
+            "digestMatches": true
+          },
+          {
+            "step": "nạp xuống digest khác gói",
+            "status": 202,
+            "result": "failed",
+            "opError": {
+              "code": "E_PKG_DIGEST",
+              "message": "Digest của gói khác digest mong đợi"
+            },
+            "stepTrace": [
+              "receive:ok,verify-package:running,validate:pending,backup:pending,activate:pending,health:pending",
+              "receive:ok,verify-package:failed,validate:pending,backup:pending,activate:pending,health:pending"
+            ]
+          },
+          {
+            "step": "nạp xuống project lỗi kiểm",
+            "status": 202,
+            "result": "failed",
+            "opErrorCode": "E_VALIDATION",
+            "issueCodes": [
+              "E_REF_TAG screens/tong-quan.screen.json /items/1/tags/value"
+            ],
+            "stepTrace": [
+              "receive:ok,verify-package:running,validate:pending,backup:pending,activate:pending,health:pending",
+              "receive:ok,verify-package:ok,validate:failed,backup:pending,activate:pending,health:pending"
+            ]
+          },
+          {
+            "step": "nạp xuống 0.3.0",
+            "status": 202,
+            "result": "committed",
+            "stepTrace": [
+              "receive:ok,verify-package:running,validate:pending,backup:pending,activate:pending,health:pending",
+              "receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:running",
+              "receive:ok,verify-package:ok,validate:ok,backup:ok,activate:ok,health:ok"
+            ]
+          },
+          {
+            "step": "versions sau 0.3.0",
+            "status": 200,
+            "shape": {
+              "active": "number",
+              "backupsMax": "number",
+              "versions": [
+                {
+                  "activatedAt": "string",
+                  "clockOk": "boolean",
+                  "deployedBy": "string",
+                  "deployedFrom": "string",
+                  "digest": "string",
+                  "minRuntimeVersion": "string",
+                  "projectId": "string",
+                  "projectName": "string",
+                  "projectVersion": "string",
+                  "seq": "number",
+                  "size": "number",
+                  "source": "string",
+                  "state": "string"
+                },
+                "len=3"
+              ]
+            },
+            "versions": [
+              {
+                "seq": 3,
+                "state": "active",
+                "projectId": "training-demo",
+                "projectVersion": "0.3.0",
+                "source": "studio",
+                "deployedBy": "kysu",
+                "restorable": null,
+                "digest": "sha256:2457d3c911f6fe84fb59544d295f247c00ca24b8d4d726b22a172f09cd65605d"
+              },
+              {
+                "seq": 2,
+                "state": "backup",
+                "projectId": "training-demo",
+                "projectVersion": "0.2.0",
+                "source": "studio",
+                "deployedBy": "kysu",
+                "restorable": true,
+                "digest": "sha256:ea00ae4b4dc247aa6d5c88d4078281140af3880d31e55a6e4f23fee2ab7d3f80"
+              },
+              {
+                "seq": 1,
+                "state": "backup",
+                "projectId": "training-demo",
+                "projectVersion": "0.1.0",
+                "source": "runtime-package",
+                "deployedBy": null,
+                "restorable": true,
+                "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0"
+              }
+            ]
+          },
+          {
+            "step": "khôi phục bản đang chạy",
+            "status": 409,
+            "error": "ALREADY_ACTIVE"
+          },
+          {
+            "step": "khôi phục seq không có",
+            "status": 404,
+            "error": "NO_SUCH_VERSION"
+          },
+          {
+            "step": "khôi phục 0.2.0",
+            "status": 202,
+            "result": "committed",
+            "kind": "restore",
+            "stepTrace": [
+              "receive:skipped,verify-package:skipped,validate:running,backup:pending,activate:pending,health:pending",
+              "receive:skipped,verify-package:skipped,validate:ok,backup:ok,activate:ok,health:running",
+              "receive:skipped,verify-package:skipped,validate:ok,backup:ok,activate:ok,health:ok"
+            ],
+            "op": {
+              "opId": "<string>",
+              "kind": "restore",
+              "user": "kysu",
+              "role": "engineer",
+              "source": "172.30.71.50",
+              "startedAt": "<string>",
+              "endedAt": "<string>",
+              "clockOk": false,
+              "result": "committed",
+              "from": {
+                "seq": 3,
+                "digest": "sha256:2457d3c911f6fe84fb59544d295f247c00ca24b8d4d726b22a172f09cd65605d",
+                "projectVersion": "0.3.0"
+              },
+              "to": {
+                "seq": 2,
+                "digest": "sha256:ea00ae4b4dc247aa6d5c88d4078281140af3880d31e55a6e4f23fee2ab7d3f80",
+                "projectId": "training-demo",
+                "projectVersion": "0.2.0"
+              },
+              "steps": [
+                {
+                  "id": "receive",
+                  "state": "skipped",
+                  "startedAt": null,
+                  "endedAt": null
+                },
+                {
+                  "id": "verify-package",
+                  "state": "skipped",
+                  "startedAt": null,
+                  "endedAt": null
+                },
+                {
+                  "id": "validate",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "backup",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "activate",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                },
+                {
+                  "id": "health",
+                  "state": "ok",
+                  "startedAt": "<string>",
+                  "endedAt": "<string>"
+                }
+              ],
+              "error": null,
+              "clientsNotified": 0
+            }
+          },
+          {
+            "step": "versions sau khôi phục",
+            "status": 200,
+            "shape": {
+              "active": "number",
+              "backupsMax": "number",
+              "versions": [
+                {
+                  "activatedAt": "string",
+                  "clockOk": "boolean",
+                  "deployedBy": "string",
+                  "deployedFrom": "string",
+                  "digest": "string",
+                  "minRuntimeVersion": "string",
+                  "projectId": "string",
+                  "projectName": "string",
+                  "projectVersion": "string",
+                  "seq": "number",
+                  "size": "number",
+                  "source": "string",
+                  "state": "string"
+                },
+                "len=3"
+              ]
+            },
+            "versions": [
+              {
+                "seq": 2,
+                "state": "active",
+                "projectId": "training-demo",
+                "projectVersion": "0.2.0",
+                "source": "restore",
+                "deployedBy": "kysu",
+                "restorable": null,
+                "digest": "sha256:ea00ae4b4dc247aa6d5c88d4078281140af3880d31e55a6e4f23fee2ab7d3f80"
+              },
+              {
+                "seq": 3,
+                "state": "backup",
+                "projectId": "training-demo",
+                "projectVersion": "0.3.0",
+                "source": "studio",
+                "deployedBy": "kysu",
+                "restorable": true,
+                "digest": "sha256:2457d3c911f6fe84fb59544d295f247c00ca24b8d4d726b22a172f09cd65605d"
+              },
+              {
+                "seq": 1,
+                "state": "backup",
+                "projectId": "training-demo",
+                "projectVersion": "0.1.0",
+                "source": "runtime-package",
+                "deployedBy": null,
+                "restorable": true,
+                "digest": "sha256:72c6738bfeac877e62d0f4c4d229ac54a75a209d9a2cb0463e999056b27dcbf0"
+              }
+            ]
+          },
+          {
+            "step": "đọc lên sau khôi phục",
+            "status": 200,
+            "sameBytesAs020": true
+          },
+          {
+            "step": "đọc lên seq 1 (bản dự phòng)",
+            "status": 200
+          },
+          {
+            "step": "audit với role viewer",
+            "status": 403,
+            "error": "FORBIDDEN"
+          }
+        ],
+        "audit": {
+          "status": 200,
+          "recordShape": {
+            "action": "string",
+            "channel": "string",
+            "clockOk": "boolean",
+            "code": "null",
+            "count": "number",
+            "detail": {
+              "projectId": "string",
+              "projectVersion": "string",
+              "seq": "number"
+            },
+            "id": "number",
+            "result": "string",
+            "role": "null",
+            "source": "string",
+            "target": "string",
+            "ts": "number",
+            "user": "null"
+          },
+          "rows": [
+            "project.adopt | - | - | system | ok | - | <digest>",
+            "cert.generate | - | - | system | ok | - | <digest>",
+            "account.create | - | - | cli | started | - | admin",
+            "account.create | - | - | cli | ok | - | admin",
+            "account.create | - | - | cli | started | - | kysu",
+            "account.create | - | - | cli | ok | - | kysu",
+            "account.create | - | - | cli | started | - | xem",
+            "account.create | - | - | cli | ok | - | xem",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/web/session",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/history/catalog",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/diagnostics",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/project/versions",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/web/session",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/history/catalog",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/diagnostics",
+            "access.denied | - | - | https | denied | AUTH_REQUIRED | /api/v1/project/versions",
+            "access.denied | - | - | https | denied | HOST_NOT_ALLOWED | /",
+            "tag.write | - | - | http | denied | LIVE_WRITE_NOT_ALLOWED | BON.MUC_DAT",
+            "audit.suppressed | - | - | system | ok | - | ",
+            "auth.login | kysu | engineer | https | ok | - | ",
+            "auth.login | xem | viewer | https | ok | - | ",
+            "auth.login | admin | administrator | https | ok | - | ",
+            "project.read | kysu | engineer | https | ok | - | <digest>",
+            "project.deploy | kysu | engineer | https | failed | BASE_CHANGED | <digest>",
+            "project.deploy | kysu | engineer | https | started | - | <digest>",
+            "project.deploy | kysu | engineer | https | ok | - | <digest>",
+            "project.read | kysu | engineer | https | ok | - | <digest>",
+            "project.deploy | kysu | engineer | https | started | - | <digest>",
+            "project.deploy | kysu | engineer | https | failed | E_PKG_DIGEST | <digest>",
+            "project.deploy | kysu | engineer | https | started | - | <digest>",
+            "project.deploy | kysu | engineer | https | failed | E_VALIDATION | <digest>",
+            "project.deploy | kysu | engineer | https | started | - | <digest>",
+            "project.deploy | kysu | engineer | https | ok | - | <digest>",
+            "project.restore | kysu | engineer | https | failed | ALREADY_ACTIVE | 3",
+            "project.restore | kysu | engineer | https | failed | NO_SUCH_VERSION | 999",
+            "project.restore | kysu | engineer | https | started | - | <digest>",
+            "project.restore | kysu | engineer | https | ok | - | <digest>",
+            "project.read | kysu | engineer | https | ok | - | <digest>",
+            "project.read | kysu | engineer | https | ok | - | <digest>"
+          ],
+          "suppressed": [
+            {
+              "count": 4,
+              "byAction": {
+                "access.denied": 3,
+                "auth.login": 1,
+                "sources": {
+                  "172.30.71.50": 4
+                }
+              }
+            }
+          ]
+        }
+      },
+      "supervisorStarts": 1
+    }
+  }
+}
