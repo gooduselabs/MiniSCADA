@@ -21,7 +21,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 | FR-002 | Runtime nhận 0.1 đến 1.0; Studio nâng cấp có sao lưu; ma trận tương thích | T015–T020 | `ps/migrate-10.test.ts` 21/21, `tests/migration-vectors/0.6-to-1.0/` 18 cặp; `store-10.test.ts` 6/6; BL335 1.0.0 báo `schemaVersions` 0.1–1.0 (`device-changes.md` 2026-10-17); ma trận ở `docs/user/admin-guide.md` | Đạt |
 | FR-003 | Hồi quy 003–010 | T059, T200 | T191 (2026-10-18): `ci-local` đầy đủ xanh trên `1.0.0-rc.1` ("ALL STEPS PASSED": build armhf, ctest x64, armhf qemu, `device-it`, `driver-it`, `web-it`, `alarm-it`, `update-it`, `logic-it`, SAST, audit, e2e Studio và runtime-web, `cargo test --lib`, smoke armhf); ctest dưới ASan + UBSan chạy riêng (T059: 5.888 ca, 56 đỏ đã phân loại và sửa) · chưa có lượt `ci-local -Sanitize` và so cặp 0.6/1.0 (T200) | Chưa đo — T059 (ASan qua `ci-local`), T200 |
 | FR-004 | Cấm `eval`/`innerHTML`; lint mở rộng | T014 | `tools/lint-rules.test.mjs` đỏ 5/22 rồi 22/22; khối mới trong `eslint.config.mjs` | Đạt |
-| FR-005 | Ngân sách kèm logic (RSS, CPU, eMMC, cache, tmpfs) | T079, T147, T148, T201 | `R:011-load.md` §1, `R:011-soak.md`; BL335 1.0.0 L1 4 giờ: RSS ≤ 19,5 MB, CPU 28,9 % một lõi (T079); logic tối đa trên BL335 (rc.1, T148): quét 2,5 ms, RSS +3,9 MB đạt, **CPU +3,3 điểm một lõi vượt ngưỡng +3**; eMMC và tổng hợp ngân sách chưa làm (T201) | Không đạt — CPU logic BL335 vượt 0,3 điểm (T148); tổng hợp T201 chưa làm |
+| FR-005 | Ngân sách kèm logic (RSS, CPU, eMMC, cache, tmpfs) | T079, T147, T148, T201 | `R:011-load.md` §1, `R:011-soak.md`; BL335 1.0.0 L1 4 giờ: RSS ≤ 19,5 MB, CPU 28,9 % một lõi (T079); logic tối đa trên BL335 (rc.1, T148): quét 2,5 ms, RSS +3,9 MB đạt, **CPU +3,3 điểm một lõi vượt ngưỡng +3**; eMMC và tổng hợp ngân sách chưa làm (T201) · **BL335 releaseSeq 13 (quét theo sự kiện, 2026-10-18): CPU +2,5 điểm một lõi, RSS +3,8 MB, quét 1,05 ms — Đạt** | Chưa đo — tổng hợp T201 (eMMC, sau soak) |
 | FR-006 | Mã lỗi mới có test, tiếng Việt, `error-codes.md` | T025 | `tools/gen-error-codes.test.mjs` 6/6 (quét mã nguồn, thất bại khi thiếu mã); `schemas/error-codes.json`; `docs/user/error-codes.md` sinh bằng `--check` | Đạt |
 | FR-007 | Thao tác BL335 theo Constitution, ghi `device-changes.md` | T206 | `R:device-changes.md` mục 2026-10-16, 2026-10-17, 2026-10-18 (T079, T122, T148, T013, T063, cài `1.0.0-rc.1`; mỗi thay đổi kèm cách hoàn tác, không đụng `atscada-*`) | Đạt (tiếp tục ở T206) |
 | FR-008 | Khóa `runtime.json` mới | T026, T027 | ctest `Config011.*`, config 47/47; `deployment/config/runtime.json`; `maxConnPerSource` mặc định 48 (spec ghi 24; đổi có ADR-010, T039) | Đạt |
@@ -114,7 +114,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 | FR-092 | Hai engine cùng ≥ 200 vector | T125, T134 | 279/279 khớp, x64 và armhf qemu, so số thực từng bit | Đạt |
 | FR-093 | Validator mọi mã `E_LOGIC_*` | T128, T135 | `ps/rules-logic.test.ts`; ctest `rules_logic_test`; vector `v10-logic-*` | Đạt |
 | FR-094 | Editor Logic theo mockup | T005, T007, T132, T143, T144 | 9 tệp Vitest 108/108; e2e `logic.e2e.mjs` 47/47 (axe 0); thử tay bộ gõ chưa làm | Đạt (tự động) · Chờ người (bộ gõ, H3) |
-| FR-095 | Tải logic tối đa ≤ +3 điểm CPU, ≤ +5 MB, quét ≤ 5 ms | T147, T148 | x64 sau sửa arena glibc (T147): +1,43 điểm CPU, RSS +4,6 MB, quét p99 1,38 ms · BL335 rc.1 (T148, A/B/A/B dưới L1): quét trung vị 2,5 ms, p99 3,8 ms, RSS +3,9 MB đạt; **CPU +3,3 điểm một lõi** (+1,65 cả máy) vượt ngưỡng +3 (cách đọc một lõi); phương án `scanMs` 200–250 ms (`R:011-load.md` §3.2) | Không đạt — CPU BL335 vượt 0,3 điểm (T148) |
+| FR-095 | Tải logic tối đa ≤ +3 điểm CPU, ≤ +5 MB, quét ≤ 5 ms | T147, T148 | x64 sau sửa arena glibc (T147): +1,43 điểm CPU, RSS +4,6 MB, quét p99 1,38 ms · BL335 rc.1 (T148, A/B/A/B dưới L1): quét trung vị 2,5 ms, p99 3,8 ms, RSS +3,9 MB đạt; **CPU +3,3 điểm một lõi** (+1,65 cả máy) vượt ngưỡng +3 (cách đọc một lõi); phương án `scanMs` 200–250 ms (`R:011-load.md` §3.2) · **BL335 releaseSeq 13 (quét theo sự kiện, 2026-10-18): CPU +2,5 điểm một lõi, RSS +3,8 MB, quét 1,05 ms — Đạt** | Đạt |
 | FR-096 | Trạng thái logic Online, cảnh báo `logic.writes` | T132, T144, T145 | `deploy-preview.test.ts`, chip Ghi PLC; Rust `device/logic.rs` 6/6 | Đạt |
 
 ## US6: trình vẽ SVG (FR-097 đến FR-118)
@@ -209,7 +209,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 | SC-025 | Độ chính xác timer, totalizer, counter, giờ chạy | T126 | Vitest + ctest 52 ca | Đạt |
 | SC-026 | 100 vòng `kill -9` logic retain | T131, T146 | `R:011-logic-x64.json` `retain-kill` 100 vòng `kill -9`: mất tối đa count 6, total 0,95, giờ chạy 0,0027 (≤ một `flushS` 10 s), 0 lần giảm, 0 ghi trùng cạnh; `retain-lost` 5/5 (về 0, cảnh báo, audit một lần) | Đạt (x64) |
 | SC-027 | Ghi từ logic: audit trước khi gửi, kiểm bằng giả lập Modbus | T129, T146 | `R:011-logic-x64.json` (giả lập Modbus): `rules` 9/9 (audit đủ trường trước khi gửi), `writes-off` 0 lệnh, `throttle` 35/35 cạnh thừa bị chặn; validator TS và C++ từ chối ghi Tag không khai báo (vector `v10-logic-*`) | Đạt (x64) |
-| SC-028 | Tải logic BL335 | T147, T148 | x64 (T147): +1,43 điểm CPU, +4,6 MB, quét p99 1,38 ms · BL335 rc.1 (T148): quét trung vị 2,5 ms, p99 3,8 ms, RSS +3,9 MB đạt; **CPU +3,3 điểm một lõi** (ngưỡng +3) | Không đạt — CPU BL335 vượt 0,3 điểm (T148) |
+| SC-028 | Tải logic BL335 | T147, T148 | x64 (T147): +1,43 điểm CPU, +4,6 MB, quét p99 1,38 ms · BL335 rc.1 (T148): quét trung vị 2,5 ms, p99 3,8 ms, RSS +3,9 MB đạt; **CPU +3,3 điểm một lõi** (ngưỡng +3) · **BL335 releaseSeq 13 (quét theo sự kiện, 2026-10-18): CPU +2,5 điểm một lõi, RSS +3,8 MB, quét 1,05 ms — Đạt** | Đạt |
 | SC-029 | Kỹ sư dựng luật bơm ≤ 25 phút | T150 | — | Chờ người (H3) |
 | SC-030 | Round-trip ≥ 20 fixture, ảnh ≤ 1 % | T154 | 26 fixture; e2e `svg-render-diff` 76 phép so khác 0 % | Đạt |
 | SC-031 | ≥ 150 ca hình học | T152 | ~270 ca | Đạt |
@@ -230,11 +230,11 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 
 | Nhóm | Đạt trọn | Không đạt | Chưa đo | Chờ người |
 |---|---|---|---|---|
-| FR (143) | 102 | 4 (FR-005, 038, 095, 135) | 7 | 30 |
-| SC (43) | 24 | 1 (SC-028) | 4 | 14 |
+| FR (143) | 103 | 2 (FR-038, 135) | 8 | 30 |
+| SC (43) | 25 | 0 | 4 | 14 |
 
 Cách đếm: mỗi FR/SC tính một lần theo phần yếu nhất của dòng, thứ tự Không đạt, Chưa đo, Chờ người, Đạt (dòng "Đạt (x64) · Chưa đo BL335" tính là Chưa đo); dòng gộp (ví dụ FR-014, 015, 016) tính đủ số FR.
 
-**Số đo vượt ngưỡng:** một mục, CPU thêm của logic tối đa trên BL335 (T148, rc.1): +3,3 điểm một lõi so với ngưỡng +3 (vòng quét 2,5 ms và RSS +3,9 MB đạt). Kéo theo FR-005, FR-095, SC-028. Phương án ở `R:011-load.md` §3.2. Các mục Không đạt khác là việc chưa xong: FR-038 (`load-tester` thiếu phần L3 nối lại), FR-135 (nghiệm thu còn nháp).
+**Số đo vượt ngưỡng:** không còn (T148 đạt sau quét theo sự kiện, 2026-10-18: CPU +2,5 điểm một lõi). Các mục Không đạt là việc chưa xong: FR-038 (`load-tester` thiếu phần L3 nối lại), FR-135 (nghiệm thu còn nháp).
 
 So với lần đếm 2026-10-17 (FR 89/5/22/27, SC 17/0/13/13): chuyển Đạt nhờ T063 (SC-008, FR-025), T079 (SC-011), T122 (FR-070, phần OTA thật của SC-023), T146 (SC-026, SC-027, FR-078–082, FR-090, 091), T202 và quyết định O1/O2 (SC-010, FR-032, FR-066), T175 trên runtime x64 (SC-037, FR-125), T013 (FR-009); FR-128, 129 sang Chờ người (chỉ còn ảnh chụp trên Windows); FR-030, FR-003 từ Không đạt/Chưa đo sang Chưa đo chờ lượt `ci-local -Sanitize` (T059) và T200. SC-013 ghi "Chưa đo — hoãn theo quyết định người dùng" (T081 không chạy ở GĐ 6). Đếm lại khi T076, T059, T198 xong. Cập nhật 2026-10-18 trưa: SC-012 sang Đạt (T080); FR-030 sang Đạt (T059).

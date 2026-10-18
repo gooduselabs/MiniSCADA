@@ -711,5 +711,78 @@
       },
       "note": "logic now really scans every 100 ms (10/s); before gd6-logic-perf it ran at the 250 ms Tag Engine round (4/s). Before optimisation: scan median 16 ms, CPU +4.9, RSS +4.5 MB."
     }
+  },
+  "remeasureEventDriven": {
+    "date": "2026-10-18 12:34–13:38",
+    "runtime": "1.0.0-rc.1",
+    "releaseSeq": 13,
+    "commit": "af6d129a",
+    "includes": ["gd6-vm-perf (event-driven scan: only blocks that are due)"],
+    "benchOnDevice": {
+      "logicOwnPeriodMsPerS": {
+        "before": 27.4,
+        "after": 17.8
+      },
+      "scanMeanMs": {
+        "before": 2.16,
+        "after": 1.37
+      },
+      "engineAloneMeanMs": {
+        "before": 1.25,
+        "after": 0.36
+      }
+    },
+    "phases": [
+      {
+        "n": 1,
+        "logic": false,
+        "cpuAvgPctOneCore": 29.3,
+        "rssAvgMB": 17.6
+      },
+      {
+        "n": 2,
+        "logic": true,
+        "cpuAvgPctOneCore": 31.9,
+        "rssAvgMB": 21.6,
+        "scan": {
+          "lastMsMedian": 1.09,
+          "p99MsEnd": 2.6,
+          "p99MsMax": 3.39,
+          "intervalMs": 100
+        }
+      },
+      {
+        "n": 3,
+        "logic": false,
+        "cpuAvgPctOneCore": 29.4,
+        "rssAvgMB": 18.2
+      },
+      {
+        "n": 4,
+        "logic": true,
+        "cpuAvgPctOneCore": 31.8,
+        "rssAvgMB": 21.8,
+        "scan": {
+          "lastMsMedian": 1.03,
+          "p99MsEnd": 2.63,
+          "p99MsMax": 6.32,
+          "intervalMs": 99.97
+        }
+      }
+    ],
+    "result": {
+      "cpuDeltaPointsOneCore": 2.5,
+      "cpuDeltaPointsMachine": 1.25,
+      "rssDeltaMB": 3.8,
+      "scanMedianMs": 1.05,
+      "scanP99Ms": 2.6,
+      "criteria": {
+        "cpu<=+3 (one core)": "pass",
+        "rss<=+5MB": "pass",
+        "scan<=5ms": "pass (one transient p99 sample 6.32 in phase 4)"
+      },
+      "seqGaps": 0,
+      "pass": true
+    }
   }
 }

@@ -50,7 +50,7 @@ Cách đọc: **Đạt** là test hoặc kịch bản tự động xanh, số đ
 | SC-025 | Độ chính xác logic | Đạt | Vitest + ctest 52 ca |
 | SC-026 | Logic retain 100 vòng `kill -9` | Đạt (x64) | T146 `retain-kill` 100 vòng: mất tối đa count 6, total 0,95, giờ chạy 0,0027 (≤ một `flushS`), 0 lần giảm, 0 ghi trùng cạnh; `retain-lost` 5/5 (`011-logic-x64.json`). BL335 cắt điện (D5) là T149 |
 | SC-027 | Ghi từ logic qua giả lập Modbus | Đạt (x64) | T146 `rules` 9/9 (audit đủ trường trước khi gửi), `writes-off` 0 lệnh, `throttle` chặn 35/35 cạnh thừa; validator từ chối ghi Tag không khai báo |
-| SC-028 | Tải logic BL335 | **Không đạt** | BL335 rc.1 (T148, A/B/A/B dưới L1): vòng quét trung vị 2,5 ms, p99 3,8 ms (Đạt), RSS +3,9 MB (Đạt), **CPU +3,3 điểm một lõi, vượt ngưỡng +3 là 0,3** (+1,65 cả máy). Trước tối ưu: quét 16 ms, CPU +4,9. x64 (T147): +1,43 điểm, +4,6 MB, quét p99 1,38 ms. Phương án: `logic.scanMs` 200–250 ms cho project tối đa, tối ưu VM, hoặc đọc ngưỡng theo cả máy (cần quyết định, T201) |
+| SC-028 | Logic tối đa trên BL335 | **Đạt** (2026-10-18, releaseSeq 13): CPU +2,5 điểm một lõi, RSS +3,8 MB, quét 1,05 ms | T148 |
 | SC-029 | Kỹ sư dựng luật bơm ≤ 25 phút | Chờ người | H3 |
 | SC-030 | Round-trip ≥ 20 fixture | Đạt | 26 fixture, ảnh khác 0 % |
 | SC-031 | ≥ 150 ca hình học | Đạt | ~270 ca |
@@ -67,7 +67,7 @@ Cách đọc: **Đạt** là test hoặc kịch bản tự động xanh, số đ
 | SC-042 | Hồi quy `ci-local` với bước mới | Chưa đo | `ci-local` đầy đủ xanh trên rc.1 2026-10-18 ("ALL STEPS PASSED", gồm SAST, audit, docs-check, `update-it`, `logic-it`); ctest ASan + UBSan chạy riêng (T059: 5.888 ca, 56 đỏ đã sửa); **chưa có** lượt `ci-local -Sanitize` (T059) và so cặp 0.6/1.0 (T200) |
 | SC-043 | Go/No-Go | Chờ người | T198, P4 |
 
-Tổng: 24 Đạt, 1 Không đạt (SC-028), 4 Chưa đo, 14 Chờ người (SC-012 đạt 2026-10-18 sau T080; lần trước 2026-10-17: 17, 0, 13, 13).
+Tổng: 25 Đạt, 0 Không đạt, 4 Chưa đo, 14 Chờ người (SC-028 đạt sau quét theo sự kiện) (SC-012 đạt 2026-10-18 sau T080; lần trước 2026-10-17: 17, 0, 13, 13).
 
 ## 3. Hạn chế còn lại
 

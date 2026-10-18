@@ -330,3 +330,15 @@ Trạng thái cuối: như mục 09:00 (runtime `1.0.0-rc.1` releaseSeq 12, `tan
 | 09:50 | Nạp `bench-1000` (định dạng 0.6) qua API, `committed` | 10:51 nạp lại `tank-demo` 0.1.0, `committed` |
 | 09:51–10:51 | `load-tester` 10 + 1 client, 1.000 Tag; bộ lấy mẫu `/proc` chỉ đọc | — |
 | 10:51 | Khôi phục `runtime.json` (SHA-256 bằng gốc `0e979c42…`), khởi động lại, tắt tài khoản, xóa `/root/mat-stage-011/t080` | — |
+
+### 12:32–13:38 — cài releaseSeq 13 (quét logic theo sự kiện), đo lại T148
+
+| Giờ | Thay đổi | Hoàn tác |
+|---|---|---|
+| 12:25 | `logic_bench` bản gốc và bản mới chạy trong `/tmp/vmb` (chỉ đọc ngoài `/tmp`), xóa sau khi chạy | — |
+| 12:32 | Sao lưu `runtime.json` vào `/root/mat-stage-011/t148d`; `deploy.sh` gói `1.0.0-rc.1` releaseSeq 13 (commit `af6d129a`), kiểm sức khỏe OK sau 1 s; releaseSeq 12 sang `/opt/mat-runtime.prev` | `sh /opt/mat-runtime/deployment/rollback.sh` |
+| 12:33 | Mật khẩu ngẫu nhiên mới, bật `mat-t079-eng`, `mat-t079-xem`; `maxLiveClientsPerSource` 10; khởi động lại | 13:38 đã khôi phục |
+| 12:34–13:37 | Nạp soak-std10/soak-logic ×2 rồi `tank-demo` (5 lần `committed`), tải L1 | — |
+| 13:38 | Khôi phục `runtime.json` (SHA-256 gốc `0e979c42…`), tắt tài khoản, xóa `/root/mat-stage-011/t148d` | — |
+
+Trạng thái cuối: runtime `1.0.0-rc.1` releaseSeq 13 active, `tank-demo` 0.1.0 active.

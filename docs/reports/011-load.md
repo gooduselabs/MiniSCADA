@@ -166,6 +166,16 @@ Còn lại: một biểu thức tốn ≈ 1 µs VM trên Cortex-A7, một khối
 
 Giới hạn và phương án cho CPU: (a) project ở mức tối đa 550 khối đặt `logic.scanMs` 200–250 ms (ước tính +1,3 đến +1,7 điểm); (b) tối ưu tiếp VM (≈ 1 µs mỗi biểu thức trên Cortex-A7); (c) đọc ngưỡng theo cả máy (2 lõi) như Master Plan §6.2 ghi "2 × Cortex-A7" (+1,65 điểm, đạt). Quyết định hiện hành: tính theo một lõi, T148 **chưa đạt** phần CPU; ghi vào ghi chú phát hành 1.0.0-rc.1.
 
+**Đo lại lần 3 (2026-10-18 12:34–13:38, `1.0.0-rc.1` releaseSeq 13, gồm `gd6-vm-perf`: quét theo sự kiện, chỉ bước khối đến hạn).** Bench trên thiết bị: CPU logic ở chu kỳ riêng 27,4 → 17,8 ms/s, quét trung bình 2,16 → 1,37 ms. Dưới L1, cùng cách đo A/B/A/B:
+
+| Tiêu chí | Không logic | Có logic | Chênh | Ngưỡng | Trạng thái |
+|---|---|---|---|---|---|
+| CPU trung bình (một lõi) | 29,3 / 29,4 % | 31,9 / 31,8 % | **+2,5 điểm** (+1,25 cả máy) | ≤ +3 | **Đạt** |
+| RSS trung bình | 17,6 / 18,2 MB | 21,6 / 21,8 MB | **+3,8 MB** | ≤ +5 MB | **Đạt** |
+| Vòng quét | — | trung vị 1,05 ms, p99 2,6 ms (một mẫu p99 6,3 ms ở pha 4) | — | ≤ 5 ms | **Đạt** |
+
+0 mất sequence, 550/550 khối OK, `intervalMs` 100. **T148 đạt.** Mục "Giới hạn và phương án cho CPU" ở trên không còn cần.
+
 ### 3.3 T122: OTA thật (SC-023)
 
 2026-10-18 01:56–02:48, runtime 1.0.0, project `tank-demo` 0.1.0 (rảnh). 10 gói `.matupdate` armhf 5,8 MB (releaseSeq 2 đến 11, khóa thử) gửi qua API của Studio (tải lên, `apply` có mật khẩu, `GET /system/update`), quay về bằng tay sau lần thứ 5. Chi tiết: `011-ota-bl335.json`; số đo và quyết định ở ADR-035 mục "Số đo".
