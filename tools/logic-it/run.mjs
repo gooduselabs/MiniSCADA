@@ -253,7 +253,9 @@ function makeSoakPair(out) {
   const lg = join(out, 'soak-logic');
   rmSync(lg, { recursive: true, force: true });
   sh('cp', ['-R', base, lg]);
-  const ll = readJson(join(out, 'logic-load/tags.json')).tags.filter((t) => t.id.startsWith('INT.R'));
+  const ll = readJson(join(out, 'logic-load/tags.json')).tags.filter((t) =>
+    t.id.startsWith('INT.R'),
+  );
   const tags = readJson(join(lg, 'tags.json'));
   tags.tags.push(...ll);
   writeJson(join(lg, 'tags.json'), tags);
@@ -268,8 +270,7 @@ function makeSoakPair(out) {
       ['logic', 'soak-logic'],
     ],
     clientDir: 'soak-std10',
-    what:
-      'soak-std10 (soak-standard of tools/gen-bench-projects.mjs in format 1.0: 500 Tag, 200 logged, 3 screens) vs. soak-logic (the same + logic.json of projects/logic-load: 550 blocks + 200 internal Tag INT.R*); the clients subscribe to the same 500 Tag on both sides',
+    what: 'soak-std10 (soak-standard of tools/gen-bench-projects.mjs in format 1.0: 500 Tag, 200 logged, 3 screens) vs. soak-logic (the same + logic.json of projects/logic-load: 550 blocks + 200 internal Tag INT.R*); the clients subscribe to the same 500 Tag on both sides',
   };
 }
 

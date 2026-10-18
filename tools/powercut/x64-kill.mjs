@@ -175,7 +175,7 @@ function historyAfterCut(cutMs) {
   const py =
     'import sqlite3,sys,json\n' +
     `c=sqlite3.connect("file:${cfg.dataDir}/history.db?mode=ro",uri=True,timeout=10)\n` +
-    'ts=[r[0] for r in c.execute("select name from sqlite_master where type=\'table\' and name like \'log_%\'")]\n' +
+    "ts=[r[0] for r in c.execute(\"select name from sqlite_master where type='table' and name like 'log_%'\")]\n" +
     `m=max([c.execute("select max(ts) from \\""+t+"\\" where ts<=${cutMs}").fetchone()[0] or 0 for t in ts] or [0])\n` +
     'ic=c.execute("pragma integrity_check").fetchone()[0]\n' +
     'print(json.dumps({"tables":len(ts),"maxTsBeforeCut":m,"integrity":ic}))\n';
@@ -378,7 +378,9 @@ for (const point of plan) {
         await sleep(500);
         left = pulseArmed();
       }
-      const ex = execIn(`${cfg.runtime} --export-audit --format jsonl --data-dir ${cfg.dataDir}`).out.split('\n');
+      const ex = execIn(
+        `${cfg.runtime} --export-audit --format jsonl --data-dir ${cfg.dataDir}`,
+      ).out.split('\n');
       const recovered = (r.pulseArmed ?? []).filter((id) =>
         ex.some((l) => l.includes('pulse-recovery') && l.includes(id)),
       );
@@ -390,11 +392,16 @@ for (const point of plan) {
         recoveryAudited: recovered.length,
         armedLeft: left,
       };
-      if (cfg.simControl && c !== 0) fail = `pulse: coil ${cfg.pulseCoil} still ${c} ${cfg.pulseReleaseS} s after READY`;
+      if (cfg.simControl && c !== 0)
+        fail = `pulse: coil ${cfg.pulseCoil} still ${c} ${cfg.pulseReleaseS} s after READY`;
       else if (recovered.length !== (r.pulseArmed ?? []).length)
         fail = `pulse: ${recovered.length}/${r.pulseArmed.length} armed pulses with a pulse-recovery audit`;
       else if (left.length) fail = `pulse: ${left.length} entries still armed in pulse.journal`;
-      r.pulse.status = fail ? 'fail' : cfg.simControl ? 'pass' : 'partial (no --sim-control: coil not read)';
+      r.pulse.status = fail
+        ? 'fail'
+        : cfg.simControl
+          ? 'pass'
+          : 'partial (no --sim-control: coil not read)';
     }
   }
   if (cfg.pauseFile) rmSync(cfg.pauseFile, { force: true });
