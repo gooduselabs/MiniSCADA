@@ -57,10 +57,10 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 
 | FR | Nội dung | Task | Bằng chứng | Trạng thái |
 |---|---|---|---|---|
-| FR-037 | `mat-sample` chỉ đọc, tmpfs, quay vòng | T067, T070 | `tools/soak/mat-sample.test.mjs` (cây `/proc` giả); `node --test` soak + powercut 55/55; chạy trọn soak x64 24 giờ (T076: 1.446 mẫu, 0 dòng hỏng); có trong gói runtime nhưng chưa chạy trên BL335 (T079 dùng script lấy mẫu riêng) | Đạt (công cụ, x64) · Chưa đo trên BL335 (T079 phần còn lại) |
+| FR-037 | `mat-sample` chỉ đọc, tmpfs, quay vòng | T067, T070 | `tools/soak/mat-sample.test.mjs` (cây `/proc` giả); `node --test` soak + powercut 55/55; chạy trọn soak x64 24 giờ (T076: 1.446 mẫu, 0 dòng hỏng); có trong gói runtime nhưng chưa chạy trên BL335 (T079 dùng script lấy mẫu riêng) · BL335 rc.1 (2026-10-19): `mat-sample.sh` từ gói chạy 6 mẫu: RSS, luồng, FD, `blkSectorsWritten`, eMMC qua sysfs (life A/B 1, preEol 1), nhiệt 38,5 °C, restarts 0, dmesgErr 0 | Đạt |
 | FR-038 | `load-tester` 500/1.000 Tag, client 11, F5, SVG, `--latency` | T071, T072 | Go 22/22; `tests/web-it/f5-storm.mjs`, `svg-load.mjs`; `tools/gen-bench-projects.mjs` 6/6; dùng ở T075 (x64), T079, T080 (BL335); phần thứ hai L3: `load-tester -reentry N` (đóng sạch và im lặng; `reentry_test.go`); **BL335 rc.1 bằng chính công cụ (2026-10-18): đóng sạch 9 ms, im lặng 14,9–15,1 s, 5/5 mỗi cách**. Chưa có `wss://` (L1 xen kẽ 8443, T079 phần còn lại) | Đạt |
 | FR-039 | Soak S0 x64 24 giờ, S1 BL335 7 ngày, S2 30 ngày | T076, T081, T196 | `R:011-soak.md` §2a: **S0 x64 24 giờ xong** (T076, 2026-10-17 20:38 → 2026-10-18 20:38 UTC): 48/48 đoạn tải, 0 mất sequence, 47 `kill -9`, 9/9 nạp xuống, RSS ≤ 34,1 MB, WAL 4,3 MB, dữ liệu toàn vẹn; S1 BL335 7 ngày **hủy theo quyết định người dùng 2026-10-18** (T081); S2 khi pilot (T196) | Đạt S0 · Chưa đo — S1 hủy theo quyết định người dùng (T081) · S2 Chờ người (P2) |
-| FR-040 | `--check-data` chỉ đọc ≤ 30 s | T066, T069 | ctest `check_data_test` 13/13, armhf qemu 13/13; `history.db` 500 MiB: 0,79 s (x64); chạy ở 150 vòng powercut x64 và cuối soak x64 24 giờ; chưa chạy trên BL335 | Đạt (x64) · Chưa đo BL335 |
+| FR-040 | `--check-data` chỉ đọc ≤ 30 s | T066, T069 | ctest `check_data_test` 13/13, armhf qemu 13/13; `history.db` 500 MiB: 0,79 s (x64); chạy ở 150 vòng powercut x64 và cuối soak x64 24 giờ; chưa chạy trên BL335 · BL335 rc.1 (2026-10-19): `--check-data --json` 1,6 s: quick_check ok history/audit/alarm (warning chỉ do WAL đang mở), project digest khớp, retain thế hệ 3 ok | Đạt |
 | FR-041 | `powercut.mjs` (Tasmota, rơ-le, tay), chu trình 6 bước | T068, T073 | `tools/powercut/powercut.test.mjs` (thiết bị giả); chưa chạy với nguồn thật; bản Node `x64-run.mjs`/`x64-kill.mjs` đã chạy ở T077 | Đạt (công cụ) · Chờ người (T083, B4) |
 | FR-042 | Đối chiếu `ACCEPTED` với `audit.db` sau cắt điện | T073, T077, T084 | `R:011-powercut-x64.json` (T077): 0 lệnh `ACCEPTED` thiếu audit trên 1.781 lệnh, 130/130 vòng; BL335 cần bộ điều khiển nguồn | Đạt (x64) · Chờ người (T084, B4) |
 | FR-043 | Tiền kiểm x64 100 vòng `kill -9` | T074, T077 | `R:011-powercut-x64.json` (T077 xong, bản Node của `x64-kill.ps1`): 130/130 vòng (100 ngẫu nhiên + D1, D3, D5 × 10) ngày 2026-10-17, D3 và D4 × 10 với rig đã sửa 20/20 ngày 2026-10-18 (khóa `rerunD3D4`), D2 qua `update-it kill` 40/40; READY tối đa 12,1 s, `--check-data` 0 hỏng, 0 lệnh ACCEPTED thiếu audit; hạn chế ở `R:011-powercut.md` §3; Docker Linux arm64 | Đạt (x64) |
@@ -230,7 +230,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 
 | Nhóm | Đạt trọn | Không đạt | Chưa đo | Chờ người |
 |---|---|---|---|---|
-| FR (143) | 108 | 1 (FR-135) | 3 | 31 |
+| FR (143) | 110 | 1 (FR-135) | 1 | 31 |
 | SC (43) | 27 | 0 | 2 | 14 |
 
 Cách đếm: mỗi FR/SC tính một lần theo phần yếu nhất của dòng, thứ tự Không đạt, Chưa đo, Chờ người, Đạt (dòng "Đạt (x64) · Chưa đo BL335" tính là Chưa đo); dòng gộp (ví dụ FR-014, 015, 016) tính đủ số FR.

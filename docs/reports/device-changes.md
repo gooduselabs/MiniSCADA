@@ -346,3 +346,7 @@ Trạng thái cuối: runtime `1.0.0-rc.1` releaseSeq 13 active, `tank-demo` 0.1
 ### 14:04–14:06 — L3 `-reentry` (FR-038) trên releaseSeq 13
 
 `maxLiveClientsPerSource` 10 tạm thời (sao lưu `runtime.json` vào `/root/mat-stage-011/l3`), `load-tester -tags demo -clients 10 -extra 1 -reentry 5` trên `tank-demo`; 14:06 khôi phục `runtime.json` (SHA-256 gốc), khởi động lại, xóa thư mục sao lưu.
+
+## 2026-10-19 04:05 — FR-037, FR-040 trên BL335 (chỉ đọc)
+
+`MAT_SAMPLE_DIR=/tmp/mat-sample-t079 MAT_SAMPLE_PERIOD_S=10 MAT_SAMPLE_COUNT=6 sh /opt/mat-runtime/deployment/mat-sample.sh` (ghi vào `/tmp`, đã xóa) và `mat-runtime --check-data --json`. Không thay đổi cấu hình hay dữ liệu.
