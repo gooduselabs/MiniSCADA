@@ -321,3 +321,12 @@ Trạng thái cuối: runtime `1.0.0-rc.1` releaseSeq 12 active (NRestarts 0), `
 | 09:44–09:47 | L8: 40 kết nối TLS im lặng từ địa chỉ thứ hai của máy dev, đăng nhập 43 lần; kiểm Host bằng `curl` | — |
 
 Trạng thái cuối: như mục 09:00 (runtime `1.0.0-rc.1` releaseSeq 12, `tank-demo`, `runtime.json` gốc).
+
+### 09:50–10:51 — T080 (L2, 1.000 Tag) trên 1.0.0-rc.1
+
+| Giờ | Thay đổi | Hoàn tác |
+|---|---|---|
+| 09:50 | Sao lưu `runtime.json` vào `/root/mat-stage-011/t080`; mật khẩu ngẫu nhiên mới và bật `mat-t079-eng`; `maxLiveClientsPerSource` 10; khởi động lại | 10:51 đã khôi phục |
+| 09:50 | Nạp `bench-1000` (định dạng 0.6) qua API, `committed` | 10:51 nạp lại `tank-demo` 0.1.0, `committed` |
+| 09:51–10:51 | `load-tester` 10 + 1 client, 1.000 Tag; bộ lấy mẫu `/proc` chỉ đọc | — |
+| 10:51 | Khôi phục `runtime.json` (SHA-256 bằng gốc `0e979c42…`), khởi động lại, tắt tài khoản, xóa `/root/mat-stage-011/t080` | — |

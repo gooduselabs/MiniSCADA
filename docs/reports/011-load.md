@@ -101,6 +101,19 @@ Runtime 1.0.0, đo 2026-10-17 20:12 đến 2026-10-18 01:40 (+07) từ máy dev 
 | L5 | Màn `anim` 400 phần tử SVG, 50 hoạt ảnh trên runtime thật (project `svg-l5`) | 10 tiến trình Chrome riêng: 53,4–54,3 FPS; 1 trang + 9 client 500 Tag: 60 FPS; 10 trang trong một tiến trình: 10,7 FPS (giới hạn của máy đo, CPU runtime 2,8 % một lõi) | **Đạt** (RSS tab chưa đo) |
 | L8 | 40 TLS im lặng từ IP A giữ liên tục 120 s, đăng nhập thật từ IP B (giao diện mạng thứ hai) mỗi ≈ 2,7 s | 43/43 đăng nhập 200, tệ nhất 1.198 ms; đăng nhập từ chính IP A 616 ms; máy chủ đóng TLS im lặng sau ≈ 10,4 s; RSS ổn định +0,3–0,7 MB; CPU 36,5 % một lõi do bắt tay lặp lại | **Đạt** |
 
+### 3.1b T080: L2 1.000 Tag (SC-012)
+
+2026-10-18 09:51–10:51, BL335, runtime `1.0.0-rc.1` releaseSeq 12, project `bench-1000` (1.000 Tag mô phỏng, định dạng 0.6 — kiểm luôn bản sửa gói thiếu `schemas/0.6`), `load-tester` 10 client + 1 thừa, 1 giờ, CPU tính theo một lõi:
+
+| Đo | Kết quả | Ngưỡng | Trạng thái |
+|---|---|---|---|
+| CPU trung bình | 43,8 % một lõi (21,9 % cả máy); đỉnh 10 s 47,5 % | mục tiêu ≤ 50 % | **Đạt** |
+| RSS | trung bình 12,8 MB, tối đa 13,0 MB | ≤ 150 MB | **Đạt** |
+| Mất sequence | 0 trên 10 client; client 11 bị từ chối đúng | 0 | **Đạt** |
+| Trễ client (tương đối) | p50 36 ms, p95 65 ms, tối đa 152 ms | — | — |
+
+MemAvailable thấp nhất 879 MB; 100–108 luồng. Số chi tiết: `011-load-bl335.json` khóa `L2`.
+
 ### 3.2 T148: L7 logic tối đa
 
 A/B/A/B, mỗi pha 15 phút, cùng tải L1 (10 client 500 Tag): `soak-std10` và `soak-logic` (= `soak-std10` + `logic.json` của `projects/logic-load`: 550 khối + 200 Tag nội bộ). Vòng quét đọc từ `GET /api/v1/logic` mỗi 30 s.
