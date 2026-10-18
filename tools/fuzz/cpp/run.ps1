@@ -10,7 +10,7 @@ param(
     [string]$BuildDir = ''
 )
 $ErrorActionPreference = 'Stop'
-$root = (Resolve-Path "$PSScriptRoot/../..").Path
+$root = (Resolve-Path "$PSScriptRoot/../../..").Path
 . "$root/tools/lib/platform.ps1"
 if (-not $BuildDir) { $BuildDir = Get-MatBuildDir 'mat-x64-asan-fuzz' }
 New-Item -ItemType Directory -Force $BuildDir | Out-Null
