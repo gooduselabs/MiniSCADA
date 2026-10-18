@@ -4,89 +4,89 @@
     {
       "name": "round 1 (timeout): every Tag BAD with a reason within 2 cycles",
       "pass": true,
-      "detail": "976 ms, reasons TIMEOUT"
+      "detail": "1217 ms, reasons TIMEOUT"
     },
     {
       "name": "round 1: GOOD again within 12 s without restarting the runtime",
       "pass": true,
-      "detail": "1772 ms"
+      "detail": "1771 ms"
     },
     {
       "name": "round 2 (refuse): every Tag BAD with a reason within 2 cycles",
       "pass": true,
-      "detail": "1014 ms, reasons REFUSED"
+      "detail": "981 ms, reasons REFUSED"
     },
     {
       "name": "round 2: GOOD again within 12 s without restarting the runtime",
       "pass": true,
-      "detail": "1472 ms"
+      "detail": "1239 ms"
     },
     {
       "name": "round 3 (timeout): every Tag BAD with a reason within 2 cycles",
       "pass": true,
-      "detail": "1208 ms, reasons TIMEOUT"
+      "detail": "1253 ms, reasons TIMEOUT"
     },
     {
       "name": "round 3: GOOD again within 12 s without restarting the runtime",
       "pass": true,
-      "detail": "2023 ms"
+      "detail": "1995 ms"
     },
     {
       "name": "round 4 (refuse): every Tag BAD with a reason within 2 cycles",
       "pass": true,
-      "detail": "988 ms, reasons REFUSED"
+      "detail": "994 ms, reasons REFUSED"
     },
     {
       "name": "round 4: GOOD again within 12 s without restarting the runtime",
       "pass": true,
-      "detail": "1249 ms"
+      "detail": "1468 ms"
     },
     {
       "name": "round 5 (timeout): every Tag BAD with a reason within 2 cycles",
       "pass": true,
-      "detail": "1501 ms, reasons TIMEOUT"
+      "detail": "1272 ms, reasons TIMEOUT"
     },
     {
       "name": "round 5: GOOD again within 12 s without restarting the runtime",
       "pass": true,
-      "detail": "1513 ms"
+      "detail": "1762 ms"
     },
     {
       "name": "round 6 (refuse): every Tag BAD with a reason within 2 cycles",
       "pass": true,
-      "detail": "964 ms, reasons REFUSED"
+      "detail": "976 ms, reasons REFUSED"
     },
     {
       "name": "round 6: GOOD again within 12 s without restarting the runtime",
       "pass": true,
-      "detail": "1253 ms"
+      "detail": "1232 ms"
     },
     {
       "name": "the runtime process is the same one at the end",
       "pass": true,
-      "detail": "824 -> 824"
+      "detail": "823 -> 823"
     }
   ],
   "measures": {
     "rounds": 6,
     "badMs": [
-      976,
-      1014,
-      1208,
-      988,
-      1501,
-      964
+      1217,
+      981,
+      1253,
+      994,
+      1272,
+      976
     ],
     "goodMs": [
-      1772,
-      1472,
-      2023,
-      1249,
-      1513,
-      1253
+      1771,
+      1239,
+      1995,
+      1468,
+      1762,
+      1232
     ],
-    "badMaxMs": 1501,
-    "goodMaxMs": 2023
+    "badMaxMs": 1272,
+    "goodMaxMs": 1995
   },
   "pass": true
 }

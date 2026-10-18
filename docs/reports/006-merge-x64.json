@@ -9,7 +9,7 @@
     {
       "name": "one request per block per second",
       "pass": true,
-      "detail": "[[\"1/0/12\",6],[\"2/1/1\",6],[\"3/0/84\",6],[\"3/100/1\",6],[\"3/200/24\",6],[\"4/5/1\",6]]"
+      "detail": "[[\"1/0/12\",5],[\"2/1/1\",5],[\"3/0/84\",5],[\"3/100/1\",5],[\"3/200/24\",5],[\"4/5/1\",5]]"
     },
     {
       "name": "every request is at most 125 registers",
@@ -22,7 +22,7 @@
   ],
   "measures": {
     "blocks": 6,
-    "requestsInWindow": 36,
+    "requestsInWindow": 30,
     "expectedRequestsInWindow": 31
   },
   "pass": true

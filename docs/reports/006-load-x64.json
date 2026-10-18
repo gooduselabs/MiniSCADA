@@ -14,7 +14,7 @@
     {
       "name": "delay from the PLC to the client within a cycle and a second",
       "pass": true,
-      "detail": "p95 13 ms"
+      "detail": "p95 14 ms"
     },
     {
       "name": "all 500 Tags GOOD on every client",
@@ -25,14 +25,14 @@
     "seconds": 60.1,
     "clients": 10,
     "tags": 500,
-    "cpuPercentOneCoreAvg": 0.8,
-    "cpuPercentOneCoreMax5s": 1,
-    "rssMaxMB": 12.2,
+    "cpuPercentOneCoreAvg": 1,
+    "cpuPercentOneCoreMax5s": 1.2,
+    "rssMaxMB": 12.1,
     "sequenceGaps": 0,
     "periodMeanMs": 1000,
-    "periodP95Ms": 1007,
-    "lagP95Ms": 13,
-    "lagMaxMs": 19
+    "periodP95Ms": 1008,
+    "lagP95Ms": 14,
+    "lagMaxMs": 22
   },
   "pass": true
 }

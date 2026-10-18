@@ -55,7 +55,7 @@
     {
       "name": "round 4: the simulator keeps the value of the command that ran last",
       "pass": true,
-      "detail": "106 then 107, holds 107"
+      "detail": "107 then 106, holds 106"
     },
     {
       "name": "round 5: both accepted",
@@ -83,7 +83,7 @@
     {
       "name": "round 6: the simulator keeps the value of the command that ran last",
       "pass": true,
-      "detail": "111 then 110, holds 110"
+      "detail": "110 then 111, holds 111"
     },
     {
       "name": "two audit records of receipt per round, each with its own old value",

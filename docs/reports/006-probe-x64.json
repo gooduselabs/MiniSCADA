@@ -4,7 +4,7 @@
     {
       "name": "probe ok with a read: OK",
       "pass": true,
-      "detail": "200 {\"code\":\"OK\",\"connectMs\":0,\"ok\":true,\"read\":{\"count\":1,\"fc\":3,\"offset\":1,\"registers\":[\"FB2E\"]},\"responseMs\":1}"
+      "detail": "200 {\"code\":\"OK\",\"connectMs\":0,\"ok\":true,\"read\":{\"count\":1,\"fc\":3,\"offset\":1,\"registers\":[\"FB2E\"]},\"responseMs\":0}"
     },
     {
       "name": "probe ok with a read: within connect + wait + 2 s",
@@ -18,22 +18,22 @@
     {
       "name": "probe wrong port: REFUSED",
       "pass": true,
-      "detail": "200 {\"code\":\"REFUSED\",\"connectMs\":0,\"message\":\"PLC từ chối kết nối (có thể đã đủ số kết nối)\",\"ok\":false}"
+      "detail": "200 {\"code\":\"REFUSED\",\"connectMs\":1,\"message\":\"PLC từ chối kết nối (có thể đã đủ số kết nối)\",\"ok\":false}"
     },
     {
       "name": "probe wrong port: within connect + wait + 2 s",
       "pass": true,
-      "detail": "4 ms"
+      "detail": "3 ms"
     },
     {
       "name": "probe unreachable name: DNS",
       "pass": true,
-      "detail": "200 {\"code\":\"DNS\",\"connectMs\":11,\"message\":\"Không phân giải được tên máy\",\"ok\":false}"
+      "detail": "200 {\"code\":\"DNS\",\"connectMs\":13,\"message\":\"Không phân giải được tên máy\",\"ok\":false}"
     },
     {
       "name": "probe unreachable name: within connect + wait + 2 s",
       "pass": true,
-      "detail": "15 ms"
+      "detail": "17 ms"
     },
     {
       "name": "probe exception 02: EXCEPTION",
@@ -43,22 +43,22 @@
     {
       "name": "probe exception 02: within connect + wait + 2 s",
       "pass": true,
-      "detail": "4 ms"
+      "detail": "3 ms"
     },
     {
       "name": "probe no answer: TIMEOUT",
       "pass": true,
-      "detail": "200 {\"code\":\"TIMEOUT\",\"connectMs\":0,\"message\":\"PLC không trả lời trong thời gian chờ\",\"ok\":false,\"responseMs\":402}"
+      "detail": "200 {\"code\":\"TIMEOUT\",\"connectMs\":0,\"message\":\"PLC không trả lời trong thời gian chờ\",\"ok\":false,\"responseMs\":401}"
     },
     {
       "name": "probe no answer: within connect + wait + 2 s",
       "pass": true,
-      "detail": "408 ms"
+      "detail": "410 ms"
     },
     {
       "name": "the channel that runs lost no lap during the tests (no gap above 1.6 s)",
       "pass": true,
-      "detail": "max gap 1007 ms over 4 reads"
+      "detail": "max gap 1009 ms over 4 reads"
     },
     {
       "name": "the Tags of the channel stayed GOOD",
@@ -66,7 +66,7 @@
     }
   ],
   "measures": {
-    "channelMaxGapMs": 1007
+    "channelMaxGapMs": 1009
   },
   "pass": true
 }

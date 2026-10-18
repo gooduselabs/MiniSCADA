@@ -2,7 +2,7 @@
   "scenario": "screens",
   "checks": [
     {
-      "name": "màn hình đầu hiện trong ≤ 2 s (đo 369 ms)",
+      "name": "màn hình đầu hiện trong ≤ 2 s (đo 313 ms)",
       "pass": true
     },
     {
@@ -77,7 +77,7 @@
     }
   ],
   "measures": {
-    "firstScreenMs": 369
+    "firstScreenMs": 313
   },
   "pass": true
 }

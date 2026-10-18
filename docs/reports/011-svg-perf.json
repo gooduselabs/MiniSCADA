@@ -16,31 +16,31 @@
     "undo": 100
   },
   "measuredMs": {
-    "open20000": 466.9,
-    "marquee20000Cold": 28.5,
-    "undo20000": 20.4,
+    "open20000": 469.6,
+    "marquee20000Cold": 28.7,
+    "undo20000": 21.1,
     "drag20000": {
-      "gapP95": 16.8,
+      "gapP95": 16.7,
       "gapAvg": 16.7,
-      "handlerP95": 1.2,
-      "frames": 121,
+      "handlerP95": 1.3,
+      "frames": 122,
       "preview": "dom"
     },
-    "open2000": 67.9,
+    "open2000": 69.1,
     "drag2000": {
-      "gapP95": 16.8,
+      "gapP95": 16.7,
       "gapAvg": 16.8,
-      "handlerP95": 1,
+      "handlerP95": 1.1,
       "frames": 181,
       "preview": "dom"
     },
-    "marquee2000Cold": 4.4,
-    "marquee2000Warm": 1,
-    "undo2000": 7.5,
+    "marquee2000Cold": 7.3,
+    "marquee2000Warm": 1.5,
+    "undo2000": 8.3,
     "drag500Quick": {
-      "gapP95": 16.8,
+      "gapP95": 16.7,
       "gapAvg": 16.7,
-      "handlerP95": 4.1,
+      "handlerP95": 3.5,
       "frames": 121,
       "preview": "quick"
     }

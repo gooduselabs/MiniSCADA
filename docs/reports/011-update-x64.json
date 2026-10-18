@@ -1,7 +1,7 @@
 {
   "feature": "011",
   "task": "T120",
-  "date": "2026-10-18T09:56:42",
+  "date": "2026-10-18T16:18:14",
   "machine": "Docker mat-armhf (aarch64), real mat-runtime of that architecture, fake systemctl",
   "note": "lab: MAT_RATE_S=0; health check 60 s, stable 5 s as on the device",
   "scenarios": {
@@ -260,7 +260,7 @@
           "detail": "KEYSET_KEY"
         }
       ],
-      "seconds": 4.0
+      "seconds": 4.4
     },
     "downgrade": {
       "passed": true,
@@ -297,7 +297,7 @@
       ],
       "apply": 202,
       "last": {
-        "updateId": "upd_65117245ef950c1b",
+        "updateId": "upd_5b9bfd0321aac57c",
         "op": "keyset",
         "result": "committed",
         "from": "1.0.0-rc.1",
@@ -307,8 +307,8 @@
         "user": "admin",
         "code": "",
         "reason": "",
-        "finishedAt": "2026-10-18T09:57:04Z",
-        "finishedAtMs": 1792317424000,
+        "finishedAt": "2026-10-18T16:18:37Z",
+        "finishedAtMs": 1792340317000,
         "audited": false
       },
       "keysAfter": 2,

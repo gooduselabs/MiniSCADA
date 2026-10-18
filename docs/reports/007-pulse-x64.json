@@ -9,7 +9,7 @@
     {
       "name": "khoảng giữa hai lần ghi ≈ pulseMs (500 ms, 480…1000)",
       "pass": true,
-      "detail": "524…728"
+      "detail": "523…756"
     },
     {
       "name": "có thấy phase release khi chờ",
@@ -44,13 +44,13 @@
     {
       "name": "0 lệnh tới giả lập không có dòng audit nhận lệnh",
       "pass": true,
-      "detail": "51 lệnh, 30 dòng"
+      "detail": "51 lệnh, 29 dòng"
     }
   ],
   "measures": {
     "gapMs": {
-      "min": 524,
-      "max": 728
+      "min": 523,
+      "max": 756
     }
   },
   "pass": true

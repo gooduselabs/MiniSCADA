@@ -4,7 +4,7 @@
     {
       "name": "cert-info: shows the IP SAN of the cards and the host name",
       "pass": true,
-      "detail": "Chủ thể:  CN=mAT rt\nNgười ký: tự ký (không có CA)\nSAN:      DNS:rt, IP:172.30.7.10, IP:203.0.113.10\nHiệu lực: 2000-01-01 00:00:00 đến 9999-12-31 23:59:59 (UTC)\nChuỗi:    1 chứng chỉ trong tệp\nSHA256 Fingerprint=5D:9C:CB:FC:53:CD:1E:94:DB:39:44:AE:C2:92:A5:55:86:FB:91:9A:2B:BA:8C:C4:72:06:BE:70:C3:AB:9E:37"
+      "detail": "Chủ thể:  CN=mAT rt\nNgười ký: tự ký (không có CA)\nSAN:      DNS:rt, IP:203.0.113.10, IP:172.30.7.10\nHiệu lực: 2000-01-01 00:00:00 đến 9999-12-31 23:59:59 (UTC)\nChuỗi:    1 chứng chỉ trong tệp\nSHA256 Fingerprint=23:3D:95:EB:4B:17:CF:C7:A0:A8:48:8E:5D:02:13:A3:7E:EF:5B:08:E8:D5:36:C4:CF:0F:E0:C2:BF:96:57:41"
     },
     {
       "name": "cert-info: no private key in the output",
@@ -24,7 +24,7 @@
     {
       "name": "make-csr: request written (the key stays on the device)",
       "pass": true,
-      "detail": "cảnh báo: không có user matscada: tiến trình con ghi bằng user đang chạy lệnh (chỉ hợp lệ khi chạy thử; trên thiết bị, deploy.sh tạo user này)\nđã ghi yêu cầu chứng chỉ vào /tmp/ca/mat.csr\nyêu cầu chứng chỉ (không bí mật) cũng nằm ở /data/tls/csr-20261018T094645Z.pem\nkhóa riêng nằm ở /data/tls/pending-key.pem và không rời thiết bị; gửi yêu cầu cho CA, rồi nhập chứng chỉ do CA ký bằng --import-cert"
+      "detail": "cảnh báo: không có user matscada: tiến trình con ghi bằng user đang chạy lệnh (chỉ hợp lệ khi chạy thử; trên thiết bị, deploy.sh tạo user này)\nđã ghi yêu cầu chứng chỉ vào /tmp/ca/mat.csr\nyêu cầu chứng chỉ (không bí mật) cũng nằm ở /data/tls/csr-20261018T160819Z.pem\nkhóa riêng nằm ở /data/tls/pending-key.pem và không rời thiết bị; gửi yêu cầu cho CA, rồi nhập chứng chỉ do CA ký bằng --import-cert"
     },
     {
       "name": "the test CA signs the request",
@@ -54,7 +54,7 @@
     {
       "name": "import of the CA-signed chain: accepted",
       "pass": true,
-      "detail": "cảnh báo: không có user matscada: tiến trình con ghi bằng user đang chạy lệnh (chỉ hợp lệ khi chạy thử; trên thiết bị, deploy.sh tạo user này)\nđã nhập chứng chỉ; bản trước giữ ở /data/tls/server.pem.prev\nSHA256 Fingerprint=D8:BF:C4:6E:0C:D6:5A:73:EE:8A:93:EA:E5:0D:CF:66:D5:7C:EE:51:2C:A0:B0:93:30:39:F7:B4:8E:8F:8F:A1\nNgười ký: CN=MAT Test CA\nchạy systemctl restart mat-runtime để dùng chứng chỉ mới; Studio phải ghim lại fingerprint (kỹ sư so với dòng trên)"
+      "detail": "cảnh báo: không có user matscada: tiến trình con ghi bằng user đang chạy lệnh (chỉ hợp lệ khi chạy thử; trên thiết bị, deploy.sh tạo user này)\nđã nhập chứng chỉ; bản trước giữ ở /data/tls/server.pem.prev\nSHA256 Fingerprint=18:8B:E5:26:51:10:4B:E6:92:EB:91:69:28:BD:3F:5E:EE:48:EB:EC:54:27:AB:A7:8C:39:08:C9:DC:42:CC:09\nNgười ký: CN=MAT Test CA\nchạy systemctl restart mat-runtime để dùng chứng chỉ mới; Studio phải ghim lại fingerprint (kỹ sư so với dòng trên)"
     },
     {
       "name": "the fingerprint changed to the imported certificate",
@@ -64,7 +64,7 @@
     {
       "name": "cert-info names the test CA as issuer, and the SAN",
       "pass": true,
-      "detail": "Chủ thể:  CN=mAT rt\nNgười ký: CA CN=MAT Test CA\nSAN:      DNS:rt, DNS:mat.test, IP:127.0.0.1, IP:172.30.7.10\nHiệu lực: 2026-10-18 09:46:45 đến 2026-11-17 09:46:45 (UTC)\nChuỗi:    2 chứng chỉ trong tệp\nSHA256 Fingerprint=D8:BF:C4:6E:0C:D6:5A:73:EE:8A:93:EA:E5:0D:CF:66:D5:7C:EE:51:2C:A0:B0:93:30:39:F7:B4:8E:8F:8F:A1"
+      "detail": "Chủ thể:  CN=mAT rt\nNgười ký: CA CN=MAT Test CA\nSAN:      DNS:rt, DNS:mat.test, IP:127.0.0.1, IP:172.30.7.10\nHiệu lực: 2026-10-18 16:08:19 đến 2026-11-17 16:08:19 (UTC)\nChuỗi:    2 chứng chỉ trong tệp\nSHA256 Fingerprint=18:8B:E5:26:51:10:4B:E6:92:EB:91:69:28:BD:3F:5E:EE:48:EB:EC:54:27:AB:A7:8C:39:08:C9:DC:42:CC:09"
     },
     {
       "name": "strict TLS client with the test CA as trust anchor: certificate valid for host rt (no warning)",
@@ -78,8 +78,8 @@
     }
   ],
   "measures": {
-    "oldFp": "5d9ccbfc53cd",
-    "newFp": "d8bfc46e0cd6"
+    "oldFp": "233d95eb4b17",
+    "newFp": "188be5265110"
   },
   "pass": true
 }
