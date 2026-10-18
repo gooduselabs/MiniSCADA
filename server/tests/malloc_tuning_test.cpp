@@ -72,6 +72,10 @@ int inChild(F fn) {
 TEST(MallocTuning, WithoutTheCapEachThreadHasItsArenaWithItOnlyTwo) {
 #if !defined(__GLIBC__)
     GTEST_SKIP() << "glibc only";
+#elif defined(__SANITIZE_ADDRESS__)
+    // T059: ASan replaces malloc (its own allocator, no glibc arenas), so mallopt(M_ARENA_MAX)
+    // and malloc_trim have nothing to act on; the Release build checks this.
+    GTEST_SKIP() << "ASan build: glibc malloc is replaced";
 #else
     if (std::thread::hardware_concurrency() < 2) GTEST_SKIP() << "one core: few arenas anyway";
     // the control: without the cap the burst makes more arenas than the cap allows
@@ -94,6 +98,10 @@ TEST(MallocTuning, WithoutTheCapEachThreadHasItsArenaWithItOnlyTwo) {
 TEST(MallocTuning, TrimGivesTheFreePagesOfTheArenasBack) {
 #if !defined(__GLIBC__)
     GTEST_SKIP() << "glibc only";
+#elif defined(__SANITIZE_ADDRESS__)
+    // T059: ASan replaces malloc (its own allocator, no glibc arenas), so mallopt(M_ARENA_MAX)
+    // and malloc_trim have nothing to act on; the Release build checks this.
+    GTEST_SKIP() << "ASan build: glibc malloc is replaced";
 #else
     EXPECT_EQ(inChild([] {
                   mat::limitMallocArenas();
