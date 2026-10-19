@@ -1,11 +1,37 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, makeSource, mount, tagInfo, textOf, widgetItem } from './test-util.ts';
+// Widget `pie` vẽ bằng ECharts lite (feature 012, T043, FR-033, FR-037): donut, decimals, showPercent, showTotal, labels giữ
+// ý nghĩa; chú giải, phần trăm, tổng giữa vành khuyên và phần truy cập vẫn do Lit vẽ. Cung đọc từ option đưa cho ECharts
+// (bản giả) thay cho path SVG tự vẽ trước đây.
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  callFormatter,
+  cleanup,
+  fakeECharts,
+  makeSource,
+  mountChart as mount,
+  tagInfo,
+  textOf,
+  widgetItem,
+} from './test-util.ts';
 
-afterEach(cleanup);
+let ec: ReturnType<typeof fakeECharts>;
+beforeEach(() => {
+  ec = fakeECharts();
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  cleanup();
+});
 
 const pie = (tags: string[], props?: Record<string, unknown>) =>
   widgetItem('pie', { series: tags }, props as never, { width: 280, height: 280 });
-const slices = (el: Element) => [...el.shadowRoot!.querySelectorAll<SVGPathElement>('path.slice')];
+type Slice = { name: string; value: number; itemStyle: { color: string } };
+type PieSeries = { type: string; radius: [string | number, string]; data: Slice[] };
+const pieSeries = () => (ec.option().series as PieSeries[])[0]!;
+/** Cung đang vẽ (phần tử dữ liệu của series pie); chưa có biểu đồ thì rỗng. */
+const slices = (el: Element) => {
+  void el;
+  return ec.charts.length && ec.charts.at(-1)!.options.length ? pieSeries().data : [];
+};
 const legend = (el: Element) =>
   [...el.shadowRoot!.querySelectorAll('.legend li')].map((li) =>
     li.textContent!.replace(/\s+/g, ' ').trim(),
@@ -38,6 +64,7 @@ describe('mat-w-pie (FR-030)', () => {
     src.set('a', { value: 3, quality: 'GOOD' });
     await el.updateComplete;
     expect(legend(el)[0]).toContain('75%');
+    expect(slices(el).map((x) => x.value)).toEqual([3, 1]);
   });
 
   it('donut hiện tổng ở giữa khi showTotal; pie đặc thì không có lỗ', async () => {
@@ -50,6 +77,44 @@ describe('mat-w-pie (FR-030)', () => {
     expect(solid.shadowRoot!.querySelector('.total')).toBeNull();
     const noTotal = await mount(pie(['a', 'b'], { donut: true }), src);
     expect(noTotal.shadowRoot!.querySelector('.total')).toBeNull();
+  });
+
+  it('donut (mặc định true): vành khuyên có lỗ; donut=false: tròn đặc', async () => {
+    const src = makeSource([tagInfo('a'), tagInfo('b')]);
+    src.set('a', { value: 1, quality: 'GOOD' });
+    src.set('b', { value: 2, quality: 'GOOD' });
+    await mount(pie(['a', 'b']), src);
+    expect(pieSeries().type).toBe('pie');
+    expect(parseFloat(String(pieSeries().radius[0]))).toBeGreaterThan(0);
+    await mount(pie(['a', 'b'], { donut: false }), src);
+    expect(parseFloat(String(pieSeries().radius[0]))).toBe(0);
+  });
+
+  it('màu cung theo token chuỗi, khớp ô màu của chú giải; tooltip có tên, giá trị, phần trăm', async () => {
+    const src = makeSource([tagInfo('a', { unit: 'kWh' }), tagInfo('b', { unit: 'kWh' })]);
+    src.set('a', { value: 1, quality: 'GOOD' });
+    src.set('b', { value: 3, quality: 'GOOD' });
+    const el = await mount(pie(['a', 'b'], { labels: ['<b>X</b>', 'Y'], decimals: 0 }), src);
+    expect(slices(el).map((x) => x.itemStyle.color)).toEqual(['#0b7285', '#c2410c']);
+    const sw = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.legend .sw')];
+    expect(sw[1]!.getAttribute('style')).toContain('--mat-chart-2');
+    const tip = callFormatter((ec.option().tooltip as { formatter: unknown }).formatter, {
+      dataIndex: 0,
+    }) as HTMLElement;
+    expect(tip.querySelector('b')).toBeNull();
+    expect(tip.textContent).toContain('<b>X</b>');
+    expect(tip.textContent).toContain('1 kWh');
+    expect(tip.textContent).toContain('25%');
+  });
+
+  it('vẽ thật bằng ECharts lite (SVG)', async () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    cleanup();
+    const src = makeSource([tagInfo('a'), tagInfo('b')]);
+    src.set('a', { value: 1, quality: 'GOOD' });
+    src.set('b', { value: 2, quality: 'GOOD' });
+    const el = await mount(pie(['a', 'b']), src);
+    expect(el.shadowRoot!.querySelector('.ec svg path')).not.toBeNull();
   });
 
   it('showPercent=false ẩn phần trăm', async () => {
@@ -66,6 +131,7 @@ describe('mat-w-pie (FR-030)', () => {
     const el = await mount(pie(['a', 'b']), src);
     expect(textOf(el, '.empty')).toBe('Không có dữ liệu');
     expect(slices(el)).toHaveLength(0);
+    expect(ec.charts).toHaveLength(0);
     expect(el.shadowRoot!.textContent).not.toContain('NaN');
   });
 
@@ -90,7 +156,8 @@ describe('mat-w-pie (FR-030)', () => {
     src.set('a', { value: 9, quality: 'GOOD' });
     const el = await mount(pie(['a'], { decimals: 0 }), src);
     expect(legend(el)[0]).toContain('100%');
-    expect(slices(el)[0]!.getAttribute('d')).not.toContain('NaN');
+    expect(slices(el)).toHaveLength(1);
+    expect(slices(el)[0]!.value).toBe(9);
   });
 
   it('nhãn: labels, mô tả Tag, id Tag', async () => {
