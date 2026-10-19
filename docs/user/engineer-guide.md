@@ -120,6 +120,8 @@ Inspector có các tab **Chung**, **Hiển thị**, **Gắn Tag**, **Sự kiện
 
 Project định dạng 1.1 trở lên. Màn hình mới mặc định là **bố cục lưới**: trang gồm các **hàng**, mỗi hàng chia trên **12 cột**, mỗi **ô** chứa một component. Vị trí do ô quyết định, không nhập X, Y. (**Thêm màn hình (bố cục tự do)** vẫn có cho cách đặt theo tọa độ cũ; **Chuyển sang bố cục lưới** đổi một màn hình tự do sang lưới, có xem trước và hoàn tác.)
 
+![Trình soạn bố cục lưới: thanh Thêm hàng, thuộc tính ô (Rộng, Trống trước, Căn, Cao tối thiểu) và hàng (Tự động, Chiều cao, Khoảng cách); nút xem trước 1920, 1366, 600; trang gồm hàng 4 thẻ giá trị, hàng biểu đồ đường 8 cột và đồng hồ kim 4 cột, ô biểu đồ đang chọn](img/eng-bo-cuc-luoi.png)
+
 1. **Thêm hàng** → chọn mẫu chia cột: `12`, `6+6`, `4+4+4`, `3+3+3+3`, `8+4`, `4+8`, `3+6+3`, hoặc **Tự nhập…** (ví dụ `2+8+2`, tổng không quá 12).
 2. **Gắn component:** kéo widget từ Toolbox thả **vào ô** (ô sáng lên khi rê vào), hoặc chọn ô rồi nhấp đúp widget trong Toolbox. Ô đã có component thì Studio hỏi **Thay**.
 3. **Đổi độ rộng:** kéo đường chia giữa hai ô (bám theo 1/12), hoặc nhập **Rộng (cột)** ở thanh thuộc tính khi ô đang chọn; **Trống trước** để chừa cột trống bên trái ô; **Căn** (kéo giãn, đầu, giữa, cuối); **Cao tối thiểu**.

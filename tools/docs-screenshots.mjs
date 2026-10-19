@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { createServer } from 'node:http';
 import { homedir } from 'node:os';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { deflateSync, inflateSync } from 'node:zlib';
 import puppeteer from 'puppeteer-core';
 
@@ -32,12 +32,19 @@ const args = process.argv.slice(2);
 const filter = args.find((a) => !a.startsWith('--'));
 const headful = args.includes('--headful');
 
-const studioE2e = await import(join(STUDIO, 'tests/e2e/util.mjs'));
-const webE2e = await import(join(WEB, 'tests/e2e/util.mjs'));
-const { startFakeRuntime } = await import(join(WEB, 'tests/e2e/fake-runtime.mjs'));
-const { dashboard } = await import(join(WEB, 'tests/e2e/fixture-project.mjs'));
-const { historyProject } = await import(join(WEB, 'tests/e2e/history-fake.mjs'));
-const { reportsProject } = await import(join(WEB, 'tests/e2e/history-projects.mjs'));
+const studioE2e = await import(pathToFileURL(join(STUDIO, 'tests/e2e/util.mjs')).href);
+const webE2e = await import(pathToFileURL(join(WEB, 'tests/e2e/util.mjs')).href);
+const { startFakeRuntime } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/fake-runtime.mjs')).href
+);
+const { dashboard } = await import(pathToFileURL(join(WEB, 'tests/e2e/fixture-project.mjs')).href);
+const { historyProject } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/history-fake.mjs')).href
+);
+const { reportsProject } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/history-projects.mjs')).href
+);
+const { gridDemo } = await import(pathToFileURL(join(WEB, 'tests/e2e/grid-fixture.mjs')).href);
 /** Đổi tên hiển thị của project mẫu e2e (bỏ chữ "e2e" trên thanh trên). */
 const renamed = (make, name) => () => {
   const p = make();
@@ -354,6 +361,7 @@ function toPalettePng(png) {
 
 const DASHBOARD_DEMO = join(ROOT, 'projects/dashboard-demo');
 const SVG_DEMO = join(ROOT, 'projects/svg-demo');
+const GRID_DEMO = join(ROOT, 'projects/grid-demo');
 const PW = 'mat-docs-screenshots';
 
 /** logic.json mẫu cho projects/dashboard-demo (chỉ trong bộ nhớ, không ghi vào project mẫu). */
@@ -527,6 +535,22 @@ const studioScenes = [
       await page.waitForSelector('mat-template-instance-dialog [role="dialog"]');
       await sleep(300);
       await shot('eng-template-ban-sao');
+    },
+  },
+  {
+    // feature 012: trình soạn bố cục lưới (hàng, cột, ô) trên project 1.1 chủ đề vivid
+    name: 'studio-luoi',
+    async run({ page, shot }) {
+      await openAndWait(page, readProject(GRID_DEMO), 'D:\\Projects\\grid-demo');
+      await treeNode(page, 'screen:bang-dieu-khien');
+      await page.waitForSelector('mat-grid-editor .ge-cell');
+      await page.$eval('mat-grid-editor .ge-cell[data-cell="c5"]', (e) => e.click());
+      await sleep(900);
+      await shot('eng-bo-cuc-luoi');
+      await page.$eval('mat-grid-editor [data-act="add-row"]', (b) => b.click());
+      await page.waitForSelector('mat-grid-editor [data-preset]');
+      await sleep(300);
+      await shot('eng-them-hang');
     },
   },
   {
@@ -775,6 +799,17 @@ const ALARMS = () => [
 ];
 
 const webScenes = [
+  {
+    // feature 012: màn hình bố cục lưới trên trang vận hành, rộng và hẹp
+    name: 'web-luoi',
+    options: { fixture: gridDemo },
+    async run({ page, rt, shot }) {
+      await page.goto(`${rt.httpUrl}/#/luoi`, { waitUntil: 'domcontentloaded' });
+      await live(page);
+      await sleep(4000);
+      await shot('op-bo-cuc-luoi');
+    },
+  },
   {
     name: 'web-man-hinh',
     options: { fixture: tramBom, config: { alarms: true }, drift: false },
