@@ -3,7 +3,6 @@
 // Ca hỏng 6–12 (SHA256SUMS, chữ ký ECDSA, tệp thừa/thiếu, `.matupdate`) chạy bằng Node mọi nơi. Ca 1–5 (Authenticode)
 // chỉ chạy trong verify-release.ps1 trên Windows; ở nơi khác script in "BỎ QUA" cho từng ca và không báo xanh.
 import assert from 'node:assert/strict';
-import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -11,7 +10,7 @@ import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { packEnvelope, readEnvelope } from './lib/envelope.mjs';
-import { keyIdOf, makeSums } from './lib/release-crypto.mjs';
+import { makeRelease as makeReleaseIn } from './lib/make-release-fixture.mjs';
 import { findOpenssl, findPwsh, runPwsh } from './lib/pwsh.mjs';
 import { runBreakCases, verifyRelease } from './verify-release.mjs';
 
@@ -26,65 +25,7 @@ const tmp = () => {
   return d;
 };
 
-/** Thư mục phát hành mẫu đủ 9 mục của FR-052 trừ bộ cài (Windows), ký bằng khóa thử sinh tại chỗ. */
-function makeRelease() {
-  const root = tmp();
-  const dir = join(root, '1.0.0-rc.0');
-  const keys = join(root, 'keys');
-  const other = join(root, 'other-keys');
-  mkdirSync(dir);
-  mkdirSync(keys);
-  mkdirSync(other);
-  const k = generateKeyPairSync('ec', { namedCurve: 'P-256' });
-  const k2 = generateKeyPairSync('ec', { namedCurve: 'P-256' });
-  writeFileSync(
-    join(keys, 'release-test.pub.pem'),
-    k.publicKey.export({ type: 'spki', format: 'pem' }),
-  );
-  writeFileSync(join(other, 'other.pub.pem'), k2.publicKey.export({ type: 'spki', format: 'pem' }));
-
-  const tgz = Buffer.from('payload-' + 'x'.repeat(4000));
-  writeFileSync(join(dir, 'mat-runtime-armhf.tar.gz'), tgz);
-  writeFileSync(
-    join(dir, 'mat-runtime-armhf.tar.gz.sha256'),
-    `${createHash('sha256').update(tgz).digest('hex')}  mat-runtime-armhf.tar.gz\n`,
-  );
-  const manifest = Buffer.from(
-    JSON.stringify({ format: '1.0.0', kind: 'runtime', releaseSeq: 12 }, null, 2),
-  );
-  const sig = sign('sha256', manifest, { key: k.privateKey, dsaEncoding: 'der' });
-  writeFileSync(
-    join(dir, 'mat-runtime-1.0.0-rc.0.matupdate'),
-    packEnvelope([
-      ['update.json', manifest],
-      ['update.sig', sig],
-      ['payload.tar.gz', Buffer.from('gz')],
-    ]),
-  );
-  writeFileSync(
-    join(dir, 'sbom.cdx.json'),
-    JSON.stringify({ bomFormat: 'CycloneDX', specVersion: '1.5', components: [{ name: 'x' }] }),
-  );
-  writeFileSync(join(dir, 'licenses.md'), '# License\n');
-  writeFileSync(join(dir, 'RELEASE-NOTES.md'), '# 1.0.0-rc.0\n');
-  writeFileSync(
-    join(dir, 'build-info.json'),
-    JSON.stringify({
-      version: '1.0.0-rc.0',
-      releaseSeq: 12,
-      commit: 'c'.repeat(40),
-      release: false,
-      signing: { releaseKeyId: keyIdOf(k.publicKey) },
-    }),
-  );
-  const sums = makeSums(dir);
-  writeFileSync(join(dir, 'SHA256SUMS'), sums);
-  writeFileSync(
-    join(dir, 'SHA256SUMS.sig'),
-    sign('sha256', Buffer.from(sums), { key: k.privateKey, dsaEncoding: 'der' }),
-  );
-  return { dir, keys, other, privateKey: k.privateKey };
-}
+const makeRelease = () => makeReleaseIn(tmp());
 
 const ALLOW = ['installer'];
 
