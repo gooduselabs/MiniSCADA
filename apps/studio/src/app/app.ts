@@ -1279,7 +1279,7 @@ export class StudioApp {
 
   /** Nâng cấp trong bộ nhớ (nút Nâng cấp của hộp thoại). */
   async upgradeProject(): Promise<void> {
-    const r = await this.store.upgrade('0.6');
+    const r = await this.store.upgrade(this.store.state.outline.format06 ? '1.0' : '0.6'); // 0.6 đã có thì nâng tiếp lên 1.0; thấp hơn lên 0.6
     if (this.u.dialog?.kind === 'upgrade') this.u = { ...this.u, dialog: null };
     if (r.ok) {
       this.syncSessionTags();

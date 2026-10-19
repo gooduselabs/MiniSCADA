@@ -413,7 +413,12 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
           list.push(e.screen.id);
           touched.project = true;
         }
-        s.screens[e.screen.id] = clone(e.screen);
+        const stored = clone(e.screen);
+        // Project 0.4 đến 1.0 đòi mọi tệp cùng schemaVersion (E_SCHEMA_VERSION): màn hình mới (`newScreen` là 0.3.0)
+        // hoặc màn hình cũ được sửa theo phiên bản của project.json.
+        const projectVersion = (s.project as { schemaVersion?: unknown }).schemaVersion;
+        if (typeof projectVersion === 'string') stored.schemaVersion = projectVersion;
+        s.screens[e.screen.id] = stored;
         touched.screens.add(e.screen.id);
         break;
       }
