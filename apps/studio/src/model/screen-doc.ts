@@ -10,7 +10,9 @@ import {
   catalogWidget,
   checkPropValue,
   type Action,
+  removeItemRef,
   type FitMode03,
+  type GridLayout,
   type Item,
   type PropValue,
   type Rect,
@@ -439,10 +441,15 @@ export function paste(
 export function remove(doc: ScreenModel, ids: readonly string[]): EditResult {
   const gone = new Set(ids);
   const items = doc.items.filter((it) => !gone.has(it.id));
-  return {
-    doc: items.length === doc.items.length ? doc : withItems(doc, items),
-    selection: [],
-  };
+  if (items.length === doc.items.length) return { doc, selection: [] };
+  const next = withItems(doc, items) as ScreenModel & { layout?: GridLayout };
+  // màn hình lưới (định dạng 1.1): ô trỏ tới item bị xóa thành ô trống
+  if (next.layout) {
+    let layout = next.layout;
+    for (const id of gone) layout = removeItemRef(layout, id);
+    next.layout = layout;
+  }
+  return { doc: next, selection: [] };
 }
 
 export interface ScreenProps {
