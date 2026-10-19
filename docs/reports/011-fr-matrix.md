@@ -114,7 +114,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 | FR-092 | Hai engine cùng ≥ 200 vector | T125, T134 | 279/279 khớp, x64 và armhf qemu, so số thực từng bit | Đạt |
 | FR-093 | Validator mọi mã `E_LOGIC_*` | T128, T135 | `ps/rules-logic.test.ts`; ctest `rules_logic_test`; vector `v10-logic-*` | Đạt |
 | FR-094 | Editor Logic theo mockup | T005, T007, T132, T143, T144 | 9 tệp Vitest 108/108; e2e `logic.e2e.mjs` 47/47 (axe 0); thử tay bộ gõ chưa làm | Đạt (tự động) · Chờ người (bộ gõ, H3) |
-| FR-095 | Tải logic tối đa ≤ +3 điểm CPU, ≤ +5 MB, quét ≤ 5 ms | T147, T148 | BL335 releaseSeq 13 (T148, quét theo sự kiện, A/B/A/B dưới L1): **CPU +2,5 điểm một lõi, RSS +3,8 MB, quét trung vị 1,05 ms, p99 2,6 ms — Đạt** (lần đo trước: 16 ms rồi +3,3 điểm, `R:011-load.md` §3.2) · x64 (T147, L1 1 giờ, Linux arm64 64 bit): CPU +1,11, quét p99 2,92 ms đạt, RSS +5,4 MiB vượt 0,4 (chỉ báo; ngân sách là của thiết bị đích; T147 chưa đánh dấu, `R:011-load.md` §1.6) | Đạt |
+| FR-095 | Tải logic tối đa ≤ +3 điểm CPU, ≤ +5 MB, quét ≤ 5 ms | T147, T148 | BL335 releaseSeq 13 (T148, quét theo sự kiện, A/B/A/B dưới L1): **CPU +2,5 điểm một lõi, RSS +3,8 MB, quét trung vị 1,05 ms, p99 2,6 ms — Đạt** (lần đo trước: 16 ms rồi +3,3 điểm, `R:011-load.md` §3.2) · x64 (T147 xong, L1 1 giờ, Linux arm64 64 bit, 2026-10-19): CPU +0,58, RSS +4,49 MiB, quét p99 2,7 ms — đạt (`R:011-logic-load-x64.json` `runtimeL1b`) | Đạt |
 | FR-096 | Trạng thái logic Online, cảnh báo `logic.writes` | T132, T144, T145 | `deploy-preview.test.ts`, chip Ghi PLC; Rust `device/logic.rs` 6/6 | Đạt |
 
 ## US6: trình vẽ SVG (FR-097 đến FR-118)
@@ -209,7 +209,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 | SC-025 | Độ chính xác timer, totalizer, counter, giờ chạy | T126 | Vitest + ctest 52 ca | Đạt |
 | SC-026 | 100 vòng `kill -9` logic retain | T131, T146 | `R:011-logic-x64.json` `retain-kill` 100 vòng `kill -9`: mất tối đa count 6, total 0,95, giờ chạy 0,0027 (≤ một `flushS` 10 s), 0 lần giảm, 0 ghi trùng cạnh; `retain-lost` 5/5 (về 0, cảnh báo, audit một lần) | Đạt (x64) |
 | SC-027 | Ghi từ logic: audit trước khi gửi, kiểm bằng giả lập Modbus | T129, T146 | `R:011-logic-x64.json` (giả lập Modbus): `rules` 9/9 (audit đủ trường trước khi gửi), `writes-off` 0 lệnh, `throttle` 35/35 cạnh thừa bị chặn; validator TS và C++ từ chối ghi Tag không khai báo (vector `v10-logic-*`) | Đạt (x64) |
-| SC-028 | Tải logic BL335 | T147, T148 | BL335 releaseSeq 13 (T148): CPU +2,5 điểm một lõi, RSS +3,8 MB, quét trung vị 1,05 ms, p99 2,6 ms — Đạt (`R:011-logic-bl335.json` `remeasureEventDriven`) · x64 L1 1 giờ (T147): RSS +5,4 MiB vượt trên máy 64 bit, chỉ báo (`R:011-load.md` §1.6) | Đạt |
+| SC-028 | Tải logic BL335 | T147, T148 | BL335 releaseSeq 13 (T148): CPU +2,5 điểm một lõi, RSS +3,8 MB, quét trung vị 1,05 ms, p99 2,6 ms — Đạt (`R:011-logic-bl335.json` `remeasureEventDriven`) · x64 L1 1 giờ (T147): CPU +0,58, RSS +4,49 MiB, quét p99 2,7 ms — đạt (`R:011-logic-load-x64.json` `runtimeL1b`) | Đạt |
 | SC-029 | Kỹ sư dựng luật bơm ≤ 25 phút | T150 | — | Chờ người (H3) |
 | SC-030 | Round-trip ≥ 20 fixture, ảnh ≤ 1 % | T154 | 26 fixture; e2e `svg-render-diff` 76 phép so khác 0 % | Đạt |
 | SC-031 | ≥ 150 ca hình học | T152 | ~270 ca | Đạt |
@@ -235,7 +235,7 @@ Viết tắt: `ps` = `packages/project-schema/src`; `le` = `packages/logic-engin
 
 Cách đếm: mỗi FR/SC tính một lần theo phần yếu nhất của dòng, thứ tự Không đạt, Chưa đo, Chờ người, Đạt (dòng "Đạt (x64) · Chưa đo BL335" tính là Chưa đo); dòng gộp (ví dụ FR-014, 015, 016) tính đủ số FR.
 
-**Số đo vượt ngưỡng trên thiết bị đích:** không có. Ghi nhận: RSS L7 trên x64 64 bit +5,4 MiB (T147, chỉ báo; BL335 +3,8 MB đạt). Mục Không đạt còn lại là việc chưa xong: FR-135 (nghiệm thu còn nháp, chờ T198 và pilot).
+**Số đo vượt ngưỡng trên thiết bị đích:** không có. RSS L7 trên x64 64 bit nay đạt (+4,49 MiB, T147 xong 2026-10-19). Mục Không đạt còn lại là việc chưa xong: FR-135 (nghiệm thu còn nháp, chờ T198 và pilot).
 
 **Chưa đo (3 FR, 2 SC):** FR-037 (`mat-sample` chưa chạy trên BL335), FR-040 (`--check-data` chưa chạy trên BL335) — phần còn lại của T079, làm được qua LAN; FR-039 và SC-013 (soak 7 ngày BL335 hủy theo quyết định người dùng, T081); SC-035 (kill Studio thật 20 lần).
 

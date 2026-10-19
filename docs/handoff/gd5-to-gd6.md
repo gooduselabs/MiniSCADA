@@ -46,7 +46,7 @@ Runtime **`1.0.0-rc.1` releaseSeq 13** (cài bằng `deploy.sh` 2026-10-18 12:32
 **Ghi chú còn mở, không chặn rc (tự làm được nếu muốn):**
 
 - **T079** (chưa đánh dấu): cài/chạy `mat-sample` trên BL335, L1 xen kẽ 8443 (cần `wss://` trong `load-tester`), RSS tab ở L5. Các ngưỡng của SC-011 đã Đạt; lỗi gói thiếu `schemas/0.6` đã sửa.
-- **T147** (chưa đánh dấu): L7 trên x64 64 bit RSS +5,4 MiB (ngưỡng +5 MB) ở L1 1 giờ; BL335 +3,8 MB đạt nên chỉ báo. Nếu cần: lấy `smaps`, hoặc đo cặp project có cùng 200 Tag nội bộ ở hai bên (`011-load.md` §1.6).
+- **T147 xong (2026-10-19, nhánh `gd6-t147`):** L7 x64 L1 1 giờ RSS +4,49 MiB (trước +5,4), CPU +0,58, quét p99 2,7 ms; nguồn là dữ liệu dựng lúc khởi động giữ suốt đời và cây JSON của `GET /logic` (`011-load.md` §1.6, `runtimeL1b`).
 - T189: collector dùng viewer nhưng `audit` đòi administrator (ghi `FORBIDDEN`).
 
 **Cần Windows:** T009 (spike signtool), T088, T091–T094, T098, T102 (dựng bộ cài NSIS, ký thử, `release.ps1` đủ 9 bước, ca hỏng 1–5), T167 (Telex/Unikey, NVDA), ảnh chụp Studio cho T203, đo lại `screen-perf` trên Windows.
