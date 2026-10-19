@@ -1,0 +1,89 @@
+{
+  "scenario": "access-data",
+  "checks": [
+    {
+      "name": "đặt quy tắc bon-nuoc, history:song cho nhóm bảo trì: 200",
+      "pass": true,
+      "detail": "{\"rev\":2}"
+    },
+    {
+      "name": "admin: GET alarms có WAVE_HIGH và SPHI_HIGH, counts.active 2",
+      "pass": true,
+      "detail": "{\"ids\":[\"WAVE_HIGH.H\",\"SPHI_HIGH.H\"],\"counts\":{\"active\":2,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":1,\"unack\":1},\"minor\":{\"active\":1,\"unack\":1}},\"disabled\":0,\"rtnUnack\":0,\"shelved\":0,\"unack\":2}}"
+    },
+    {
+      "name": "vh1: GET alarms chỉ WAVE_HIGH, counts.active 1 unack 1, không chữ nào của SPHI",
+      "pass": true,
+      "detail": "{\"s\":200,\"counts\":{\"active\":1,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"active\":1,\"unack\":1}},\"disabled\":0,\"rtnUnack\":0,\"shelved\":0,\"unack\":1}}"
+    },
+    {
+      "name": "system/info: vh1 instances 1, active 1; admin instances 2, active 2",
+      "pass": true,
+      "detail": "{\"infoV\":{\"active\":1,\"dbBytes\":32768,\"disabled\":0,\"droppedChanges\":0,\"evalMaxMs\":0.01,\"evalWindowS\":60,\"instances\":1,\"logState\":\"running\",\"shelved\":0,\"unacked\":1},\"infoA\":{\"active\":2,\"dbBytes\":32768,\"disabled\":0,\"droppedChanges\":0,\"evalMaxMs\":0.01,\"evalWindowS\":60,\"instances\":2,\"logState\":\"running\",\"shelved\":0,\"unacked\":2}}"
+    },
+    {
+      "name": "vh1: alarmSnapshot chỉ WAVE_HIGH, counts.active 1",
+      "pass": true,
+      "detail": "{\"n\":1,\"counts\":{\"active\":1,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"active\":1,\"unack\":1}},\"disabled\":0,\"rtnUnack\":0,\"shelved\":0,\"unack\":1}}"
+    },
+    {
+      "name": "vh1: ack SPHI_HIGH 403 ACCESS_DENIED",
+      "pass": true,
+      "detail": "403 ACCESS_DENIED"
+    },
+    {
+      "name": "vh1: ack all xác nhận 1 alarm, counts của câu trả lời: active 1, unack 0",
+      "pass": true,
+      "detail": "{\"s\":200,\"acked\":1,\"counts\":{\"active\":1,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"active\":1,\"unack\":0}},\"disabled\":0,\"rtnUnack\":0,\"shelved\":0,\"unack\":0}}"
+    },
+    {
+      "name": "vh1: alarmDelta sau ack có counts của vh1 (active 1, unack 0)",
+      "pass": true,
+      "detail": "{\"active\":1,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},\"minor\":{\"active\":1,\"unack\":0}},\"disabled\":0,\"rtnUnack\":0,\"shelved\":0,\"unack\":0}"
+    },
+    {
+      "name": "admin: SPHI_HIGH vẫn chờ xác nhận (unack 1)",
+      "pass": true,
+      "detail": "{\"active\":2,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":1,\"unack\":1},\"minor\":{\"active\":1,\"unack\":0}},\"disabled\":0,\"rtnUnack\":0,\"shelved\":0,\"unack\":1}"
+    },
+    {
+      "name": "alarms/history: admin có SPHI_HIGH, vh1 chỉ WAVE_HIGH",
+      "pass": true,
+      "detail": "{\"a\":2,\"v\":[\"WAVE_HIGH.H\"]}"
+    },
+    {
+      "name": "vh1: history/catalog nhóm song chỉ có DEMO.WAVE",
+      "pass": true,
+      "detail": "[{\"aggregated\":false,\"column\":\"DEMO_WAVE\",\"orphan\":false,\"tagId\":\"DEMO.WAVE\",\"type\":\"FLOAT64\",\"unit\":\"\"}]"
+    },
+    {
+      "name": "admin: series TANK01.SP_HI có giá trị",
+      "pass": true,
+      "detail": "200 {\"apiVersion\":\"1.6.0\",\"approximate\":false,\"coverage\":{\"from\":1792439271091,\"to\":1792439272092},\"from\":1792435739985,\"gap"
+    },
+    {
+      "name": "vh1: series chỉ TANK01.SP_HI: 403 ACCESS_DENIED",
+      "pass": true,
+      "detail": "403 ACCESS_DENIED"
+    },
+    {
+      "name": "vh1: series DEMO.WAVE,TANK01.SP_HI: không có TANK01.SP_HI",
+      "pass": true,
+      "detail": "200 {\"apiVersion\":\"1.6.0\",\"approximate\":false,\"coverage\":{\"from\":1792439271091,\"to\":1792439272092},\"from\":1792435739985,\"gap"
+    },
+    {
+      "name": "cho vh1 xem bon-nuoc: 200",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "vh1: sau access-changed có alarmSnapshot mới, 2 alarm, counts.active 2 (≤ 2 s)",
+      "pass": true,
+      "detail": "965 ms {\"active\":2,\"byPriority\":{\"advisory\":{\"active\":0,\"unack\":0},\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":1,\"unack\":1},\"minor\":{\"active\":1,\"unack\":0}},\"disabled\":0,\"rtnUnack\":0,\"shelved\":0,\"unack\":1}"
+    }
+  ],
+  "measures": {
+    "alarmResnapshotMs": 965
+  },
+  "pass": true
+}

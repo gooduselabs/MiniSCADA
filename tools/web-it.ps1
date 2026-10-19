@@ -42,6 +42,7 @@
 #   lockout-dos:  (011, T053, SC-003) 1.000 lan doan tu IP A (lan) bi chan <= 20 lan kiem mat khau; vh1 tu IP B (pub)
 #                 vao duoc trong <= 2 s.
 #   write-min-role: (011, T209, bao cao 008 F5) operator ghi Tag writeMinRole engineer: 403 ca lo, audit denied.
+#   access-data:  (013, T023) project tests/web-it/out/access-data: lich su, alarm, so dem alarm (REST, live, system/info) loc theo quyen.
 #   login-required, access, admin-attack: (013, T013, T023, T029) viewerLogin required; moi duong du lieu khong phien
 #                 401; quy tac dat qua API quan tri, live/man hinh/menu/ghi loc theo quyen, access-changed <= 2 s; ca tan
 #                 cong API quan tri. Ket qua docs/reports/013-<ten>-x64.json.
@@ -49,7 +50,7 @@
 # Ket qua: docs/reports/007-<scenario>-x64.json. Don khi dung -Keep: docker compose -f tests/web-it/compose.yaml -p mat-web-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank', 'history-10', 'reports', 'faceplate', 'host-rebind', 'lockout-dos', 'write-min-role', 'login-required', 'access', 'admin-attack')][string[]]$Scenario = @('control'),
+    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank', 'history-10', 'reports', 'faceplate', 'host-rebind', 'lockout-dos', 'write-min-role', 'login-required', 'access', 'admin-attack', 'access-data')][string[]]$Scenario = @('control'),
     [int]$Rounds = 20,
     [int]$Seconds = 300,
     [switch]$Keep,
@@ -451,6 +452,20 @@ required
         $res = Invoke-Browser 'faceplate'
         Write-Result 'faceplate' $res '011'
         if (-not $res.pass) { $failed += 'faceplate' }
+        if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
+    }
+    # feature 013 (T023): project tests/web-it/out/access-data (dashboard-demo + 1 nhom luu tru + 2 alarm), viewerLogin
+    # required: lich su, alarm va so dem alarm loc theo quyen qua runtime that; ket qua docs/reports/013-access-data-x64.json
+    if ($Scenario -contains 'access-data') {
+        node "$root/tests/web-it/make-access-data.mjs" | Out-Null
+        Start-Rig '/src/tests/web-it/out/access-data' 'modbus-demo'
+        New-Accounts
+        Write-Host '--- access-data'
+        docker exec $rt sh -c "printf -- '--viewer-login\nrequired\n' > /data/extra-args" | Out-Null
+        Restart-Runtime
+        $res = Invoke-Client @('access-data') (Get-Fingerprint)
+        Write-Result 'access-data' $res '013'
+        if (-not $res.pass) { $failed += 'access-data' }
         if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
     }
     # feature 011 (T053, T209): project tests/web-it/out/hardening (dashboard-demo, SIM.MODE writeMinRole engineer),

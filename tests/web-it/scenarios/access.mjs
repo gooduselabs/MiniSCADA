@@ -411,6 +411,207 @@ export async function access(fp) {
   return rep.result();
 }
 
+// -------------------------------------------------------------------------------------- access-data
+
+/**
+ * access-data (T023, project tests/web-it/out/access-data của make-access-data.mjs): lịch sử, alarm và số đếm alarm
+ * lọc theo quyền qua runtime thật. Quy tắc: bon-nuoc và nhóm lưu trữ `song` chỉ cho nhóm bảo trì; vh1 (operator,
+ * không nhóm) chỉ thấy DEMO.WAVE (tong-quan) nên chỉ alarm WAVE_HIGH; admin thấy cả SPHI_HIGH.
+ */
+export async function accessData(fp) {
+  const rep = makeReport('access-data');
+  const { check } = rep;
+  const w = new Web(fp);
+  const A = await adminSession(w);
+  let rev = (await get(w, A, '/api/v1/admin/groups')).json?.rev ?? 0;
+  const g = await post(w, A, '/api/v1/admin/groups', { rev, id: 'bao-tri', name: 'Bảo trì' });
+  if (g.status === 201) rev = g.json.rev;
+  else rev = (await get(w, A, '/api/v1/admin/groups')).json.rev;
+  const set = await post(w, A, '/api/v1/admin/access', {
+    rev,
+    set: [
+      { resource: 'screen:bon-nuoc', level: 'view', grantees: ['group:bao-tri'] },
+      { resource: 'history:song', level: 'view', grantees: ['group:bao-tri'] },
+    ],
+  });
+  check('đặt quy tắc bon-nuoc, history:song cho nhóm bảo trì: 200', set.status === 200, set.body);
+  const secret = (body) => (body ?? '').includes('SPHI') || (body ?? '').includes('TANK01.SP_HI');
+  try {
+    const S = (await w.login('vh1', pw('vh1'))).session;
+    // Hai alarm đã bật (admin thấy cả hai)
+    let adminList = null;
+    for (let i = 0; i < 40; i++) {
+      adminList = (await get(w, A, '/api/v1/alarms')).json;
+      if ((adminList?.instances ?? []).length >= 2) break;
+      await sleep(500);
+    }
+    check(
+      'admin: GET alarms có WAVE_HIGH và SPHI_HIGH, counts.active 2',
+      adminList?.instances?.length === 2 && adminList?.counts?.active === 2,
+      JSON.stringify({ ids: adminList?.instances?.map((x) => x.id), counts: adminList?.counts }),
+    );
+    const mine = await get(w, S, '/api/v1/alarms');
+    check(
+      'vh1: GET alarms chỉ WAVE_HIGH, counts.active 1 unack 1, không chữ nào của SPHI',
+      mine.status === 200 &&
+        mine.json?.instances?.length === 1 &&
+        mine.json.instances[0].alarmId === 'WAVE_HIGH' &&
+        mine.json?.counts?.active === 1 &&
+        mine.json?.counts?.unack === 1 &&
+        mine.json?.counts?.byPriority?.major?.active === 0 &&
+        !secret(mine.body),
+      JSON.stringify({ s: mine.status, counts: mine.json?.counts }),
+    );
+    const infoV = (await get(w, S, '/api/v1/system/info')).json?.alarms;
+    const infoA = (await get(w, A, '/api/v1/system/info')).json?.alarms;
+    check(
+      'system/info: vh1 instances 1, active 1; admin instances 2, active 2',
+      infoV?.instances === 1 &&
+        infoV?.active === 1 &&
+        infoA?.instances === 2 &&
+        infoA?.active === 2,
+      JSON.stringify({ infoV, infoA }),
+    );
+    // Live: alarmSnapshot của vh1
+    const live = await liveConnect(fp, { cookie: S.cookie });
+    await live.waitFor((m) => m.find((x) => x.type === 'hello'), 3000);
+    live.send({ type: 'subscribeAlarms', requestId: 'a1' });
+    const snap = await live.waitFor((m) => m.find((x) => x.type === 'alarmSnapshot'), 5000);
+    check(
+      'vh1: alarmSnapshot chỉ WAVE_HIGH, counts.active 1',
+      snap?.instances?.length === 1 &&
+        snap.instances[0].alarmId === 'WAVE_HIGH' &&
+        snap?.counts?.active === 1,
+      JSON.stringify({ n: snap?.instances?.length, counts: snap?.counts }),
+    );
+    // Lệnh: alarm bị cấm 403; xác nhận tất cả chỉ đụng alarm được xem, counts của câu trả lời là của vh1
+    const sphi = adminList?.instances?.find((x) => x.alarmId === 'SPHI_HIGH');
+    const denied = await post(w, S, '/api/v1/alarms/ack', {
+      items: [{ id: sphi?.id ?? 'SPHI_HIGH.H', occurrence: sphi?.occurrence ?? 1 }],
+    });
+    check(
+      'vh1: ack SPHI_HIGH 403 ACCESS_DENIED',
+      denied.status === 403 && codeOf(denied) === 'ACCESS_DENIED',
+      `${denied.status} ${codeOf(denied)}`,
+    );
+    const ackAll = await post(w, S, '/api/v1/alarms/ack', {
+      all: true,
+      upToRevision: (mine.json?.revision ?? 0) + 1000000,
+    });
+    check(
+      'vh1: ack all xác nhận 1 alarm, counts của câu trả lời: active 1, unack 0',
+      ackAll.status === 200 &&
+        ackAll.json?.acked === 1 &&
+        ackAll.json?.counts?.active === 1 &&
+        ackAll.json?.counts?.unack === 0 &&
+        !secret(ackAll.body),
+      JSON.stringify({ s: ackAll.status, acked: ackAll.json?.acked, counts: ackAll.json?.counts }),
+    );
+    const delta = await live.waitFor(
+      (m) => m.find((x) => x.type === 'alarmDelta' && x.changed?.length),
+      5000,
+    );
+    check(
+      'vh1: alarmDelta sau ack có counts của vh1 (active 1, unack 0)',
+      delta?.counts?.active === 1 && delta?.counts?.unack === 0,
+      JSON.stringify(delta?.counts),
+    );
+    const adminAfter = (await get(w, A, '/api/v1/alarms')).json?.counts;
+    check(
+      'admin: SPHI_HIGH vẫn chờ xác nhận (unack 1)',
+      adminAfter?.unack === 1,
+      JSON.stringify(adminAfter),
+    );
+    // Lịch sử alarm
+    let ah = null;
+    for (let i = 0; i < 20; i++) {
+      ah = (await get(w, A, '/api/v1/alarms/history')).json;
+      if ((ah?.items ?? []).some((x) => x.alarmId?.startsWith('SPHI_HIGH'))) break;
+      await sleep(500);
+    }
+    const vh = await get(w, S, '/api/v1/alarms/history');
+    check(
+      'alarms/history: admin có SPHI_HIGH, vh1 chỉ WAVE_HIGH',
+      (ah?.items ?? []).some((x) => x.alarmId?.startsWith('SPHI_HIGH')) &&
+        vh.status === 200 &&
+        (vh.json?.items ?? []).length > 0 &&
+        vh.json.items.every((x) => x.alarmId?.startsWith('WAVE_HIGH')) &&
+        !secret(vh.body),
+      JSON.stringify({ a: ah?.items?.length, v: vh.json?.items?.map((x) => x.alarmId) }),
+    );
+    // Lịch sử Tag
+    const cat = (await get(w, S, '/api/v1/history/catalog')).json;
+    const song = cat?.groups?.find((x) => x.id === 'song');
+    check(
+      'vh1: history/catalog nhóm song chỉ có DEMO.WAVE',
+      song && song.tags.map((t) => t.tagId ?? t.id).join() === 'DEMO.WAVE',
+      JSON.stringify(song?.tags),
+    );
+    const to = Date.now() + 60000;
+    const from = to - 3600000;
+    const q = (tags) => `/api/v1/history/series?group=song&tags=${tags}&from=${from}&to=${to}`;
+    let adminSeries = null;
+    for (let i = 0; i < 30; i++) {
+      adminSeries = await get(w, A, q('TANK01.SP_HI'));
+      if (adminSeries.status === 200 && /85/.test(adminSeries.body)) break;
+      await sleep(1000);
+    }
+    check(
+      'admin: series TANK01.SP_HI có giá trị',
+      adminSeries?.status === 200 && /85/.test(adminSeries.body),
+      `${adminSeries?.status} ${(adminSeries?.body ?? '').slice(0, 120)}`,
+    );
+    const onlySecret = await get(w, S, q('TANK01.SP_HI'));
+    check(
+      'vh1: series chỉ TANK01.SP_HI: 403 ACCESS_DENIED',
+      onlySecret.status === 403 && codeOf(onlySecret) === 'ACCESS_DENIED',
+      `${onlySecret.status} ${codeOf(onlySecret)}`,
+    );
+    const both = await get(w, S, q('DEMO.WAVE,TANK01.SP_HI'));
+    check(
+      'vh1: series DEMO.WAVE,TANK01.SP_HI: không có TANK01.SP_HI',
+      both.status === 200 && both.body.includes('DEMO.WAVE') && !secret(both.body),
+      `${both.status} ${(both.body ?? '').slice(0, 120)}`,
+    );
+    // Quyền đổi: vh1 được xem bon-nuoc → access-changed, alarmSnapshot mới có SPHI_HIGH, counts.active 2
+    const acc = (await get(w, A, '/api/v1/admin/access')).json;
+    const n0 = live.messages.length;
+    const t0 = Date.now();
+    const ch = await post(w, A, '/api/v1/admin/access', {
+      rev: acc.rev,
+      set: [
+        { resource: 'screen:bon-nuoc', level: 'view', grantees: ['group:bao-tri', 'user:vh1'] },
+      ],
+    });
+    check('cho vh1 xem bon-nuoc: 200', ch.status === 200, ch.status);
+    const again = await live.waitFor(
+      (m) => m.slice(n0).find((x) => x.type === 'alarmSnapshot'),
+      4000,
+    );
+    rep.measures.alarmResnapshotMs = Date.now() - t0;
+    check(
+      'vh1: sau access-changed có alarmSnapshot mới, 2 alarm, counts.active 2 (≤ 2 s)',
+      live.messages.slice(n0).some((x) => x.type === 'access-changed') &&
+        again?.instances?.length === 2 &&
+        again?.counts?.active === 2 &&
+        rep.measures.alarmResnapshotMs <= 2000,
+      `${rep.measures.alarmResnapshotMs} ms ${JSON.stringify(again?.counts)}`,
+    );
+    live.close();
+  } finally {
+    const acc = (await get(w, A, '/api/v1/admin/access')).json;
+    const clear = (acc?.rules ?? []).map((r) => ({
+      resource: r.resource,
+      level: r.level,
+      grantees: null,
+    }));
+    if (clear.length) await post(w, A, '/api/v1/admin/access', { rev: acc.rev, set: clear });
+    const gr = (await get(w, A, '/api/v1/admin/groups')).json?.rev;
+    await post(w, A, '/api/v1/admin/groups/bao-tri/delete', { rev: gr, reauth: pw('admin') });
+  }
+  return rep.result();
+}
+
 // ------------------------------------------------------------------------------------- admin-attack
 
 export async function adminAttack(fp) {
