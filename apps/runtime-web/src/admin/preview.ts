@@ -20,13 +20,17 @@ import { h } from './ui.ts';
 export class PreviewHost implements ActionHost {
   readonly #session: () => SessionInfo | null;
   readonly #locked: (screen: string, item: string) => boolean;
+  readonly #popup: (popup: string) => boolean;
   readonly #message: string;
 
   constructor(o: {
     session: () => SessionInfo | null;
     locked?: (screen: string, item: string) => boolean;
+    /** Popup người đang "xem với tư cách" không được xem (nút mở nó khóa NO_PERMISSION). */
+    popupDenied?: (popup: string) => boolean;
     message: string;
   }) {
+    this.#popup = o.popupDenied ?? (() => false);
     this.#session = o.session;
     this.#locked = o.locked ?? (() => false);
     this.#message = o.message;
@@ -34,6 +38,9 @@ export class PreviewHost implements ActionHost {
 
   session(): SessionInfo | null {
     return this.#session();
+  }
+  popupBlocked(popup: string): { code: 'NO_PERMISSION'; message: string } | null {
+    return this.#popup(popup) ? { code: 'NO_PERMISSION', message: '' } : null;
   }
   writeBlocked(): null {
     return null;

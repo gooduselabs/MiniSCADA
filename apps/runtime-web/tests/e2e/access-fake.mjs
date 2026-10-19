@@ -621,6 +621,24 @@ export function makeAccess(seed, deps) {
       record(s, 'access.restore', 'access', 'ok');
       return json(res, 200, { rev: store.rev });
     }
+    if (path === '/api/v1/admin/effective' && m === 'GET' && url.searchParams.has('users')) {
+      // Lô (≤ 200): {"effective":{"tên": EffectiveAccess}}; tên lạ thì bỏ.
+      const names = (url.searchParams.get('users') ?? '').split(',').filter(Boolean);
+      if (names.length > 200) return err(res, 400, 'BAD_REQUEST');
+      log.batches = (log.batches ?? 0) + 1;
+      const out = {};
+      for (const n of names) {
+        const u = users.get(n);
+        if (!u) continue;
+        log.effective.push(n);
+        out[n] = computeAccess(cat(), store, {
+          user: u.name,
+          role: u.role,
+          groups: u.groups,
+        }).effective;
+      }
+      return json(res, 200, { effective: out });
+    }
     if (path === '/api/v1/admin/effective' && m === 'GET') {
       const name = url.searchParams.get('user') ?? '';
       const u = users.get(name);

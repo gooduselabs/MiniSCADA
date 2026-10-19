@@ -714,7 +714,8 @@ export async function startFakeRuntime(opts = {}) {
           https: Boolean(https) && !cfg.httpsDown,
           httpsPort: https?.address()?.port ?? null,
           login: true,
-          viewerLogin: cfg.viewerLogin,
+          // Feature 013: runtime có phân quyền (1.6.0) báo viewerLogin cả khi chưa đăng nhập; trang dựa vào đó.
+          ...(acc ? { viewerLogin: cfg.viewerLogin } : {}),
         },
         warnings: cfg.httpsDown ? ['HTTPS_DOWN'] : [],
         // Feature 013: trang đăng nhập hiện tên project và thiết bị (system/info công khai).

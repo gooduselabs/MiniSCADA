@@ -305,3 +305,23 @@ describe('bindSvgEvents: hành động ghi', () => {
     expect(r.modal.holder).toBeNull();
   });
 });
+
+// Feature 013: phần tử SVG mở popup không được xem → khóa NO_PERMISSION, bấm chỉ báo lý do.
+describe('svg-events: popup không có quyền xem (013)', () => {
+  it('data-mat-lock NO_PERMISSION, aria-disabled, không mở popup', () => {
+    const r = rig();
+    r.host.popupBlock = (id) => (id === 'p-cam' ? { code: 'NO_PERMISSION', message: '' } : null);
+    r.bind([
+      { elementUid: 'el_btn', click: { action: 'popup', screen: 'p-cam' } },
+      { elementUid: 'el_plain', click: { action: 'popup', screen: 'p1' } },
+    ]);
+    const el = r.el('el_btn');
+    expect(el.getAttribute('data-mat-lock')).toBe('NO_PERMISSION');
+    expect(el.getAttribute('aria-disabled')).toBe('true');
+    click(el);
+    click(r.el('el_plain'));
+    expect(r.host.calls).toEqual(['popup:p1']);
+    expect(r.messages.at(-1)?.[0]).toContain('Cần quyền xem cửa sổ này');
+    expect(r.el('el_plain').getAttribute('data-mat-lock')).toBeNull();
+  });
+});

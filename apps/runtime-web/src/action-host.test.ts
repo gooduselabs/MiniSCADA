@@ -610,3 +610,22 @@ describe('quyền theo item (013)', () => {
     expect(requestLogin).not.toHaveBeenCalled();
   });
 });
+
+describe('popup không có quyền xem (013)', () => {
+  it('popupBlocked: popup ngoài screens → NO_PERMISSION; trong → null; không giới hạn → null', async () => {
+    const { AccessView, parseAccess } = await import('./access.ts');
+    const { host } = await setup();
+    expect(host.popupBlocked('pop-bom')).toBeNull();
+    host.setAccess(
+      new AccessView(
+        parseAccess({ role: 'operator', screens: ['tong-quan', 'pop-a'], admin: false }),
+      ),
+    );
+    expect(host.popupBlocked('pop-bom')).toMatchObject({ code: 'NO_PERMISSION' });
+    expect(host.popupBlocked('pop-a')).toBeNull();
+    host.setAccess(
+      new AccessView(parseAccess({ role: 'administrator', screens: [], admin: true })),
+    );
+    expect(host.popupBlocked('pop-bom')).toBeNull();
+  });
+});

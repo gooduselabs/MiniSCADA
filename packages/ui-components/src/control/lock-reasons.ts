@@ -1,5 +1,5 @@
 // Thứ tự kiểm khóa của widget điều khiển (contracts/ui-components-api.md §5; FR-037). Hàm thuần.
-import { lockText } from '../i18n/control-vi.ts';
+import { POPUP_NO_PERMISSION, lockText } from '../i18n/control-vi.ts';
 import type { ActionHost, Role, TagSource } from '../host/types.ts';
 
 export type LockCode =
@@ -45,6 +45,12 @@ export interface LockInput {
 }
 
 const lock = (code: LockCode, detail?: string): Lock => ({ code, message: lockText(code, detail) });
+
+/** Feature 013: khóa của nút/phần tử mở popup `popup` (người dùng không được xem popup đó), hoặc null. */
+export function popupLock(host: ActionHost | undefined, popup: string): Lock | null {
+  const b = host?.popupBlocked?.(popup) ?? null;
+  return b ? { code: 'NO_PERMISSION', message: b.message || POPUP_NO_PERMISSION } : null;
+}
 
 /** Trả lý do khóa đầu tiên theo thứ tự cố định, hoặc null. UNCERTAIN không khóa. */
 export function lockOf(i: LockInput): Lock | null {

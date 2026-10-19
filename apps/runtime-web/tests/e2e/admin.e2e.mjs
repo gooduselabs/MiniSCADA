@@ -461,7 +461,11 @@ export default async function run(ctx) {
     who.qd1?.[1] === true && who.vh2?.[0] === true && who.vh2?.[1] === false,
     JSON.stringify(who),
   );
-  ctx.check('dùng /admin/effective cho từng người', rt.access.log.effective.length >= 5);
+  ctx.check(
+    'một lần gọi /admin/effective?users= theo lô cho mọi người',
+    rt.access.log.batches === 1 && rt.access.log.effective.length >= 5,
+    `${rt.access.log.batches} lô`,
+  );
   await sleep(300);
   await ctx.shot('quyen-component');
   await axeBoth(ctx, 'tab Quyền theo component');

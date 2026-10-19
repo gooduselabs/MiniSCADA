@@ -38,6 +38,9 @@ export function lockText(code: LockCode, detail?: string): string {
   }
 }
 
+/** Nút hoặc phần tử SVG mở popup mà người dùng không được xem (feature 013). */
+export const POPUP_NO_PERMISSION = 'Cần quyền xem cửa sổ này';
+
 export const ROLE_LABEL: Record<string, string> = {
   viewer: 'viewer',
   operator: 'operator',

@@ -53,7 +53,7 @@
 - [x] T026 [US4] Trang: component ẩn / khóa "cần quyền thao tác" (`lockedItems`), ô lưới trống
   - Xong: `filterScreen` bỏ item ẩn (ô lưới bỏ `item`), "Không có nội dung bạn được xem"; ui-components: `ActionHost.itemBlocked` tùy chọn, mã khóa `NO_PERMISSION` ("Cần quyền thao tác", sau NO_SESSION/ROLE) và `PREVIEW`; phần tử SVG hỏi quyền theo item `svg` chứa nó (`accessItem`).
 - [x] T027 [US4] Tab Quyền theo component: xem trước màn hình bấm chọn + danh sách, "ai thấy, ai thao tác" (qua `/admin/effective`), Xem với tư cách (chỉ đọc)
-  - Xong: `mat-screen` chỉ đọc (PreviewHost không gửi lệnh) + lớp phủ nút bấm chọn; sửa Ai được xem/Ai được thao tác (chỉ component thao tác được); bảng "ai thấy, ai thao tác" từ `GET /admin/effective?user=` từng người (4 yêu cầu song song, theo quyền đã lưu). Tab Xem với tư cách: banner, màn hình và trang hệ thống của người đó, ô ẩn trống, item khóa "Cần quyền thao tác".
+  - Xong: `mat-screen` chỉ đọc (PreviewHost không gửi lệnh) + lớp phủ nút bấm chọn; sửa Ai được xem/Ai được thao tác (chỉ component thao tác được); bảng "ai thấy, ai thao tác" từ một lần gọi theo lô `GET /admin/effective?users=a,b,…` (≤ 200 mỗi lô, theo quyền đã lưu). Tab Xem với tư cách: banner, màn hình và trang hệ thống của người đó, ô ẩn trống, item khóa "Cần quyền thao tác".
 - [ ] T028 [US4] Studio Inspector tab Bảo mật: `view`, `operate` mặc định (test trước)
 - [ ] T029 [US4] web-it `tests/web-it/scenarios/admin-attack.mjs`: vai trò thấp gọi API quản trị, CSRF, sửa chính mình leo thang, xóa admin cuối, ghi bằng curl không quyền
 

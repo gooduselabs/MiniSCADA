@@ -132,6 +132,11 @@ export class WebActionHost implements ActionHost {
     this.#emit();
   }
 
+  /** Popup không có trong `screens` của phiên: nút/phần tử mở nó khóa (máy chủ trả 403 cho cấu hình popup). */
+  popupBlocked(popup: string): { code: 'NO_PERMISSION'; message: string } | null {
+    return this.#access.canView(popup) ? null : { code: 'NO_PERMISSION', message: '' };
+  }
+
   /** Item trong `lockedItems`: khóa "Cần quyền thao tác" (chỉ hiển thị; máy chủ kiểm `operate` khi ghi). */
   itemBlocked(ctx: { screen: string; item: string }): {
     code: 'NO_PERMISSION';

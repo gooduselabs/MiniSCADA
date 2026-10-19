@@ -100,6 +100,18 @@ async function lookupHttps(
   }
 }
 
+/** `system/info.web.viewerLogin` (feature 013); null khi thiết bị không báo hoặc lỗi. */
+async function viewerLoginOf(): Promise<'off' | 'required' | null> {
+  try {
+    const res = await fetch('/api/v1/system/info', { cache: 'no-store' });
+    if (!res.ok) return null;
+    const v = ((await res.json()) as { web?: { viewerLogin?: unknown } }).web?.viewerLogin;
+    return v === 'off' || v === 'required' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Feature 013 (FR-002, FR-003): tới trang đăng nhập, kèm địa chỉ quay lại là trang đang xem. */
 function redirectToLogin(): void {
   location.assign(loginUrl(location.hash));
@@ -156,8 +168,15 @@ async function main(): Promise<void> {
     if (session.expired && required() && https) toLogin();
   });
 
-  // Cookie phiên và danh sách project đi cùng lúc (HTTP: không có phiên, restore không gọi mạng).
-  const [opened] = await Promise.all([store.open(), session.restore()]);
+  // Cookie phiên và danh sách project đi cùng lúc (HTTP: không có phiên, restore không gọi mạng). Feature 013:
+  // `system/info.web.viewerLogin` (có cả khi chưa đăng nhập) cho biết runtime có phân quyền (device-api 1.6.0);
+  // `web/session` có `viewerLogin` là đường dự phòng.
+  const [opened, , info] = await Promise.all([
+    store.open(),
+    session.restore(),
+    https ? viewerLoginOf() : Promise.resolve(null),
+  ]);
+  if (session.viewerLogin === null && info) session.viewerLogin = info;
   if (opened.status === 'no-project') {
     shell.showError(vi.noProjectTitle, issueLines(opened.errors));
     // Chưa có project hợp lệ: không mở WebSocket, để không chiếm 1 trong 10 phiên dữ liệu sống (Constitution IV,
@@ -608,8 +627,8 @@ async function main(): Promise<void> {
     if (started) router?.resync();
   };
   const loadAccess = async () => {
-    // Chỉ runtime có phân quyền (device-api 1.6.0) báo `viewerLogin` trong web/session: runtime cũ không có web/access
-    // (khỏi gọi để nhận 404). Phiên ẩn danh (`viewerLogin: off`): máy chủ vẫn tự lọc, trang hiện như cũ.
+    // Chỉ runtime có phân quyền (device-api 1.6.0) báo `viewerLogin` (system/info hoặc web/session): runtime cũ không
+    // có web/access (khỏi gọi để nhận 404). Phiên ẩn danh (`off`) cũng tải: máy chủ trả quyền của người xem ẩn danh.
     if (!https || session.viewerLogin === null) {
       applyAccess(new AccessView(null));
       return;

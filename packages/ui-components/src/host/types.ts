@@ -106,6 +106,11 @@ export interface ActionHost {
     screen: string;
     item: string;
   }): { code: ItemBlockCode; message: string } | null;
+  /**
+   * Feature 013 (tùy chọn): người dùng không được xem popup `popup` → nút/phần tử mở popup đó khóa `NO_PERMISSION`.
+   * Chỉ hiển thị (máy chủ trả 403 cho cấu hình popup). `message` rỗng: chữ mặc định.
+   */
+  popupBlocked?(popup: string): { code: 'NO_PERMISSION'; message: string } | null;
   /** onPhase: ACCEPTED rồi kết quả cuối. Không bao giờ tự gửi lại. */
   write(spec: WriteSpec, onPhase: (o: WriteOutcome) => void): Promise<WriteOutcome>;
   navigate(screenId: string): void;

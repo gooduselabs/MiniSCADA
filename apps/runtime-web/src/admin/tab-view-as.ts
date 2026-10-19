@@ -93,6 +93,7 @@ export class ViewAsTab implements AdminTab {
       host: new PreviewHost({
         session: () => ({ user: name, role }),
         locked: (s, i) => (e.lockedItems[s] ?? []).includes(i),
+        popupDenied: (p) => !e.admin && !e.screens.includes(p),
         message: V.banner(name, role),
       }),
       label: V.banner(name, role),

@@ -156,3 +156,29 @@ describe('parse phòng thủ', () => {
     expect([s.viewerLogin, s.storeState, s.orphans.length]).toEqual(['off', 'invalid', 1]);
   });
 });
+
+describe('effectiveMany (lô ≤ 200)', () => {
+  it('một lần gọi users=a,b; > 200 chia lô; đọc {effective:{tên: EffectiveAccess}}', async () => {
+    const { api, f } = mk({});
+    const names = Array.from({ length: 250 }, (_, i) => `u${i}`);
+    const body = (list: string[]) => ({
+      json: {
+        effective: Object.fromEntries(
+          list.map((n) => [n, { user: n, role: 'viewer', screens: ['a'], admin: false }]),
+        ),
+      },
+    });
+    f.set(
+      `GET /api/v1/admin/effective?users=${names.slice(0, 200).join('%2C')}`,
+      body(names.slice(0, 200)),
+    );
+    f.set(
+      `GET /api/v1/admin/effective?users=${names.slice(200).join('%2C')}`,
+      body(names.slice(200)),
+    );
+    const m = await api.effectiveMany(names);
+    expect(m.size).toBe(250);
+    expect(m.get('u249')?.screens).toEqual(['a']);
+    expect(f.calls).toHaveLength(2);
+  });
+});

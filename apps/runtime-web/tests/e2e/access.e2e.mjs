@@ -193,4 +193,30 @@ export default async function run(ctx) {
   ctx.check('mở được Bồn nước', (await deepCount(page, '.item[data-item-id="svg1"]')) === 1);
   ctx.check('không có thông báo lỗi cụt', !(await bodyText(page)).includes('HTTP 403'));
   await axeBoth(ctx, 'màn hình có component bị khóa');
+
+  // ---- Nút mở popup không được xem: khóa NO_PERMISSION ----
+  rt.access.setRules([
+    ...seed,
+    { resource: 'screen:pop-bom', level: 'view', grantees: ['group:quan-doc'] },
+  ]);
+  await go(page, 'tong-quan');
+  await until(
+    async () => (await lockOf(page, 'pop'))?.[0] === 'NO_PERMISSION',
+    'nút mở popup khóa',
+    8000,
+  );
+  const pl = await lockOf(page, 'pop');
+  ctx.check(
+    'nút "Mở cửa sổ bơm" khóa: "Cần quyền xem cửa sổ này"',
+    pl[1].includes('Cần quyền xem cửa sổ này'),
+    JSON.stringify(pl),
+  );
+  const disabled = await deepEval(
+    page,
+    W('pop'),
+    'return els[0].shadowRoot.querySelector("[data-main]").disabled;',
+  );
+  ctx.check('nút mở popup bị tắt (không mở được)', disabled === true);
+  ctx.check('nút điều hướng khác không bị khóa', (await lockOf(page, 'go')) === null);
+  await ctx.shot('popup-khoa');
 }

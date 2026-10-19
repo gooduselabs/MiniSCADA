@@ -288,21 +288,14 @@ export class ComponentsTab implements AdminTab {
     if (this.#effLoading && this.#effRev === rev) return this.#effLoading;
     this.#effRev = rev;
     this.#effective = new Map();
-    const users = this.#c.data.users;
+    const users = this.#c.data.users.map((u) => u.name);
     this.#effLoading = (async () => {
-      // 4 yêu cầu song song (thiết bị nhỏ; tối đa 200 người dùng).
-      let i = 0;
-      const worker = async () => {
-        while (i < users.length) {
-          const u = users[i++]!;
-          try {
-            this.#effective.set(u.name, await this.#c.api.effective(u.name));
-          } catch {
-            /* bỏ người này; hàng hiện "—" */
-          }
-        }
-      };
-      await Promise.all([worker(), worker(), worker(), worker()]);
+      // Một yêu cầu theo lô (`?users=`, ≤ 200 mỗi lần); lỗi thì các hàng hiện "—".
+      try {
+        this.#effective = await this.#c.api.effectiveMany(users);
+      } catch (e) {
+        this.#c.fail(e);
+      }
     })();
     await this.#effLoading;
     this.#effLoading = null;

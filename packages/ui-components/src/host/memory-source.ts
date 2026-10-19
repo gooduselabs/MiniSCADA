@@ -140,6 +140,8 @@ export class FakeActionHost implements ActionHost {
   itemBlock:
     | ((ctx: { screen: string; item: string }) => { code: ItemBlockCode; message: string } | null)
     | null = null;
+  /** Feature 013: popup không được xem (test); null thì không khóa. */
+  popupBlock: ((popup: string) => { code: 'NO_PERMISSION'; message: string } | null) | null = null;
   readonly writes: WriteSpec[] = [];
   readonly calls: string[] = [];
   #pending: Array<{ onPhase: (o: WriteOutcome) => void; done: (o: WriteOutcome) => void }> = [];
@@ -155,6 +157,10 @@ export class FakeActionHost implements ActionHost {
 
   writeBlocked(): { code: WriteBlockCode; message: string } | null {
     return this.blocked;
+  }
+
+  popupBlocked(popup: string): { code: 'NO_PERMISSION'; message: string } | null {
+    return this.popupBlock ? this.popupBlock(popup) : null;
   }
 
   itemBlocked(ctx: { screen: string; item: string }): {

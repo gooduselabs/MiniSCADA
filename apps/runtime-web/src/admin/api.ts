@@ -356,6 +356,27 @@ export class AdminApi {
     return a;
   }
 
+  /**
+   * EffectiveAccess của nhiều người một lần: `GET /api/v1/admin/effective?users=a,b,c` (≤ 200 mỗi lần) →
+   * `{"effective":{"a":EffectiveAccess,…}}`; danh sách dài chia lô 200. Người thiếu trong kết quả thì bỏ.
+   */
+  async effectiveMany(users: readonly string[]): Promise<Map<string, EffectiveAccess>> {
+    const out = new Map<string, EffectiveAccess>();
+    for (let i = 0; i < users.length; i += 200) {
+      const list = users.slice(i, i + 200);
+      const b = await this.#call(
+        'GET',
+        `/api/v1/admin/effective?users=${encodeURIComponent(list.join(','))}`,
+      );
+      const map = isObj(b) && isObj(b.effective) ? b.effective : {};
+      for (const n of list) {
+        const a = parseAccess(map[n]);
+        if (a) out.set(n, a);
+      }
+    }
+    return out;
+  }
+
   // ---- nhật ký (§5) ----
   async audit(q: AuditQuery) {
     const p = new URLSearchParams();
