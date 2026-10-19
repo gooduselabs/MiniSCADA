@@ -120,3 +120,27 @@ Lệnh: `pwsh tools/release/release.ps1 -SkipCi -RuntimeBin ~/build/mac-armhf/ar
 | 9 `verify-release` | đạt; ca 1–5 (Authenticode) bỏ qua: chỉ Windows |
 
 Lần chạy đầu với `-Verifier <mat-update-verify armhf>` dừng ở bước 5 ("mã null"): binary armhf không chạy được trên macOS. Trên máy không phải armhf thì không truyền `-Verifier` (make-update kiểm bằng bộ kiểm Node).
+
+## Lượt Windows (2026-10-19, nhánh gd6-windows)
+
+- **Máy:** Windows 11 Home 10.0.26200; Windows PowerShell 5.1.26100 (ký) và PowerShell 7.6.7 (chạy `release.ps1`); Node 24.15.0 (yêu cầu ghi 22 LTS, chạy được); Rust 1.99.0 (`x86_64-pc-windows-msvc`); signtool 10.0.26100; OpenSSL của Git for Windows; WebView2 Runtime. Chứng chỉ thử `CN=mAT SCADA TEST - NOT FOR RELEASE` (RSA 3072) trong `Cert:\CurrentUser\My`, đã gỡ sau khi xong; khóa phát hành thử sinh ngoài repo.
+- **Kiểm nhanh trước build:** `npm ci`, lint, typecheck, Vitest ui-components 746/746, `cargo test --lib` 198/198, `node --test tools/release` xanh.
+- **Lệnh:** `pwsh tools/release/release.ps1 -SkipCi -RuntimeTarball build/mat-runtime-armhf.tar.gz -SigningKey <khóa thử> -Keys <thư mục pub> -OutDir <ngoài repo> -Force`.
+
+| Bước | Kết quả | Thời gian |
+|---|---|---|
+| 1 cổng | đạt (chứng chỉ thử tìm thấy) | 0,9 s |
+| 2 `ci-local` | BỎ QUA (`-SkipCi`) | – |
+| 3 dựng, ký, kiểm Studio | đạt: setup 222.217.272 B (211,9 MiB); `uninstall.exe` có chữ ký | 279,4 s |
+| 4 gói runtime | gói armhf dựng sẵn (không dựng lại) | 0,1 s |
+| 5 `.matupdate` | đạt, 5,1 MB | 1,2 s |
+| 7 SBOM, license | 836 thành phần, 0 từ chối | 4,9 s |
+| 8 ghi chú, build-info | đạt | 0,5 s |
+| 6 `SHA256SUMS` và chữ ký | 9 tệp khớp | 1 s |
+| 9 `verify-release.ps1` | Authenticode bộ cài và `mat-studio.exe` đúng dấu vân tay; **12/12 ca hỏng bị từ chối** (1, 2 HashMismatch; 3 NotSigned; 4 người ký khác; 5 không dấu thời gian; 6–12 như các lượt trước) | 37,6 s |
+
+Tổng 326,4 s (≈ 5,4 phút, chưa gồm `ci-local`). Trạng thái Authenticode của chứng chỉ thử là `UnknownError` (thông điệp "terminated in a root certificate which is not trusted"): chữ ký toán học đúng, gốc chưa tin cậy; mã (`signing.ps1`, `signature.rs`) chấp nhận cả `NotTrusted` lẫn `UnknownError` do gốc.
+
+**Lỗi tìm ra khi chạy thật (đã sửa, có test):** (1) Tauri gọi `powershell` 5.1 từ `release.ps1` (pwsh 7) thừa hưởng `PSModulePath` của PS7, `Cert:` lỗi và Tauri chỉ báo "failed to run powershell"; (2) `verify-release.ps1` báo "BỎ QUA" ca 1–5 và tổng 7/7 ở phần Node dù đã chạy; (3) ca 4 để lại bản sao chứng chỉ ở kho `CA`; (4) `release.ps1` kiểm `mat-studio.exe` trong cây dựng (chưa ký) và không kiểm `uninstall.exe`.
+
+**Chưa làm (cần người hoặc tài nguyên khác):** `ci-local` đầy đủ và dựng armhf từ nguồn trong cùng lần chạy (SC-018 chưa đo trọn); `-Verifier mat-update-verify`; thử ba URL dấu thời gian RFC 3161; chứng chỉ thật (T103, T104).

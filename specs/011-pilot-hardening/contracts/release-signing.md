@@ -49,12 +49,12 @@ Chế độ không `-Release` (thử) bỏ điều kiện 2, 3, 6, 8 và cho ph�
 ```powershell
 New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=mAT SCADA TEST - NOT FOR RELEASE" `
   -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA256 -CertStoreLocation Cert:\CurrentUser\My `
-  -NotAfter (Get-Date).AddDays(30)
+  -NotAfter (Get-Date).AddDays(90)
 ```
 
 - Chỉ vào `Cert:\CurrentUser\My`; **không** thêm vào `Cert:\CurrentUser\Root`/`TrustedPublisher`, không cần quyền admin.
-- Lệnh gỡ: `make-test-cert.ps1 -Remove`.
-- Kiểm kỳ vọng: `Get-AuthenticodeSignature` trả `Status = NotTrusted` (chữ ký toán học đúng, gốc chưa tin) và `SignerCertificate.Thumbprint` đúng; `signtool verify /pa /v` trả lỗi chuỗi tin cậy (mã 1) nhưng báo tính toàn vẹn đúng; sửa một byte: `Status = HashMismatch`.
+- Lệnh gỡ: `make-test-cert.ps1 -Remove` (cũng gỡ bản sao `New-SelfSignedCertificate` để lại ở `Cert:\CurrentUser\CA`).
+- Kiểm kỳ vọng: `Get-AuthenticodeSignature` trả `Status = NotTrusted` hoặc `UnknownError` có thông điệp "root ... not trusted" (Windows 11 build 26200 trả `UnknownError`; chữ ký toán học đúng, gốc chưa tin) và `SignerCertificate.Thumbprint` đúng; `signtool verify /pa /v` trả lỗi chuỗi tin cậy (mã 1) nhưng báo tính toàn vẹn đúng; sửa một byte: `Status = HashMismatch`.
 - Kiểm trong cô lập (Windows Sandbox hoặc máy ảo) với gốc thử đã nhập tay là bước tùy chọn ⚠️🔌; không thực hiện trên máy dev.
 
 ## 4. Ký Tauri/NSIS
