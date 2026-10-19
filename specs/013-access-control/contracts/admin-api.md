@@ -2,7 +2,7 @@
 
 Nguồn: [spec](../spec.md), [mô hình quyền](access-model.md). `system/info` và `diagnostics` báo `"api":"1.6.0"`. Mọi đường dưới đây **chỉ HTTPS**, nằm trong bảng `core/auth/roles.cpp`, cho cookie (`cookieAllowed`) và Bearer; yêu cầu thay đổi cần `Origin` khớp và `X-MAT-CSRF` khi đi bằng cookie (luật `AuthGate` có sẵn). Thân JSON ≤ 64 KiB (`413`), JSON sai hoặc sai kiểu `400 BAD_REQUEST` trước khi xử lý.
 
-Lỗi theo dạng có sẵn: `{"error":"<MÃ>","message":"…"}`. Mã mới: `CONFLICT` (409, `rev` lệch), `LAST_ADMIN` (409), `IN_USE` (409, kèm `usedBy`), `REAUTH_REQUIRED` (403, thiếu hoặc sai `reauth`), `WEAK_PASSWORD` (400, kèm `reason`), `NOT_FOUND` (404), `EXISTS` (409), `RATE_LIMITED` (429), `ACCESS_DENIED` (403, thiếu quyền tài nguyên), `STORE_INVALID` (503).
+Lỗi theo dạng có sẵn: `{"error":"<MÃ>","message":"…"}`. `WEAK_PASSWORD` kèm `reason` một trong `TOO_SHORT`, `TOO_LONG`, `CONTAINS_NAME`, `COMMON` (`checkNewPassword` không kiểm mật khẩu phổ biến; mật khẩu không phải UTF-8 được báo `COMMON`, gần nhất trong bốn mã). `GET /api/v1/system/info` có `web.viewerLogin` (`"off"|"required"`), cả ở bản rút gọn khi chưa đăng nhập. Mã mới: `CONFLICT` (409, `rev` lệch), `LAST_ADMIN` (409), `IN_USE` (409, kèm `usedBy`), `REAUTH_REQUIRED` (403, thiếu hoặc sai `reauth`), `WEAK_PASSWORD` (400, kèm `reason`), `NOT_FOUND` (404), `EXISTS` (409), `RATE_LIMITED` (429), `ACCESS_DENIED` (403, thiếu quyền tài nguyên), `STORE_INVALID` (503).
 
 **Xác nhận lại** (`reauth`): trường `"reauth":"<mật khẩu của admin đang gọi>"` trong thân; kiểm qua `AuthService::reauthenticate` (hàng đợi băm có sẵn); sai thì `REAUTH_REQUIRED`, tính vào khóa tạm của chính admin. Cần cho: đặt lại mật khẩu, hạ vai trò, tắt, xóa người dùng, xóa nhóm, khôi phục kho.
 
@@ -55,13 +55,14 @@ Ghi chú cài đặt (luồng B, 2026-10-19): `GET /api/v1/web/access` nằm tro
 | `POST /api/v1/admin/access` | `{"rev","set":[{"resource","level","grantees":[…]\|null}]}` (`null` xóa quy tắc, về mặc định; tối đa 500 phần tử) | `{"rev"}` | `access.rule` (một dòng mỗi phần tử, detail before/after) |
 | `POST /api/v1/admin/access/cleanup` | `{"rev"}` | `{"rev","removed":n}` (xóa quy tắc mồ côi) | `access.cleanup` |
 | `POST /api/v1/admin/access/restore` | `{"reauth"}` | `{"rev"}` (chép `.bak` về; `rev` mới = `rev` của bản sao + 2, để yêu cầu làm trên tệp hỏng hay tệp trước đó đều 409); không có hoặc hỏng `.bak` → `409 NO_BACKUP` | `access.restore` (started rồi ok/failed) |
-| `GET /api/v1/admin/effective?user=<name>` | — | `EffectiveAccess` của người đó (xem với tư cách, FR-043) | `admin.view-as` |
+| `GET /api/v1/admin/effective?user=<name>` | — | `EffectiveAccess` của người đó (xem với tư cách, FR-043), thêm `enabled` | `admin.view-as` |
+| `GET /api/v1/admin/effective?users=a,b,c` | — (tối đa 200 tên; không dùng cùng `user`) | `{"effective":{"a":EffectiveAccess,…}}` (tên không còn tồn tại bị bỏ) — cho "ai thấy, ai thao tác" | — |
 
 `resources[]`: `{"id","kind":"screen"|"popup"|"item"|"page"|"history"|"report","title","screen"?,"widget"?,"levels":["view","operate"?],"defaults":{"view":"viewer","operate"?:"operator"}}`. Luật kiểm của `set`: tài nguyên phải có trong project đang chạy (`400 NOT_FOUND` kèm `resource`), `operate` chỉ cho tài nguyên có mức đó, người nhận phải tồn tại, không trùng; quy tắc `page:admin` bị từ chối.
 
 ## 5. Nhật ký (administrator, cookie)
 
-`GET /api/v1/admin/audit?from&to&user&action&beforeId&limit` — cùng kết quả với `GET /api/v1/audit` (đã có, Bearer) nhưng cho cookie; action lọc theo tiền tố (`auth.`, `access.`, `account.`, `group.`, `admin.`). Ghi `audit.read` như đường cũ.
+`GET /api/v1/admin/audit?from&to&user&action&beforeId&limit` — cùng kết quả với `GET /api/v1/audit` (đã có, Bearer) nhưng cho cookie; action lọc theo tiền tố (`auth.`, `access.`, `account.`, `group.`, `admin.`). Phân trang bằng `beforeId` (nhận cả `before` làm bí danh); trả `{"records":[…],"next":<beforeId kế>|null}`, bản ghi cùng hình `GET /api/v1/audit`. Ghi `audit.read` như đường cũ (channel `web` khi đi bằng cookie).
 
 ## 6. Thực thi trên các đường có sẵn
 

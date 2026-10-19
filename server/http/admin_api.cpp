@@ -74,13 +74,13 @@ const char* problemReason(PasswordProblem p) {
         case PasswordProblem::None:
             return "";
         case PasswordProblem::NotUtf8:
-            return "not-utf8";
+            return "COMMON";  // not UTF-8: the nearest of the four codes the page knows
         case PasswordProblem::TooShort:
-            return "too-short";
+            return "TOO_SHORT";
         case PasswordProblem::TooLong:
-            return "too-long";
+            return "TOO_LONG";
         case PasswordProblem::SameAsName:
-            return "same-as-name";
+            return "CONTAINS_NAME";
     }
     return "invalid";
 }
@@ -991,6 +991,39 @@ struct AdminApi::Impl {
     }
 
     AdminReply effective(const std::map<std::string, std::string>& q, const AdminCaller& who) {
+        // ?users=a,b,c (at most 200): the access of several accounts, for "who sees, who
+        // operates"; no admin.view-as row (it is not a view as one person).
+        if (const auto many = q.find("users"); many != q.end()) {
+            if (q.count("user")) return error(400, "BAD_REQUEST");
+            std::vector<std::string> names;
+            const std::string& s = many->second;
+            size_t at = 0;
+            while (!s.empty() && at <= s.size()) {
+                size_t end = s.find(',', at);
+                if (end == std::string::npos) end = s.size();
+                const std::string n = s.substr(at, end - at);
+                if (!validAccountName(n)) return error(400, "BAD_REQUEST");
+                if (std::find(names.begin(), names.end(), n) == names.end()) names.push_back(n);
+                at = end + 1;
+            }
+            if (names.empty() || names.size() > kMaxAccounts) return error(400, "BAD_REQUEST");
+            const AuthFiles f = b.store->read();
+            json out = json::object();
+            for (const std::string& n : names) {
+                const Account* a =
+                    f.users.status == UsersStatus::Ok ? f.users.file.find(n) : nullptr;
+                if (!a) continue;  // an account gone meanwhile is left out
+                Principal p;
+                p.user = a->name;
+                p.role = a->role;
+                p.groups = a->groups;
+                json one = effectiveAccessJson(
+                    b.access->forPrincipal(p, a->rev, f.users.file.rev)->access);
+                one["enabled"] = a->enabled;
+                out[n] = std::move(one);
+            }
+            return reply(200, {{"effective", std::move(out)}});
+        }
         const auto it = q.find("user");
         if (it == q.end() || !validAccountName(it->second)) return error(400, "BAD_REQUEST");
         const AuthFiles f = b.store->read();

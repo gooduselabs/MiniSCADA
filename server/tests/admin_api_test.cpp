@@ -228,7 +228,7 @@ TEST(AdminApi, CreateAUserWhoSignsInAtOnce) {
                {{"rev", 3}, {"name", "vh5"}, {"role", "viewer"}, {"password", "short"}}, admin);
     EXPECT_EQ(a.status, 400);
     EXPECT_EQ(a.body["error"], "WEAK_PASSWORD");
-    EXPECT_EQ(a.body["reason"], "too-short");
+    EXPECT_EQ(a.body["reason"], "TOO_SHORT");
     EXPECT_EQ(
         r.post("/api/v1/admin/users",
                {{"rev", 3}, {"name", "Bad Name"}, {"role", "viewer"}, {"generate", true}}, admin)
@@ -581,6 +581,14 @@ TEST(AdminApi, TheAccessOfThePageAndViewAs) {
     EXPECT_EQ(a.body["lockedItems"]["tong-quan"], json::array({"chay-bom"}));
     EXPECT_EQ(r.audit(AuditAction::AdminViewAs).size(), 1u);
     EXPECT_EQ(r.get("/api/v1/admin/effective", admin, {{"user", "nobody"}}).status, 404);
+    // in one go, for the page's "who sees, who operates" (no view-as row)
+    a = r.get("/api/v1/admin/effective", admin, {{"users", "xem1,vh1,nobody"}});
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    EXPECT_EQ(a.body["effective"]["xem1"]["lockedItems"]["tong-quan"], json::array({"chay-bom"}));
+    EXPECT_EQ(a.body["effective"]["vh1"]["lockedItems"], json::object());
+    EXPECT_FALSE(a.body["effective"].contains("nobody"));
+    EXPECT_EQ(r.audit(AuditAction::AdminViewAs).size(), 1u);
+    EXPECT_EQ(r.get("/api/v1/admin/effective", admin, {{"users", "Bad"}}).status, 400);
 }
 
 TEST(AdminApi, TheAdminPasswordReset) {
