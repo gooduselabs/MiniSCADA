@@ -57,7 +57,7 @@ Rollback tay về bản trước: `sh /opt/mat-runtime/deployment/rollback.sh` (
 
 ### 2.2. mAT Studio trên Windows
 
-1. Chạy bộ cài `mAT Studio_<phiên bản>_x64-setup.exe`. Bộ cài phát hành chính thức có chữ ký số Authenticode: kiểm tên nhà phát hành trong hộp cảnh báo của Windows. Bản thử và bản rc chưa ký (chờ chứng chỉ ký mã của công ty) nên Windows báo nhà phát hành không xác định ("Unknown publisher"): chỉ cài khi tệp đến từ kênh tin cậy và `SHA256SUMS` khớp (mục 7.3). SmartScreen vẫn có thể cảnh báo với bản mới phát hành.
+1. Chạy bộ cài `mAT Studio_<phiên bản>_x64-setup.exe`. mAT SCADA là sản phẩm dùng nội bộ: bộ cài **không có chữ ký số Authenticode của CA** (quyết định 2026-10-19, không mua chứng chỉ ký mã), nên Windows báo nhà phát hành không xác định ("Unknown publisher") và SmartScreen có thể hiện "Windows protected your PC": chọn **More info → Run anyway**. Chỉ cài khi tệp đến từ kênh nội bộ tin cậy và `SHA256SUMS` khớp (mục 7.3); `SHA256SUMS.sig` được ký bằng khóa phát hành nội bộ nên vẫn kiểm được tính toàn vẹn của cả bộ phát hành.
 2. Lần đầu tìm thiết bị, Windows có thể hỏi cho phép qua tường lửa: chọn **mạng riêng**.
 3. Studio cần WebView2 (có sẵn trên Windows 10/11 cập nhật).
 

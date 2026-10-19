@@ -1,7 +1,7 @@
 {
   "feature": "008",
   "task": "T077",
-  "date": "2026-10-18",
+  "date": "2026-10-19",
   "machine": {
     "cpu": "Apple M2",
     "cores": 8,
@@ -16,15 +16,15 @@
     "undo": 100
   },
   "measuredMs": {
-    "importLimitCase": 490,
-    "import": 630,
-    "tree": 15.6,
-    "pick": 5.8,
-    "pickMedian": 9,
-    "bindRewire": 34.3,
-    "testValue": 13.2,
-    "undoModel": 38.4,
-    "undoCanvas": 38.4
+    "importLimitCase": 511,
+    "import": 621,
+    "tree": 14.8,
+    "pick": 5.6,
+    "pickMedian": 5.6,
+    "bindRewire": 36.4,
+    "testValue": 9.8,
+    "undoModel": 34.7,
+    "undoCanvas": 34.7
   },
   "pass": {
     "import": true,

@@ -9,6 +9,8 @@ Hai loại chữ ký tách biệt, hai chuỗi tin cậy khác nhau:
 | Bộ cài Studio (`.exe`), `mat-studio.exe`, trình gỡ | Authenticode SHA-256 + dấu thời gian RFC 3161 | Windows (SmartScreen, Explorer, `signtool`) | chứng chỉ ký mã do CA công cộng cấp (OV hoặc EV) |
 | `SHA256SUMS`, gói `.matupdate`, `mat-runtime-armhf.tar.gz` | ECDSA P-256 + SHA-256 | `mat-update-verify` trên thiết bị và trên máy dev | khóa phát hành riêng của dự án (ngoại tuyến) |
 
+> **Quyết định 2026-10-19 (người dùng):** mAT SCADA dùng nội bộ, **không mua chứng chỉ ký mã** cho Studio. Bản phát hành nội bộ dựng bằng `release.ps1` chế độ thường (không `-Release`): bộ cài không ký Authenticode của CA hoặc ký bằng chứng chỉ thử (`make-test-cert.ps1`); `SHA256SUMS` vẫn được ký bằng khóa phát hành ECDSA nội bộ (§5) và gói OTA giữ nguyên chữ ký (§5, §6). Cổng `-Release` (§2) và yêu cầu chứng chỉ thật giữ trong công cụ cho trường hợp phát hành ra ngoài sau này. T103, T104: không áp dụng.
+
 ## 1. `tools/release/sign.ps1`
 
 ```text

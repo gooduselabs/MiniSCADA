@@ -15,7 +15,7 @@ Cách đọc: **Đạt** là test hoặc kịch bản tự động xanh, số đ
 | Giao thức live | 1.3.0 | không đổi |
 | Định dạng project | 1.0.0 | runtime nhận 0.1–0.6 và 1.0; Studio nâng cấp có sao lưu; gói runtime chép mọi bộ schema đóng băng (sửa 95effeb5, kiểm trên thiết bị ở T080 với `bench-1000` định dạng 0.6) |
 | Gói `.matupdate` | 1.0.0 | `mat-update-verify` armhf 214.592 B; so SemVer đầy đủ (rc.1 < 1.0.0) |
-| Studio | 1.0.0-rc.1 | `package.json`, `tauri.conf.json`, `Cargo.toml`; `build-info.mjs versions --expect 1.0.0-rc.1` đồng nhất. Bộ cài NSIS chưa dựng và chưa ký (Windows, T102–T104) |
+| Studio | 1.0.0-rc.1 | `package.json`, `tauri.conf.json`, `Cargo.toml`; `build-info.mjs versions --expect 1.0.0-rc.1` đồng nhất. Bộ cài NSIS dựng và ký thử trên Windows 11 (T093, T098, 2026-10-19); không ký Authenticode của CA (sản phẩm nội bộ, quyết định 2026-10-19; T103, T104 không áp dụng) |
 | Gói `.matscada` | không đổi | thêm từ chối tệp thừa `E_PACKAGE_EXTRA_FILE` |
 | Constitution | 2.0.2 | PATCH T004 (ghi từ logic, OTA chỉ khi có HTTPS/đăng nhập/role/audit) |
 
@@ -118,8 +118,8 @@ Danh sách tập trung ở [docs/pilot/customer-checklist.md](../pilot/customer-
 | B7 | Người cắt mạng 50 lần | T086 |
 | B8 | Chọn PLC hoặc giả lập để thử logic ghi PLC | T149 |
 | B9 | Bật `update.enabled` trên bàn thử | đã cho phép và dùng ở T122; còn T123 (cần B4) |
-| R1 | Mua chứng chỉ ký mã, máy ký, URL dấu thời gian | T103–T105, E4 |
-| R2 | Sinh hai khóa ECDSA phát hành ngoại tuyến | T103 |
+| R1 | ~~Mua chứng chỉ ký mã~~ không áp dụng (nội bộ, 2026-10-19); còn cài thử Windows sạch | T105, E4 |
+| R2 | Sinh hai khóa ECDSA phát hành ngoại tuyến (cho `SHA256SUMS` và gói OTA; vẫn cần dù không mua chứng chỉ) | trước pilot |
 | R3 | Cài thử Studio trên Windows 10/11 sạch | T105 |
 | H1–H4 | Người thử bảng tác vụ; huấn luyện thử nội bộ; kỹ sư thử editor logic; thử bộ gõ, NVDA và ký hiệu bơm trong trình vẽ | T150, T167, T186 |
 | P1–P4 | Cài rc lên site và bàn thử, chạy pilot ≥ 30 ngày, đo trễ Chrome, `EXT_CSD` và soak 30 ngày bàn thử (T196), Tech Lead ký vào và Go/No-Go | T193–T198 |
