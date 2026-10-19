@@ -90,7 +90,9 @@ async function partA() {
   const hello = log.recv.find((x) => x.type === 'hello');
   r.check(
     'A: hello 1.3.0 có features alarms mà client 1.2 không hiểu vẫn nhận được',
-    hello?.protocolVersion === '1.3.0' && hello.features?.includes('alarms'),
+    // 1.3.0 or a later 1.x (feature 013: 1.4.0 adds access-changed and snapshot.denied)
+    /^1\.([3-9]|\d{2,})\.\d+$/.test(hello?.protocolVersion ?? '') &&
+      hello.features?.includes('alarms'),
     JSON.stringify(hello?.protocolVersion),
   );
   // đổi Tag nguồn và bật một alarm: client 1.2 thấy Tag, không thấy alarm

@@ -111,12 +111,12 @@ struct Fixture : ::testing::Test {
 
 }  // namespace
 
-TEST_F(Fixture, ProtocolVersionIs130) { EXPECT_STREQ(kLiveProtocolVersion, "1.3.0"); }
+TEST_F(Fixture, ProtocolVersionIs140) { EXPECT_STREQ(kLiveProtocolVersion, "1.4.0"); }  // 013
 
 TEST_F(Fixture, HelloAnnouncesTheAlarmFeatureOnlyWhenThereAreAlarms) {
     hub->onOpen(1);
     json h = json::parse(tx.sent[1][0]);
-    EXPECT_EQ(h["protocolVersion"], "1.3.0");
+    EXPECT_EQ(h["protocolVersion"], "1.4.0");
     ASSERT_TRUE(h.contains("features"));
     EXPECT_EQ(h["features"], json::array({"alarms"}));
     src.has = false;

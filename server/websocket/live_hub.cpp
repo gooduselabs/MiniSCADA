@@ -115,6 +115,14 @@ void LiveHub::subscribeAlarmsLocked(uint64_t sid, Session& s, const std::string&
 }
 
 void LiveHub::startSnapshotLocked(uint64_t sid, Session& s, AlarmLiveSnapshot snap) {
+    // Feature 013: only the alarms the session may see.
+    if (s.grant && !s.grant->all && s.grant->alarm && snap.ids.size() == snap.instances.size()) {
+        std::vector<std::string> kept;
+        for (size_t i = 0; i < snap.instances.size(); ++i)
+            if (s.grant->alarmOk(snap.ids[i])) kept.push_back(std::move(snap.instances[i]));
+        snap.instances = std::move(kept);
+        snap.ids.clear();
+    }
     Session::SnapshotParts p;
     p.classes = std::move(snap.classes);
     p.areas = std::move(snap.areas);
@@ -228,8 +236,10 @@ void LiveHub::alarmTickLocked(int64_t) {
             startSnapshotLocked(kv.first, s, std::move(snap));
             continue;  // changes since are in the snapshot or come with the next batch
         }
-        for (const auto& c : b.changes)
+        for (const auto& c : b.changes) {
+            if (s.grant && !s.grant->alarmOk(c.id)) continue;  // feature 013
             s.alarmPending[c.id] = s.authenticated ? c.json : c.publicJson;
+        }
         if (s.snapshot) {  // parts first; the changes wait behind the last part
             sendSnapshotPartsLocked(kv.first, s);
             if (s.snapshot) continue;
@@ -238,10 +248,13 @@ void LiveHub::alarmTickLocked(int64_t) {
     }
 }
 
-void LiveHub::onOpen(uint64_t sid, bool authenticated) {
+void LiveHub::onOpen(uint64_t sid, bool authenticated, LiveGrantFn grant) {
     std::lock_guard<std::mutex> g(hubMu_);
     Session& s = sessions_[sid];
     s.authenticated = authenticated;
+    s.grantFn = std::move(grant);
+    if (s.grantFn) s.grant = s.grantFn();
+    s.nextGrantCheck = mono_() + kLiveGrantCheckMs;
     char buf[256];
     std::snprintf(buf, sizeof buf,
                   "{\"type\":\"hello\",\"protocolVersion\":\"%s\",\"serverVersion\":\"%s\","
@@ -267,12 +280,17 @@ void LiveHub::errorLocked(uint64_t sid, Session& s, const char* code, const std:
 void LiveHub::subscribeLocked(uint64_t sid, Session& s, const std::string& requestId,
                               const std::vector<std::string>& tags) {
     std::vector<size_t> idx;
-    std::vector<std::string> unknown;
+    std::vector<std::string> unknown, denied;
     std::vector<uint32_t> pos;
+    if (s.grantFn) s.grant = s.grantFn();  // feature 013: the access of now
     for (const auto& id : tags) {
         auto i = store_.indexOf(id);
         if (!i) {
             unknown.push_back(id);
+            continue;
+        }
+        if (s.grant && !s.grant->tag(*i)) {  // live 1.4.0: like unknown, without a value
+            if (std::find(denied.begin(), denied.end(), id) == denied.end()) denied.push_back(id);
             continue;
         }
         if (*i >= pos.size()) pos.resize(*i + 1, kNoPosition);
@@ -280,7 +298,7 @@ void LiveHub::subscribeLocked(uint64_t sid, Session& s, const std::string& reque
         pos[*i] = static_cast<uint32_t>(idx.size());
         idx.push_back(*i);
     }
-    if (idx.empty()) {
+    if (idx.empty() && denied.empty()) {
         errorLocked(sid, s, "NO_VALID_TAGS", "Không có Tag hợp lệ trong yêu cầu", requestId);
         return;
     }
@@ -309,8 +327,41 @@ void LiveHub::subscribeLocked(uint64_t sid, Session& s, const std::string& reque
         if (k) out += ',';
         appendJsonString(out, unknown[k]);
     }
-    out += "]}";
+    out += "]";
+    if (!denied.empty()) {
+        out += ",\"denied\":[";
+        for (size_t k = 0; k < denied.size(); ++k) {
+            if (k) out += ',';
+            appendJsonString(out, denied[k]);
+        }
+        out += "]";
+    }
+    out += "}";
     sendLocked(sid, s, std::move(out));
+}
+
+// Feature 013: about once a second, the access of each session again. Another fingerprint: the
+// Tags it lost get no more deltas (their positions stay, so the others keep theirs), the alarms it
+// lost no more changes, and the page is told to read its access again.
+void LiveHub::grantTickLocked(int64_t monoNow) {
+    for (auto& kv : sessions_) {
+        Session& s = kv.second;
+        if (!s.grantFn || s.dead || monoNow < s.nextGrantCheck) continue;
+        s.nextGrantCheck = monoNow + kLiveGrantCheckMs;
+        LiveGrantPtr now = s.grantFn();
+        if (now == s.grant) continue;
+        const bool changed = !now || !s.grant || now->fingerprint != s.grant->fingerprint;
+        s.grant = std::move(now);
+        if (!changed) continue;
+        if (s.grant && !s.grant->all) {
+            for (size_t k = 0; k < s.tags.size(); ++k)
+                if (!s.grant->tag(s.tags[k]) && s.tags[k] < s.positionOf.size())
+                    s.positionOf[s.tags[k]] = kNoPosition;
+            for (auto it = s.alarmPending.begin(); it != s.alarmPending.end();)
+                it = s.grant->alarmOk(it->first) ? std::next(it) : s.alarmPending.erase(it);
+        }
+        sendLocked(kv.first, s, "{\"type\":\"access-changed\"}");
+    }
 }
 
 void LiveHub::onMessage(uint64_t sid, const char* data, size_t len) {
@@ -413,6 +464,7 @@ void LiveHub::tick(int64_t commitMono) {
     const int64_t now = clock_();
     const int64_t monoNow = mono_();
     const int64_t commit = commitMono != 0 ? commitMono : monoNow;
+    grantTickLocked(monoNow);
     const std::vector<size_t> dirty = store_.takeDirty();
     const bool anySubscribed = std::any_of(sessions_.begin(), sessions_.end(), [](const auto& kv) {
         return kv.second.subscribed && !kv.second.dead;

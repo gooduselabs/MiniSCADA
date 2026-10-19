@@ -36,6 +36,10 @@ class HistoryApi {
         // Test hook: runs on the query thread before the query; sees the cancel flag (set when the
         // client left).
         std::function<void(const std::atomic<bool>&)> testHold;
+        // Feature 013 (contracts/admin-api.md §6): the Tags of history(P) of the request's person;
+        // a Tag outside it is left out, a request with only such Tags is 403 ACCESS_DENIED, the
+        // catalog lists only the allowed Tags (and the groups that have some). Empty: every Tag.
+        std::function<std::function<bool(const std::string& tag)>(const GateDecision&)> tagFilter;
     };
 
     explicit HistoryApi(Options opt);
@@ -48,7 +52,8 @@ class HistoryApi {
     const Options& options() const { return opt_; }
 
    private:
-    int catalogJson(mg_connection* c, bool close);
+    int catalogJson(mg_connection* c, const GateDecision& d, bool close);
+    std::function<bool(const std::string&)> filterOf(const GateDecision& d) const;
     int series(mg_connection* c, const GateRequest& r, const GateDecision& d, bool close);
     int aggregate(mg_connection* c, const GateRequest& r, const GateDecision& d, bool close);
     int rows(mg_connection* c, const GateRequest& r, const GateDecision& d, bool close);

@@ -24,6 +24,7 @@ struct mg_context;
 namespace mat {
 
 class ViewerGate;
+struct RequestOrigin;
 
 class CivetLiveTransport : public LiveTransport {
    public:
@@ -40,6 +41,9 @@ class CivetLiveTransport : public LiveTransport {
         // Security review of 011 (M1): sessions at once from one source address; 0: no share
         // (only maxClients). The runtime passes maxLiveClientsPerSource of runtime.json.
         size_t maxClientsPerSource = 0;
+        // Feature 013 (live 1.4.0): what a connection may receive, from its request (the cookie or
+        // the token it came with, or none). Empty: everything.
+        std::function<LiveGrantFn(const RequestOrigin&)> grantOf;
     };
     using Clock = std::function<int64_t()>;  // monotonic ms
 
