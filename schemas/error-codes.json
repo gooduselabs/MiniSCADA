@@ -864,56 +864,56 @@
       "http": null,
       "group": "screens",
       "message": "Bố cục lưới phải có đúng 12 cột (mode grid)",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
       "code": "E_LAYOUT_ID",
       "http": null,
       "group": "screens",
       "message": "Id hàng hoặc ô của bố cục lưới sai dạng hoặc bị trùng",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
       "code": "E_LAYOUT_ITEM_DUP",
       "http": null,
       "group": "screens",
       "message": "Một component nằm ở nhiều ô của bố cục lưới",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
       "code": "E_LAYOUT_ITEM_POS",
       "http": null,
       "group": "screens",
       "message": "Component của màn hình lưới có tọa độ, hoặc component của màn hình tự do thiếu tọa độ",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
       "code": "E_LAYOUT_ITEM_REF",
       "http": null,
       "group": "screens",
       "message": "Ô của bố cục lưới trỏ tới component không có trên màn hình",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
       "code": "E_LAYOUT_LIMIT",
       "http": null,
       "group": "screens",
       "message": "Bố cục lưới quá 100 hàng, hoặc một hàng không có ô hay có quá 12 ô",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
       "code": "E_LAYOUT_SPAN",
       "http": null,
       "group": "screens",
       "message": "Độ rộng ô ngoài 1 đến 12 cột, khoảng trống trước ô ngoài 0 đến 11, hoặc tổng các ô của một hàng quá 12 cột",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
       "code": "E_LAYOUT_VERSION",
       "http": null,
       "group": "screens",
       "message": "Bố cục lưới và chủ đề cần project định dạng 1.1 và runtime 1.1.0 trở lên",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
       "code": "E_LIMIT",
@@ -3066,7 +3066,7 @@
       "http": null,
       "group": "screens",
       "message": "Component của màn hình lưới không nằm trong ô nào nên không hiển thị",
-      "usedIn": ["packages/project-schema"]
+      "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
       "code": "W_LOGIC_DISABLED",

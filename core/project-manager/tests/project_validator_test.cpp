@@ -283,7 +283,8 @@ TEST(ProjectValidator02, RuntimeVersionIsAParameter) {
     EXPECT_TRUE(codes.count("E_RUNTIME_TOO_OLD")) << resultJson(old);
 }
 
-// T191: build 1.0.0-rc.1; feature 012: 1.1.0-alpha.1. minRuntimeVersion compares the numbers only, so 1.0 and 1.1 projects run.
+// T191: build 1.0.0-rc.1; feature 012: 1.1.0-alpha.1. minRuntimeVersion compares the numbers
+// only, so 1.0 and 1.1 projects run.
 TEST(ProjectValidator02, DefaultRuntimeVersionIs110Alpha1) {
     EXPECT_STREQ(kRuntimeVersion, "1.1.0-alpha.1");  // feature 012: format 1.1
     EXPECT_EQ(compareSemver("1.1.0", kRuntimeVersion), 0);

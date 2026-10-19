@@ -24,6 +24,7 @@
 #include "core/project-manager/rules_02.hpp"
 #include "core/project-manager/rules_03.hpp"
 #include "core/project-manager/rules_10.hpp"
+#include "core/project-manager/rules_11.hpp"
 #include "valijson/adapters/nlohmann_json_adapter.hpp"
 #include "valijson/schema.hpp"
 #include "valijson/schema_parser.hpp"
@@ -704,9 +705,10 @@ void loadScreens(Checker& c, const json& project, std::vector<ScreenInput>& scre
     }
 }
 
-// Which schema set the project asks for: 1.0.x in project.json -> 10, 0.6.x -> 6, 0.5.x -> 5, 0.4.x
-// -> 4, 0.3.x -> 3, 0.2.x -> 2; anything else (including a file that does not parse, 1.1 and
-// later) -> the frozen 0.1 set, 1.
+// Which schema set the project asks for: 1.0.x and 1.1.x in project.json -> 10 (the 1.x family
+// shares the schemas at the root, feature 012), 0.6.x -> 6, 0.5.x -> 5, 0.4.x -> 4, 0.3.x -> 3,
+// 0.2.x -> 2; anything else (including a file that does not parse, 1.2 and later) -> the frozen 0.1
+// set, 1.
 int schemaSetOf(const std::string& projectDir) {
     std::string text;
     if (readContained(projectDir, "project.json", text) != ReadStatus::Ok) return 1;
@@ -719,13 +721,14 @@ int schemaSetOf(const std::string& projectDir) {
         !j["schemaVersion"].is_string())
         return 1;
     const std::string v = j["schemaVersion"];
-    for (const int set : {10, 6, 5, 4, 3, 2}) {
-        const std::string prefix = set == 10 ? "1.0." : "0." + std::to_string(set) + ".";
+    for (const int set : {11, 10, 6, 5, 4, 3, 2}) {
+        const std::string prefix =
+            set >= 10 ? "1." + std::to_string(set - 10) + "." : "0." + std::to_string(set) + ".";
         if (v.size() <= prefix.size() || v.compare(0, prefix.size(), prefix) != 0) continue;
         bool digits = true;
         for (size_t i = prefix.size(); i < v.size(); ++i)
             if (v[i] < '0' || v[i] > '9') digits = false;
-        if (digits) return set;
+        if (digits) return set == 11 ? 10 : set;
     }
     return 1;
 }
@@ -1124,6 +1127,8 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
         if (v10) {
             rules10.after(errs, warns);
             for (auto& e : errs10) errs.push_back(std::move(e));
+            // the 1.x family: grid layout, theme (feature 012, rules_11)
+            runRules11(project, in.screens, errs, warns);
         }
         for (auto& e : errs) c.errors.push_back(std::move(e));
         for (auto& w : warns) c.warnings.push_back(std::move(w));
@@ -1198,7 +1203,10 @@ bool LoadedProject::is05() const { return versionIs(project, "0.5.") || is06(); 
 
 bool LoadedProject::is06() const { return versionIs(project, "0.6.") || is10(); }
 
-bool LoadedProject::is10() const { return versionIs(project, "1.0."); }
+// 1.1 (feature 012) keeps everything of 1.0
+bool LoadedProject::is10() const {
+    return versionIs(project, "1.0.") || versionIs(project, "1.1.");
+}
 
 std::set<std::string> LoadedProject::allowlist() const {
     std::set<std::string> out;
