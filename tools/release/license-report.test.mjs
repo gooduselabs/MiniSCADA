@@ -57,6 +57,7 @@ test('chính sách license: cho phép, có điều kiện, từ chối, không r
     ['CDLA-Permissive-2.0', 'allowed'],
     ['BlueOak-1.0.0', 'allowed'],
     ['LicenseRef-Public-Domain', 'allowed'],
+    ['OFL-1.1', 'allowed'], // phông chữ (Inter, feature 012): được nhúng và phân phối kèm phần mềm
     ['MPL-2.0', 'conditional'],
     ['GPL-3.0-only', 'denied'],
     ['GPL-2.0-or-later', 'denied'],
