@@ -365,9 +365,11 @@ def sc_busy(lab):
 def sc_health(lab):
     before = lab.tree().get('releaseSeq')
     token = lab.login()
-    t0 = time.time()
     s, b = lab.upload('broken.matupdate', token)
     uid = b.get('updateId')
+    # spec 011 US5 AC5: <= 90 s "since the switch" - from the apply, not from the upload (sending and verifying the
+    # package is not part of the window; it grows with the size of the binary)
+    t0 = time.time()
     a, _ = lab.req('POST', '/api/v1/system/update/apply', {'updateId': uid, 'password': lab.pw['admin']}, token)
     end = time.time() + 200
     while time.time() < end and lab.read_last().get('updateId') != uid:
