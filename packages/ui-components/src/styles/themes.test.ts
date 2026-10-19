@@ -1,6 +1,7 @@
 // Ba chủ đề vivid, industrial, dark (feature 012, contracts/ui-theme.md, FR-029, FR-032, FR-036, SC-007): đủ token ở mọi
 // chủ đề, mọi cặp chữ/nền ≥ 4,5:1, nét biểu đồ và màu alarm trên bề mặt ≥ 3:1, industrial giữ đúng giá trị cũ (và khớp
 // token của Studio), Inter tự chứa, `--mat-motion` = 0ms khi giảm chuyển động.
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -209,6 +210,13 @@ describe('chủ đề: đủ token và tương phản (FR-032, SC-007)', () => {
 });
 
 describe('chọn chủ đề và nạp (contracts/ui-theme.md §1)', () => {
+  it('themes/*.css và fonts/ khớp đầu ra của tools/gen-theme-tokens.mjs (không sửa tay)', () => {
+    const script = resolve(__dirname, '../../../../tools/gen-theme-tokens.mjs');
+    expect(() =>
+      execFileSync(process.execPath, [script, '--check'], { stdio: 'pipe' }),
+    ).not.toThrow();
+  });
+
   it('vivid và dark chỉ áp khi đặt data-mat-theme; industrial là mặc định (:where(:root))', () => {
     expect(THEMES.industrial).toContain(':where(:root) {');
     expect(THEMES.vivid).not.toContain(':where(:root) {');
@@ -239,19 +247,23 @@ describe('chọn chủ đề và nạp (contracts/ui-theme.md §1)', () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
 
-  it('phông Inter tự chứa: @font-face latin và latin-ext, woff2 cục bộ, font-display swap, không URL ngoài', () => {
+  // latin-ext của Inter thiếu U+1EA0-1EF1 (ạ, ả, ấ, …): cần thêm tập vietnamese thì mới đủ dấu (FR-036).
+  it('phông Inter tự chứa: @font-face latin, latin-ext, vietnamese, woff2 cục bộ, font-display swap, không URL ngoài', () => {
     for (const css of [TOKENS_FILE, TOKENS_CSS]) {
       const faces = [...css.matchAll(/@font-face\s*{[^}]*}/g)].map((m) => m[0]);
-      expect(faces).toHaveLength(2);
+      expect(faces).toHaveLength(3);
       for (const f of faces) {
         expect(f).toContain("font-family: 'Inter Variable'");
         expect(f).toContain('font-display: swap');
         expect(f).toMatch(
-          /url\([^)]*inter-latin(-ext)?-wght-normal[^)]*\.woff2[^)]*\) format\('woff2'\)/,
+          /url\([^)]*inter-(latin|latin-ext|vietnamese)-wght-normal[^)]*\.woff2[^)]*\) format\('woff2'\)/,
         );
         expect(f).toMatch(/unicode-range:/);
       }
-      expect(faces.join('')).toContain('inter-latin-ext-wght-normal');
+      const all = faces.join('');
+      expect(all).toContain('inter-latin-ext-wght-normal');
+      expect(all).toContain('inter-vietnamese-wght-normal');
+      expect(all).toContain('U+1EA0-1EF9');
       expect(css).not.toMatch(/url\(\s*'?(https?:)?\/\//);
     }
   });

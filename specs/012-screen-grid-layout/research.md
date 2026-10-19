@@ -31,6 +31,7 @@ Phiên bản thư viện lấy bằng `npm view` ngày 2026-10-19. Kích thướ
 ## R4. Phông chữ
 
 - **Decision**: `@fontsource-variable/inter` 5.3.0 (OFL-1.1), chỉ chép `inter-latin-wght-normal.woff2` và `inter-latin-ext-wght-normal.woff2` (đủ dấu tiếng Việt) vào tài nguyên tĩnh; `font-display: swap`; dự phòng `Segoe UI`, `system-ui`.
+- **Sửa khi làm T039 (2026-10-19)**: latin-ext của Inter **không** có U+1EA0-1EF1 (ạ, ả, ấ, ầ, …), nên thêm `inter-vietnamese-wght-normal.woff2` (10 KB). Ba tệp (latin 48 KB, latin-ext 85 KB, vietnamese 10 KB) chép vào `packages/ui-components/src/styles/fonts/` kèm `LICENSE-Inter.txt`; trình duyệt chỉ tải khi chủ đề dùng Inter (vivid, dark) và chỉ tập có ký tự cần.
 - **Rationale**: giống nhau trên mọi máy vận hành; số dễ đọc (tabular-nums).
 - **Alternatives**: phông hệ thống (khác nhau giữa máy, hiện đang dùng).
 

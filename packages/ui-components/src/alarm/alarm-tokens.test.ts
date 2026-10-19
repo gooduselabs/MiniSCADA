@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-const TOKENS_CSS = readFileSync(resolve(__dirname, '../styles/tokens.css'), 'utf8');
+// Giá trị industrial (mặc định) nằm ở themes/industrial.css từ feature 012 (tokens.css chỉ còn @import).
+const TOKENS_CSS = readFileSync(resolve(__dirname, '../styles/themes/industrial.css'), 'utf8');
 
 const COLORS = ['red', 'orange', 'amber', 'blue', 'purple', 'teal', 'gray', 'green'] as const;
 
