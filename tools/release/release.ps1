@@ -154,7 +154,6 @@ Invoke-ReleaseStep 3 'dựng, ký và kiểm Studio' {
     $bundle = Join-Path $env:CARGO_TARGET_DIR 'release/bundle/nsis'
     $setup = Get-ChildItem -LiteralPath $bundle -Filter '*-setup.exe' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     if (-not $setup) { Stop-Release 'STUDIO_BUILD' "không thấy bộ cài trong $bundle" }
-    $exe = Join-Path $env:CARGO_TARGET_DIR 'release/mat-studio.exe'
     # Tauri ký qua bundle.windows.signCommand (T093). Chưa cấu hình thì ký bộ cài ở đây (trình gỡ bên trong chưa ký).
     $s = Get-AuthenticodeSignature -LiteralPath $setup.FullName
     if ($s.Status.ToString() -eq 'NotSigned') {
@@ -165,7 +164,12 @@ Invoke-ReleaseStep 3 'dựng, ký và kiểm Studio' {
         if ($LASTEXITCODE -ne 0) { Stop-Release 'SIGN' 'sign.ps1 từ chối hoặc lỗi' }
     }
     Copy-Item -LiteralPath $setup.FullName -Destination $stage
-    $script:studioExe = $exe
+    # mat-studio.exe và uninstall.exe lấy từ bản cài im lặng (bản trong cây dựng chưa ký); uninstall.exe chưa ký là lỗi.
+    $ex = Expand-MatStudioInstall -Setup $setup.FullName -OutDir (Get-MatBuildDir (Join-Path 'release-staging' "$Version.studio-files"))
+    $un = Get-MatSignatureInfo -Path $ex.uninstallExe
+    if (-not $un.verified) { Stop-Release 'SIGN' "uninstall.exe không có chữ ký hợp lệ (trạng thái $($un.status)); NSIS không báo lỗi khi ký trình gỡ hỏng" }
+    Write-Host ("OK  uninstall.exe: {0}, {1}" -f $un.status, $un.cert.thumbprint)
+    $script:studioExe = $ex.studioExe
 }
 
 Invoke-ReleaseStep 4 'gói runtime armhf' {

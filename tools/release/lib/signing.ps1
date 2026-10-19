@@ -250,3 +250,25 @@ function Write-MatSigningLog([string]$LogPath, $Entry) {
     $json = Protect-MatSecret (ConvertTo-Json -InputObject @($list.ToArray()) -Depth 8)
     [IO.File]::WriteAllText($LogPath, $json + "`n", (New-Object System.Text.UTF8Encoding $false))
 }
+
+# Cài im lặng bộ cài NSIS vào thư mục tạm, chép mat-studio.exe và uninstall.exe ra $OutDir rồi gỡ cài (T093; research R15
+# T010): target/release/mat-studio.exe trong cây dựng là bản CHƯA ký, và NSIS không báo lỗi khi ký uninstall.exe hỏng.
+# Trả { studioExe, uninstallExe }. Cài theo currentUser nên không cần quyền admin; gỡ cài xong không để lại tệp.
+function Expand-MatStudioInstall([string]$Setup, [string]$OutDir) {
+    $inst = Join-Path $MatTemp ('mat-studio-inst-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+    try {
+        # /D= phải là đối số cuối, không nháy (quy ước NSIS).
+        $p = Start-Process -FilePath $Setup -ArgumentList @('/S', "/D=$inst") -Wait -PassThru
+        if ($p.ExitCode -ne 0) { throw "cài im lặng mã $($p.ExitCode)" }
+        foreach ($n in 'mat-studio.exe', 'uninstall.exe') {
+            if (-not (Test-Path -LiteralPath (Join-Path $inst $n))) { throw "bản cài không có $n" }
+            Copy-Item -LiteralPath (Join-Path $inst $n) -Destination (Join-Path $OutDir $n) -Force
+        }
+    } finally {
+        $un = Join-Path $inst 'uninstall.exe'
+        if (Test-Path -LiteralPath $un) { Start-Process -FilePath $un -ArgumentList @('/S') -Wait | Out-Null; Start-Sleep -Seconds 3 }
+        Remove-Item -LiteralPath $inst -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    return [pscustomobject]@{ studioExe = (Join-Path $OutDir 'mat-studio.exe'); uninstallExe = (Join-Path $OutDir 'uninstall.exe') }
+}
