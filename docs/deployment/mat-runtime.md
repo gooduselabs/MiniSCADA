@@ -144,6 +144,8 @@ SQL Server: runtime tự sinh một `freetds.conf` cho các kết nối của n�
 
 Từ 0.4.0, ngoài trang xem HTTP 8080 (không đổi), runtime mở **HTTPS 8443** cho Studio: đăng nhập, nạp xuống, đọc lên, chẩn đoán, audit. Mọi API kỹ thuật chỉ có ở HTTPS; qua HTTP trả 403 `HTTPS_REQUIRED`. Khóa trong `runtime.json`: xem `specs/005-device-online/contracts/device-config.md` §1 (`httpsPort`, `httpsThreads`, `discoveryEnabled`, `discoveryPort`, `deviceName`, `projectStoreDir`, `projectBackups`, `usersFile`, `auditRetentionDays`, `auditMaxMB`).
 
+TLS 1.2 và 1.3, chỉ bộ mã AEAD; máy chủ chọn theo thứ tự của nó, **ChaCha20-Poly1305 trước** AES-GCM ở cả hai phiên bản (Cortex-A7 của BL335 không có lệnh AES; AES-GCM chỉ dùng khi client không có ChaCha20). Không có khóa cấu hình; chính sách nằm trong `third_party/mbedtls-config/mat_mbedtls_config.h`, lý do và số đo ở ADR-010 (mục "Bổ sung 2026-10-19"). Kiểm từ máy trạm: `openssl s_client -connect <IP>:8443 -brief </dev/null` in `Ciphersuite: TLS_CHACHA20_POLY1305_SHA256`.
+
 ### Chứng chỉ và fingerprint
 
 Lần chạy đầu runtime tự sinh khóa và chứng chỉ riêng (`/var/lib/mat-runtime/tls/server.pem`, `0600`). Chứng chỉ tự ký nên Studio **ghim** theo fingerprint SHA-256, so một lần khi kết nối lần đầu (TOFU):

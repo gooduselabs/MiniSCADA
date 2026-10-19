@@ -16,7 +16,7 @@ Rà soát license theo Constitution ("Ràng buộc công nghệ"): không thư v
 
 Ba thư viện của feature 005 (rà ngày 2026-10-11, task T001–T003; quy tắc phát hành trước 2026-09-27 của [ADR-009](../docs/adr/009-studio-ui-stack.md)):
 
-- **Mbed TLS:** 3.6.7 là bản 3.6.x mới nhất. Trang security advisories mới nhất là đợt 2026-07, đều đã vá trong 3.6.7 (advisory Everest CVE-2026-54434 chỉ ảnh hưởng 4.1.0, và cấu hình không bật Everest). Thư viện và mọi nơi dùng phải biên dịch cùng một `MBEDTLS_CONFIG_FILE` (target `mat_mbedtls` truyền cho người dùng). Khi nâng: chạy lại `mbedtls_config_test` và test HTTPS.
+- **Mbed TLS:** 3.6.7 là bản 3.6.x mới nhất. Trang security advisories mới nhất là đợt 2026-07, đều đã vá trong 3.6.7 (advisory Everest CVE-2026-54434 chỉ ảnh hưởng 4.1.0, và cấu hình không bật Everest). Thư viện và mọi nơi dùng phải biên dịch cùng một `MBEDTLS_CONFIG_FILE` (target `mat_mbedtls` truyền cho người dùng). Khi nâng: áp lại "mAT patch 1" (mục "Bản vá cục bộ"), chạy lại `mbedtls_config_test` và test HTTPS.
 - **phc-winner-argon2:** không tìm thấy CVE nào (Debian security tracker, GitHub security advisories, tìm kiếm web). Từ tag tới nhánh chính chỉ có 27 commit sửa build, README, URL. PR mở #299 (ghi tràn bộ đệm) chỉ ở công cụ dòng lệnh `run.c`, không chép vào đây. PR #301 chỉ đổi thứ tự kiểm `lanes`, lỗi trả về khác, không có lỗi bộ nhớ.
 - **miniz:** 3.1.2 sửa vòng lặp vô hạn của `tinfl` (`code_len == 0`) và lỗi tràn offset của central directory trong API zip; repo không có security advisory. Mã của từng file nguồn của tag 3.1.2 nằm nguyên văn trong bản amalgamation.
 
@@ -55,6 +55,11 @@ Ba thư viện của feature 005 (rà ngày 2026-10-11, task T001–T003; quy t�
      - **Làm gì:** hai callback mới `mat_accept(ctx, peer)` và `mat_release(ctx, peer)`. Luồng master gọi `mat_accept` ngay sau `accept()` và `check_acl`, trước hàng đợi và trước mọi bắt tay; trả 0 thì đóng socket ngay. Worker gọi `mat_release` đúng một lần cho mỗi socket đã nhận, ở cuối vòng xử lý, bất kể đường đi (request xong, bắt tay lỗi, WebSocket đóng, server dừng). Không gán callback thì như upstream. `server/http/web_contexts.cpp` nối hai callback vào `ConnLimiter` (`server/http/conn_limit.hpp`) dùng chung cho context HTTP và HTTPS.
      - **Test:** `server/tests/conn_limit_test.cpp`: HTTP, HTTPS, WebSocket cộng chung, kết nối vượt bị đóng ≤ 500 ms; 40 kết nối TLS im lặng từ một IP: request từ IP khác 13 ms (trước vá: chờ tới khi bắt tay hết hạn 10 s, test đỏ); bắt tay lỗi và kết nối đóng trả lại chỗ (bộ đếm về 0).
 - Khi nâng cấp CivetWeb: áp lại năm bản vá; chạy lại `server/websocket/tests`, `https_handshake_test`, `conn_limit_test` và `tools/measure/http-check.mjs`.
+- **Mbed TLS 3.6.7** (`mbedtls/library/ssl_tls13_server.c`, đánh dấu "mAT patch 1", feature 011, 2026-10-19):
+  1. `ssl_tls13_select_ciphersuite` chọn bộ mã TLS 1.3 theo thứ tự của máy chủ (`MBEDTLS_SSL_CIPHERSUITES`, ChaCha20-Poly1305 trước) thay vì bộ đầu tiên của client; chỉ có tác dụng khi cấu hình định nghĩa `MAT_SSL_TLS13_SERVER_ORDER` (`mbedtls-config/mat_mbedtls_config.h`), không định nghĩa thì như upstream.
+     - **Vì sao:** Cortex-A7 của BL335 không có lệnh AES; Node/OpenSSL (AES-256-GCM đầu) và Chrome trên máy có AES (AES-128-GCM đầu) khiến máy chủ chạy AES bằng phần mềm. L1 với 5 WebSocket TLS: 36,2 % một lõi so với 28,9 % khi chỉ HTTP (ngân sách 30 %). Chi tiết: ADR-010, mục "Bổ sung 2026-10-19".
+     - **Test:** `HttpsTlsPolicy.Tls13PicksChaCha20InTheServersOrder` (`server/tests/https_handshake_test.cpp`), `MbedtlsConfig.ChaCha20ComesFirstInEachVersion`.
+  - Khi nâng Mbed TLS: áp lại bản vá, chạy lại hai test trên.
 
 ## Thư viện client DB nạp động (feature 003, không vendored, không link)
 
