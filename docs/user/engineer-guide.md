@@ -110,7 +110,7 @@ Inspector có các tab **Chung**, **Hiển thị**, **Gắn Tag**, **Sự kiện
 
 **Gắn Tag:** kéo Tag từ Details thả vào ô của widget, hoặc **Chọn Tag…**. **Dùng đơn vị, bảng, giới hạn của Tag** điền sẵn đơn vị và giới hạn.
 
-**Sự kiện** "Khi bấm": **Ghi giá trị**, **Đảo giá trị**, **Ghi xung**, **Chuyển màn hình**, **Mở popup**, **Đóng popup**. **Hộp xác nhận** bắt buộc với mọi lệnh ghi giá trị số; chỉ nút hoặc công tắc BOOL mới được bỏ xác nhận. **Vai trò tối thiểu** mặc định là `operator`; đặt `engineer` cho chỉnh thông số (ví dụ "Ngưỡng mức cao" trong `training-demo`).
+**Sự kiện** "Khi bấm": **Ghi giá trị**, **Đảo giá trị**, **Ghi xung**, **Chuyển màn hình**, **Mở popup**, **Đóng popup**. **Hộp xác nhận** bắt buộc với mọi lệnh ghi giá trị số; chỉ nút hoặc công tắc BOOL mới được bỏ xác nhận. **Vai trò tối thiểu** mặc định là `operator`; đặt `engineer` cho chỉnh thông số (ví dụ "Ngưỡng mức cao" trong `training-demo`). Project định dạng 1.1 có hai mức riêng để xem và để thao tác (mục 6.3).
 
 **Nút xung:** runtime giữ nhịp bật rồi nhả. Chương trình PLC vẫn phải tự xóa bit lệnh xung sau một thời gian (ví dụ gấp đôi độ dài xung): runtime nhả lại xung dở khi khởi động lại, nhưng không thay được bảo vệ trong PLC.
 
@@ -135,6 +135,33 @@ Lỗi thường gặp: `E_LAYOUT_SPAN` (tổng các ô của hàng quá 12 cột
 ### 6.2. Chủ đề giao diện
 
 **Thiết lập project** → **Chủ đề giao diện**: **Sáng đa sắc** (mặc định của project mới), **Công nghiệp trầm** (giao diện cũ, mặc định của project nâng cấp), **Tối**. Trang vận hành và xem trước màn hình đổi theo; màu đặt riêng cho widget vẫn giữ.
+
+<a id="help-security"></a>
+
+### 6.3. Bảo mật: vai trò tối thiểu và phân quyền trên thiết bị
+
+Project định dạng 1.1. Kỹ sư chỉ đặt **mặc định theo vai trò** trong project; quyền theo từng người dùng và nhóm do quản trị viên đặt **trên thiết bị** (trang Quản trị của trang vận hành, [admin-guide.md](admin-guide.md#quan-tri-web)), **không** nằm trong project và không đi theo gói `.matscada`. Nạp xuống project mới không xóa quy tắc của quản trị viên.
+
+**Component:** chọn component, Inspector, tab **Bảo mật**:
+
+- **Vai trò tối thiểu để xem**: người có vai trò thấp hơn không thấy component (ô lưới để trống) và không nhận giá trị Tag của nó. Mặc định **Xem (viewer)**.
+- **Vai trò tối thiểu để thao tác**: chỉ có ở component điều khiển (nút bấm, công tắc, đặt giá trị, thanh trượt, chọn từ danh sách, SVG có sự kiện ghi); không thấp hơn mức xem, không thể là viewer. Mặc định **Vận hành (operator)**. Component chỉ hiển thị báo "Component chỉ hiển thị (không có điều khiển hay sự kiện ghi) nên không có mức thao tác.".
+- Dòng nhắc trong tab: "Đây là mức mặc định khi thiết bị chưa có quy tắc quyền. Quản trị viên phân quyền theo người dùng và nhóm trên trang Quản trị của thiết bị, nhưng không hạ được dưới mức này. Máy chủ kiểm quyền ở mọi lệnh ghi."
+
+**Màn hình và popup:** **Thuộc tính màn hình…** → **Vai trò tối thiểu để xem**: người có vai trò thấp hơn không thấy màn hình trong menu và không mở được. Popup đặt như màn hình; nút mở popup mà người dùng không xem được thì khóa ("Cần quyền xem cửa sổ này").
+
+Project định dạng 1.0 trở về trước giữ một mức **Vai trò tối thiểu** ở tab Bảo mật (chỉ khóa điều khiển trên giao diện). Ở project 1.1, `minRole` cũ vẫn được đọc như mức thao tác.
+
+**Định danh ổn định:** quy tắc của quản trị viên trỏ tới màn hình và component bằng **mã** (`id`): `screen:<mã màn hình>`, `item:<mã màn hình>/<mã component>`. Đổi mã một màn hình hay component rồi nạp xuống thì quy tắc cũ thành **mồ côi** (không có hiệu lực; trang Quản trị báo và cho dọn), component mang mã mới dùng mặc định của project cho tới khi quản trị viên đặt lại quyền. Đổi tên hiển thị, nhãn, vị trí, ô lưới không ảnh hưởng. Trước khi đổi mã của nút điều khiển đã được phân quyền: báo quản trị viên.
+
+**Lỗi kiểm tra:**
+
+| Mã | Nghĩa | Cách sửa |
+|---|---|---|
+| `E_SECURITY_LEVEL` | vai trò tối thiểu sai: mức thao tác là viewer, thấp hơn mức xem hay khác `minRole` cũ, hoặc đặt mức mới ở project định dạng 1.0 | chọn lại mức; nâng project lên 1.1 trước khi dùng mức xem |
+| `E_SECURITY_ITEM` | đặt mức thao tác cho component không thao tác được (widget chỉ hiển thị, SVG không có sự kiện ghi) | bỏ mức thao tác |
+
+Studio và runtime dùng cùng luật kiểm: project báo lỗi ở Studio thì thiết bị cũng từ chối khi nạp xuống.
 
 ## 7. Đồ họa SVG
 
@@ -375,6 +402,8 @@ Kỹ sư không cập nhật runtime: việc này cần tài khoản administrat
 | `E_LOGIC_WRITE_UNDECLARED` | hành động **Ghi PLC** trỏ mục chưa khai | thêm mục ở nhóm **Ghi PLC** (mục 9) |
 | Ghi bị REJECTED `OWNED_BY_LOGIC` | ghi tay vào Tag logic `LOGIC.…` | Tag logic chỉ đọc; đổi luật hoặc dùng Tag nội bộ khác |
 | Luật chạy nhưng PLC không đổi | thiết bị tắt ghi từ logic (chip "Ghi PLC: tắt", `LOGIC_WRITES_OFF`) | quản trị viên bật `logic.writes` sau khi duyệt danh sách ghi |
+| `E_SECURITY_LEVEL`, `E_SECURITY_ITEM` | vai trò tối thiểu sai, hoặc mức thao tác ở component chỉ hiển thị | mục 6.3 |
+| Operator báo nút khóa "Cần quyền thao tác" dù vai trò đủ | quản trị viên đã giới hạn thao tác component đó cho nhóm khác, hoặc quy tắc mồ côi sau khi đổi mã component | hỏi quản trị viên (trang Quản trị, **Xem với tư cách**); không đổi mã component đã phân quyền (mục 6.3) |
 | `E_TEMPLATE_TAG_REF`, `E_POPUP_ARGS` | tham số template hoặc `args` của popup cho Tag không có | sửa giá trị tham số hoặc thêm Tag |
 
 ## 14. Bảng tác vụ kiểm tra
@@ -389,7 +418,7 @@ Mỗi tác vụ dùng `projects/training-demo` và PLC giả lập (mục 1). Gi
 | K4 | Thêm Tag ngoài | thêm `BOM.LOI2` kiểu BOOL, địa chỉ `HR12.4` | Tag xuất hiện; không lỗi |
 | K5 | Thêm Tag tính toán | thêm `BON.PHAN_TRAM_TRONG` = `100 - BON.MUC` | **Xem trước** cho giá trị đúng |
 | K6 | Dựng màn hình | thêm màn hình "Bơm", một **Đèn báo** gắn `BOM.LOI`, một **Công tắc** gắn `BOM.LENH_CHAY` | thấy trong xem trước; mục menu mới khi thêm vào Điều hướng |
-| K7 | Bảo mật nút | đặt **Vai trò tối thiểu** `engineer` cho công tắc vừa thêm | trên trang vận hành, tài khoản operator thấy "Cần quyền engineer" |
+| K7 | Bảo mật nút | đặt **Vai trò tối thiểu** `engineer` cho công tắc vừa thêm (project 1.1: **Vai trò tối thiểu để thao tác**, mục 6.3) | trên trang vận hành, tài khoản operator thấy "Cần quyền engineer" |
 | K8 | Nhập SVG | nhập một SVG bồn đơn giản, gắn **Mức chất lỏng** với `BON.MUC` | **Thử giá trị** 50 cho thấy nửa bồn |
 | K9 | Ghim chứng chỉ, đăng nhập | **Thiết bị trong mạng…**, so fingerprint, **Ghim và tiếp tục**, **Đăng nhập…** | thanh trạng thái "Online", viền cam |
 | K10 | Nạp xuống | **Nạp xuống…**, đọc xem trước, xác nhận | kết quả thành công; trang vận hành tự tải lại project mới |

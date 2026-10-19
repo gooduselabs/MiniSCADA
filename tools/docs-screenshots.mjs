@@ -4,7 +4,9 @@
 // giả của trang vận hành: apps/runtime-web/tests/e2e). Dữ liệu tất định: project mẫu trong projects/ (dashboard-demo,
 // svg-demo) và project mẫu của e2e trang vận hành; không cần Docker, không cần thiết bị.
 //
-// Dùng:   node tools/docs-screenshots.mjs [lọc tên ảnh] [--build] [--headful]
+// Dùng:   node tools/docs-screenshots.mjs [lọc] [--build] [--headful]
+//   lọc       khớp một phần tên cảnh (ví dụ `web-quyen`): chỉ chạy các cảnh đó, chụp mọi ảnh của chúng; không khớp tên
+//             cảnh nào thì là lọc theo tên ảnh (mọi cảnh vẫn chạy, chỉ ghi ảnh có tên chứa chuỗi lọc).
 //   --build   dựng lại hai bản build e2e (apps/studio/dist-e2e, apps/runtime-web/dist-e2e) trước khi chụp; thiếu thì tự dựng.
 // Biến môi trường: CHROME_PATH (Chrome/Edge/chrome-headless-shell); không đặt thì tìm ~/.cache/mat-chrome rồi Chrome cài sẵn.
 // Kết quả: docs/user/img/<tên>.png, khung 1366 × 768, theme sáng, giao diện tiếng Việt. Ảnh là giao diện web trong Chrome;
@@ -45,6 +47,9 @@ const { reportsProject } = await import(
   pathToFileURL(join(WEB, 'tests/e2e/history-projects.mjs')).href
 );
 const { gridDemo } = await import(pathToFileURL(join(WEB, 'tests/e2e/grid-fixture.mjs')).href);
+const { PASS, accessDemo, accessSeed, loginPage } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/access-fixture.mjs')).href
+);
 /** Đổi tên hiển thị của project mẫu e2e (bỏ chữ "e2e" trên thanh trên). */
 const renamed = (make, name) => () => {
   const p = make();
@@ -99,17 +104,19 @@ function chromePath() {
 
 function buildIfNeeded() {
   const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  for (const [dir, dist] of [
-    [STUDIO, STUDIO_DIST],
-    [WEB, WEB_DIST],
+  // Trang vận hành: thêm lượt `e2e-login` (trang /login của feature 013, chạy sau `e2e`, như `npm run e2e`).
+  for (const [dir, dist, modes, files] of [
+    [STUDIO, STUDIO_DIST, ['e2e'], ['index.html']],
+    [WEB, WEB_DIST, ['e2e', 'e2e-login'], ['index.html', 'login.html']],
   ]) {
-    if (args.includes('--build') || !existsSync(join(dist, 'index.html'))) {
+    if (args.includes('--build') || files.some((f) => !existsSync(join(dist, f)))) {
       console.log(`dựng bản e2e: ${dir}`);
-      execFileSync(npx, ['vite', 'build', '--mode', 'e2e', '--logLevel', 'error'], {
-        cwd: dir,
-        stdio: 'inherit',
-        shell: process.platform === 'win32',
-      });
+      for (const mode of modes)
+        execFileSync(npx, ['vite', 'build', '--mode', mode, '--logLevel', 'error'], {
+          cwd: dir,
+          stdio: 'inherit',
+          shell: process.platform === 'win32',
+        });
     }
   }
 }
@@ -742,8 +749,8 @@ const live = (page) =>
  * Project của trang vận hành: project mẫu e2e (apps/runtime-web/tests/e2e/fixture-project.mjs) bỏ các item chỉ để thử bảo
  * mật (chuỗi XSS, Tag lạ, màn hình hỏng), tên hiển thị gọn.
  */
-const tramBom = () => {
-  const p = dashboard();
+const tramBom = () => pruneDemo(dashboard());
+function pruneDemo(p) {
   p.active.project.projectName = 'Trạm bơm';
   const drop = { 'tong-quan': ['ghost', 'xss'], bom1: ['xssbtn'] };
   for (const [id, items] of Object.entries(drop)) {
@@ -762,6 +769,21 @@ const tramBom = () => {
   p.active.navigation = prune(p.active.navigation);
   p.active.project.navigation = prune(p.active.project.navigation);
   p.active.screens = p.active.screens.filter((x) => x.id !== 'hong');
+  return p;
+}
+
+/**
+ * Project của cảnh phân quyền (feature 013): project mẫu e2e của 013 (access-fixture.mjs) bỏ item thử bảo mật như trên;
+ * hàng nút đầu màn hình Bơm 1 cao hơn để thấy đủ dòng lý do khóa ("Cần quyền thao tác").
+ */
+const tramBomQuyen = () => {
+  const p = pruneDemo(accessDemo());
+  const f = p.files.get('screens/bom1.screen.json');
+  const tall = new Set(['run', 'start', 'auto', 'back']);
+  f.json = {
+    ...f.json,
+    items: f.json.items.map((i) => (tall.has(i.id) ? { ...i, height: 72 } : i)),
+  };
   return p;
 };
 
@@ -808,6 +830,103 @@ const webScenes = [
       await live(page);
       await sleep(4000);
       await shot('op-bo-cuc-luoi');
+    },
+  },
+  {
+    // feature 013: đăng nhập bắt buộc, component khóa do quyền, trang Quản trị. Runtime giả phân quyền của e2e
+    // (apps/runtime-web/tests/e2e/access-fake.mjs), kho mẫu accessSeed: vh1 nhóm Ca A, nút Chạy bơm chỉ Quản đốc thao tác.
+    name: 'web-quyen',
+    options: {
+      fixture: tramBomQuyen,
+      access: accessSeed(),
+      config: { viewerLogin: 'required' },
+      drift: false,
+    },
+    async run({ page, rt, shot }) {
+      const path = () => page.evaluate(() => location.pathname).catch(() => '?');
+      const tab = async (id) => {
+        await page.evaluate((h) => (location.hash = h), `#/quan-tri/${id}`);
+        await page.waitForSelector(`#ad-tab-${id}[aria-selected="true"]`);
+        await sleep(300);
+      };
+      const inPreview = (host, id) =>
+        page.waitForFunction(
+          (h, i) =>
+            Boolean(
+              document
+                .querySelector(h + ' mat-screen')
+                ?.shadowRoot?.querySelector('.item[data-item-id="' + i + '"]'),
+            ),
+          { timeout: 10000 },
+          host,
+          id,
+        );
+      // Liên kết trực tiếp khi chưa đăng nhập → trang đăng nhập (sẽ mở lại /bom1).
+      await page.goto(`${rt.httpsUrl}/#/bom1`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.login-card form');
+      await until(
+        async () => (await page.evaluate(() => document.body.innerText)).includes('Trạm bơm'),
+        'tên project',
+        5000,
+      ).catch(() => undefined);
+      await page.type('input[autocomplete="username"]', 'vh1');
+      await page.type('input[autocomplete="current-password"]', PASS.vh1);
+      await sleep(300);
+      await shot('op-dang-nhap-trang');
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+        page.keyboard.press('Enter'),
+      ]);
+      await waitDeep(page, 'mat-w-setpoint', 1, 10000);
+      await live(page);
+      await until(
+        async () =>
+          (await deepEval(
+            page,
+            '.item[data-item-id="run"] > *',
+            'const l = els[0] && els[0].shadowRoot.querySelector("[data-lock]"); return l ? l.getAttribute("data-lock") : null;',
+          )) === 'NO_PERMISSION',
+        'nút Chạy bơm khóa vì quyền',
+      );
+      await sleep(800);
+      await shot('op-can-quyen');
+      // Quản trị viên: đăng xuất vh1, đăng nhập quantri.
+      await page.click('#app-logout-btn');
+      await until(async () => (await path()) === '/login', 'về trang đăng nhập', 8000);
+      await loginPage(page, 'quantri', PASS.quantri);
+      await page.evaluate(() => (location.hash = '#/quan-tri/nguoi-dung'));
+      await page.waitForSelector('[data-user="vh1"]');
+      await sleep(600);
+      await shot('adm-quan-tri-nguoi-dung');
+      // Các tab quyền dài: khung cao hơn (1366 × 1100) để thấy đủ ma trận, khung "Ai được xem / thao tác".
+      await page.setViewport({ ...VIEWPORT, height: 1100 });
+      await tab('quyen-trang');
+      await page.waitForSelector('tr[data-resource="screen:bon-nuoc"]');
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await sleep(300);
+      await shot('adm-quyen-theo-trang');
+      await tab('quyen-thanh-phan');
+      await page.waitForSelector('#ad-comp-screen');
+      await page.select('#ad-comp-screen', 'bom1');
+      await inPreview('.ad-comp', 'run');
+      await page.waitForSelector('.ad-pick[data-pick="run"]');
+      await page.$eval('.ad-pick[data-pick="run"]', (e) => e.click());
+      await page.waitForSelector('.ad-inspector [data-level="operate"]');
+      await page.waitForSelector('.ad-who [data-who="vh1"]');
+      await page.$eval('.ad-inspector', (e) => e.scrollIntoView({ block: 'start' }));
+      await sleep(600);
+      await shot('adm-quyen-component');
+      await tab('xem-voi-tu-cach');
+      await page.select('#ad-viewas-user', 'vh1');
+      await page.$eval('[data-viewas-start]', (e) => e.click());
+      await page.waitForSelector('[data-banner="view-as"]');
+      await page.waitForSelector('.ad-viewas-screens [data-screen="bom1"]');
+      await page.$eval('.ad-viewas-screens [data-screen="bom1"]', (e) => e.click());
+      await inPreview('.ad-viewas-main', 'run');
+      await page.$eval('[role="tablist"]', (e) => e.scrollIntoView({ block: 'start' }));
+      await sleep(800);
+      await shot('adm-xem-voi-tu-cach');
+      await page.setViewport(VIEWPORT);
     },
   },
   {
@@ -929,8 +1048,12 @@ async function newPage() {
   page.on('pageerror', (e) => console.warn(`  (lỗi trang) ${e}`));
   return { context, page };
 }
+/** Bộ lọc khớp tên cảnh: chỉ chạy cảnh đó và chụp mọi ảnh của nó. */
+const sceneFilter =
+  filter && [...studioScenes, ...webScenes].some((s) => s.name.includes(filter)) ? filter : null;
+const wanted = (scene) => !sceneFilter || scene.name.includes(sceneFilter);
 const shooter = (page) => async (name) => {
-  if (filter && !name.includes(filter)) return;
+  if (filter && !sceneFilter && !name.includes(filter)) return;
   const file = join(OUT, `${name}.png`);
   const raw = Buffer.from(await page.screenshot({ type: 'png' }));
   const small = toPalettePng(raw);
@@ -942,7 +1065,7 @@ const shooter = (page) => async (name) => {
 
 const server = await serveStudio();
 const studioUrl = `http://127.0.0.1:${server.address().port}/?gate=off`;
-for (const scene of studioScenes) {
+for (const scene of studioScenes.filter(wanted)) {
   console.log(`▶ ${scene.name}`);
   const { context, page } = await newPage();
   try {
@@ -957,7 +1080,7 @@ for (const scene of studioScenes) {
 }
 server.close();
 
-for (const scene of webScenes) {
+for (const scene of webScenes.filter(wanted)) {
   console.log(`▶ ${scene.name}`);
   const rt = await startFakeRuntime({ staticDir: WEB_DIST, ...scene.options });
   if (!rt.httpsUrl) {

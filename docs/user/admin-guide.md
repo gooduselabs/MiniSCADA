@@ -4,7 +4,9 @@ Dành cho người cài đặt và giữ hệ thống chạy: thiết bị BL335
 
 Áp dụng cho bản 1.0: runtime 1.0.0 (API thiết bị 1.5.0) và Studio 1.0. Mọi mục trong tài liệu này đã có trong runtime 1.0.0: khóa đăng nhập, kiểm `Host`, giới hạn kết nối theo nguồn, `--check-data`, chẩn đoán, ghi PLC từ logic, cập nhật runtime qua mạng (OTA, gói `.matupdate`, `mat-updater`), kiểm chữ ký bản phát hành. Riêng chữ ký số Authenticode của bộ cài Studio cần chứng chỉ ký mã thật của công ty: bản thử và bản rc chưa có (mục 2.2).
 
-Chữ trên màn hình được trích nguyên văn từ phần mềm. Ảnh chụp màn hình chụp giao diện web của Studio (thiết bị là thiết bị giả lập của bộ kiểm thử) trên Chrome (macOS, chế độ headless, khung 1366 × 768, theme sáng) với dữ liệu mẫu, dựng lại được bằng `node tools/docs-screenshots.mjs`; trên Windows phông chữ và khung cửa sổ có thể khác chút.
+Đăng nhập bắt buộc, phân quyền theo người dùng và nhóm, trang **Quản trị** trên web (mục 4.1 đến 4.3, 5.2) có từ runtime báo API thiết bị 1.6.0 (`system/info`, khóa `api`).
+
+Chữ trên màn hình được trích nguyên văn từ phần mềm. Ảnh chụp màn hình chụp giao diện web của Studio và trang vận hành (thiết bị là thiết bị giả lập của bộ kiểm thử) trên Chrome (chế độ headless, khung 1366 × 768; ba ảnh tab quyền của trang Quản trị cao 1100 điểm ảnh để thấy đủ một tab; theme sáng) với dữ liệu mẫu, dựng lại được bằng `node tools/docs-screenshots.mjs`; trên Windows phông chữ và khung cửa sổ có thể khác chút.
 
 Quy ước trong tài liệu:
 
@@ -19,9 +21,13 @@ Quy ước trong tài liệu:
 | `viewer` | xem trang vận hành, chẩn đoán; không điều khiển |
 | `operator` | thêm: điều khiển trên trang vận hành, xác nhận và tạm ẩn alarm |
 | `engineer` | thêm: nạp xuống, đọc lên, khôi phục project bằng Studio, thử kết nối |
-| `administrator` | thêm: đọc audit, dừng ghi PLC của logic (mục 9), cập nhật runtime qua mạng và quay về bản trước (mục 7.2) |
+| `administrator` | thêm: đọc audit, dừng ghi PLC của logic (mục 9), cập nhật runtime qua mạng và quay về bản trước (mục 7.2), quản lý tài khoản, nhóm và quyền trên trang **Quản trị** (mục 4.1) |
 
-Quyền root trên thiết bị (SSH) đứng ngoài các vai trò trên: tạo tài khoản, sửa cấu hình, bật ghi PLC từ logic, bật cập nhật qua mạng.
+Trên trang web, vai trò hiện bằng tên tiếng Việt: **Người xem** (`viewer`), **Vận hành** (`operator`), **Kỹ sư** (`engineer`), **Quản trị viên** (`administrator`).
+
+Vai trò là **trần**: quản trị viên thu hẹp thêm quyền xem từng trang, xem hoặc thao tác từng component cho từng người hay nhóm (mục 4.1), nhưng không bao giờ cho ai làm quá vai trò của họ.
+
+Quyền root trên thiết bị (SSH) đứng ngoài các vai trò trên: sửa cấu hình, bật ghi PLC từ logic, bật cập nhật qua mạng, và là đường phục hồi tài khoản khi mất quản trị viên (mục 4.3).
 
 ## 2. Cài đặt
 
@@ -42,7 +48,7 @@ Cần: gói `mat-runtime-armhf.tar.gz` và tệp `.sha256` đi kèm, script `dep
    ```
 
 3. `deploy.sh` làm: kiểm SHA-256, giải nén vào `/opt/mat-runtime.new`, kiểm project, cài cấu hình lần đầu, sao lưu bản đang chạy vào `/opt/mat-runtime.prev`, kích hoạt, kiểm tra sức khỏe trong 15 s. Không đạt thì **tự rollback**.
-4. Lần đầu: `deploy.sh` hỏi mật khẩu cho tài khoản `admin` (vai trò administrator) nếu có terminal; nếu không, nó in "BƯỚC BẮT BUỘC" kèm lệnh tạo tài khoản (mục 4).
+4. Lần đầu: `deploy.sh` hỏi mật khẩu cho tài khoản `admin` (vai trò administrator) nếu có terminal; nếu không, nó in "BƯỚC BẮT BUỘC" kèm lệnh tạo tài khoản (mục 4.2). Các tài khoản khác tạo trên trang Quản trị (mục 4.1).
 5. Ghi lại **fingerprint** mà `deploy.sh` in ra (dùng ở mục 3).
 
 Kiểm tra sau cài:
@@ -79,7 +85,142 @@ Thiết bị tự sinh chứng chỉ ở lần chạy đầu. Studio và Chrome 
 
 ## 4. Tài khoản
 
-Tài khoản nằm trong `/etc/mat-runtime/users.json` (`0640 root:matscada`; runtime từ chối tệp có quyền khác). Chỉ tạo trên thiết bị bằng root; không có đăng ký hay quên mật khẩu trên web.
+Có hai cách quản lý tài khoản, nhóm và quyền, cùng đọc và ghi một kho trên thiết bị:
+
+- trang **Quản trị** trên web, tài khoản administrator, không cần SSH hay Studio (mục 4.1);
+- dòng lệnh `mat-runtime` trên thiết bị, bằng root: dùng khi cài lần đầu và để phục hồi (mục 4.2, 4.3).
+
+**Kho trên thiết bị** (thư mục `/var/lib/mat-runtime/auth/`, `0700`, của `matscada`; mỗi tệp `0600`):
+
+| Tệp | Nội dung |
+|---|---|
+| `/var/lib/mat-runtime/auth/users.json` | tài khoản: tên, vai trò, nhóm, bật hay tắt, băm mật khẩu, lần đăng nhập cuối |
+| `/var/lib/mat-runtime/auth/access.json` | nhóm và quy tắc quyền theo trang, theo component |
+| `users.json.bak`, `access.json.bak` (cùng thư mục) | bản trước lần ghi cuối, tự giữ một bản |
+
+Nhóm và quy tắc quyền nằm trên thiết bị, **không** nằm trong project: nạp xuống project mới không xóa chúng (mục 4.1, "Quy tắc mồ côi").
+
+**Khởi tạo một lần từ `/etc`:** thiết bị cài trước đây giữ tài khoản ở `/etc/mat-runtime/users.json`. Lần đầu runtime mới chạy (hoặc lần đầu chạy một lệnh `--user-*`), tài khoản được chép sang `/var/lib/mat-runtime/auth/users.json` (audit `account.migrate`; lệnh in "đã chép tài khoản từ … sang … (từ nay sửa ở đó)"). Phiên đang mở không bị hủy. Từ đó runtime **không đọc** `/etc/mat-runtime/users.json` nữa: sửa tay tệp này không còn tác dụng.
+
+<a id="quan-tri-web"></a>
+
+### 4.1. Quản trị trên trang web
+
+**Mở trang Quản trị:**
+
+1. Mở `https://<địa chỉ>:8443/` trên Chrome, đăng nhập bằng tài khoản administrator.
+2. Bấm **Quản trị** ở cuối menu bên trái (địa chỉ `#/quan-tri`). Vai trò khác không thấy mục này; gõ thẳng địa chỉ thì trang báo "Không có quyền xem trang này", máy chủ từ chối mọi lệnh quản trị và ghi nhật ký.
+3. Đầu trang có các thẻ số liệu: **Người dùng**, **Quản trị viên** (đang bật), **Nhóm**, **Quy tắc quyền** (kèm số quy tắc mồ côi), **Đang khóa tạm**. Bấm **Tải lại** để đọc lại dữ liệu từ thiết bị.
+
+Trang chỉ dùng được qua HTTPS. Thao tác trên trang có hiệu lực ngay, không cần nạp lại project, không khởi động lại dịch vụ.
+
+![Trang Quản trị, tab Người dùng (đăng nhập quantri, administrator): thẻ số liệu 6 người dùng, 1 quản trị viên, 4 nhóm, 5 quy tắc quyền (1 mồ côi), 1 đang khóa tạm; dải "Quy tắc quyền" báo 1 quy tắc mồ côi kèm nút Dọn quy tắc mồ côi; thanh tab Người dùng, Nhóm, Quyền theo trang, Quyền theo component, Xem với tư cách, Nhật ký; ô tìm, lọc Mọi vai trò, nút Thêm người dùng; bảng có cột Tên, Vai trò, Nhóm, Trạng thái, Khóa tạm, Đăng nhập cuối, Phiên, Thao tác với hàng quantri (bạn) Quản trị viên, vh1 và vh2 Vận hành nhóm Vận hành ca A, nút Sửa ở mỗi hàng](img/adm-quan-tri-nguoi-dung.png)
+
+#### Tab Người dùng
+
+- **Thêm người dùng:** nhập **Tên tài khoản** (3–32 ký tự: chữ thường, số, dấu chấm, gạch dưới, gạch ngang; bắt đầu bằng chữ), chọn **Vai trò**, bấm các **Nhóm** cần gán. Phần **Mật khẩu**: **Sinh ngẫu nhiên (khuyên dùng): mật khẩu hiện đúng một lần** hoặc **Tự đặt mật khẩu** (nhập hai lần). Bấm **Thêm người dùng**. Người đó đăng nhập được ngay.
+- Mật khẩu sinh ngẫu nhiên hiện trong hộp "Mật khẩu của <tên>" **đúng một lần**: bấm **Chép mật khẩu**, trao tận tay người dùng, rồi **Tôi đã chép, đóng**. Thiết bị không lưu bản rõ; mất thì đặt lại.
+- **Sửa** (cuối hàng): đổi vai trò, nhóm, bỏ chọn **Tài khoản đang bật (đăng nhập được)** để tắt (người nghỉ việc), bấm **Lưu thay đổi**. **Thao tác khác** có **Đặt lại mật khẩu…** và **Xóa người dùng…**.
+- **Mở khóa** (cột Khóa tạm, khi tài khoản đang bị khóa do nhập sai): gỡ khóa ngay.
+- Ô **Tìm theo tên hoặc nhóm** và lọc **Mọi vai trò** để tìm nhanh. Cột **Phiên** là số phiên đang mở.
+
+Đổi vai trò, nhóm, trạng thái hay mật khẩu của một người **đăng xuất mọi phiên** của người đó ngay (hộp Sửa nhắc "Đổi vai trò, nhóm, trạng thái hay mật khẩu sẽ đăng xuất mọi phiên của người này."). Sửa chính tài khoản của mình thì chính bạn bị đăng xuất.
+
+Thiết bị luôn giữ ít nhất một quản trị viên đang bật: xóa, tắt hay hạ vai trò quản trị viên cuối cùng bị từ chối "Phải còn ít nhất một quản trị viên đang bật.".
+
+Mật khẩu tự đặt theo quy tắc ở mục 4.4 (15 đến 128 ký tự, không chứa tên tài khoản). Sai quy tắc: "Mật khẩu chưa đạt quy tắc" kèm lý do, ví dụ ": cần ít nhất 15 ký tự", ": không được chứa tên tài khoản".
+
+#### Tab Nhóm
+
+Nhóm giúp cấp quyền cho nhiều người một lần (ví dụ "Vận hành ca A", "Quản đốc", "Bảo trì"). Mỗi người thuộc 0 đến 16 nhóm; thiết bị có tối đa 50 nhóm.
+
+- **Tạo nhóm:** nhập **Tên hiển thị**; **Mã nhóm (không đổi được sau khi tạo)** được gợi ý từ tên (ví dụ "Vận hành ca B" thành `van-hanh-ca-b`; chữ thường, số, gạch ngang, 2–32 ký tự). Bấm **Tạo nhóm**.
+- **Đổi tên:** chỉ đổi tên hiển thị; mã giữ nguyên, quy tắc không đổi.
+- **Xóa:** cần xác nhận lại mật khẩu. Nhóm còn thành viên hoặc còn trong quy tắc thì bị chặn: hộp "Chưa xóa được nhóm …" liệt kê **Thành viên** và **Quy tắc quyền** đang dùng nhóm; gỡ chúng trước rồi xóa lại.
+
+Gán người vào nhóm ở tab **Người dùng** (hộp Sửa).
+
+#### Tab Quyền theo trang
+
+Ma trận: mỗi hàng là một trang, mỗi cột là một người nhận. Tích ô là **cho xem** trang đó.
+
+- **Hàng** chia theo loại: **Màn hình**, **Popup**, **Trang hệ thống** (Alarm, Lịch sử, Báo cáo, Bảng theo dõi), **Nhóm lưu trữ** (Tag của nhóm trên trang Lịch sử), **Mẫu báo cáo**. Lọc bằng ô **Tìm theo tên hoặc mã** và **Mọi loại**.
+- **Cột:** **Chung** (**Mọi người**: mọi người đã đăng nhập), **Vai trò** (**Người xem+**, **Vận hành+**, **Kỹ sư+**: người có vai trò đó trở lên), **Nhóm**, **Người dùng**.
+- Cột **Trạng thái**: **Mặc định** (chưa có quy tắc trên thiết bị, dùng mặc định của project), **Đã đặt** (có quy tắc), **Chưa lưu**.
+- Mỗi lần tích là một thay đổi nháp: thanh dưới đếm "N thay đổi chưa lưu", bấm **Lưu thay đổi** (hoặc **Bỏ thay đổi**). Lưu một lần cho mọi hàng đã sửa.
+- **Đặt cho nhiều trang:** tích ô chọn ở đầu các hàng (ô ở tiêu đề: **Chọn mọi trang đang hiện**), bấm **Đặt quyền cho N trang…**. Trong hộp "Đặt quyền xem cho N trang": chọn người được xem, hoặc **Sao chép quyền từ trang** để lấy đúng người nhận của một trang khác, rồi **Áp dụng**; **Về mặc định** bỏ quy tắc của mọi trang đã chọn.
+- **Về mặc định** (cột Thao tác của một hàng): xóa quy tắc của trang đó.
+- Bỏ hết các ô của một hàng đã đặt nghĩa là không ai xem được trang đó, trừ quản trị viên.
+
+Người không được xem một trang thì trang đó không có trong menu của họ, gõ địa chỉ thẳng ra "Không có quyền xem trang này", và **dữ liệu của trang đó không tới trình duyệt** của họ (máy chủ lọc cấu hình màn hình, dữ liệu sống, lịch sử, báo cáo, alarm). Alarm chỉ hiện với người xem được ít nhất một component dùng Tag nguồn của alarm (chưa phân alarm theo nhóm).
+
+Quản trị viên luôn xem được mọi trang và trang Quản trị; quy tắc không lấy mất quyền đó.
+
+![Trang Quản trị, tab Quyền theo trang (khung cao 1100): ô tìm, lọc Mọi loại, nút Đặt quyền cho 0 trang…; dòng "Quản trị viên luôn xem được mọi trang và trang Quản trị."; ma trận có nhóm cột Chung (Mọi người), Vai trò (Người xem+, Vận hành+, Kỹ sư+), Nhóm (Vận hành ca A, Quản đốc, Bảo trì…); các màn hình Bảng điều khiển lưới, Tổng quan, Bơm 1 trạng thái Mặc định với ô Mọi người tích mờ; Bồn nước trạng thái Đã đặt, chỉ tích nhóm Bảo trì; popup Bơm (cửa sổ) và màn hình Chi phí điện Mặc định](img/adm-quyen-theo-trang.png)
+
+#### Tab Quyền theo component
+
+1. Chọn **Màn hình**. Khung **Xem trước (bấm vào component để chọn)** hiện màn hình; bên dưới là danh sách **Component trên màn hình** (tìm bằng **Tìm component**). Component đã có quy tắc mang nhãn **giới hạn xem** hoặc **giới hạn thao tác**.
+2. Bấm một component (trên xem trước hoặc trong danh sách). Khung bên phải có:
+   - **Ai được xem**: người không được xem thì component bị ẩn (ô lưới để trống), Tag chỉ component đó dùng không tới trình duyệt của họ;
+   - **Ai được thao tác** (chỉ có ở component điều khiển: nút bấm, công tắc, đặt giá trị, thanh trượt, chọn từ danh sách, SVG có sự kiện ghi): người không có quyền thấy component **khóa** kèm chú thích "Cần quyền thao tác", và máy chủ từ chối lệnh ghi gửi tay của họ (có nhật ký). Component chỉ hiển thị (thẻ giá trị, biểu đồ…) báo "Component chỉ hiển thị: không có quyền thao tác.".
+3. Bấm các người nhận (Chung, Vai trò, Nhóm, Người dùng) để bật hay tắt; **Về mặc định** bỏ quy tắc của mức đó. Bấm **Lưu thay đổi** ở thanh dưới.
+4. Bảng **Ai thấy, ai thao tác được** liệt kê từng người dùng với cột **Thấy** và **Thao tác** (Có, Không), "Tính bằng luật của thiết bị trên quyền đã lưu.". Còn thay đổi chưa lưu thì bảng nhắc lưu để cập nhật.
+
+Component nằm trên màn hình người đó không được xem thì cũng không được xem ("Cần quyền xem màn hình này trước."). Popup phân quyền như màn hình: nút mở popup mà người dùng không xem được popup đó thì khóa ("Cần quyền xem cửa sổ này").
+
+![Trang Quản trị, tab Quyền theo component (khung cao 1100), màn hình Bơm 1: danh sách Component trên màn hình với Chạy bơm (run · button) đang chọn, nhãn giới hạn thao tác, tiếp theo Xung khởi động, Tự động, Mức đặt, Tốc độ đặt, Chế độ, Mở van, Mức bồn 2; khung bên phải "Chạy bơm", item:bom1/run, Loại: button; Ai được xem: Mặc định (theo project): Người xem+, chip Mọi người được chọn; Ai được thao tác: Đã đặt, chip Nhóm Quản đốc được chọn, nút Về mặc định; bảng Ai thấy, ai thao tác được: quantri Có, Có; vh1 và vh2 (Vận hành) Có, Không; qd1 Có, Có](img/adm-quyen-component.png)
+
+#### Tab Xem với tư cách
+
+Chọn một người ở **Xem với tư cách người dùng**, bấm **Xem**. Dải "Đang xem với tư cách … Chỉ đọc: không gửi lệnh ghi nào." hiện; bên trái là vai trò, nhóm, **Màn hình người này xem được** và **Trang hệ thống**; bấm một màn hình để thấy đúng như người đó thấy: component bị ẩn để trống, component bị khóa hiện "Cần quyền thao tác". Không có lệnh ghi nào được gửi. Mỗi lần xem có dòng nhật ký `admin.view-as`. **Thoát chế độ xem** để quay lại.
+
+Dùng tab này để kiểm sau khi phân quyền, hoặc khi người vận hành báo "Không có quyền xem trang này".
+
+![Trang Quản trị, tab Xem với tư cách (khung cao 1100): chọn vh1 (Vận hành), nút Xem; dải tím "Đang xem với tư cách vh1 (Vận hành). Chỉ đọc: không gửi lệnh ghi nào." với nút Thoát chế độ xem; chip Vận hành, Vận hành ca A; Màn hình người này xem được: Bảng điều khiển lưới, Tổng quan, Bơm 1 (đang chọn), Bơm (cửa sổ), Chi phí điện, không có Bồn nước; Trang hệ thống: Alarm, Lịch sử, Báo cáo, Bảng theo dõi; khung xem trước màn hình Bơm 1, nút Chạy bơm khóa "Cần quyền thao tác", các điều khiển khác khóa vì đang xem với tư cách](img/adm-xem-voi-tu-cach.png)
+
+#### Tab Nhật ký
+
+Nhật ký kiểm toán của thiết bị: đăng nhập (thành công, thất bại), từ chối quyền, mọi thay đổi người dùng, nhóm, quy tắc. Lọc theo **Người**, **Loại** (Đăng nhập; Quyền, từ chối; Tài khoản; Nhóm; Quản trị), **Từ**, **Đến**, bấm **Lọc**; **Tải thêm** để xem dòng cũ hơn. Mỗi dòng có **Thời điểm**, **Người**, **Hành động**, **Đối tượng**, **Kết quả**, **Chi tiết** (giá trị cũ và mới). Nhật ký không bao giờ chứa mật khẩu.
+
+#### Xác nhận lại mật khẩu
+
+Thao tác nhạy cảm mở hộp "Xác nhận bằng mật khẩu của bạn": nhập **Mật khẩu của bạn** (mật khẩu của chính quản trị viên đang làm, không phải của người bị sửa), bấm nút xác nhận. Cần cho: **Đặt lại mật khẩu…**, hạ vai trò, tắt tài khoản, **Xóa người dùng…**, xóa nhóm, **Khôi phục bản trước** của kho quyền. Sai: "Mật khẩu xác nhận không đúng.", hộp vẫn mở; sai nhiều lần thì bị khóa tạm như đăng nhập sai (mục 4.4).
+
+#### Quyền được tính thế nào
+
+- **Mặc định (theo project):** trang hoặc component chưa có quy tắc trên thiết bị thì dùng vai trò tối thiểu kỹ sư đặt trong project (Studio, tab **Bảo mật**; xem [engineer-guide.md](engineer-guide.md#help-security)). Không đặt thì: màn hình, popup, trang hệ thống, nhóm lưu trữ, mẫu báo cáo cho **Người xem+** (Bảng theo dõi: **Vận hành+**); thao tác component cho **Vận hành+**. Trên ma trận, hàng Mặc định hiện ô tương ứng (thường là **Mọi người**) tích mờ; rê chuột lên nhãn **Mặc định** để xem mức, ví dụ "Mặc định (theo project): Người xem+".
+- **Có quy tắc:** chỉ người khớp **ít nhất một** người nhận được tích (nhóm của họ, chính họ, vai trò của họ, Mọi người). Người thuộc nhiều nhóm: một nhóm được là đủ.
+- **Quyền không vượt vai trò:** quy tắc chỉ thu hẹp. Người có vai trò **Người xem** không bao giờ thao tác được, kể cả khi nhóm của họ được tích ở **Ai được thao tác**. Quy tắc cũng không hạ được dưới mặc định của project: kỹ sư đặt "Vai trò tối thiểu để thao tác" là Kỹ sư thì tích nhóm vận hành cũng không cho người Vận hành bấm.
+- **Hiệu lực:** đổi quy tắc có hiệu lực trong khoảng 1 giây với mọi trang đang mở (menu, component ẩn, khóa tự cập nhật, không tải lại trang; ai mất quyền xem màn hình đang mở thấy "Không có quyền xem trang này"). Đổi tài khoản (vai trò, nhóm, trạng thái, mật khẩu) đăng xuất người đó.
+- **Quy tắc mồ côi:** quy tắc trỏ bằng mã (`screen:<mã màn hình>`, `item:<mã màn hình>/<mã component>`). Kỹ sư xóa hay đổi mã màn hình hoặc component rồi nạp xuống thì quy tắc cũ thành mồ côi: không có hiệu lực, không cấp quyền cho gì khác. Dải "Quy tắc quyền" báo số quy tắc mồ côi; bấm **Dọn quy tắc mồ côi** để xóa. Component mới (mã mới) dùng mặc định của project: đặt lại quyền cho nó.
+
+#### Ví dụ: ca A chỉ thấy Tổng quan, chỉ Quản đốc bấm được Chạy bơm
+
+Yêu cầu: người vận hành ca A chỉ xem màn hình **Tổng quan**; nút **Chạy bơm** trên Tổng quan chỉ nhóm **Quản đốc** bấm được; kỹ sư vẫn xem mọi màn hình.
+
+1. Tab **Nhóm**: **Tạo nhóm** "Vận hành ca A" (mã `ca-a`) và "Quản đốc" (mã `quan-doc`).
+2. Tab **Người dùng**: **Thêm người dùng** `vh1`, vai trò **Vận hành**, nhóm **Vận hành ca A**. Thêm `qd1`, vai trò **Vận hành**, nhóm **Quản đốc** và **Vận hành ca A**.
+3. Tab **Quyền theo trang**: tích ô chọn mọi màn hình **trừ** Tổng quan (lọc **Màn hình**, ô ở tiêu đề, rồi bỏ chọn Tổng quan), bấm **Đặt quyền cho N trang…**, chọn **Nhóm Quản đốc** và **Vai trò Kỹ sư+**, **Áp dụng**. Làm tương tự cho các trang hệ thống mà ca A không cần (ví dụ Lịch sử, Báo cáo). Hàng Tổng quan để **Mặc định** (mọi người đã đăng nhập xem được). Bấm **Lưu thay đổi**.
+4. Tab **Quyền theo component**: chọn màn hình **Tổng quan**, bấm **Chạy bơm** trên xem trước. Ở **Ai được thao tác**, chọn **Nhóm Quản đốc**. Bấm **Lưu thay đổi**. Bảng **Ai thấy, ai thao tác được**: `vh1` Thấy Có, Thao tác Không; `qd1` Có, Có.
+5. Tab **Xem với tư cách**: chọn `vh1`, **Xem**: chỉ có Tổng quan (và trang hệ thống còn cho phép); **Chạy bơm** khóa "Cần quyền thao tác". Chọn `qd1`: Chạy bơm không khóa.
+
+`qd1` thuộc cả hai nhóm nên xem được mọi màn hình đã cấp cho Quản đốc. Người mới vào ca A chỉ cần gán nhóm **Vận hành ca A**, không phải đặt lại quyền.
+
+#### Dải cảnh báo trên trang Quản trị
+
+| Dải | Nghĩa | Việc cần làm |
+|---|---|---|
+| "Xem không cần đăng nhập" | thiết bị đang để `viewerLogin: off`: ai mở được địa chỉ thiết bị cũng xem được; quyền theo trang chỉ áp cho người đã đăng nhập | đổi sang `required` (mục 5.2) |
+| "Kho quyền bị hỏng" | `access.json` hỏng hoặc sai định dạng: mọi người trừ quản trị viên đang bị từ chối | **Khôi phục bản trước** (cần mật khẩu), hoặc mục 4.3 |
+| "Dữ liệu đã đổi" | quản trị viên khác (hoặc lệnh trên thiết bị) vừa sửa: thay đổi của bạn chưa được ghi | **Tải lại**, xem bản mới rồi làm lại |
+| "Quy tắc quyền" … mồ côi | quy tắc trỏ tới trang hoặc component không còn trong project đang chạy | **Dọn quy tắc mồ côi** |
+
+Thao tác quá 30 lần mỗi phút: "Thao tác quá nhanh (tối đa 30 lần mỗi phút). Chờ một chút rồi thử lại.".
+
+### 4.2. Dòng lệnh trên thiết bị
+
+Lệnh chạy bằng root, sửa cùng kho với trang Quản trị (dưới cùng khóa tệp: chạy lúc trang đang mở cũng an toàn; trang báo "Dữ liệu đã đổi" ở lần lưu kế). Runtime đọc lại kho trong khoảng 2 s (quy tắc: tối đa 3 s).
 
 ```sh
 mat-runtime --user-add admin --role administrator     # hỏi mật khẩu hai lần, không hiện ký tự
@@ -91,9 +232,55 @@ mat-runtime --user-passwd kysu1                       # đổi mật khẩu
 mat-runtime --user-role kysu1 operator                # đổi vai trò
 mat-runtime --user-disable kysu1                      # tắt (người nghỉ việc)
 mat-runtime --user-enable kysu1
+mat-runtime --user-remove kysu1                       # xóa tài khoản, gỡ khỏi mọi quy tắc quyền
+mat-runtime --group-add ca-a "Vận hành ca A"          # mã nhóm, tên hiển thị
+mat-runtime --user-groups vanhanh1 ca-a,quan-doc      # đặt lại toàn bộ nhóm của tài khoản
+mat-runtime --user-groups vanhanh1 -                  # "-": không thuộc nhóm nào
+mat-runtime --group-remove ca-a                       # gỡ nhóm khỏi mọi tài khoản và quy tắc, rồi xóa
+mat-runtime --access-reset                            # xóa mọi quy tắc quyền, giữ nhóm
 ```
 
+- Đổi vai trò, nhóm, trạng thái, mật khẩu hay xóa tài khoản: các phiên đang mở của tài khoản đó bị hủy.
+- `--group-remove` không bị chặn khi nhóm còn thành viên (khác trang Quản trị): đây là đường phục hồi.
+- `--access-reset`: mọi trang và component về mặc định của project (lệnh in số quy tắc đã xóa).
+- `--user-list` chưa hiện nhóm: xem nhóm ở tab Người dùng của trang Quản trị.
+- Mã thoát: 0 xong (hoặc không có gì để đổi); 2 sai tham số; 4 bị từ chối (chưa có tài khoản hay nhóm, đã có tên đó, quản trị viên cuối cùng, không phải root); 5 không ghi được audit (không đổi gì); 6 tệp tài khoản hoặc `access.json` hỏng (mục 4.3).
+
 Mật khẩu không bao giờ là tham số dòng lệnh. Dùng trong script: `printf '%s\n' "$MAT_PW" | mat-runtime --user-add kysu2 --role engineer --password-stdin`.
+
+<a id="phuc-hoi-tai-khoan"></a>
+
+### 4.3. Phục hồi
+
+**Mất quản trị viên** (quên mật khẩu, tài khoản bị tắt hay bị khóa, không còn administrator nào): SSH root vào thiết bị, rồi một trong các lệnh:
+
+```sh
+mat-runtime --user-passwd admin                       # đặt mật khẩu mới
+mat-runtime --user-enable admin                       # bật lại
+mat-runtime --user-unlock admin                       # gỡ khóa tạm
+mat-runtime --user-add admin2 --role administrator    # tạo quản trị viên mới
+```
+
+Có hiệu lực trong khoảng 2 s; đăng nhập lại trang web.
+
+**Kho quyền hỏng** (`access.json` sai định dạng, quyền tệp sai, sửa tay hỏng): runtime vẫn chạy, nhưng mọi người **trừ quản trị viên** bị từ chối (an toàn mặc định), người vận hành thấy "Không có quyền xem trang này". Thiết bị ghi audit `access.store-invalid`.
+
+1. Quản trị viên đăng nhập, mở **Quản trị**: dải "Kho quyền bị hỏng". Bấm **Khôi phục bản trước**, nhập mật khẩu của mình: thiết bị chép `access.json.bak` về.
+2. Không có bản trước (báo `NO_BACKUP`) hoặc bản trước cũng hỏng: root chạy `mat-runtime --access-reset`. Tệp hỏng được thay bằng tệp mới **rỗng** (mất cả nhóm): tạo lại nhóm **cùng mã** cũ (tab Nhóm hoặc `--group-add`), rồi đặt lại quyền.
+
+**Tệp tài khoản hỏng** (`users.json`): không ai đăng nhập được; lệnh `--user-*` báo "không đọc được file tài khoản: … (mã 6)". Chép bản trước về, rồi kiểm:
+
+```sh
+cd /var/lib/mat-runtime/auth
+cp users.json users.json.hong        # giữ bản hỏng để xem lại
+cp users.json.bak users.json
+chown matscada:matscada users.json && chmod 0600 users.json
+mat-runtime --user-list
+```
+
+Không có bản trước dùng được: khôi phục thư mục `auth/` từ sao lưu (mục 6.3).
+
+### 4.4. Mật khẩu, khóa đăng nhập, phiên
 
 **Mật khẩu:** mật khẩu mới dài **15 đến 128 ký tự**, khác tên tài khoản, dạng Unicode dựng sẵn (bộ gõ Unikey/EVKey đặt "Unicode dựng sẵn"). Tài khoản có sẵn với mật khẩu cũ ngắn hơn không bị buộc đổi, nhưng nên đổi. Mỗi người một tài khoản; không dùng chung `admin`.
 
@@ -104,8 +291,10 @@ Mật khẩu không bao giờ là tham số dòng lệnh. Dùng trong script: `p
 - Một IP sai 20 lần (mọi tên) trong 10 phút: mọi đăng nhập từ IP đó bị khóa 5 phút. Nhiều người sau cùng một NAT có thể bị khóa chung.
 - Quá 2 lần kiểm mật khẩu cùng lúc (`maxConcurrentLogins`): 429 `LOGIN_BUSY`, thử lại sau 1 s, không khóa ai; audit có `auth.busy` (tối đa một dòng mỗi phút, kèm số lần bị từ chối). Thấy nhiều `auth.busy`: có máy đang thử mật khẩu hàng loạt.
 - Một tên bị sai ≥ 50 lần trong 10 phút từ ≥ 5 IP: audit `auth.distributed_attack` (không khóa). Gặp mục này: kiểm tra mạng, đổi mật khẩu tài khoản đó.
-- Mở khóa sớm: `mat-runtime --user-unlock <tên>` (mọi cặp của tên đó, có hiệu lực trong 2 s) hoặc `mat-runtime --user-unlock-all` (mọi cặp và mọi IP, trong 5 s). Khởi động lại dịch vụ cũng xóa mọi khóa.
+- Mở khóa sớm: nút **Mở khóa** ở tab Người dùng của trang Quản trị (mục 4.1), hoặc `mat-runtime --user-unlock <tên>` (mọi cặp của tên đó, có hiệu lực trong 2 s) hoặc `mat-runtime --user-unlock-all` (mọi cặp và mọi IP, trong 5 s). Khởi động lại dịch vụ cũng xóa mọi khóa.
 - `--user-unlock-all` để tệp yêu cầu `/var/lib/mat-runtime/auth-unlock.req` cho runtime đọc. Runtime chỉ dùng tệp này khi là tệp thường của root, quyền `0600`; tệp khác (do `matscada` hay người khác tạo, quyền rộng hơn, thư mục, liên kết) bị xóa không dùng, có audit `account.unlock` bị từ chối mã `UNLOCK_REQUEST_REFUSED`. Vì vậy luôn chạy lệnh bằng root, không bằng `runuser -u matscada`.
+
+Mỗi người tự đổi mật khẩu trên trang vận hành: nút tài khoản ở thanh trên > **Đổi mật khẩu của tôi** (nhập mật khẩu hiện tại; các phiên khác của người đó bị đăng xuất). Không có đăng ký hay "quên mật khẩu" trên web: quên thì quản trị viên **Đặt lại mật khẩu…** (mục 4.1).
 
 **Phiên:** hết sau 30 phút rảnh (`webSessionIdleMin`, 5–480; trạm 24/7 có thể đặt 480), tối đa 12 giờ (`webSessionMaxHours`). Tối đa 12 phiên web cùng lúc (`webMaxSessions`).
 
@@ -130,9 +319,18 @@ Mỗi lần từ chối có audit `access.denied` kèm tên đã gõ (cắt còn
 | Khóa | Giá trị nên dùng | Ghi chú |
 |---|---|---|
 | `viewerAccess` | `private` (mặc định) | trang xem không đăng nhập chỉ cho địa chỉ mạng riêng; `any` chỉ khi demo (cảnh báo `VIEWER_PUBLIC`); `off` tắt trang xem |
-| `viewerLogin` | `off` cho kiosk trong phòng điều khiển; `required` khi trang có thể bị mở từ ngoài LAN | `required`: không có dữ liệu nếu chưa đăng nhập |
+| `viewerLogin` | `required` (bản cài mới) | `required`: mọi người phải đăng nhập trước khi xem; `off`: xem không cần đăng nhập (dưới đây) |
 | `maxConnPerSource` | 48 (mặc định; khoảng 4–64) | số kết nối đồng thời tối đa mỗi IP (HTTP, HTTPS, WebSocket cộng chung); chống một máy chiếm hết worker. Runtime áp tối đa 75 % `httpsThreads` (mặc định 64, tức 48): đặt cao hơn thì runtime dùng mức đó và in cảnh báo lúc khởi động |
 | `maxLiveClientsPerSource` | không đặt (mặc định nửa số phiên dữ liệu sống, làm tròn lên: 5 của 10); khoảng 1–10 | số trang nhận dữ liệu sống cùng lúc tối đa của một IP. Đặt `10` khi nhiều máy vận hành đi qua cùng một NAT hoặc VPN (thiết bị thấy chúng là một IP), hoặc một máy mở nhiều tab |
+
+<a id="viewer-login"></a>
+
+**Đăng nhập bắt buộc (`viewerLogin`):**
+
+- **Bản cài mới:** `runtime.json` mẫu đặt `"viewerLogin": "required"`. Mở bất kỳ địa chỉ nào của trang vận hành khi chưa đăng nhập đưa tới trang đăng nhập; đăng nhập xong về đúng trang đã định mở. Không có phiên thì máy chủ không trả cấu hình màn hình, dữ liệu sống, lịch sử, báo cáo, alarm. Mở bằng `http://` chỉ hiện "Cần mở bằng HTTPS để đăng nhập" kèm liên kết **Mở trang đăng nhập (HTTPS)**.
+- **Thiết bị đang chạy khi nâng cấp:** giữ nguyên `runtime.json`. Không có khóa `viewerLogin` thì runtime dùng `off` như trước. `deploy.sh` in dòng "viewerLogin: off: XEM KHÔNG CẦN ĐĂNG NHẬP…" để nhắc.
+- **Đổi:** root sửa `/etc/mat-runtime/runtime.json` thành `"viewerLogin": "required"` (hoặc `"off"`), rồi `systemctl restart mat-runtime`. Trước khi bật `required`: mỗi người vận hành phải có tài khoản (mục 4.1), máy vận hành mở bằng `https://` và đã cài chứng chỉ (mục 3).
+- **Khi `off`:** ai mở được địa chỉ thiết bị cũng xem được. Người chưa đăng nhập được tính như vai trò Người xem không thuộc nhóm nào: thấy trang và component **chưa có quy tắc** (khi mặc định project cho Người xem) hoặc có quy tắc tích **Người xem+**; ô **Mọi người**, nhóm, người dùng không tính cho họ. Trang Quản trị hiện dải cảnh báo "Xem không cần đăng nhập". Chỉ để `off` cho màn hình kiosk trong phòng điều khiển kín, không mở ra ngoài LAN. Trạm 24/7 muốn bắt buộc đăng nhập: dùng tài khoản Người xem riêng cho trạm và `webSessionIdleMin` 480 (mục 4.4).
 
 Giới hạn theo IP được tính ở hai mức:
 
@@ -146,7 +344,7 @@ Kết nối HTTPS rảnh được giữ 3 s rồi đóng. Mặc định 64 worke
 - **SSH:** dùng khóa SSH cho root (`PermitRootLogin prohibit-password`) hoặc `PasswordAuthentication no`, rồi `systemctl reload ssh`. Khi root còn đăng nhập bằng mật khẩu, thiết bị báo cảnh báo `SSH_ROOT_PASSWORD` (đọc `/etc/ssh/sshd_config` lúc khởi động và 10 phút một lần). Đổi mật khẩu root mặc định ngay khi nhận thiết bị.
 - **Truy cập từ xa:** dùng **VPN** vào LAN của thiết bị. Không chuyển cổng (port-forward) 22, 8080, 8443 ra Internet. Nếu bắt buộc chuyển cổng HTTPS: giới hạn nguồn ở router, `viewerLogin: required`, mật khẩu dài. Router làm SNAT thì bộ lọc mạng riêng của thiết bị không còn tác dụng.
 - **Mạng:** IP tĩnh; NTP cho đồng hồ (lịch và báo cáo cần giờ đúng); chỉ mở UDP 8446 (tìm thiết bị) trong LAN, hoặc tắt bằng `"discoveryEnabled": false`.
-- **Tệp:** không đổi quyền `users.json`, `secrets.json` (`0640 root:matscada`), thư mục `/var/lib/mat-runtime` (`0700 matscada`).
+- **Tệp:** không đổi quyền `secrets.json` (`0640 root:matscada`), thư mục `/var/lib/mat-runtime` (`0700 matscada`), thư mục `/var/lib/mat-runtime/auth/` (`0700`) và các tệp trong đó (`0600 matscada`): tệp cho nhóm hay người khác đọc, ghi được bị runtime coi là hỏng.
 - Hướng dẫn gia cố chi tiết kèm bộ luật tường lửa mẫu (gồm `nft ct count` giới hạn kết nối ở tầng mạng): `docs/deployment/hardening.md` trong bộ mã nguồn (không đi kèm bộ cài).
 
 ## 6. Sao lưu và khôi phục
@@ -156,7 +354,7 @@ Kết nối HTTPS rảnh được giữ 3 s rồi đóng. Mặc định 64 worke
 | Nội dung | Nơi trên thiết bị | Ghi chú |
 |---|---|---|
 | Cấu hình | `/etc/mat-runtime/runtime.json` | |
-| Tài khoản | `/etc/mat-runtime/users.json` | chỉ có băm mật khẩu, vẫn giữ kín |
+| Tài khoản, nhóm, quy tắc quyền | `/var/lib/mat-runtime/auth/` (`users.json`, `access.json` và bản `.bak`) | chỉ có băm mật khẩu, vẫn giữ kín; `/etc/mat-runtime/users.json` chỉ còn là nguồn khởi tạo (mục 4) |
 | Mật khẩu DB ngoài | `/etc/mat-runtime/secrets.json` | **bí mật**: lưu bản sao mã hóa |
 | Chứng chỉ và khóa | `/var/lib/mat-runtime/tls/` | **bí mật**; giữ thì không phải ghim lại |
 | Project đang chạy và 3 bản dự phòng | `/var/lib/mat-runtime/projects/` | bản chính nên nằm ở máy kỹ sư (Đọc lên) |
@@ -186,6 +384,7 @@ Chép tệp sao lưu ra khỏi thiết bị (máy quản trị, ổ mã hóa). K
    systemctl stop mat-runtime
    tar -C / -xzf /root/mat-backup-<ngày>.tar.gz
    chown -R matscada:matscada /var/lib/mat-runtime && chmod 0700 /var/lib/mat-runtime
+   chmod 0700 /var/lib/mat-runtime/auth && chmod 0600 /var/lib/mat-runtime/auth/*
    chown root:matscada /etc/mat-runtime/users.json /etc/mat-runtime/secrets.json
    chmod 0640 /etc/mat-runtime/users.json /etc/mat-runtime/secrets.json
    systemctl start mat-runtime
@@ -394,7 +593,11 @@ Bản dựng trước khi phát hành chính thức mang hậu tố `-rc.N` (Stu
 | Chrome `NET::ERR_CERT_AUTHORITY_INVALID` | | cài chứng chỉ (mục 3) |
 | Chrome `NET::ERR_CERT_COMMON_NAME_INVALID` | cảnh báo `TLS_NO_IP_SAN` hoặc `TLS_SAN_MISMATCH` | `mat-runtime --regen-cert` sau khi đặt IP tĩnh |
 | 421 `HOST_NOT_ALLOWED` | mở bằng tên miền chưa khai | thêm vào `allowedHosts` (mục 5.1) |
-| Người dùng báo bị khóa | audit `auth.lockout` | `mat-runtime --user-unlock <tên>`; nếu thấy `auth.distributed_attack`: kiểm mạng |
+| Người dùng báo bị khóa | audit `auth.lockout` | **Mở khóa** ở tab Người dùng, hoặc `mat-runtime --user-unlock <tên>`; nếu thấy `auth.distributed_attack`: kiểm mạng |
+| Người vận hành báo "Không có quyền xem trang này" hoặc nút khóa "Cần quyền thao tác" | **Xem với tư cách** người đó (mục 4.1) | cấp quyền ở tab Quyền theo trang hoặc Quyền theo component, hoặc gán đúng nhóm |
+| Mọi người trừ quản trị viên bị từ chối | dải "Kho quyền bị hỏng" trên trang Quản trị | **Khôi phục bản trước**; hoặc `mat-runtime --access-reset` (mục 4.3) |
+| Không còn ai đăng nhập được với vai trò quản trị | | SSH root, mục 4.3 |
+| Quyền của một nút "mất" sau khi nạp project mới | dải quy tắc mồ côi | kỹ sư đã đổi mã component: đặt lại quyền cho component mới, **Dọn quy tắc mồ côi** |
 | 403 `SOURCE_NOT_ALLOWED` trên trang xem | truy cập từ ngoài mạng riêng | VPN; hoặc `viewerAccess` (mục 5.2) |
 | Đăng nhập, ghi bị từ chối `AUDIT_UNAVAILABLE` | `df -h /var/lib`; `journalctl` | giải phóng chỗ; audit phải ghi được thì mới cho thay đổi |
 | Cảnh báo `SSH_ROOT_PASSWORD` | `/etc/ssh/sshd_config` | mục 5.3 |
@@ -437,3 +640,7 @@ Giáo trình: [docs/training/admin.md](../training/admin.md). Làm trên bàn th
 | A17 | Dừng khẩn ghi PLC của logic | trên bàn thử có `logic.writes` = `on`: Studio, administrator, **Dừng ghi của logic…**; khởi động lại dịch vụ | chip "Ghi PLC: dừng" giữ qua khởi động lại; audit `logic.writes.disabled`; bật lại theo mục 9 |
 | A18 | Quay về bản trước sau OTA | sau A14: **Cập nhật runtime…** > **Quay về bản trước**, nhập mật khẩu | `system/info` hiện phiên bản trước; audit `system.update.manual-rollback` |
 | A19 | Nhiều trạm sau một NAT | mở trang vận hành ở 6 tab trên cùng một máy; đặt `"maxLiveClientsPerSource": 10`, khởi động lại, mở lại | lần đầu tab thứ 6 báo "Máy này đã mở tối đa 5 kết nối dữ liệu sống"; sau khi đặt 10 cả 6 tab có dữ liệu sống |
+| A20 | Tạo người dùng trên web | trang Quản trị: tạo nhóm "Vận hành ca A", **Thêm người dùng** `vh3` (Vận hành, nhóm ca A, mật khẩu sinh ngẫu nhiên); đăng xuất, đăng nhập bằng `vh3` | `vh3` đăng nhập được ngay; tab Nhật ký có `account.create` |
+| A21 | Phân quyền | làm ví dụ "ca A chỉ thấy Tổng quan" (mục 4.1); **Xem với tư cách** `vh3` | menu của `vh3` chỉ có Tổng quan; Chạy bơm khóa "Cần quyền thao tác" |
+| A22 | Hủy phiên khi đổi tài khoản | `vh3` đang mở trang; admin bỏ chọn **Tài khoản đang bật**, xác nhận bằng mật khẩu | trang của `vh3` về trang đăng nhập; `vh3` không đăng nhập lại được |
+| A23 | Phục hồi quản trị viên | trên bàn thử: `mat-runtime --user-add admin2 --role administrator`, đăng nhập bằng `admin2` | thấy mục Quản trị; audit `account.create` kênh CLI |
