@@ -15,6 +15,8 @@ const ERROR_KEY: Readonly<Record<string, MessageKey>> = {
   ALREADY_03: 'upgrade.error.ALREADY_03',
   ALREADY_04: 'upgrade.error.ALREADY_04',
   ALREADY_05: 'upgrade.error.ALREADY_05',
+  ALREADY_06: 'upgrade.error.ALREADY_06',
+  ALREADY_10: 'upgrade.error.ALREADY_10',
   NO_PROJECT: 'upgrade.error.NO_PROJECT',
 };
 
