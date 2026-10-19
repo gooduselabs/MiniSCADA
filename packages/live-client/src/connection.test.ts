@@ -795,3 +795,38 @@ describe('LiveConnection — 4401 phiên đã hết (1.2.0)', () => {
     expect(h.sockets.length).toBe(1);
   });
 });
+
+// Feature 013 (admin-api §6): quyền đổi → máy chủ gửi `access-changed`; Tag ngoài tập được phép vào `denied`.
+describe('LiveConnection — access-changed và denied (013)', () => {
+  it('gọi onAccessChanged, không đổi trạng thái kết nối hay giá trị', () => {
+    const h = setup();
+    const changed = vi.fn();
+    h.conn.onAccessChanged = changed;
+    h.conn.start();
+    h.last().open();
+    h.hello('1.3.0');
+    h.snap();
+    const before = h.changes.length;
+    h.last().msg({ type: 'access-changed' });
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(h.conn.state).toBe('live');
+    expect(h.changes.length).toBe(before);
+  });
+
+  it('snapshot có denied: các Tag đó được coi như unknown (không giá trị)', () => {
+    const h = setup(() => 1, ['A', 'B', 'C']);
+    h.conn.start();
+    h.last().open();
+    h.hello('1.3.0');
+    const sub = (h.last().sent.at(-1) as { requestId: string }).requestId;
+    h.last().msg({
+      type: 'snapshot',
+      subscriptionId: sub,
+      sequence: 1,
+      tags: [{ id: 'A', value: 1, quality: 'GOOD' }],
+      unknown: ['B'],
+      denied: ['C'],
+    });
+    expect(h.conn.unknown).toEqual(['B', 'C']);
+  });
+});

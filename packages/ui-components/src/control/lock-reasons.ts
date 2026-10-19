@@ -15,7 +15,9 @@ export type LockCode =
   | 'NO_VALUE'
   | 'BUSY'
   | 'OTHER_DIALOG'
-  | 'PROJECT_CHANGING';
+  | 'PROJECT_CHANGING'
+  | 'NO_PERMISSION'
+  | 'PREVIEW';
 
 export interface Lock {
   code: LockCode;
@@ -38,6 +40,8 @@ export interface LockInput {
   busy: boolean;
   /** Có hộp xác nhận của widget khác. */
   otherDialog: boolean;
+  /** Feature 013: màn hình và item để hỏi `host.itemBlocked` (quyền `operate`). */
+  item?: { screen: string; item: string };
 }
 
 const lock = (code: LockCode, detail?: string): Lock => ({ code, message: lockText(code, detail) });
@@ -49,6 +53,9 @@ export function lockOf(i: LockInput): Lock | null {
   const session = i.host.session();
   if (!session) return lock('NO_SESSION');
   if (ROLE_RANK[session.role] < ROLE_RANK[i.minRole]) return lock('ROLE', i.minRole);
+  const itemBlock = i.item ? (i.host.itemBlocked?.(i.item) ?? null) : null;
+  if (itemBlock)
+    return { code: itemBlock.code, message: itemBlock.message || lockText(itemBlock.code) };
   if (i.source.connection !== 'live') return lock('LIVE_LOST');
   const info = i.tag ? i.source.info(i.tag) : undefined;
   const state = i.tag ? i.source.get(i.tag) : undefined;

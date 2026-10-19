@@ -31,6 +31,10 @@ export function lockText(code: LockCode, detail?: string): string {
       return 'Đang có hộp xác nhận khác';
     case 'PROJECT_CHANGING':
       return 'Project đang thay đổi';
+    case 'NO_PERMISSION':
+      return 'Cần quyền thao tác';
+    case 'PREVIEW':
+      return 'Xem trước, không gửi lệnh';
   }
 }
 
@@ -47,6 +51,7 @@ const REASON_TEXT: Record<string, string> = {
   SESSION_EXPIRED: 'Phiên đã hết hạn',
   SESSION_INVALID: 'Phiên không hợp lệ',
   FORBIDDEN: 'Không đủ quyền',
+  ACCESS_DENIED: 'Thiếu quyền thao tác',
   HTTPS_REQUIRED: 'Cần dùng HTTPS',
   NO_SUCH_TAG: 'Tag không tồn tại',
   READ_ONLY: 'Tag chỉ đọc',

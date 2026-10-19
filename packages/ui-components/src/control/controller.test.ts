@@ -509,3 +509,62 @@ describe('confirm, sending, kết quả', () => {
     expect(fn.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+// Feature 013 (US4 AC2): item điều khiển trong `lockedItems` → khóa "Cần quyền thao tác"; xem trước của trang Quản trị.
+describe('lockOf: quyền thao tác theo item (013)', () => {
+  it('host.itemBlocked nhận màn hình và id item, NO_PERMISSION có chữ mặc định', () => {
+    const r = rig();
+    const seen: Array<{ screen: string; item: string }> = [];
+    r.host.itemBlock = (ctx) => {
+      seen.push(ctx);
+      return { code: 'NO_PERMISSION', message: '' };
+    };
+    expect(r.ctl.state).toMatchObject({
+      phase: 'locked',
+      code: 'NO_PERMISSION',
+      message: 'Cần quyền thao tác',
+    });
+    expect(seen.at(-1)).toEqual({ screen: 's1', item: 'w1' });
+  });
+
+  it('đứng sau NO_SESSION và ROLE, trước LIVE_LOST', () => {
+    const r = rig();
+    r.host.itemBlock = () => ({ code: 'NO_PERMISSION', message: 'Cần quyền thao tác' });
+    r.source.setConnection('stale');
+    expect(lockCode(r.ctl)).toBe('NO_PERMISSION');
+    r.host.sessionInfo = { user: 'v', role: 'viewer' };
+    expect(lockCode(r.ctl)).toBe('ROLE');
+    r.host.sessionInfo = null;
+    expect(lockCode(r.ctl)).toBe('NO_SESSION');
+  });
+
+  it('PREVIEW: khóa với chữ của host; null thì không khóa', () => {
+    const r = rig();
+    r.host.itemBlock = () => ({ code: 'PREVIEW', message: 'Chỉ xem' });
+    expect(r.ctl.state).toMatchObject({ code: 'PREVIEW', message: 'Chỉ xem' });
+    r.host.itemBlock = () => null;
+    expect(r.ctl.state.phase).toBe('ready');
+  });
+
+  it('accessItem thay id item khi kiểm (phần tử SVG: context.widget là elementUid)', () => {
+    const source = new MemoryTagSource({ tags: [SP], now: 1000 });
+    source.set('SP', { value: 1, quality: 'GOOD' });
+    const host = new FakeActionHost({ session: { user: 'an', role: 'operator' } });
+    const seen: string[] = [];
+    host.itemBlock = (c) => {
+      seen.push(`${c.screen}/${c.item}`);
+      return null;
+    };
+    const c = new ControlController({
+      item: mkItem({ id: 'el_x' }),
+      source,
+      host,
+      now: () => 0,
+      uuid: () => 'u',
+      context: { screen: 's1', widget: 'el_x' },
+      accessItem: 'svg1',
+    });
+    void c.state;
+    expect(seen.at(-1)).toBe('s1/svg1');
+  });
+});

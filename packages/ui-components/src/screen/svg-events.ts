@@ -20,6 +20,8 @@ export interface StatusSink {
 
 export interface SvgEventsDeps {
   screenId: string;
+  /** Feature 013: id item `svg` (quyền `operate` theo item). */
+  itemId?: string;
   mounted: MountedScreen;
   events: ReadonlyArray<{ elementUid: string; click: ElementAction }>;
   source: TagSource;
@@ -101,7 +103,7 @@ class Bound {
     if (isWriteAction(click)) {
       this.#ctl = svgActionController(
         click,
-        { screen: d.screenId, uid, label: this.#label },
+        { screen: d.screenId, uid, label: this.#label, ...(d.itemId ? { item: d.itemId } : {}) },
         {
           source: d.source,
           host: d.host,

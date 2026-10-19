@@ -101,6 +101,11 @@ export class LiveConnection {
    * mở lại; người nghe hỏi đăng nhập lại rồi gọi `start()`.
    */
   onSessionEnded: ((conn: LiveConnection) => void) | null = null;
+  /**
+   * Feature 013 (admin-api §6): quyền của phiên đổi (`{"type":"access-changed"}`). Máy chủ đã gỡ Tag không còn được
+   * phép; người nghe tải lại quyền và dựng lại menu, màn hình.
+   */
+  onAccessChanged: ((conn: LiveConnection) => void) | null = null;
 
   private readonly opt: Required<LiveConnectionOptions>;
   private readonly alarmFeed: AlarmFeed;
@@ -312,6 +317,10 @@ export class LiveConnection {
       return;
     }
     if (this.alarmFeed.handle(msg)) return;
+    if (msg.type === 'access-changed') {
+      this.onAccessChanged?.(this);
+      return;
+    }
     const changes = applyMessage(this.live, msg);
     if (msg.type === 'hello') {
       if (!isCompatibleProtocol(this.live.hello?.protocolVersion ?? '')) {

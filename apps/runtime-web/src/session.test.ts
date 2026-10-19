@@ -246,3 +246,73 @@ describe('touch', () => {
     expect(touches(m.f)).toBe(1);
   });
 });
+
+describe('feature 013: nhóm, viewerLogin, đổi mật khẩu của tôi', () => {
+  it('web/session có groups và viewerLogin', async () => {
+    const { s } = make(true, {
+      'GET /api/v1/web/session': {
+        json: { ...SESSION_BODY, groups: ['ca-a', 'bao-tri'], viewerLogin: 'required' },
+      },
+    });
+    await s.restore();
+    expect(s.groups).toEqual(['ca-a', 'bao-tri']);
+    expect(s.viewerLogin).toBe('required');
+  });
+
+  it('thiếu khóa mới (runtime cũ): nhóm rỗng, viewerLogin không rõ', async () => {
+    const { s } = make(true, { 'GET /api/v1/web/session': { json: SESSION_BODY } });
+    await s.restore();
+    expect(s.groups).toEqual([]);
+    expect(s.viewerLogin).toBeNull();
+  });
+
+  it('401 của web/session vẫn đọc viewerLogin nếu máy chủ báo', async () => {
+    const { s } = make(true, {
+      'GET /api/v1/web/session': {
+        status: 401,
+        json: { error: 'AUTH_REQUIRED', viewerLogin: 'required' },
+      },
+    });
+    await s.restore();
+    expect(s.info).toBeNull();
+    expect(s.viewerLogin).toBe('required');
+  });
+
+  it('đổi mật khẩu: POST web/password với CSRF, 204 → ok, phiên giữ nguyên', async () => {
+    const { s, f } = make(true, {
+      'GET /api/v1/web/session': { json: SESSION_BODY },
+      'POST /api/v1/web/password': { status: 204 },
+    });
+    await s.restore();
+    const r = await s.changePassword('cu-123456789012', 'moi-123456789012');
+    expect(r).toEqual({ ok: true });
+    const call = f.calls.find((c) => c.url === '/api/v1/web/password')!;
+    expect(call.body).toEqual({ old: 'cu-123456789012', new: 'moi-123456789012' });
+    expect(call.headers['x-mat-csrf']).toBe(SESSION_BODY.csrfToken);
+    expect(s.info).not.toBeNull();
+  });
+
+  it('đổi mật khẩu: lỗi trả mã, reason, retryAfterS; 401 hết phiên', async () => {
+    const { s, f } = make(true, {
+      'GET /api/v1/web/session': { json: SESSION_BODY },
+      'POST /api/v1/web/password': {
+        status: 400,
+        json: { error: 'WEAK_PASSWORD', reason: 'TOO_SHORT', message: 'Quá ngắn' },
+      },
+    });
+    await s.restore();
+    expect(await s.changePassword('a', 'b')).toEqual({
+      ok: false,
+      code: 'WEAK_PASSWORD',
+      reason: 'TOO_SHORT',
+      message: 'Quá ngắn',
+    });
+    f.set('POST /api/v1/web/password', { status: 403, json: { error: 'REAUTH_REQUIRED' } });
+    expect(await s.changePassword('a', 'b')).toMatchObject({ ok: false, code: 'REAUTH_REQUIRED' });
+    f.set('POST /api/v1/web/password', new Error('mạng'));
+    expect(await s.changePassword('a', 'b')).toMatchObject({ ok: false, code: 'NETWORK' });
+    f.set('POST /api/v1/web/password', { status: 401, json: { error: 'SESSION_EXPIRED' } });
+    expect(await s.changePassword('a', 'b')).toMatchObject({ ok: false, code: 'SESSION_EXPIRED' });
+    expect(s.expired).toBe(true);
+  });
+});
