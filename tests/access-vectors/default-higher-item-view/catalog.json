@@ -1,0 +1,155 @@
+{
+  "screens": [
+    {
+      "id": "tong-quan",
+      "popup": false,
+      "view": "viewer",
+      "items": [
+        {
+          "id": "chay-bom",
+          "operable": true,
+          "view": "viewer",
+          "operate": "operator",
+          "tags": [
+            "PUMP01.RUN_CMD"
+          ]
+        },
+        {
+          "id": "muc-be",
+          "operable": false,
+          "view": "viewer",
+          "tags": [
+            "TANK.LEVEL"
+          ]
+        },
+        {
+          "id": "chi-phi",
+          "operable": false,
+          "view": "engineer",
+          "tags": [
+            "COST.TODAY"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bom-1",
+      "popup": false,
+      "view": "viewer",
+      "items": [
+        {
+          "id": "den",
+          "operable": false,
+          "view": "viewer",
+          "tags": [
+            "PUMP01.RUN"
+          ]
+        },
+        {
+          "id": "dat-toc",
+          "operable": true,
+          "view": "viewer",
+          "operate": "operator",
+          "tags": [
+            "PUMP01.SPEED_SP"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bao-tri",
+      "popup": false,
+      "view": "viewer",
+      "items": [
+        {
+          "id": "reset",
+          "operable": true,
+          "view": "viewer",
+          "operate": "operator",
+          "tags": [
+            "PUMP01.RESET"
+          ]
+        },
+        {
+          "id": "gio-chay",
+          "operable": false,
+          "view": "viewer",
+          "tags": [
+            "PUMP01.HOURS"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "popup-bom",
+      "popup": true,
+      "view": "viewer",
+      "items": [
+        {
+          "id": "chay",
+          "operable": true,
+          "view": "viewer",
+          "operate": "operator",
+          "tags": [
+            "PUMP01.RUN_CMD"
+          ]
+        },
+        {
+          "id": "nhan",
+          "operable": false,
+          "view": "viewer",
+          "tags": [
+            "PUMP01.RUN",
+            "PUMP01.FLOW"
+          ]
+        }
+      ]
+    }
+  ],
+  "historyGroups": [
+    {
+      "id": "ap-suat",
+      "tags": [
+        "P1",
+        "TANK.LEVEL"
+      ]
+    },
+    {
+      "id": "nang-luong",
+      "tags": [
+        "E1"
+      ]
+    }
+  ],
+  "reports": [
+    {
+      "id": "dien-ngay",
+      "tags": [
+        "E1",
+        "E2"
+      ]
+    }
+  ],
+  "alarms": [
+    {
+      "id": "a-muc",
+      "tag": "TANK.LEVEL"
+    },
+    {
+      "id": "a-bom",
+      "tag": "PUMP01.RUN"
+    },
+    {
+      "id": "a-ap",
+      "tag": "P1"
+    },
+    {
+      "id": "a-gio",
+      "tag": "PUMP01.HOURS"
+    },
+    {
+      "id": "a-luu",
+      "tag": "PUMP01.FLOW"
+    }
+  ]
+}

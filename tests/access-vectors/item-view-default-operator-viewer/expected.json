@@ -1,0 +1,63 @@
+{
+  "screens": [
+    "tong-quan",
+    "bom-1",
+    "bao-tri",
+    "popup-bom"
+  ],
+  "hiddenItems": {
+    "bom-1": [
+      "den"
+    ]
+  },
+  "lockedItems": {
+    "bao-tri": [
+      "reset"
+    ],
+    "bom-1": [
+      "dat-toc"
+    ],
+    "popup-bom": [
+      "chay"
+    ],
+    "tong-quan": [
+      "chay-bom"
+    ]
+  },
+  "pages": [
+    "alarms",
+    "history",
+    "reports"
+  ],
+  "admin": false,
+  "liveTags": [
+    "COST.TODAY",
+    "PUMP01.FLOW",
+    "PUMP01.HOURS",
+    "PUMP01.RESET",
+    "PUMP01.RUN",
+    "PUMP01.RUN_CMD",
+    "PUMP01.SPEED_SP",
+    "TANK.LEVEL"
+  ],
+  "historyTags": [
+    "COST.TODAY",
+    "E1",
+    "E2",
+    "P1",
+    "PUMP01.FLOW",
+    "PUMP01.HOURS",
+    "PUMP01.RESET",
+    "PUMP01.RUN",
+    "PUMP01.RUN_CMD",
+    "PUMP01.SPEED_SP",
+    "TANK.LEVEL"
+  ],
+  "alarms": [
+    "a-bom",
+    "a-gio",
+    "a-luu",
+    "a-muc"
+  ],
+  "orphans": []
+}

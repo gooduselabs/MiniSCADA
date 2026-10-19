@@ -9,3 +9,4 @@ apps/studio/src-tauri/target/
 projects/
 tests/project-vectors/*/
 dist-e2e*/
+tests/access-vectors/*/

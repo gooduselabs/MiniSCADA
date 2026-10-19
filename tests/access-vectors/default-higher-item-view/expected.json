@@ -1,0 +1,49 @@
+{
+  "screens": [
+    "tong-quan",
+    "bom-1",
+    "bao-tri",
+    "popup-bom"
+  ],
+  "hiddenItems": {
+    "tong-quan": [
+      "chi-phi"
+    ]
+  },
+  "lockedItems": {},
+  "pages": [
+    "alarms",
+    "history",
+    "reports",
+    "watch"
+  ],
+  "admin": false,
+  "liveTags": [
+    "PUMP01.FLOW",
+    "PUMP01.HOURS",
+    "PUMP01.RESET",
+    "PUMP01.RUN",
+    "PUMP01.RUN_CMD",
+    "PUMP01.SPEED_SP",
+    "TANK.LEVEL"
+  ],
+  "historyTags": [
+    "E1",
+    "E2",
+    "P1",
+    "PUMP01.FLOW",
+    "PUMP01.HOURS",
+    "PUMP01.RESET",
+    "PUMP01.RUN",
+    "PUMP01.RUN_CMD",
+    "PUMP01.SPEED_SP",
+    "TANK.LEVEL"
+  ],
+  "alarms": [
+    "a-bom",
+    "a-gio",
+    "a-luu",
+    "a-muc"
+  ],
+  "orphans": []
+}
