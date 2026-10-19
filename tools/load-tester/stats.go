@@ -14,6 +14,7 @@ import (
 type clientResult struct {
 	ClientIndex     int     `json:"clientIndex"`
 	Mode            string  `json:"mode"`
+	Scheme          string  `json:"scheme"` // ws (8080) | wss (-alternate, 8443)
 	Accepted        bool    `json:"accepted"`
 	CloseCode       int     `json:"closeCode,omitempty"`
 	ClosedAfterMs   int64   `json:"closedAfterMs,omitempty"`

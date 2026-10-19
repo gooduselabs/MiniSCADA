@@ -72,11 +72,11 @@ Giới hạn băng thông RS485 là ràng buộc thiết kế (ước tính chu 
 
 | Mã | Ngưỡng | BL335 | x64 (tiền kiểm) | Trạng thái |
 |---|---|---|---|---|
-| L1 | CPU ≤ 30 %, đỉnh ≤ 60 %; RSS ≤ 150 MB; 0 mất sequence; 8080 và 8443 xen kẽ | 4 giờ: 28,9 %, đỉnh 50,4 %, RSS ≤ 19,5 MB, 0 mất sequence (§3.1). Điều kiện "8443 xen kẽ" chưa làm: `load-tester` chỉ mở `ws://`; HTTPS 8443 có tải ở L4, L5, L8 | 1 giờ Đạt | **Đạt** các ngưỡng · xen kẽ 8443 **Chưa đo** (T079 phần còn lại: cần `wss://` trong `load-tester`) |
+| L1 | CPU ≤ 30 %, đỉnh ≤ 60 %; RSS ≤ 150 MB; 0 mất sequence; 8080 và 8443 xen kẽ | 4 giờ: 28,9 %, đỉnh 50,4 %, RSS ≤ 19,5 MB, 0 mất sequence (§3.1). Điều kiện "8443 xen kẽ" chưa làm: `load-tester` chỉ mở `ws://`; HTTPS 8443 có tải ở L4, L5, L8 | 1 giờ Đạt | **Đạt** các ngưỡng · xen kẽ 8443 **Chưa đo** (T079 phần còn lại: công cụ đã có, `load-tester -alternate -fingerprint`, chưa chạy trên BL335) |
 | L2 | CPU ≤ 50 % (mục tiêu); RSS ≤ 150 MB | 43,8 %, 12,8 MB, 0 mất sequence (§3.1b) | — | **Đạt** |
 | L3 | 4429 50/50; vào lại ≤ 35 s | §1.4 | 4429 50/50 | **Đạt** |
 | L4 | mọi trang ≤ 5 s | tối đa 935 ms | tối đa 494 ms | **Đạt** |
-| L5 | ≥ 30 FPS với 50 animation; đo RSS tab | ≥ 53,4 FPS; RSS tab chưa đo | 60 FPS (1 trang) | **Đạt** FPS · RSS tab **Chưa đo** (T079 phần còn lại; không có ngưỡng) |
+| L5 | ≥ 30 FPS với 50 animation; đo RSS tab | ≥ 53,4 FPS; RSS tab chưa đo | 60 FPS (1 trang) | **Đạt** FPS · RSS tab **Chưa đo** (T079 phần còn lại; không có ngưỡng; công cụ đã có, `tools/measure/tab-rss.mjs`, chưa chạy trên BL335) |
 | L6 | 100 % nối lại ≤ 35 s; 0 slot rò | cần người cắt cổng switch hoặc `ip link` | 500/500, tối đa 8,7 s, 0 slot rò | x64 **Đạt** · BL335 **Chưa đo** — cần người (T086, B7) |
 | L7 | ≤ +3 điểm CPU, ≤ +5 MB, quét ≤ 5 ms | **+2,5 điểm** một lõi, **+3,8 MB**, quét trung vị 1,05 ms, p99 2,6 ms (releaseSeq 13, §3.2) | L1 1 giờ: +1,11 điểm, quét p99 2,92 ms, **RSS +5,4 MiB** | BL335 **Đạt** · x64 RSS **Không đạt** (vượt 0,4 MiB; xem dưới) |
 | L8 | đăng nhập máy khác ≤ 2 s; RAM ≤ +1 MB | 43/43, tệ nhất 1.198 ms (T079) và 837 ms (T063, rc.1); RSS +0,3–0,7 MB | 82 ms; +708 kB | **Đạt** |
@@ -130,10 +130,10 @@ Số x64 của 010 (runtime 0.9.0, tham khảo, không thay số 011): 10 client
 | Mã | Điều kiện | Kết quả | Trạng thái |
 |---|---|---|---|
 | L1 | `load-tester -tags 500 -clients 10 -extra 1 -latency`, 4 giờ (14.401 s), project `soak-std10` (500 Tag, lưu trữ 200 Tag, 3 màn hình) | CPU trung bình 28,9 % một lõi (14,5 % cả máy), đỉnh 50,4 % một lõi; RSS 12,4 → 19,5 MB, đi ngang từ giờ thứ 2; luồng 109, FD 26–27; MemAvailable ≥ 859 MB; 0 mất sequence; trễ tương đối p50 23, p95 43, tối đa 115 ms (576.002 mẫu); `liveLagP95Ms` phía máy chủ ≤ 53 ms; client 11 bị 4429 | **Đạt** (một lõi sát ngưỡng: 28,9/30) |
-| L1 phụ | 8080 và 8443 xen kẽ | load-tester chỉ mở `ws://` 8080; HTTPS 8443 có ở L4, L5, L8 | Chưa đo (T079 phần còn lại: cần `wss://` trong `load-tester`) |
+| L1 phụ | 8080 và 8443 xen kẽ | load-tester chỉ mở `ws://` 8080; HTTPS 8443 có ở L4, L5, L8 | Chưa đo (T079 phần còn lại: công cụ đã có, `load-tester -alternate -tls-port 8443 -fingerprint <fp>`, chưa chạy) |
 | L3 | 10 client giữ, 50 lần client 11; rồi 10 vòng client 1 rời | 50/50 đóng 4429; vào lại sau khi client 1 đóng sạch 28–83 ms, sau khi client 1 im lặng 15,2 s | **Đạt** |
 | L4 | 10 trang Chrome headless (ngữ cảnh riêng, cache tắt), màn `tong-quan` 250 item qua HTTPS, F5 cùng lúc 50 vòng | 500 lần tải: trung vị 647, p95 795, tối đa 935 ms; 0 vượt 5 s; 0 trang 4429. Runtime trong cơn F5: CPU 61 % một lõi (đỉnh 69,6), RSS ≤ 16,9 MB | **Đạt** |
-| L5 | Màn `anim` 400 phần tử SVG, 50 hoạt ảnh trên runtime thật (project `svg-l5`) | 10 tiến trình Chrome riêng: 53,4–54,3 FPS; 1 trang + 9 client 500 Tag: 60 FPS; 10 trang trong một tiến trình: 10,7 FPS (giới hạn của máy đo, CPU runtime 2,8 % một lõi) | **Đạt** (RSS tab chưa đo) |
+| L5 | Màn `anim` 400 phần tử SVG, 50 hoạt ảnh trên runtime thật (project `svg-l5`) | 10 tiến trình Chrome riêng: 53,4–54,3 FPS; 1 trang + 9 client 500 Tag: 60 FPS; 10 trang trong một tiến trình: 10,7 FPS (giới hạn của máy đo, CPU runtime 2,8 % một lõi) | **Đạt** (RSS tab chưa đo; công cụ `tools/measure/tab-rss.mjs` đã có, chưa chạy) |
 | L8 | 40 TLS im lặng từ IP A giữ liên tục 120 s, đăng nhập thật từ IP B (giao diện mạng thứ hai) mỗi ≈ 2,7 s | 43/43 đăng nhập 200, tệ nhất 1.198 ms; đăng nhập từ chính IP A 616 ms; máy chủ đóng TLS im lặng sau ≈ 10,4 s; RSS ổn định +0,3–0,7 MB; CPU 36,5 % một lõi do bắt tay lặp lại | **Đạt** |
 
 ### 3.1a L3 bằng `load-tester -reentry` (FR-038)

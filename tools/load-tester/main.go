@@ -8,6 +8,7 @@
 //	load-tester -host ... -slot-test                            # heartbeat timeout frees the slot
 //	load-tester -host ... -tags 500|1000 -extra-attempts 50 -flap 50 -latency  # feature 011, see load011.go
 //	load-tester -host ... -tags 500 -extra-attempts 50 -reentry 5               # L3 with re-entry, see reentry.go
+//	load-tester -host ... -tags 500 -alternate -fingerprint <sha256>            # L1 over 8080 and 8443, see tls.go
 package main
 
 import (
@@ -16,8 +17,10 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -25,9 +28,17 @@ import (
 type options struct {
 	host, origin, tags string
 	port, proto        int
+	tls                *tlsClient // -alternate: the 8443 side (tls.go)
+	alternate          bool       // odd clients over wss
+	useTLS             bool       // this client goes over wss (set by forClient)
 }
 
-func (o options) wsURL() string { return fmt.Sprintf("ws://%s:%d/api/v1/live", o.host, o.port) }
+func (o options) wsURL() string {
+	if o.useTLS {
+		return "wss://" + net.JoinHostPort(o.host, strconv.Itoa(o.tls.Port)) + "/api/v1/live"
+	}
+	return "ws://" + net.JoinHostPort(o.host, strconv.Itoa(o.port)) + "/api/v1/live"
+}
 
 func (o options) tagList() []string {
 	switch o.tags {
@@ -98,7 +109,11 @@ func main() {
 	flag.IntVar(&o.port, "port", 8080, "server port")
 	flag.IntVar(&o.proto, "proto", 1, "live protocol: 1 = mat-runtime 1.0.0, 0 = Sprint 0 PoC")
 	flag.StringVar(&o.tags, "tags", "sim", "tags to subscribe: 500 | 1000 (SIM.T0001.., tools/gen-bench-projects.mjs) | sim (500 SIM.*, older runs) | demo (5 tank/motor tags) | bench")
-	flag.StringVar(&o.origin, "origin", "", "send this Origin header (browser-like client)")
+	flag.StringVar(&o.origin, "origin", "", "send this Origin header (browser-like client); auto = the Origin of the client's own listener (default with -alternate)")
+	flag.BoolVar(&o.alternate, "alternate", false, "feature 011 L1: odd clients over wss://host:<tls-port>, even ones over ws://host:<port> (see tls.go)")
+	tlsPort := flag.Int("tls-port", 8443, "-alternate: port of the wss listener")
+	fingerprint := flag.String("fingerprint", "", "-alternate: SHA-256 of the device certificate to pin (64 hex, colons and 'SHA256 Fingerprint=' accepted)")
+	insecure := flag.Bool("insecure", false, "-alternate: do not verify the device certificate (written into the JSON); excludes -fingerprint")
 	clients := flag.Int("clients", 10, "regular clients")
 	extra := flag.Int("extra", 1, "extra clients connecting after the regular ones (should be rejected)")
 	slow := flag.Int("slow", 0, "additional slow clients that stop reading after the snapshot")
@@ -128,6 +143,20 @@ func main() {
 	q = queryOptionsFromEnv(q, *qpw)
 	if err := validateTags(o.tags); err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if o.alternate {
+		tc, err := newTLSClient(*tlsPort, *fingerprint, *insecure)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(2)
+		}
+		o.tls = tc
+		if o.origin == "" {
+			o.origin = originAuto
+		}
+	} else if *fingerprint != "" || *insecure {
+		fmt.Fprintln(os.Stderr, "-fingerprint and -insecure need -alternate")
 		os.Exit(2)
 	}
 	if *flapMode != "close" && *flapMode != "external" {
@@ -220,7 +249,7 @@ func main() {
 		}
 		go func(i int, mode clientMode) {
 			defer wg.Done()
-			results[i] = runClient(ctx, o, i+1, hold, mode)
+			results[i] = runClient(ctx, o.forClient(i+1), i+1, hold, mode)
 		}(i, mode)
 		time.Sleep(50 * time.Millisecond)
 	}
@@ -233,7 +262,10 @@ func main() {
 	for j := 0; j < parallelExtra; j++ {
 		wg.Add(1)
 		idx := *clients + *slow + j
-		go func() { defer wg.Done(); results[idx] = runClient(ctx, o, idx+1, 5*time.Second, modeNormal) }()
+		go func() {
+			defer wg.Done()
+			results[idx] = runClient(ctx, o.forClient(idx+1), idx+1, 5*time.Second, modeNormal)
+		}()
 	}
 	wg.Wait()
 	var reentry *reentryResult
@@ -254,6 +286,15 @@ func main() {
 		doc["query"] = queryDoc
 	}
 	checks, nm := withReentry(buildChecks(scenario, s, l3, nil), notMeasured(scenario), reentry)
+	if o.alternate {
+		by := summarizeByScheme(results)
+		doc["tls"] = o.tls
+		doc["summaryByScheme"] = by
+		if *latency {
+			doc["latencyByScheme"] = latencyByScheme(results, o)
+		}
+		checks, nm = withAlternation(checks, nm, by)
+	}
 	if l3 != nil {
 		doc["l3"] = l3
 	}
@@ -283,7 +324,7 @@ func main() {
 		doc[k] = v
 	}
 	writeDoc(doc, *out)
-	if s.ProtocolMismatch > 0 || ((scenario != "custom" || reentry != nil) && !allPass(checks)) {
+	if s.ProtocolMismatch > 0 || ((scenario != "custom" || reentry != nil || o.alternate) && !allPass(checks)) {
 		os.Exit(1)
 	}
 }
