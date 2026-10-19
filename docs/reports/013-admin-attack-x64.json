@@ -139,17 +139,17 @@
     {
       "name": "audit access.denied có FORBIDDEN",
       "pass": true,
-      "detail": "HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,ACCESS_DENIED,AUTH_REQUIRED,SESSION_SCOPE"
+      "detail": "HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,ACCESS_DENIED,AUTH_REQUIRED"
     },
     {
       "name": "audit access.denied có CSRF_FAILED",
       "pass": true,
-      "detail": "HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,ACCESS_DENIED,AUTH_REQUIRED,SESSION_SCOPE"
+      "detail": "HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,ACCESS_DENIED,AUTH_REQUIRED"
     },
     {
       "name": "audit access.denied có ORIGIN_MISMATCH",
       "pass": true,
-      "detail": "HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,ACCESS_DENIED,AUTH_REQUIRED,SESSION_SCOPE"
+      "detail": "HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,ACCESS_DENIED,AUTH_REQUIRED"
     },
     {
       "name": "audit: LAST_ADMIN và REAUTH_REQUIRED có dòng denied",
@@ -159,7 +159,7 @@
     {
       "name": "audit: tag.write denied ACCESS_DENIED (B21)",
       "pass": true,
-      "detail": "8"
+      "detail": "4"
     },
     {
       "name": "audit không chứa mật khẩu",

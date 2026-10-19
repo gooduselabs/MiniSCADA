@@ -99,8 +99,12 @@ class AuthStore {
 AuthFiles readAuthFiles(const std::string& usersPath, const std::string& accessPath,
                         bool deviceCommand = false);
 
+// How often the runtime looks at access.json (one lstat): with the live hub asking about the access
+// every second (kLiveGrantCheckMs), a rule the device command changes is in force within 2 s.
+constexpr int64_t kAccessRecheckMs = 1000;
+
 // The runtime's view of access.json, read again when the file changes (stat at most every
-// kUsersRecheckMs, or at once after recheckNow). Not thread-safe.
+// kAccessRecheckMs, or at once after recheckNow). Not thread-safe.
 class AccessStoreView {
    public:
     explicit AccessStoreView(std::string path);

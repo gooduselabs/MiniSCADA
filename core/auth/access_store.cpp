@@ -379,7 +379,7 @@ AccessStoreView::AccessStoreView(std::string path) : path_(std::move(path)) {}
 void AccessStoreView::recheckNow() { checked_ = false; }
 
 bool AccessStoreView::refresh(int64_t nowMonoMs) {
-    if (checked_ && nowMonoMs - lastCheck_ < kUsersRecheckMs) return false;
+    if (checked_ && nowMonoMs - lastCheck_ < kAccessRecheckMs) return false;
     checked_ = true;
     lastCheck_ = nowMonoMs;
     std::string sig = "none";

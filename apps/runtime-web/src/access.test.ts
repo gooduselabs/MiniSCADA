@@ -1,7 +1,14 @@
 // Quyền hiệu lực trên trang (feature 013, access-model §5): đọc thân, câu hỏi quyền, lọc màn hình tự do và lưới.
 import type { ScreenModel } from '@mat/project-schema';
 import { describe, expect, it } from 'vitest';
-import { AccessView, emptyForUser, fetchAccess, filterScreen, parseAccess } from './access.ts';
+import {
+  AccessView,
+  emptyForUser,
+  fetchAccess,
+  filterScreen,
+  parseAccess,
+  sessionEnded,
+} from './access.ts';
 import { fakeFetch } from './testing.ts';
 
 const BODY = {
@@ -134,5 +141,20 @@ describe('filterScreen', () => {
     expect(emptyForUser(filterScreen(free, ['a', 'b']), ['a', 'b'])).toBe(true);
     expect(emptyForUser(filterScreen(free, ['a']), ['a'])).toBe(false);
     expect(emptyForUser({ ...free, items: [] } as unknown as ScreenModel, [])).toBe(false);
+  });
+});
+
+describe('sessionEnded', () => {
+  const access = (user: string | null, anonymous: boolean) =>
+    parseAccess({ user, role: 'viewer', anonymous, screens: [] })!;
+  it('trang tưởng còn phiên mà máy chủ trả quyền ẩn danh (viewerLogin off, phiên bị hủy): phiên đã hết', () => {
+    expect(sessionEnded({ status: 'ok', access: access(null, true) }, 'vh1')).toBe(true);
+    expect(sessionEnded({ status: 'ok', access: access('vh2', false) }, 'vh1')).toBe(true);
+  });
+  it('cùng người, hoặc trang không có phiên, hoặc lỗi khác: không', () => {
+    expect(sessionEnded({ status: 'ok', access: access('vh1', false) }, 'vh1')).toBe(false);
+    expect(sessionEnded({ status: 'ok', access: access(null, true) }, null)).toBe(false);
+    expect(sessionEnded({ status: 'unsupported' }, 'vh1')).toBe(false);
+    expect(sessionEnded({ status: 'error', message: 'x' }, 'vh1')).toBe(false);
   });
 });

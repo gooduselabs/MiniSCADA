@@ -735,6 +735,70 @@ TEST(AlarmsApi, SystemInfoHasTheBlockAndIdentityTheFeature) {
     EXPECT_TRUE(has) << ident.dump();
 }
 
+// Feature 013 (contracts/access-model.md §4, alarm(P)): the counts are those of the alarms the
+// person may see, wherever they are given: the list, the live snapshot and changes (countsFor), the
+// answer of a command and the block of system/info. No filter: the engine's counts.
+TEST(AlarmsApi, TheCountsAreOnlyOfTheAlarmsThePersonMaySee) {
+    Fx f;
+    ASSERT_TRUE(f.world->raise("P1.FAULT", "P1_FAULT"));
+    ASSERT_TRUE(f.world->raise("P2.FAULT", "P2_FAULT"));
+    const AlarmIdFilter onlyP1 = [](const std::string& id) { return id == "P1_FAULT"; };
+    AlarmGlue& g = *f.world->glue;
+    const json all = g.listJson(true);
+    EXPECT_EQ(all["counts"]["active"], 2);
+    EXPECT_EQ(g.listJson(true, [](const std::string&) { return true; })["counts"], all["counts"])
+        << "a filter that keeps everything counts as the engine";
+    const json mine = g.listJson(true, onlyP1);
+    ASSERT_EQ(mine["instances"].size(), 1u);
+    EXPECT_EQ(mine["instances"][0]["id"], "P1_FAULT");
+    EXPECT_EQ(mine["counts"]["active"], 1);
+    EXPECT_EQ(mine["counts"]["unack"], 1);
+    EXPECT_EQ(mine["counts"]["byPriority"]["critical"]["active"], 1);
+    EXPECT_EQ(mine["counts"]["byPriority"]["minor"]["active"], 0);
+    EXPECT_EQ(mine["counts"]["byPriority"]["minor"]["unack"], 0);
+
+    const AlarmLiveSnapshot s = g.snapshot(true);
+    ASSERT_TRUE(s.countsFor);
+    EXPECT_EQ(json::parse(s.countsFor(onlyP1)), mine["counts"]);
+    EXPECT_EQ(json::parse(s.counts), all["counts"]);
+
+    json info = g.infoJson(onlyP1);
+    EXPECT_EQ(info["instances"], 1);
+    EXPECT_EQ(info["active"], 1);
+    EXPECT_EQ(info["unacked"], 1);
+    EXPECT_EQ(g.infoJson()["instances"], 5);
+
+    AlarmActor who;
+    who.user = "vh1";
+    who.role = "operator";
+    who.source = "127.0.0.1:1";
+    who.allowed = onlyP1;
+    AckSpec spec;
+    spec.all = true;
+    spec.upToRevision = all["revision"].get<int64_t>() + 1000;
+    const AlarmApiResult r = g.ack(spec, who);
+    ASSERT_EQ(r.status, 200) << r.body.dump();
+    EXPECT_EQ(r.body["acked"], 1);
+    EXPECT_EQ(r.body["counts"]["active"], 1) << "P2_FAULT is not counted";
+    EXPECT_EQ(r.body["counts"]["unack"], 0);
+    const AlarmApiResult u = g.unshelve("P1_FAULT", who);
+    ASSERT_EQ(u.status, 200) << u.body.dump();
+    EXPECT_EQ(u.body["counts"]["active"], 1);
+    EXPECT_EQ(u.body["counts"]["byPriority"]["minor"]["active"], 0);
+
+    info = g.infoJson(onlyP1);
+    EXPECT_EQ(info["unacked"], 0);
+    EXPECT_EQ(g.infoJson()["unacked"], 1);
+
+    g.takeChanges();
+    ASSERT_TRUE(f.world->raise("P3.INFO", "P3_INFO", "ACTIVE_ACK"));
+    const AlarmLiveBatch b = g.takeChanges();
+    ASSERT_FALSE(b.changes.empty());
+    ASSERT_TRUE(b.countsFor);
+    EXPECT_EQ(json::parse(b.countsFor(onlyP1))["active"], 1);
+    EXPECT_EQ(json::parse(b.counts)["active"], 3);
+}
+
 TEST(AlarmsApi, SystemInfoOfAProjectWithoutAlarmsStillHasTheBlockWithZeros) {
     AlarmWorldOptions o;
     o.withAlarms = false;

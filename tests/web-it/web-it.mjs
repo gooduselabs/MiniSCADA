@@ -3,7 +3,7 @@
 //   node web-it.mjs attack|attack-accounts|control|locks|session|expect|pulse|pulse-kill --fp <fingerprint>
 //   node web-it.mjs session --step prep28|check28 --fp <fp>   (đổi mật khẩu bằng CLI do script làm giữa hai bước)
 // Mật khẩu từ môi trường (MAT_IT_PW_ADMIN, _KYSU1, _VH1, _VH2, _XEM1).
-import { access, adminAttack, loginRequired } from './scenarios/access.mjs';
+import { access, accessData, adminAttack, loginRequired } from './scenarios/access.mjs';
 import { attack, attackAccounts } from './scenarios/attack.mjs';
 import { gate } from './scenarios/gate.mjs';
 import { writeMinRole } from './scenarios/write-min-role.mjs';
@@ -39,6 +39,7 @@ const table = {
   // feature 013 (T013, T023, T029): viewerLogin required
   'login-required': () => loginRequired(fp),
   access: () => access(fp),
+  'access-data': () => accessData(fp),
   'admin-attack': () => adminAttack(fp),
 };
 

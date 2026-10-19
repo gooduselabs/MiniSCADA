@@ -1,17 +1,15 @@
 {
-  "scenario": "write-min-role-x64",
-  "at": "2026-10-17T04:33:24Z",
-  "runtime": "chạy tay bằng docker compose + client như tools/*-it.ps1 (pwsh bị chặn trong sandbox của agent), x64 image mat-armhf",
+  "scenario": "write-min-role",
   "checks": [
     {
       "name": "operator (web) ghi lô có Tag writeMinRole engineer: 403 FORBIDDEN",
       "pass": true,
-      "detail": "403 {\"error\":\"FORBIDDEN\",\"message\":\"Tài khoản không đủ quyền cho thao tác này.\",\"results\":[{\"message\":\"Lô lệnh có Tag chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"79d78e9b-6fb3-40f6-861f-11b3778543c4\",\"status\":\"REJECTED\"},{\"message\":\"Tag này chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"3a3092f8-057b-4aae-948d-5a5b352699fc\",\"status\":\"REJECTED\"}]}"
+      "detail": "403 {\"error\":\"FORBIDDEN\",\"message\":\"Tài khoản không đủ quyền cho thao tác này.\",\"results\":[{\"message\":\"Lô lệnh có Tag chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"3cba9c3b-5ec0-43bf-8260-711084406d9c\",\"status\":\"REJECTED\"},{\"message\":\"Tag này chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"8635f98a-3ac8-4f78-b7a9-a3fd2aed11ef\",\"status\":\"REJECTED\"}]}"
     },
     {
       "name": "mọi yêu cầu của lô REJECTED FORBIDDEN, thông điệp nêu role cần",
       "pass": true,
-      "detail": "[{\"message\":\"Lô lệnh có Tag chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"79d78e9b-6fb3-40f6-861f-11b3778543c4\",\"status\":\"REJECTED\"},{\"message\":\"Tag này chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"3a3092f8-057b-4aae-948d-5a5b352699fc\",\"status\":\"REJECTED\"}]"
+      "detail": "[{\"message\":\"Lô lệnh có Tag chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"3cba9c3b-5ec0-43bf-8260-711084406d9c\",\"status\":\"REJECTED\"},{\"message\":\"Tag này chỉ ghi được từ vai trò engineer trở lên.\",\"reason\":\"FORBIDDEN\",\"requestId\":\"8635f98a-3ac8-4f78-b7a9-a3fd2aed11ef\",\"status\":\"REJECTED\"}]"
     },
     {
       "name": "operator (Bearer) ghi SIM.MODE: 403",
@@ -44,7 +42,7 @@
       "web"
     ],
     "detailSample": {
-      "requestId": "3a3092f8-057b-4aae-948d-5a5b352699fc",
+      "requestId": "8635f98a-3ac8-4f78-b7a9-a3fd2aed11ef",
       "value": 2
     }
   },
