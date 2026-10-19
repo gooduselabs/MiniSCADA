@@ -11,7 +11,7 @@ Nguồn: [spec](../spec.md) FR-010 đến FR-037, [kế hoạch](../../../docs/p
 | `/etc/mat-runtime/users.json` | `root:matscada` 0640 (như cũ) | CLI cũ | **chỉ là nguồn khởi tạo**: khi `auth/users.json` chưa có, runtime và CLI chép nó sang (một lần, audit `account.migrate`), từ đó không đọc nữa |
 
 - Thư mục `auth/` 0700. Đọc từ chối tệp là liên kết, không phải tệp thường, hoặc nhóm/người khác ghi được (giữ luật của `readUsersFile`).
-- **Ghi:** khóa `flock` trên `auth/.lock` (cả runtime và CLI), đọc lại, kiểm `rev`, ghi tệp tạm cùng thư mục, fsync, rename, fsync thư mục; giữ bản trước là `<tệp>.bak` (một bản).
+- **Ghi:** khóa `flock` loại trừ trên chính thư mục `auth/` (cả runtime và CLI; luồng B, 2026-10-19: khóa thư mục thay cho tệp `auth/.lock`, để root và matscada mở được mà không phải đổi chủ một tệp khóa), đọc lại, kiểm `rev`, ghi tệp tạm cùng thư mục, fsync, rename, fsync thư mục; giữ bản trước là `<tệp>.bak` (một bản, tạo bằng hard link trước khi rename, nên người đọc không bao giờ thấy tệp bị thiếu).
 - Mỗi tệp có `rev` (số nguyên tăng mỗi lần ghi). Mọi yêu cầu sửa của API mang `rev` đã đọc; khác thì `409 CONFLICT`.
 - Runtime đọc lại khi tệp đổi (như `AccountStore::refresh`, tối đa 2 s/lần) để CLI sửa cũng có hiệu lực.
 - **Hỏng** (JSON sai, sai schemaVersion, vượt giới hạn): runtime ghi log và audit `access.store-invalid`, coi như **mọi quy tắc từ chối** trừ `administrator` (FR-036); trang Quản trị hiện lỗi và nút **Khôi phục bản trước** (`.bak`). `users.json` hỏng giữ hành vi cũ (không ai đăng nhập được, CLI phục hồi).
@@ -22,15 +22,17 @@ Nguồn: [spec](../spec.md) FR-010 đến FR-037, [kế hoạch](../../../docs/p
 {
   "schemaVersion": "1.1.0",
   "rev": 12,
-  "accounts": [
+  "users": [
     { "name": "vh1", "role": "operator", "enabled": true, "groups": ["ca-a"],
       "passwordHash": "$argon2id$...", "rev": 3, "unlockSeq": 0,
-      "createdAt": 1792400000000, "updatedAt": 1792400000000, "lastLoginAt": 1792410000000 }
+      "createdAt": "2026-10-20T03:00:00Z", "updatedAt": "2026-10-20T03:00:00Z", "lastLoginAt": 1792410000000 }
   ]
 }
 ```
 
-- Thêm `groups` (mảng id nhóm, thiếu = rỗng, tối đa 16), `lastLoginAt` (ms, tùy chọn; runtime cập nhật **không quá 1 lần/giờ/người** để giữ ngân sách ghi eMMC). Tệp 1.0.0 đọc được (thiếu trường mới); lần ghi đầu nâng lên 1.1.0.
+- Thêm `rev` của tệp (thiếu = 0), `groups` (mảng id nhóm, thiếu = rỗng, tối đa 16), `lastLoginAt` (ms UTC, tùy chọn; runtime cập nhật **không quá 1 lần/giờ/người** để giữ ngân sách ghi eMMC). Tệp 1.0.0 đọc được (thiếu trường mới); lần ghi đầu nâng lên 1.1.0.
+- Lệch so với bản nháp (luồng B, 2026-10-19): giữ khóa `users` và `createdAt`/`updatedAt` dạng ISO 8601 của 1.0.0 (tệp 1.0.0 đọc nguyên trạng, CLI cũ và `--user-list` không đổi); API quản trị trả hai trường này dạng ms. Ghi `lastLoginAt` **không** tăng `rev` của tệp (không làm 409 một chỉnh sửa đang dở của admin) và không tăng `rev` của tài khoản (phiên không bị hủy).
+- Đổi `groups` của một tài khoản tăng `rev` của tài khoản (phiên bị hủy, D23). Khởi tạo từ `/etc` giữ nguyên `rev` từng tài khoản (phiên đang mở không bị hủy), `rev` của tệp = 1.
 - Giới hạn: 200 tài khoản (nới từ 64), tệp ≤ 512 KiB.
 
 ### 1.2. `access.json` 1.0.0
@@ -48,7 +50,7 @@ Nguồn: [spec](../spec.md) FR-010 đến FR-037, [kế hoạch](../../../docs/p
 ```
 
 - `groups[].id`: `^[a-z][a-z0-9-]{1,31}$`, duy nhất; `name` 1 đến 64 ký tự, không ký tự điều khiển. Tối đa 50 nhóm.
-- `rules[]`: tối đa 5.000; cặp (`resource`, `level`) duy nhất; `grantees` 0 đến 64 phần tử, không trùng. `grantees: []` nghĩa là **không ai** (ngoài administrator).
+- `rules[]`: tối đa 5.000; cặp (`resource`, `level`) duy nhất; `grantees` 0 đến 64 phần tử, không trùng. `grantees: []` nghĩa là **không ai** (ngoài administrator). `resource` phải đúng cú pháp một loại của §2 (`page:admin` bị từ chối); `group:` phải là nhóm trong tệp. Tệp ≤ 2 MiB, quyền 0600 (nhóm và người khác không đọc, không ghi), không phải liên kết.
 - Người nhận: `group:<id>` (nhóm phải tồn tại), `user:<name>` (tài khoản phải tồn tại), `role:<viewer|operator|engineer|administrator>` (khớp người có **đúng hoặc cao hơn** vai trò đó), `*` (mọi người đã đăng nhập).
 - Xóa nhóm hoặc người dùng gỡ người nhận tương ứng khỏi mọi quy tắc (cùng một lần ghi, audit).
 
@@ -101,7 +103,9 @@ Thêm điều kiện cha:
 
 - `live(P)` = hợp các Tag của mọi `item` được `view`.
 - `history(P)` = `live(P)` ∪ Tag của `history:*` và `report:*` được `view` (cần thêm `page:history` hoặc `page:reports` tương ứng được `view`).
-- `alarm(P)` = alarm có Tag nguồn thuộc `live(P)` (D21); trang Alarm cần `page:alarms`. Administrator: mọi thứ.
+- `alarm(P)` = alarm có Tag nguồn thuộc `live(P)` (D21); trang Alarm cần `page:alarms`. Alarm **không có Tag nguồn** (chất lượng của thiết bị) thuộc `alarm(P)` khi `P` xem được `page:alarms` (quyết định của luồng B, 2026-10-19). Administrator: mọi thứ.
+- Tag của **bảng theo dõi** (watch tables của project) thuộc `live(P)` khi `P` xem được `page:watch` (trang Bảng theo dõi đăng ký chúng); không thuộc danh mục của vector §7.
+- Kho hỏng: mọi tài nguyên từ chối mọi người trừ administrator (kể cả khi không có quy tắc).
 
 Bộ tính phải là hàm thuần (`computeAccess(project, store, P) → EffectiveAccess`), tính trước khi đăng nhập, khi nạp project, khi `rev` của kho đổi, giữ trong phiên; tra cứu bằng bảng băm (SC-006).
 

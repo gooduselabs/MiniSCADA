@@ -19,6 +19,8 @@ Lỗi theo dạng có sẵn: `{"error":"<MÃ>","message":"…"}`. Mã mới: `CO
 
 `GET /api/v1/web/session` thêm `groups` và `viewerLogin` (`"off"|"required"`).
 
+Ghi chú cài đặt (luồng B, 2026-10-19): `GET /api/v1/web/access` nằm trong bảng với `needsSession = false` (để trả được cho ẩn danh khi `viewerLogin: off`); handler tự đọc phiên Bearer hoặc cookie của yêu cầu, không có phiên hợp lệ thì: `viewerLogin: off` và nguồn được bộ lọc nguồn phục vụ → EffectiveAccess ẩn danh, ngược lại `401 AUTH_REQUIRED`. `POST /api/v1/web/password` cũng nhận Bearer (khi đó mọi phiên của người đó bị hủy, kể cả phiên gọi).
+
 ## 2. Người dùng (administrator)
 
 | Phương thức, đường | Thân | Trả về | Audit |
@@ -32,6 +34,7 @@ Lỗi theo dạng có sẵn: `{"error":"<MÃ>","message":"…"}`. Mã mới: `CO
 - Tên tài khoản như cũ `^[a-z][a-z0-9._-]{2,31}$`; vai trò một trong 4; nhóm phải tồn tại.
 - `LAST_ADMIN` khi thao tác làm không còn administrator nào đang bật (xóa, tắt, hạ vai trò) — cả khi admin tự sửa mình.
 - Đổi vai trò, nhóm, `enabled`, mật khẩu, xóa → hủy mọi phiên của người đó (kể cả chính admin nếu tự đổi; trả `{"rev","signedOut":true}`).
+- `createdAt`, `updatedAt`, `lastLoginAt` trong danh sách là ms UTC (hoặc `null`); tệp giữ `createdAt`/`updatedAt` dạng ISO (access-model §1.1). Một yêu cầu không đổi gì (giá trị như cũ) trả `{"rev"}` với `rev` cũ, không ghi tệp, không audit. Danh sách có thêm `storeState: "invalid"` khi `users.json` hỏng.
 
 ## 3. Nhóm (administrator)
 
@@ -51,7 +54,7 @@ Lỗi theo dạng có sẵn: `{"error":"<MÃ>","message":"…"}`. Mã mới: `CO
 | `GET /api/v1/admin/access` | — | `{"rev","viewerLogin","storeState":"ok"\|"invalid","resources":[…],"rules":[…],"orphans":[{"resource","level"}]}` | — |
 | `POST /api/v1/admin/access` | `{"rev","set":[{"resource","level","grantees":[…]\|null}]}` (`null` xóa quy tắc, về mặc định; tối đa 500 phần tử) | `{"rev"}` | `access.rule` (một dòng mỗi phần tử, detail before/after) |
 | `POST /api/v1/admin/access/cleanup` | `{"rev"}` | `{"rev","removed":n}` (xóa quy tắc mồ côi) | `access.cleanup` |
-| `POST /api/v1/admin/access/restore` | `{"reauth"}` | `{"rev"}` (chép `.bak` về) | `access.restore` |
+| `POST /api/v1/admin/access/restore` | `{"reauth"}` | `{"rev"}` (chép `.bak` về; `rev` mới = `rev` của bản sao + 2, để yêu cầu làm trên tệp hỏng hay tệp trước đó đều 409); không có hoặc hỏng `.bak` → `409 NO_BACKUP` | `access.restore` (started rồi ok/failed) |
 | `GET /api/v1/admin/effective?user=<name>` | — | `EffectiveAccess` của người đó (xem với tư cách, FR-043) | `admin.view-as` |
 
 `resources[]`: `{"id","kind":"screen"|"popup"|"item"|"page"|"history"|"report","title","screen"?,"widget"?,"levels":["view","operate"?],"defaults":{"view":"viewer","operate"?:"operator"}}`. Luật kiểm của `set`: tài nguyên phải có trong project đang chạy (`400 NOT_FOUND` kèm `resource`), `operate` chỉ cho tài nguyên có mức đó, người nhận phải tồn tại, không trùng; quy tắc `page:admin` bị từ chối.
@@ -67,8 +70,9 @@ Lỗi theo dạng có sẵn: `{"error":"<MÃ>","message":"…"}`. Mã mới: `CO
 | `GET /project/<screen>.screen.json` (và `.bindings.json`, `.svg`) | không `view` màn hình → `403 ACCESS_DENIED` + audit `access.denied`. Được xem: bỏ khỏi `items[]` các item bị ẩn; ô lưới trỏ item đó bỏ khóa `item`; bỏ binding của item bị ẩn. |
 | `GET /project/navigation.json` (và mục menu trong `projects/active`) | chỉ gồm màn hình được xem |
 | `GET /project/<khác>` (mẫu báo cáo, ký hiệu…) | mẫu báo cáo cần `report:<id>` `view`; tệp khác như cũ |
-| `GET /api/v1/projects/active` | danh sách màn hình, nhóm lưu trữ, mẫu báo cáo lọc theo quyền; danh mục Tag (nếu có) lọc theo `live(P)` |
+| `GET /api/v1/projects/active` | danh sách màn hình, nhóm lưu trữ, mẫu báo cáo lọc theo quyền; danh mục Tag (nếu có) lọc theo `history(P)` (⊇ `live(P)`; trang Lịch sử và Báo cáo cần tên và đơn vị của Tag của nhóm và mẫu được xem — luồng B, 2026-10-19); `entryScreen` không được xem → màn hình đầu tiên được xem |
 | WebSocket `/api/v1/live` | `subscribe` Tag ngoài `live(P)` → Tag vào `denied` (như `unknown`, không có giá trị); khi quyền đổi: gỡ và gửi `{"type":"access-changed"}` |
+| (giao thức live) | **1.4.0** (luồng B, 2026-10-19; ADR-006: bản tin và trường mới là MINOR): `snapshot.denied` (chỉ có khi khác rỗng), `{"type":"access-changed"}`. Tag bị gỡ giữ vị trí trong đăng ký (các Tag khác không đổi vị trí) nhưng không còn delta; trang tải lại quyền rồi đăng ký lại. Hub hỏi lại quyền của mỗi phiên mỗi 1 s; quy tắc sửa trên web có hiệu lực ở lần hỏi kế (≤ 1 s), sửa bằng CLI ≤ 3 s (đọc lại tệp tối đa mỗi 2 s). Alarm (subscribeAlarms) cũng lọc theo `alarm(P)`. |
 | `GET /api/v1/history/*` | Tag ngoài `history(P)` bị bỏ; yêu cầu chỉ có Tag bị cấm → `403 ACCESS_DENIED` |
 | `GET /api/v1/alarms`, `/alarms/history` | chỉ alarm có Tag nguồn trong `live(P)`; cần `page:alarms` (`403`) |
 | `POST /api/v1/alarms/ack|shelve|unshelve` | alarm ngoài tập được phép → `403 ACCESS_DENIED` |
@@ -81,4 +85,4 @@ Trang đăng nhập nhận `next` chỉ khi khớp `^#/[A-Za-z0-9/_\-.]{0,200}$`
 
 ## 8. Dòng lệnh
 
-`mat-runtime --user-*` ghi `auth/users.json` (sau khi khởi tạo từ `/etc`), dưới cùng khóa tệp; thêm `--user-groups <name> <g1,g2>`, `--user-remove <name>`, `--group-add <id> <name>`, `--group-remove <id>`, `--access-reset` (xóa mọi quy tắc, giữ nhóm; đường phục hồi).
+`mat-runtime --user-*` ghi `auth/users.json` (sau khi khởi tạo từ `/etc`), dưới cùng khóa tệp; thêm `--user-groups <name> <g1,g2|->` (`-`: không nhóm nào), `--user-remove <name>` (gỡ cả `user:<name>` khỏi quy tắc), `--group-add <id> <name>`, `--group-remove <id>`, `--access-reset` (xóa mọi quy tắc, giữ nhóm; đường phục hồi; `access.json` hỏng thì ghi tệp mới rỗng). `--group-remove` là đường phục hồi: gỡ nhóm khỏi mọi tài khoản và quy tắc rồi xóa (không chặn `IN_USE` như API). `access.json` hỏng: các lệnh đổi nhóm, quy tắc trả mã 6. Mọi lệnh audit started rồi ok/failed như các lệnh tài khoản cũ.
