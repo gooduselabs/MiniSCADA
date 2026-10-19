@@ -5,53 +5,69 @@
 ## Phase 1: Setup
 
 - [ ] T001 ADR `docs/adr/042-access-control.md` (kho trên thiết bị, chuyển `users.json` sang `/var/lib/mat-runtime/auth`, mô hình quyền, thực thi máy chủ) và mục mới trong `docs/architecture/threat-model.md` (API quản trị, leo thang, CSRF, rò dữ liệu qua đường phụ)
-- [ ] T002 `deployment/config/runtime.json`: `viewerLogin` mặc định `required` cho bản cài mới; thiết bị đang chạy giữ tệp cũ (kiểm `deploy_rollback_test.sh`)
+- [x] T002 `deployment/config/runtime.json`: `viewerLogin` mặc định `required` cho bản cài mới; thiết bị đang chạy giữ tệp cũ (kiểm `deploy_rollback_test.sh`)
+  - Ghi chú (luồng B, 2026-10-20): `deployment/config/runtime.json` `viewerLogin: required`; deploy.sh chỉ cài runtime.json khi chưa có, in cảnh báo "XEM KHÔNG CẦN ĐĂNG NHẬP" khi off; `deploy_rollback_test.sh` kiểm tệp cũ giữ nguyên và bản cài mới lấy required.
 
 ## Phase 2: Foundational (luồng A + B lõi)
 
 - [x] T003 [P] Bộ sinh `tests/access-vectors/generate.mjs` + ≥ 40 ca theo access-model §7 (kết quả viết tay, không sinh bằng bộ tính) — 74 ca; quy ước chi tiết (mồ côi gồm mức không áp được, khóa chỉ cho item được xem, alarm không phụ thuộc `page:alarms`) ở `tests/access-vectors/README.md`
 - [x] T004 [P] Test Vitest `packages/access-model/src/compute.test.ts` chạy mọi vector (đỏ) — 79 test, đỏ trước khi cài
 - [x] T005 `packages/access-model/src/compute.ts` (`computeAccess`), `catalog.ts` (`catalogFromProject`) cho xanh — 85 test xanh; catalog test trên grid-demo, history-demo, alarm-demo; popup có tham số bung theo `args`; alarm theo thiết bị (không Tag) chưa vào danh mục
-- [ ] T006 [P] gtest `core/auth/tests/access_model_test.cpp` + `access_vectors_test.cpp` (đọc `tests/access-vectors`) (đỏ)
-- [ ] T007 `core/auth/access_model.{hpp,cpp}` + `access_catalog.{hpp,cpp}` cho xanh
-- [ ] T008 [P] gtest `core/auth/tests/access_store_test.cpp`: users 1.0→1.1, khởi tạo từ `/etc`, `flock`, `rev`/409, `.bak`, tệp hỏng → chỉ admin, giới hạn kích thước (đỏ)
-- [ ] T009 `core/auth/access_store.{hpp,cpp}`, `account_store.*` (đường mới, `groups`, `lastLoginAt`, 200 tài khoản) cho xanh
+- [x] T006 [P] gtest `core/auth/tests/access_model_test.cpp` + `access_vectors_test.cpp` (đọc `tests/access-vectors`) (đỏ)
+  - Ghi chú: `access_model_test` (18 ca riêng), `access_vectors_test` đọc `tests/access-vectors` (hoặc MAT_ACCESS_VECTORS), khớp 77/77 ca sau khi gộp 013-a; `access_catalog_test` trên grid-demo, tank-demo, history-demo, alarm-demo.
+- [x] T007 `core/auth/access_model.{hpp,cpp}` + `access_catalog.{hpp,cpp}` cho xanh
+  - Ghi chú: access.json nhận quy tắc mồ côi và người nhận không khớp (không coi là kho hỏng); alarm không có Tag nguồn theo `page:alarms`; Tag của bảng theo dõi vào live(P) khi xem được `page:watch` (ngoài vector). Lệch ghi ở access-model.md.
+- [x] T008 [P] gtest `core/auth/tests/access_store_test.cpp`: users 1.0→1.1, khởi tạo từ `/etc`, `flock`, `rev`/409, `.bak`, tệp hỏng → chỉ admin, giới hạn kích thước (đỏ)
+  - Ghi chú: `access_store_test` (khởi tạo một lần từ /etc giữ rev tài khoản, thư mục 0700 từ chối liên kết/nhóm ghi, rev + 1, .bak bằng hard link, 4 luồng × 10 lần không mất thay đổi, khôi phục .bak, 0644/2 MiB → hỏng, AccessService, T030).
+- [x] T009 `core/auth/access_store.{hpp,cpp}`, `account_store.*` (đường mới, `groups`, `lastLoginAt`, 200 tài khoản) cho xanh
+  - Ghi chú: users.json 1.1.0 giữ khóa `users` và ISO createdAt/updatedAt, thêm `rev`, `groups`, `lastLoginAt` (≤ 1 lần/giờ, không tăng rev); khóa flock trên thư mục auth/; runtime đọc auth/users.json (owner root hoặc chính tiến trình); AuthService: principalOf, reloadAccounts (giữ phiên), accountSummaries.
 - [x] T010 [P] Schema `schemas/screen.schema.json`: `item.security.view/operate`, `screen.security.view`; luật `E_SECURITY_LEVEL`, `E_SECURITY_ITEM` ở `packages/project-schema/src/rules-11.ts` và `core/project-manager/rules_11.cpp`; vector `tests/project-vectors/v11-security-*` (test trước) — 23 ca, luật ở `tests/project-vectors/README-013.md` (`E_SECURITY_LEVEL`: operate viewer, thấp hơn view, khác minRole, hoặc security mới ở project 1.0); TS và C++ xanh
 
 ## Phase 3: US1 Đăng nhập bắt buộc (P1)
 
 - [ ] T011 [US1] e2e `apps/runtime-web/tests/e2e/login-required.e2e.mjs`: 401 → `/login?next=`, `next` độc hại (20 dạng) bị bỏ, hết phiên quay lại đúng trang (đỏ)
 - [ ] T012 [US1] `login.ts`, `session.ts`, `main.ts`, `project-store.ts`: chuyển hướng và `next` an toàn
-- [ ] T013 [US1] web-it `tests/web-it/scenarios/login-required.mjs`: mọi đường dữ liệu không phiên → 401, 0 byte giá trị Tag
+- [x] T013 [US1] web-it `tests/web-it/scenarios/login-required.mjs`: mọi đường dữ liệu không phiên → 401, 0 byte giá trị Tag
+  - Ghi chú: web-it `login-required` (trong `tests/web-it/scenarios/access.mjs`) 27/27 xanh x64, kết quả docs/reports/013-login-required-x64.json.
 
 ## Phase 4: US2 Quản lý tài khoản trên web (P1)
 
-- [ ] T014 [US2] gtest `server/tests/admin_api_test.cpp`: users/groups, reauth, LAST_ADMIN, IN_USE, CONFLICT, 413/400, 429, hủy phiên, audit before/after không có mật khẩu (đỏ)
-- [ ] T015 [US2] `server/http/admin_api.{hpp,cpp}` + bảng `core/auth/roles.cpp`; `web/password`, `web/session` thêm `groups`, `viewerLogin`; device-api 1.6.0
-- [ ] T016 [US2] CLI `server/cli/users.cpp`: đường mới + `--user-groups`, `--user-remove`, `--group-add/remove`, `--access-reset` (test `user_cli_test`)
+- [x] T014 [US2] gtest `server/tests/admin_api_test.cpp`: users/groups, reauth, LAST_ADMIN, IN_USE, CONFLICT, 413/400, 429, hủy phiên, audit before/after không có mật khẩu (đỏ)
+  - Ghi chú: `server/tests/admin_api_test.cpp` 12 ca qua `AdminApi::call` với AuthService, AuthStore, AccessService thật.
+- [x] T015 [US2] `server/http/admin_api.{hpp,cpp}` + bảng `core/auth/roles.cpp`; `web/password`, `web/session` thêm `groups`, `viewerLogin`; device-api 1.6.0
+  - Ghi chú: thêm `effective?users=` theo lô, `reason` WEAK_PASSWORD TOO_SHORT/TOO_LONG/CONTAINS_NAME/COMMON, `/admin/audit` (beforeId); device-api 1.6.0, live 1.4.0.
+- [x] T016 [US2] CLI `server/cli/users.cpp`: đường mới + `--user-groups`, `--user-remove`, `--group-add/remove`, `--access-reset` (test `user_cli_test`)
+  - Ghi chú: CLI ghi auth/ dưới flock, chown về người dùng dịch vụ; `--user-groups`, `--user-remove`, `--group-add/remove` (gỡ khỏi tài khoản và quy tắc), `--access-reset`; user_cli_test cập nhật + 3 ca mới.
 - [ ] T017 [US2] Trang `apps/runtime-web/src/admin/`: khung Quản trị, tab Người dùng, tab Nhóm, hộp xác nhận lại; Đổi mật khẩu của tôi (e2e trước)
 - [ ] T018 [US2] Tab Nhật ký (`/api/v1/admin/audit`)
 
 ## Phase 5: US3 Quyền theo trang (P1)
 
-- [ ] T019 [US3] gtest thực thi: `/project/<màn hình>` 403, navigation/projects/active lọc, live `denied`, history lọc/403, alarm lọc, `access-changed` (đỏ)
-- [ ] T020 [US3] Thực thi ở `http_api.cpp`, `live_hub.*`, `civet_transport.cpp`, `history_api.cpp`, alarm; `GET /api/v1/web/access`; `/api/v1/admin/access*`, `/admin/effective`
+- [x] T019 [US3] gtest thực thi: `/project/<màn hình>` 403, navigation/projects/active lọc, live `denied`, history lọc/403, alarm lọc, `access-changed` (đỏ)
+  - Ghi chú: `server/tests/access_enforce_test.cpp` (bộ lọc projects/active, màn hình, báo cáo, ghi của trang, live hub denied/access-changed/alarm) + ca alarm và lịch sử qua web-it access.
+- [x] T020 [US3] Thực thi ở `http_api.cpp`, `live_hub.*`, `civet_transport.cpp`, `history_api.cpp`, alarm; `GET /api/v1/web/access`; `/api/v1/admin/access*`, `/admin/effective`
+  - Ghi chú: lọc ở http_api (qua `access_filter`), history_api (`tagFilter`), alarms (GET cần page:alarms, POST 403), live hub hỏi lại quyền mỗi 1 s; access-changed đo 1 lần trên x64 ≤ 2 s.
 - [ ] T021 [US3] Trang: `access.ts` (tải EffectiveAccess), menu lọc, trang "không có quyền", xử lý `access-changed`
 - [ ] T022 [US3] Tab Quyền theo trang (ma trận, đặt nhiều trang, sao chép)
-- [ ] T023 [US3] web-it `tests/web-it/scenarios/access.mjs`: bắt live của người bị cấm 0 giá trị Tag cấm; history, alarm, project file
+- [x] T023 [US3] web-it `tests/web-it/scenarios/access.mjs`: bắt live của người bị cấm 0 giá trị Tag cấm; history, alarm, project file
+  - Ghi chú: web-it `access` 28/28 xanh x64 (dashboard-demo không có lưu trữ và alarm: phần lịch sử, alarm của kịch bản chỉ ở gtest).
 
 ## Phase 6: US4 Quyền theo component (P2)
 
-- [ ] T024 [US4] gtest: màn hình trả về bỏ item ẩn, ô lưới bỏ `item`; `tags/write` cookie thiếu `context`/không `operate`/Tag không thuộc binding → `ACCESS_DENIED` + audit (đỏ)
-- [ ] T025 [US4] Cài đặt ở `http_api.cpp`, `tags_api.cpp`
+- [x] T024 [US4] gtest: màn hình trả về bỏ item ẩn, ô lưới bỏ `item`; `tags/write` cookie thiếu `context`/không `operate`/Tag không thuộc binding → `ACCESS_DENIED` + audit (đỏ)
+  - Ghi chú: trong access_enforce_test (filteredScreen, pageWriteRefusal).
+- [x] T025 [US4] Cài đặt ở `http_api.cpp`, `tags_api.cpp`
+  - Ghi chú: ghi bằng cookie bắt buộc context; các kịch bản web-it cũ (control, locks, expect, write-min-role, deploy-live) đổi sang context thật (`PAGE_CONTEXT` của lib/api.mjs) và ghi Tag không component nào ghi nay là ACCESS_DENIED.
 - [ ] T026 [US4] Trang: component ẩn / khóa "cần quyền thao tác" (`lockedItems`), ô lưới trống
 - [ ] T027 [US4] Tab Quyền theo component: xem trước màn hình bấm chọn + danh sách, "ai thấy, ai thao tác" (qua `/admin/effective`), Xem với tư cách (chỉ đọc)
 - [x] T028 [US4] Studio Inspector tab Bảo mật: `view`, `operate` mặc định (test trước) — chỉ ở project 1.1 (1.0 giữ ô minRole cũ); `setItemAccess`, Thuộc tính màn hình có "Vai trò tối thiểu để xem"; 15 test
-- [ ] T029 [US4] web-it `tests/web-it/scenarios/admin-attack.mjs`: vai trò thấp gọi API quản trị, CSRF, sửa chính mình leo thang, xóa admin cuối, ghi bằng curl không quyền
+- [x] T029 [US4] web-it `tests/web-it/scenarios/admin-attack.mjs`: vai trò thấp gọi API quản trị, CSRF, sửa chính mình leo thang, xóa admin cuối, ghi bằng curl không quyền
+  - Ghi chú: web-it `admin-attack` 33/33 xanh x64; attack cũ 37/37 xanh.
 
 ## Phase 7: US5 Quy tắc qua cập nhật project (P3)
 
-- [ ] T030 [US5] gtest + e2e: nạp project mới giữ quy tắc còn id, mồ côi được báo, Dọn; xóa nhóm/người dùng gỡ khỏi quy tắc
+- [x] T030 [US5] gtest + e2e: nạp project mới giữ quy tắc còn id, mồ côi được báo, Dọn; xóa nhóm/người dùng gỡ khỏi quy tắc
+  - Ghi chú (phần máy chủ): `AccessService.RulesLiveThroughANewProject`, cleanup trong admin_api_test, xóa người dùng/nhóm gỡ khỏi quy tắc (API, CLI). Phần e2e trang: luồng C.
 
 ## Phase 8: Polish
 
