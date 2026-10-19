@@ -65,7 +65,7 @@ class ScheduleBlock : public Block {
     std::string id_;
     std::string outTag_;
     uint32_t outSlot_ = kNoSlot;
-    nlohmann::json def_;  // only when compiled_ is empty (T147)
+    nlohmann::json def_;                        // only when compiled_ is empty (T147)
     std::optional<CompiledSchedule> compiled_;  // none: a document scheduleAt reads at each scan
     std::optional<int> tz_;
     std::optional<bool> value_;

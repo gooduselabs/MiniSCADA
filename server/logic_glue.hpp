@@ -119,6 +119,10 @@ class LogicSubsystem {
 
     // GET /api/v1/logic (device-api-011 §4).
     nlohmann::json status();
+    // T147: the same as jsonText(status()), byte for byte, written one block at a time: the tree
+    // of the logic maximum (550 blocks) is ~1 MB of small nodes for 77 KB of text, built on an
+    // HTTPS worker every few seconds (fragmentation of the heap, time under the engine's mutex).
+    std::string statusText();
     // system/info.logic.writes: "off" (configuration), "on", "stopped" (administrator).
     std::string writesState();
 
@@ -170,6 +174,10 @@ class LogicSubsystem {
     void auditLocked(AuditAction action, AuditResult result, const std::string& user,
                      const std::string& target, const std::string& code, nlohmann::json detail);
     void updateWarningsLocked(int64_t now);
+    // mu_ held: status() without its blocks ("blocks" empty), and each block in scan order.
+    nlohmann::json statusHeadLocked(int64_t now) const;
+    template <class F>
+    void forEachBlockLocked(int64_t now, int64_t wnow, F&& fn) const;
     expr::InputValue readTag(const EngineRound& io, const std::string& id) const;
     int64_t mono() const;
     int64_t wall() const;
@@ -229,6 +237,7 @@ class LogicSubsystem {
     // a scan that took longer than scanMs, or that came a whole period late
     uint64_t overruns_ = 0;
     ScanProfile profile_;
+    size_t lastStatusBytes_ = 0;  // the size of the last statusText(), its next reserve
     std::map<std::string, std::string> lastErrorCode_;  // rule -> code of the last refusal
 
     // the dispatcher

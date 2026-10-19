@@ -752,10 +752,7 @@ std::string LogicSubsystem::writesState() {
     return stopped_ ? "stopped" : opt_.writes;
 }
 
-json LogicSubsystem::status() {
-    std::lock_guard<std::mutex> g(mu_);
-    const int64_t now = mono();
-    const int64_t wnow = wall();
+json LogicSubsystem::statusHeadLocked(int64_t now) const {
     std::vector<double> w(scanMsWindow_.begin(), scanMsWindow_.end());
     double interval = 0;
     for (int64_t x : scanIntervals_) interval += static_cast<double>(x);
@@ -766,23 +763,27 @@ json LogicSubsystem::status() {
         p99 = w[std::min(w.size() - 1, static_cast<size_t>(std::ceil(w.size() * 0.99)) - 1)];
     }
     const auto round1 = [](double x) { return std::round(x * 100) / 100; };
-    json body = {{"enabled", true},
-                 {"writes",
-                  {{"configured", opt_.writes},
-                   {"runtimeEnabled", opt_.writes == "on" && !stopped_},
-                   {"stopped", stopped_},
-                   {"stoppedBy", stopped_ ? json(stoppedBy_) : json(nullptr)},
-                   {"perMinute", engine_->writesLastMinute(now)},
-                   {"limitPerMinute", opt_.maxWritesPerMin}}},
-                 {"scan",
-                  {{"periodMs", opt_.scanMs},
-                   {"lastMs", round1(lastScanMs_)},
-                   {"p99Ms", round1(p99)},
-                   {"overrun", overruns_},
-                   {"scans", scans_},
-                   {"intervalMs", round1(interval)}}},
-                 {"retainLost", retainLost_},
-                 {"blocks", json::array()}};
+    return {{"enabled", true},
+            {"writes",
+             {{"configured", opt_.writes},
+              {"runtimeEnabled", opt_.writes == "on" && !stopped_},
+              {"stopped", stopped_},
+              {"stoppedBy", stopped_ ? json(stoppedBy_) : json(nullptr)},
+              {"perMinute", engine_->writesLastMinute(now)},
+              {"limitPerMinute", opt_.maxWritesPerMin}}},
+            {"scan",
+             {{"periodMs", opt_.scanMs},
+              {"lastMs", round1(lastScanMs_)},
+              {"p99Ms", round1(p99)},
+              {"overrun", overruns_},
+              {"scans", scans_},
+              {"intervalMs", round1(interval)}}},
+            {"retainLost", retainLost_},
+            {"blocks", json::array()}};
+}
+
+template <class F>
+void LogicSubsystem::forEachBlockLocked(int64_t now, int64_t wnow, F&& fn) const {
     std::map<std::string, std::vector<std::string>> outsByBlock;
     for (const auto& [tag, def] : engine_->outputTags()) outsByBlock[def.block].push_back(tag);
     for (const std::string& id : engine_->blockIds()) {
@@ -814,9 +815,45 @@ json LogicSubsystem::status() {
             }
             b["outputs"] = o;
         }
-        body["blocks"].push_back(b);
+        fn(std::move(b));
     }
+}
+
+json LogicSubsystem::status() {
+    std::lock_guard<std::mutex> g(mu_);
+    const int64_t now = mono();
+    const int64_t wnow = wall();
+    json body = statusHeadLocked(now);
+    json& blocks = body["blocks"];
+    forEachBlockLocked(now, wnow, [&blocks](json b) { blocks.push_back(std::move(b)); });
     return body;
+}
+
+std::string LogicSubsystem::statusText() {
+    std::lock_guard<std::mutex> g(mu_);
+    const int64_t now = mono();
+    const int64_t wnow = wall();
+    // the keys of an object are written in order: "blocks" comes first, the head follows it
+    const std::string head = jsonText(statusHeadLocked(now));
+    static const std::string kEmpty = "{\"blocks\":[]";
+    if (head.compare(0, kEmpty.size(), kEmpty) != 0) {  // never: the keys above are fixed
+        json body = statusHeadLocked(now);
+        json& blocks = body["blocks"];
+        forEachBlockLocked(now, wnow, [&blocks](json b) { blocks.push_back(std::move(b)); });
+        return jsonText(body);
+    }
+    std::string text = "{\"blocks\":[";
+    text.reserve(lastStatusBytes_ + 64);
+    bool first = true;
+    forEachBlockLocked(now, wnow, [&](json b) {
+        if (!first) text += ',';
+        first = false;
+        text += jsonText(b);
+    });
+    text += ']';
+    text.append(head, kEmpty.size(), std::string::npos);
+    lastStatusBytes_ = text.size();
+    return text;
 }
 
 bool LogicSubsystem::applyWritesReset() {
