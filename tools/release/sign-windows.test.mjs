@@ -302,10 +302,10 @@ test('make-test-cert.ps1 -Remove: gỡ chứng chỉ thử khỏi Cert:\\Current
   assert.equal(certScript('-Remove').status, 0);
 });
 
-// Tauri (chạy trong `release.ps1` dưới pwsh 7) gọi `powershell` 5.1 thừa hưởng PSModulePath của PS7: tham số động
-// `-CodeSigningCert` của Get-ChildItem biến mất. sign.ps1 -Mode test phải tìm chứng chỉ thử mà không cần nó.
+// Tauri (chạy trong `release.ps1` dưới pwsh 7) gọi `powershell` 5.1 thừa hưởng PSModulePath của PS7: module Security của PS7
+// nạp vào 5.1 làm Cert: lỗi ("TypeData ... already present"). sign.ps1 phải tự bỏ các đường dẫn module của PS7.
 test(
-  'sign.ps1 -Mode test chạy được từ powershell 5.1 do pwsh 7 sinh ra (PSModulePath của PS7)',
+  'sign.ps1 -Mode test chạy được khi PSModulePath chứa module của PS7 (như Tauri dưới release.ps1)',
   {
     skip:
       skip ||
@@ -313,16 +313,20 @@ test(
   },
   () => {
     assert.equal(certScript('-Json').status, 0); // ca -Remove ở trên đã gỡ chứng chỉ
+    const modulePath = spawnSync('pwsh', ['-NoProfile', '-Command', '$env:PSModulePath'], {
+      encoding: 'utf8',
+    }).stdout.trim();
+    assert.match(
+      modulePath,
+      /PowerShell[\\/]Modules|powershell_7/i,
+      'PSModulePath của pwsh có đường dẫn PS7',
+    );
     const d = tmp();
     const exe = makeExe(d, 'p.exe');
-    const r = spawnSync(
-      'pwsh',
-      [
-        '-NoProfile',
-        '-Command',
-        `powershell -NoProfile -ExecutionPolicy Bypass -File '${join(here, 'sign.ps1')}' -Path '${exe}' -LogPath '${join(d, 'l.json')}'; exit $LASTEXITCODE`,
-      ],
-      { encoding: 'utf8' },
+    const r = runPwsh(
+      pwsh,
+      ['-File', join(here, 'sign.ps1'), '-Path', exe, '-LogPath', join(d, 'l.json')],
+      { env: { ...process.env, PSModulePath: modulePath } },
     );
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.match(r.stdout, /Successfully signed/);
