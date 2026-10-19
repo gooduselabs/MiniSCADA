@@ -804,24 +804,26 @@ export class MatScreen extends LitElement {
                 gridTemplateColumns: narrow ? '1fr' : 'repeat(12, minmax(0, 1fr))',
                 columnGap: `${r.gap ?? gap}px`,
                 rowGap: `${gap}px`,
-                height: auto ? undefined : `${r.height}px`,
+                // xếp chồng (hẹp): hàng cao cố định thành tự cao, mỗi ô giữ chiều cao đó (không chia nhau)
+                height: auto || narrow ? undefined : `${r.height}px`,
                 minHeight: auto && rowMin > 0 ? `${rowMin}px` : undefined,
               })}
             >
-              ${r.cells.map(
-                (c, i) =>
-                  html`<div
-                    class="cell"
-                    data-cell-id=${c.id}
-                    style=${styleMap({
-                      gridColumn: narrow ? '1 / -1' : `${starts[i]} / span ${c.span}`,
-                      alignSelf: c.align && c.align !== 'stretch' ? c.align : undefined,
-                      minHeight: c.minHeight ? `${c.minHeight}px` : undefined,
-                    })}
-                  >
-                    ${this.mode === 'edit' ? html`<slot name=${`cell-${c.id}`}></slot>` : nothing}
-                  </div>`,
-              )}
+              ${r.cells.map((c, i) => {
+                const fixed = !auto && narrow ? (r.height as number) : 0;
+                const min = Math.max(c.minHeight ?? 0, fixed);
+                return html`<div
+                  class="cell"
+                  data-cell-id=${c.id}
+                  style=${styleMap({
+                    gridColumn: narrow ? '1 / -1' : `${starts[i]} / span ${c.span}`,
+                    alignSelf: c.align && c.align !== 'stretch' ? c.align : undefined,
+                    minHeight: min > 0 ? `${min}px` : undefined,
+                  })}
+                >
+                  ${this.mode === 'edit' ? html`<slot name=${`cell-${c.id}`}></slot>` : nothing}
+                </div>`;
+              })}
             </div>`;
           })}
         </div>

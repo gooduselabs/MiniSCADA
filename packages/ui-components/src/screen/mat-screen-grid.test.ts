@@ -127,6 +127,9 @@ describe('<mat-screen>: bố cục lưới', () => {
     const { el } = await setup(gridScreen(), 600);
     expect(root(el).querySelector('.grid')!.classList.contains('narrow')).toBe(true);
     expect(cell(el, 'c2').style.gridColumn).toBe('1 / -1');
+    // hàng cao cố định (r2, 320 px) khi xếp chồng: hàng tự cao, mỗi ô giữ tối thiểu 320 px (không chia nhau 320 px)
+    expect(rows(el)[1]!.style.height).toBe('');
+    expect(cell(el, 'c4').style.minHeight).toBe('320px');
     const wide = await setup(gridScreen(), 1366);
     expect(root(wide.el).querySelector('.grid')!.classList.contains('narrow')).toBe(false);
   });
