@@ -96,7 +96,7 @@ function areaOf(file) {
 const RULE_A = /\b([EW]_[A-Z0-9_]+)\b/g;
 const RULE_B = /"([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)"/g;
 const RULE_C =
-  /(?:\{\s*"error"\s*,\s*|\\?"error\\?"\s*:\s*\\?|(?:sendError|refuse|fail)\s*\([^;]{0,40}?\b\d{3}\s*,\s*)"([A-Z][A-Z0-9]*)"/g;
+  /(?:\{\s*"error"\s*,\s*|\\?"error\\?"\s*:\s*\\?|(?:sendError|refuse|fail|deny)\s*\([^;]{0,40}?\b\d{3}\s*,\s*)"([A-Z][A-Z0-9]*)"/g;
 
 /** Quét mã nguồn: Map mã → Set khu vực. */
 function scanSource() {

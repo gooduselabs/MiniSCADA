@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 457 mã.
+Tổng cộng 469 mã.
 
 ## Mục lục
 
@@ -25,7 +25,7 @@ Tổng cộng 457 mã.
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
 - [Gói project (.matscada)](#package) (16)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
-- [Đăng nhập, phiên và truy cập HTTP](#auth) (25)
+- [Đăng nhập, phiên và truy cập HTTP](#auth) (37)
 - [Ghi Tag](#write) (39)
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
@@ -363,31 +363,43 @@ Tổng cộng 457 mã.
 
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
+| `ACCESS_DENIED` | 403 | Bạn không có quyền với trang hoặc component này. | `server`, `server/http` |
 | `AUDIT_UNAVAILABLE` | 503 | Thiết bị không ghi được nhật ký kiểm toán nên chưa thực hiện | `core/auth`, `core/project-store`, `core/tag-engine`, `server`, `server/http` |
 | `AUTH_FAILED` | 401 | Sai tên đăng nhập hoặc mật khẩu. | `core/auth`, `server/http` |
 | `AUTH_LOCKED` | 429 | Đăng nhập đang bị khóa tạm do sai nhiều lần. Hãy thử lại sau. | `core/auth`, `server/http` |
 | `AUTH_REQUIRED` | 401 | Cần đăng nhập. | `server/http` |
 | `BAD_REQUEST` | 400 | Yêu cầu không hợp lệ. | `drivers/modbus`, `server`, `server/http` |
 | `BODY_TOO_LARGE` | 413 | Nội dung yêu cầu quá lớn. | `server/http` |
+| `CONFLICT` | 409 | Dữ liệu đã đổi bởi người khác, tải lại rồi thử lại. | `server/http` |
+| `CONTAINS_NAME` | 400 | Mật khẩu chứa tên tài khoản (lý do của WEAK_PASSWORD). | `server/http` |
 | `CSRF_FAILED` | 403 | Yêu cầu không có mã chống giả mạo hợp lệ. Hãy tải lại trang. | `server/http` |
+| `EXISTS` | 409 | Tên đã có, chọn tên khác. | `server/http` |
 | `FETCH_SITE` | 403 | Yêu cầu từ trang khác nguồn bị từ chối. | `server/http` |
 | `FORBIDDEN` | 403 | Tài khoản không đủ quyền cho thao tác này. | `server/http` |
 | `HOST_NOT_ALLOWED` | 421 | Tên này chưa được phép. Quản trị viên: thêm vào allowedHosts của runtime.json. | `server` |
 | `HTTPS_REQUIRED` | 403 | Chức năng này chỉ dùng được qua HTTPS (cổng kỹ thuật). | `server/http` |
 | `INTERNAL_ERROR` | 500 | Lỗi nội bộ của thiết bị. | `core/auth`, `server/http` |
+| `IN_USE` | 409 | Còn đang được dùng (thành viên hoặc quy tắc quyền), gỡ trước khi xóa. | `server/http` |
+| `LAST_ADMIN` | 409 | Phải còn ít nhất một quản trị viên đang bật. | `server/http` |
 | `LENGTH_REQUIRED` | 411 | Yêu cầu cần có Content-Length. | `server/http` |
 | `LOGIN_BUSY` | 429 | Thiết bị đang bận kiểm tra các đăng nhập khác. Hãy thử lại sau giây lát. | `core/auth`, `server/http` |
 | `METHOD_NOT_ALLOWED` | 405 | Phương thức không được hỗ trợ cho đường dẫn này. | `server/http` |
 | `NOT_FOUND` | 404 | Không có chức năng này. | `core/alarm`, `server`, `server/http` |
 | `NOT_IMPLEMENTED` | 501 | Phiên bản runtime này chưa có chức năng này. | `server/http` |
+| `NO_BACKUP` | 404 | Không có bản sao trước để khôi phục. | `server/http` |
 | `ORIGIN_MISMATCH` | 403 | Yêu cầu không xuất phát từ trang của thiết bị này. | `server/http` |
+| `REAUTH_REQUIRED` | 403 | Cần nhập lại đúng mật khẩu của bạn để xác nhận. | `server/http` |
 | `SESSION_EXPIRED` | 401 | Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại. | `core/auth`, `server/http` |
 | `SESSION_INVALID` | 401 | Phiên đăng nhập không còn dùng được (đổi địa chỉ, tài khoản bị tắt hoặc đã đổi). | `core/auth`, `server/http` |
 | `SESSION_SCOPE` | 403 | Phiên đăng nhập của trang này không dùng được cho thao tác này. | `server/http` |
 | `SOURCE_NOT_ALLOWED` | 403 | Địa chỉ nguồn không được phép mở trang xem (viewerAccess = private) | `server/http` |
+| `STORE_INVALID` | 503 | Kho tài khoản hoặc quyền trên thiết bị bị hỏng; chỉ quản trị viên vào được, khôi phục bản trước. | `server/http` |
+| `TOO_LONG` | 400 | Mật khẩu dài quá 128 ký tự (lý do của WEAK_PASSWORD). | `server/http` |
+| `TOO_SHORT` | 400 | Mật khẩu ngắn hơn 15 ký tự (lý do của WEAK_PASSWORD). | `server/http` |
 | `UNLOCK_REQUEST_FAILED` | — | Không ghi được tệp yêu cầu mở mọi khóa đăng nhập | `server/cli` |
 | `UNLOCK_REQUEST_REFUSED` | — | Tệp yêu cầu mở mọi khóa đăng nhập không phải tệp thường của root quyền 0600: đã xóa, không dùng | `core/auth` |
 | `VIEWER_OFF` | 403 | Trang xem đã bị tắt trên thiết bị này (viewerAccess = off). | `server/http` |
+| `WEAK_PASSWORD` | 400 | Mật khẩu không đạt quy tắc (15 đến 128 ký tự, không chứa tên tài khoản). | `server/http` |
 
 <a id="write"></a>
 
