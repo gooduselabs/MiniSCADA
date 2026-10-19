@@ -390,6 +390,60 @@ export function setSecurity(
   return replaceItem(doc, id, next);
 }
 
+const ROLE_ORDER: readonly Role03[] = ['viewer', 'operator', 'engineer', 'administrator'];
+const roleRank = (r: string): number => (ROLE_ORDER as readonly string[]).indexOf(r);
+
+/** Sửa vai trò tối thiểu của item (định dạng 1.1, feature 013); `null` bỏ khóa, vắng thì giữ. */
+export interface AccessPatch {
+  view?: Role03 | null;
+  operate?: Role03 | null;
+}
+
+/**
+ * Vai trò tối thiểu để xem (`security.view`) và để thao tác (`security.operate`) của item (contracts/access-model.md
+ * §3, luật E_SECURITY_* của tests/project-vectors/README-013.md). `operate` chỉ cho item thao tác được: widget nhóm
+ * `control`, hoặc item svg mà bên gọi báo có sự kiện ghi (`svgOperable`, tính từ tệp binding). Đặt `operate` thì bỏ
+ * `minRole` (bí danh cũ). Từ chối `operate: viewer` và `operate` thấp hơn `view`; nâng `view` trên mức thao tác đã khai
+ * thì mức thao tác được nâng theo. Giá trị mặc định (viewer, operator) được bỏ khi chuẩn hóa.
+ */
+export function setItemAccess(
+  doc: ScreenModel,
+  id: string,
+  patch: AccessPatch,
+  opts: { svgOperable?: boolean } = {},
+): EditResult {
+  const it = find(doc, id);
+  if (it === undefined) return reject(doc, 'unknown-item');
+  const operable =
+    it.type === 'widget'
+      ? catalogWidget(it.widget)?.group === 'control'
+      : opts.svgOperable === true;
+  const cur: { view?: Role03; operate?: Role03; minRole?: Role03 } = { ...(it.security ?? {}) };
+  if (patch.view !== undefined) {
+    if (patch.view === null) delete cur.view;
+    else if (roleRank(patch.view) < 0) return reject(doc, 'bad-security');
+    else cur.view = patch.view;
+  }
+  if (patch.operate !== undefined) {
+    if (patch.operate !== null && (!operable || roleRank(patch.operate) < 1))
+      return reject(doc, 'bad-security');
+    delete cur.minRole;
+    if (patch.operate === null) delete cur.operate;
+    else cur.operate = patch.operate;
+  }
+  const view = cur.view ?? 'viewer';
+  const explicit = cur.operate ?? cur.minRole;
+  if (explicit !== undefined && roleRank(explicit) < roleRank(view)) {
+    if (patch.operate !== undefined && patch.operate !== null) return reject(doc, 'bad-security');
+    delete cur.minRole;
+    cur.operate = view;
+  }
+  const next = { ...it } as Item & { security?: typeof cur };
+  if (Object.keys(cur).length === 0) delete next.security;
+  else next.security = cur;
+  return replaceItem(doc, id, next as Item);
+}
+
 /** Đổi tên hiển thị của item; chuỗi rỗng bỏ khóa `name`. */
 export function rename(doc: ScreenModel, id: string, name: string): EditResult {
   const it = find(doc, id);
@@ -468,6 +522,8 @@ export interface ScreenProps {
   /** `null` bỏ khóa (về mặc định). */
   fitMode?: FitMode03 | null;
   background?: string | null;
+  /** Định dạng 1.1 (feature 013): vai trò tối thiểu để xem màn hình; `null` hoặc viewer bỏ khóa. */
+  view?: Role03 | null;
 }
 const FIT_MODES: readonly FitMode03[] = ['contain', 'cover', 'stretch', 'fit-width', 'none'];
 const clampInt = (n: number, lo: number, hi: number): number =>
@@ -501,6 +557,11 @@ export function setScreenProps(doc: ScreenModel, p: ScreenProps): EditResult {
     if (p.background === null) delete next.background;
     else if (!/^#[0-9a-fA-F]{6}$/.test(p.background)) return reject(doc, 'bad-screen-prop');
     else next.background = p.background;
+  }
+  if (p.view !== undefined) {
+    if (p.view !== null && roleRank(p.view) < 0) return reject(doc, 'bad-screen-prop');
+    if (p.view === null || p.view === 'viewer') delete next.security;
+    else next.security = { view: p.view };
   }
   return JSON.stringify(next) === JSON.stringify(doc) ? { doc } : { doc: next };
 }
