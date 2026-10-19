@@ -1,0 +1,49 @@
+# Research: 012 bố cục lưới và giao diện
+
+Phiên bản thư viện lấy bằng `npm view` ngày 2026-10-19. Kích thước sau nén là ước tính, **R2 đo lại** trước khi khóa.
+
+## R1. Mô hình bố cục: ô tham chiếu item
+
+- **Decision**: `screen.layout = { mode: "grid", columns: 12, gap, padding, rows: [{ id, height, gap?, cells: [{ id, span, offset?, align?, minHeight?, item? }] }] }`; `items[]` phẳng giữ nguyên; item của màn hình lưới bỏ `x`, `y`, `width`, `height`.
+- **Rationale**: mọi luồng hiện có (binding, sự kiện, `rename.ts`, `compare.ts`, `svg-bind.ts`, `*-flow.ts`, template) duyệt `screen.items`; giữ nguyên thì FR-014 gần như miễn phí. Vị trí là dữ liệu riêng của bố cục.
+- **Alternatives**: lồng item trong ô (phải viết lại mọi luồng duyệt item); thêm `slot {row, col, span}` vào item (thứ tự hàng và ô rải rác, khó đổi thứ tự, khó kiểm trùng).
+
+## R2. Thư viện biểu đồ
+
+- **Decision (tạm, chốt sau spike T-R2)**: ECharts 6.1.0 nhập theo mô-đun (`echarts/core` + `BarChart`, `PieChart`, `GaugeChart`, `HeatmapChart`, các component `Grid`, `Tooltip`, `Legend`, renderer `SVGRenderer`/`CanvasRenderer`), **nạp lười** bằng `import()` lần đầu một widget cần nó. Xu hướng thời gian thực và lịch sử **giữ uPlot 1.6.32**, làm mới giao diện bằng token và plugin.
+- **Rationale**: ECharts có cột, tròn/vành khuyên, đồng hồ, bản đồ nhiệt, hoạt ảnh, theme, tooltip đẹp, giấy phép Apache-2.0 (qua cổng giấy phép), có renderer SVG dùng lại cho báo cáo (R6). uPlot vẫn nhanh nhất cho 10.000 đến 100.000 điểm; viết lại xu hướng là rủi ro không cần.
+- **Spike T-R2 (đo)**: kích thước gzip của gói ECharts tối thiểu (mục tiêu ≤ 350 KB), thời gian vẽ 12 widget, CPU ở 1 Hz × 10 client. Nếu vượt: dùng Chart.js 4.5.1 (MIT) cho cột/tròn và giữ đồng hồ SVG tay vẽ lại.
+- **Alternatives**: chỉ cải tiến SVG tay (rẻ nhất nhưng người dùng chê; khó có tooltip, hoạt ảnh); ECharts cho cả xu hướng (nặng hơn uPlot nhiều ở 50.000 điểm).
+
+## R3. Bảng màu và chủ đề
+
+- **Decision**: ba chủ đề `vivid` (Sáng đa sắc, mặc định project mới), `industrial` (giá trị token hiện có), `dark`. Giá trị lấy từ thang 12 bậc của **Radix Colors 3.0.0** (MIT) lúc thiết kế, ghi cứng vào `packages/ui-components/src/styles/themes/*.css`; không có phụ thuộc lúc chạy. Bảng màu chuỗi 12 màu: blue, teal, green, amber, orange, red, crimson, pink, violet, indigo, cyan, lime (bậc 9 cho nét, bậc 3 cho vùng); thang tuần tự (blue 3→11) và phân kỳ (red ↔ blue). Biến chủ đề qua thuộc tính `data-mat-theme` trên `:root`.
+- **Rationale**: Radix có cặp sáng/tối đã cân chỉnh tương phản; ghi giá trị vào CSS giữ cơ chế token `--mat-*` hiện có (`tokens.css`, `:where()`), widget không phải sửa.
+- **Tương phản**: test tự động mở rộng `alarm-tokens.test.ts` cho mọi cặp chữ/nền của ba chủ đề (≥ 4,5:1); chuỗi biểu đồ giữ mảng kiểu nét hiện có (`line-chart.ts`).
+- **Alternatives**: thang Tailwind (tương tự, ít bậc nền nhạt cho tối); sinh OKLCH tự viết (tốn công cân chỉnh).
+
+## R4. Phông chữ
+
+- **Decision**: `@fontsource-variable/inter` 5.3.0 (OFL-1.1), chỉ chép `inter-latin-wght-normal.woff2` và `inter-latin-ext-wght-normal.woff2` (đủ dấu tiếng Việt) vào tài nguyên tĩnh; `font-display: swap`; dự phòng `Segoe UI`, `system-ui`.
+- **Rationale**: giống nhau trên mọi máy vận hành; số dễ đọc (tabular-nums).
+- **Alternatives**: phông hệ thống (khác nhau giữa máy, hiện đang dùng).
+
+## R5. Hiển thị lưới
+
+- **Decision**: phần tử `mat-grid-screen` (Lit) render hàng là `display: grid; grid-template-columns: repeat(12, minmax(0, 1fr))`, ô `grid-column: <offset+1> / span <span>`; hàng `height: auto` dùng `min-height` từ danh mục widget, hàng px cố định; dưới 768 px (container query trên phần tử, không dùng kích thước cửa sổ, để xem trước Studio giả lập được) mọi ô `grid-column: 1 / -1`. Widget, binding, sự kiện, popup dùng lại mã của `mat-screen` qua hàm chung tách ra (`mountWidget`, `mountSvgItem`).
+- **Rationale**: CSS Grid có sẵn, không phụ thuộc; container query cho xem trước nhiều cỡ ở Studio (FR-023).
+- **Alternatives**: tính vị trí bằng JS rồi đặt tuyệt đối (mất khả năng co giãn tự nhiên).
+
+## R6. Báo cáo
+
+- **Decision**: giữ pdfmake 0.3.11; nhúng Inter (vfs) thay Roboto; mẫu mới (dải tiêu đề màu chủ đề, logo tùy chọn, thẻ số liệu, bảng zebra, `headerRows: 1`, chân trang `currentPage/pageCount`); biểu đồ: ECharts SSR SVG (`renderToSVGString`) nhúng bằng nút `svg` của pdfmake. XLSX: thêm style (fill tiêu đề, độ rộng cột, numFmt) trong `xlsx/` tự ghép hiện có.
+- **Alternatives**: chụp canvas thành PNG (vỡ hạt khi phóng, trái SC-009).
+
+## R7. Định dạng 1.1 và hai bộ kiểm
+
+- **Decision**: `SUPPORTED_SCHEMA_11 = /^1\.1\.\d+$/`; set 11 trong `project_validator.cpp` (bản đóng băng `schemas/1.1/`); `migrateTo11` dùng `bumpFormat` (chỉ đổi `schemaVersion`, `minRuntimeVersion` 1.1.0). Studio lưu project có màn hình lưới bắt buộc 1.1; nút Nâng cấp đưa 0.x/1.0 lên 1.1 (một lần). Mã lỗi: `E_LAYOUT_COLUMNS`, `E_LAYOUT_SPAN`, `E_LAYOUT_ITEM_REF`, `E_LAYOUT_ITEM_DUP`, `E_LAYOUT_ITEM_POS`, `E_LAYOUT_LIMIT`, `E_LAYOUT_ID`, `W_LAYOUT_ITEM_ORPHAN`.
+- **Rationale**: cùng cách các bước 0.4 → 1.0 đã làm; vector chung đảm bảo TS = C++.
+
+## R8. Hiệu năng
+
+- Live hub, đăng ký Tag không đổi (theo item). Đo: `tools/load-tester` 500 Tag, 10 client với project mẫu `projects/grid-demo` (mới) so với `dashboard-demo`; trình duyệt: Performance panel, 12 widget, 1 Hz.
