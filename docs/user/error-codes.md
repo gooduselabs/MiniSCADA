@@ -12,14 +12,14 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 455 mã.
+Tổng cộng 457 mã.
 
 ## Mục lục
 
 - [Định dạng và phiên bản project](#format) (13)
 - [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (33)
 - [Biểu thức của Tag tính toán](#expression) (10)
-- [Màn hình, widget, binding và điều hướng](#screens) (47)
+- [Màn hình, widget, binding và điều hướng](#screens) (49)
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (32)
 - [Alarm](#alarm) (46)
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
@@ -140,6 +140,8 @@ Tổng cộng 455 mã.
 | `E_SCREEN_KIND` | — | `kind` của màn hình sai, hoặc `entryScreen` là popup | `core/project-manager`, `packages/project-schema` |
 | `E_SCREEN_SIZE` | — | `size` của màn hình ngoài khoảng | `core/project-manager`, `packages/project-schema` |
 | `E_SCREEN_TAGS` | — | Một màn hình dùng hơn 1000 Tag khác nhau (giới hạn của một lần đăng ký dữ liệu sống) | `core/common`, `core/project-manager`, `packages/project-schema` |
+| `E_SECURITY_ITEM` | — | Mức thao tác (security.operate) đặt cho component không thao tác được: widget chỉ hiển thị, hoặc SVG không có sự kiện ghi | `core/project-manager`, `packages/project-schema` |
+| `E_SECURITY_LEVEL` | — | Vai trò tối thiểu của màn hình hoặc component sai: mức thao tác là viewer, thấp hơn mức xem hay khác minRole, hoặc khai ở project định dạng 1.0 (cần 1.1) | `core/project-manager`, `packages/project-schema` |
 | `E_TARGET_UNSUPPORTED` | — | Đích của binding có trong danh sách nhưng phiên bản này chưa hỗ trợ | `core/project-manager`, `packages/project-schema` |
 | `E_TEMPLATE_ID` | — | Template có id khác tên tệp, hoặc id item trong template sai dạng hay bị trùng | `core/project-manager`, `packages/project-schema` |
 | `E_TEMPLATE_PARAM` | — | Tham số template hoặc popup sai: tham số chưa khai, đặt ngoài chỗ cho phép, dấu ngoặc nhọn lạ, khai báo hay giá trị tham số không hợp lệ | `core/project-manager`, `packages/project-schema` |

@@ -1523,6 +1523,20 @@
       "usedIn": ["core/common", "core/project-manager", "packages/project-schema"]
     },
     {
+      "code": "E_SECURITY_ITEM",
+      "http": null,
+      "group": "screens",
+      "message": "Mức thao tác (security.operate) đặt cho component không thao tác được: widget chỉ hiển thị, hoặc SVG không có sự kiện ghi",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SECURITY_LEVEL",
+      "http": null,
+      "group": "screens",
+      "message": "Vai trò tối thiểu của màn hình hoặc component sai: mức thao tác là viewer, thấp hơn mức xem hay khác minRole, hoặc khai ở project định dạng 1.0 (cần 1.1)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
       "code": "E_SERIAL_NOT_ALLOWED",
       "http": null,
       "group": "tags",

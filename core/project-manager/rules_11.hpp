@@ -10,6 +10,7 @@
 
 #include "core/project-manager/project_validator.hpp"
 #include "core/project-manager/rules_03.hpp"
+#include "core/project-manager/widget_catalog.hpp"
 #include "nlohmann/json.hpp"
 
 namespace mat {
@@ -20,8 +21,16 @@ constexpr size_t kGridMaxRows = 100;
 constexpr size_t kGridMaxCellsPerRow = 12;
 
 // `project`: project.json (passed its schema); `screens`: the screens and popups that passed
-// theirs.
+// theirs; `catalog`: the widget catalog (E_SECURITY_ITEM, feature 013; null: widget items skipped).
 void runRules11(const nlohmann::json& project, const std::vector<Rules03Input::ScreenDoc>& screens,
-                std::vector<ProjectIssue>& errors, std::vector<ProjectIssue>& warnings);
+                const WidgetCatalog* catalog, std::vector<ProjectIssue>& errors,
+                std::vector<ProjectIssue>& warnings);
+
+// Feature 013 (specs/013-access-control/contracts/access-model.md §2), twin of isOperableItem of
+// rules-11.ts: a widget of the "control" group of the catalog, or an svg item one element of whose
+// binding file (`bindings`, null when it did not load) has a click event that writes (write,
+// toggle, pulse).
+bool isOperableItem(const nlohmann::json& item, const nlohmann::json* bindings,
+                    const WidgetCatalog* catalog);
 
 }  // namespace mat

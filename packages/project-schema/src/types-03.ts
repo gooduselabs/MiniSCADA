@@ -43,6 +43,18 @@ export interface SvgItem extends ItemBase {
   viewBox: [number, number, number, number];
   fit?: 'contain' | 'cover' | 'stretch';
   elements: Array<{ elementUid: string; name?: string; kind?: string }>;
+  /** Định dạng 1.1 (feature 013): vai trò tối thiểu (không có `minRole`). */
+  security?: Omit<ItemSecurity, 'minRole'>;
+}
+
+/**
+ * Vai trò tối thiểu của item khi không có quy tắc quyền (specs/013-access-control/contracts/access-model.md §3):
+ * `view` thiếu = viewer; `operate` thiếu = `minRole`, thiếu nữa = operator.
+ */
+export interface ItemSecurity {
+  minRole?: Exclude<Role03, 'viewer'>;
+  view?: Role03;
+  operate?: Role03;
 }
 
 export interface WidgetItem extends ItemBase {
@@ -52,7 +64,8 @@ export interface WidgetItem extends ItemBase {
   /** Khe → id Tag, hoặc mảng id cho khe `multi`. */
   tags?: Record<string, string | string[]>;
   events?: { click?: Action };
-  security?: { minRole?: Exclude<Role03, 'viewer'> };
+  /** `minRole` (0.3) là bí danh cũ của `operate`; `view`, `operate` từ định dạng 1.1 (feature 013). */
+  security?: ItemSecurity;
 }
 
 export type Item = SvgItem | WidgetItem;
@@ -65,6 +78,8 @@ export interface ScreenModel {
   size: { width: number; height: number };
   fitMode?: FitMode03;
   background?: string;
+  /** Định dạng 1.1 (feature 013): vai trò tối thiểu để xem màn hình hoặc popup; thiếu = viewer. */
+  security?: { view?: Role03 };
   items: Item[];
 }
 

@@ -184,6 +184,11 @@ export const ERROR_CODES = [
   'E_LAYOUT_LIMIT',
   /** `layout` hoặc `theme` ở project dưới 1.1, hoặc project 1.1 có runtime tối thiểu dưới 1.1.0. */
   'E_LAYOUT_VERSION',
+  // feature 013: vai trò tối thiểu của màn hình và item (specs/013-access-control/spec.md FR-050; rules-11.ts)
+  /** `security.operate` là viewer, thấp hơn `view`, khác `minRole`; hoặc `security.view`/`operate` ở project 1.0. */
+  'E_SECURITY_LEVEL',
+  /** `security.operate` trên item không thao tác được (widget không thuộc nhóm control, SVG không có sự kiện ghi). */
+  'E_SECURITY_ITEM',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**

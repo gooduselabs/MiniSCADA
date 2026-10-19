@@ -47,6 +47,16 @@
     "layout": {
       "$ref": "#/definitions/layout"
     },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Format 1.1 (feature 013): lowest role that sees the screen or popup when no access rule applies.",
+      "properties": {
+        "view": {
+          "$ref": "#/definitions/role"
+        }
+      }
+    },
     "items": {
       "type": "array",
       "items": {
@@ -109,6 +119,19 @@
         },
         "tpl": {
           "$ref": "#/definitions/tpl"
+        },
+        "security": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Format 1.1 (feature 013): as security of a widget item, without minRole (the events of the elements have their own).",
+          "properties": {
+            "view": {
+              "$ref": "#/definitions/role"
+            },
+            "operate": {
+              "$ref": "#/definitions/role"
+            }
+          }
         },
         "svgFile": {
           "type": "string",
@@ -247,9 +270,16 @@
         "security": {
           "type": "object",
           "additionalProperties": false,
+          "description": "minRole (0.3) is the old alias of operate. Format 1.1 (feature 013): view and operate are the lowest roles that see and operate the item when no access rule applies; rules E_SECURITY_LEVEL, E_SECURITY_ITEM.",
           "properties": {
             "minRole": {
               "type": "string"
+            },
+            "view": {
+              "$ref": "#/definitions/role"
+            },
+            "operate": {
+              "$ref": "#/definitions/role"
             }
           }
         }
@@ -412,6 +442,10 @@
           }
         }
       }
+    },
+    "role": {
+      "description": "Format 1.1 (feature 013): a role as the lowest one allowed (contracts/access-model.md §3).",
+      "enum": ["viewer", "operator", "engineer", "administrator"]
     }
   }
 }

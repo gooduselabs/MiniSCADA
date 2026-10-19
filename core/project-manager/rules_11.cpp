@@ -54,10 +54,38 @@ const json& arrayOf(const json& o, const char* k) {
     return o.is_object() && o.contains(k) && o[k].is_array() ? o[k] : kEmpty;
 }
 
+// viewer < operator < engineer < administrator (SECURITY_ROLES of rules-11.ts); -1 when unknown
+int roleIndex(const std::string& r) {
+    static const char* const kRoles[] = {"viewer", "operator", "engineer", "administrator"};
+    for (int i = 0; i < 4; ++i)
+        if (r == kRoles[i]) return i;
+    return -1;
+}
+
 }  // namespace
 
+bool isOperableItem(const json& item, const json* bindings, const WidgetCatalog* catalog) {
+    if (!item.is_object() || !item.contains("type")) return false;
+    if (item["type"] == "widget") {
+        if (!catalog || !item.contains("widget") || !item["widget"].is_string()) return false;
+        const WidgetSpec* spec = catalog->find(item["widget"].get<std::string>());
+        return spec && spec->group == "control";
+    }
+    if (item["type"] != "svg" || !bindings) return false;
+    for (const auto& e : arrayOf(*bindings, "elements")) {
+        if (!e.is_object() || !e.contains("events") || !e["events"].is_object()) continue;
+        const json& ev = e["events"];
+        if (!ev.contains("click") || !ev["click"].is_object() || !ev["click"].contains("action"))
+            continue;
+        const json& a = ev["click"]["action"];
+        if (a == "write" || a == "toggle" || a == "pulse") return true;
+    }
+    return false;
+}
+
 void runRules11(const json& project, const std::vector<Rules03Input::ScreenDoc>& screens,
-                std::vector<ProjectIssue>& errors, std::vector<ProjectIssue>& warnings) {
+                const WidgetCatalog* catalog, std::vector<ProjectIssue>& errors,
+                std::vector<ProjectIssue>& warnings) {
     const auto err = [&](const char* code, const std::string& file, const std::string& path,
                          const std::string& message) {
         errors.push_back({code, file, path, message});
@@ -171,6 +199,56 @@ void runRules11(const json& project, const std::vector<Rules03Input::ScreenDoc>&
                 }
             if (!placed.count(idOf(it)))
                 warn("W_LAYOUT_ITEM_ORPHAN", file, p, "item '" + idOf(it) + "' is in no cell");
+        }
+    }
+
+    // the lowest roles of screens and items (feature 013, README-013.md), after the layout rules
+    for (const auto& sd : screens) {
+        const std::string& file = sd.file;
+        const json& screen = sd.screen;
+        if (!screen.is_object() || !screen.contains("items") || !screen["items"].is_array())
+            continue;
+        if (!v11 && screen.contains("security"))
+            err("E_SECURITY_LEVEL", file, "/security", "screen security needs project format 1.1");
+        const json& items = screen["items"];
+        for (size_t i = 0; i < items.size(); ++i) {
+            const json& item = items[i];
+            if (!item.is_object() || !item.contains("security") || !item["security"].is_object())
+                continue;
+            const json& sec = item["security"];
+            const std::string p = "/items/" + std::to_string(i) + "/security";
+            if (!v11) {
+                const char* first =
+                    sec.contains("view") ? "view" : sec.contains("operate") ? "operate" : nullptr;
+                if (first)
+                    err("E_SECURITY_LEVEL", file, p + "/" + first,
+                        std::string("security.") + first + " needs project format 1.1");
+                continue;
+            }
+            if (!sec.contains("operate") || !sec["operate"].is_string()) continue;
+            const std::string operate = sec["operate"].get<std::string>();
+            if (item.contains("type") && item["type"] == "widget") {
+                // E_WIDGET_UNKNOWN is already reported
+                const bool known = catalog && item.contains("widget") &&
+                                   item["widget"].is_string() &&
+                                   catalog->find(item["widget"].get<std::string>());
+                if (!known) continue;
+            }
+            const auto sv = sd.svg.find(i);
+            const json* bindings =
+                sv != sd.svg.end() && sv->second.hasBindings ? &sv->second.bindings : nullptr;
+            const std::string view = sec.contains("view") && sec["view"].is_string()
+                                         ? sec["view"].get<std::string>()
+                                         : std::string("viewer");
+            if (!isOperableItem(item, bindings, catalog))
+                err("E_SECURITY_ITEM", file, p + "/operate", "the item cannot be operated");
+            else if (operate == "viewer")
+                err("E_SECURITY_LEVEL", file, p + "/operate", "operate needs operator or higher");
+            else if (roleIndex(operate) < roleIndex(view))
+                err("E_SECURITY_LEVEL", file, p + "/operate", "operate is lower than view");
+            else if (sec.contains("minRole") && sec["minRole"] != json(operate))
+                err("E_SECURITY_LEVEL", file, p + "/minRole",
+                    "minRole (alias of operate) differs from it");
         }
     }
 }

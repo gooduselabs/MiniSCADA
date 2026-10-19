@@ -592,10 +592,18 @@ class Rules {
         const json& tagsObj = item.contains("tags") && isObj(item["tags"]) ? item["tags"] : kEmpty;
 
         if (item.contains("security")) {
-            if (!spec->hasSecurity) {
+            // format 1.1 (feature 013): `view`, `operate` are allowed on every widget (rules_11);
+            // an empty security or one with `minRole` on a widget without security stays
+            // E_WIDGET_PROP
+            const json& sec = item["security"];
+            bool onlyAccess = sec.is_object() && !sec.empty();
+            if (sec.is_object())
+                for (auto it = sec.begin(); it != sec.end(); ++it)
+                    if (it.key() != "view" && it.key() != "operate") onlyAccess = false;
+            if (!spec->hasSecurity && !onlyAccess) {
                 add("E_WIDGET_PROP", file, p + "/security",
                     spec->id + " has no security properties");
-            } else if (item["security"].contains("minRole")) {
+            } else if (spec->hasSecurity && item["security"].contains("minRole")) {
                 const std::string role = item["security"]["minRole"].get<std::string>();
                 if (std::find(spec->minRoles.begin(), spec->minRoles.end(), role) ==
                     spec->minRoles.end())
