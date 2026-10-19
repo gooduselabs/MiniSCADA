@@ -41,11 +41,15 @@ const SVG_KEYS = [
   'viewBox',
   'fit',
   'elements',
+  // định dạng 1.1 (feature 013): vai trò tối thiểu
+  'security',
   'tpl',
 ] as const;
 const ACTION_KEYS = ['action', 'value', 'durationMs', 'screen', 'args'] as const;
 const ELEMENT_KEYS = ['elementUid', 'name', 'kind'] as const;
 const TPL_KEYS = ['inst', 'tid', 'rid', 'params'] as const;
+/** Vai trò tối thiểu (định dạng 1.1, feature 013; `minRole` 0.3 là bí danh cũ của `operate`). */
+const SECURITY_KEYS = ['view', 'operate', 'minRole'] as const;
 /** Bố cục lưới (định dạng 1.1, feature 012): thứ tự khóa của hàng và ô. */
 const ROW_KEYS = ['id', 'height', 'gap', 'cells'] as const;
 const CELL_KEYS = ['id', 'span', 'offset', 'align', 'minHeight', 'item'] as const;
@@ -107,6 +111,7 @@ export function canonicalItem(item: Obj): Obj {
     if (out.fit === 'contain') delete out.fit;
     if (Array.isArray(out.elements))
       out.elements = (out.elements as Obj[]).map((e) => pick(e, ELEMENT_KEYS));
+    canonSecurity(out, 'operator');
     return out;
   }
   const out = pick(item, WIDGET_KEYS);
@@ -130,13 +135,22 @@ export function canonicalItem(item: Obj): Obj {
     else if (Object.keys(out.events).length === 0) delete out.events;
   }
   if (isObj(out.tpl)) out.tpl = ordered(out.tpl, TPL_KEYS);
-  if (isObj(out.security)) {
-    const sec = { ...out.security };
-    if (sec.minRole === spec?.security?.default) delete sec.minRole;
-    if (Object.keys(sec).length > 0) out.security = sec;
-    else delete out.security;
-  }
+  canonSecurity(out, spec?.security?.default);
   return out;
+}
+
+/**
+ * `security` của item ở dạng chuẩn: khóa theo SECURITY_KEYS; bỏ `view: viewer`, `minRole` bằng mặc định danh mục và
+ * `operate` bằng mặc định khi không có `minRole`; rỗng thì bỏ cả khối.
+ */
+function canonSecurity(out: Obj, defaultOperate: string | undefined): void {
+  if (!isObj(out.security)) return;
+  const sec = pick(out.security, SECURITY_KEYS);
+  if (sec.view === 'viewer') delete sec.view;
+  if (sec.minRole === defaultOperate) delete sec.minRole;
+  if (sec.operate === defaultOperate && sec.minRole === undefined) delete sec.operate;
+  if (Object.keys(sec).length > 0) out.security = sec;
+  else delete out.security;
 }
 
 /** Tệp màn hình `screens/<id>.screen.json` ở dạng chuẩn. */
@@ -171,6 +185,12 @@ export function formatScreen03(screen: ScreenModel): string {
     });
     lines.push(rows.length > 0 ? `    "rows": [\n${rows.join(',\n')}\n    ]` : '    "rows": []');
     head.push(`  "layout": {\n${lines.join(',\n')}\n  }`);
+  }
+  // vai trò tối thiểu để xem màn hình (định dạng 1.1, feature 013); `viewer` là mặc định, không ghi
+  if (isObj(s.security)) {
+    const sec = pick(s.security, ['view']);
+    if (sec.view === 'viewer') delete sec.view;
+    if (Object.keys(sec).length > 0) head.push(`  "security": ${JSON.stringify(sec)}`);
   }
   // faceplate (định dạng 1.0): tham số của popup, mỗi tham số một dòng gọn
   if (Array.isArray(s.params)) {

@@ -379,5 +379,152 @@ export function cases11() {
     'E_ITEM_ID',
     'E_LAYOUT_ITEM_REF',
   ]);
+
+  securityCases(ok, bad);
   return C;
+}
+
+// ================= feature 013: security.view / security.operate (README-013.md) =================
+const MB = 'screens/main.bindings.json';
+/** Chỉ số item của main (base03 + base10): 0 svg1 (sự kiện popup, không ghi), 2 card_level, 5 sp_level (setpoint,
+ * minRole engineer), 6 btn_run (button). */
+const main = (f, i) => f[MS].items[i];
+const sec = (f, i, s) => (main(f, i).security = s);
+/** Hạ mọi tệp về 1.0 và bỏ phần chỉ có ở 1.1 (màn hình lưới, theme), như ca v11-version-theme-in-1.0. */
+const to10 = (f) => {
+  for (const v of Object.values(f))
+    if (v !== null && typeof v === 'object' && v.schemaVersion !== undefined)
+      v.schemaVersion = '1.0.0';
+  f[PJ].minRuntimeVersion = '1.0.0';
+  delete f[PJ].theme;
+  f[PJ].screens = f[PJ].screens.filter((s) => s !== 'tong-quan');
+  delete f[GS];
+};
+
+function securityCases(ok, bad) {
+  // ---------- hợp lệ ----------
+  ok('v11-security-valid-view-operate', (f) => {
+    sec(f, 6, { view: 'operator', operate: 'engineer' });
+    sec(f, 2, { view: 'engineer' });
+    f[MS].security = { view: 'viewer' };
+    g(f).security = { view: 'operator' };
+    f[FS].security = { view: 'operator' };
+  });
+  ok('v11-security-valid-svg-write-operate', (f) => {
+    const el = f[MB].elements.find((e) => e.elementUid === 'el_bbb');
+    el.events = { click: { action: 'toggle', tag: 'PUMP01.RUN_CMD' } };
+    sec(f, 0, { view: 'operator', operate: 'engineer' });
+  });
+  ok('v11-security-valid-svg-view-only', (f) => sec(f, 0, { view: 'engineer' }));
+  ok('v11-security-valid-minrole-equals-operate', (f) =>
+    sec(f, 5, { minRole: 'engineer', operate: 'engineer' }),
+  );
+  ok('v11-security-valid-view-higher-than-default-operate', (f) =>
+    sec(f, 6, { view: 'administrator' }),
+  );
+  ok('v11-security-valid-grid-item', (f) => (g(f).items[0].security = { view: 'operator' }));
+  ok('v11-security-valid-popup-switch', (f) => {
+    f[FS].security = { view: 'engineer' };
+    f[FS].items.find((it) => it.widget === 'switch').security = {
+      view: 'engineer',
+      operate: 'administrator',
+    };
+  });
+
+  // ---------- E_SECURITY_LEVEL ----------
+  bad(
+    'v11-security-level-operate-viewer',
+    (f) => sec(f, 6, { operate: 'viewer' }),
+    ['E_SECURITY_LEVEL'],
+    undefined,
+    iss(at('E_SECURITY_LEVEL', '/items/6/security/operate', MS)),
+  );
+  bad(
+    'v11-security-level-operate-below-view',
+    (f) => sec(f, 6, { view: 'engineer', operate: 'operator' }),
+    ['E_SECURITY_LEVEL'],
+    undefined,
+    iss(at('E_SECURITY_LEVEL', '/items/6/security/operate', MS)),
+  );
+  bad(
+    'v11-security-level-minrole-differs',
+    (f) => sec(f, 5, { minRole: 'engineer', operate: 'administrator' }),
+    ['E_SECURITY_LEVEL'],
+    undefined,
+    iss(at('E_SECURITY_LEVEL', '/items/5/security/minRole', MS)),
+  );
+  bad(
+    'v11-security-level-item-view-in-1.0',
+    (f) => {
+      to10(f);
+      sec(f, 2, { view: 'operator' });
+    },
+    ['E_SECURITY_LEVEL'],
+    undefined,
+    iss(at('E_SECURITY_LEVEL', '/items/2/security/view', MS)),
+  );
+  bad(
+    'v11-security-level-item-operate-in-1.0',
+    (f) => {
+      to10(f);
+      sec(f, 6, { operate: 'engineer' });
+    },
+    ['E_SECURITY_LEVEL'],
+    undefined,
+    iss(at('E_SECURITY_LEVEL', '/items/6/security/operate', MS)),
+  );
+  bad(
+    'v11-security-level-screen-in-1.0',
+    (f) => {
+      to10(f);
+      f[MS].security = { view: 'operator' };
+    },
+    ['E_SECURITY_LEVEL'],
+    undefined,
+    iss(at('E_SECURITY_LEVEL', '/security', MS)),
+  );
+  // 1.0 giữ nguyên hành vi: minRole của nút vẫn hợp lệ
+  ok('v11-security-valid-minrole-in-1.0', (f) => {
+    to10(f);
+    sec(f, 6, { minRole: 'engineer' });
+  });
+
+  // ---------- E_SECURITY_ITEM ----------
+  bad(
+    'v11-security-item-display-widget',
+    (f) => sec(f, 2, { operate: 'operator' }),
+    ['E_SECURITY_ITEM'],
+    undefined,
+    iss(at('E_SECURITY_ITEM', '/items/2/security/operate', MS)),
+  );
+  bad(
+    'v11-security-item-svg-without-write',
+    (f) => sec(f, 0, { operate: 'operator' }),
+    ['E_SECURITY_ITEM'],
+    undefined,
+    iss(at('E_SECURITY_ITEM', '/items/0/security/operate', MS)),
+  );
+  bad(
+    'v11-security-item-grid-gauge',
+    (f) => (g(f).items[1].security = { view: 'viewer', operate: 'engineer' }),
+    ['E_SECURITY_ITEM'],
+    undefined,
+    iss(at('E_SECURITY_ITEM', '/items/1/security/operate')),
+  );
+
+  // ---------- schema, luật cũ ----------
+  bad('v11-security-view-unknown-role', (f) => sec(f, 2, { view: 'boss' }), ['E_SCHEMA']);
+  bad('v11-security-operate-unknown-role', (f) => sec(f, 6, { operate: 'root' }), ['E_SCHEMA']);
+  bad('v11-security-unknown-key', (f) => sec(f, 6, { maxRole: 'engineer' }), ['E_SCHEMA']);
+  bad('v11-security-screen-operate-key', (f) => (f[MS].security = { operate: 'operator' }), [
+    'E_SCHEMA',
+  ]);
+  bad('v11-security-screen-view-unknown', (f) => (f[MS].security = { view: 'root' }), ['E_SCHEMA']);
+  bad(
+    'v11-security-display-minrole-still-prop',
+    (f) => sec(f, 2, { minRole: 'operator' }),
+    ['E_WIDGET_PROP'],
+    undefined,
+    iss(at('E_WIDGET_PROP', '/items/2/security', MS)),
+  );
 }

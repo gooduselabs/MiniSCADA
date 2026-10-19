@@ -1128,7 +1128,7 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
             rules10.after(errs, warns);
             for (auto& e : errs10) errs.push_back(std::move(e));
             // the 1.x family: grid layout, theme (feature 012, rules_11)
-            runRules11(project, in.screens, errs, warns);
+            runRules11(project, in.screens, catalog.get(), errs, warns);
         }
         for (auto& e : errs) c.errors.push_back(std::move(e));
         for (auto& w : warns) c.warnings.push_back(std::move(w));

@@ -1,0 +1,16 @@
+{
+  "screens": [],
+  "hiddenItems": {},
+  "lockedItems": {},
+  "pages": [
+    "alarms",
+    "history",
+    "reports",
+    "watch"
+  ],
+  "admin": false,
+  "liveTags": [],
+  "historyTags": [],
+  "alarms": [],
+  "orphans": []
+}

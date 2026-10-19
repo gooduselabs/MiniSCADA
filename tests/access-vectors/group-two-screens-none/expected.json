@@ -1,0 +1,38 @@
+{
+  "screens": [
+    "tong-quan",
+    "popup-bom"
+  ],
+  "hiddenItems": {},
+  "lockedItems": {},
+  "pages": [
+    "alarms",
+    "history",
+    "reports",
+    "watch"
+  ],
+  "admin": false,
+  "liveTags": [
+    "COST.TODAY",
+    "PUMP01.FLOW",
+    "PUMP01.RUN",
+    "PUMP01.RUN_CMD",
+    "TANK.LEVEL"
+  ],
+  "historyTags": [
+    "COST.TODAY",
+    "E1",
+    "E2",
+    "P1",
+    "PUMP01.FLOW",
+    "PUMP01.RUN",
+    "PUMP01.RUN_CMD",
+    "TANK.LEVEL"
+  ],
+  "alarms": [
+    "a-bom",
+    "a-luu",
+    "a-muc"
+  ],
+  "orphans": []
+}

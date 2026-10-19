@@ -9,14 +9,23 @@ import {
   type Issue,
   type WarningCode,
 } from './codes.ts';
+import { catalogWidget } from './catalog.ts';
 import { GRID_COLUMNS, GRID_LIMITS } from './layout.ts';
 import { compareSemver } from './rules.ts';
 import type { GridScreen } from './types-11.ts';
 
 export interface Rule11Input {
   project: { schemaVersion: string; minRuntimeVersion?: string; theme?: unknown };
-  /** Màn hình và popup đã qua schema, theo id. */
-  screens: Readonly<Record<string, { file: string; screen: unknown }>>;
+  /**
+   * Màn hình và popup đã qua schema, theo id. `svg`: theo chỉ số item, binding đã nạp của item `svg` (cho luật
+   * E_SECURITY_ITEM: item SVG thao tác được khi có sự kiện ghi).
+   */
+  screens: Readonly<
+    Record<
+      string,
+      { file: string; screen: unknown; svg?: ReadonlyArray<{ bindings?: unknown } | undefined> }
+    >
+  >;
 }
 
 const POS_FIELDS = ['x', 'y', 'width', 'height'] as const;
@@ -138,5 +147,67 @@ export function runRules11(input: Rule11Input): { errors: Issue[]; warnings: Iss
         warn('W_LAYOUT_ITEM_ORPHAN', file, `/items/${i}`, `item '${it.id}' is in no cell`);
     });
   }
+
+  // vai trò tối thiểu của màn hình và item (feature 013, README-013.md), sau mọi luật bố cục
+  for (const { file, screen: raw, svg } of Object.values(input.screens)) {
+    const screen = raw as { security?: unknown; items?: unknown };
+    if (!screen || !Array.isArray(screen.items)) continue;
+    if (!is11 && screen.security !== undefined)
+      err('E_SECURITY_LEVEL', file, '/security', 'screen security needs project format 1.1');
+    (screen.items as unknown[]).forEach((item, i) => {
+      const sec = (item as { security?: unknown }).security;
+      if (sec === null || typeof sec !== 'object') return;
+      const { view, operate, minRole } = sec as Record<string, unknown>;
+      const p = `/items/${i}/security`;
+      if (!is11) {
+        const first = view !== undefined ? 'view' : operate !== undefined ? 'operate' : null;
+        if (first)
+          err(
+            'E_SECURITY_LEVEL',
+            file,
+            `${p}/${first}`,
+            `security.${first} needs project format 1.1`,
+          );
+        return;
+      }
+      if (typeof operate !== 'string') return;
+      const it = item as { type?: unknown; widget?: unknown };
+      if (it.type === 'widget' && !catalogWidget(String(it.widget))) return; // E_WIDGET_UNKNOWN đã báo
+      if (!isOperableItem(item, svg?.[i]?.bindings))
+        err('E_SECURITY_ITEM', file, `${p}/operate`, 'the item cannot be operated');
+      else if (operate === 'viewer')
+        err('E_SECURITY_LEVEL', file, `${p}/operate`, 'operate needs operator or higher');
+      else if (SECURITY_ROLES.indexOf(operate) < SECURITY_ROLES.indexOf(String(view ?? 'viewer')))
+        err('E_SECURITY_LEVEL', file, `${p}/operate`, 'operate is lower than view');
+      else if (minRole !== undefined && minRole !== operate)
+        err('E_SECURITY_LEVEL', file, `${p}/minRole`, 'minRole (alias of operate) differs from it');
+    });
+  }
   return { errors, warnings };
+}
+
+/** Vai trò theo thứ hạng tăng dần (`security.view`, `security.operate`). */
+export const SECURITY_ROLES: readonly string[] = [
+  'viewer',
+  'operator',
+  'engineer',
+  'administrator',
+];
+const WRITE_ACTIONS: readonly unknown[] = ['write', 'toggle', 'pulse'];
+
+/**
+ * Item thao tác được (specs/013-access-control/contracts/access-model.md §2): widget thuộc nhóm `control` của danh mục
+ * widget, hoặc item `svg` có phần tử với sự kiện `click` ghi (write, toggle, pulse) trong `bindings` (tệp binding của
+ * item). Dùng chung cho luật E_SECURITY_ITEM và danh mục tài nguyên của `@mat/access-model`.
+ */
+export function isOperableItem(item: unknown, bindings?: unknown): boolean {
+  const it = item as { type?: unknown; widget?: unknown } | null;
+  if (it?.type === 'widget') return catalogWidget(String(it.widget))?.group === 'control';
+  if (it?.type !== 'svg') return false;
+  const els = (bindings as { elements?: unknown } | undefined)?.elements;
+  if (!Array.isArray(els)) return false;
+  return els.some((e) => {
+    const click = (e as { events?: { click?: { action?: unknown } } } | null)?.events?.click;
+    return WRITE_ACTIONS.includes(click?.action);
+  });
 }

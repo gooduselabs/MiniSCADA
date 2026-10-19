@@ -197,6 +197,10 @@ export const viScreens = {
   'spd.bg': 'Màu nền',
   'spd.bg.default': 'theo giao diện',
   'spd.bg.clear': 'Bỏ màu nền',
+  // feature 013: vai trò tối thiểu để xem màn hình (định dạng 1.1)
+  'spd.view': 'Vai trò tối thiểu để xem',
+  'spd.view.help':
+    'Mặc định khi thiết bị chưa có quy tắc quyền cho màn hình này; người có vai trò thấp hơn không mở được màn hình.',
   'spd.err.size': 'Cỡ phải là số nguyên trong khoảng cho phép',
   'spd.do': 'Áp dụng',
 } as const;

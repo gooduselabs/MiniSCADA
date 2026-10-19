@@ -1,0 +1,43 @@
+{
+  "screens": [
+    "tong-quan",
+    "bom-1",
+    "bao-tri"
+  ],
+  "hiddenItems": {},
+  "lockedItems": {},
+  "pages": [
+    "alarms",
+    "history",
+    "reports",
+    "watch"
+  ],
+  "admin": false,
+  "liveTags": [
+    "COST.TODAY",
+    "PUMP01.HOURS",
+    "PUMP01.RESET",
+    "PUMP01.RUN",
+    "PUMP01.RUN_CMD",
+    "PUMP01.SPEED_SP",
+    "TANK.LEVEL"
+  ],
+  "historyTags": [
+    "COST.TODAY",
+    "E1",
+    "E2",
+    "P1",
+    "PUMP01.HOURS",
+    "PUMP01.RESET",
+    "PUMP01.RUN",
+    "PUMP01.RUN_CMD",
+    "PUMP01.SPEED_SP",
+    "TANK.LEVEL"
+  ],
+  "alarms": [
+    "a-bom",
+    "a-gio",
+    "a-muc"
+  ],
+  "orphans": []
+}
