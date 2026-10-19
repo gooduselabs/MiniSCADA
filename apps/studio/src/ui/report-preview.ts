@@ -22,6 +22,7 @@ import {
   type CsvStyle,
   type ExportLabels,
   type ExportMeta,
+  type ReportTheme,
 } from '@mat/report-export';
 import type { ReportTemplate as SchemaTemplate } from '@mat/project-schema';
 import type { HistoryCatalogGroup, HistorySource } from '@mat/ui-components';
@@ -43,6 +44,14 @@ export type ExportKind = 'csv' | 'csv-excel' | 'xlsx' | 'pdf';
 export interface ReportPeriodSel {
   d?: string;
   m?: string;
+}
+
+/**
+ * Chủ đề báo cáo từ `project.json` (cùng quy ước với trang vận hành: không đặt hoặc lạ là industrial, contracts/ui-theme.md §1).
+ */
+export function projectTheme(project: unknown): ReportTheme {
+  const theme = (project as { theme?: unknown } | null | undefined)?.theme;
+  return theme === 'vivid' || theme === 'dark' ? theme : 'industrial';
 }
 
 const LOW_COVERAGE = 0.95;
@@ -88,6 +97,7 @@ export class ReportPreview extends LitElement {
     tagInfo: { attribute: false },
     save: { attribute: false },
     exporter: { attribute: false },
+    theme: { attribute: false },
     table: { state: true },
     msg: { state: true },
     loading: { state: true },
@@ -106,6 +116,8 @@ export class ReportPreview extends LitElement {
     | ((name: string, bytes: Uint8Array, ext: 'csv' | 'xlsx' | 'pdf') => Promise<SaveResult>)
     | undefined;
   declare exporter: ReportExporter | undefined;
+  /** Chủ đề của project (project.json `theme`, feature 012): màu của PDF/XLSX xuất thử. */
+  declare theme: ReportTheme | undefined;
   declare table: ReportTable | null;
   declare msg: Msg | null;
   declare loading: boolean;
@@ -301,6 +313,7 @@ export class ReportPreview extends LitElement {
       tz: g.timeZone,
       sheetName: tpl.name,
       ...(tpl.paper ? { paper: tpl.paper } : {}),
+      ...(this.theme ? { theme: this.theme } : {}),
     };
     const exp = this.exporter ?? defaultExporter;
     this.exporting = true;

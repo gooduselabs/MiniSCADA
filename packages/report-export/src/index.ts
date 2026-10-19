@@ -8,7 +8,7 @@ import type { ExportLabels, ExportMeta } from './types.ts';
 export { exportFileName } from './filename.ts';
 export { toCsv, csvBytes, guardFormula } from './csv/csv.ts';
 export type { CsvOptions } from './csv/csv.ts';
-export type { CsvStyle, ExportLabels, ExportMeta } from './types.ts';
+export type { CsvStyle, ExportLabels, ExportMeta, ReportTheme } from './types.ts';
 
 export type ExportKind = 'csv' | 'csv-excel' | 'xlsx' | 'pdf';
 

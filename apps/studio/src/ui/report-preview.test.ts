@@ -5,8 +5,9 @@ import {
   buildReport,
   reportRequest,
   type AggregateResult as MathAggregate,
+  type ReportTable,
 } from '@mat/history-math';
-import { exportCsv, exportXlsx } from '@mat/report-export';
+import { exportCsv, exportXlsx, type ExportMeta } from '@mat/report-export';
 import type { ReportTemplate } from '@mat/history-math';
 import { HistoryError, FakeHistorySource, type HistorySource } from '@mat/ui-components';
 import { SimHistorySource } from '@mat/tag-sim';
@@ -15,7 +16,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { simHistoryGroups } from '../model/sim-history-groups.ts';
 import { loggingOf, newHistoryApp, reportsOf } from './history-test-helpers.ts';
 import './report-preview.ts';
-import type { ReportPreview } from './report-preview.ts';
+import { projectTheme, type ReportPreview } from './report-preview.ts';
 import { cleanup } from './test-helpers.ts';
 
 afterEach(cleanup);
@@ -194,6 +195,35 @@ describe('mat-report-preview', () => {
     expect(new TextDecoder().decode(calls[1]![1])).toContain(';'); // CSV Excel vi-VN dùng dấu chấm phẩy
     expect([...calls[2]![1].slice(0, 2)]).toEqual([0x50, 0x4b]); // zip
     expect([...calls[3]![1].slice(0, 4)]).toEqual([0x25, 0x50, 0x44, 0x46]);
+  });
+
+  it('xuất thử XLSX/PDF truyền chủ đề của project (feature 012 T049)', async () => {
+    const metas: Array<ExportMeta['theme']> = [];
+    const exporter = {
+      csv: exportCsv,
+      xlsx: async (_t: ReportTable, m: ExportMeta) => {
+        metas.push(m.theme);
+        return new Uint8Array([1]);
+      },
+      pdf: async (_t: ReportTable, m: ExportMeta) => {
+        metas.push(m.theme);
+        return new Uint8Array([2]);
+      },
+    };
+    const { el } = await setup({ exporter, theme: 'vivid' });
+    for (const act of ['xlsx', 'pdf']) {
+      el.querySelector<HTMLButtonElement>(`[data-act="${act}"]`)!.click();
+      await el.whenIdle();
+    }
+    el.theme = undefined;
+    el.querySelector<HTMLButtonElement>('[data-act="pdf"]')!.click();
+    await el.whenIdle();
+    expect(metas).toEqual(['vivid', 'vivid', undefined]);
+    expect([projectTheme({ theme: 'dark' }), projectTheme({}), projectTheme(null)]).toEqual([
+      'dark',
+      'industrial',
+      'industrial',
+    ]);
   });
 
   it('thiết bị: 401 hiện nút Đăng nhập; BUSY và RANGE_TOO_LARGE hiện lời nhắn riêng; mất kết nối cho phép thử lại', async () => {

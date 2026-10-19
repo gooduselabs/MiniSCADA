@@ -37,7 +37,21 @@ export default defineConfig(({ mode }) => {
                 assetFileNames: 'assets/login-[hash][extname]',
               },
             }
-          : {}),
+          : {
+              // Mọi mã ECharts/zrender (widget bar/pie/gauge và biểu đồ báo cáo PDF của @mat/report-export, feature 012
+              // T049) vào MỘT chunk tải lười `echarts-modules-*.js`: không có chunk chung tên khác, nên cổng nội dung
+              // của package-web.mjs (đúng 9 chỗ innerHTML đã xem, chỉ trong chunk này) giữ nguyên.
+              output: {
+                codeSplitting: {
+                  groups: [
+                    {
+                      name: 'echarts-modules',
+                      test: /[\\/]node_modules[\\/](?:echarts|zrender)[\\/]|[\\/]ui-components[\\/]src[\\/]chart[\\/]echarts-modules\.ts$/,
+                    },
+                  ],
+                },
+              },
+            }),
       },
     },
     server: {

@@ -46,7 +46,7 @@ import { AppElement, icon } from '../base.ts';
 import '../grid/mat-grid.ts';
 import type { MatGrid } from '../grid/mat-grid.ts';
 import '../report-preview.ts';
-import type { SaveResult } from '../report-preview.ts';
+import { projectTheme, type SaveResult } from '../report-preview.ts';
 import { registerEditor } from '../registry.ts';
 import './templates-editor.css';
 
@@ -824,6 +824,7 @@ export class TemplatesEditor extends AppElement {
             .tagInfo=${tagInfoOf(s.outline.tags)}
             .userName=${this.app.session.auth?.user ?? ''}
             .save=${this.save}
+            .theme=${projectTheme(s.outline.project)}
           ></mat-report-preview>
         </aside>
       </div>
