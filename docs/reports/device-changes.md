@@ -366,3 +366,11 @@ Trạng thái cuối: runtime `1.0.0-rc.1` releaseSeq 13 active, `tank-demo` 0.1
 | 09:58 | `tls_cipher_bench` trong `/tmp` (xóa sau khi chạy) | — |
 | 10:01 | `deploy.sh` gói `1.0.0-rc.1` releaseSeq 14 (commit `f6ae5bf8`), kiểm sức khỏe OK sau 1 s; releaseSeq 13 sang `/opt/mat-runtime.prev` | `sh /opt/mat-runtime/deployment/rollback.sh` |
 | 10:01–11:03 | Như mục 08:37 (tài khoản thử, `maxLiveClientsPerSource` 10, `soak-std10`, L1 xen kẽ 1 giờ, nạp lại `tank-demo`), khôi phục `runtime.json` (SHA-256 gốc) | — |
+
+## 2026-10-19 11:30–12:34 — cài releaseSeq 15 (live hub tối ưu), đo lại L1 xen kẽ
+
+| Giờ | Thay đổi | Hoàn tác |
+|---|---|---|
+| 11:28 | `live_bench` trước/sau trong `/tmp` (xóa sau khi chạy) | — |
+| 11:32 | `deploy.sh` gói `1.0.0-rc.1` releaseSeq 15 (commit `acf06614`), kiểm sức khỏe OK sau 1 s; releaseSeq 14 sang `/opt/mat-runtime.prev` | `sh /opt/mat-runtime/deployment/rollback.sh` |
+| 11:33–12:34 | Như mục 08:37 (tài khoản thử, `maxLiveClientsPerSource` 10, `soak-std10`, L1 xen kẽ 1 giờ, nạp lại `tank-demo`), khôi phục `runtime.json` (SHA-256 gốc) | — |

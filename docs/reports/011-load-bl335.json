@@ -791,5 +791,62 @@
       "seqGaps==0": "pass"
     },
     "note": "ChaCha20 giảm phần TLS từ ~7 xuống ~1 điểm; L1 chỉ ws đã 28,9–29,4 %; đang giảm CPU đường live (định dạng delta một lần mỗi tick, nhánh gd6-live-cpu)"
+  },
+  "L1alternateLiveOpt": {
+    "task": "T079 (L1 xen kẽ, sau ChaCha20 + live hub định dạng một lần mỗi tick)",
+    "date": "2026-10-19 11:34–12:34",
+    "runtime": "1.0.0-rc.1",
+    "releaseSeq": 15,
+    "project": "soak-std10 (500 Tag)",
+    "durationS": 3600,
+    "liveBenchOnDevice": {
+      "beforeUsPerTick": 26988.7,
+      "afterUsPerTick": 3231.0,
+      "beforePctOneCore": 10.8,
+      "afterPctOneCore": 1.29,
+      "config": "500 Tag × 10 phiên, thay đổi 100 %, 4 tick/s"
+    },
+    "device": {
+      "cpuAvgPctOneCore": 10.5,
+      "cpuAvgPctMachine": 5.3,
+      "cpuPeakPctOneCore": 21.5,
+      "rssAvgMB": 19.6,
+      "rssMaxMB": 20.0
+    },
+    "summaryByScheme": {
+      "ws": {
+        "accepted": 5,
+        "totalSeqGaps": 0,
+        "maxLagP95Ms": 20,
+        "extraRejectedCorrectly": true
+      },
+      "wss": {
+        "accepted": 5,
+        "totalSeqGaps": 0,
+        "maxLagP95Ms": 20,
+        "extraRejectedCorrectly": true
+      }
+    },
+    "latencyByScheme": {
+      "ws": {
+        "count": 72000,
+        "p50Ms": 9,
+        "p95Ms": 17,
+        "maxMs": 85
+      },
+      "wss": {
+        "count": 72000,
+        "p50Ms": 9,
+        "p95Ms": 17,
+        "maxMs": 85
+      }
+    },
+    "criteria": {
+      "cpuAvg<=30% (one core)": "pass (10.5)",
+      "cpuPeak<=60%": "pass (21.5)",
+      "rss": "pass",
+      "seqGaps==0": "pass"
+    },
+    "pass": true
   }
 }
