@@ -29,7 +29,9 @@ services:
       - '127.0.0.1:${MAT_IT_SIM_PORT:-18503}:1503'
     stop_grace_period: 5s
     networks:
-      lan: { ipv4_address: '${MAT_IT_LAN:-172.30.7}.10', priority: 100 }
+      # gw_priority (Docker 28+): lan là cổng mặc định, nên cổng loopback của máy dev luôn vào qua lan; không có thì
+      # Docker có lúc chọn pub và runtime thấy nguồn công cộng (403 viewerAccess private).
+      lan: { ipv4_address: '${MAT_IT_LAN:-172.30.7}.10', priority: 100, gw_priority: 100 }
       pub: { ipv4_address: '${MAT_IT_PUB:-203.0.113}.10' }
 
   sim:

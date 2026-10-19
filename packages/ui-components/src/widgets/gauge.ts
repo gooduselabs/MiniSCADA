@@ -41,6 +41,7 @@ export class MatGauge extends MatEChartWidget {
   ];
 
   #state = { min: 0, max: 100, known: false, value: 0, dim: false };
+  protected override sizeDependent = true;
 
   protected override renderWidget(): TemplateResult {
     const id = this.tagOf('value');
@@ -93,6 +94,11 @@ export class MatGauge extends MatEChartWidget {
     const clamped = min + fraction(value, min, max) * (max - min);
     const width = 12;
     const ends = new Set([min, max]);
+    // Nửa vòng: bán kính bị chặn bởi nửa bề rộng và bởi chiều cao (tâm sát đáy), tính bằng px; '92%' của ECharts tính
+    // theo nửa cạnh ngắn nên khung rộng thấp chỉ dùng nửa chiều cao.
+    const { width: w, height: h } = this.chartSize();
+    const cy = h - 8;
+    const radius = Math.max(10, Math.min(w / 2 - 6, cy - 6));
     return {
       // Không tooltip: số đọc đã hiện dưới đồng hồ; tooltip mặc định của ECharts dựng HTML từ chuỗi (cổng SC-020).
       tooltip: { show: false },
@@ -103,8 +109,8 @@ export class MatGauge extends MatEChartWidget {
           max,
           startAngle: 180,
           endAngle: 0,
-          radius: '92%',
-          center: ['50%', '72%'],
+          radius,
+          center: ['50%', cy],
           splitNumber: 4,
           progress: {
             show: zones.length === 0 && known,

@@ -186,6 +186,21 @@ describe('mat-w-gauge (FR-027)', () => {
     expect(s.axisLabel.formatter(25)).toBe('');
   });
 
+  // Bán kính theo cả rộng và cao của khung (px), không theo nửa cạnh ngắn ('92%'): khung rộng thấp không còn đồng hồ
+  // nhỏ hẳn bản SVG trước 012 (compat-008 dashboard-demo).
+  it('bán kính lấy hết khung: min(rộng/2, cao) trừ lề, tâm sát đáy', async () => {
+    const src = makeSource([tagInfo('t1')]);
+    src.set('t1', { value: 5, quality: 'GOOD' });
+    const wide = { ...gauge(), width: 300, height: 100 };
+    await mount(wide, src);
+    const s = gs() as GaugeSeries & { radius: number; center: [string, number] };
+    expect(s.radius).toBe(100 - 8 - 6);
+    expect(s.center).toEqual(['50%', 100 - 8]);
+    const tall = { ...gauge(), width: 120, height: 300 };
+    await mount(tall, src);
+    expect((gs() as GaugeSeries & { radius: number }).radius).toBe(120 / 2 - 6);
+  });
+
   // Nạp ECharts thật lần đầu (biến đổi ~600 KB mã) chậm khi nhiều worker chạy song song: hạn 30 s.
   it('vẽ thật bằng ECharts lite (SVG)', { timeout: 30_000 }, async () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);

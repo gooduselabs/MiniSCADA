@@ -67,6 +67,16 @@ export class MatEChartWidget extends MatWidget {
     this.#sync();
   }
 
+  /** Cỡ vùng vẽ hiện tại (px); trước khi có vùng vẽ: cỡ của item. */
+  protected chartSize(): { width: number; height: number } {
+    return this.#box
+      ? this.#size(this.#box)
+      : { width: this.item?.width || 300, height: this.item?.height || 200 };
+  }
+
+  /** true: option phụ thuộc cỡ vùng vẽ, đổi cỡ thì dựng lại option (đồng hồ tính bán kính bằng px). */
+  protected sizeDependent = false;
+
   #size(box: HTMLElement): { width: number; height: number } {
     return {
       width: Math.max(box.clientWidth || this.item?.width || 300, 40),
@@ -133,6 +143,7 @@ export class MatEChartWidget extends MatWidget {
     this.#ro = new RO(() => {
       if (!this.#chart || !box.clientWidth || !box.clientHeight) return;
       this.#chart.resize(this.#size(box));
+      if (this.sizeDependent) this.#apply();
     });
     this.#ro.observe(box);
   }
