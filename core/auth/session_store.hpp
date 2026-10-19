@@ -109,6 +109,12 @@ class SessionStore {
     bool touch(std::string_view token, int64_t nowMono, SessionKind kind = SessionKind::Bearer);
     bool remove(std::string_view token, SessionKind kind = SessionKind::Bearer);  // sign-out
     size_t removeUser(const std::string& user);
+    // Feature 013 (POST /api/v1/web/password): every session of `user` but the one of `keepToken`
+    // (of `keepKind`), which now carries the account's new `rev`. Returns the sessions removed.
+    size_t removeUserExcept(const std::string& user, std::string_view keepToken,
+                            SessionKind keepKind, int64_t rev);
+    // Feature 013 (GET /api/v1/admin/users): the live sessions of `user`.
+    size_t userCount(const std::string& user, int64_t nowMono) const;
     size_t activeCount(int64_t nowMono) const;
 
     // For auth-state.json across execv: sessions as kept (hashes only) and back.

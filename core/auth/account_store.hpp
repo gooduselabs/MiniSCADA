@@ -1,7 +1,9 @@
-// Accounts of the device (specs/005-device-online data-model §4, research R8, ADR-011):
-// /etc/mat-runtime/users.json, owner root:matscada, mode 0640. The device commands (root) write it;
-// the runtime only reads it, and reads it again when it changes. Nothing here logs or returns a
-// password hash.
+// Accounts of the device (specs/005-device-online data-model §4, research R8, ADR-011). Feature
+// 013 (contracts/access-model.md §1, ADR-042): the file is <dataDir>/auth/users.json, owner
+// matscada, mode 0600, written by the runtime (the admin API) and by the device commands (root,
+// which give it back to matscada) under the lock of core/auth/access_store; /etc/mat-runtime/
+// users.json (root:matscada 0640) is only the seed copied there once. The runtime reads it again
+// when it changes. Nothing here logs or returns a password hash.
 #pragma once
 #include <cstddef>
 #include <cstdint>
@@ -17,10 +19,11 @@
 
 namespace mat {
 
-constexpr const char* kUsersSchemaVersion = "1.0.0";
+constexpr const char* kUsersSchemaVersion = "1.1.0";  // written; 1.x.y is read
 constexpr const char* kUsersFileDefault = "/etc/mat-runtime/users.json";
-constexpr size_t kMaxAccounts = 64;
-constexpr size_t kUsersFileMaxBytes = 256 * 1024;
+constexpr size_t kMaxAccounts = 200;               // feature 013 (was 64)
+constexpr size_t kUsersFileMaxBytes = 512 * 1024;  // feature 013 (was 256 KiB)
+constexpr size_t kMaxGroupsPerAccount = 16;
 constexpr int64_t kUsersRecheckMs = 2000;  // the runtime looks at the file at most this often
 
 bool validAccountName(std::string_view name);  // ^[a-z][a-z0-9._-]{2,31}$
@@ -35,10 +38,17 @@ struct Account {
     int64_t unlockSeq = 0;             // + 1 on --user-unlock
     std::string createdAt;             // ISO 8601 UTC
     std::string updatedAt;
+    // Feature 013 (users.json 1.1.0): the groups of access.json it belongs to (missing = none), and
+    // the last sign-in (UTC ms; the runtime writes it at most once an hour per account).
+    std::vector<std::string> groups;
+    std::optional<int64_t> lastLoginAt;
 };
 
 struct UsersFile {
     std::string schemaVersion = kUsersSchemaVersion;
+    // Feature 013: + 1 on every change a person makes (the admin API answers 409 CONFLICT to a
+    // request made on another rev); 0 in a 1.0.0 file. lastLoginAt alone keeps it.
+    int64_t rev = 0;
     std::vector<Account> users;
 
     const Account* find(std::string_view name) const;
@@ -54,14 +64,15 @@ struct UsersRead {
     std::vector<std::string> damaged;  // Ok: "<name>: <why>" of each account with an unusable hash
 };
 
-// The text of users.json: schemaVersion 1.x.y; at most 64 accounts with valid, unique names, known
+// The text of users.json: schemaVersion 1.x.y; at most 200 accounts with valid, unique names, known
 // roles, the keys of data-model §4 with their types (unknown keys are ignored: later 1.x versions
-// may add some). Any of that wrong: Error, the file gives no account. A hash that parsePhc refuses
-// damages only its account.
+// may add some); 1.1.0: rev, groups (at most 16 valid, unique group ids), lastLoginAt. Any of that
+// wrong: Error, the file gives no account. A hash that parsePhc refuses damages only its account.
 UsersRead parseUsers(std::string_view text);
 // Reads a regular file of at most kUsersFileMaxBytes. `enforceMode`: refuse a file that others may
-// read or write (mode & 0007), that its group may write (feature 011) or that root does not own,
-// as the runtime must; the device commands read it anyway and write it back root:<group> 0640.
+// read or write (mode & 0007), that its group may write (feature 011) or that neither root nor the
+// user of this process owns (feature 013: the runtime owns auth/users.json), as the runtime must;
+// the device commands read it anyway.
 UsersRead readUsersFile(const std::string& path, bool enforceMode = true);
 
 std::string usersJson(const UsersFile& f);
@@ -99,6 +110,11 @@ AccountEditError setAccountEnabled(UsersFile& f, const std::string& name, bool e
                                    const std::string& nowIso);  // rev + 1
 AccountEditError unlockAccount(UsersFile& f, const std::string& name,
                                const std::string& nowIso);  // unlockSeq + 1
+// Feature 013: the groups of an account (rev + 1: its sessions end, D23). The caller checks that
+// the groups exist; the same groups change nothing.
+AccountEditError setAccountGroups(UsersFile& f, const std::string& name,
+                                  const std::vector<std::string>& groups,
+                                  const std::string& nowIso);
 AccountEditError removeAccount(UsersFile& f, const std::string& name);
 bool hasEnabledAdministrator(const UsersFile& f);
 
@@ -124,8 +140,13 @@ class AccountStore {
     UsersStatus status() const;
     const Account* find(std::string_view name) const;  // nullptr: no such account
     size_t size() const;                               // accounts usable now
+    std::vector<std::string> names() const;            // feature 013: in file order
     int64_t loads() const;                             // reads of the file so far (tests)
     const std::string& path() const;
+    // Feature 013: rev of the file (0 while it cannot be used), and a re-read at the next refresh
+    // whatever the time since the last look (after the admin API wrote the file).
+    int64_t fileRev() const;
+    void recheckNow();
 
    private:
     struct Impl;

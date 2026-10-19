@@ -81,6 +81,20 @@ enum class AuditAction {
     // PULSE_STUCK (mat-runtime --pulse-ack <rid|all>): started, ok / failed (CLI), then ok or
     // failed by the runtime when it closes the journal entries
     PulseAck,  // pulse.ack
+    // Feature 013 (contracts/admin-api.md): accounts, groups and rules on the web, the store.
+    AccountGroups,       // account.groups: the groups of an account changed
+    AccountDelete,       // account.delete
+    AccountMigrate,      // account.migrate: auth/users.json made from /etc/mat-runtime/users.json
+    GroupCreate,         // group.create
+    GroupRename,         // group.rename
+    GroupDelete,         // group.delete
+    AccessRule,          // access.rule: one rule set or removed (detail before / after)
+    AccessCleanup,       // access.cleanup: the orphan rules removed
+    AccessRestore,       // access.restore: access.json.bak back
+    AccessReset,         // access.reset: every rule removed (mat-runtime --access-reset)
+    AccessStoreInvalid,  // access.store-invalid: access.json damaged, only administrators get in
+    AdminRead,           // admin.read: the list of accounts read (not again within 60 s)
+    AdminViewAs,         // admin.view-as: the access of another account looked at
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -91,7 +105,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 enum class AuditChannel { Https, Http, Cli, System, Web, Logic };
 
 // clang-format off
-inline constexpr std::array<AuditAction, 53> kAuditActions = {
+inline constexpr std::array<AuditAction, 66> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -120,6 +134,13 @@ inline constexpr std::array<AuditAction, 53> kAuditActions = {
     AuditAction::UpdateManualRollback,  AuditAction::KeysUpdated,
     AuditAction::AuthBusy,
     AuditAction::PulseAck,
+    AuditAction::AccountGroups,         AuditAction::AccountDelete,
+    AuditAction::AccountMigrate,        AuditAction::GroupCreate,
+    AuditAction::GroupRename,           AuditAction::GroupDelete,
+    AuditAction::AccessRule,            AuditAction::AccessCleanup,
+    AuditAction::AccessRestore,         AuditAction::AccessReset,
+    AuditAction::AccessStoreInvalid,    AuditAction::AdminRead,
+    AuditAction::AdminViewAs,
 };
 // clang-format on
 
@@ -231,6 +252,32 @@ constexpr const char* auditActionName(AuditAction a) {
             return "auth.busy";
         case AuditAction::PulseAck:
             return "pulse.ack";
+        case AuditAction::AccountGroups:
+            return "account.groups";
+        case AuditAction::AccountDelete:
+            return "account.delete";
+        case AuditAction::AccountMigrate:
+            return "account.migrate";
+        case AuditAction::GroupCreate:
+            return "group.create";
+        case AuditAction::GroupRename:
+            return "group.rename";
+        case AuditAction::GroupDelete:
+            return "group.delete";
+        case AuditAction::AccessRule:
+            return "access.rule";
+        case AuditAction::AccessCleanup:
+            return "access.cleanup";
+        case AuditAction::AccessRestore:
+            return "access.restore";
+        case AuditAction::AccessReset:
+            return "access.reset";
+        case AuditAction::AccessStoreInvalid:
+            return "access.store-invalid";
+        case AuditAction::AdminRead:
+            return "admin.read";
+        case AuditAction::AdminViewAs:
+            return "admin.view-as";
     }
     return "";
 }
