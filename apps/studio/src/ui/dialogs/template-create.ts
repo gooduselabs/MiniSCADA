@@ -33,6 +33,7 @@ export const REJECT_KEY: Readonly<Record<TemplateRejection, MessageKey>> = {
   'max-items': 'tpl.err.maxItems',
   'not-popup': 'tpl.fp.notPopup',
   'no-prefix': 'tpl.fp.noPrefix',
+  'grid-layout': 'lay.tplUnsupported',
 };
 
 const repKey = (r: Replacement) => `${r.item}|${r.path.join('/')}`;

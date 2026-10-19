@@ -1,7 +1,14 @@
 // Thao tác ở cấp project với màn hình 0.3 (feature 007, T109, FR-065, FR-066): sinh id và màn hình mới, nhân bản, liệt kê
 // chỗ trỏ tới một màn hình (hộp thoại Xóa), đặt màn hình đầu. Hàm thuần trên cấu trúc project đọc được (outlineOf);
 // trả danh sách sửa đổi để store áp thành MỘT bước hoàn tác.
-import type { Action, BindingSet04, ScreenKind, ScreenModel } from '@mat/project-schema';
+import {
+  removeItemRef,
+  type Action,
+  type BindingSet04,
+  type GridLayout,
+  type ScreenKind,
+  type ScreenModel,
+} from '@mat/project-schema';
 import { emptyGridLayout } from './grid-ops.ts';
 import type { ProjectEdit, ProjectOutline } from './project-doc.ts';
 
@@ -94,6 +101,13 @@ export function planDuplicateScreen(
     name: copyName(src.name),
     items: JSON.parse(JSON.stringify(items)),
   };
+  // màn hình lưới (feature 012): ô trỏ tới item svg bị bỏ thành ô trống
+  const grid = (copy as ScreenModel & { layout?: GridLayout }).layout;
+  if (grid) {
+    let layout = grid;
+    for (const s of src.items) if (s.type === 'svg') layout = removeItemRef(layout, s.id);
+    (copy as ScreenModel & { layout?: GridLayout }).layout = layout;
+  }
   return {
     id: nid,
     edits: [{ kind: 'screenUpsert', screen: copy }],

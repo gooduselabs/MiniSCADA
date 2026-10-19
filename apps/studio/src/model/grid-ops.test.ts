@@ -177,3 +177,19 @@ describe('grid-ops', () => {
     expect(L(r.doc).rows[0]!.cells[0]).toEqual({ id: 'c1', span: 4 });
   });
 });
+
+describe('placeInGrid (nhập SVG, ký hiệu vào màn hình lưới)', () => {
+  it('bỏ tọa độ của item, đặt vào ô trống đầu tiên; hết ô trống thì thêm hàng 12 cột', async () => {
+    const { placeInGrid } = await import('./grid-ops.ts');
+    const it = { id: 'svg_1', type: 'svg', x: 0, y: 0, width: 400, height: 300 } as never;
+    const one = placeInGrid(doc(), it) as G;
+    expect(one.items.at(-1)).toEqual({ id: 'svg_1', type: 'svg' });
+    expect(one.layout.rows[0]!.cells[1]!.item).toBe('svg_1');
+    let full: ScreenModel = doc();
+    full = placeInGrid(full, { id: 'a2', type: 'widget', widget: 'card' } as never);
+    full = placeInGrid(full, { id: 'a3', type: 'widget', widget: 'card' } as never);
+    const more = placeInGrid(full, it) as G;
+    expect(more.layout.rows).toHaveLength(2);
+    expect(more.layout.rows[1]!.cells).toEqual([{ id: 'c4', span: 12, item: 'svg_1' }]);
+  });
+});

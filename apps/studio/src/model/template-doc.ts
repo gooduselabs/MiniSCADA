@@ -53,7 +53,9 @@ export type TemplateRejection =
   | 'bad-args'
   | 'max-items'
   | 'not-popup'
-  | 'no-prefix';
+  | 'no-prefix'
+  /** Feature 012: bản sao template cần tọa độ, chưa đặt được vào màn hình bố cục lưới. */
+  | 'grid-layout';
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -413,6 +415,8 @@ export function addInstance(
   template: TemplateDoc,
   opts: AddInstanceOptions,
 ): AddInstanceResult {
+  if ((screen as ScreenModel & { layout?: unknown }).layout !== undefined)
+    return { ok: false, reason: 'grid-layout' };
   const inst = opts.inst ?? nextInstanceId(screen, template.id);
   if (!INST_ID_RE.test(inst)) return { ok: false, reason: 'bad-inst' };
   if (instanceIds(screen).has(inst)) return { ok: false, reason: 'inst-taken' };

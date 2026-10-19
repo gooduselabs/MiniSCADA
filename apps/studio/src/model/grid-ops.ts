@@ -331,3 +331,41 @@ export function removeRow(doc: ScreenModel, rowId: string): GridEditResult {
     selection: [],
   };
 }
+
+/**
+ * Đặt một item mới vào màn hình lưới (nhập SVG, ký hiệu; feature 012, FR-014): bỏ `x`, `y`, `width`, `height` của item,
+ * trỏ ô trống đầu tiên (theo thứ tự hàng rồi ô) tới nó; hết ô trống thì thêm một hàng 12 cột ở cuối. Màn hình tự do trả
+ * màn hình có item thêm nguyên trạng.
+ */
+export function placeInGrid(doc: ScreenModel, item: ScreenModel['items'][number]): ScreenModel {
+  const l = layoutOf(doc);
+  if (!l) return { ...doc, items: [...doc.items, item] };
+  const loose = { ...item } as Record<string, unknown>;
+  for (const k of ['x', 'y', 'width', 'height']) delete loose[k];
+  const placed = loose as unknown as ScreenModel['items'][number];
+  for (let r = 0; r < l.rows.length; r++) {
+    const c = l.rows[r]!.cells.findIndex((x) => x.item === undefined);
+    if (c < 0) continue;
+    const layout = mapRow(l, r, (row) => ({
+      ...row,
+      cells: row.cells.map((x, i) => (i === c ? { ...x, item: placed.id } : x)),
+    }));
+    return { ...doc, layout, items: [...doc.items, placed] } as GridDoc;
+  }
+  const [rowId] = freshIds(l, 'r', 1);
+  const [cellId] = freshIds(
+    { ...l, rows: [...l.rows, { id: rowId!, height: 'auto', cells: [] }] },
+    'c',
+    1,
+  );
+  const row: GridRow = {
+    id: rowId!,
+    height: 'auto',
+    cells: [{ id: cellId!, span: GRID_COLUMNS, item: placed.id }],
+  };
+  return {
+    ...doc,
+    layout: { ...l, rows: [...l.rows, row] },
+    items: [...doc.items, placed],
+  } as GridDoc;
+}
