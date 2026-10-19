@@ -129,6 +129,8 @@ async function main(): Promise<void> {
     return;
   }
   const summary = opened.summary;
+  // chủ đề của project (feature 012, FR-030): token --mat-* theo :root[data-mat-theme]
+  document.documentElement.dataset.matTheme = summary.theme ?? 'industrial';
 
   // ---- Nguồn dữ liệu, phiên, hành động ----
   const proto = https ? 'wss' : 'ws';

@@ -168,6 +168,23 @@ describe('tóm tắt project 0.3', () => {
     expect(f.calls).toHaveLength(2);
   });
 
+  it('chủ đề (feature 012): theme của project vào tóm tắt; giá trị lạ hoặc vắng thì không có', async () => {
+    for (const [theme, want] of [
+      ['vivid', 'vivid'],
+      ['dark', 'dark'],
+      ['neon', undefined],
+      [undefined, undefined],
+    ] as const) {
+      const r = routes03(['a']);
+      const body = body03(['a']) as { project: Record<string, unknown> };
+      if (theme !== undefined) body.project.theme = theme;
+      (r['/api/v1/projects/active'] as { json: Record<string, unknown> }).json = body;
+      const store = new ProjectStore({ fetch: fakeFetch(r).fn });
+      const res = await store.open();
+      expect(res.status === 'ok' && res.summary.theme, String(theme)).toBe(want);
+    }
+  });
+
   it('navigation vắng → null', async () => {
     const r = routes03(['a']);
     (r['/api/v1/projects/active'] as { json: Record<string, unknown> }).json = body03(['a'], {

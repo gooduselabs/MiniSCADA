@@ -328,6 +328,12 @@ export class MatScreenEditor extends AppElement {
 
   protected override updated(): void {
     this.revealItem();
+    // Chủ đề của project (định dạng 1.1, feature 012, FR-030): token --mat-* của widget trên canvas và xem trước theo nó;
+    // khung IDE của Studio dùng token riêng nên không đổi.
+    const theme = (this.app.store.state.outline.project as unknown as { theme?: unknown } | null)
+      ?.theme;
+    document.documentElement.dataset.matTheme =
+      theme === 'vivid' || theme === 'dark' ? theme : 'industrial';
     // Báo ngữ cảnh lệnh (số item chọn, clipboard, xem trước, loại màn hình): bảng lệnh và nút khóa theo đó.
     const app = this.app;
     const doc = app.screenModel(this.screenId);

@@ -38,7 +38,13 @@ import {
   type WatchTableDoc,
 } from '@mat/project-schema';
 
-export type ProjectField = 'projectName' | 'projectVersion' | 'entryScreen' | 'maxClients';
+export type ProjectField =
+  | 'projectName'
+  | 'projectVersion'
+  | 'entryScreen'
+  | 'maxClients'
+  // định dạng 1.1 (feature 012): chủ đề giao diện
+  | 'theme';
 
 /** Khóa của Tag 0.1 theo thứ tự file chuẩn (data-model của 004 §3.1); cũng là các cột của Bảng Tag 0.1. */
 export const TAG_KEY_ORDER = ['id', 'type', 'description', 'unit', 'min', 'max', 'source'] as const;
