@@ -446,7 +446,8 @@ function cases(
     17,
     'from-version',
     inv('FROM_VERSION', 6),
-    makePackage({ files: mkFiles(), key, manifest: { ...base, minFromVersion: '1.0.1' } }).pkg,
+    // xa hẳn mọi bản đang chạy (vector: 1.0.0 đã cài; update-it: phiên bản runtime hiện tại, 1.1.0-alpha.1 từ 012)
+    makePackage({ files: mkFiles(), key, manifest: { ...base, minFromVersion: '99.0.0' } }).pkg,
   );
   add(
     18,
@@ -929,7 +930,7 @@ export function writeItPackages(outDir, binPath, arch, count = 20) {
   const meta = [];
   for (const c of list) {
     if (c.api || c.device) continue;
-    // device-relative cases: releaseSeq 10 and minFromVersion 1.0.1 are relative to the installed 1.0.0 / 10
+    // device-relative cases: releaseSeq 10 is relative to the installed 10; minFromVersion 99.0.0 is above any version
     writeFileSync(join(outDir, 'bad', fileName(c)), c.pkg);
     meta.push({ id: c.id, name: c.name, file: `bad/${fileName(c)}`, expect: c.expect });
   }
