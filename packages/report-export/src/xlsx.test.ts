@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // T098 (XLSX): một sheet, ô số là số với numFmt theo decimals, freeze panes, chuỗi nội tuyến, XML hợp lệ, thoát & < > ",
-// ô bắt đầu = + - @, đọc lại khớp 100 % ô. Bộ đọc viết riêng cho test: fflate (giải nén) + DOMParser (XML).
+// ô bắt đầu = + - @, đọc lại khớp 100 % ô. T050 (feature 012): tiêu đề màu theo chủ đề, độ rộng theo nội dung, numFmt có
+// đơn vị. Bộ đọc viết riêng cho test: fflate (giải nén) + DOMParser (XML).
 import { unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { buildXlsx } from './xlsx/xlsx.ts';
@@ -99,25 +100,31 @@ describe('XLSX', () => {
     );
   });
 
-  it('numFmt theo decimals của từng cột', () => {
+  it('numFmt theo decimals và đơn vị của từng cột (T050: phân cách nghìn, đơn vị là chữ trong nháy)', () => {
     const styles = xml('xl/styles.xml');
-    const fmts = Array.from(styles.getElementsByTagName('numFmt')).map((n) =>
-      n.getAttribute('formatCode'),
-    );
-    const xfs = Array.from(styles.getElementsByTagName('cellXfs')[0]!.getElementsByTagName('xf'));
     const h = rows.findIndex((r) => r[0]!.text === LABELS.rowHeader);
-    const first = rows[h + 1]!;
-    t.columns.forEach((col, k) => {
-      const xf = xfs[first[k + 1]!.style ?? 0]!;
-      const id = xf.getAttribute('numFmtId');
-      const code = Array.from(styles.getElementsByTagName('numFmt'))
-        .find((n) => n.getAttribute('numFmtId') === id)
-        ?.getAttribute('formatCode');
-      expect(code ?? (id === '1' ? '0' : id === '2' ? '0.00' : ''), col.key).toBe(
-        col.decimals === 0 ? '0' : `0.${'0'.repeat(col.decimals)}`,
-      );
-    });
-    expect(fmts.length).toBeGreaterThan(0);
+    for (const row of [rows[h + 1]!, rows[h + 1 + t.rows.length]!])
+      // hàng dữ liệu đầu và dòng tổng
+      t.columns.forEach((col, k) => {
+        const dec = col.decimals === 0 ? '' : `.${'0'.repeat(col.decimals)}`;
+        expect(formatOf(styles, row[k + 1]!.style), col.key).toBe(
+          `#,##0${dec}${col.unit ? `" ${col.unit}"` : ''}`,
+        );
+      });
+  });
+
+  it('ký tự đặc biệt của đơn vị không phá định dạng số: bỏ nháy kép và gạch ngược, % là chữ', () => {
+    const odd = {
+      ...t,
+      columns: t.columns.map((c, i) => ({ ...c, unit: ['%', 'm³/h', 'a"b\\c'][i] ?? c.unit })),
+    };
+    const r = readSheet(buildXlsx(odd, META, LABELS));
+    const styles = r.xml('xl/styles.xml');
+    const h = r.rows.findIndex((x) => x[0]!.text === LABELS.rowHeader);
+    const codes = odd.columns.map((_, k) => formatOf(styles, r.rows[h + 1]![k + 1]!.style));
+    expect(codes[0]).toMatch(/" %"$/);
+    expect(codes[1]).toMatch(/" m³\/h"$/);
+    expect(codes[2]).toMatch(/" abc"$/);
   });
 
   it('freeze panes dưới hàng tiêu đề cột', () => {
@@ -137,7 +144,87 @@ describe('XLSX', () => {
       expect(w).toBeLessThanOrEqual(40 + 2);
     }
   });
+
+  // ---- T050 (feature 012, FR-039) ----
+
+  const colWidths = () =>
+    Array.from(sheet.getElementsByTagName('col')).map((c) => Number(c.getAttribute('width')));
+  const headerIdx = () => rows.findIndex((r) => r[0]!.text === LABELS.rowHeader);
+
+  it('hàng tiêu đề cột có nền màu nhấn của chủ đề (mặc định vivid), chữ trắng đậm, xuống dòng', () => {
+    const styles = xml('xl/styles.xml');
+    for (const c of rows[headerIdx()]!) {
+      const s = styleOf(styles, c.style);
+      expect(s.fill, c.text).toBe('FF3E63DD');
+      expect(s.fontColor).toBe('FFFFFFFF');
+      expect(s.bold).toBe(true);
+      expect(s.wrap).toBe(true);
+    }
+    const ind = readSheet(buildXlsx(t, { ...META, theme: 'industrial' }, LABELS));
+    const st = ind.xml('xl/styles.xml');
+    const hi = ind.rows.findIndex((r) => r[0]!.text === LABELS.rowHeader);
+    expect(styleOf(st, ind.rows[hi]![0]!.style).fill).toBe('FF0B7285');
+  });
+
+  it('tiêu đề báo cáo chữ lớn đậm màu nhấn', () => {
+    const s = styleOf(xml('xl/styles.xml'), rows[0]![0]!.style);
+    expect(s.bold).toBe(true);
+    expect(s.size).toBeGreaterThanOrEqual(14);
+    expect(s.fontColor).toBe('FF3E63DD');
+  });
+
+  it('độ rộng cột số theo số dài nhất kèm đơn vị, tiêu đề dài thì xuống dòng thay vì kéo rộng cột', () => {
+    const w = colWidths();
+    const h = headerIdx();
+    t.columns.forEach((col, k) => {
+      const texts = [...t.rows.map((r) => r.text[k]!), ...(t.totalsText ?? []).slice(k, k + 1)];
+      const num = Math.max(...texts.map((s) => s.length)) + (col.unit ? col.unit.length + 1 : 0);
+      const header = rows[h]![k + 1]!.text;
+      const word = Math.max(...header.split(/\s+/).map((x) => [...x].length));
+      expect(w[k + 1], `${col.key}: đủ cho số và đơn vị`).toBeGreaterThanOrEqual(num + 1);
+      expect(w[k + 1], `${col.key}: đủ cho từ dài nhất của tiêu đề`).toBeGreaterThanOrEqual(word);
+      expect(w[k + 1], `${col.key}: không rộng bằng cả tiêu đề`).toBeLessThan([...header].length);
+    });
+    expect(w[0]).toBeGreaterThanOrEqual(Math.max(...t.rows.map((r) => [...r.label].length)));
+  });
+
+  it('hàng tiêu đề cột cao đủ cho số dòng xuống (ht, customHeight)', () => {
+    const row = Array.from(sheet.getElementsByTagName('row'))[headerIdx()]!;
+    expect(row.getAttribute('customHeight')).toBe('1');
+    expect(Number(row.getAttribute('ht'))).toBeGreaterThanOrEqual(30);
+  });
 });
+
+/** formatCode của kiểu ô (numFmt riêng hoặc dựng sẵn 0). */
+function formatOf(styles: Document, style: number | null): string {
+  const xfs = Array.from(styles.getElementsByTagName('cellXfs')[0]!.getElementsByTagName('xf'));
+  const id = xfs[style ?? 0]!.getAttribute('numFmtId');
+  return (
+    Array.from(styles.getElementsByTagName('numFmt'))
+      .find((n) => n.getAttribute('numFmtId') === id)
+      ?.getAttribute('formatCode') ?? (id === '0' ? 'General' : `builtin:${id}`)
+  );
+}
+
+/** Phông và nền của kiểu ô. */
+function styleOf(styles: Document, style: number | null) {
+  const xf = Array.from(styles.getElementsByTagName('cellXfs')[0]!.getElementsByTagName('xf'))[
+    style ?? 0
+  ]!;
+  const font = Array.from(styles.getElementsByTagName('fonts')[0]!.getElementsByTagName('font'))[
+    Number(xf.getAttribute('fontId'))
+  ]!;
+  const fill = Array.from(styles.getElementsByTagName('fills')[0]!.getElementsByTagName('fill'))[
+    Number(xf.getAttribute('fillId'))
+  ]!;
+  return {
+    bold: font.getElementsByTagName('b').length > 0,
+    size: Number(font.getElementsByTagName('sz')[0]?.getAttribute('val')),
+    fontColor: font.getElementsByTagName('color')[0]?.getAttribute('rgb') ?? null,
+    fill: fill.getElementsByTagName('fgColor')[0]?.getAttribute('rgb') ?? null,
+    wrap: xf.getElementsByTagName('alignment')[0]?.getAttribute('wrapText') === '1',
+  };
+}
 
 describe('XLSX: chuỗi độc hại', () => {
   const h = hostileTable();
