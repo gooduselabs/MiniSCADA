@@ -244,3 +244,15 @@ Hai điểm cần làm rõ trước khi viết mã (task T004): (1) ghi từ lu�
 | 0.5 (Studio) | 1.0 | Studio cũ mở project 1.0.0 từ chối (như 006 FR-005); nạp xuống project 0.3 vẫn chạy |
 
 Ghi vào `docs/user/admin-guide.md`.
+
+### Kết quả spike T009 (2026-10-19, Windows 11 build 26200)
+
+- `signtool.exe`: `C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe` (4.00); `sign.ps1` tự tìm bản mới nhất trong `Windows Kits\10\bin`.
+- `New-SelfSignedCertificate -Type CodeSigningCert` vào `Cert:\CurrentUser\My` (không cần quyền admin); `signtool sign /sha1 <dấu vân tay> /fd SHA256` ký được.
+- `Get-AuthenticodeSignature` trả **`UnknownError`** (`StatusMessage`: "A certificate chain processed, but terminated in a root certificate which is not trusted by the trust provider"), **không phải `NotTrusted`**, trên cả Windows PowerShell 5.1 và pwsh 7; dấu vân tay người ký đúng. Mã chấp nhận cả hai (`Get-MatSignatureInfo`, `signature.rs`).
+- `signtool verify /pa /v`: mã 1, "A certificate chain processed, but terminated in a root certificate which is not trusted"; in băm SHA-256 của tệp.
+- Sửa 1 byte trong ảnh PE → `HashMismatch` (byte cuối nằm trong khối chữ ký cho lỗi khác).
+- Bẫy: tệp hệ thống (ví dụ `whoami.exe`) ký bằng catalog nên `Get-AuthenticodeSignature` báo `Valid` của Microsoft dù đã ký thêm; dùng `.exe` chưa ký thật (test biên dịch bằng `csc.exe`).
+- Bẫy: `New-SelfSignedCertificate` thêm bản sao (chỉ khóa công khai) vào `Cert:\CurrentUser\CA` (kho trung gian, không phải kho tin cậy); `make-test-cert.ps1` gỡ.
+- Bẫy: Windows PowerShell 5.1 do pwsh 7 sinh ra thừa hưởng `PSModulePath` của PS7; module Security của PS7 nạp vào 5.1 làm `Cert:` lỗi. `sign.ps1` loại các đường dẫn PS7 khỏi `PSModulePath`.
+- Đã gỡ chứng chỉ sau spike; Root và TrustedPublisher không đổi.

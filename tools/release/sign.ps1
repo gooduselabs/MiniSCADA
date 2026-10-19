@@ -29,6 +29,11 @@ param(
     [switch]$CheckOnly
 )
 $ErrorActionPreference = 'Stop'
+# Tauri chạy sign.ps1 bằng Windows PowerShell 5.1 do release.ps1 (pwsh 7) sinh ra: nó thừa hưởng PSModulePath của PS7, module
+# Security của PS7 nạp vào 5.1 làm Cert: lỗi ("TypeData ... already present"). Bỏ đường dẫn module của PS7 trước khi dùng Cert:.
+if ($PSVersionTable.PSEdition -eq 'Desktop' -and $env:PSModulePath) {
+    $env:PSModulePath = (@($env:PSModulePath -split ';' | Where-Object { $_ -and $_ -notmatch '(?i)(?<!Windows)PowerShell\\(7\\)?Modules|powershell_7' }) -join ';')
+}
 . "$PSScriptRoot/../lib/platform.ps1"
 . "$PSScriptRoot/lib/signing.ps1"
 

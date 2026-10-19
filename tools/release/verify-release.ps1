@@ -33,8 +33,12 @@ $Dir = (Resolve-Path -LiteralPath $Dir).ProviderPath
 if (-not $Keys) { $Keys = Join-Path $MatRepoRoot 'deployment/keys' }
 if (-not $Release) { Write-Host $MatTestBanner }
 $failed = $false
+$psCaseIds = New-Object System.Collections.Generic.List[int]   # ca Authenticode đã chạy ở đây (để gộp vào tổng)
+$script:psCaseRejected = 0
 
 function Write-Case([int]$Id, [string]$Name, [bool]$Rejected, [string]$Got) {
+    $psCaseIds.Add($Id)
+    if ($Rejected) { $script:psCaseRejected++ }
     $tag = if ($Rejected) { 'từ chối' } else { 'KHÔNG bị từ chối' }
     Write-Host ("ca {0} {1}: {2} → {3}" -f $Id, $tag, $Name, $Got)
 }
@@ -114,7 +118,12 @@ if ($MatIsWindows) {
                     Write-Case 4 'thay chữ ký bằng chữ ký của chứng chỉ khác' $rej ("người ký $got, cần $expect")
                     if (-not $rej) { $failed = $true }
                 } finally {
-                    if ($tmpCert) { Remove-Item -LiteralPath ("Cert:\CurrentUser\My\" + $tmpCert.Thumbprint) -ErrorAction SilentlyContinue }
+                    if ($tmpCert) {
+                        # New-SelfSignedCertificate để thêm cả một bản sao vào kho trung gian CA: gỡ cả hai.
+                        foreach ($st in 'My', 'CA') {
+                            Remove-Item -LiteralPath ("Cert:\CurrentUser\$st\" + $tmpCert.Thumbprint) -ErrorAction SilentlyContinue
+                        }
+                    }
                 }
                 # Ca 5: bỏ dấu thời gian (ký lại không /tr bằng cùng chứng chỉ; cần khóa không hỏi PIN).
                 if ($orig -and $orig.cert -and ($orig.cert.subject -match 'TEST')) {
@@ -152,7 +161,15 @@ if ($Release) { $a += '--release' } elseif ($allowList.Count -gt 0) { $a += @('-
 if ($BreakCases) { $a += '--break-cases'; if ($OtherKeys) { $a += @('--other-keys', $OtherKeys) } }
 $out = Invoke-MatNative { & (Get-MatNode) @a 2>&1 }
 $code = $LASTEXITCODE
-foreach ($l in @($out)) { Write-Host ([string]$l) }
+foreach ($l in @($out)) {
+    $line = [string]$l
+    # Phần Node không chạy được ca 1–5 nên in "BỎ QUA" và tính tổng 7: ở đây các ca đó đã chạy, gộp vào tổng.
+    if ($line -match '^ca (\d+) BỎ QUA' -and $psCaseIds.Contains([int]$Matches[1])) { continue }
+    if ($line -match '^ca hỏng: (\d+)/(\d+) bị từ chối') {
+        $line = 'ca hỏng: {0}/{1} bị từ chối' -f ([int]$Matches[1] + $script:psCaseRejected), ([int]$Matches[2] + $psCaseIds.Count)
+    }
+    Write-Host $line
+}
 if ($code -ne 0) { $failed = $true }
 
 if ($failed) { Write-MatError 'verify-release: KHÔNG ĐẠT'; exit 1 }
