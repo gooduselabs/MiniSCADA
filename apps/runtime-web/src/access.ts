@@ -85,6 +85,16 @@ export async function fetchAccess(
   return a ? { status: 'ok', access: a } : { status: 'error', message: 'Thân web/access sai hình' };
 }
 
+/**
+ * Trang còn phiên của `signedIn` mà máy chủ trả quyền của người khác hoặc của ẩn danh (`viewerLogin: off`: phiên bị
+ * hủy ở máy chủ thì web/access trả quyền ẩn danh, không 401): phiên đã hết, trang phải coi như hết hạn
+ * (SESSION_EXPIRED), không chỉ khóa theo quyền ẩn danh.
+ */
+export function sessionEnded(load: AccessLoad, signedIn: string | null): boolean {
+  if (signedIn === null || load.status !== 'ok') return false;
+  return load.access.anonymous || load.access.user !== signedIn;
+}
+
 /** Trang hệ thống của trang vận hành ↔ khóa `page:<…>` (access-model §2). */
 export type SystemPage = 'alarms' | 'history' | 'reports' | 'watch';
 

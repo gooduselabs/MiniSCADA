@@ -4,7 +4,7 @@
 // (chỉ hỏi lại projects/active, T104a), banner 4429, tự tải lại khi project đổi (hash giữ nguyên qua reload.ts).
 import '../../../packages/ui-components/src/styles/tokens.css';
 import { MatScreen, registerScreen, registerWidgets } from '@mat/ui-components';
-import { AccessView, emptyForUser, fetchAccess, filterScreen } from './access.ts';
+import { AccessView, emptyForUser, fetchAccess, filterScreen, sessionEnded } from './access.ts';
 import { WebActionHost } from './action-host.ts';
 import { AlarmApp } from './alarm/alarm-app.ts';
 import './alarm/alarm.css';
@@ -635,6 +635,12 @@ async function main(): Promise<void> {
     }
     const r = await fetchAccess();
     if (r.status === 'unauthorized') return onUnauthorized();
+    // viewerLogin off: phiên bị hủy ở máy chủ thì web/access trả quyền ẩn danh chứ không 401 (trang sẽ chỉ khóa
+    // theo quyền đó): coi là phiên hết hạn (banner, SESSION_EXPIRED).
+    if (sessionEnded(r, session.info?.user ?? null)) {
+      session.expire(); // báo người nghe: loadAccess chạy lại, lần này không phiên
+      return;
+    }
     if (r.status === 'ok') applyAccess(new AccessView(r.access));
     else if (r.status === 'unsupported') applyAccess(new AccessView(null));
   };
