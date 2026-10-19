@@ -364,6 +364,22 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"POST /api/v1/system/update/apply", true},
         {"POST /api/v1/system/update/cancel", true},
         {"POST /api/v1/system/update/rollback", true},
+        // feature 013: the admin API is a person's requests, all of it
+        {"GET /api/v1/admin/users", true},
+        {"POST /api/v1/admin/users", true},
+        {"POST /api/v1/admin/users/vh1", true},
+        {"POST /api/v1/admin/users/vh1/password", true},
+        {"POST /api/v1/admin/users/vh1/delete", true},
+        {"GET /api/v1/admin/groups", true},
+        {"POST /api/v1/admin/groups", true},
+        {"POST /api/v1/admin/groups/ca-a", true},
+        {"POST /api/v1/admin/groups/ca-a/delete", true},
+        {"GET /api/v1/admin/access", true},
+        {"POST /api/v1/admin/access", true},
+        {"POST /api/v1/admin/access/cleanup", true},
+        {"POST /api/v1/admin/access/restore", true},
+        {"GET /api/v1/admin/effective", true},
+        {"GET /api/v1/admin/audit", true},
     };
     for (const auto& kv : expected) {
         const size_t space = kv.first.find(' ');

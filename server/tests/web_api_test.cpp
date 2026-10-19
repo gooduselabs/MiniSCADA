@@ -396,8 +396,8 @@ TEST(WebLogin, EveryRoleSignsInAndTheAccountsAreStillOnlyManagedByCommand) {  //
         EXPECT_EQ(bodyJson(r)["role"], role);
     }
     for (const char* path :
-         {"/api/v1/web/register", "/api/v1/web/signup", "/api/v1/web/password", "/api/v1/web/reset",
-          "/api/v1/web/forgot", "/api/v1/web/account", "/api/v1/web/users"})
+         {"/api/v1/web/register", "/api/v1/web/signup", "/api/v1/web/reset", "/api/v1/web/forgot",
+          "/api/v1/web/account", "/api/v1/web/users"})  // 013: web/password exists (admin_api_test)
         for (const char* method : {"POST", "GET"}) {
             HttpRequest q;
             q.method = method;

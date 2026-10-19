@@ -385,6 +385,8 @@ TEST(WebGate, EveryChangeNeedsOriginAndCsrfAReadDoesNot) {
         const GateDecision d = r.check(q);
         if (q.method == "POST")
             EXPECT_EQ(d.error, "ORIGIN_MISMATCH") << rule.path;
+        else if (rule.minRole == Role::Administrator)  // feature 013: the admin API's reads
+            EXPECT_EQ(d.error, "FORBIDDEN") << rule.path << ": the rig's session is no admin";
         else
             EXPECT_TRUE(d.through()) << rule.path << " " << d.error;
     }
