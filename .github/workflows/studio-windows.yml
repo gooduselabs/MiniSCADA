@@ -1,0 +1,46 @@
+name: studio-windows
+
+# Bộ cài mAT Studio cho Windows (NSIS, x64) dựng trên máy Windows của GitHub. Sản phẩm nội bộ: không ký
+# Authenticode của CA (quyết định 2026-10-19, T103/T104 không áp dụng) nên build dùng `--no-sign`; Windows sẽ
+# báo "Unknown publisher" khi cài. Tệp `.exe` và SHA256 ở artifact `mat-studio-windows`. Chạy tay
+# (workflow_dispatch) hoặc khi đẩy tag `studio-*`.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['studio-*']
+
+permissions:
+  contents: read
+
+jobs:
+  nsis:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/studio/src-tauri
+      - run: npm ci
+      - name: Build installer (unsigned)
+        run: npm run tauri -w @mat/studio -- build --bundles nsis --no-sign
+      - name: Checksums
+        shell: pwsh
+        run: |
+          $d = 'apps/studio/src-tauri/target/release/bundle/nsis'
+          Get-ChildItem $d -Filter *.exe | ForEach-Object {
+            $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$h  $($_.Name)" | Tee-Object -FilePath "$d/SHA256SUMS" -Append
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mat-studio-windows
+          path: |
+            apps/studio/src-tauri/target/release/bundle/nsis/*.exe
+            apps/studio/src-tauri/target/release/bundle/nsis/SHA256SUMS
+          retention-days: 30
