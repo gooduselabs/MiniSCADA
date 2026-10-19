@@ -623,6 +623,26 @@ c('alarm-source-item-hidden', {
   },
 });
 
+// Alarm không có Tag nguồn (của thiết bị, driver): hiện cho người xem được `page:alarms` (quyết định 2026-10-20).
+const withDeviceAlarm = (cat) => cat.alarms.push({ id: 'a-plc', tag: null });
+c('alarm-without-tag-page-viewed', {
+  catalog: withDeviceAlarm,
+  principal: P('xem1', 'viewer'),
+  expected: { ...VIEWER, alarms: ['a-bom', 'a-gio', 'a-luu', 'a-muc', 'a-plc'] },
+});
+c('alarm-without-tag-page-denied', {
+  catalog: withDeviceAlarm,
+  rules: [R('page:alarms', 'view', ['role:engineer'])],
+  principal: P('vh1', 'operator'),
+  expected: { ...OPERATOR, pages: ['history', 'reports', 'watch'] },
+});
+c('alarm-without-tag-administrator', {
+  catalog: withDeviceAlarm,
+  rules: [R('page:alarms', 'view', [])],
+  principal: P('admin', 'administrator'),
+  expected: { ...ADMIN, alarms: [...ALL_ALARMS, 'a-plc'].sort() },
+});
+
 // ---------- nhóm lưu trữ, mẫu báo cáo ----------
 c('history-page-denied', {
   rules: [R('page:history', 'view', ['group:khach'])],

@@ -1,0 +1,148 @@
+{
+  "scenario": "access",
+  "checks": [
+    {
+      "name": "vh1: web/access không có bon-nuoc",
+      "pass": true,
+      "detail": "[\"tong-quan\",\"giam-sat\",\"bom1\",\"bom\",\"bom-chi-tiet\"]"
+    },
+    {
+      "name": "vh1: sw_fan ẩn, slider_flow khóa (quy tắc), sp_level khóa (minRole engineer)",
+      "pass": true,
+      "detail": "{\"h\":{\"tong-quan\":[\"sw_fan\"]},\"l\":{\"tong-quan\":[\"btn_toggle\",\"slider_flow\",\"sp_level\"]}}"
+    },
+    {
+      "name": "vh2 (quản đốc): thấy sw_fan, thao tác slider_flow",
+      "pass": true,
+      "detail": "{\"admin\":false,\"anonymous\":false,\"groups\":[\"quan-doc\"],\"hiddenItems\":{},\"lockedItems\":{\"tong-quan\":[\"btn_toggle\",\"sp_level\"]},\"pages\":[\"alarms\",\"history\",\"reports\",\"watch\"],\"projectHash\":\"sha256:98e56cbb8a7fd5e4a17d9d30450b90bd25f1d4a652e3c23cb4d9a6af316d1e0a\",\"role\":\"operator\",\"screens\":[\"tong-quan\",\"giam-sat\",\"bom1\",\"bom\",\"bom-chi-tiet\"],\"storeRev\":3,\"user\":\"vh2\",\"usersRev\":6}"
+    },
+    {
+      "name": "vh1: bon-nuoc.screen.json 403 ACCESS_DENIED",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "name": "vh1: tong-quan.screen.json không có sw_fan, không SIM.FAN_ON",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "vh2: tong-quan.screen.json có sw_fan",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "vh1: projects/active không có bon-nuoc trong danh sách và menu",
+      "pass": true,
+      "detail": "{\"items\":[{\"icon\":\"home\",\"label\":\"Tổng quan\",\"screen\":\"tong-quan\"},{\"icon\":\"chart\",\"label\":\"Giám sát\",\"screen\":\"giam-sat\"},{\"icon\":\"pump\",\"label\":\"Bơm\",\"screen\":\"bom\"}],\"position\":\"left\"}"
+    },
+    {
+      "name": "vh1: danh mục Tag không có Tag chỉ dùng ở chỗ bị cấm",
+      "pass": true
+    },
+    {
+      "name": "vh1: live được nâng cấp",
+      "pass": true,
+      "detail": "101"
+    },
+    {
+      "name": "vh1: snapshot có denied = hai Tag bị cấm",
+      "pass": true,
+      "detail": "[\"SIM.FAN_ON\",\"TANK01.SP_HI\"]"
+    },
+    {
+      "name": "vh1: snapshot có TANK01.LEVEL, TANK01.SP",
+      "pass": true,
+      "detail": "[\"TANK01.LEVEL\",\"TANK01.SP\"]"
+    },
+    {
+      "name": "vh2: nhận SIM.FAN_ON",
+      "pass": true,
+      "detail": "{\"type\":\"snapshot\",\"subscriptionId\":\"q1\",\"sequence\":1,\"ts\":1792430244411,\"tags\":[{\"id\":\"SIM.FAN_ON\",\"value\":false,\"quality\":\"GOOD\",\"sourceTimestamp\":1792430239102,\"serverTimestamp\":1792430239102,\"revision\":1}],\"unknown\":[]}"
+    },
+    {
+      "name": "vh1: ghi qua slider_flow (không operate): REJECTED ACCESS_DENIED",
+      "pass": true,
+      "detail": "{\"results\":[{\"message\":\"Bạn không có quyền thao tác thành phần này.\",\"reason\":\"ACCESS_DENIED\",\"requestId\":\"371cf286-e0dc-454a-926f-15e33ab7cd44\",\"status\":\"REJECTED\"}]}"
+    },
+    {
+      "name": "vh1: ghi qua sp_level (minRole engineer của project): ACCESS_DENIED",
+      "pass": true,
+      "detail": "{\"results\":[{\"message\":\"Bạn không có quyền thao tác thành phần này.\",\"reason\":\"ACCESS_DENIED\",\"requestId\":\"7c013e65-e7c4-4b87-8a71-ad19617596aa\",\"status\":\"REJECTED\"}]}"
+    },
+    {
+      "name": "vh1: ghi không context: ACCESS_DENIED",
+      "pass": true,
+      "detail": "{\"results\":[{\"message\":\"Bạn không có quyền thao tác thành phần này.\",\"reason\":\"ACCESS_DENIED\",\"requestId\":\"6d39b923-fb9e-4ef7-8e4a-260e8da7c47a\",\"status\":\"REJECTED\"}]}"
+    },
+    {
+      "name": "vh1: ghi qua màn hình bị cấm: ACCESS_DENIED",
+      "pass": true,
+      "detail": "{\"results\":[{\"message\":\"Bạn không có quyền thao tác thành phần này.\",\"reason\":\"ACCESS_DENIED\",\"requestId\":\"ad90a1ce-7a5c-4832-935b-39d5938d27f1\",\"status\":\"REJECTED\"}]}"
+    },
+    {
+      "name": "vh1: Tag không thuộc binding của component: ACCESS_DENIED",
+      "pass": true,
+      "detail": "{\"results\":[{\"message\":\"Thành phần này không ghi Tag SIM.MODE.\",\"reason\":\"ACCESS_DENIED\",\"requestId\":\"120750c8-fc10-4ff3-9997-836aebf09fe8\",\"status\":\"REJECTED\"}]}"
+    },
+    {
+      "name": "ghi bị từ chối: 0 lệnh tới giả lập",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "vh2 (quản đốc) ghi qua slider_flow: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-19T17:17:24.914Z\",\"receivedAt\":\"2026-10-19T17:17:24.827Z\",\"requestId\":\"b9a67173-2ac3-4ab5-a2bd-8f0789919b2a\",\"status\":\"CONFIRMED\",\"tag\":\"SIM.SP_FLOW\",\"value\":41}"
+    },
+    {
+      "name": "vh1 ghi qua sw_pump (mặc định operator): CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-19T17:17:25.164Z\",\"receivedAt\":\"2026-10-19T17:17:25.060Z\",\"requestId\":\"ad403b47-2c4b-46a1-9a20-2a0e9fc41677\",\"status\":\"CONFIRMED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
+    },
+    {
+      "name": "đổi quy tắc: 200",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "vh2: access-changed trong 2 s",
+      "pass": true,
+      "detail": "126 ms"
+    },
+    {
+      "name": "vh2: sau access-changed không còn delta của SIM.FAN_ON (vị trí 0)",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "vh1 không nhận access-changed (quyền của vh1 không đổi)",
+      "pass": true,
+      "detail": "3"
+    },
+    {
+      "name": "audit access.denied của /project/screens/bon-nuoc.screen.json",
+      "pass": true,
+      "detail": "12"
+    },
+    {
+      "name": "audit tag.write denied ACCESS_DENIED của vh1",
+      "pass": true,
+      "detail": "8"
+    },
+    {
+      "name": "audit access.rule có before/after",
+      "pass": true,
+      "detail": "4"
+    },
+    {
+      "name": "vh1: 0 giá trị Tag bị cấm trên live",
+      "pass": true,
+      "detail": "3"
+    }
+  ],
+  "measures": {
+    "accessChangedMs": 126
+  },
+  "pass": true
+}

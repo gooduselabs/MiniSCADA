@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "core/audit/audit_log.hpp"
+#include "core/auth/access_service.hpp"
 #include "nlohmann/json.hpp"
 #include "server/system_warnings.hpp"
 
@@ -22,6 +24,7 @@ namespace mat {
 
 class DeviceState;
 class ViewerGate;
+struct RequestOrigin;
 class AlarmGlue;
 namespace alarmsapi {
 class SourceLimiter;
@@ -62,6 +65,18 @@ class HttpApi {
         // Feature 011 (T138): logic.writes now ("off", "on", "stopped" by an administrator);
         // empty: logicWrites.
         std::function<std::string()> logicWritesNow;
+        // Feature 013 (contracts/admin-api.md §6): the access of the person of a request (null:
+        // every resource, as before). A screen file of a screen not viewed: 403 ACCESS_DENIED
+        // (audited access.denied); viewed: without its hidden items and their grid cells; the SVG
+        // and binding files of an SVG item only when the item is viewed; the report templates
+        // only those viewed; projects/active with the viewed screens, menu entries and Tags; the
+        // alarms only with page:alarms, those of its Tags.
+        std::function<SessionAccessPtr(const RequestOrigin&)> accessOf;
+        std::function<void(const AuditEvent&)> audit;
+        // The owners (screen, item) of the files of SVG items; for a project before 0.3, the
+        // screen of each SVG file (item "svg"). The report templates file, when there is one.
+        std::map<std::string, std::vector<std::pair<std::string, std::string>>> itemFiles;
+        std::string reportsFile;
     };
     using InfoProvider = std::function<nlohmann::json()>;
 
@@ -90,6 +105,13 @@ class HttpApi {
     std::shared_ptr<std::mutex> firstSeenMu_ = std::make_shared<std::mutex>();
     std::shared_ptr<std::map<std::string, int64_t>> firstSeen_ =
         std::make_shared<std::map<std::string, int64_t>>();
+    // Feature 013: projects/active as JSON, and its filtered texts by the fingerprint of an access.
+    std::shared_ptr<const nlohmann::json> activeDoc_;
+    std::shared_ptr<std::mutex> activeMu_ = std::make_shared<std::mutex>();
+    std::shared_ptr<std::map<std::string, std::string>> activeByAccess_ =
+        std::make_shared<std::map<std::string, std::string>>();
+    // 0 to go on, or the 403 sent (ACCESS_DENIED, audited).
+    int denied(mg_connection* c, const SessionAccess& a, const std::string& what) const;
 };
 
 }  // namespace mat

@@ -136,8 +136,9 @@ export function catalogFromProject(project: CatalogProjectInput): ResourceCatalo
       id: r.id,
       tags: sortedTags(r.columns.map((c) => c.tagId)),
     })),
-    alarms: (project.alarms?.alarms ?? [])
-      .filter((a): a is { id: string; tag: string } => typeof a.tag === 'string')
-      .map((a) => ({ id: a.id, tag: a.tag })),
+    alarms: (project.alarms?.alarms ?? []).map((a) => ({
+      id: a.id,
+      tag: typeof a.tag === 'string' ? a.tag : null,
+    })),
   };
 }

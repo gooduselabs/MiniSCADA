@@ -374,8 +374,8 @@ TEST_F(Fixture, NoSequenceGapWhenSubscribingWhileTicking) {
 
 TEST_F(Fixture, HelloAnnouncesProtocol120AndTheVersionFileAgrees) {
     hub->onOpen(1);
-    EXPECT_EQ(tx.ofType(1, "hello")[0]["protocolVersion"], "1.3.0");
-    EXPECT_STREQ(kLiveProtocolVersion, "1.3.0");
+    EXPECT_EQ(tx.ofType(1, "hello")[0]["protocolVersion"], "1.4.0");
+    EXPECT_STREQ(kLiveProtocolVersion, "1.4.0");
     // schemas/protocol-version.json is the same version (the Studio and the runtime read it)
     std::ifstream f(std::string(MAT_SOURCE_DIR) + "/schemas/protocol-version.json");
     ASSERT_TRUE(f.good());

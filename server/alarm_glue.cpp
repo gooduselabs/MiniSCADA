@@ -375,7 +375,10 @@ AlarmLiveSnapshot AlarmGlue::snapshot(bool full) {
     if (v) {
         s.revision = v->revision;
         counts = v->counts;
-        for (const AlarmItem& it : v->items) s.instances.push_back(itemJson(it, full).dump());
+        for (const AlarmItem& it : v->items) {
+            s.instances.push_back(itemJson(it, full).dump());
+            s.ids.push_back(it.id);  // feature 013: the hub keeps those a session may see
+        }
     }
     s.counts = countsJson(counts).dump();
     s.classes = classesJson().dump();
@@ -491,7 +494,33 @@ size_t AlarmGlue::reservations() const {
 
 // --- ack ---
 
+namespace {
+
+AlarmApiResult accessDenied(const std::function<void(const AuditEvent&)>& audit, AuditAction a,
+                            const AlarmActor& who, const std::string& id) {
+    if (audit) {
+        AuditEvent e(a, AuditResult::Denied, who.channel, who.source);
+        e.user = who.user;
+        e.role = who.role;
+        e.target = id.substr(0, 120);
+        e.code = "ACCESS_DENIED";
+        try {
+            audit(e);
+        } catch (const std::exception&) {
+        }
+    }
+    return {
+        403,
+        {{"error", "ACCESS_DENIED"}, {"id", id}, {"message", "Bạn không có quyền với alarm này."}}};
+}
+
+}  // namespace
+
 AlarmApiResult AlarmGlue::ack(const AckSpec& spec, const AlarmActor& who) {
+    if (who.allowed && !spec.all)
+        for (const auto& it : spec.items)
+            if (!who.allowed(it.id))
+                return accessDenied(opt_.audit, AuditAction::AlarmAck, who, it.id);
     auto v = engine_.view();
     const AlarmView empty;
     if (!v) v = std::make_shared<AlarmView>();
@@ -506,6 +535,7 @@ AlarmApiResult AlarmGlue::ack(const AckSpec& spec, const AlarmActor& who) {
         // shelved, waiting for acknowledgement, and not newer than the revision the page showed.
         const std::string qf = spec.q.empty() ? std::string() : foldText(spec.q);
         for (const AlarmItem& it : v->items) {
+            if (who.allowed && !who.allowed(it.id)) continue;  // feature 013
             if (it.shelve || it.disabled) continue;
             if (it.state != AlarmState::ActiveUnack && it.state != AlarmState::RtnUnack) continue;
             if (!spec.states.empty() && std::find(spec.states.begin(), spec.states.end(),
@@ -637,6 +667,8 @@ AlarmApiResult AlarmGlue::ack(const AckSpec& spec, const AlarmActor& who) {
 
 AlarmApiResult AlarmGlue::shelve(const std::string& id, const std::string& reasonIn,
                                  int64_t durationS, const AlarmActor& who) {
+    if (who.allowed && !who.allowed(id))
+        return accessDenied(opt_.audit, AuditAction::AlarmShelve, who, id);
     if (!byId_.count(id)) return notFound(id);
     auto v = engine_.view();
     const AlarmItem* it = v ? v->find(id) : nullptr;
@@ -695,6 +727,8 @@ AlarmApiResult AlarmGlue::shelve(const std::string& id, const std::string& reaso
 }
 
 AlarmApiResult AlarmGlue::unshelve(const std::string& id, const AlarmActor& who) {
+    if (who.allowed && !who.allowed(id))
+        return accessDenied(opt_.audit, AuditAction::AlarmUnshelve, who, id);
     if (!byId_.count(id)) return notFound(id);
     auto v = engine_.view();
     const AlarmItem* it = v ? v->find(id) : nullptr;

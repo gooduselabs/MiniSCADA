@@ -120,6 +120,27 @@ const std::vector<EndpointRule>& endpointRules() {
         {"POST", "/api/v1/system/update/apply", true, Role::Administrator, true, true, false},
         {"POST", "/api/v1/system/update/cancel", true, Role::Administrator, true, true, false},
         {"POST", "/api/v1/system/update/rollback", true, Role::Administrator, true, true, false},
+        // device-api 1.6.0 (feature 013, contracts/admin-api.md): the access of the page (open:
+        // answered for the session it carries, or for an anonymous viewer when viewerLogin is
+        // off), the own password, then the admin API: administrator, cookie or Bearer, HTTPS.
+        {"GET", "/api/v1/web/access", false, Role::Viewer, false, false, true},
+        {"POST", "/api/v1/web/password", true, Role::Viewer, true, true, true},
+        {"GET", "/api/v1/admin/users", true, Role::Administrator, true, false, true},
+        {"POST", "/api/v1/admin/users", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/users/{name}", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/users/{name}/password", true, Role::Administrator, true, true,
+         true},
+        {"POST", "/api/v1/admin/users/{name}/delete", true, Role::Administrator, true, true, true},
+        {"GET", "/api/v1/admin/groups", true, Role::Administrator, true, false, true},
+        {"POST", "/api/v1/admin/groups", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/groups/{id}", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/groups/{id}/delete", true, Role::Administrator, true, true, true},
+        {"GET", "/api/v1/admin/access", true, Role::Administrator, true, false, true},
+        {"POST", "/api/v1/admin/access", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/access/cleanup", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/access/restore", true, Role::Administrator, true, true, true},
+        {"GET", "/api/v1/admin/effective", true, Role::Administrator, true, false, true},
+        {"GET", "/api/v1/admin/audit", true, Role::Administrator, true, false, true},
     };
     return rules;
 }

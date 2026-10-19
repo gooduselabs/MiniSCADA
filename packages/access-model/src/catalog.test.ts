@@ -88,8 +88,9 @@ describe('catalogFromProject: nhóm lưu trữ, mẫu báo cáo, alarm', () => {
   it('projects/alarm-demo (0.5): alarm có Tag nguồn; alarm theo thiết bị không có Tag thì không vào danh mục', async () => {
     const cat = catalogFromProject(await load('alarm-demo'));
     expect(cat.alarms).toContainEqual({ id: 'TANK1_LEVEL', tag: 'TANK1.LEVEL' });
-    expect(cat.alarms.map((a) => a.id)).not.toContain('PLC1_LINK');
-    expect(cat.alarms).toHaveLength(11);
+    // an alarm of a device (no source Tag) is kept, with tag null (decision of 2026-10-20)
+    expect(cat.alarms).toContainEqual({ id: 'PLC1_LINK', tag: null });
+    expect(cat.alarms).toHaveLength(12);
   });
 });
 

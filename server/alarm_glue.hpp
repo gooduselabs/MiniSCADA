@@ -41,6 +41,10 @@ namespace mat {
 struct AlarmActor {
     std::string user, role, source;
     AuditChannel channel = AuditChannel::Https;
+    // Feature 013 (contracts/admin-api.md §6): the alarms this person may act on (by instance id);
+    // empty: every alarm. An instance outside it: 403 ACCESS_DENIED (audited denied); "all" acts
+    // on the allowed ones only.
+    std::function<bool(const std::string& id)> allowed;
 };
 
 // An answer ready for the HTTP layer: the status and the JSON body ({"error","message",…} on a

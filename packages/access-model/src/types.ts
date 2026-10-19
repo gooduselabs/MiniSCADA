@@ -36,7 +36,8 @@ export interface CatalogTagSet {
 
 export interface CatalogAlarm {
   id: string;
-  tag: string;
+  /** null: an alarm of a device or driver (no source Tag), shown to whoever may view page:alarms. */
+  tag: string | null;
 }
 
 export interface ResourceCatalog {

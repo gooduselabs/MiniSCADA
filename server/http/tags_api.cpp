@@ -1,17 +1,21 @@
 // POST /api/v1/tags/write, GET /api/v1/tags/write/{requestId} and GET /api/v1/tags/write?ids=
 // (feature 006 T145; contracts/device-api-1.1.md §3). The rules of a write live in the coordinator
 // (core/tag-engine/write_coordinator); this file reads the request, calls it and writes the answer.
+#include <algorithm>
 #include <cstdio>
 #include <ctime>
+#include <optional>
 #include <set>
 
 #include "civetweb.h"
+#include "core/auth/access_service.hpp"
 #include "core/common/json_limits.hpp"
 #include "core/common/json_text.hpp"
 #include "core/crypto/hex.hpp"
 #include "core/crypto/sha256.hpp"
 #include "core/tag-engine/write_coordinator.hpp"
 #include "drivers/modbus/exceptions.hpp"
+#include "server/http/access_filter.hpp"
 #include "server/http/engineering_api.hpp"
 #include "server/http/engineering_api_internal.hpp"
 
@@ -246,9 +250,39 @@ int EngineeringApi::tagsWrite(mg_connection* c, const GateRequest& r, const Gate
         return sendError(c, 403, "FORBIDDEN", close, "", {{"results", std::move(results)}});
     }
 
-    const std::vector<WriteView> views = tags_.coordinator->submit(who, reqs);
+    // Feature 013 (contracts/admin-api.md §6, FR-033): a write of the page names the component
+    // that sends it (context.screen, context.widget); the item must be operated by this person and
+    // its bindings must hold the Tag. A request that does not is REJECTED ACCESS_DENIED and
+    // audited; the others of the batch go on. Bearer (the engineer's tools): as before.
+    std::vector<std::optional<json>> denied(reqs.size());
+    if (d.viaCookie && access_) {
+        const SessionAccessPtr a = access_->forAccess(d.access);
+        for (size_t i = 0; i < reqs.size(); ++i) {
+            const WriteRequest& w = reqs[i];
+            const std::string why =
+                pageWriteRefusal(access_->catalog(), *a, w.context.screen, w.context.widget, w.tag);
+            if (why.empty()) continue;
+            tags_.coordinator->recordDenied(who, w.requestId, w.tag, w.value, true,
+                                            "ACCESS_DENIED");
+            denied[i] = json{{"requestId", w.requestId},
+                             {"status", "REJECTED"},
+                             {"reason", "ACCESS_DENIED"},
+                             {"message", why}};
+        }
+    }
+    std::vector<WriteRequest> allowed;
+    for (size_t i = 0; i < reqs.size(); ++i)
+        if (!denied[i]) allowed.push_back(reqs[i]);
+    std::vector<WriteView> views;
+    if (!allowed.empty()) views = tags_.coordinator->submit(who, allowed);
     json results = json::array();
-    for (const WriteView& v : views) results.push_back(viewJson(v));
+    size_t next = 0;
+    for (size_t i = 0; i < reqs.size(); ++i) {
+        if (denied[i])
+            results.push_back(*denied[i]);
+        else if (next < views.size())
+            results.push_back(viewJson(views[next++]));
+    }
     return send(c, 200, jsonText({{"results", results}}), close);
 }
 

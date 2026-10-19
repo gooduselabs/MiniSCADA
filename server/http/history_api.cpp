@@ -213,7 +213,7 @@ HistoryApi::HistoryApi(Options opt)
 
 int HistoryApi::handle(mg_connection* c, const GateRequest& r, const GateDecision& d, bool close) {
     const std::string path = d.rule->path;
-    if (path == "/api/v1/history/catalog") return catalogJson(c, close);
+    if (path == "/api/v1/history/catalog") return catalogJson(c, d, close);
     if (!opt_.enabled || opt_.catalog.groups.empty()) return fail(c, 404, "NO_HISTORY", close);
     if (path == "/api/v1/history/series") return series(c, r, d, close);
     if (path == "/api/v1/history/aggregate") return aggregate(c, r, d, close);
@@ -224,7 +224,12 @@ int HistoryApi::handle(mg_connection* c, const GateRequest& r, const GateDecisio
 
 // ---------------------------------------------------------------- catalog
 
-int HistoryApi::catalogJson(mg_connection* c, bool close) {
+std::function<bool(const std::string&)> HistoryApi::filterOf(const GateDecision& d) const {
+    return opt_.tagFilter ? opt_.tagFilter(d) : std::function<bool(const std::string&)>();
+}
+
+int HistoryApi::catalogJson(mg_connection* c, const GateDecision& d, bool close) {
+    const auto allow = filterOf(d);
     json body = {{"apiVersion", kDeviceApiVersion},
                  {"enabled", opt_.enabled && !opt_.catalog.groups.empty()},
                  {"state", opt_.state ? opt_.state() : "running"},
@@ -248,6 +253,9 @@ int HistoryApi::catalogJson(mg_connection* c, bool close) {
     // the groups had no data (code review I5)
     if (!lease && err == "busy") return fail(c, 429, "BUSY", close, "Retry-After: 2\r\n");
     for (const auto& g : opt_.catalog.groups) {
+        if (allow && std::none_of(g.tags.begin(), g.tags.end(),
+                                  [&](const QueryTag& t) { return allow(t.tagId); }))
+            continue;  // feature 013: a group with no Tag this person may read
         json gj = {{"id", g.id},
                    {"name", g.name},
                    {"mode", g.mode},
@@ -259,6 +267,7 @@ int HistoryApi::catalogJson(mg_connection* c, bool close) {
                    {"aggregates", nullptr},
                    {"tags", json::array()}};
         for (const auto& t : g.tags) {
+            if (allow && !allow(t.tagId)) continue;
             json tj = tagInfo(t);
             tj["aggregated"] = t.aggregated;
             tj["orphan"] = false;
@@ -307,7 +316,8 @@ namespace {
 
 // group, tags, from, to; fills `out`. Returns 0 when fine, else the HTTP status already sent.
 int commonParams(mg_connection* c, const HistoryCatalog& cat, const Params& p, bool tagsRequired,
-                 size_t maxTags, bool allowStrings, bool close, Common& out) {
+                 size_t maxTags, bool allowStrings, bool close, Common& out,
+                 const std::function<bool(const std::string&)>& allow = {}) {
     const auto g = p.find("group");
     const auto f = p.find("from");
     const auto t = p.find("to");
@@ -328,12 +338,19 @@ int commonParams(mg_connection* c, const HistoryCatalog& cat, const Params& p, b
             if (idx < 0) return fail(c, 404, "UNKNOWN_TAG", close);
             if (!allowStrings && !out.group->tags[static_cast<size_t>(idx)].numeric())
                 return fail(c, 400, "BAD_REQUEST", close);
+            if (allow && !allow(n)) continue;  // feature 013: left out
             out.tags.push_back(static_cast<size_t>(idx));
         }
     } else {
         for (size_t i = 0; i < out.group->tags.size() && out.tags.size() < maxTags; ++i)
-            if (allowStrings || out.group->tags[i].numeric()) out.tags.push_back(i);
+            if ((allowStrings || out.group->tags[i].numeric()) &&
+                (!allow || allow(out.group->tags[i].tagId)))
+                out.tags.push_back(i);
     }
+    // Feature 013: nothing this person may read is left.
+    if (out.tags.empty() && allow)
+        return eapi::sendError(c, 403, "ACCESS_DENIED", close, "",
+                               {{"message", "Bạn không có quyền xem lịch sử của các Tag này."}});
     return 0;
 }
 
@@ -347,7 +364,8 @@ int HistoryApi::series(mg_connection* c, const GateRequest& r, const GateDecisio
         !onlyKeys(p, {"group", "tags", "from", "to", "maxPoints", "res", "reduce"}))
         return fail(c, 400, "BAD_REQUEST", close);
     Common cm;
-    if (const int s = commonParams(c, opt_.catalog, p, true, 16, false, close, cm)) return s;
+    if (const int s = commonParams(c, opt_.catalog, p, true, 16, false, close, cm, filterOf(d)))
+        return s;
     SeriesParams sp;
     sp.group = cm.group;
     sp.tags = cm.tags;
@@ -456,7 +474,8 @@ int HistoryApi::aggregate(mg_connection* c, const GateRequest& r, const GateDeci
         !p.count("bucketMs"))
         return fail(c, 400, "BAD_REQUEST", close);
     Common cm;
-    if (const int s = commonParams(c, opt_.catalog, p, true, 16, false, close, cm)) return s;
+    if (const int s = commonParams(c, opt_.catalog, p, true, 16, false, close, cm, filterOf(d)))
+        return s;
     AggregateParams ap;
     ap.group = cm.group;
     ap.tags = cm.tags;
@@ -546,7 +565,8 @@ int HistoryApi::rows(mg_connection* c, const GateRequest& r, const GateDecision&
         !onlyKeys(p, {"group", "tags", "from", "to", "limit", "order", "after"}))
         return fail(c, 400, "BAD_REQUEST", close);
     Common cm;
-    if (const int s = commonParams(c, opt_.catalog, p, false, 32, true, close, cm)) return s;
+    if (const int s = commonParams(c, opt_.catalog, p, false, 32, true, close, cm, filterOf(d)))
+        return s;
     RowsParams rp;
     rp.group = cm.group;
     rp.tags = cm.tags;
@@ -639,7 +659,8 @@ int HistoryApi::exportCsv(mg_connection* c, const GateRequest& r, const GateDeci
         !onlyKeys(p, {"group", "tags", "from", "to", "res", "fields", "bom"}))
         return fail(c, 400, "BAD_REQUEST", close);
     Common cm;
-    if (const int s = commonParams(c, opt_.catalog, p, false, 1000, true, close, cm)) return s;
+    if (const int s = commonParams(c, opt_.catalog, p, false, 1000, true, close, cm, filterOf(d)))
+        return s;
     ExportParams ep;
     ep.group = cm.group;
     ep.tags = cm.tags;

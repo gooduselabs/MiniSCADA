@@ -147,11 +147,13 @@ int EngineeringApi::webLogin(mg_connection* c, const GateRequest& r, bool close)
 }
 
 int EngineeringApi::webSession(mg_connection* c, const GateDecision& d, bool close) {
-    return send(c, 200,
-                jsonText(sessionBody(d.web.user, d.web.role ? roleName(*d.web.role) : "",
-                                     d.web.csrf, d.web.idleRemainingS, d.web.lifetimeRemainingS,
-                                     d.web.idleTimeoutS, d.web.maxSessionS)),
-                close);
+    json body = sessionBody(d.web.user, d.web.role ? roleName(*d.web.role) : "", d.web.csrf,
+                            d.web.idleRemainingS, d.web.lifetimeRemainingS, d.web.idleTimeoutS,
+                            d.web.maxSessionS);
+    // Feature 013 (contracts/admin-api.md §1): the groups of the account and the device's mode.
+    body["groups"] = d.web.groups;
+    body["viewerLogin"] = opt_.viewerLogin;
+    return send(c, 200, jsonText(body), close);
 }
 
 int EngineeringApi::webTouch(mg_connection* c, bool close) {

@@ -4,7 +4,7 @@
     {
       "name": "FLOAT TANK01.SP = 50: CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-19T07:56:42.876Z\",\"readback\":50,\"receivedAt\":\"2026-10-19T07:56:42.655Z\",\"requestId\":\"20771191-9758-47fd-99f3-ee40d07367b7\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP\",\"value\":50}"
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-19T17:15:42.196Z\",\"readback\":50,\"receivedAt\":\"2026-10-19T17:15:42.178Z\",\"requestId\":\"c7cff86d-d910-436d-881c-d5b44b30d375\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP\",\"value\":50}"
     },
     {
       "name": "FLOAT: đúng 1 lệnh tới giả lập, không gửi hai lần",
@@ -14,27 +14,27 @@
     {
       "name": "BOOL ngoại PUMP01.RUN_CMD = true: CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-19T07:56:43.380Z\",\"receivedAt\":\"2026-10-19T07:56:43.261Z\",\"requestId\":\"e2474770-a094-4b6d-86d8-487c3dc8589d\",\"status\":\"CONFIRMED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":true}"
+      "detail": "{\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-19T17:15:42.696Z\",\"receivedAt\":\"2026-10-19T17:15:42.547Z\",\"requestId\":\"c6e98d6b-09d4-4a39-90a1-c61f44d423de\",\"status\":\"CONFIRMED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":true}"
     },
     {
       "name": "BOOL mô phỏng SIM.FAN_ON = true: CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-19T07:56:43.876Z\",\"receivedAt\":\"2026-10-19T07:56:43.658Z\",\"requestId\":\"5e90188b-2652-4515-b4ae-5daead93a784\",\"status\":\"CONFIRMED\",\"tag\":\"SIM.FAN_ON\",\"value\":true}"
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-19T17:15:42.946Z\",\"receivedAt\":\"2026-10-19T17:15:42.912Z\",\"requestId\":\"f4b00aac-26eb-4379-a982-547f0b034a9c\",\"status\":\"CONFIRMED\",\"tag\":\"SIM.FAN_ON\",\"value\":true}"
     },
     {
-      "name": "INT mô phỏng DEMO.SET = 42: CONFIRMED",
+      "name": "INT mô phỏng SIM.MODE = 1: CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-19T07:56:44.127Z\",\"receivedAt\":\"2026-10-19T07:56:44.065Z\",\"requestId\":\"0bfc8a23-f13d-4d67-a705-26331ad8a4ce\",\"status\":\"CONFIRMED\",\"tag\":\"DEMO.SET\",\"value\":42}"
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-19T17:15:43.446Z\",\"receivedAt\":\"2026-10-19T17:15:43.281Z\",\"requestId\":\"609294a1-7177-4290-aa67-c77364f0a9f6\",\"status\":\"CONFIRMED\",\"tag\":\"SIM.MODE\",\"value\":1}"
     },
     {
-      "name": "nội bộ TANK01.SP_HI = 70: CONFIRMED",
+      "name": "nội bộ TANK01.SP_HI = 70 (engineer, sp_high minRole engineer): CONFIRMED",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-19T07:56:44.627Z\",\"receivedAt\":\"2026-10-19T07:56:44.463Z\",\"requestId\":\"0dae20b4-df77-4ad5-8ff8-202873e91688\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP_HI\",\"value\":70}"
+      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-19T17:15:43.696Z\",\"receivedAt\":\"2026-10-19T17:15:43.650Z\",\"requestId\":\"d623208d-24b4-4bf3-999a-865c7dc3f6cf\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP_HI\",\"value\":70}"
     },
     {
       "name": "vượt giới hạn TANK01.SP = 95: REJECTED OUT_OF_LIMITS",
       "pass": true,
-      "detail": "{\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"f3457b14-177d-4aa9-94d9-2511d2d5eda1\",\"status\":\"REJECTED\"}"
+      "detail": "{\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"d6647f84-6520-4459-a20d-342ed2f9ad9d\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "vượt giới hạn: 0 lệnh tới giả lập",
@@ -42,9 +42,9 @@
       "detail": "0"
     },
     {
-      "name": "Tag chỉ đọc TANK01.LEVEL: REJECTED READ_ONLY",
+      "name": "Tag chỉ đọc TANK01.LEVEL (không component nào ghi): REJECTED ACCESS_DENIED",
       "pass": true,
-      "detail": "{\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"0b8b9519-c5d2-44b8-89f1-48c4f5fcb7e1\",\"status\":\"REJECTED\"}"
+      "detail": "{\"message\":\"Bạn không có quyền thao tác thành phần này.\",\"reason\":\"ACCESS_DENIED\",\"requestId\":\"b9731098-2e51-459f-8065-41ed3a541402\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "chỉ đọc: 0 lệnh tới giả lập",
@@ -52,19 +52,19 @@
       "detail": "0"
     },
     {
-      "name": "Tag lạ: REJECTED NO_SUCH_TAG",
+      "name": "Tag lạ: REJECTED ACCESS_DENIED",
       "pass": true,
-      "detail": "{\"message\":\"Không có Tag này trên thiết bị.\",\"reason\":\"NO_SUCH_TAG\",\"requestId\":\"185cd60b-bd67-4c72-b4f9-50f2d8737d1d\",\"status\":\"REJECTED\"}"
+      "detail": "{\"message\":\"Thành phần này không ghi Tag KHONG.CO.\",\"reason\":\"ACCESS_DENIED\",\"requestId\":\"231519c3-86ab-4955-a9e2-67bde8e69781\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "thiết bị từ chối (exception 03): FAILED DEVICE_EXCEPTION",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-19T07:56:45.626Z\",\"receivedAt\":\"2026-10-19T07:56:45.384Z\",\"requestId\":\"18961db0-5eb6-47e9-a920-168502a715a4\",\"status\":\"FAILED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
+      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-19T17:15:44.696Z\",\"receivedAt\":\"2026-10-19T17:15:44.501Z\",\"requestId\":\"c80943a4-0f8a-46f7-af9f-20c67433a5a6\",\"status\":\"FAILED\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
     },
     {
       "name": "thiết bị không trả lời: TIMEOUT WRITE_TIMEOUT",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-19T07:56:47.126Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-19T07:56:45.994Z\",\"requestId\":\"d7358274-1e56-4b35-bf68-d151a21d72b3\",\"status\":\"TIMEOUT\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
+      "detail": "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-19T17:15:45.946Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-19T17:15:44.902Z\",\"requestId\":\"94781746-0fc4-4862-aaeb-e86460919e19\",\"status\":\"TIMEOUT\",\"tag\":\"PUMP01.RUN_CMD\",\"value\":false}"
     },
     {
       "name": "lệnh quá hạn tới giả lập đúng 1 lần, không gửi lại",
@@ -74,7 +74,7 @@
     {
       "name": "cùng requestId lần hai: duplicate",
       "pass": true,
-      "detail": "{\"duplicate\":true,\"old\":{\"quality\":\"GOOD\",\"value\":42},\"phase\":\"queued\",\"receivedAt\":\"2026-10-19T07:56:47.481Z\",\"requestId\":\"d79f529e-621c-4a9d-818a-16545fb60adb\",\"status\":\"ACCEPTED\",\"tag\":\"DEMO.SET\",\"value\":7}"
+      "detail": "{\"duplicate\":true,\"old\":{\"quality\":\"GOOD\",\"value\":1},\"phase\":\"queued\",\"receivedAt\":\"2026-10-19T17:15:46.307Z\",\"requestId\":\"42ce6e93-666f-4868-a2d8-c8dfbed5c6ea\",\"status\":\"ACCEPTED\",\"tag\":\"SIM.MODE\",\"value\":1}"
     },
     {
       "name": "cùng requestId khác nội dung: REQUEST_ID_CONFLICT",
@@ -101,9 +101,9 @@
       "detail": "7/8"
     },
     {
-      "name": "context sai dạng: lệnh vẫn chạy (context bỏ)",
+      "name": "context sai dạng: REJECTED ACCESS_DENIED (013)",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-19T07:56:48.377Z\",\"receivedAt\":\"2026-10-19T07:56:48.183Z\",\"requestId\":\"86779a75-8986-4b77-b286-9b74c1bc1bc1\",\"status\":\"CONFIRMED\",\"tag\":\"DEMO.SET\",\"value\":9}"
+      "detail": "{\"message\":\"Không có thành phần này trên màn hình.\",\"reason\":\"ACCESS_DENIED\",\"requestId\":\"dcf6c4df-89b7-4d25-bee0-cadca12669e6\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "projects/active qua cookie: 200 và có 6 screens",

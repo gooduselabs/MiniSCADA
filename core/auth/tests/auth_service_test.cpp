@@ -1072,3 +1072,114 @@ TEST(AuthService, ClientAddressAndCodes) {
     EXPECT_STREQ(accessErrorCode(AccessStatus::SessionInvalid), "SESSION_INVALID");
     EXPECT_STREQ(accessErrorCode(AccessStatus::Forbidden), "FORBIDDEN");
 }
+
+// --- Feature 013: the person of a session, changes made in this process, the account list
+
+namespace {
+
+// users.json 1.1.0 with groups (the text of usersText, plus what 013 adds).
+void writeUsers11(Fixture& f, const std::vector<TestAccount>& accounts,
+                  const std::map<std::string, std::vector<std::string>>& groups,
+                  int64_t fileRev = 5) {
+    nlohmann::json doc = nlohmann::json::parse(mat::test::usersText(accounts, "1.1.0"));
+    doc["rev"] = fileRev;
+    for (auto& u : doc["users"]) {
+        const auto g = groups.find(u["name"].get<std::string>());
+        if (g != groups.end()) u["groups"] = g->second;
+    }
+    mat::test::writeFile(f.dir.file("users.tmp"), doc.dump(2), 0600);
+    ::rename(f.dir.file("users.tmp").c_str(), f.usersFile.c_str());
+}
+
+}  // namespace
+
+TEST(AuthAccess013, ThePrincipalOfASessionHasItsGroupsAndRevs) {
+    Fixture f;
+    writeUsers11(f, f.standard(), {{"kysu1", {"ca-a", "bao-tri"}}}, 9);
+    f.start();
+    const LoginResult r = f.loginAs("kysu1");
+    ASSERT_EQ(r.status, LoginStatus::Ok);
+    const auto p = f.auth->principalOf(r.token, {kIp, 1}, SessionKind::Bearer);
+    ASSERT_TRUE(p);
+    EXPECT_EQ(p->user, "kysu1");
+    EXPECT_EQ(p->role, Role::Engineer);
+    EXPECT_EQ(p->groups, (std::vector<std::string>{"ca-a", "bao-tri"}));
+    EXPECT_EQ(p->accountRev, 1);
+    EXPECT_EQ(p->usersRev, 9);
+    const Access a = f.auth->authorize(r.token, {kIp, 1}, Role::Viewer, false);
+    EXPECT_EQ(a.groups, p->groups);
+    EXPECT_EQ(a.usersRev, 9);
+    EXPECT_FALSE(f.auth->principalOf(r.token, {"10.9.9.9", 1}, SessionKind::Bearer))
+        << "another address";
+    EXPECT_FALSE(f.auth->principalOf(r.token, {kIp, 1}, SessionKind::Web)) << "another kind";
+    EXPECT_FALSE(f.auth->principalOf("mats_nothing", {kIp, 1}, SessionKind::Bearer));
+}
+
+TEST(AuthAccess013, AChangeWrittenHereEndsTheSessionsAtOnceButTheOneKept) {
+    Fixture f;
+    f.writeUsers(f.standard());
+    f.start();
+    std::string p1 = f.pw["xem1"], p2 = f.pw["xem1"], p3 = f.pw["kysu1"];
+    const LoginResult a = f.auth->loginWeb("xem1", p1, {kIp, 1});
+    const LoginResult b = f.auth->loginWeb("xem1", p2, {kIp, 2});
+    const LoginResult k = f.auth->loginWeb("kysu1", p3, {kIp, 3});
+    ASSERT_EQ(a.status, LoginStatus::Ok);
+    ASSERT_EQ(b.status, LoginStatus::Ok);
+    ASSERT_EQ(k.status, LoginStatus::Ok);
+    // the password of xem1 changed (rev 1 -> 2), the file written by this process: no 2 s wait
+    auto accounts = f.standard();
+    accounts[2].rev = 2;
+    f.writeUsers(accounts);
+    const auto ended = f.auth->reloadAccounts(KeepSession{"xem1", a.token, SessionKind::Web});
+    ASSERT_EQ(ended.size(), 1u);
+    EXPECT_EQ(ended[0].first, "xem1");
+    EXPECT_EQ(ended[0].second, 1u);
+    EXPECT_EQ(f.auth->authorizeWeb(a.token, {kIp, 1}, Role::Viewer, false).status, AccessStatus::Ok)
+        << "the session that made the change stays, with the new rev";
+    EXPECT_NE(f.auth->authorizeWeb(b.token, {kIp, 2}, Role::Viewer, false).status,
+              AccessStatus::Ok);
+    EXPECT_EQ(f.auth->authorizeWeb(k.token, {kIp, 3}, Role::Viewer, false).status,
+              AccessStatus::Ok);
+    const auto revoked = f.audit(AuditAction::AuthSessionRevoked);
+    ASSERT_EQ(revoked.size(), 1u);
+    EXPECT_EQ(revoked[0].user, std::optional<std::string>("xem1"));
+    // disabled: every session goes, the kept one too
+    accounts[2].enabled = false;
+    accounts[2].rev = 3;
+    f.writeUsers(accounts);
+    f.auth->reloadAccounts(KeepSession{"xem1", a.token, SessionKind::Web});
+    EXPECT_NE(f.auth->authorizeWeb(a.token, {kIp, 1}, Role::Viewer, false).status,
+              AccessStatus::Ok);
+}
+
+TEST(AuthAccess013, TheAccountListAndTheLastSignIn) {
+    Fixture f;
+    writeUsers11(f, f.standard(), {{"xem1", {"ca-a"}}});
+    std::vector<std::pair<std::string, int64_t>> notes;
+    int64_t wall = 1792400000000;
+    f.start();
+    AuthOptions o = f.options();
+    o.noteLogin = [&](const std::string& u, int64_t ms) { notes.emplace_back(u, ms); };
+    o.wallMs = [&wall] { return wall; };
+    f.auth = std::make_unique<AuthService>(o);
+    ASSERT_EQ(f.loginAs("xem1").status, LoginStatus::Ok);
+    ASSERT_EQ(f.loginAs("xem1").status, LoginStatus::Ok);
+    ASSERT_EQ(notes.size(), 1u) << "at most once an hour";
+    EXPECT_EQ(notes[0], std::make_pair(std::string("xem1"), wall));
+    wall += 3600000;
+    ASSERT_EQ(f.loginAs("xem1").status, LoginStatus::Ok);
+    EXPECT_EQ(notes.size(), 2u);
+    std::string pw = f.pw["xem1"];
+    ASSERT_EQ(f.auth->reauthenticate("xem1", pw, {kIp, 1}).status, LoginStatus::Ok);
+    EXPECT_EQ(notes.size(), 2u) << "a reauth is no sign-in";
+    const std::vector<AccountSummary> list = f.auth->accountSummaries();
+    ASSERT_EQ(list.size(), 4u);
+    const auto xem = std::find_if(list.begin(), list.end(),
+                                  [](const AccountSummary& s) { return s.name == "xem1"; });
+    ASSERT_NE(xem, list.end());
+    EXPECT_EQ(xem->sessions, 3u);
+    EXPECT_EQ(xem->groups, std::vector<std::string>{"ca-a"});
+    EXPECT_EQ(xem->role, Role::Viewer);
+    EXPECT_FALSE(xem->lockedUntilMs);
+    EXPECT_EQ(f.auth->usersRev(), 5);
+}

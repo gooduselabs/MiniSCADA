@@ -59,6 +59,8 @@ class ProjectStore;
 class LogicSubsystem;
 class UpdateService;
 struct UpdateCaller;
+class AdminApi;
+class AccessService;
 
 constexpr size_t kJsonBodyMaxBytes = 16 * 1024;  // device-api §1.2
 constexpr size_t kLoginBodyMaxBytes = 4 * 1024;  // device-api §3
@@ -74,6 +76,8 @@ class EngineeringApi {
         std::vector<std::string> features{"auth"};
         // Feature 011 (device-api-011 §1): device/identity.acceptedHosts. Null: no such block.
         const HostPolicy* hostPolicy = nullptr;
+        // Feature 013: runtime.json viewerLogin, in GET /api/v1/web/session.
+        std::string viewerLogin = "off";
     };
 
     // `audit` may be closed (open() failed): sign-ins and changes are then refused with 503
@@ -189,6 +193,13 @@ class EngineeringApi {
     };
     void setUpdate(UpdateBackend backend);
 
+    // Feature 013 (contracts/admin-api.md): GET /api/v1/web/access, POST /api/v1/web/password and
+    // /api/v1/admin/* go to `admin` (they answer 501 without it); the access model of the sessions
+    // checks the cookie's tag writes (context.screen, context.widget, operate) and the alarm
+    // actions. Both must outlive the contexts. Call before install().
+    void setAdmin(AdminApi* admin);
+    void setAccess(AccessService* access);
+
     // Registers the endpoints of the roles table on `ctx` (HTTP or HTTPS listener).
     void install(mg_context* ctx);
 
@@ -264,6 +275,8 @@ class EngineeringApi {
     AlarmsBackend alarms_;
     LogicBackend logic_;
     UpdateBackend update_;
+    AdminApi* admin_ = nullptr;
+    AccessService* access_ = nullptr;
     std::unique_ptr<alarmsapi::PostLimiter> postLimiter_;
     std::mutex testMu_;              // guards the two members below
     std::deque<int64_t> testTimes_;  // when the tests of the last minute began

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0.0",
+  "rev": 1,
+  "groups": [
+    {
+      "id": "ca-a",
+      "name": "Vận hành ca A"
+    },
+    {
+      "id": "ca-b",
+      "name": "Vận hành ca B"
+    },
+    {
+      "id": "bao-tri",
+      "name": "Bảo trì"
+    },
+    {
+      "id": "quan-doc",
+      "name": "Quản đốc"
+    },
+    {
+      "id": "ke-toan",
+      "name": "Kế toán"
+    },
+    {
+      "id": "khach",
+      "name": "Khách tham quan"
+    }
+  ],
+  "rules": [
+    {
+      "resource": "page:alarms",
+      "level": "view",
+      "grantees": []
+    }
+  ]
+}

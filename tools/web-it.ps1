@@ -42,11 +42,14 @@
 #   lockout-dos:  (011, T053, SC-003) 1.000 lan doan tu IP A (lan) bi chan <= 20 lan kiem mat khau; vh1 tu IP B (pub)
 #                 vao duoc trong <= 2 s.
 #   write-min-role: (011, T209, bao cao 008 F5) operator ghi Tag writeMinRole engineer: 403 ca lo, audit denied.
+#   login-required, access, admin-attack: (013, T013, T023, T029) viewerLogin required; moi duong du lieu khong phien
+#                 401; quy tac dat qua API quan tri, live/man hinh/menu/ghi loc theo quyen, access-changed <= 2 s; ca tan
+#                 cong API quan tri. Ket qua docs/reports/013-<ten>-x64.json.
 # Mang, container: tests/web-it/compose.yaml. Mat khau thu sinh ngau nhien moi lan chay (--password-stdin), khong ghi file.
 # Ket qua: docs/reports/007-<scenario>-x64.json. Don khi dung -Keep: docker compose -f tests/web-it/compose.yaml -p mat-web-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank', 'history-10', 'reports', 'faceplate', 'host-rebind', 'lockout-dos', 'write-min-role')][string[]]$Scenario = @('control'),
+    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank', 'history-10', 'reports', 'faceplate', 'host-rebind', 'lockout-dos', 'write-min-role', 'login-required', 'access', 'admin-attack')][string[]]$Scenario = @('control'),
     [int]$Rounds = 20,
     [int]$Seconds = 300,
     [switch]$Keep,
@@ -257,7 +260,7 @@ try {
     $only010 = -not [bool]($Scenario | Where-Object { $_ -notin @('history-10', 'reports') })
     if (-not $NoBuild -and -not $only010) { Build-Runtime }
     $needWeb = $Scenario | Where-Object { $_ -in @('screens', 'widgets', 'chrome-control', 'f5x10', 'open', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'compat') }
-    $needMain = $Scenario | Where-Object { $_ -in @('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'cert', 'charts') }
+    $needMain = $Scenario | Where-Object { $_ -in @('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'cert', 'charts', 'login-required', 'access', 'admin-attack') }
     $needBig = $Scenario | Where-Object { $_ -in @('open', 'charts') }
     if (-not $NoBuild -and ($needWeb -or $needMain)) { Build-Web }
     if ($Scenario -contains 'history-10' -or $Scenario -contains 'reports') {
@@ -306,7 +309,7 @@ try {
         Write-Result 'bundle' $r '008'
     }
     node "$root/tests/web-it/make-projects.mjs" | Out-Null
-    $order = @('control', 'locks', 'expect', 'pulse', 'session', 'attack', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'cert', 'pulse-kill', 'gate', 'deploy-live', 'attack-accounts', 'session28')
+    $order = @('control', 'locks', 'expect', 'pulse', 'session', 'attack', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'cert', 'pulse-kill', 'gate', 'deploy-live', 'attack-accounts', 'session28', 'login-required', 'access', 'admin-attack')
     $todo = @($order | Where-Object { $Scenario -contains $_ })
     if ($todo.Count) {
         Start-Rig '/src/projects/dashboard-demo' 'modbus-demo'
@@ -334,6 +337,16 @@ required
                 docker exec $rt sh -c 'rm -f /data/extra-args' | Out-Null
                 $checks = @($a.checks) + @($b.checks)
                 $res = [pscustomobject]@{ scenario = 'gate'; checks = $checks; measures = @{}; pass = -not (@($checks | Where-Object { -not $_.pass }).Count) }
+            }
+            elseif ($s -in @('login-required', 'access', 'admin-attack')) {
+                # feature 013: viewerLogin required for these, then back to the default of the rig
+                docker exec $rt sh -c "printf -- '--viewer-login\nrequired\n' > /data/extra-args" | Out-Null
+                Restart-Runtime
+                $res = Invoke-Client @($s) (Get-Fingerprint)
+                docker exec $rt sh -c 'rm -f /data/extra-args' | Out-Null
+                Write-Result $s $res '013'
+                if (-not $res.pass) { $failed += $s }
+                continue
             }
             elseif ($s -eq 'attack-accounts') {
                 $a = Invoke-Client @('attack-accounts', '--part', 'lock') $fp
