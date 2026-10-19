@@ -116,6 +116,24 @@ Inspector có các tab **Chung**, **Hiển thị**, **Gắn Tag**, **Sự kiện
 
 **Xem trước:** chế độ **Mô phỏng** (thanh công cụ) chạy Tag mô phỏng ngay trong Studio, không cần thiết bị. Chế độ **Thiết bị** hiện giá trị sống khi Online.
 
+### 6.1. Bố cục lưới (hàng và cột)
+
+Project định dạng 1.1 trở lên. Màn hình mới mặc định là **bố cục lưới**: trang gồm các **hàng**, mỗi hàng chia trên **12 cột**, mỗi **ô** chứa một component. Vị trí do ô quyết định, không nhập X, Y. (**Thêm màn hình (bố cục tự do)** vẫn có cho cách đặt theo tọa độ cũ; **Chuyển sang bố cục lưới** đổi một màn hình tự do sang lưới, có xem trước và hoàn tác.)
+
+1. **Thêm hàng** → chọn mẫu chia cột: `12`, `6+6`, `4+4+4`, `3+3+3+3`, `8+4`, `4+8`, `3+6+3`, hoặc **Tự nhập…** (ví dụ `2+8+2`, tổng không quá 12).
+2. **Gắn component:** kéo widget từ Toolbox thả **vào ô** (ô sáng lên khi rê vào), hoặc chọn ô rồi nhấp đúp widget trong Toolbox. Ô đã có component thì Studio hỏi **Thay**.
+3. **Đổi độ rộng:** kéo đường chia giữa hai ô (bám theo 1/12), hoặc nhập **Rộng (cột)** ở thanh thuộc tính khi ô đang chọn; **Trống trước** để chừa cột trống bên trái ô; **Căn** (kéo giãn, đầu, giữa, cuối); **Cao tối thiểu**.
+4. **Hàng:** **Tự động** (cao theo nội dung) hoặc bỏ chọn để nhập chiều cao cố định; **Khoảng cách** giữa các ô; nút ↑ ↓ đổi thứ tự, 🗑 xóa hàng (xóa cả component trong hàng).
+5. **Xem trước** ở chiều rộng **1920**, **1366**, **600**: dưới 768 điểm ảnh các ô xếp chồng thành một cột (máy tính bảng dọc, điện thoại).
+
+Bàn phím khi ô có focus: ← → ↑ ↓ chuyển ô; **Alt+↑/↓** đổi thứ tự hàng; **Alt+←/→** đổi thứ tự ô; **Ctrl+←/→** thu, nới ô một cột; **Enter** chọn ô; **Delete** xóa component của ô. Mọi thao tác hoàn tác được bằng Ctrl+Z.
+
+Lỗi thường gặp: `E_LAYOUT_SPAN` (tổng các ô của hàng quá 12 cột), `E_LAYOUT_ITEM_POS` (component lưới có tọa độ, hoặc component màn hình tự do thiếu tọa độ), `E_LAYOUT_VERSION` (project chưa nâng lên 1.1); cảnh báo `W_LAYOUT_ITEM_ORPHAN` (component không nằm trong ô nào, không hiển thị). Bản sao template chưa chèn được vào màn hình lưới.
+
+### 6.2. Chủ đề giao diện
+
+**Thiết lập project** → **Chủ đề giao diện**: **Sáng đa sắc** (mặc định của project mới), **Công nghiệp trầm** (giao diện cũ, mặc định của project nâng cấp), **Tối**. Trang vận hành và xem trước màn hình đổi theo; màu đặt riêng cho widget vẫn giữ.
+
 ## 7. Đồ họa SVG
 
 <a id="help-svg-import"></a>

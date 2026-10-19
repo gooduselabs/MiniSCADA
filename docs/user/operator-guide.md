@@ -65,6 +65,8 @@ Mỗi giá trị có một dấu ở góc khi dữ liệu không tốt. Không c
 
 Rê chuột lên dấu để xem lý do, ví dụ "Lỗi: Mất kết nối thiết bị".
 
+**Màn hình bố cục lưới** (project 1.1): các ô xếp theo hàng và cột; trang cuộn dọc khi dài. Trên máy tính bảng dọc hoặc điện thoại (màn hình hẹp dưới 768 điểm ảnh) các ô xếp chồng thành một cột theo thứ tự từ trên xuống, trái sang phải. Màu sắc theo **chủ đề** kỹ sư chọn cho project (Sáng đa sắc, Công nghiệp trầm hoặc Tối).
+
 ## 5. Điều khiển có xác nhận
 
 Cần: trang `https://`, đã đăng nhập, vai trò `operator` trở lên.
