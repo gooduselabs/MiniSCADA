@@ -421,6 +421,9 @@ export class ReportPage {
       sheetName: tpl.name,
     };
     if (tpl.paper) meta.paper = tpl.paper;
+    // Màu báo cáo theo chủ đề của project (main.ts đặt data-mat-theme, feature 012 FR-038).
+    const theme = document.documentElement.dataset.matTheme;
+    if (theme === 'vivid' || theme === 'industrial' || theme === 'dark') meta.theme = theme;
     this.#out?.querySelector('[role="alert"]')?.remove();
     this.#setExport(false);
     try {

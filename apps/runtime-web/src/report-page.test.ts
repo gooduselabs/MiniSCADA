@@ -8,6 +8,7 @@ import {
   type AggregateQuery,
   type AggregateResult,
 } from '@mat/ui-components';
+import type { ExportMeta } from '@mat/report-export';
 import { ReportPage, type ReportsFile } from './report-page.ts';
 
 const NOW = Date.UTC(2026, 9, 12, 8, 30, 0); // 15:30 +07:00 ngày 2026-10-12
@@ -92,7 +93,7 @@ interface Ctx {
   page: ReportPage;
   urls: string[];
   downloads: Array<{ name: string; mime: string; bytes: Uint8Array }>;
-  exported: Array<{ kind: string; table: ReportTable }>;
+  exported: Array<{ kind: string; table: ReportTable; meta?: ExportMeta }>;
 }
 
 function setup(file: ReportsFile | null = FILE, now = NOW): Ctx {
@@ -119,12 +120,12 @@ function setup(file: ReportsFile | null = FILE, now = NOW): Ctx {
         exported.push({ kind: `csv-${style}`, table: t });
         return new Uint8Array([1, 2, 3]);
       },
-      xlsx: async (t) => {
-        exported.push({ kind: 'xlsx', table: t });
+      xlsx: async (t, meta) => {
+        exported.push({ kind: 'xlsx', table: t, meta });
         return new Uint8Array([4]);
       },
-      pdf: async (t) => {
-        exported.push({ kind: 'pdf', table: t });
+      pdf: async (t, meta) => {
+        exported.push({ kind: 'pdf', table: t, meta });
         return new Uint8Array([5]);
       },
     },
@@ -288,6 +289,24 @@ describe('ReportPage: xuất file', () => {
     expect(hist.aggregateCalls.length + hist.seriesCalls.length + hist.rowsCalls.length).toBe(
       calls,
     );
+  });
+
+  it('XLSX và PDF nhận chủ đề của trang (data-mat-theme, feature 012 T049); giá trị lạ thì bỏ', async () => {
+    for (const [theme, want] of [
+      ['industrial', 'industrial'],
+      ['dark', 'dark'],
+      ['la', undefined],
+    ] as const) {
+      document.documentElement.dataset.matTheme = theme;
+      const { root, exported } = await ready();
+      for (const k of ['xlsx', 'pdf']) {
+        btn(root, k).click();
+        await flush();
+      }
+      expect(exported.map((e) => e.meta?.theme)).toEqual([want, want]);
+      root.remove();
+    }
+    delete document.documentElement.dataset.matTheme;
   });
 
   it('nút xuất tắt khi chưa có báo cáo; lỗi dựng XLSX báo cụ thể, CSV vẫn dùng được', async () => {

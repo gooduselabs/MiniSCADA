@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@mat/history-math": "*",
+    "echarts": "6.1.0",
     "fflate": "0.8.3",
     "pdfmake": "0.3.11"
   },
