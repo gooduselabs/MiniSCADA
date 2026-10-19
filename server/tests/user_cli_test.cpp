@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "core/audit/audit_log.hpp"
+#include "core/auth/access_model.hpp"
 #include "core/auth/account_store.hpp"
 #include "core/auth/password_hash.hpp"
 #include "core/crypto/hex.hpp"
@@ -198,7 +199,9 @@ class UserCli : public ::testing::Test {
         ASSERT_EQ(::mkdir(etc.c_str(), 0755), 0);
         ASSERT_EQ(::mkdir(data.c_str(), 0700), 0);
         ASSERT_EQ(::chown(data.c_str(), svcUid, svcGid), 0);  // as systemd's StateDirectory
-        users = etc + "/users.json";
+        // Feature 013: the seed in /etc, the accounts in <dataDir>/auth/users.json.
+        seed = etc + "/users.json";
+        users = data + "/auth/users.json";
     }
 
     DeviceCliEnv env(int inFd, bool root) {
@@ -214,7 +217,7 @@ class UserCli : public ::testing::Test {
 
     Outcome runOnFd(std::vector<std::string> args, int inFd, bool root = true) {
         args.insert(args.begin(), "mat-runtime");
-        if (withPaths) args.insert(args.end(), {"--users-file", users, "--data-dir", data});
+        if (withPaths) args.insert(args.end(), {"--users-file", seed, "--data-dir", data});
         std::vector<char*> argv;
         for (auto& a : args) argv.push_back(&a[0]);
         std::ostringstream out, err;
@@ -247,9 +250,10 @@ class UserCli : public ::testing::Test {
         return r.code == 0;
     }
 
-    // users.json as the runtime reads it (mode checked).
+    // users.json (feature 013: the service user owns it, so the owner rule of the runtime, which runs
+    // as that user, is not the one of this root test; the mode is checked where it matters).
     UsersFile accounts() {
-        const UsersRead r = readUsersFile(users, true);
+        const UsersRead r = readUsersFile(users, false);
         EXPECT_EQ(r.status, UsersStatus::Ok) << r.error;
         return r.file;
     }
@@ -279,7 +283,7 @@ class UserCli : public ::testing::Test {
     }
 
     TempDir dir;
-    std::string etc, data, users;
+    std::string etc, data, users, seed;
     std::string now = kNow;
     std::string serviceUser = kServiceUser;
     bool withPaths = true;
@@ -287,8 +291,9 @@ class UserCli : public ::testing::Test {
     gid_t svcGid = 0;
 };
 
-// --user-add --password-stdin: the account is in users.json (0640, root:<group of the service
-// user>), its hash checks the password, rev 1, unlockSeq 0. The password is nowhere else.
+// --user-add --password-stdin: the account is in <dataDir>/auth/users.json (feature 013: 0600, the
+// service user's, in its 0700 directory), its hash checks the password, rev 1, unlockSeq 0. The
+// password is nowhere else.
 TEST_F(UserCli, AddStoresAnAccountFromOneLineOfStdin) {
     const std::string pw = testPassword();
     const Outcome r = run({"--user-add", "kysu1", "--role", "engineer", "--password-stdin"},
@@ -309,9 +314,12 @@ TEST_F(UserCli, AddStoresAnAccountFromOneLineOfStdin) {
 
     struct stat st {};
     ASSERT_EQ(::stat(users.c_str(), &st), 0);
-    EXPECT_EQ(st.st_mode & 07777, 0640u);
-    EXPECT_EQ(st.st_uid, 0u);
+    EXPECT_EQ(st.st_mode & 07777, 0600u);
+    EXPECT_EQ(st.st_uid, svcUid);
     EXPECT_EQ(st.st_gid, svcGid);
+    ASSERT_EQ(::stat((data + "/auth").c_str(), &st), 0);
+    EXPECT_EQ(st.st_mode & 07777, 0700u);
+    EXPECT_EQ(st.st_uid, svcUid);
 
     EXPECT_EQ(r.out.find(pw), std::string::npos);
     EXPECT_EQ(r.err.find(pw), std::string::npos);
@@ -426,6 +434,7 @@ TEST_F(UserCli, ExitCodes) {
     EXPECT_FALSE(exists(users));
     EXPECT_TRUE(auditRows().empty());
     // damaged users.json: 6, and it stays as it was
+    ASSERT_EQ(::mkdir((data + "/auth").c_str(), 0700), 0);
     writeFile(users, "{not json", 0640);
     EXPECT_EQ(run({"--user-list"}).code, 6);
     EXPECT_EQ(run({"--user-add", "kysu1", "--role", "viewer", "--password-stdin"}, pw + "\n").code,
@@ -435,32 +444,31 @@ TEST_F(UserCli, ExitCodes) {
     EXPECT_TRUE(auditRows().empty());
 }
 
-// users.json cannot be written (here the container's read-only /sys): exit code 4; the attempt is
-// in the audit log as `started`, then `failed`.
+// users.json cannot be written after the record of the change (here its copy before,
+// users.json.bak, is a directory the hard link cannot replace): exit code 4; the attempt is in the
+// audit log as `started`, then `failed`, and users.json keeps every byte.
 TEST_F(UserCli, AFileThatCannotBeWrittenIsRecordedAsFailed) {
-    users = "/sys/mat-usercli-test.json";
-    writeFile(users, "x", 0600);  // refused on the read-only sysfs of a container
-    if (exists(users)) {
-        ::unlink(users.c_str());
-        GTEST_SKIP() << "/sys is writable here";
-    }
-    const Outcome r = run({"--user-add", "admin", "--role", "administrator", "--password-stdin"},
-                          testPassword() + "\n");
+    ASSERT_TRUE(add("admin", "administrator", testPassword()));
+    ASSERT_EQ(::mkdir((users + ".bak").c_str(), 0700), 0);
+    ASSERT_EQ(::mkdir((users + ".bak/x").c_str(), 0700), 0);
+    const std::string before = readFile(users);
+    const Outcome r =
+        run({"--user-add", "kysu1", "--role", "viewer", "--password-stdin"}, testPassword() + "\n");
     EXPECT_EQ(r.code, 4) << r.err;
-    EXPECT_FALSE(exists(users));
+    EXPECT_EQ(readFile(users), before);
     const auto rows = auditRows();
-    ASSERT_EQ(rows.size(), 2u);
-    EXPECT_EQ(rows[0].action, "account.create");
-    EXPECT_EQ(rows[0].result, "started");
-    EXPECT_EQ(rows[1].action, "account.create");
-    EXPECT_EQ(rows[1].result, "failed");
-    EXPECT_TRUE(rows[1].code.has_value());
+    ASSERT_EQ(rows.size(), 4u);
+    EXPECT_EQ(rows[2].action, "account.create");
+    EXPECT_EQ(rows[2].result, "started");
+    EXPECT_EQ(rows[3].action, "account.create");
+    EXPECT_EQ(rows[3].result, "failed");
+    EXPECT_TRUE(rows[3].code.has_value());
 }
 
-// The directory of users.json is missing: exit code 4 before the password is read (the line is
-// still in the pipe), and nothing is recorded.
+// The data directory is missing (so is its auth directory): exit code 4 before the password is
+// read (the line is still in the pipe), and nothing is recorded.
 TEST_F(UserCli, AMissingDirectoryStopsTheCommandBeforeThePassword) {
-    users = dir.path + "/missing/users.json";
+    data = dir.path + "/missing";
     int p[2];
     ASSERT_EQ(::pipe(p), 0);
     const std::string line = testPassword() + "\n";
@@ -476,13 +484,13 @@ TEST_F(UserCli, AMissingDirectoryStopsTheCommandBeforeThePassword) {
     EXPECT_EQ(left, static_cast<ssize_t>(line.size()));
     EXPECT_TRUE(auditRows().empty());
 }
-
-// Account commands take turns (flock on the directory of users.json from the read to the write):
-// a command waits while another holds the lock, so two at once cannot lose a change.
+// Account commands take turns (flock on the auth directory from the read to the write, which the
+// runtime's admin API takes too): a command waits while another holds the lock, so two at once
+// cannot lose a change.
 TEST_F(UserCli, CommandsTakeTurnsOnUsersJson) {
     ASSERT_TRUE(add("admin", "administrator", testPassword()));
     ASSERT_TRUE(add("kysu1", "engineer", testPassword()));
-    const int fd = ::open(etc.c_str(), O_RDONLY | O_DIRECTORY);
+    const int fd = ::open((data + "/auth").c_str(), O_RDONLY | O_DIRECTORY);
     ASSERT_GE(fd, 0);
     ASSERT_EQ(::flock(fd, LOCK_EX), 0);  // another command between its read and its write
     std::atomic<bool> done{false};
@@ -1062,6 +1070,99 @@ TEST_F(UserCli, ByteOrderMarkIsDroppedForANewAccountToo) {
     EXPECT_FALSE(verifyPassword("\xEF\xBB\xBF" + pw, *a.hash));
 }
 
+// --- Feature 013 (contracts/access-model.md §1, admin-api.md §8)
+
+// The first command copies the seed (/etc/mat-runtime/users.json of features 005 to 012) to the
+// auth directory once (audit account.migrate); from then on the seed is not read.
+TEST_F(UserCli, TheSeedIsCopiedOnceToTheAuthDirectory) {
+    UsersFile f;
+    const std::string pw = testPassword();
+    ASSERT_EQ(addAccount(f, "admin", Role::Administrator, hashPassword(pw), kNow),
+              AccountEditError::None);
+    f.users[0].rev = 4;
+    writeFile(seed, usersJson(f), 0640);
+    Outcome r = run({"--user-list"});
+    ASSERT_EQ(r.code, 0) << r.err;
+    EXPECT_NE(r.err.find("đã chép"), std::string::npos) << r.err;
+    EXPECT_NE(r.out.find("admin"), std::string::npos) << r.out;
+    EXPECT_EQ(account("admin").rev, 4) << "the account keeps its rev: its sessions stay";
+    EXPECT_EQ(accounts().rev, 1);
+    auto rows = auditRows();
+    ASSERT_EQ(rows.size(), 1u);
+    EXPECT_EQ(rows[0].action, "account.migrate");
+    writeFile(seed, "{changed", 0640);
+    r = run({"--user-list"});
+    EXPECT_EQ(r.code, 0) << r.err;
+    EXPECT_EQ(r.err.find("đã chép"), std::string::npos);
+    EXPECT_EQ(auditRows().size(), 1u);
+}
+
+// A damaged seed and nothing copied yet: 6, as a damaged users.json was.
+TEST_F(UserCli, ADamagedSeedIsExitCode6) {
+    writeFile(seed, "{not json", 0640);
+    EXPECT_EQ(run({"--user-list"}).code, 6);
+    EXPECT_EQ(run({"--user-add", "admin", "--role", "administrator", "--password-stdin"},
+                  testPassword() + "\n")
+                  .code,
+              6);
+    EXPECT_FALSE(exists(users));
+}
+
+TEST_F(UserCli, GroupsOfAccountsAndTheRecoveryOfTheRules) {
+    ASSERT_TRUE(add("admin", "administrator", testPassword()));
+    ASSERT_TRUE(add("kysu1", "engineer", testPassword()));
+    const std::string access = data + "/auth/access.json";
+    ASSERT_EQ(run({"--group-add", "ca-a", "Vận hành ca A"}).code, 0);
+    ASSERT_EQ(run({"--group-add", "bao-tri", "Bảo trì"}).code, 0);
+    EXPECT_EQ(run({"--group-add", "ca-a", "lại"}).code, 4) << "already there";
+    EXPECT_EQ(run({"--group-add", "Ca-A", "x"}).code, 2);
+    EXPECT_EQ(run({"--group-add", "ca-b"}).code, 2) << "no name";
+    AccessParse a = parseAccessFile(readFile(access));
+    ASSERT_TRUE(a.ok) << a.error;
+    EXPECT_EQ(a.file.rev, 2);
+    EXPECT_EQ(a.file.groups[0].name, "Vận hành ca A");
+    struct stat st {};
+    ASSERT_EQ(::stat(access.c_str(), &st), 0);
+    EXPECT_EQ(st.st_mode & 07777, 0600u);
+    EXPECT_EQ(st.st_uid, svcUid);
+
+    ASSERT_EQ(run({"--user-groups", "kysu1", "ca-a,bao-tri"}).code, 0);
+    EXPECT_EQ(account("kysu1").groups, (std::vector<std::string>{"ca-a", "bao-tri"}));
+    EXPECT_EQ(account("kysu1").rev, 2) << "D23: its sessions end";
+    EXPECT_EQ(run({"--user-groups", "kysu1", "ca-z"}).code, 4) << "no such group";
+    EXPECT_EQ(run({"--user-groups", "kysu1", "ca-a,ca-a"}).code, 2);
+    // a rule naming the group and the account, as the admin page would write it
+    a.file = parseAccessFile(readFile(access)).file;
+    a.file.rules.push_back({"screen:bao-tri", AccessLevel::View, {"group:bao-tri", "user:kysu1"}});
+    a.file.rev += 1;
+    writeFile(access, accessFileJson(a.file), 0600);
+    ASSERT_EQ(run({"--group-remove", "bao-tri"}).code, 0);
+    a = parseAccessFile(readFile(access));
+    ASSERT_TRUE(a.ok);
+    EXPECT_EQ(a.file.groups.size(), 1u);
+    EXPECT_EQ(a.file.rules[0].grantees, std::vector<std::string>{"user:kysu1"});
+    EXPECT_EQ(account("kysu1").groups, std::vector<std::string>{"ca-a"});
+    ASSERT_EQ(run({"--user-remove", "kysu1"}).code, 0);
+    EXPECT_EQ(accounts().find("kysu1"), nullptr);
+    EXPECT_TRUE(parseAccessFile(readFile(access)).file.rules[0].grantees.empty());
+    EXPECT_EQ(run({"--user-remove", "admin"}).code, 4) << "the last administrator";
+    EXPECT_EQ(run({"--user-remove", "nobody"}).code, 4);
+    ASSERT_EQ(run({"--access-reset"}).code, 0);
+    a = parseAccessFile(readFile(access));
+    EXPECT_TRUE(a.file.rules.empty());
+    EXPECT_EQ(a.file.groups.size(), 1u) << "the groups stay";
+    // a damaged access.json: --access-reset writes a new one, the other commands refuse (6)
+    writeFile(access, "{broken", 0600);
+    EXPECT_EQ(run({"--group-add", "ca-c", "C"}).code, 6);
+    ASSERT_EQ(run({"--access-reset"}).code, 0);
+    EXPECT_TRUE(parseAccessFile(readFile(access)).ok);
+    std::vector<std::string> actions;
+    for (const auto& row : auditRows())
+        if (row.result == "ok") actions.push_back(row.action);
+    for (const char* want :
+         {"group.create", "account.groups", "group.delete", "account.delete", "access.reset"})
+        EXPECT_NE(std::find(actions.begin(), actions.end(), want), actions.end()) << want;
+}
 TEST(UserCliCommand, RecognisesTheAccountCommands) {
     auto is = [](std::vector<std::string> args) {
         args.insert(args.begin(), "mat-runtime");
@@ -1069,8 +1170,10 @@ TEST(UserCliCommand, RecognisesTheAccountCommands) {
         for (auto& a : args) argv.push_back(&a[0]);
         return isUserCommand(static_cast<int>(argv.size()), argv.data());
     };
-    for (const char* c : {"--user-add", "--user-passwd", "--user-role", "--user-disable",
-                          "--user-enable", "--user-unlock", "--user-unlock-all", "--user-list"})
+    for (const char* c :
+         {"--user-add", "--user-passwd", "--user-role", "--user-disable", "--user-enable",
+          "--user-unlock", "--user-unlock-all", "--user-list", "--user-groups", "--user-remove",
+          "--group-add", "--group-remove", "--access-reset"})
         EXPECT_TRUE(is({c, "x"})) << c;
     EXPECT_FALSE(is({"--users-file", "/etc/mat-runtime/users.json"}));
     EXPECT_FALSE(is({"--check-project"}));

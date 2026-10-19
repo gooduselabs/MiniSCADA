@@ -18,6 +18,8 @@
 #include <utility>
 #include <vector>
 
+#include "core/auth/access_model.hpp"
+#include "core/auth/access_store.hpp"
 #include "core/auth/account_store.hpp"
 #include "core/auth/auth_service.hpp"
 #include "core/auth/password_hash.hpp"
@@ -40,7 +42,13 @@ enum class Command {
     UnlockAll,
     List,
     LogicWritesReset,
-    PulseAck
+    PulseAck,
+    // Feature 013 (contracts/admin-api.md §8)
+    Groups,
+    Remove,
+    GroupAdd,
+    GroupRemove,
+    AccessReset
 };
 
 struct CommandSpec {
@@ -62,6 +70,12 @@ constexpr CommandSpec kCommands[] = {
     {"--logic-writes-reset", Command::LogicWritesReset, 0},
     // Second review T202 (N-L3): close pulse journal entries reported as PULSE_STUCK.
     {"--pulse-ack", Command::PulseAck, 1},
+    // Feature 013: groups of an account, removal, the groups of access.json, the rules reset.
+    {"--user-groups", Command::Groups, 2},
+    {"--user-remove", Command::Remove, 1},
+    {"--group-add", Command::GroupAdd, 2},
+    {"--group-remove", Command::GroupRemove, 1},
+    {"--access-reset", Command::AccessReset, 0},
 };
 
 const CommandSpec* findCommand(const char* arg) {
@@ -111,11 +125,19 @@ bool parse(int argc, char** argv, Args& a, std::string& error) {
             if (c->values >= 1 && !value(a.name)) {
                 error = c->command == Command::PulseAck
                             ? arg + " cần mã yêu cầu của xung (requestId) hoặc all"
-                            : arg + " cần tên tài khoản";
+                            : c->command == Command::GroupAdd || c->command == Command::GroupRemove
+                                  ? arg + " cần mã nhóm"
+                                  : arg + " cần tên tài khoản";
                 return false;
             }
             if (c->values == 2 && !value(a.role)) {
-                error = "--user-role cần tên tài khoản và role (" + std::string(kRoles) + ")";
+                error = c->command == Command::Groups
+                            ? "--user-groups cần tên tài khoản và danh sách mã nhóm (g1,g2; - "
+                              "là không nhóm nào)"
+                            : c->command == Command::GroupAdd
+                                  ? "--group-add cần mã nhóm và tên hiển thị"
+                                  : "--user-role cần tên tài khoản và role (" +
+                                        std::string(kRoles) + ")";
                 return false;
             }
         } else if (arg == "--role") {
@@ -376,108 +398,90 @@ int hashNewPassword(const DeviceCliEnv& env, bool fromStdin, const std::string& 
 
 // --- changes
 
-// The primary group of the service user, which reads users.json (0640); the user name when the
-// user does not exist (writeUsersFile then warns that the group is missing).
-std::string serviceGroup(const std::string& user) {
-    passwd pw{};
-    passwd* result = nullptr;
-    std::vector<char> buf(16384);
-    if (::getpwnam_r(user.c_str(), &pw, buf.data(), buf.size(), &result) == 0 && result) {
-        group gr{};
-        group* g = nullptr;
-        if (::getgrgid_r(result->pw_gid, &gr, buf.data(), buf.size(), &g) == 0 && g)
-            return g->gr_name;
-    }
-    return user;
-}
-
+// What a command changes: its audit record, the edit of the two files under the store's lock, and
+// what to print once they are written.
 struct Change {
     AuditAction action = AuditAction::AccountCreate;
     std::string target;
     nlohmann::json detail = nlohmann::json::object();
-    UsersFile file;    // users.json after the change
-    std::string done;  // what to print once it is written
+    std::string done;
 };
 
-// Audit `started` (as the service user), then users.json, then `ok` or `failed`.
-int commit(const DeviceCliEnv& env, const RuntimeConfig& cfg, const Change& c, std::ostream& out,
+// Under the lock (AuthStore::transact): the rules of the command on the files as read now (0, or
+// the exit code with its message printed), then the audit `started` (as the service user), then
+// the files are written; then `ok` or `failed`.
+int commit(const DeviceCliEnv& env, const RuntimeConfig& cfg, AuthStore& store, Change& c,
+           const std::function<int(AuthTxn&, Change&)>& edit, std::ostream& out,
            std::ostream& err) {
     const AuditOptions ao = deviceCliAuditOptions(cfg, env);
+    int code = 0;
+    bool started = false;
     AuditEvent event(c.action, AuditResult::Started, AuditChannel::Cli, "cli");
-    event.target = c.target;
-    if (!c.detail.empty()) event.detail = jsonText(c.detail);
-    std::string e, warning;
-    const bool started = appendAuditAsServiceUser(env, ao, event, e, &warning);
-    if (!warning.empty()) err << "cảnh báo: " << warning << "\n";
-    if (!started) {
-        err << "không ghi được audit vào " << cfg.dataDir << "/" << kAuditFileName << ": " << e
-            << "\nkhông đổi gì (mã 5)\n";
-        return 5;
+    std::string txnError;
+    const TxnStatus s = store.transact(
+        [&](AuthTxn& t) {
+            code = edit(t, c);
+            if (code != 0 || (!t.usersChanged && !t.accessChanged)) return false;
+            event = AuditEvent(c.action, AuditResult::Started, AuditChannel::Cli, "cli");
+            if (!c.target.empty()) event.target = c.target;
+            if (!c.detail.empty()) event.detail = jsonText(c.detail);
+            std::string e, warning;
+            started = appendAuditAsServiceUser(env, ao, event, e, &warning);
+            if (!warning.empty()) err << "cảnh báo: " << warning << "\n";
+            if (!started) {
+                err << "không ghi được audit vào " << cfg.dataDir << "/" << kAuditFileName << ": "
+                    << e << "\nkhông đổi gì (mã 5)\n";
+                code = 5;
+                return false;
+            }
+            return true;
+        },
+        txnError);
+    if (s == TxnStatus::Aborted) {
+        if (code == 0) out << c.done << "\n";  // nothing to change
+        return code;
     }
-    UsersWriteOptions wo;
-    wo.group = serviceGroup(env.serviceUser);
-    std::string writeError, writeWarning;
-    const bool written = writeUsersFile(cfg.usersFile, c.file, writeError, &writeWarning, wo);
     AuditEvent result = event;
-    result.result = written ? AuditResult::Ok : AuditResult::Failed;
-    if (!written) {
+    result.result = s == TxnStatus::Ok ? AuditResult::Ok : AuditResult::Failed;
+    if (s == TxnStatus::Failed) {
+        if (!started) {  // the lock or the directory: nothing was audited, nothing changed
+            err << txnError << "\n";
+            return 4;
+        }
         result.code = "USERS_WRITE_FAILED";
         nlohmann::json detail = c.detail;
-        detail["error"] = writeError;
+        detail["error"] = txnError;
         result.detail = jsonText(detail);
     }
     std::string resultError;
     const bool recorded = appendAuditAsServiceUser(env, ao, result, resultError);
-    if (!written) {
-        err << writeError << "\n";
+    if (s == TxnStatus::Failed) {
+        err << txnError << "\n";
         if (!recorded) err << "cũng không ghi được kết quả vào audit: " << resultError << "\n";
         return 4;
     }
     out << c.done << "\n";
-    if (!writeWarning.empty()) err << "cảnh báo: " << writeWarning << "\n";
     if (!recorded)
         err << "cảnh báo: đã đổi, nhưng không ghi được kết quả vào audit (đã có bản ghi started): "
             << resultError << "\n";
     return 0;
 }
 
-// An exclusive flock on the directory of users.json (as server_cert does on its directory), so the
-// account commands take turns from their read to their write; released when the object goes. The
-// directory is opened at once: a missing one stops the command before any password is asked.
-class UsersLock {
-   public:
-    explicit UsersLock(const std::string& usersFile) {
-        const size_t slash = usersFile.rfind('/');
-        dir_ = slash == std::string::npos ? "." : slash == 0 ? "/" : usersFile.substr(0, slash);
-        fd_ = ::open(dir_.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-        if (fd_ < 0)
-            error_ =
-                "không mở được thư mục " + dir_ + " của file tài khoản: " + std::strerror(errno);
+// "g1,g2" (or "-": none) as distinct group ids.
+bool groupList(const std::string& text, std::vector<std::string>& out) {
+    out.clear();
+    if (text == "-" || text.empty()) return true;
+    size_t at = 0;
+    while (at <= text.size()) {
+        size_t end = text.find(',', at);
+        if (end == std::string::npos) end = text.size();
+        const std::string g = text.substr(at, end - at);
+        if (!validGroupId(g) || std::find(out.begin(), out.end(), g) != out.end()) return false;
+        out.push_back(g);
+        at = end + 1;
     }
-    ~UsersLock() {
-        if (fd_ >= 0) ::close(fd_);
-    }
-    UsersLock(const UsersLock&) = delete;
-    UsersLock& operator=(const UsersLock&) = delete;
-
-    bool opened() const { return fd_ >= 0; }
-    // Waits while another account command holds it (it only does from its read to its write).
-    bool acquire() {
-        while (::flock(fd_, LOCK_EX) != 0) {
-            if (errno == EINTR) continue;
-            error_ = "không khóa được thư mục " + dir_ + ": " + std::strerror(errno);
-            return false;
-        }
-        return true;
-    }
-    const std::string& error() const { return error_; }
-
-   private:
-    std::string dir_;
-    int fd_ = -1;
-    std::string error_;
-};
-
+    return out.size() <= kMaxAccountGroups;
+}
 // The request file of --logic-writes-reset: kLogicWritesResetFile of server/logic_glue.hpp.
 constexpr const char* kLogicWritesResetRequestFile = "logic-writes-reset.req";
 // The request file of --pulse-ack: kPulseAckFile of server/write_subsystem.hpp.
@@ -703,8 +707,23 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
             return 2;
         }
     }
+    std::vector<std::string> groups;
+    if (a.command == Command::Groups && !groupList(a.role, groups)) {
+        err << "danh sách nhóm không hợp lệ: mã nhóm a-z, 0-9, '-' (2–32 ký tự), cách nhau bằng "
+               "dấu phẩy, tối đa 16; \"-\" là không nhóm nào\n";
+        return 2;
+    }
+    const bool groupCommand = a.command == Command::GroupAdd || a.command == Command::GroupRemove;
+    if (groupCommand && !validGroupId(a.name)) {
+        err << "mã nhóm không hợp lệ: 2–32 ký tự a-z, 0-9, '-', bắt đầu bằng chữ\n";
+        return 2;
+    }
+    if (a.command == Command::GroupAdd && !validGroupName(a.role)) {
+        err << "tên nhóm không hợp lệ: 1–64 ký tự, không có ký tự điều khiển\n";
+        return 2;
+    }
     if (!env.isRoot) {
-        err << "cần chạy bằng root: users.json thuộc root:matscada (BL335 không có sudo)\n";
+        err << "cần chạy bằng root (BL335 không có sudo)\n";
         return 4;
     }
     if (a.command == Command::PulseAck && !validPulseAckTarget(a.name)) {
@@ -712,9 +731,10 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
                "hoặc all\n";
         return 2;
     }
-    if (a.command != Command::List && a.command != Command::UnlockAll &&
-        a.command != Command::LogicWritesReset && a.command != Command::PulseAck &&
-        !validAccountName(a.name)) {
+    const bool named = a.command != Command::List && a.command != Command::UnlockAll &&
+                       a.command != Command::LogicWritesReset && a.command != Command::PulseAck &&
+                       a.command != Command::AccessReset && !groupCommand;
+    if (named && !validAccountName(a.name)) {
         err << accountEditMessage(AccountEditError::InvalidName) << "\n";
         return 4;
     }
@@ -722,6 +742,40 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
     if (!loadDeviceCliConfig(a.overrides, env, cfg, error)) {
         err << "config: " << error << "\n";
         return 2;
+    }
+    if (a.command == Command::UnlockAll) return requestUnlockAll(env, cfg, out, err);
+    if (a.command == Command::LogicWritesReset) return requestLogicWritesReset(env, cfg, out, err);
+    if (a.command == Command::PulseAck) return requestPulseAck(env, cfg, a.name, out, err);
+
+    // Feature 013: the accounts are in <dataDir>/auth/users.json, made once from the seed
+    // (usersFile, /etc/mat-runtime/users.json), under the lock the runtime takes too.
+    AuthStoreOptions so;
+    so.dir = cfg.authDir;
+    so.seedUsersFile = cfg.usersFile;
+    so.ownerUser = env.serviceUser;
+    so.deviceCommand = true;
+    AuthStore store(so);
+    {
+        std::string prepError, seedError;
+        bool migrated = false;
+        if (!store.prepare(prepError, &migrated, &seedError)) {
+            err << prepError << "\n";
+            return 4;
+        }
+        if (migrated) {
+            AuditEvent e(AuditAction::AccountMigrate, AuditResult::Ok, AuditChannel::Cli, "cli");
+            e.target = store.usersPath();
+            e.detail = jsonText({{"from", cfg.usersFile}});
+            std::string ae;
+            appendAuditAsServiceUser(env, deviceCliAuditOptions(cfg, env), e, ae);
+            err << "đã chép tài khoản từ " << cfg.usersFile << " sang " << store.usersPath()
+                << " (từ nay sửa ở đó)\n";
+        }
+        if (!seedError.empty() && store.read().users.status == UsersStatus::Missing) {
+            err << "không đọc được file tài khoản: " << seedError
+                << "\nsửa hoặc khôi phục file rồi chạy lại (mã 6)\n";
+            return 6;
+        }
     }
     const std::string& name = a.name;
     auto refuse = [&](AccountEditError e) {
@@ -735,6 +789,7 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
                 << "\nsửa hoặc khôi phục file rồi chạy lại (mã 6)\n";
             return 6;
         }
+        if (!named) return 0;
         const Account* acc = r.status == UsersStatus::Ok ? r.file.find(name) : nullptr;
         if (a.command == Command::Add) {
             if (acc) return refuse(AccountEditError::Exists);
@@ -744,97 +799,190 @@ int runUserCli(int argc, char** argv, const DeviceCliEnv& env, std::ostream& out
         }
         return 0;
     };
-    if (a.command == Command::UnlockAll) return requestUnlockAll(env, cfg, out, err);
-    if (a.command == Command::LogicWritesReset) return requestLogicWritesReset(env, cfg, out, err);
-    if (a.command == Command::PulseAck) return requestPulseAck(env, cfg, a.name, out, err);
     if (a.command == Command::List) {
-        const UsersRead r = readUsersFile(cfg.usersFile, /*enforceMode=*/false);
+        const UsersRead r = readUsersFile(store.usersPath(), /*enforceMode=*/false);
         if (r.status == UsersStatus::Error) return check(r);
-        return list(r.file, cfg.usersFile, out, err);
-    }
-    UsersLock lock(cfg.usersFile);  // the directory must be there: checked before any password
-    if (!lock.opened()) {
-        err << lock.error() << "\n";
-        return 4;
+        return list(r.file, store.usersPath(), out, err);
     }
     std::string phc;  // new hash of --user-add and --user-passwd
     if (a.command == Command::Add || a.command == Command::Passwd) {
         // The checks run once before the password is asked (no typing for nothing), and again
-        // under the lock below. The lock is not held while someone types.
-        if (const int code = check(readUsersFile(cfg.usersFile, false)); code != 0) return code;
+        // under the lock. The lock is not held while someone types.
+        if (const int code = check(store.read().users); code != 0) return code;
         if (const int code = hashNewPassword(env, a.passwordStdin, name, phc, err); code != 0)
             return code;
     }
-    // Account commands take turns from this read to the write, so two at once cannot lose a
-    // change (a disabled account coming back enabled).
-    if (!lock.acquire()) {
-        err << lock.error() << "\n";
-        return 4;
-    }
-    UsersRead read = readUsersFile(cfg.usersFile, /*enforceMode=*/false);
-    if (const int code = check(read); code != 0) return code;
-    const UsersFile file = read.status == UsersStatus::Ok ? std::move(read.file) : UsersFile{};
-    const Account* current = file.find(name);
     const std::string now = env.nowIso ? env.nowIso() : utcIsoNow();
-
+    // access.json must be readable for what changes it (or names its groups)
+    auto accessOk = [&](const AuthTxn& t) {
+        if (t.before.accessState != AccessFileState::Invalid) return 0;
+        err << "access.json hỏng: " << t.before.accessError
+            << "\nkhôi phục trên trang Quản trị hoặc chạy --access-reset (mã 6)\n";
+        return 6;
+    };
     Change c;
     c.target = name;
-    c.file = file;
-    AccountEditError e = AccountEditError::None;
-    switch (a.command) {
-        case Command::Add:
-            e = addAccount(c.file, name, *role, phc, now);
-            c.action = AuditAction::AccountCreate;
-            c.detail["role"] = roleName(*role);
-            c.done = "đã tạo tài khoản " + name + " (" + roleName(*role) + ")";
-            break;
-        case Command::Passwd: {
-            e = setAccountPassword(c.file, name, phc, now);
-            c.action = AuditAction::AccountPassword;
-            c.done = "đã đặt mật khẩu mới cho " + name + "; các phiên đang mở của tài khoản bị hủy";
-            break;
-        }
-        case Command::Role:
-            if (current->role == *role) {
-                out << name << " đã có role " << roleName(*role) << ": không đổi gì\n";
+    const std::function<int(AuthTxn&, Change&)> edit = [&](AuthTxn& t, Change& ch) -> int {
+        if (const int code = check(t.before.users); code != 0) return code;
+        const Account* current = t.users.find(name);
+        AccountEditError e = AccountEditError::None;
+        switch (a.command) {
+            case Command::Add:
+                e = addAccount(t.users, name, *role, phc, now);
+                ch.action = AuditAction::AccountCreate;
+                ch.detail["role"] = roleName(*role);
+                ch.done = "đã tạo tài khoản " + name + " (" + roleName(*role) + ")";
+                break;
+            case Command::Passwd:
+                e = setAccountPassword(t.users, name, phc, now);
+                ch.action = AuditAction::AccountPassword;
+                ch.done =
+                    "đã đặt mật khẩu mới cho " + name + "; các phiên đang mở của tài khoản bị hủy";
+                break;
+            case Command::Role:
+                ch.action = AuditAction::AccountRole;
+                if (current->role == *role) {
+                    ch.done = name + " đã có role " + roleName(*role) + ": không đổi gì";
+                    return 0;
+                }
+                ch.detail = {{"from", roleName(current->role)}, {"to", roleName(*role)}};
+                ch.done = "đã đổi role của " + name + ": " + roleName(current->role) + " → " +
+                          roleName(*role) + "; các phiên đang mở của tài khoản bị hủy";
+                e = setAccountRole(t.users, name, *role, now);
+                break;
+            case Command::Disable:
+            case Command::Enable: {
+                const bool enable = a.command == Command::Enable;
+                ch.action = enable ? AuditAction::AccountEnable : AuditAction::AccountDisable;
+                if (current->enabled == enable) {
+                    ch.done = name + (enable ? " đang bật" : " đã tắt") + ": không đổi gì";
+                    return 0;
+                }
+                e = setAccountEnabled(t.users, name, enable, now);
+                ch.done = enable ? "đã bật tài khoản " + name
+                                 : "đã tắt tài khoản " + name +
+                                       "; các phiên đang mở của tài khoản bị hủy";
+                break;
+            }
+            case Command::Unlock:
+                e = unlockAccount(t.users, name, now);
+                ch.action = AuditAction::AccountUnlock;
+                ch.done = "đã mở khóa tạm của " + name +
+                          " ở mọi địa chỉ (runtime đọc lại file trong 2 s); khóa theo IP: "
+                          "--user-unlock-all";
+                break;
+            case Command::Groups: {
+                ch.action = AuditAction::AccountGroups;
+                if (const int code = accessOk(t); code != 0) return code;
+                for (const auto& g : groups)
+                    if (!t.access.group(g)) {
+                        err << "không có nhóm " << g << " (tạo bằng --group-add)\n";
+                        return 4;
+                    }
+                ch.detail = {{"before", current->groups}, {"after", groups}};
+                if (current->groups == groups) {
+                    ch.done = name + " đã có đúng các nhóm này: không đổi gì";
+                    return 0;
+                }
+                e = setAccountGroups(t.users, name, groups, now);
+                ch.done = "đã đặt nhóm của " + name + "; các phiên đang mở của tài khoản bị hủy";
+                break;
+            }
+            case Command::Remove: {
+                ch.action = AuditAction::AccountDelete;
+                if (const int code = accessOk(t); code != 0) return code;
+                ch.detail = {{"role", roleName(current->role)}, {"groups", current->groups}};
+                e = removeAccount(t.users, name);
+                if (e != AccountEditError::None) break;
+                size_t fromRules = 0;
+                for (auto& r : t.access.rules) {
+                    const auto it = std::find(r.grantees.begin(), r.grantees.end(), "user:" + name);
+                    if (it == r.grantees.end()) continue;
+                    r.grantees.erase(it);
+                    ++fromRules;
+                }
+                if (fromRules > 0) t.accessChanged = true;
+                ch.detail["removedFromRules"] = fromRules;
+                ch.done = "đã xóa tài khoản " + name + "; các phiên đang mở của tài khoản bị hủy";
+                break;
+            }
+            case Command::GroupAdd: {
+                ch.action = AuditAction::GroupCreate;
+                if (const int code = accessOk(t); code != 0) return code;
+                if (t.access.group(name)) {
+                    err << "đã có nhóm " << name << "\n";
+                    return 4;
+                }
+                if (t.access.groups.size() >= kMaxAccessGroups) {
+                    err << "đã đủ 50 nhóm\n";
+                    return 4;
+                }
+                t.access.groups.push_back({name, a.role});
+                t.accessChanged = true;
+                ch.detail = {{"name", a.role}};
+                ch.done = "đã tạo nhóm " + name;
                 return 0;
             }
-            e = setAccountRole(c.file, name, *role, now);
-            c.action = AuditAction::AccountRole;
-            c.detail = {{"from", roleName(current->role)}, {"to", roleName(*role)}};
-            c.done = "đã đổi role của " + name + ": " + roleName(current->role) + " → " +
-                     roleName(*role) + "; các phiên đang mở của tài khoản bị hủy";
-            break;
-        case Command::Disable:
-        case Command::Enable: {
-            const bool enable = a.command == Command::Enable;
-            if (current->enabled == enable) {
-                out << name << (enable ? " đang bật" : " đã tắt") << ": không đổi gì\n";
+            case Command::GroupRemove: {
+                // The recovery path: the group goes from the accounts and the rules as well.
+                ch.action = AuditAction::GroupDelete;
+                if (const int code = accessOk(t); code != 0) return code;
+                if (!t.access.group(name)) {
+                    err << "không có nhóm " << name << "\n";
+                    return 4;
+                }
+                t.access.groups.erase(
+                    std::remove_if(t.access.groups.begin(), t.access.groups.end(),
+                                   [&](const AccessGroup& g) { return g.id == name; }),
+                    t.access.groups.end());
+                size_t members = 0, fromRules = 0;
+                for (const Account& acc : t.before.users.file.users) {
+                    if (std::find(acc.groups.begin(), acc.groups.end(), name) == acc.groups.end())
+                        continue;
+                    std::vector<std::string> left = acc.groups;
+                    left.erase(std::remove(left.begin(), left.end(), name), left.end());
+                    setAccountGroups(t.users, acc.name, left, now);
+                    ++members;
+                }
+                for (auto& r : t.access.rules) {
+                    const auto it =
+                        std::find(r.grantees.begin(), r.grantees.end(), "group:" + name);
+                    if (it == r.grantees.end()) continue;
+                    r.grantees.erase(it);
+                    ++fromRules;
+                }
+                t.accessChanged = true;
+                if (members > 0) t.usersChanged = true;
+                ch.detail = {{"members", members}, {"removedFromRules", fromRules}};
+                ch.done = "đã xóa nhóm " + name + " (" + std::to_string(members) + " tài khoản, " +
+                          std::to_string(fromRules) + " quy tắc)";
                 return 0;
             }
-            e = setAccountEnabled(c.file, name, enable, now);
-            c.action = enable ? AuditAction::AccountEnable : AuditAction::AccountDisable;
-            c.done = enable
-                         ? "đã bật tài khoản " + name
-                         : "đã tắt tài khoản " + name + "; các phiên đang mở của tài khoản bị hủy";
-            break;
+            case Command::AccessReset: {
+                // Every rule goes, the groups stay (a damaged file: none can be kept).
+                ch.action = AuditAction::AccessReset;
+                ch.target = "access.json";
+                const size_t n = t.access.rules.size();
+                t.access.rules.clear();
+                t.accessChanged = true;
+                ch.detail = {{"removed", n},
+                             {"damaged", t.before.accessState == AccessFileState::Invalid}};
+                ch.done = "đã xóa mọi quy tắc quyền (" + std::to_string(n) +
+                          "): mọi trang và thành phần về mặc định của project";
+                return 0;
+            }
+            case Command::UnlockAll:
+            case Command::LogicWritesReset:
+            case Command::PulseAck:
+            case Command::List:
+            case Command::None:
+                return 2;
         }
-        case Command::Unlock:
-            e = unlockAccount(c.file, name, now);
-            c.action = AuditAction::AccountUnlock;
-            c.done = "đã mở khóa tạm của " + name +
-                     " ở mọi địa chỉ (runtime đọc lại file trong 2 s); khóa theo IP: "
-                     "--user-unlock-all";
-            break;
-        case Command::UnlockAll:
-        case Command::LogicWritesReset:
-        case Command::PulseAck:
-        case Command::List:
-        case Command::None:
-            return 2;
-    }
-    if (e != AccountEditError::None) return refuse(e);
-    return commit(env, cfg, c, out, err);
+        if (e != AccountEditError::None) return refuse(e);
+        t.usersChanged = true;
+        return 0;
+    };
+    return commit(env, cfg, store, c, edit, out, err);
 }
 
 }  // namespace mat
