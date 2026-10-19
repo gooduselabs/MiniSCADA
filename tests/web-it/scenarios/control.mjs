@@ -55,10 +55,12 @@ export async function control(fp) {
     check('đăng nhập operator', false);
     return rep.result();
   }
-  const ctx = { screen: 'bon-nuoc', widget: 'sp_bom1' };
-  const writeOnce = async (label, req, wantStatus, wantCode, extra = {}) => {
+  // Feature 013: every write names its component (PAGE_CONTEXT of lib/api.mjs); an engineer writes what only an
+  // engineer's component writes.
+  const E = (await w.login('kysu1', pw('kysu1'))).session;
+  const writeOnce = async (label, req, wantStatus, wantCode, extra = {}, s = S) => {
     const mark = await simMark();
-    const r = await w.writeAndWait(S, { context: ctx, ...req });
+    const r = await w.writeAndWait(s, req);
     await sleep(150);
     const sent = (await simWrites(mark)).length;
     const f = r.final ?? {};
@@ -83,8 +85,15 @@ export async function control(fp) {
     { tag: 'SIM.FAN_ON', value: true },
     'CONFIRMED',
   );
-  await writeOnce('INT mô phỏng DEMO.SET = 42', { tag: 'DEMO.SET', value: 42 }, 'CONFIRMED');
-  await writeOnce('nội bộ TANK01.SP_HI = 70', { tag: 'TANK01.SP_HI', value: 70 }, 'CONFIRMED');
+  await writeOnce('INT mô phỏng SIM.MODE = 1', { tag: 'SIM.MODE', value: 1 }, 'CONFIRMED');
+  await writeOnce(
+    'nội bộ TANK01.SP_HI = 70 (engineer, sp_high minRole engineer)',
+    { tag: 'TANK01.SP_HI', value: 70 },
+    'CONFIRMED',
+    undefined,
+    {},
+    E,
+  );
   const oo = await writeOnce(
     'vượt giới hạn TANK01.SP = 95',
     { tag: 'TANK01.SP', value: 95 },
@@ -92,14 +101,20 @@ export async function control(fp) {
     'OUT_OF_LIMITS',
   );
   check('vượt giới hạn: 0 lệnh tới giả lập', oo.sent === 0, oo.sent);
+  // 013: no component of the page writes a read-only or unknown Tag: refused before the coordinator
   const ro = await writeOnce(
-    'Tag chỉ đọc TANK01.LEVEL',
-    { tag: 'TANK01.LEVEL', value: 1 },
+    'Tag chỉ đọc TANK01.LEVEL (không component nào ghi)',
+    { tag: 'TANK01.LEVEL', value: 1, context: { screen: 'tong-quan', widget: 'card_level' } },
     'REJECTED',
-    'READ_ONLY',
+    'ACCESS_DENIED',
   );
   check('chỉ đọc: 0 lệnh tới giả lập', ro.sent === 0, ro.sent);
-  await writeOnce('Tag lạ', { tag: 'KHONG.CO', value: 1 }, 'REJECTED', 'NO_SUCH_TAG');
+  await writeOnce(
+    'Tag lạ',
+    { tag: 'KHONG.CO', value: 1, context: { screen: 'tong-quan', widget: 'sw_pump' } },
+    'REJECTED',
+    'ACCESS_DENIED',
+  );
 
   // Giả lập từ chối và im lặng
   await simFault({ kind: 'exception', code: 3, fc: 5, count: 1 });
@@ -126,14 +141,14 @@ export async function control(fp) {
   // Trùng requestId: chạy một lần
   const id = uuid();
   const m2 = await simMark();
-  const a = await w.write(S, { requestId: id, tag: 'DEMO.SET', value: 7 });
-  const b = await w.write(S, { requestId: id, tag: 'DEMO.SET', value: 7 });
+  const a = await w.write(S, { requestId: id, tag: 'SIM.MODE', value: 1 });
+  const b = await w.write(S, { requestId: id, tag: 'SIM.MODE', value: 1 });
   check(
     'cùng requestId lần hai: duplicate',
     b.json?.results?.[0]?.duplicate === true && a.json?.results?.[0]?.status === 'ACCEPTED',
     JSON.stringify(b.json?.results?.[0]),
   );
-  const c = await w.write(S, { requestId: id, tag: 'DEMO.SET', value: 8 });
+  const c = await w.write(S, { requestId: id, tag: 'SIM.MODE', value: 2 });
   check(
     'cùng requestId khác nội dung: REQUEST_ID_CONFLICT',
     reasonOf(c) === 'REQUEST_ID_CONFLICT',
@@ -145,7 +160,7 @@ export async function control(fp) {
   await sleep(600);
   const rows = await auditRows(fp, 'action=tag.write');
   const started = rows.filter(
-    (r) => r.result === 'started' && detailOf(r).context?.widget === 'sp_bom1',
+    (r) => r.result === 'started' && r.user === 'vh1' && detailOf(r).context?.widget,
   );
   check(
     'audit: dòng nhận lệnh có channel web, user, role và context',
@@ -156,7 +171,7 @@ export async function control(fp) {
   check('audit: channel = web', ch.has('web'), [...ch].join(','));
   check(
     'audit: context đúng dạng (screen, widget)',
-    started.every((r) => detailOf(r).context?.screen === 'bon-nuoc'),
+    started.every((r) => ['bon-nuoc', 'tong-quan'].includes(detailOf(r).context?.screen)),
   );
   const fin = rows.filter((r) => ['ok', 'failed'].includes(r.result));
   check(
@@ -164,15 +179,15 @@ export async function control(fp) {
     fin.length >= started.length - 1,
     `${started.length}/${fin.length}`,
   );
-  // context sai dạng bị bỏ, không từ chối
+  // context sai dạng: 013 bắt buộc context của một component có thật (trước 013: bỏ context, lệnh chạy)
   const bad = await w.writeAndWait(S, {
-    tag: 'DEMO.SET',
-    value: 9,
+    tag: 'SIM.MODE',
+    value: 2,
     context: { screen: 'Bad Screen!', widget: 'x' },
   });
   check(
-    'context sai dạng: lệnh vẫn chạy (context bỏ)',
-    bad.final?.status === 'CONFIRMED',
+    'context sai dạng: REJECTED ACCESS_DENIED (013)',
+    bad.final?.status === 'REJECTED' && (bad.final?.reason ?? bad.final?.code) === 'ACCESS_DENIED',
     JSON.stringify(bad.final),
   );
   // trang tải project: số màn hình lấy từ chính project đang chạy (dashboard-demo đổi theo feature, 011 thêm Bơm và popup)
@@ -240,7 +255,12 @@ export async function locks(fp) {
     'HTTPS_REQUIRED',
   );
   const ro = await w.write(S, { tag: 'TANK01.LEVEL', value: 1 });
-  check('khóa Tag chỉ đọc: REJECTED READ_ONLY', reasonOf(ro) === 'READ_ONLY', reasonOf(ro));
+  // 013: no component writes it, refused before the coordinator
+  check(
+    'khóa Tag chỉ đọc: REJECTED ACCESS_DENIED (013)',
+    reasonOf(ro) === 'ACCESS_DENIED',
+    reasonOf(ro),
+  );
   // mất kết nối tới PLC: Tag BAD → CONNECTION_BAD
   await simFault({ kind: 'refuse' });
   let r;
@@ -466,7 +486,7 @@ export async function pulse(fp, rounds = 20) {
   // Lỗi tham số
   const bad1 = await w.write(S, { tag: 'PUMP01.RUN_CMD', value: true, pulseMs: 50 });
   check('pulseMs 50: REJECTED PULSE_RANGE', reasonOf(bad1) === 'PULSE_RANGE', reasonOf(bad1));
-  const bad2 = await w.write(S, { tag: 'DEMO.SET', value: 1, pulseMs: 500 });
+  const bad2 = await w.write(S, { tag: 'SIM.MODE', value: 1, pulseMs: 500 });
   check(
     'pulse trên Tag số: REJECTED PULSE_NOT_BOOL',
     reasonOf(bad2) === 'PULSE_NOT_BOOL',
@@ -594,8 +614,9 @@ export async function expectScenario(fp) {
   const { check } = rep;
   const w = new Web(fp);
   await waitPolling();
-  const A = (await w.login('vh1', pw('vh1'))).session;
-  const B = (await w.login('vh2', pw('vh2'))).session;
+  // 013: R.RUN is written by btn_toggle, an engineer's component: two engineer sessions
+  const A = (await w.login('kysu1', pw('kysu1'))).session;
+  const B = (await w.login('kysu1', pw('kysu1'))).session;
   // đưa R.RUN về false
   const reset = await w.writeAndWait(A, { tag: 'R.RUN', value: false });
   check('đặt R.RUN = false', reset.final?.status === 'CONFIRMED', JSON.stringify(reset.final));
@@ -603,7 +624,7 @@ export async function expectScenario(fp) {
     tag: 'R.RUN',
     value: true,
     expect: false,
-    context: { screen: 'bon-nuoc', widget: 'sw_auto' },
+    context: { screen: 'tong-quan', widget: 'btn_toggle' },
   });
   check(
     'client A (expect false → true): CONFIRMED',
@@ -622,7 +643,7 @@ export async function expectScenario(fp) {
     (await simWrites(mB)).length === 0,
     (await simWrites(mB)).length,
   );
-  const c = await w.write(A, { tag: 'DEMO.SET', value: 3, expect: true });
+  const c = await w.write(A, { tag: 'SIM.MODE', value: 1, expect: true });
   check(
     'expect trên Tag không phải BOOL: REJECTED EXPECT_NOT_BOOL',
     reasonOf(c) === 'EXPECT_NOT_BOOL',

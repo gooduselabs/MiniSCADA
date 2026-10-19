@@ -660,7 +660,7 @@ async function deployLive(browser) {
   const requestId = await p0.evaluate(`(async () => {
     const s = await (await fetch('/api/v1/web/session')).json();
     const id = crypto.randomUUID();
-    const r = await fetch('/api/v1/tags/write', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-MAT-CSRF': s.csrfToken }, body: JSON.stringify({ requests: [{ requestId: id, tag: 'PUMP01.RUN_CMD', value: true, pulseMs: 6000, context: { screen: 'bon-nuoc', widget: 'deploy_live' } }] }) });
+    const r = await fetch('/api/v1/tags/write', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-MAT-CSRF': s.csrfToken }, body: JSON.stringify({ requests: [{ requestId: id, tag: 'PUMP01.RUN_CMD', value: true, pulseMs: 6000, context: { screen: 'tong-quan', widget: 'btn_start' } }] }) });
     const j = await r.json();
     window.__csrf = s.csrfToken;
     return j.results?.[0]?.status === 'ACCEPTED' ? id : 'REFUSED ' + JSON.stringify(j);

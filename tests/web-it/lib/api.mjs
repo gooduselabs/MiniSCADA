@@ -19,6 +19,29 @@ export const WRITE_FCS = new Set([5, 6, 15, 16, 22]);
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Feature 013 (contracts/admin-api.md §6): a write of the page names the component that sends it and the
+// component must write that Tag. The component of dashboard-demo for each Tag the scenarios write; a request with
+// context (or context: null, none) keeps its own.
+export const PAGE_CONTEXT = {
+  'TANK01.SP': { screen: 'bon-nuoc', widget: 'slider_sp' },
+  'TANK01.SP_HI': { screen: 'bon-nuoc', widget: 'sp_high' },
+  'PUMP01.RUN_CMD': { screen: 'tong-quan', widget: 'sw_pump' },
+  'SIM.FAN_ON': { screen: 'tong-quan', widget: 'sw_fan' },
+  'SIM.MODE': { screen: 'tong-quan', widget: 'select_mode' },
+  'SIM.SP_FLOW': { screen: 'tong-quan', widget: 'slider_flow' },
+  'R.RUN': { screen: 'tong-quan', widget: 'btn_toggle' },
+};
+const withContext = (req) => {
+  if ('context' in req) {
+    if (req.context !== null) return req;
+    const { context, ...rest } = req;
+    void context;
+    return rest;
+  }
+  const ctx = PAGE_CONTEXT[req.tag];
+  return ctx ? { ...req, context: ctx } : req;
+};
+
 /** Bộ ghi kết quả của một kịch bản: { name, pass, detail }. */
 export function makeReport(scenario) {
   const checks = [];
@@ -107,7 +130,7 @@ export class Web {
   write(s, req, opts = {}) {
     return this.request('POST', '/api/v1/tags/write', {
       s,
-      body: JSON.stringify({ requests: [{ requestId: uuid(), ...req }] }),
+      body: JSON.stringify({ requests: [withContext({ requestId: uuid(), ...req })] }),
       ...opts,
     });
   }
@@ -118,7 +141,7 @@ export class Web {
     const t0 = Date.now();
     const post = await this.request('POST', '/api/v1/tags/write', {
       s,
-      body: JSON.stringify({ requests: [{ ...req, requestId }] }),
+      body: JSON.stringify({ requests: [withContext({ ...req, requestId })] }),
     });
     let final = post.json?.results?.[0];
     if (post.status !== 200 || final?.status !== 'ACCEPTED')
