@@ -60,12 +60,17 @@ export class MatGridEditor extends AppElement {
     overCell: { state: true },
     presetsOpen: { state: true },
     previewWidth: { state: true },
+    stageWidth: { state: true },
   };
   declare screenId: string;
   declare selCell: string | null;
   declare overCell: string | null;
   declare presetsOpen: boolean;
   declare previewWidth: number;
+  /** Chiều rộng vùng làm việc (đo bằng ResizeObserver); 0 khi chưa đo (jsdom). */
+  declare stageWidth: number;
+
+  #ro: ResizeObserver | null = null;
 
   #editSource: MemoryTagSource | null = null;
   #editTags: unknown = null;
@@ -79,6 +84,31 @@ export class MatGridEditor extends AppElement {
     this.overCell = null;
     this.presetsOpen = false;
     this.previewWidth = 1366;
+    this.stageWidth = 0;
+  }
+
+  protected override attached(): void {
+    const RO = (globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver;
+    if (!RO) return;
+    this.#ro = new RO((entries) => {
+      const w = entries[entries.length - 1]?.contentRect.width ?? 0;
+      if (Math.abs(w - this.stageWidth) > 1) this.stageWidth = w;
+    });
+    void this.updateComplete.then(() => {
+      const st = this.querySelector('.ge-stage');
+      if (st && this.#ro) this.#ro.observe(st);
+    });
+  }
+
+  protected override detached(): void {
+    this.#ro?.disconnect();
+    this.#ro = null;
+  }
+
+  /** Hệ số thu nhỏ để trang xem trước vừa vùng làm việc (không phóng to quá 1). */
+  private zoom(): number {
+    const avail = this.stageWidth - 32;
+    return avail > 0 ? Math.min(1, avail / this.previewWidth) : 1;
   }
 
   // ---------- dữ liệu ----------
@@ -290,7 +320,13 @@ export class MatGridEditor extends AppElement {
     const pad = d.layout.padding ?? 16;
     const gap = row?.gap ?? d.layout.gap ?? 12;
     const col = (this.previewWidth - 2 * pad - (GRID_COLUMNS - 1) * gap) / GRID_COLUMNS;
-    this.#drag = { row: rowId, index, startX: e.clientX, step: Math.max(1, col + gap), applied: 0 };
+    this.#drag = {
+      row: rowId,
+      index,
+      startX: e.clientX,
+      step: Math.max(1, (col + gap) * this.zoom()),
+      applied: 0,
+    };
     const key = `grid-divider-${Date.now()}`;
     const move = (ev: PointerEvent) => {
       const g = this.#drag;
@@ -655,13 +691,14 @@ export class MatGridEditor extends AppElement {
           : nothing
       }
       <div class="ge-stage">
-        <div class="ge-page" style=${`width:${this.previewWidth}px`}>
+        <div class="ge-page" style=${`width:${this.previewWidth}px;zoom:${this.zoom()}`}>
           <mat-screen
             .screen=${d}
             .tags=${src.source}
             .host=${src.host}
             .alarms=${src.alarms ?? undefined}
             .mode=${edit ? 'edit' : 'run'}
+            .autoHeight=${true}
             .viewport=${{ width: this.previewWidth, height: 800 }}
             .loadSvg=${this.loadSvg}
             .loadBindings=${this.loadBindings}

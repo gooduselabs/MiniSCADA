@@ -91,6 +91,7 @@ export class MatScreen extends LitElement {
     loadSvg: { attribute: false },
     loadBindings: { attribute: false },
     mode: { reflect: true },
+    autoHeight: { type: Boolean, reflect: true, attribute: 'auto-height' },
     viewport: { attribute: false },
     env: { attribute: false },
   };
@@ -106,6 +107,8 @@ export class MatScreen extends LitElement {
   declare loadSvg: (path: string) => Promise<string>;
   declare loadBindings: (path: string) => Promise<ElementBindings02[]>;
   declare mode: 'run' | 'edit';
+  /** Bố cục lưới: cao theo nội dung thay vì lấp đầy chỗ chứa (trình soạn lưới của Studio). */
+  declare autoHeight: boolean;
   declare viewport: Size | 'auto';
   /** Tiêm rAF/ResizeObserver (test); vắng thì dùng của trình duyệt. */
   declare env: ScreenEnv | undefined;
@@ -146,6 +149,7 @@ export class MatScreen extends LitElement {
     super();
     this.popup = null;
     this.mode = 'run';
+    this.autoHeight = false;
     this.viewport = 'auto';
     this.loadSvg = async () => {
       throw new Error('loadSvg not set');
@@ -166,6 +170,14 @@ export class MatScreen extends LitElement {
       position: absolute;
       inset: 0;
       overflow: hidden;
+    }
+    :host([auto-height]) {
+      height: auto;
+    }
+    :host([auto-height]) .viewport {
+      position: relative;
+      inset: auto;
+      overflow: visible !important;
     }
     .sizer {
       position: relative;

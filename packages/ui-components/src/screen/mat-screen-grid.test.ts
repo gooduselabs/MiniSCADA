@@ -155,6 +155,16 @@ describe('<mat-screen>: bố cục lưới', () => {
     expect(root(ed.el).querySelector('.grid')!.classList.contains('edit')).toBe(true);
   });
 
+  it('autoHeight: thuộc tính auto-height trên phần tử (trình soạn Studio cao theo nội dung)', async () => {
+    const { el } = await setup(gridScreen());
+    expect(el.hasAttribute('auto-height')).toBe(false);
+    el.autoHeight = true;
+    await el.updateComplete;
+    expect(el.hasAttribute('auto-height')).toBe(true);
+    const css = (el.constructor as unknown as { styles: { cssText: string } }).styles.cssText;
+    expect(css).toContain(':host([auto-height])');
+  });
+
   it('màn hình tự do vẫn dựng như cũ (.frame co giãn)', async () => {
     const free = gridScreen() as unknown as Record<string, unknown>;
     delete free.layout;
