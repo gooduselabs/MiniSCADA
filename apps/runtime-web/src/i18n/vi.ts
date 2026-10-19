@@ -1,5 +1,23 @@
 // Chuỗi tiếng Việt của trang vận hành (Constitution; feature 007 FR-022). Mọi chữ hiện cho người dùng nằm ở đây;
 // chuỗi cũ của reload.ts, status.ts giữ ở file của chúng. Chuỗi của widget nằm ở @mat/ui-components.
+
+/** Lý do `WEAK_PASSWORD` của máy chủ (admin-api §1) → phần đuôi câu. */
+export function weakReason(reason?: string, message?: string): string {
+  switch (reason) {
+    case 'TOO_SHORT':
+      return ': cần ít nhất 15 ký tự';
+    case 'TOO_LONG':
+      return ': tối đa 128 ký tự';
+    case 'SAME_AS_NAME':
+    case 'CONTAINS_NAME':
+      return ': không được chứa tên tài khoản';
+    case 'COMMON':
+      return ': mật khẩu quá phổ biến';
+    default:
+      return message ? `: ${message}` : reason ? ` (${reason})` : '';
+  }
+}
+
 export const vi = {
   appName: 'mAT SCADA',
   chromeTooOld: (need: number, have: number | null) =>
@@ -45,6 +63,7 @@ export const vi = {
     SESSION_EXPIRED: 'Phiên đã hết hạn, đăng nhập lại',
     PROJECT_CHANGING: 'Project đang thay đổi',
   },
+  blockedNoPermission: 'Cần quyền thao tác',
 
   // Hộp Đăng nhập
   loginTitle: 'Đăng nhập',
@@ -59,9 +78,7 @@ export const vi = {
       case 'AUTH_FAILED':
         return 'Sai tài khoản hoặc mật khẩu';
       case 'AUTH_LOCKED':
-        return retryAfterS
-          ? `Đăng nhập bị khóa tạm, thử lại sau ${Math.ceil(retryAfterS / 60)} phút`
-          : 'Đăng nhập bị khóa tạm, thử lại sau ít phút';
+        return vi.access.loginLocked(retryAfterS, Date.now());
       case 'LOGIN_BUSY': // 011: giới hạn đăng nhập đồng thời; AUTH_BUSY của thiết bị cũ
       case 'AUTH_BUSY':
         return 'Thiết bị đang bận kiểm tra đăng nhập khác, thử lại sau giây lát';
@@ -96,6 +113,76 @@ export const vi = {
   loginPageFingerprint: 'Vân tay chứng chỉ (SHA-256)',
   loginPageFingerprintHint: 'Đối chiếu với vân tay ghi trên thiết bị trước khi tin chứng chỉ.',
   loginPageDone: 'Đã đăng nhập, đang chuyển trang…',
+
+  // Đăng nhập bắt buộc, phân quyền, tài khoản của tôi (feature 013). Chữ của trang Quản trị: i18n/vi-admin.ts (tải lười).
+  access: {
+    adminMenu: 'Quản trị',
+    redirecting: 'Phiên đã hết, đang chuyển tới trang đăng nhập…',
+    httpsRequiredTitle: 'Cần mở bằng HTTPS để đăng nhập',
+    httpsRequiredBody:
+      'Thiết bị yêu cầu đăng nhập trước khi xem. Trang đăng nhập chỉ dùng được qua HTTPS.',
+    httpsLink: 'Mở trang đăng nhập (HTTPS)',
+    noAccessTitle: 'Không có quyền xem trang này',
+    noAccessBody: (id: string) =>
+      `Tài khoản của bạn chưa được cấp quyền xem trang "${id}", hoặc trang không còn trong project. Hỏi quản trị viên nếu bạn cần trang này.`,
+    noAccessHome: 'Về trang đầu',
+    noContentTitle: 'Không có nội dung bạn được xem',
+    noContentBody: 'Mọi thành phần của màn hình này đều cần quyền mà tài khoản của bạn chưa có.',
+    viewerLoginOff: 'Xem không cần đăng nhập',
+    account: 'Tài khoản',
+    accountMenu: (user: string) => `Tài khoản ${user}`,
+    accountGroups: (g: string) => `Nhóm: ${g}`,
+    accountNoGroup: 'Không thuộc nhóm nào',
+    changePassword: 'Đổi mật khẩu của tôi',
+    pwTitle: 'Đổi mật khẩu của tôi',
+    pwOld: 'Mật khẩu hiện tại',
+    pwNew: 'Mật khẩu mới',
+    pwRepeat: 'Nhập lại mật khẩu mới',
+    pwRule: '15 đến 128 ký tự. Nên dùng một câu dễ nhớ.',
+    pwCount: (n: number) => `${n} / 128 ký tự`,
+    pwShort: (n: number) => `Còn thiếu ${15 - n} ký tự`,
+    pwOk: 'Đủ độ dài',
+    pwTooLong: 'Quá 128 ký tự',
+    pwMismatch: 'Hai lần nhập mật khẩu mới không khớp',
+    pwSame: 'Mật khẩu mới phải khác mật khẩu hiện tại',
+    pwEmptyOld: 'Nhập mật khẩu hiện tại',
+    pwSubmit: 'Đổi mật khẩu',
+    pwBusy: 'Đang đổi…',
+    pwCancel: 'Hủy',
+    pwDone: 'Đã đổi mật khẩu. Các phiên khác của bạn đã bị đăng xuất.',
+    pwClose: 'Đóng',
+    pwError: (code: string, reason?: string, message?: string, retryAfterS?: number): string => {
+      switch (code) {
+        case 'REAUTH_REQUIRED':
+          return 'Mật khẩu hiện tại không đúng';
+        case 'WEAK_PASSWORD':
+          return `Mật khẩu mới chưa đạt quy tắc${weakReason(reason, message)}`;
+        case 'RATE_LIMITED':
+          return retryAfterS
+            ? `Thử quá nhiều lần, chờ ${retryAfterS} giây rồi thử lại`
+            : 'Thử quá nhiều lần, chờ ít phút rồi thử lại';
+        case 'AUTH_LOCKED':
+          return 'Tài khoản đang bị khóa tạm do nhập sai nhiều lần';
+        case 'NETWORK':
+          return 'Không kết nối được tới thiết bị';
+        case 'SESSION_EXPIRED':
+          return 'Phiên đã hết, đăng nhập lại';
+        default:
+          return message ? `${message} (${code})` : `Không đổi được mật khẩu (${code})`;
+      }
+    },
+    loginLocked: (retryAfterS: number | undefined, now: number) => {
+      if (!retryAfterS) return 'Tài khoản bị khóa tạm do nhập sai nhiều lần, thử lại sau ít phút';
+      const at = new Date(now + retryAfterS * 1000).toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return `Tài khoản bị khóa tạm do nhập sai nhiều lần. Thử lại sau ${Math.ceil(retryAfterS / 60)} phút (lúc ${at}).`;
+    },
+    loginBrand: 'Hệ thống giám sát và điều khiển',
+    loginNext: (to: string) => `Sau khi đăng nhập sẽ mở ${to}`,
+    loginDevice: (name: string) => `Thiết bị ${name}`,
+  },
 
   // Alarm (feature 009; contracts/ui-alarm.md §14). Chữ dùng chung với widget (trạng thái, mức ưu tiên, lỗi) ở
   // @mat/ui-components (alarmVi); ở đây là phần riêng của trang: banner, trang Alarm, hộp thoại, âm thanh, lịch sử, CSV.

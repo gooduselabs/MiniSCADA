@@ -7,7 +7,7 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "e2e": "vite build --mode e2e && node tests/e2e/run.mjs",
+    "e2e": "vite build --mode e2e && vite build --mode e2e-login && node tests/e2e/run.mjs",
     "build": "vite build && vite build --mode device && vite build --mode login && node scripts/package-web.mjs"
   },
   "devDependencies": {

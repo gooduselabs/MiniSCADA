@@ -32,6 +32,10 @@ export interface MenuExtra {
   reports?: readonly { id: string; name: string }[];
   /** Hiện mục "Lịch sử" (lưu trữ bật và có phiên). */
   history?: boolean;
+  /** Feature 013: màn hình được xem (EffectiveAccess.screens); vắng = mọi màn hình. */
+  canView?: (screen: string) => boolean;
+  /** Feature 013: administrator → mục "Quản trị" (`@quan-tri`) cuối menu. */
+  admin?: boolean;
 }
 type NavItem = NavigationItem & { report?: string };
 
@@ -72,11 +76,15 @@ export function buildMenu(
 ): MenuModel | null {
   const alarm = opts;
   const extra = opts;
-  const routable = screens.filter((s) => s.kind === 'screen');
+  const canView = extra.canView ?? (() => true);
+  const routable = screens.filter((s) => s.kind === 'screen' && canView(s.id));
   const withAlarm = alarm?.show === true && (nav as { alarms?: boolean } | null)?.alarms !== false;
   const reports = new Map((extra.reports ?? []).map((r) => [r.id, r.name]));
-  if (routable.length + reports.size + (extra.history ? 1 : 0) <= 1 && !withAlarm) return null;
-  if (nav?.position === 'hidden') return null;
+  const admin = extra.admin === true;
+  if (routable.length + reports.size + (extra.history ? 1 : 0) <= 1 && !withAlarm && !admin)
+    return null;
+  // Quản trị viên luôn có đường vào trang Quản trị, kể cả khi project ẩn menu.
+  if (nav?.position === 'hidden' && !admin) return null;
   const ok = new Set(routable.map((s) => s.id));
   const entries: MenuEntry[] = [];
   for (const it of nav?.items ?? []) {
@@ -118,6 +126,14 @@ export function buildMenu(
   }
   if (extra.history)
     entries.push({ kind: 'item', label: viHist.menuHistory, screen: '@history', icon: 'chart' });
+  if (admin)
+    entries.push({
+      kind: 'item',
+      label: vi.access.adminMenu,
+      screen: '@quan-tri',
+      icon: 'gear',
+      system: true,
+    });
   return { position: nav?.position === 'top' ? 'top' : 'left', entries };
 }
 

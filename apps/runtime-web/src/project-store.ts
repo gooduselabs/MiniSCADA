@@ -143,6 +143,17 @@ export class ProjectStore {
     return this.#summary;
   }
 
+  /**
+   * Bỏ cache màn hình (feature 013: quyền đổi, máy chủ lọc item theo phiên nên bản cũ có thể sai). Yêu cầu đang bay của
+   * thế hệ cũ không vào cache mới.
+   */
+  invalidate(): void {
+    this.#cache.clear();
+    this.#inflight.clear();
+    this.#reports = null;
+    this.#gen++;
+  }
+
   /** id màn hình đang nằm trong cache (cũ → mới). */
   cached(): string[] {
     return [...this.#cache.keys()];

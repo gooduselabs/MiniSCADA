@@ -15,6 +15,8 @@ export interface ResolvedRoute {
   notice: RouteNotice | null;
   /** Feature 009: trang dựng sẵn của hệ thống (alarms, alarm-history), không phải màn hình của project. */
   system?: true;
+  /** Feature 013: id không có trong danh sách của phiên và bị từ chối: hiện "Không có quyền xem trang này". */
+  denied?: true;
 }
 
 /** Trang hệ thống có route riêng (feature 009; contracts/ui-alarm.md §11). Ưu tiên hơn màn hình trùng id. */
@@ -23,9 +25,12 @@ export const SYSTEM_ROUTES: readonly string[] = ['alarms', 'alarm-history'];
 /** Trang lịch sử và báo cáo (feature 010): `#/history[?…]`, `#/report/<id>[?…]`; không phải màn hình của project. */
 export type PageRoute =
   | { kind: 'history'; params: URLSearchParams }
-  | { kind: 'report'; id: string; params: URLSearchParams };
+  | { kind: 'report'; id: string; params: URLSearchParams }
+  /** Feature 013: trang Quản trị `#/quan-tri[/<tab>]` (chỉ administrator; máy chủ tự từ chối API quản trị). */
+  | { kind: 'admin'; tab: string | null; params: URLSearchParams };
 
 const REPORT_ID = /^[a-z0-9][a-z0-9-]{0,47}$/;
+const ADMIN_TAB = /^[a-z][a-z-]{0,31}$/;
 
 /** `#/history?g=…` hoặc `#/report/<id>?d=…` → trang; sai dạng → null. */
 export function parsePageHash(hash: string): PageRoute | null {
@@ -35,6 +40,9 @@ export function parsePageHash(hash: string): PageRoute | null {
   const path = q < 0 ? raw : raw.slice(0, q);
   const params = new URLSearchParams(q < 0 ? '' : raw.slice(q + 1));
   if (path === 'history') return { kind: 'history', params };
+  if (path === 'quan-tri') return { kind: 'admin', tab: null, params };
+  const a = /^quan-tri\/([^/]+)$/.exec(path);
+  if (a) return ADMIN_TAB.test(a[1]!) ? { kind: 'admin', tab: a[1]!, params } : null;
   const m = /^report\/([^/]+)$/.exec(path);
   if (!m) return null;
   let id: string;
@@ -48,7 +56,7 @@ export function parsePageHash(hash: string): PageRoute | null {
 
 /** Khóa mục menu của trang: `@history`, `@report/<id>` (không trùng id màn hình vì id màn hình không có `@`). */
 export const pageKey = (p: PageRoute): string =>
-  p.kind === 'history' ? '@history' : `@report/${p.id}`;
+  p.kind === 'history' ? '@history' : p.kind === 'admin' ? '@quan-tri' : `@report/${p.id}`;
 
 /** `#/<id>` → id; rỗng, sai dạng hay chuỗi phần trăm hỏng → null. */
 export function parseHash(hash: string): string | null {
@@ -90,6 +98,11 @@ export interface RouterOptions {
 
   /** Trang lịch sử/báo cáo (feature 010); vắng thì `#/history` được coi là id màn hình như trước. */
   onPage?: (page: PageRoute) => void;
+  /**
+   * Feature 013: id không có trong `screens` mà phiên bị giới hạn quyền (máy chủ đã bỏ màn hình bị cấm khỏi danh sách):
+   * true → route `denied` (giữ hash) thay vì màn hình đầu kèm thông báo "không có màn hình".
+   */
+  deny?: (id: string) => boolean;
   win?: Window;
 }
 
@@ -126,6 +139,13 @@ export class Router {
     if (this.#started) return;
     this.#started = true;
     this.#win.addEventListener('hashchange', this.#listener);
+    this.#sync();
+  }
+
+  /** Báo lại route hiện tại dù không đổi (feature 013: quyền đổi, cần dựng lại màn hình hay trang). */
+  resync(): void {
+    this.#current = null;
+    this.#pageHash = '';
     this.#sync();
   }
 
@@ -188,6 +208,14 @@ export class Router {
       this.#o.system ?? [],
     );
     const hashId = parseHash(loc.hash);
+    if (r.notice && this.#o.deny?.(r.notice.id)) {
+      // Không có quyền: giữ hash (đăng nhập tài khoản khác hay được cấp quyền thì F5 vẫn đúng trang).
+      if (this.#current === r.notice.id) return;
+      this.closePopup();
+      this.#current = r.notice.id;
+      this.#o.onRoute({ screen: r.notice.id, kiosk: r.kiosk, notice: null, denied: true });
+      return;
+    }
     // Hash trống hoặc id lạ: sửa thành màn hình đầu (replace để Back không quay lại id lạ).
     if (hashId !== r.screen)
       this.#win.history.replaceState(history.state, '', `#/${encodeURIComponent(r.screen)}`);
