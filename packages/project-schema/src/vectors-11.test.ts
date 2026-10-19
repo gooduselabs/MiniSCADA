@@ -36,6 +36,9 @@ describe('tests/project-vectors: v11-*', () => {
       'E_LAYOUT_LIMIT',
       'E_LAYOUT_VERSION',
       'W_LAYOUT_ITEM_ORPHAN',
+      // feature 013: security.view / security.operate (README-013.md)
+      'E_SECURITY_LEVEL',
+      'E_SECURITY_ITEM',
     ])
       expect(count(c), c).toBeGreaterThanOrEqual(2);
   });

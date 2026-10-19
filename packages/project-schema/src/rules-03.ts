@@ -556,9 +556,15 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
 
       // security
       if (item.security !== undefined) {
-        if (!spec.security)
+        // định dạng 1.1 (feature 013): `view`, `operate` được ở mọi widget (luật E_SECURITY_* ở rules-11); `security`
+        // rỗng hoặc có `minRole` ở widget không có thuộc tính bảo mật vẫn là E_WIDGET_PROP như trước
+        const secKeys = Object.keys(item.security);
+        const onlyAccess =
+          secKeys.length > 0 && secKeys.every((k) => k === 'view' || k === 'operate');
+        if (!spec.security && !onlyAccess)
           add('E_WIDGET_PROP', `${p}/security`, `${spec.id} has no security properties`);
         else if (
+          spec.security &&
           item.security.minRole !== undefined &&
           !spec.security.minRole.includes(item.security.minRole)
         )

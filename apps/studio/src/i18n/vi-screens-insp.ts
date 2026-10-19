@@ -183,6 +183,14 @@ export const viScreensInsp = {
   'wi.role.operator': 'Vận hành (operator)',
   'wi.role.engineer': 'Kỹ sư (engineer)',
   'wi.role.administrator': 'Quản trị (administrator)',
+  // feature 013: vai trò tối thiểu của định dạng 1.1 (security.view, security.operate)
+  'wi.role.viewer': 'Xem (viewer)',
+  'wi.access.view': 'Vai trò tối thiểu để xem',
+  'wi.access.operate': 'Vai trò tối thiểu để thao tác',
+  'wi.access.displayOnly':
+    'Component chỉ hiển thị (không có điều khiển hay sự kiện ghi) nên không có mức thao tác.',
+  'wi.access.note':
+    'Đây là mức mặc định khi thiết bị chưa có quy tắc quyền. Quản trị viên phân quyền theo người dùng và nhóm trên trang Quản trị của thiết bị, nhưng không hạ được dưới mức này. Máy chủ kiểm quyền ở mọi lệnh ghi.',
   'wi.role.always':
     'Điều khiển luôn khóa khi mất kết nối, khi chất lượng giá trị xấu hoặc khi đang gửi lệnh: không tắt được.',
   'wi.role.notAuth':
