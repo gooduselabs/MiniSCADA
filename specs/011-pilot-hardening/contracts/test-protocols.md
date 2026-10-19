@@ -21,6 +21,10 @@ Mọi phép đo ghi: phiên bản (`system/info`), mã commit, cấu hình (`run
 
 Mỗi kịch bản chạy trước ở x64 (Docker) làm tiền kiểm; số x64 không thay số BL335.
 
+**Cách đo L1 "8080 và 8443 xen kẽ"**: `load-tester -alternate -tls-port 8443 -fingerprint <SHA-256 chứng chỉ thiết bị>` (`tools/load-tester/tls.go`): client lẻ (1, 3, …, cả client thừa 11) mở `wss://<host>:8443/api/v1/live`, client chẵn mở `ws://<host>:8080/api/v1/live`; mỗi client gửi Origin của đúng listener của nó (`http://<host>:8080` hoặc `https://<host>:8443`). Chứng chỉ luôn được kiểm tường minh: `-fingerprint` ghim SHA-256 chứng chỉ lá (so ngay sau bắt tay TLS, trước byte HTTP nào) hoặc `-insecure` (ghi `tls.verify: "insecure"` trong JSON); thiếu cả hai là dùng sai (mã 2). JSON thêm `scheme` mỗi client, `tls`, `summaryByScheme` (`ws`, `wss`: cùng các chỉ số của `summary`), `latencyByScheme` (với `-latency`) và check "cả 8080 và 8443 có dữ liệu sống, 0 mất sequence"; `wss8443Alternation` rời `notMeasured`. Ngưỡng của L1 áp cho cả hai nhóm.
+
+**Cách đo L5 "RSS tab"**: `node tools/measure/tab-rss.mjs --url <URL màn hình L5> --pages 10 --seconds <S> --fingerprint <SHA-256>` mở 10 trang trong `chrome-headless-shell` (mỗi trang một ngữ cảnh, một tiến trình renderer), lấy mẫu mỗi `--interval` giây RSS của renderer của từng tab (`ps`) và `JSHeapUsedSize` (CDP `Performance.getMetrics`, không ép GC); báo mỗi tab đầu, cuối, tối đa, độ dốc MB/giờ (cả chuỗi và sau `--warmup` giây) và tổng RSS mọi renderer. HTTPS: công cụ ghim fingerprint rồi chỉ cho Chrome chấp nhận đúng khóa đó (`--ignore-certificate-errors-spki-list`). L5 không đặt ngưỡng RSS tab: ghi số đo; độ dốc dương kéo dài sau khởi động là dấu hiệu rò bộ nhớ phía trang cần điều tra. RSS là bộ nhớ của máy trạm chạy Chrome, không phải của BL335.
+
 ## 2. Soak
 
 | Mã | Mô tả | Thời gian | Ở đâu |

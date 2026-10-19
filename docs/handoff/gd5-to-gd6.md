@@ -45,7 +45,7 @@ Runtime **`1.0.0-rc.1` releaseSeq 13** (cài bằng `deploy.sh` 2026-10-18 12:32
 
 **Ghi chú còn mở, không chặn rc (tự làm được nếu muốn):**
 
-- **T079** (chưa đánh dấu): cài/chạy `mat-sample` trên BL335, L1 xen kẽ 8443 (cần `wss://` trong `load-tester`), RSS tab ở L5. Các ngưỡng của SC-011 đã Đạt; lỗi gói thiếu `schemas/0.6` đã sửa.
+- **T079** (chưa đánh dấu): cài/chạy `mat-sample` trên BL335 (đã đạt 2026-10-19), L1 xen kẽ 8443 và RSS tab ở L5: công cụ đã có (`load-tester -alternate -fingerprint`, `tools/measure/tab-rss.mjs`; cách đo ở test-protocols §1), còn chạy trên BL335. Các ngưỡng của SC-011 đã Đạt; lỗi gói thiếu `schemas/0.6` đã sửa.
 - **T147** (chưa đánh dấu): L7 trên x64 64 bit RSS +5,4 MiB (ngưỡng +5 MB) ở L1 1 giờ; BL335 +3,8 MB đạt nên chỉ báo. Nếu cần: lấy `smaps`, hoặc đo cặp project có cùng 200 Tag nội bộ ở hai bên (`011-load.md` §1.6).
 - T189: collector dùng viewer nhưng `audit` đòi administrator (ghi `FORBIDDEN`).
 
