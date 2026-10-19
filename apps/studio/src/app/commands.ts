@@ -138,6 +138,8 @@ export type CommandId =
   | 'screen.explodeInstance'
   | 'screen.updateInstances'
   | 'screen.faceplate'
+  // Feature 012 (FR-040): chuyển màn hình tự do đang mở sang bố cục lưới (hộp thoại xem trước).
+  | 'screen.convertToGrid'
   // Feature 011 (FR-097, FR-115): trình vẽ SVG. Không có menu: bảng lệnh, thanh công cụ và phím của trình vẽ.
   | 'svg.new'
   | 'svg.editInDrawing'
@@ -205,6 +207,8 @@ export interface CommandContext {
   format10: boolean;
   /** Project ở định dạng 1.1 (bố cục lưới, chủ đề; feature 012). */
   format11: boolean;
+  /** Màn hình của tab đang chọn dùng bố cục lưới (có `layout`, feature 012). */
+  screenIsGrid: boolean;
   /** Vùng chọn của editor Màn hình có item của bản sao template. */
   screenTplSel: boolean;
   /** Vùng chọn của editor Màn hình là đúng một item `svg` (lệnh "Sửa trong trình vẽ"). */
@@ -248,6 +252,7 @@ export const EMPTY_CONTEXT: CommandContext = {
   alarmCount: 0,
   format10: false,
   format11: false,
+  screenIsGrid: false,
   screenTplSel: false,
   screenSvgItem: false,
   svgEditor: false,
@@ -717,6 +722,13 @@ export const COMMANDS: readonly CommandSpec[] = [
   cmd('screen.explodeInstance', null, all(screenEdit, format10, tplSelected), { icon: 'explode' }),
   cmd('screen.updateInstances', null, all(screenEdit, format10, tplSelected), { icon: 'refresh' }),
   cmd('screen.faceplate', null, all(screenEdit, format10, popupOpen), { icon: 'popup' }),
+  // ---- Feature 012: chuyển tự do → lưới (FR-040; không tự chạy, luôn qua hộp thoại xem trước) ----
+  cmd(
+    'screen.convertToGrid',
+    null,
+    all(screenEdit, format11, (c) => (c.screenIsGrid ? 'reason.alreadyGrid' : true)),
+    { icon: 'grid' },
+  ),
   // ---- Feature 011: trình vẽ SVG ----
   cmd('svg.new', null, all(needProject, editable, project03), { icon: 'fnew' }),
   cmd(

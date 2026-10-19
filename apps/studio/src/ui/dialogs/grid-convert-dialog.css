@@ -1,0 +1,85 @@
+/* Hộp thoại xem trước "Chuyển sang bố cục lưới" (feature 012, FR-040). Khung (.overlay, .dlg, .dlg-h, .dlg-b, .dlg-f),
+   .btn, .help dùng lại của shell.css. Chỉ token màu của theme/tokens.css. */
+mat-grid-convert-dialog .dlg {
+  width: min(860px, 96%);
+}
+.gc-dlg {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.gc-sum {
+  margin: 0;
+  font-weight: 600;
+}
+.gc-rows {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 46vh;
+  overflow: auto;
+}
+.gc-row {
+  display: grid;
+  grid-template-columns: 24px 1fr max-content;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-s);
+}
+.gc-rh,
+.gc-h {
+  color: var(--muted);
+}
+.gc-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3px;
+  padding: 3px;
+  border: 1px dashed var(--border-2);
+  border-radius: 4px;
+  min-width: 0;
+}
+.gc-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+.gc-cell.empty {
+  border-style: dashed;
+  border-color: var(--border-2);
+  background: transparent;
+  color: var(--muted);
+}
+.gc-lbl {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gc-span {
+  color: var(--muted);
+  flex: none;
+}
+.gc-warn {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: var(--warn-soft);
+  color: var(--fg);
+  font-size: var(--fs-s);
+}
+.gc-warn ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}

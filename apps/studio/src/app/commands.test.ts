@@ -162,6 +162,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'screen.explodeInstance',
       'screen.updateInstances',
       'screen.faceplate',
+      // feature 012 (FR-040): chuyển màn hình tự do sang lưới
+      'screen.convertToGrid',
       // feature 011: trình vẽ SVG (bảng lệnh, thanh công cụ và phím của trình vẽ, menu ngữ cảnh item svg)
       'svg.new',
       'svg.editInDrawing',
@@ -385,5 +387,24 @@ describe('điều kiện bật và lý do', () => {
     }
     expect(commandById('watch.write')!.shortcut).toBe('Ctrl+Shift+Enter');
     expect(t('reason.needOperator')).toContain('operator');
+  });
+
+  it('feature 012 (FR-040): Chuyển sang bố cục lưới cần editor Màn hình, project 1.1, màn hình tự do', () => {
+    const open = ctx({ version03: true, screenEditor: true, format11: true });
+    expect(enabled('screen.convertToGrid', open)).toBe(true);
+    expect(enabled('screen.convertToGrid', { ...open, screenIsGrid: true })).toBe(
+      'reason.alreadyGrid',
+    );
+    expect(enabled('screen.convertToGrid', { ...open, format11: false })).toBe(
+      'reason.needFormat11',
+    );
+    expect(enabled('screen.convertToGrid', { ...open, screenEditor: false })).toBe(
+      'reason.screenNotActive',
+    );
+    expect(enabled('screen.convertToGrid', { ...open, readOnly: true })).toBe('reason.readOnly');
+    expect(enabled('screen.convertToGrid', { ...open, screenPreview: 'sim' })).toBe(
+      'reason.screenPreviewLocked',
+    );
+    expect(commandById('screen.convertToGrid')!.menu).toBeNull();
   });
 });

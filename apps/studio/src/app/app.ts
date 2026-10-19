@@ -154,6 +154,8 @@ export type OnlineDialogSpec =
   | { kind: 'templateDelete'; tid: string }
   /** `args` của hành động Mở popup ở sự kiện nhấp của item `item` trên màn hình `screen`. */
   | { kind: 'popupArgs'; screen: string; item: string }
+  // Feature 012 (FR-040): xem trước chuyển màn hình tự do `screen` sang bố cục lưới (ui/dialogs/grid-convert-dialog.ts).
+  | { kind: 'gridConvert'; screen: string }
   // Feature 011 (FR-083): "Dừng ghi của logic" trên thiết bị đang Online (administrator).
   | { kind: 'logicStop' }
   // Feature 011 (FR-068): Cập nhật runtime (OTA) của thiết bị đang Online (administrator; ui/dialogs/update-wizard.ts).
@@ -181,6 +183,7 @@ export type SimpleDialogKind = Exclude<
   | { kind: 'templateUpdate' }
   | { kind: 'templateDelete' }
   | { kind: 'popupArgs' }
+  | { kind: 'gridConvert' }
   | { kind: 'svgExternal' }
   | { kind: 'svgDelete' }
   | { kind: 'svgPasteReport' }
@@ -216,6 +219,7 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'templateUpdate' ||
   d?.kind === 'templateDelete' ||
   d?.kind === 'popupArgs' ||
+  d?.kind === 'gridConvert' ||
   d?.kind === 'logicStop' ||
   d?.kind === 'runtimeUpdate' ||
   d?.kind === 'svgRestore' ||
@@ -1197,6 +1201,10 @@ export class StudioApp {
         return openUpdateAll(this);
       case 'screen.faceplate':
         return makeFaceplate(this);
+      case 'screen.convertToGrid': {
+        const sid = currentScreenId(this);
+        return sid === null ? undefined : this.openDialog({ kind: 'gridConvert', screen: sid });
+      }
       case 'tree.add':
         return treeAdd(this);
       case 'tree.rename':
