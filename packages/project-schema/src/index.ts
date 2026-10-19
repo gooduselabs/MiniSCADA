@@ -16,11 +16,13 @@ export {
   migrate04to05,
   migrate05to06,
   migrate06to10,
+  migrate10to11,
   migrateTo03,
   migrateTo04,
   migrateTo05,
   migrateTo06,
   migrateTo10,
+  migrateTo11,
 } from './migrate.ts';
 export type { MigrateChange, MigrateError, MigrateResult } from './migrate.ts';
 export { canonicalTag, formatTagsFile, serialize as serialize02 } from './format-02.ts';

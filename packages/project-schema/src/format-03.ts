@@ -46,6 +46,9 @@ const SVG_KEYS = [
 const ACTION_KEYS = ['action', 'value', 'durationMs', 'screen', 'args'] as const;
 const ELEMENT_KEYS = ['elementUid', 'name', 'kind'] as const;
 const TPL_KEYS = ['inst', 'tid', 'rid', 'params'] as const;
+/** Bố cục lưới (định dạng 1.1, feature 012): thứ tự khóa của hàng và ô. */
+const ROW_KEYS = ['id', 'height', 'gap', 'cells'] as const;
+const CELL_KEYS = ['id', 'span', 'offset', 'align', 'minHeight', 'item'] as const;
 /** Thứ tự khóa của mục menu; `report` (định dạng 0.6, mục mở trang báo cáo) đứng sau `screen`. */
 const NAV_ITEM_KEYS = ['label', 'screen', 'report', 'icon'] as const;
 
@@ -149,6 +152,26 @@ export function formatScreen03(screen: ScreenModel): string {
   if (s.fitMode !== undefined && s.fitMode !== 'contain')
     head.push(`  "fitMode": ${JSON.stringify(s.fitMode)}`);
   if (s.background !== undefined) head.push(`  "background": ${JSON.stringify(s.background)}`);
+  // bố cục lưới (định dạng 1.1): khóa cấp layout mỗi khóa một dòng, mỗi hàng một dòng gọn
+  if (isObj(s.layout)) {
+    const l = s.layout;
+    const lines: string[] = [];
+    for (const k of ['mode', 'columns', 'gap', 'padding'] as const)
+      if (l[k] !== undefined) lines.push(`    ${JSON.stringify(k)}: ${JSON.stringify(l[k])}`);
+    const rows = (Array.isArray(l.rows) ? (l.rows as Obj[]) : []).map((r) => {
+      const row = pick(r, ROW_KEYS);
+      if (Array.isArray(row.cells))
+        row.cells = (row.cells as Obj[]).map((c) => {
+          const cell = pick(c, CELL_KEYS);
+          if (cell.offset === 0) delete cell.offset;
+          if (cell.align === 'stretch') delete cell.align;
+          return cell;
+        });
+      return '      ' + JSON.stringify(row);
+    });
+    lines.push(rows.length > 0 ? `    "rows": [\n${rows.join(',\n')}\n    ]` : '    "rows": []');
+    head.push(`  "layout": {\n${lines.join(',\n')}\n  }`);
+  }
   // faceplate (định dạng 1.0): tham số của popup, mỗi tham số một dòng gọn
   if (Array.isArray(s.params)) {
     const ps = (s.params as Obj[]).map(
