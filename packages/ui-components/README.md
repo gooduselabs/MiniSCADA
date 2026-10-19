@@ -44,6 +44,8 @@ Nhóm: Hiển thị. Cỡ mặc định 220 × 110, nhỏ nhất 96 × 56.
 | `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
 | `fontSize` | enum | `"m"` | `s`, `m`, `l`, `xl` |
 | `showQuality` | bool | `true` |  |
+| `sparkline` | bool | `false` |  |
+| `trend` | bool | `false` |  |
 | `valueColor` | color | `"auto"` |  |
 | `background` | color | `"auto"` |  |
 

@@ -1,4 +1,5 @@
-// Hình học biểu đồ cột (FR-030, ADR-020): thuần, vẽ bằng SVG ở widgets/bar.ts.
+// Hình học biểu đồ cột (FR-030, ADR-020): thuần. Từ feature 012 widgets/bar.ts vẽ bằng ECharts và chỉ dùng resolveScale
+// (thang trục giá trị giữ nguyên ý nghĩa của min/max); barLayout giữ cho test hình học.
 export interface BarArea {
   x: number;
   y: number;
@@ -35,9 +36,9 @@ export interface BarLayoutOptions {
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Thang tự co từ 0: min = min(0, nhỏ nhất), max = max(0, lớn nhất); suy biến thì max = min + 1. */
-function resolveScale(
+export function resolveScale(
   values: ReadonlyArray<number | null>,
-  opt: BarLayoutOptions,
+  opt: Pick<BarLayoutOptions, 'min' | 'max'>,
 ): { min: number; max: number } {
   const finite = values.filter((v): v is number => v !== null && Number.isFinite(v));
   let min = typeof opt.min === 'number' ? opt.min : Math.min(0, ...finite);

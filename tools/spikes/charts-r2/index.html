@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spike R2: ECharts lite và uPlot</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        background: #f9f9fb;
+        color: #1c2024;
+        font-family: system-ui, sans-serif;
+      }
+      #grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        padding: 8px 12px;
+      }
+      h2 {
+        font-size: 13px;
+        margin: 0 0 4px;
+      }
+      .chart {
+        height: 220px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="grid"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

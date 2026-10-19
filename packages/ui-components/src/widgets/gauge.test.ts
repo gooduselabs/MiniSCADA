@@ -1,12 +1,48 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, makeSource, mount, tagInfo, textOf, widgetItem } from './test-util.ts';
+// Widget `gauge` vẽ bằng ECharts lite (feature 012, T044, FR-033, FR-037): label, min, max, decimals, unit, zones, showValue
+// giữ ý nghĩa; nhãn, số đọc và phần truy cập (role=meter) do Lit vẽ. Kim và vùng màu đọc từ option đưa cho ECharts (bản giả)
+// thay cho SVG tự vẽ trước đây: góc kim = startAngle 180° ... endAngle 0° theo phân số của giá trị đã kẹp trong thang.
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  cleanup,
+  fakeECharts,
+  makeSource,
+  mountChart as mount,
+  tagInfo,
+  textOf,
+  widgetItem,
+} from './test-util.ts';
 
-afterEach(cleanup);
+let ec: ReturnType<typeof fakeECharts>;
+beforeEach(() => {
+  ec = fakeECharts();
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  cleanup();
+});
+
+type GaugeSeries = {
+  type: string;
+  min: number;
+  max: number;
+  startAngle: number;
+  endAngle: number;
+  pointer: { show: boolean };
+  axisLine: { lineStyle: { color: Array<[number, string]> } };
+  data: Array<{ value: number }>;
+};
+const gs = () => (ec.option().series as GaugeSeries[])[0]!;
 
 const gauge = (props?: Record<string, unknown>, tag = 't1') =>
   widgetItem('gauge', { value: tag }, props as never);
-const needle = (el: Element) => el.shadowRoot!.querySelector<SVGElement>('.needle')!;
-const angle = (el: Element) => Number(needle(el).getAttribute('data-angle'));
+/** Góc kim theo cách cũ (-90° = min, 0° = giữa, +90° = max) suy từ option ECharts. */
+const angle = (el: Element) => {
+  void el;
+  const s = gs();
+  const f = (s.data[0]!.value - s.min) / (s.max - s.min);
+  const deg = s.startAngle + (s.endAngle - s.startAngle) * f; // 180 -> 0
+  return 90 - deg;
+};
 const meter = (el: Element) => el.shadowRoot!.querySelector('.w')!;
 
 describe('mat-w-gauge (FR-027)', () => {
@@ -73,11 +109,12 @@ describe('mat-w-gauge (FR-027)', () => {
       }),
       src,
     );
-    const zones = [...el.shadowRoot!.querySelectorAll<SVGElement>('.zone')];
-    expect(zones).toHaveLength(3);
-    expect(zones.map((z) => z.getAttribute('stroke'))).toEqual(['#15703a', '#8f5e00', '#c42b2b']);
-    expect(zones[0]!.getAttribute('data-from')).toBe('0');
-    expect(zones[2]!.getAttribute('data-to')).toBe('100');
+    void el;
+    expect(gs().axisLine.lineStyle.color).toEqual([
+      [0.6, '#15703a'],
+      [0.9, '#8f5e00'],
+      [1, '#c42b2b'],
+    ]);
   });
 
   it('vùng màu sai màu bị bỏ', async () => {
@@ -86,7 +123,11 @@ describe('mat-w-gauge (FR-027)', () => {
       gauge({ zones: [{ from: 0, to: 10, color: 'url(javascript:1)' }] }),
       src,
     );
-    expect(el.shadowRoot!.querySelectorAll('.zone')).toHaveLength(0);
+    void el;
+    const stops = gs().axisLine.lineStyle.color;
+    expect(stops).toHaveLength(1);
+    expect(stops[0]![0]).toBe(1);
+    expect(stops.some(([, c]) => c.includes('url'))).toBe(false);
   });
 
   it('hiện giá trị và đơn vị; showValue=false ẩn chữ giá trị', async () => {
@@ -108,6 +149,51 @@ describe('mat-w-gauge (FR-027)', () => {
     const unk = await mount(gauge(undefined, 'lạ'), src);
     expect(textOf(unk, '.value')).toBe('?');
     expect(meter(unk).hasAttribute('aria-valuenow')).toBe(false);
+    expect(gs().pointer.show).toBe(false);
+  });
+
+  it('vùng màu có khoảng trống: phần trống là màu rãnh, theo thứ tự tăng', async () => {
+    const src = makeSource([tagInfo('t1')]);
+    src.set('t1', { value: 10, quality: 'GOOD' });
+    await mount(
+      gauge({
+        min: 0,
+        max: 100,
+        zones: [
+          { from: 80, to: 100, color: '#c42b2b' },
+          { from: 20, to: 40, color: '#15703a' },
+        ],
+      }),
+      src,
+    );
+    const stops = gs().axisLine.lineStyle.color;
+    expect(stops.map(([f]) => f)).toEqual([0.2, 0.4, 0.8, 1]);
+    expect(stops[1]![1]).toBe('#15703a');
+    expect(stops[3]![1]).toBe('#c42b2b');
+    expect(stops[0]![1]).toBe(stops[2]![1]);
+  });
+
+  it('nửa vòng 180° -> 0°, chữ min và max ở hai đầu thang', async () => {
+    const src = makeSource([tagInfo('t1')]);
+    src.set('t1', { value: 5, quality: 'GOOD' });
+    await mount(gauge({ min: 0, max: 50 }), src);
+    const s = gs() as GaugeSeries & { axisLabel: { formatter: (v: number) => string } };
+    expect([s.type, s.startAngle, s.endAngle]).toEqual(['gauge', 180, 0]);
+    // không tooltip (số đọc đã hiện; tooltip mặc định của ECharts dựng HTML từ chuỗi)
+    expect(ec.option().tooltip).toMatchObject({ show: false });
+    expect(s.axisLabel.formatter(0)).toBe('0');
+    expect(s.axisLabel.formatter(50)).toBe('50');
+    expect(s.axisLabel.formatter(25)).toBe('');
+  });
+
+  // Nạp ECharts thật lần đầu (biến đổi ~600 KB mã) chậm khi nhiều worker chạy song song: hạn 30 s.
+  it('vẽ thật bằng ECharts lite (SVG)', { timeout: 30_000 }, async () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    cleanup();
+    const src = makeSource([tagInfo('t1')]);
+    src.set('t1', { value: 30, quality: 'GOOD' });
+    const el = await mount(gauge(), src);
+    expect(el.shadowRoot!.querySelector('.ec svg path')).not.toBeNull();
   });
 
   it('XSS: nhãn và tên Tag hiện dạng chữ', async () => {

@@ -3,6 +3,7 @@
 // con trỏ (±25 %), Shift+kéo = dịch, bấm đúp = về khoảng ban đầu, bàn phím (mũi tên, +/-, Home). Khoảng đổi → sau
 // 250 ms hủy yêu cầu cũ và hỏi lại với maxPoints = min(2000, 2 × bề rộng vùng vẽ); giữ hình cũ khi chờ.
 import { css, html, nothing, unsafeCSS, type TemplateResult } from 'lit';
+import { styleMap } from 'lit/directives/style-map.js';
 import uplotCss from 'uplot/dist/uPlot.min.css?raw';
 import { axisTime, localTime } from '../chart/history-fmt.ts';
 import { fixed } from '../format/format-value.ts';
@@ -119,10 +120,11 @@ export class MatHistoryTrend extends MatHistoryWidget {
       .legend button {
         font: inherit;
         color: inherit;
-        background: none;
+        /* feature 012: thẻ nền nhạt theo màu đường (--mat-chart-N-soft) */
+        background: var(--soft, none);
         border: 1px solid transparent;
-        border-radius: 3px;
-        padding: 0 4px;
+        border-radius: 999px;
+        padding: 1px 8px 1px 6px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
@@ -298,6 +300,8 @@ export class MatHistoryTrend extends MatHistoryWidget {
             },
             axisColor: cssVar(this, '--mat-text-muted', '#56646a'),
             gridColor: cssVar(this, '--mat-border', '#d2d9dc'),
+            font: cssVar(this, '--mat-font', "'Segoe UI', system-ui, sans-serif"),
+            surfaceColor: cssVar(this, '--mat-surface', '#ffffff'),
             bandColors: colors.map((c) => hexAlpha(c, 0.18)),
           },
           this.#data,
@@ -625,6 +629,7 @@ export class MatHistoryTrend extends MatHistoryWidget {
                       <button
                         type="button"
                         data-i=${i}
+                        style=${styleMap({ '--soft': `var(--mat-chart-${i + 1}-soft)` })}
                         aria-pressed=${this._hidden.has(i) ? 'false' : 'true'}
                         title=${viHistory.toggleSeries}
                         @click=${() => this.#toggleSeries(i)}

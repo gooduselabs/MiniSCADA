@@ -1,178 +1,48 @@
-/* Token --mat-* của thư viện widget (contracts/ui-components-api.md §8). Cùng giá trị với token của Studio
-   (apps/studio/src/theme/tokens.css, studio-ux.md §7); sáng và tối theo :root[data-theme] và prefers-color-scheme.
-   Dùng :where() để độ ưu tiên bằng 0: trang chủ đặt lại token trên :root thì luôn thắng. Widget không dùng mã màu
-   cứng ngoài màu do project đặt. */
+/* Token --mat-* của thư viện widget (contracts/ui-components-api.md §8, feature 012 contracts/ui-theme.md). Ba chủ đề sinh
+   bởi tools/gen-theme-tokens.mjs (themes/*.css, không sửa tay):
+   - industrial (Công nghiệp trầm): mặc định khi :root không có data-mat-theme; giá trị cũ, cùng giá trị với token của
+     Studio (apps/studio/src/theme/tokens.css, studio-ux.md §7); sáng và tối theo :root[data-theme] và prefers-color-scheme;
+   - vivid (Sáng đa sắc) và dark (Tối): :root[data-mat-theme='vivid' | 'dark'].
+   Mọi bộ chọn bọc :where() (độ ưu tiên 0): trang chủ đặt lại token trên :root luôn thắng; giữa các chủ đề, thứ tự nạp dưới
+   đây quyết định. Widget không dùng mã màu cứng ngoài màu do project đặt. Trang nạp tệp này qua Vite (@import được gộp);
+   installTokens() (tokens.ts) nạp cùng nội dung cho nơi chứa chưa nạp. Đổi @font-face ở đây thì đổi cả FONT_FACES ở tokens.ts. */
 
-:where(:root) {
-  --mat-bg: #edf0f1;
-  --mat-surface: #ffffff;
-  --mat-surface-2: #f5f7f8;
-  --mat-text: #1a2225;
-  --mat-text-muted: #56646a;
-  --mat-accent: #0b7285;
-  --mat-accent-ink: #ffffff;
-  --mat-border: #d2d9dc;
-  --mat-border-strong: #b3bec3;
-  --mat-good: #15703a;
-  --mat-good-soft: #dcf1e3;
-  --mat-warn: #8f5e00;
-  --mat-warn-soft: #fbefcf;
-  --mat-bad: #c42b2b;
-  --mat-bad-soft: #fbe1e1;
-  --mat-info: #0b5cad;
-  --mat-online: #e8590c;
-  --mat-offline: #6b777c;
-  --mat-scrim: rgba(12, 22, 26, 0.36);
-  --mat-shadow: 0 12px 32px rgba(16, 34, 42, 0.18), 0 2px 6px rgba(16, 34, 42, 0.08);
-  --mat-radius: 4px;
-  --mat-font:
-    'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial,
-    sans-serif;
-  --mat-font-mono: 'Cascadia Mono', 'Cascadia Code', Consolas, ui-monospace, Menlo, monospace;
-  /* Bảng màu series: phân biệt được khi mù màu, kèm kiểu nét khác nhau ở biểu đồ đường */
-  --mat-chart-1: #0b7285;
-  --mat-chart-2: #c2410c;
-  --mat-chart-3: #6f42c1;
-  --mat-chart-4: #15703a;
-  --mat-chart-5: #b4234a;
-  --mat-chart-6: #1c64c4;
-  --mat-chart-7: #8f5e00;
-  --mat-chart-8: #56646a;
-  /* Tám màu alarm (feature 009, D24): nền/dải, nền nhạt, chữ trên nền màu. Chữ ≥ 4,5:1 (kiểm ở alarm-tokens.test.ts). */
-  --mat-alarm-red: #b3261e;
-  --mat-alarm-red-soft: #fbe1e1;
-  --mat-alarm-red-ink: #ffffff;
-  --mat-alarm-orange: #a63f00;
-  --mat-alarm-orange-soft: #fde6d3;
-  --mat-alarm-orange-ink: #ffffff;
-  --mat-alarm-amber: #7a5200;
-  --mat-alarm-amber-soft: #fbefcf;
-  --mat-alarm-amber-ink: #ffffff;
-  --mat-alarm-blue: #0b5cad;
-  --mat-alarm-blue-soft: #dcebfb;
-  --mat-alarm-blue-ink: #ffffff;
-  --mat-alarm-purple: #6f42c1;
-  --mat-alarm-purple-soft: #ece3fa;
-  --mat-alarm-purple-ink: #ffffff;
-  --mat-alarm-teal: #0b6b73;
-  --mat-alarm-teal-soft: #d6f0f2;
-  --mat-alarm-teal-ink: #ffffff;
-  --mat-alarm-gray: #56646a;
-  --mat-alarm-gray-soft: #e6eaec;
-  --mat-alarm-gray-ink: #ffffff;
-  --mat-alarm-green: #15703a;
-  --mat-alarm-green-soft: #dcf1e3;
-  --mat-alarm-green-ink: #ffffff;
+@import './themes/industrial.css';
+@import './themes/vivid.css';
+@import './themes/dark.css';
+
+/* Inter Variable (OFL-1.1, fonts/LICENSE-Inter.txt): đi kèm sản phẩm, không tải từ Internet (FR-036). latin-ext của Inter
+   thiếu U+1EA0-1EF1 nên cần thêm tập vietnamese mới đủ dấu tiếng Việt. Trình duyệt chỉ tải tệp khi chữ cần đến phông. */
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('./fonts/inter-latin-wght-normal.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-@media (prefers-color-scheme: dark) {
-  :where(:root:not([data-theme='light'])) {
-    --mat-bg: #131718;
-    --mat-surface: #191e20;
-    --mat-surface-2: #1e2427;
-    --mat-text: #e1e8ea;
-    --mat-text-muted: #9aa9af;
-    --mat-accent: #3ab1c1;
-    --mat-accent-ink: #04191d;
-    --mat-border: #2d363a;
-    --mat-border-strong: #435055;
-    --mat-good: #52c672;
-    --mat-good-soft: #15321e;
-    --mat-warn: #e4b545;
-    --mat-warn-soft: #372b10;
-    --mat-bad: #ff7070;
-    --mat-bad-soft: #3b1919;
-    --mat-info: #70b2f6;
-    --mat-online: #ff8a3d;
-    --mat-offline: #8d9a9f;
-    --mat-scrim: rgba(0, 0, 0, 0.55);
-    --mat-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
-    --mat-chart-1: #3ab1c1;
-    --mat-chart-2: #ff9a5c;
-    --mat-chart-3: #b794f4;
-    --mat-chart-4: #52c672;
-    --mat-chart-5: #f27a9b;
-    --mat-chart-6: #70b2f6;
-    --mat-chart-7: #e4b545;
-    --mat-chart-8: #9aa9af;
-    --mat-alarm-red: #ff7070;
-    --mat-alarm-red-soft: #3b1919;
-    --mat-alarm-red-ink: #2b0505;
-    --mat-alarm-orange: #ff9a5c;
-    --mat-alarm-orange-soft: #3a2312;
-    --mat-alarm-orange-ink: #2e1200;
-    --mat-alarm-amber: #e4b545;
-    --mat-alarm-amber-soft: #372b10;
-    --mat-alarm-amber-ink: #2e2000;
-    --mat-alarm-blue: #70b2f6;
-    --mat-alarm-blue-soft: #14283f;
-    --mat-alarm-blue-ink: #041a33;
-    --mat-alarm-purple: #b794f4;
-    --mat-alarm-purple-soft: #2a2040;
-    --mat-alarm-purple-ink: #1d0a3a;
-    --mat-alarm-teal: #3ab1c1;
-    --mat-alarm-teal-soft: #12333a;
-    --mat-alarm-teal-ink: #04191d;
-    --mat-alarm-gray: #a5b3b8;
-    --mat-alarm-gray-soft: #2a3236;
-    --mat-alarm-gray-ink: #10181b;
-    --mat-alarm-green: #52c672;
-    --mat-alarm-green-soft: #15321e;
-    --mat-alarm-green-ink: #052010;
-  }
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('./fonts/inter-latin-ext-wght-normal.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
-:where(:root[data-theme='dark']) {
-  --mat-bg: #131718;
-  --mat-surface: #191e20;
-  --mat-surface-2: #1e2427;
-  --mat-text: #e1e8ea;
-  --mat-text-muted: #9aa9af;
-  --mat-accent: #3ab1c1;
-  --mat-accent-ink: #04191d;
-  --mat-border: #2d363a;
-  --mat-border-strong: #435055;
-  --mat-good: #52c672;
-  --mat-good-soft: #15321e;
-  --mat-warn: #e4b545;
-  --mat-warn-soft: #372b10;
-  --mat-bad: #ff7070;
-  --mat-bad-soft: #3b1919;
-  --mat-info: #70b2f6;
-  --mat-online: #ff8a3d;
-  --mat-offline: #8d9a9f;
-  --mat-scrim: rgba(0, 0, 0, 0.55);
-  --mat-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
-  --mat-chart-1: #3ab1c1;
-  --mat-chart-2: #ff9a5c;
-  --mat-chart-3: #b794f4;
-  --mat-chart-4: #52c672;
-  --mat-chart-5: #f27a9b;
-  --mat-chart-6: #70b2f6;
-  --mat-chart-7: #e4b545;
-  --mat-chart-8: #9aa9af;
-  --mat-alarm-red: #ff7070;
-  --mat-alarm-red-soft: #3b1919;
-  --mat-alarm-red-ink: #2b0505;
-  --mat-alarm-orange: #ff9a5c;
-  --mat-alarm-orange-soft: #3a2312;
-  --mat-alarm-orange-ink: #2e1200;
-  --mat-alarm-amber: #e4b545;
-  --mat-alarm-amber-soft: #372b10;
-  --mat-alarm-amber-ink: #2e2000;
-  --mat-alarm-blue: #70b2f6;
-  --mat-alarm-blue-soft: #14283f;
-  --mat-alarm-blue-ink: #041a33;
-  --mat-alarm-purple: #b794f4;
-  --mat-alarm-purple-soft: #2a2040;
-  --mat-alarm-purple-ink: #1d0a3a;
-  --mat-alarm-teal: #3ab1c1;
-  --mat-alarm-teal-soft: #12333a;
-  --mat-alarm-teal-ink: #04191d;
-  --mat-alarm-gray: #a5b3b8;
-  --mat-alarm-gray-soft: #2a3236;
-  --mat-alarm-gray-ink: #10181b;
-  --mat-alarm-green: #52c672;
-  --mat-alarm-green-soft: #15321e;
-  --mat-alarm-green-ink: #052010;
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('./fonts/inter-vietnamese-wght-normal.woff2') format('woff2');
+  unicode-range:
+    U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301,
+    U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }

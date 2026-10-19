@@ -2,6 +2,7 @@
 // Phần thuần (alignSeries, niceTimeSplits, phóng/dịch, quy đổi tọa độ) không phụ thuộc DOM nên test được trong Node.
 // uPlot chỉ vẽ (tải lười bằng import()); mọi tương tác (kéo chọn, cuộn, Shift+kéo, bàn phím) do widget xử lý.
 import type { SeriesLine } from '../host/history-source.ts';
+import { axisStyle, cursorPoints } from './line-chart.ts';
 
 export interface TimeRange {
   from: number;
@@ -226,6 +227,10 @@ export interface HistoryPlotOptions {
   axisColor: string;
   gridColor: string;
   bandColors: string[];
+  /** Phông chữ trục (--mat-font), feature 012. */
+  font?: string;
+  /** Màu bề mặt (--mat-surface): ruột điểm con trỏ, feature 012. */
+  surfaceColor?: string;
 }
 
 export interface HistoryPlotAdapter {
@@ -302,7 +307,10 @@ export async function loadHistoryPlot(): Promise<HistoryPlotFactory> {
         select: { show: false, left: 0, top: 0, width: 0, height: 0 },
         cursor: {
           drag: { x: false, y: false, setScale: false },
-          points: { show: true },
+          points: cursorPoints(
+            o.series.map((s) => s.color),
+            o.surfaceColor ?? '#ffffff',
+          ),
           lock: false,
         },
         scales: {
@@ -336,9 +344,7 @@ export async function loadHistoryPlot(): Promise<HistoryPlotFactory> {
         },
         axes: [
           {
-            stroke: o.axisColor,
-            grid: { show: o.grid, stroke: o.gridColor, width: 1 },
-            ticks: { stroke: o.gridColor, width: 1 },
+            ...axisStyle(o),
             splits: (_u, _i, min, max) =>
               niceTimeSplits(min * 1000, max * 1000, o.offsetMs, 6).map((t) => t / 1000),
             values: (_u, splits) => {
@@ -347,19 +353,15 @@ export async function loadHistoryPlot(): Promise<HistoryPlotFactory> {
             },
           },
           {
+            ...axisStyle(o),
             scale: 'y',
-            stroke: o.axisColor,
-            grid: { show: o.grid, stroke: o.gridColor, width: 1 },
-            ticks: { stroke: o.gridColor, width: 1 },
           },
           ...(hasRight
             ? [
                 {
+                  ...axisStyle({ ...o, grid: false }),
                   scale: 'y2',
                   side: 1 as const,
-                  stroke: o.axisColor,
-                  grid: { show: false },
-                  ticks: { stroke: o.gridColor, width: 1 },
                 },
               ]
             : []),

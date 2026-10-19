@@ -137,6 +137,14 @@ describe('history-trend: dữ liệu và vẽ', () => {
     expect(d.x.length).toBe(20);
   });
 
+  it('giao diện mới (feature 012): phông, bề mặt từ token; chú giải dạng thẻ nền nhạt theo màu đường', async () => {
+    const el = await mountTrend(item(), new FakeHistorySource());
+    expect(plots[0]!.opts.font).toBeTruthy();
+    expect(plots[0]!.opts.surfaceColor).toMatch(/^#[0-9a-f]{6}$/i);
+    const b = el.shadowRoot!.querySelectorAll<HTMLElement>('.legend button')[1]!;
+    expect(b.getAttribute('style')).toContain('--mat-chart-2-soft');
+  });
+
   it('maxPoints bị chặn ở 2000', async () => {
     const hist = new FakeHistorySource();
     await mountTrend(item(), hist);

@@ -146,6 +146,34 @@ describe('mat-w-line (FR-029, SC-018)', () => {
     expect(h.creates[0]!.data).toHaveLength(9);
   });
 
+  it('giao diện mới (feature 012): phông và bề mặt từ token; tô vùng nhạt chỉ khi một đường', async () => {
+    const one = await mount(line(['a']), makeSource([tagInfo('a')]));
+    await plotReady(one);
+    const o1 = h.creates[0]!.opts;
+    expect(o1.font).toBeTruthy();
+    expect(o1.surfaceColor).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(o1.series[0]!.fill).toMatch(/^rgba\(/);
+    const two = await mount(line(['a', 'b']), makeSource([tagInfo('a'), tagInfo('b')]));
+    await plotReady(two);
+    expect(h.creates[1]!.opts.series.every((s) => s.fill === undefined)).toBe(true);
+  });
+
+  it('chú giải dạng thẻ: nền nhạt theo màu đường (--mat-chart-N-soft); con trỏ có chấm màu từng đường', async () => {
+    const src = makeSource([tagInfo('a'), tagInfo('b')]);
+    src.set('a', { value: 1, quality: 'GOOD' });
+    src.set('b', { value: 2, quality: 'GOOD' });
+    const el = await mount(line(['a', 'b']), src);
+    await plotReady(el);
+    const li = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.legend li')];
+    expect(li[1]!.getAttribute('style')).toContain('--mat-chart-2-soft');
+    tick(el);
+    h.creates[0]!.opts.onCursor(0);
+    await el.updateComplete;
+    const dots = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.cursor .dot')];
+    expect(dots).toHaveLength(2);
+    expect(dots[0]!.getAttribute('style')).toContain('--mat-chart-1');
+  });
+
   it('chú giải: nhãn, giá trị hiện tại, đơn vị; labels ghi đè mô tả Tag', async () => {
     const src = makeSource([
       tagInfo('a', { unit: 'bar', description: 'Áp suất vào' }),
