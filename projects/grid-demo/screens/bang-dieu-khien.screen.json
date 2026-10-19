@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "bang-dieu-khien",
+  "name": "Bảng điều khiển",
+  "size": {"width":1920,"height":1080},
+  "layout": {
+    "mode": "grid",
+    "columns": 12,
+    "gap": 12,
+    "padding": 16,
+    "rows": [
+      {"id":"r1","height":"auto","cells":[{"id":"c1","span":3,"item":"nhiet_do"},{"id":"c2","span":3,"item":"ap_suat"},{"id":"c3","span":3,"item":"luu_luong"},{"id":"c4","span":3,"item":"canh_bao"}]},
+      {"id":"r2","height":320,"cells":[{"id":"c5","span":8,"item":"xu_huong"},{"id":"c6","span":4,"item":"dong_ho"}]},
+      {"id":"r3","height":300,"cells":[{"id":"c7","span":6,"item":"cot_bom"},{"id":"c8","span":6,"item":"tron_bom"}]},
+      {"id":"r4","height":"auto","cells":[{"id":"c9","span":12,"item":"bang_tag"}]}
+    ]
+  },
+  "items": [
+    {"id":"nhiet_do","type":"widget","widget":"card","props":{"label":"Nhiệt độ"},"tags":{"value":"SIM.TEMP"}},
+    {"id":"ap_suat","type":"widget","widget":"card","props":{"label":"Áp suất"},"tags":{"value":"SIM.PRESS"}},
+    {"id":"luu_luong","type":"widget","widget":"card","props":{"label":"Lưu lượng"},"tags":{"value":"SIM.FLOW"}},
+    {"id":"canh_bao","type":"widget","widget":"lamp","props":{"label":"Cảnh báo"},"tags":{"state":"SIM.ALARM"}},
+    {"id":"xu_huong","type":"widget","widget":"line","tags":{"series":["SIM.TEMP","SIM.PRESS","SIM.FLOW"]}},
+    {"id":"dong_ho","type":"widget","widget":"gauge","tags":{"value":"PUMP01.FLOW"}},
+    {"id":"cot_bom","type":"widget","widget":"bar","tags":{"series":["PUMP01.FLOW","PUMP02.FLOW","PUMP03.FLOW","PUMP04.FLOW","PUMP05.FLOW"]}},
+    {"id":"tron_bom","type":"widget","widget":"pie","tags":{"series":["PUMP01.FLOW","PUMP02.FLOW","PUMP03.FLOW"]}},
+    {"id":"bang_tag","type":"widget","widget":"tag-table","tags":{"rows":["SIM.TEMP","SIM.PRESS","SIM.FLOW","SIM.MODE","PUMP01.FLOW"]}}
+  ]
+}
