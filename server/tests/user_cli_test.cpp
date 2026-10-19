@@ -250,8 +250,8 @@ class UserCli : public ::testing::Test {
         return r.code == 0;
     }
 
-    // users.json (feature 013: the service user owns it, so the owner rule of the runtime, which runs
-    // as that user, is not the one of this root test; the mode is checked where it matters).
+    // users.json (feature 013: the service user owns it, so the owner rule of the runtime, which
+    // runs as that user, is not the one of this root test; the mode is checked where it matters).
     UsersFile accounts() {
         const UsersRead r = readUsersFile(users, false);
         EXPECT_EQ(r.status, UsersStatus::Ok) << r.error;
