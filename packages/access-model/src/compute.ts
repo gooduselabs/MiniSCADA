@@ -128,7 +128,9 @@ export function computeAccess(
 
   const alarms = admin
     ? catalog.alarms.map((a) => a.id)
-    : catalog.alarms.filter((a) => live.has(a.tag)).map((a) => a.id);
+    : catalog.alarms
+        .filter((a) => (a.tag === null ? pages.includes('alarms') : live.has(a.tag)))
+        .map((a) => a.id);
 
   return {
     user: principal.user,

@@ -347,15 +347,20 @@ TEST(AccessFileText, RefusesWhatTheContractForbids) {
     EXPECT_FALSE(bad(R"([{"id":"ab","name":""}])", "[]").ok);         // empty name
     EXPECT_FALSE(bad(R"([{"id":"ab","name":"a\u0007"}])", "[]").ok);  // control
     EXPECT_FALSE(bad(R"([{"id":"ab","name":"x"},{"id":"ab","name":"y"}])", "[]").ok);
-    EXPECT_FALSE(bad("[]", R"([{"resource":"screen:a","level":"view","grantees":["group:zz"]}])")
-                     .ok);  // no such group
+    // what the project or the accounts cannot give is no damage: such rules match nobody or are
+    // orphans (tests/access-vectors README rules 2 and 5)
+    EXPECT_TRUE(
+        bad("[]", R"([{"resource":"screen:a","level":"view","grantees":["group:zz"]}])").ok);
+    EXPECT_TRUE(bad("[]", R"([{"resource":"screen:a","level":"view","grantees":["boss"]}])").ok);
+    EXPECT_TRUE(bad("[]", R"([{"resource":"page:admin","level":"view","grantees":[]}])").ok);
+    EXPECT_TRUE(bad("[]", R"([{"resource":"lạ:x","level":"view","grantees":[]}])").ok);
+    EXPECT_FALSE(bad("[]", R"([{"resource":"","level":"view","grantees":[]}])").ok);
+    EXPECT_FALSE(bad("[]", R"([{"resource":"screen:a","level":"view","grantees":[""]}])").ok);
     EXPECT_FALSE(bad("[]", R"([{"resource":"screen:a","level":"edit","grantees":[]}])").ok);
     EXPECT_FALSE(bad("[]", R"([{"resource":"screen:a","level":"view","grantees":["*","*"]}])").ok);
-    EXPECT_FALSE(bad("[]", R"([{"resource":"screen:a","level":"view","grantees":["boss"]}])").ok);
     EXPECT_FALSE(bad("[]", R"([{"resource":"screen:a","level":"view","grantees":[]},
                                {"resource":"screen:a","level":"view","grantees":["*"]}])")
                      .ok);
-    EXPECT_FALSE(bad("[]", R"([{"resource":"page:admin","level":"view","grantees":[]}])").ok);
     std::string many = "[";
     for (int i = 0; i < 51; ++i)
         many += std::string(i ? "," : "") + R"({"id":"g)" + std::to_string(100 + i) +

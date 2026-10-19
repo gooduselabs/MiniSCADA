@@ -178,15 +178,11 @@ bool validGrantee(std::string_view g) {
 
 namespace {
 
-// The syntax of a resource of a rule: a known kind and a non-empty name; never page:admin.
+// A resource of a rule in the file: any short text. One the project cannot have (another kind,
+// page:admin, a level it has not) is an orphan (§2, tests/access-vectors README rule 5), not a
+// damaged store; the admin API refuses such rules before they are written.
 bool validRuleResource(std::string_view r) {
-    if (r.size() > 200 || !controlFree(r)) return false;
-    if (startsWith(r, kScreen)) return r.size() > kScreen.size();
-    if (startsWith(r, kHistory)) return r.size() > kHistory.size();
-    if (startsWith(r, kReport)) return r.size() > kReport.size();
-    if (startsWith(r, kPage)) return r.substr(kPage.size()) != "admin" && r.size() > kPage.size();
-    std::string_view s, i;
-    return splitItem(r, s, i);
+    return !r.empty() && r.size() <= 200 && controlFree(r);
 }
 
 bool majorOneVersion(const std::string& v) {
@@ -269,9 +265,10 @@ AccessParse parseAccessFile(std::string_view text) {
         for (const auto& g : gs) {
             if (!g.is_string()) return fail(at + ": a grantee is not text");
             const std::string s = g.get<std::string>();
-            if (!validGrantee(s)) return fail(at + ": grantee " + s + " is not valid");
-            if (startsWith(s, "group:") && !ids.count(s.substr(6)))
-                return fail(at + ": group " + s.substr(6) + " does not exist");
+            // Any text: one that is not a grantee, or a group that is gone, matches nobody (README
+            // rule 2); the admin API checks the grantees it writes.
+            if (s.empty() || s.size() > 200 || !controlFree(s))
+                return fail(at + ": grantee is not valid text");
             if (!seen.insert(s).second) return fail(at + ": grantee " + s + " is there twice");
             rule.grantees.push_back(s);
         }
