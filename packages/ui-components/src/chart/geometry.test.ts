@@ -3,6 +3,7 @@ import {
   arcPath,
   fraction,
   gaugeAngle,
+  gaugeStops,
   polar,
   resolveRange,
   sliceShape,
@@ -169,5 +170,38 @@ describe('autoYRange (ADR-020, R11)', () => {
     expect(a).toBeLessThan(5);
     expect(b).toBeGreaterThan(5);
     expect(autoYRange(null, null, undefined, undefined)).toEqual([0, 1]);
+  });
+});
+
+describe('gaugeStops (feature 012): điểm dừng màu cung đồng hồ ECharts', () => {
+  const T = '#dddddd';
+  it('không vùng: một đoạn rãnh', () => {
+    expect(gaugeStops([], 0, 100, T)).toEqual([[1, T]]);
+  });
+  it('vùng liền nhau phủ hết thang', () => {
+    const z = zoneSegments(
+      [
+        { from: 0, to: 60, color: '#00aa00' },
+        { from: 60, to: 100, color: '#aa0000' },
+      ],
+      0,
+      100,
+    );
+    expect(gaugeStops(z, 0, 100, T)).toEqual([
+      [0.6, '#00aa00'],
+      [1, '#aa0000'],
+    ]);
+  });
+  it('khoảng trống thành màu rãnh; vùng không theo thứ tự được sắp; chồng nhau không lùi', () => {
+    const z = [
+      { from: 50, to: 70, color: '#bb0000' },
+      { from: 10, to: 60, color: '#00bb00' },
+    ];
+    expect(gaugeStops(z, 0, 100, T)).toEqual([
+      [0.1, T],
+      [0.6, '#00bb00'],
+      [0.7, '#bb0000'],
+      [1, T],
+    ]);
   });
 });

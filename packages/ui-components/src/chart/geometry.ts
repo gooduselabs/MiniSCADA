@@ -104,3 +104,27 @@ export function zoneColorAt(zones: readonly ZoneSeg[], v: number): string | unde
   const last = zones[zones.length - 1];
   return last && v === last.to ? last.color : undefined;
 }
+
+/**
+ * Điểm dừng màu của cung đồng hồ ECharts (feature 012, axisLine.lineStyle.color): [phân số cuối đoạn, màu] tăng dần phủ
+ * [0, 1]; đoạn không thuộc vùng nào là màu rãnh `track`. Vùng chồng nhau: vùng bắt đầu sau thắng phần còn lại.
+ */
+export function gaugeStops(
+  zones: readonly ZoneSeg[],
+  min: number,
+  max: number,
+  track: string,
+): Array<[number, string]> {
+  const out: Array<[number, string]> = [];
+  let pos = 0;
+  const r4 = (n: number) => Math.round(n * 10000) / 10000;
+  for (const z of [...zones].sort((a, b) => a.from - b.from)) {
+    const f = r4(fraction(z.from, min, max));
+    const g = r4(fraction(z.to, min, max));
+    if (f > pos) out.push([f, track]);
+    if (g > Math.max(pos, f)) out.push([g, z.color]);
+    pos = Math.max(pos, f, g);
+  }
+  if (pos < 1) out.push([1, track]);
+  return out;
+}
