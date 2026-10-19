@@ -3,6 +3,7 @@
 // bật giảm chuyển động (FR-033). Không bao giờ đưa chuỗi HTML vào ECharts: tooltip dựng bằng DOM (tooltipContent),
 // nhãn là chuỗi thuần mà zrender vẽ thành chữ SVG (cổng nội dung SC-020, T047).
 import { safeColor } from '../format/color.ts';
+import { FALLBACK_SERIES_COLORS } from './line-chart.ts';
 
 /** Phần API của một biểu đồ ECharts mà widget dùng. */
 export interface ChartInstance {
@@ -59,20 +60,7 @@ export interface ChartTheme {
 }
 
 // Giá trị industrial sáng (themes/industrial.css): dùng khi nơi chứa chưa nạp token.
-const FALLBACK_CHART = [
-  '#0b7285',
-  '#c2410c',
-  '#6f42c1',
-  '#15703a',
-  '#b4234a',
-  '#1c64c4',
-  '#8f5e00',
-  '#56646a',
-  '#3a5bc7',
-  '#815e46',
-  '#953ea3',
-  '#5c7c2f',
-];
+const FALLBACK_CHART = FALLBACK_SERIES_COLORS;
 
 export function readChartTheme(el: Element): ChartTheme {
   const view = el.ownerDocument.defaultView;

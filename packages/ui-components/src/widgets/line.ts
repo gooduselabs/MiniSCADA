@@ -9,6 +9,7 @@ import {
   FALLBACK_SERIES_COLORS,
   loadUPlot,
   SERIES_DASHES,
+  singleSeriesFill,
   type PlotAdapter,
   type PlotFactory,
   type PlotOptions,
@@ -16,6 +17,7 @@ import {
 import { ChartWindow } from '../chart/window.ts';
 import { formatValue, numberOf } from '../format/format-value.ts';
 import { vi } from '../i18n/vi.ts';
+import { styleMap } from 'lit/directives/style-map.js';
 import { MatWidget } from './base.ts';
 
 const MAX_SERIES = 8;
@@ -140,6 +142,33 @@ export class MatLine extends MatWidget {
       .u-wrap,
       .uplot {
         font-family: var(--mat-font);
+      }
+      /* Giao diện mới (feature 012): chú giải dạng thẻ nền nhạt theo màu đường, con trỏ dạng ô có chấm màu, đường
+         gióng nét đứt màu viền. */
+      .legend li {
+        padding: 1px 8px 1px 6px;
+        border-radius: 999px;
+        background: var(--soft, transparent);
+      }
+      .cursor {
+        align-self: flex-start;
+        padding: 2px 8px;
+        border-radius: var(--mat-radius, 4px);
+        background: var(--mat-surface-2);
+        color: var(--mat-text);
+        box-shadow: var(--mat-shadow-card, none);
+      }
+      .cursor .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        margin: 0 3px 0 6px;
+        background: var(--c);
+      }
+      .u-cursor-x,
+      .u-cursor-y {
+        border-color: var(--mat-border-strong) !important;
       }
     `,
   ];
@@ -291,16 +320,20 @@ export class MatLine extends MatWidget {
         if (!host) return;
         const ids = this.#ids();
         const fixed = this.#yFixed();
+        const series = ids.map((id, i) => ({
+          label: this.#labelOf(i),
+          color: this.#cssColor(`--mat-chart-${i + 1}`, FALLBACK_SERIES_COLORS[i]!),
+          dash: SERIES_DASHES[i]!,
+          width: 2,
+          show: this.source.info(id) !== undefined,
+        }));
+        const fills = singleSeriesFill(series);
         const opts: PlotOptions = {
           width: host.clientWidth || this.item.width || 300,
           height: host.clientHeight || Math.max(60, (this.item.height || 200) - 60),
-          series: ids.map((id, i) => ({
-            label: this.#labelOf(i),
-            color: this.#cssColor(`--mat-chart-${i + 1}`, FALLBACK_SERIES_COLORS[i]!),
-            dash: SERIES_DASHES[i]!,
-            width: 2,
-            show: this.source.info(id) !== undefined,
-          })),
+          series: series.map((s, i) => (fills[i] ? { ...s, fill: fills[i] } : s)),
+          font: this.#cssColor('--mat-font', "'Segoe UI', system-ui, sans-serif"),
+          surfaceColor: this.#cssColor('--mat-surface', '#ffffff'),
           grid: this.prop('grid', true),
           xRange: () => [this.#nowSec - this.#windowSec(), this.#nowSec],
           yRange: (min, max) => autoYRange(min, max, fixed.yMin, fixed.yMax),
@@ -422,7 +455,11 @@ export class MatLine extends MatWidget {
                   : formatValue({ value: v, quality: 'GOOD' }, r.info, {
                       decimals: this.decimals(r.info),
                     }).text;
-              return html` · ${r.label} ${text}${r.fmt.unit ? ' ' + r.fmt.unit : ''}`;
+              return html`<span
+                  class="dot"
+                  style=${styleMap({ '--c': `var(--mat-chart-${r.i + 1})` })}
+                ></span
+                >${r.label} ${text}${r.fmt.unit ? ' ' + r.fmt.unit : ''}`;
             })}
           </div>`
         : nothing;
@@ -437,7 +474,7 @@ export class MatLine extends MatWidget {
             ? html`<ul class="legend" aria-hidden="true">
                 ${rows.map(
                   (r) =>
-                    html`<li>
+                    html`<li style=${styleMap({ '--soft': `var(--mat-chart-${r.i + 1}-soft)` })}>
                       <svg viewBox="0 0 26 8" aria-hidden="true">
                         <line
                           x1="0"

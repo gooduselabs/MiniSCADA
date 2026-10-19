@@ -2,7 +2,8 @@
 // quét mẫu cấm của cổng nội dung bản thiết bị (eval, new Function, innerHTML), rồi đo trên Chrome thật:
 //  - nạp chunk ECharts và vẽ 12 widget (trung vị 5 lần, renderer SVG và Canvas);
 //  - CPU khi cập nhật 1 Hz × 10 tab trong 30 s (TaskDuration của DevTools / thời gian thực).
-// Dùng: node tools/spikes/charts-r2/run.mjs [--out <thư mục build>] [--no-browser]
+//  - --uplot: chỉ đo bộ điều hợp uPlot của ui-components với 50.000 điểm × 4 đường (uplot-bench.html, T045).
+// Dùng: node tools/spikes/charts-r2/run.mjs [--out <thư mục build>] [--no-browser] [--uplot]
 // Chrome lấy từ CHROME_PATH hoặc đường dẫn cài đặt mặc định.
 import { createServer } from 'node:http';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -80,6 +81,25 @@ const browser = await puppeteer.launch({ executablePath, headless: true });
 const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 try {
   console.log(`Chrome ${await browser.version()}`);
+  if (args.includes('--uplot')) {
+    const impls = ['impl=new', 'fill=0', 'fill=1'];
+    for (const impl of impls) {
+      const runs = [];
+      for (let i = 0; i < 7; i++) {
+        const page = await browser.newPage();
+        await page.goto(base.replace('index.html', `uplot-bench.html?${impl}`), {
+          waitUntil: 'load',
+        });
+        await page.waitForSelector('body[data-done]', { timeout: 60000 });
+        runs.push(await page.evaluate(() => globalThis.__bench));
+        await page.close();
+      }
+      console.log(
+        `  [${impl}] uPlot 50.000 điểm: dựng lần đầu trung vị ${median(runs.map((r) => r.firstMs))} ms, setData trung vị ${median(runs.map((r) => r.setDataMedianMs))} ms (lớn nhất ${Math.max(...runs.map((r) => r.setDataMaxMs))} ms), 7 lần`,
+      );
+    }
+    process.exit(0);
+  }
   for (const renderer of ['svg', 'canvas']) {
     const load = [];
     const draw = [];

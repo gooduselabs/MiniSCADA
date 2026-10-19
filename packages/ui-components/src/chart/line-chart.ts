@@ -9,6 +9,8 @@ export interface PlotSeriesStyle {
   dash: number[];
   width: number;
   show: boolean;
+  /** Tô vùng dưới đường (rgba), feature 012: chỉ khi một đường. */
+  fill?: string;
 }
 
 export interface PlotOptions {
@@ -24,6 +26,10 @@ export interface PlotOptions {
   onCursor: (idx: number | null) => void;
   axisColor: string;
   gridColor: string;
+  /** Phông chữ trục (--mat-font), feature 012. */
+  font?: string;
+  /** Màu bề mặt (--mat-surface): ruột điểm con trỏ, feature 012. */
+  surfaceColor?: string;
 }
 
 export interface PlotAdapter {
@@ -38,7 +44,7 @@ export type PlotFactory = (
   data: Float64Array[],
 ) => PlotAdapter;
 
-/** Mẫu nét cho tối đa 8 đường. */
+/** Mẫu nét cho tối đa 12 đường (8 mẫu cũ giữ nguyên thứ tự). */
 export const SERIES_DASHES: number[][] = [
   [],
   [10, 4],
@@ -48,9 +54,13 @@ export const SERIES_DASHES: number[][] = [
   [4, 4],
   [1, 3],
   [8, 3, 2, 3, 2, 3],
+  [12, 3, 3, 3],
+  [6, 2],
+  [3, 6],
+  [14, 3, 2, 3, 2, 3],
 ];
 
-/** Màu dự phòng khi token --mat-chart-N chưa có (jsdom, trang chưa nạp token). */
+/** Màu dự phòng khi token --mat-chart-N chưa có (jsdom, trang chưa nạp token): 12 màu của chủ đề industrial. */
 export const FALLBACK_SERIES_COLORS = [
   '#0b7285',
   '#c2410c',
@@ -60,7 +70,62 @@ export const FALLBACK_SERIES_COLORS = [
   '#1c64c4',
   '#8f5e00',
   '#56646a',
+  '#3a5bc7',
+  '#815e46',
+  '#953ea3',
+  '#5c7c2f',
 ];
+
+// ---- giao diện uPlot dùng chung (feature 012, T045): line và history-trend ----
+
+export interface AxisStyle {
+  stroke: string;
+  font?: string;
+  grid: { show: boolean; stroke: string; width: number; dash: number[] };
+  ticks: { show: boolean; stroke: string; width: number };
+}
+
+/** Trục: chữ màu phụ theo phông token, không vạch chia, lưới nét đứt mảnh. */
+export function axisStyle(o: {
+  axisColor: string;
+  gridColor: string;
+  grid: boolean;
+  font?: string;
+}): AxisStyle {
+  return {
+    stroke: o.axisColor,
+    ...(o.font ? { font: `11px ${o.font}` } : {}),
+    grid: { show: o.grid, stroke: o.gridColor, width: 1, dash: [3, 3] },
+    ticks: { show: false, stroke: o.gridColor, width: 1 },
+  };
+}
+
+/** Điểm con trỏ: viền màu đường (chỉ số series uPlot, 0 là trục x), ruột màu bề mặt. */
+export function cursorPoints(colors: readonly string[], surface: string) {
+  return {
+    show: true,
+    size: 8,
+    width: 2,
+    stroke: (_u: unknown, i: number): string => colors[i - 1] ?? colors[0] ?? '#000000',
+    fill: ((): string => surface) as (u: unknown, i: number) => string,
+  };
+}
+
+/** rgba(r, g, b, a) từ #rrggbb; màu khác thì undefined (không tô). */
+export function areaFill(hex: string, alpha: number): string | undefined {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!m) return undefined;
+  const [r, g, b] = [m[1]!, m[2]!, m[3]!].map((x) => parseInt(x, 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/** Vùng tô nhạt dưới đường chỉ khi đúng một đường hiện (nhiều đường thì tô làm rối). */
+export function singleSeriesFill(
+  series: ReadonlyArray<{ color: string; show: boolean }>,
+): Array<string | undefined> {
+  const one = series.filter((s) => s.show).length === 1;
+  return series.map((s) => (one && s.show ? areaFill(s.color, 0.12) : undefined));
+}
 
 /** Trục Y: cố định khi đặt cả hai, nếu không tự co theo dữ liệu thêm 5 % mỗi phía. */
 export function autoYRange(
@@ -95,7 +160,13 @@ export async function loadUPlot(): Promise<PlotFactory> {
         width: o.width,
         height: o.height,
         legend: { show: false },
-        cursor: { drag: { x: false, y: false, setScale: false }, points: { show: true } },
+        cursor: {
+          drag: { x: false, y: false, setScale: false },
+          points: cursorPoints(
+            o.series.map((s) => s.color),
+            o.surfaceColor ?? '#ffffff',
+          ),
+        },
         scales: {
           x: { time: true, range: () => o.xRange() },
           y: {
@@ -103,18 +174,7 @@ export async function loadUPlot(): Promise<PlotFactory> {
               o.yRange(Number.isFinite(min) ? min : null, Number.isFinite(max) ? max : null),
           },
         },
-        axes: [
-          {
-            stroke: o.axisColor,
-            grid: { show: o.grid, stroke: o.gridColor, width: 1 },
-            ticks: { stroke: o.gridColor, width: 1 },
-          },
-          {
-            stroke: o.axisColor,
-            grid: { show: o.grid, stroke: o.gridColor, width: 1 },
-            ticks: { stroke: o.gridColor, width: 1 },
-          },
-        ],
+        axes: [axisStyle(o), axisStyle(o)],
         series: [
           {},
           ...o.series.map((s) => ({
@@ -125,6 +185,7 @@ export async function loadUPlot(): Promise<PlotFactory> {
             spanGaps: false,
             show: s.show,
             points: { show: false },
+            ...(s.fill ? { fill: s.fill } : {}),
           })),
         ],
         hooks: {

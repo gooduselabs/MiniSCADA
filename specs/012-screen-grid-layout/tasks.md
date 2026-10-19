@@ -82,10 +82,10 @@
 - [ ] T040 [US3] Studio: chọn chủ đề ở Thiết lập project (`apps/studio/src/ui/editors/project-settings*.ts`), project mới ghi `theme: "vivid"`, canvas và xem trước đặt `data-mat-theme` (test)
 - [x] T041 [US3] `packages/ui-components/src/chart/echarts-lite.ts`: `loadECharts()` nạp lười mô-đun Bar, Pie, Gauge, Heatmap, Tooltip, Legend, Grid, SVGRenderer; theme ECharts từ token; tắt hoạt ảnh khi `prefers-reduced-motion` (test với mock)
   - Ghi chú khi làm (2026-10-19, nhánh 012-theme): `echarts-lite.ts` (API, theme, `tooltipContent` dựng DOM) tách khỏi `echarts-modules.ts` (`echarts.use`, chỉ nạp qua `import()` nên là chunk riêng); thêm VisualMap vì bản đồ nhiệt cần, không có CanvasRenderer. Hoạt ảnh vào = 3 × `--mat-motion`, tắt khi `prefers-reduced-motion` hoặc `--mat-motion` = 0. Test có một ca vẽ thật bằng ECharts trong jsdom (SVG) và các ca với bộ nạp giả (`setEChartsLoader`).
-- [ ] T042 [P] [US3] Vẽ lại `packages/ui-components/src/widgets/bar.ts` bằng ECharts lite, giữ nguyên `props` (test `bar.test.ts` cập nhật, đỏ trước)
-- [ ] T043 [P] [US3] Vẽ lại `packages/ui-components/src/widgets/pie.ts` (thêm `props.donut`) (test)
-- [ ] T044 [P] [US3] Vẽ lại `packages/ui-components/src/widgets/gauge.ts` (test)
-- [ ] T045 [P] [US3] Làm mới uPlot: `packages/ui-components/src/chart/line-chart.ts`, `history-plot.ts` đọc 12 màu, lưới, tooltip, chú giải mới; giữ hiệu năng 50.000 điểm (test và đo)
+- [x] T042 [P] [US3] Vẽ lại `packages/ui-components/src/widgets/bar.ts` bằng ECharts lite, giữ nguyên `props` (test `bar.test.ts` cập nhật, đỏ trước)
+- [x] T043 [P] [US3] Vẽ lại `packages/ui-components/src/widgets/pie.ts` (thêm `props.donut`) (test)
+- [x] T044 [P] [US3] Vẽ lại `packages/ui-components/src/widgets/gauge.ts` (test)
+- [x] T045 [P] [US3] Làm mới uPlot: `packages/ui-components/src/chart/line-chart.ts`, `history-plot.ts` đọc 12 màu, lưới, tooltip, chú giải mới; giữ hiệu năng 50.000 điểm (test và đo)
 - [ ] T046 [P] [US3] `packages/ui-components/src/widgets/card.ts`: `props.sparkline`, `props.trend`, bo góc và bóng theo token (test)
 - [ ] T047 [US3] Đo bundle trang vận hành (`npm run build -w @mat/runtime-web`): tăng ≤ 400 KB gzip, trang không có biểu đồ không tải chunk ECharts; ghi số vào research R2 (SC-006)
 
