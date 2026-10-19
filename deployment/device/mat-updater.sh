@@ -19,7 +19,8 @@
 #
 # Environment for tests (deployment/device/tests/updater_test.sh): MAT_OPT_ROOT (prefix of /opt,
 # /etc, /var), MAT_SYSTEMCTL, MAT_VERIFY, MAT_RUNUSER, MAT_FETCH, MAT_HEALTH_S, MAT_STABLE_S,
-# MAT_SLEEP, MAT_RATE_S, MAT_READ_S, MAT_LOCK_WAIT_S, MAT_TEST_KILL (STEP:N: kill -9 at that point).
+# MAT_SLEEP, MAT_RATE_S, MAT_READ_S, MAT_LOCK_WAIT_S, MAT_UPTIME_FILE, MAT_TEST_KILL (STEP:N: kill -9 at
+# that point).
 set -u
 umask 022
 
@@ -40,6 +41,8 @@ RUNUSER=${MAT_RUNUSER-runuser -u matscada --}
 HEALTH_S=${MAT_HEALTH_S:-60}
 STABLE_S=${MAT_STABLE_S:-5}
 SLEEP=${MAT_SLEEP:-sleep}
+# Monotonic clock of the health window (never moved by NTP); unreadable: the count of rounds alone.
+UPTIME_FILE=${MAT_UPTIME_FILE:-/proc/uptime}
 RATE_S=${MAT_RATE_S:-300}
 READ_S=${MAT_READ_S:-60}
 # Another run holding the lock is waited for (second review T202 N-OTA3): mat-updater.path uses
@@ -117,10 +120,17 @@ digests() { grep -o '"digest":"[^"]*"' | sort | tr '\n' ' '; }
 
 # Health (S7): the service stays active ≥ STABLE_S, system/info answers over HTTP and HTTPS with
 # the expected version and releaseSeq, and the project digest is the one from before.
+# The window is HEALTH_S seconds of the monotonic clock: a round is 1 s of sleep plus the checks, so a
+# count of rounds alone ran ~85 s for 60 (update-it, feature 012). The count stays as a bound.
+uptime_s() { v=$(cut -d. -f1 "$UPTIME_FILE" 2>/dev/null) && [ -n "$v" ] && echo "$v"; }
 healthy() { # $1 version, $2 releaseSeq, $3 digests before
     i=0
     stable=0
+    t0=$(uptime_s) || t0=""
     while [ $i -lt "$HEALTH_S" ]; do
+        if [ -n "$t0" ] && now=$(uptime_s) && [ $((now - t0)) -ge "$HEALTH_S" ]; then
+            break
+        fi
         $SLEEP 1
         i=$((i + 1))
         if ! sysctl_ is-active --quiet mat-runtime; then
