@@ -67,3 +67,24 @@ describe('mat-screen-editor: bố cục lưới', () => {
     expect(model(app)).toBe(before);
   });
 });
+
+describe('Inspector của component trên màn hình lưới (FR-020)', () => {
+  it('không có ô X, Y, Rộng, Cao; màn hình tự do vẫn có', async () => {
+    await import('../props-widget.ts');
+    const { app } = await open('tong-quan');
+    app.selectItems('tong-quan', ['luu_luong']);
+    const props = document.createElement('mat-widget-props') as HTMLElement & {
+      app: StudioApp;
+      screenId: string;
+    };
+    props.app = app;
+    props.screenId = 'tong-quan';
+    document.body.append(props);
+    await settled(props);
+    expect(props.querySelector('[data-field="rect"]')).toBeNull();
+    app.selectItems('main', [app.screenModel('main')!.items[0]!.id]);
+    props.screenId = 'main';
+    await settled(props);
+    expect(props.querySelector('[data-field="rect"]')).not.toBeNull();
+  });
+});

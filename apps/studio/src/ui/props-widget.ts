@@ -443,7 +443,12 @@ export class MatWidgetProps extends AppElement {
               ${prow(t('wi.type'), one.type === 'svg' ? t('widget.svg') : t(`widget.${one.widget}` as MessageKey))}`
           : html`<p class="help pad" role="status">${t('wi.multi', { n: its.length })}</p>`
       }
-      ${rectFields.map(([k, key]) => this.numberRow(t(key), k, its, issues))}
+      ${
+        // màn hình lưới (feature 012, FR-020): ô quyết định vị trí và cỡ, không có X, Y, Rộng, Cao
+        (this.doc as (ScreenModel & { layout?: unknown }) | null)?.layout !== undefined
+          ? nothing
+          : rectFields.map(([k, key]) => this.numberRow(t(key), k, its, issues))
+      }
       ${this.checkRow(
         t('wi.locked'),
         'locked',
