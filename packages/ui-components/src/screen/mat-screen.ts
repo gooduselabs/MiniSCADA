@@ -204,6 +204,12 @@ export class MatScreen extends LitElement {
     .grid .cell > .item {
       flex: 1 1 auto;
     }
+    /* lớp phủ của trình soạn lưới (Studio) đặt vào ô qua slot, phủ trên widget */
+    .grid .cell ::slotted(*) {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
     .svg-host {
       width: 100%;
       height: 100%;
@@ -812,7 +818,9 @@ export class MatScreen extends LitElement {
                       alignSelf: c.align && c.align !== 'stretch' ? c.align : undefined,
                       minHeight: c.minHeight ? `${c.minHeight}px` : undefined,
                     })}
-                  ></div>`,
+                  >
+                    ${this.mode === 'edit' ? html`<slot name=${`cell-${c.id}`}></slot>` : nothing}
+                  </div>`,
               )}
             </div>`;
           })}

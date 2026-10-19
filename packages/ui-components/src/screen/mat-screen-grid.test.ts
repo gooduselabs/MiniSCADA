@@ -142,6 +142,16 @@ describe('<mat-screen>: bố cục lưới', () => {
     expect(root(el).querySelector('[data-item-id="b"]')).toBeNull();
   });
 
+  it('chế độ edit: mỗi ô có slot "cell-<id>" cho lớp phủ của trình soạn; chế độ run thì không', async () => {
+    const run = await setup(gridScreen());
+    expect(root(run.el).querySelector('slot')).toBeNull();
+    const ed = await setup(gridScreen());
+    ed.el.mode = 'edit';
+    await ed.el.updateComplete;
+    expect(cell(ed.el, 'c3').querySelector('slot')?.getAttribute('name')).toBe('cell-c3');
+    expect(root(ed.el).querySelector('.grid')!.classList.contains('edit')).toBe(true);
+  });
+
   it('màn hình tự do vẫn dựng như cũ (.frame co giãn)', async () => {
     const free = gridScreen() as unknown as Record<string, unknown>;
     delete free.layout;
