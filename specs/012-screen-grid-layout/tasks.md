@@ -160,7 +160,8 @@
 - [ ] T055 Đo hiệu năng `tools/load-tester` 500 Tag, 10 client với `grid-demo` so `dashboard-demo` (SC-005), ghi `docs/reports/012-perf.md`
 - [x] T056 Fuzz 10.000 bố cục hỏng qua hai bộ kiểm và `mat-grid-screen` (SC-004)
   - Ghi chú khi làm (2026-10-19, nhánh 012-screen-grid-layout): TS: `layout-fuzz.test.ts` (10.000 qua rules-11, 300 qua validateProject); C++: `project_fuzz_test` xanh (nhánh 012-cpp). Fuzz trình hiển thị không làm riêng: trang vận hành chỉ dựng project đã qua bộ kiểm.
-- [ ] T057 `tools/ci-local.ps1` đầy đủ xanh; `node tools/docs-check.mjs` 0 lỗi
+- [x] T057 `tools/ci-local.ps1` đầy đủ xanh; `node tools/docs-check.mjs` 0 lỗi
+  - Ghi chú khi làm (2026-10-20, `-BuildName ci012`, chạy theo đoạn bằng `-StartAt` sau mỗi bản sửa): mọi bước đạt (logic-it bỏ qua: chưa có công cụ; ASan/sast clang-tidy/audit chỉ với `-Sanitize`/`-Full`/mạng). ctest x64 6089/6089 sau khi sửa đua ở `project_api_test` (đọc bản ghi trước khi kiểm điều kiện); armhf qemu xanh; web-it: compat cần `gw_priority` cho mạng lan của rig (Docker có lúc chuyển cổng loopback qua mạng pub → 403) và bỏ vùng widget biểu đồ 012 khi so ảnh, đồng hồ kim sửa cho lấy hết khung; update-it: vector `from-version` lên `minFromVersion 99.0.0` (runtime 1.1.0-alpha.1 vượt ngưỡng cũ), `mat-updater` kiểm sức khỏe theo đồng hồ đơn điệu, health 89,2 s ≤ 90 s; build-docs bỏ ca symlink khi Windows trả EPERM. docs-check 0 lỗi. `updater_test` ca `keyset: modes` hỏng cả trước 012 khi chạy trên ổ Windows gắn vào container (quyền tệp), không thuộc ci-local.
 
 ## Dependencies & Execution Order
 
