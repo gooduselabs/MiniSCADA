@@ -20,8 +20,10 @@
 
 ## Phase 3: US1 Đăng nhập bắt buộc (P1)
 
-- [ ] T011 [US1] e2e `apps/runtime-web/tests/e2e/login-required.e2e.mjs`: 401 → `/login?next=`, `next` độc hại (20 dạng) bị bỏ, hết phiên quay lại đúng trang (đỏ)
-- [ ] T012 [US1] `login.ts`, `session.ts`, `main.ts`, `project-store.ts`: chuyển hướng và `next` an toàn
+- [x] T011 [US1] e2e `apps/runtime-web/tests/e2e/login-required.e2e.mjs`: 401 → `/login?next=`, `next` độc hại (20 dạng) bị bỏ, hết phiên quay lại đúng trang (đỏ)
+  - Xong (luồng C): 29 kiểm — liên kết trực tiếp khi chưa phiên (302 giữ fragment), 4401, 401 của `/project`, đăng xuất, 22 dạng `next` độc hại (tự chuyển khi đã có phiên + 4 dạng qua biểu mẫu, không có alert), khóa tạm kèm giờ, Đổi mật khẩu của tôi, HTTP chỉ thông báo + liên kết `/login?next=` HTTPS; axe sáng/tối. Vitest `next.test.ts` (41 ca). Bản build e2e thêm `--mode e2e-login` (trang /login vào dist-e2e).
+- [x] T012 [US1] `login.ts`, `session.ts`, `main.ts`, `project-store.ts`: chuyển hướng và `next` an toàn
+  - Xong: `next.ts` (regex §7 + chặt hơn: bỏ đoạn rỗng, `.`, `..`; phần `?…` của hash bị cắt khi dựng `next`), chuyển hướng chỉ khi `viewerLogin: required` (từ `web/session`) hoặc `projects/active` 401; thiết bị `off` giữ hành vi cũ (hết phiên chỉ khóa điều khiển). Trang /login mới (vivid/dark, tên project và thiết bị từ `system/info`, đã có phiên thì chuyển ngay). `WebSession.changePassword`, `groups`, `viewerLogin`; menu tài khoản + hộp đổi mật khẩu (tải lười).
 - [ ] T013 [US1] web-it `tests/web-it/scenarios/login-required.mjs`: mọi đường dữ liệu không phiên → 401, 0 byte giá trị Tag
 
 ## Phase 4: US2 Quản lý tài khoản trên web (P1)
@@ -29,23 +31,29 @@
 - [ ] T014 [US2] gtest `server/tests/admin_api_test.cpp`: users/groups, reauth, LAST_ADMIN, IN_USE, CONFLICT, 413/400, 429, hủy phiên, audit before/after không có mật khẩu (đỏ)
 - [ ] T015 [US2] `server/http/admin_api.{hpp,cpp}` + bảng `core/auth/roles.cpp`; `web/password`, `web/session` thêm `groups`, `viewerLogin`; device-api 1.6.0
 - [ ] T016 [US2] CLI `server/cli/users.cpp`: đường mới + `--user-groups`, `--user-remove`, `--group-add/remove`, `--access-reset` (test `user_cli_test`)
-- [ ] T017 [US2] Trang `apps/runtime-web/src/admin/`: khung Quản trị, tab Người dùng, tab Nhóm, hộp xác nhận lại; Đổi mật khẩu của tôi (e2e trước)
-- [ ] T018 [US2] Tab Nhật ký (`/api/v1/admin/audit`)
+- [x] T017 [US2] Trang `apps/runtime-web/src/admin/`: khung Quản trị, tab Người dùng, tab Nhóm, hộp xác nhận lại; Đổi mật khẩu của tôi (e2e trước)
+  - Xong: chunk tải lười `admin-page-*.js` (19,7 KB gzip) + CSS 3,9 KB; thẻ số liệu, dải cảnh báo (xem không cần đăng nhập, kho hỏng + Khôi phục, mồ côi + Dọn, 409), tab bàn phím (mũi tên/Home/End); Người dùng (tìm, lọc vai trò, thêm với mật khẩu sinh một lần + Chép, sửa vai trò/nhóm/trạng thái, mở khóa, đặt lại mật khẩu, xóa; hạ vai trò/tắt/đặt lại/xóa cần `reauth`), Nhóm (thẻ, mã gợi ý từ tên, đổi tên, xóa, IN_USE liệt kê nơi dùng). e2e `admin.e2e.mjs` (83 kiểm), Vitest `admin/model.test.ts`, `admin/api.test.ts`.
+- [x] T018 [US2] Tab Nhật ký (`/api/v1/admin/audit`)
+  - Xong: lọc người, loại (tiền tố), từ–đến; "Tải thêm" theo `beforeId`; chi tiết before → after.
 
 ## Phase 5: US3 Quyền theo trang (P1)
 
 - [ ] T019 [US3] gtest thực thi: `/project/<màn hình>` 403, navigation/projects/active lọc, live `denied`, history lọc/403, alarm lọc, `access-changed` (đỏ)
 - [ ] T020 [US3] Thực thi ở `http_api.cpp`, `live_hub.*`, `civet_transport.cpp`, `history_api.cpp`, alarm; `GET /api/v1/web/access`; `/api/v1/admin/access*`, `/admin/effective`
-- [ ] T021 [US3] Trang: `access.ts` (tải EffectiveAccess), menu lọc, trang "không có quyền", xử lý `access-changed`
-- [ ] T022 [US3] Tab Quyền theo trang (ma trận, đặt nhiều trang, sao chép)
+- [x] T021 [US3] Trang: `access.ts` (tải EffectiveAccess), menu lọc, trang "không có quyền", xử lý `access-changed`
+  - Xong: `access.ts` + test; menu theo `screens`/`pages` + mục Quản trị cho admin; route `denied` giữ hash; 403 `ACCESS_DENIED` của `/project` → "Không có quyền xem trang này"; live `access-changed` (live-client `onAccessChanged`, `denied` như `unknown`) → tải lại quyền, dựng lại menu/màn hình (màn hình mới được xem → tải lại trang). e2e `access.e2e.mjs` (28 kiểm, gồm 0 giá trị Tag bị cấm).
+- [x] T022 [US3] Tab Quyền theo trang (ma trận, đặt nhiều trang, sao chép)
+  - Xong: hàng màn hình/popup/trang hệ thống/nhóm lưu trữ/mẫu báo cáo, cột Mọi người/vai trò/nhóm/người dùng; "Mặc định (theo project)" khác "Đã đặt" và "Chưa lưu"; đặt nhiều trang, sao chép từ trang khác, Về mặc định; bản nháp chung lưu theo lô ≤ 500 với `rev`.
 - [ ] T023 [US3] web-it `tests/web-it/scenarios/access.mjs`: bắt live của người bị cấm 0 giá trị Tag cấm; history, alarm, project file
 
 ## Phase 6: US4 Quyền theo component (P2)
 
 - [ ] T024 [US4] gtest: màn hình trả về bỏ item ẩn, ô lưới bỏ `item`; `tags/write` cookie thiếu `context`/không `operate`/Tag không thuộc binding → `ACCESS_DENIED` + audit (đỏ)
 - [ ] T025 [US4] Cài đặt ở `http_api.cpp`, `tags_api.cpp`
-- [ ] T026 [US4] Trang: component ẩn / khóa "cần quyền thao tác" (`lockedItems`), ô lưới trống
-- [ ] T027 [US4] Tab Quyền theo component: xem trước màn hình bấm chọn + danh sách, "ai thấy, ai thao tác" (qua `/admin/effective`), Xem với tư cách (chỉ đọc)
+- [x] T026 [US4] Trang: component ẩn / khóa "cần quyền thao tác" (`lockedItems`), ô lưới trống
+  - Xong: `filterScreen` bỏ item ẩn (ô lưới bỏ `item`), "Không có nội dung bạn được xem"; ui-components: `ActionHost.itemBlocked` tùy chọn, mã khóa `NO_PERMISSION` ("Cần quyền thao tác", sau NO_SESSION/ROLE) và `PREVIEW`; phần tử SVG hỏi quyền theo item `svg` chứa nó (`accessItem`).
+- [x] T027 [US4] Tab Quyền theo component: xem trước màn hình bấm chọn + danh sách, "ai thấy, ai thao tác" (qua `/admin/effective`), Xem với tư cách (chỉ đọc)
+  - Xong: `mat-screen` chỉ đọc (PreviewHost không gửi lệnh) + lớp phủ nút bấm chọn; sửa Ai được xem/Ai được thao tác (chỉ component thao tác được); bảng "ai thấy, ai thao tác" từ một lần gọi theo lô `GET /admin/effective?users=a,b,…` (≤ 200 mỗi lô, theo quyền đã lưu). Tab Xem với tư cách: banner, màn hình và trang hệ thống của người đó, ô ẩn trống, item khóa "Cần quyền thao tác".
 - [x] T028 [US4] Studio Inspector tab Bảo mật: `view`, `operate` mặc định (test trước) — chỉ ở project 1.1 (1.0 giữ ô minRole cũ); `setItemAccess`, Thuộc tính màn hình có "Vai trò tối thiểu để xem"; 15 test
 - [ ] T029 [US4] web-it `tests/web-it/scenarios/admin-attack.mjs`: vai trò thấp gọi API quản trị, CSRF, sửa chính mình leo thang, xóa admin cuối, ghi bằng curl không quyền
 

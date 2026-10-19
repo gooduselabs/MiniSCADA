@@ -11,6 +11,7 @@ import {
   svgActionController,
   type SvgWriteAction,
 } from '../control/svg-action-controller.ts';
+import { popupLock } from '../control/lock-reasons.ts';
 import type { ActionHost, TagSource } from '../host/types.ts';
 import { resultView, SENDING_TEXT } from '../i18n/control-vi.ts';
 
@@ -20,6 +21,8 @@ export interface StatusSink {
 
 export interface SvgEventsDeps {
   screenId: string;
+  /** Feature 013: id item `svg` (quyền `operate` theo item). */
+  itemId?: string;
   mounted: MountedScreen;
   events: ReadonlyArray<{ elementUid: string; click: ElementAction }>;
   source: TagSource;
@@ -101,7 +104,7 @@ class Bound {
     if (isWriteAction(click)) {
       this.#ctl = svgActionController(
         click,
-        { screen: d.screenId, uid, label: this.#label },
+        { screen: d.screenId, uid, label: this.#label, ...(d.itemId ? { item: d.itemId } : {}) },
         {
           source: d.source,
           host: d.host,
@@ -172,7 +175,12 @@ class Bound {
 
   #lock(): { code: string; message: string } | null {
     const ctl = this.#ctl;
-    if (!ctl) return null;
+    if (!ctl) {
+      const a = this.#click;
+      return a.action === 'popup' && this.#d.mode === 'run'
+        ? popupLock(this.#d.host, a.screen)
+        : null;
+    }
     const s = ctl.state;
     if (s.phase === 'locked') return { code: s.code, message: s.message };
     if (ctl.busyLock() === 'BUSY') return { code: 'BUSY', message: SENDING_TEXT };
@@ -212,6 +220,11 @@ class Bound {
     const a = this.#click;
     const ctl = this.#ctl;
     if (!ctl) {
+      const pl = this.#lock();
+      if (pl) {
+        this.#d.status.show(pl.message, 'warn');
+        return;
+      }
       if (a.action === 'navigate') this.#d.host.navigate(a.screen);
       else if (a.action === 'popup') {
         if (a.args) this.#d.host.openPopup(a.screen, a.args);

@@ -41,6 +41,11 @@ export interface ControlDeps {
   modal?: ModalRegistry;
   /** Gắn vào WriteSpec.context; vắng thì `{ screen: '', widget: item.id }`. */
   context?: { screen: string; widget: string };
+  /**
+   * Feature 013: id item dùng để hỏi quyền (`host.itemBlocked`); vắng thì `context.widget`. Phần tử SVG: `context.widget`
+   * là `elementUid`, quyền theo item `svg` chứa nó.
+   */
+  accessItem?: string;
 }
 
 const TYPE_RANGE: Partial<Record<TagInfo['type'], [number, number]>> = {
@@ -205,7 +210,9 @@ export class ControlController {
 
   #lock(): Lock | null {
     const role = (this.#d.item.security?.minRole ?? 'operator') as Exclude<Role, 'viewer'>;
+    const ctx = this.#d.context ?? { screen: '', widget: this.#d.item.id };
     return lockOf({
+      item: { screen: ctx.screen, item: this.#d.accessItem ?? ctx.widget },
       tag: this.tag,
       minRole: role,
       source: this.#d.source,

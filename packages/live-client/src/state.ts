@@ -165,7 +165,11 @@ export function applyMessage(st: LiveState, msg: ServerMessage): TagChange[] {
       st.values = tags.map((t) => tagValue(t.value));
       st.qualities = tags.map((t) => quality(t.quality));
       st.reasons = tags.map((t) => reasonOf(t.reason));
-      st.unknown = Array.isArray(msg.unknown) ? msg.unknown.map(str) : [];
+      // Feature 013: Tag ngoài tập được phép của phiên vào `denied`; với trang giống hệt Tag lạ (không có giá trị).
+      st.unknown = [
+        ...(Array.isArray(msg.unknown) ? msg.unknown.map(str) : []),
+        ...(Array.isArray(msg.denied) ? msg.denied.map(str) : []),
+      ];
       st.sequence = num(msg.sequence);
       st.subscriptionId = sub;
       st.hasSnapshot = true;

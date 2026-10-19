@@ -25,8 +25,27 @@ export const TOUCH_INTERVAL_MS = 60_000;
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => v !== null && typeof v === 'object' && !Array.isArray(v);
 
+/** Feature 013: chế độ xem của thiết bị (`runtime.json`), báo trong `web/session`. */
+export type ViewerLogin = 'off' | 'required';
+
+/** Kết quả `POST /api/v1/web/password` (feature 013, US2 AC7). */
+export type PasswordResult =
+  | { ok: true }
+  | { ok: false; code: string; reason?: string; message?: string; retryAfterS?: number };
+
+interface ParsedSession {
+  info: SessionInfo;
+  csrf: string;
+  groups: string[];
+}
+
+const viewerLoginOf = (body: unknown): ViewerLogin | null =>
+  isObj(body) && (body.viewerLogin === 'off' || body.viewerLogin === 'required')
+    ? body.viewerLogin
+    : null;
+
 /** Đọc thân phiên của `web/login` và `web/session`; hình dạng sai → null. */
-function parseSession(body: unknown): { info: SessionInfo; csrf: string } | null {
+function parseSession(body: unknown): ParsedSession | null {
   if (!isObj(body)) return null;
   const { user, role, csrfToken } = body;
   if (
@@ -37,12 +56,17 @@ function parseSession(body: unknown): { info: SessionInfo; csrf: string } | null
   )
     return null;
   if (!ROLES.includes(role)) return null;
-  return { info: { user, role: role as Role }, csrf: csrfToken };
+  const groups = Array.isArray(body.groups)
+    ? body.groups.filter((g): g is string => typeof g === 'string')
+    : [];
+  return { info: { user, role: role as Role }, csrf: csrfToken, groups };
 }
 
 export class WebSession {
   #csrf: string | null = null;
   #info: SessionInfo | null = null;
+  #groups: string[] = [];
+  #viewerLogin: ViewerLogin | null = null;
   #expired = false;
   #active = false;
   #timer: ReturnType<typeof setInterval> | null = null;
@@ -60,6 +84,20 @@ export class WebSession {
 
   get info(): SessionInfo | null {
     return this.#info;
+  }
+
+  /** Nhóm của người đang đăng nhập (feature 013); rỗng khi không phiên hoặc runtime cũ. */
+  get groups(): readonly string[] {
+    return this.#groups;
+  }
+
+  /** `viewerLogin` của thiết bị nếu máy chủ đã báo (web/session, hoặc đặt từ system/info); null: chưa biết. */
+  get viewerLogin(): ViewerLogin | null {
+    return this.#viewerLogin;
+  }
+
+  set viewerLogin(v: ViewerLogin | null) {
+    this.#viewerLogin = v;
   }
 
   /** Phiên từng có đã hết hạn hoặc bị hủy (chưa đăng nhập lại): hiện banner, khóa điều khiển. */
@@ -106,8 +144,10 @@ export class WebSession {
     if (!this.#https) return;
     try {
       const res = await this.#fetch('/api/v1/web/session', { cache: 'no-store' });
+      const body: unknown = await res.json().catch(() => null);
+      this.#viewerLogin = viewerLoginOf(body) ?? this.#viewerLogin;
       if (!res.ok) return;
-      const s = parseSession(await res.json().catch(() => null));
+      const s = parseSession(body);
       if (s) this.#begin(s);
     } catch {
       /* chỉ xem */
@@ -139,8 +179,45 @@ export class WebSession {
     }
     const s = parseSession(body);
     if (!s) return { ok: false, code: 'BAD_RESPONSE' };
+    this.#viewerLogin = viewerLoginOf(body) ?? this.#viewerLogin;
     this.#begin(s);
     return { ok: true, info: s.info };
+  }
+
+  /**
+   * Đổi mật khẩu của chính mình (`POST /api/v1/web/password`, feature 013 FR-005): máy chủ hủy các phiên KHÁC của người
+   * đó, giữ phiên này. Mật khẩu chỉ đi trong thân yêu cầu, không giữ lại.
+   */
+  async changePassword(oldPassword: string, newPassword: string): Promise<PasswordResult> {
+    if (!this.#https || !this.#info) return { ok: false, code: 'NO_SESSION' };
+    let res: Response;
+    try {
+      res = await this.#fetch('/api/v1/web/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...this.csrfHeaders() },
+        body: JSON.stringify({
+          old: oldPassword.normalize('NFC'),
+          new: newPassword.normalize('NFC'),
+        }),
+        cache: 'no-store',
+      });
+    } catch {
+      return { ok: false, code: 'NETWORK' };
+    }
+    if (res.ok) return { ok: true };
+    const body: unknown = await res.json().catch(() => null);
+    if (res.status === 401) {
+      this.expire();
+      return { ok: false, code: 'SESSION_EXPIRED' };
+    }
+    const out: PasswordResult = {
+      ok: false,
+      code: isObj(body) && typeof body.error === 'string' ? body.error : `HTTP_${res.status}`,
+    };
+    if (isObj(body) && typeof body.reason === 'string') out.reason = body.reason;
+    if (isObj(body) && typeof body.message === 'string') out.message = body.message;
+    if (isObj(body) && typeof body.retryAfterS === 'number') out.retryAfterS = body.retryAfterS;
+    return out;
   }
 
   async logout(): Promise<void> {
@@ -161,9 +238,10 @@ export class WebSession {
     this.#end(true);
   }
 
-  #begin(s: { info: SessionInfo; csrf: string }): void {
+  #begin(s: ParsedSession): void {
     this.#csrf = s.csrf;
     this.#info = s.info;
+    this.#groups = s.groups;
     this.#expired = false;
     this.#active = false;
     this.#startTimer();
@@ -174,6 +252,7 @@ export class WebSession {
     const had = this.#info !== null || this.#expired !== expired;
     this.#csrf = null;
     this.#info = null;
+    this.#groups = [];
     this.#expired = expired;
     this.#active = false;
     this.#stopTimer();

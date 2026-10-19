@@ -3,6 +3,7 @@
 import type { Action } from '@mat/project-schema';
 import { css, html, nothing, type TemplateResult } from 'lit';
 import { ControlWidget, controlStyles } from '../control/control-widget.ts';
+import { popupLock, type Lock } from '../control/lock-reasons.ts';
 import { widgetStyles } from '../styles/widget-styles.ts';
 
 const WRITE = new Set(['write', 'toggle', 'pulse']);
@@ -48,9 +49,16 @@ export class MatWButton extends ControlWidget {
     return !!a && WRITE.has(a.action);
   }
 
+  /** Feature 013: hành động mở popup mà người dùng không được xem popup đó. */
+  #popupLock(): Lock | null {
+    const a = this.#action();
+    return a?.action === 'popup' && this.mode === 'run' ? popupLock(this.host, a.screen) : null;
+  }
+
   #click = (): void => {
     const a = this.#action();
     if (!a || this.mode !== 'run' || !this.host) return;
+    if (this.#popupLock()) return;
     switch (a.action) {
       case 'navigate':
         this.host.navigate(a.screen);
@@ -80,19 +88,32 @@ export class MatWButton extends ControlWidget {
     const name = this.nameOf(this.tagId);
     const label = this.prop('label', '') || name;
     const write = !!a && WRITE.has(a.action);
-    const disabled = this.mode !== 'run' || !a || (write && !this.ready);
+    const plock = this.#popupLock();
+    const disabled = this.mode !== 'run' || !a || (write && !this.ready) || plock !== null;
     return this.frame(
       html`<button
-        type="button"
-        data-main
-        class="btn ${variant}"
-        aria-label=${name}
-        aria-describedby=${this.describedBy() ?? nothing}
-        ?disabled=${disabled}
-        @click=${this.#click}
-      >
-        ${label}
-      </button>`,
+          type="button"
+          data-main
+          class="btn ${variant}"
+          aria-label=${name}
+          aria-describedby=${plock ? 'lock' : (this.describedBy() ?? nothing)}
+          ?disabled=${disabled}
+          @click=${this.#click}
+        >
+          ${label}
+        </button>
+        ${
+          plock
+            ? html`<div
+                class="lockmsg ellipsis"
+                id="lock"
+                title=${plock.message}
+                data-lock=${plock.code}
+              >
+                🔒 ${plock.message}
+              </div>`
+            : nothing
+        }`,
     );
   }
 }

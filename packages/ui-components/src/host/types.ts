@@ -88,10 +88,29 @@ export interface WriteOutcome {
 
 export type WriteBlockCode = 'INSECURE' | 'HTTPS_DOWN' | 'SESSION_EXPIRED' | 'PROJECT_CHANGING';
 
+/**
+ * Feature 013: khóa riêng một item. `NO_PERMISSION`: item thao tác được nhưng người dùng không có quyền `operate`
+ * (`lockedItems` của EffectiveAccess); `PREVIEW`: xem trước, xem với tư cách (trang Quản trị), không gửi lệnh.
+ */
+export type ItemBlockCode = 'NO_PERMISSION' | 'PREVIEW';
+
 export interface ActionHost {
   session(): SessionInfo | null;
   /** Lý do chung khiến mọi ghi bị khóa; null: không khóa. */
   writeBlocked(): { code: WriteBlockCode; message: string } | null;
+  /**
+   * Feature 013 (tùy chọn): lý do khóa riêng item `item` của màn hình `screen`; null hoặc vắng: không khóa. Chỉ là hiển
+   * thị: máy chủ tự kiểm quyền `operate` khi ghi. `message` rỗng thì dùng chữ mặc định của mã.
+   */
+  itemBlocked?(ctx: {
+    screen: string;
+    item: string;
+  }): { code: ItemBlockCode; message: string } | null;
+  /**
+   * Feature 013 (tùy chọn): người dùng không được xem popup `popup` → nút/phần tử mở popup đó khóa `NO_PERMISSION`.
+   * Chỉ hiển thị (máy chủ trả 403 cho cấu hình popup). `message` rỗng: chữ mặc định.
+   */
+  popupBlocked?(popup: string): { code: 'NO_PERMISSION'; message: string } | null;
   /** onPhase: ACCEPTED rồi kết quả cuối. Không bao giờ tự gửi lại. */
   write(spec: WriteSpec, onPhase: (o: WriteOutcome) => void): Promise<WriteOutcome>;
   navigate(screenId: string): void;

@@ -114,6 +114,7 @@ export class SvgItemView {
     if (this.#events.length === 0) return;
     this.#eventsBound = bindSvgEvents({
       screenId: ctx.screenId,
+      itemId: this.opt.item.id,
       mounted,
       events: this.#events,
       source: this.#source,

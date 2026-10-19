@@ -15,6 +15,8 @@ export interface ShellHandlers {
   onLogin: () => void;
   onLogout: () => void;
   onSelect: (screen: string) => void;
+  /** Feature 013: mục "Đổi mật khẩu của tôi" của menu tài khoản. */
+  onChangePassword?: () => void;
 }
 
 const must = <T extends HTMLElement>(doc: Document, id: string): T => {
@@ -42,8 +44,11 @@ export class Shell {
   readonly #viewOnly: HTMLElement;
   readonly #sessionBanner: HTMLElement;
   readonly #notice: HTMLElement;
+  readonly #accountBtn: HTMLButtonElement | null;
+  readonly #accountMenu: HTMLElement | null;
   #menu: MenuModel | null = null;
   #current = '';
+  #account: { info: SessionInfo; groups: readonly string[] } | null = null;
 
   constructor(h: ShellHandlers, doc: Document = document) {
     this.#doc = doc;
@@ -89,6 +94,104 @@ export class Shell {
     const nc = must<HTMLButtonElement>(doc, 'app-notice-close');
     nc.textContent = vi.dismiss;
     nc.addEventListener('click', () => this.setNotice(null));
+
+    // Menu tài khoản (feature 013): nút mở menu (role=menu), mục là nút role=menuitem; mũi tên lên/xuống, Esc đóng.
+    this.#accountBtn = doc.getElementById('app-account-btn') as HTMLButtonElement | null;
+    this.#accountMenu = doc.getElementById('app-account-menu');
+    const ab = this.#accountBtn;
+    const am = this.#accountMenu;
+    if (ab && am) {
+      ab.append(createIcon('user', 18));
+      ab.setAttribute('aria-label', vi.access.account);
+      ab.title = vi.access.account;
+      ab.addEventListener('click', () => this.toggleAccountMenu());
+      am.addEventListener('keydown', (e) => this.#menuKey(e));
+      am.addEventListener('focusout', (e) => {
+        const to = e.relatedTarget as Node | null;
+        if (to && !am.contains(to) && to !== ab) this.toggleAccountMenu(false);
+      });
+      doc.addEventListener('pointerdown', (e) => {
+        const t = e.target as Node | null;
+        if (!am.hidden && t && !am.contains(t) && !ab.contains(t)) this.toggleAccountMenu(false);
+      });
+    }
+  }
+
+  get accountMenuOpen(): boolean {
+    return this.#accountMenu ? !this.#accountMenu.hidden : false;
+  }
+
+  /** Mở/đóng menu tài khoản; mở thì focus mục đầu, đóng bằng phím thì focus về nút. */
+  toggleAccountMenu(open: boolean = !this.accountMenuOpen, focusBack = false): void {
+    const ab = this.#accountBtn;
+    const am = this.#accountMenu;
+    if (!ab || !am) return;
+    const on = open && this.#account !== null;
+    if (on) this.#renderAccountMenu();
+    am.hidden = !on;
+    ab.setAttribute('aria-expanded', String(on));
+    if (on) am.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    else if (focusBack) ab.focus();
+  }
+
+  #menuKey(e: KeyboardEvent): void {
+    const items = [
+      ...(this.#accountMenu?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
+    ];
+    const i = items.indexOf(this.#doc.activeElement as HTMLElement);
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      this.toggleAccountMenu(false, true);
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const n = items.length;
+      if (n) items[(i + (e.key === 'ArrowDown' ? 1 : n - 1) + n) % n]!.focus();
+    } else if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      (e.key === 'Home' ? items[0] : items.at(-1))?.focus();
+    } else if (e.key === 'Tab') this.toggleAccountMenu(false);
+  }
+
+  #renderAccountMenu(): void {
+    const am = this.#accountMenu;
+    const a = this.#account;
+    if (!am || !a) return;
+    const head = this.#doc.createElement('div');
+    head.className = 'account-head';
+    const name = this.#doc.createElement('strong');
+    name.textContent = a.info.user;
+    const role = this.#doc.createElement('span');
+    role.className = `role-badge role-${a.info.role}`;
+    role.textContent = a.info.role;
+    const groups = this.#doc.createElement('span');
+    groups.className = 'muted';
+    groups.textContent = a.groups.length
+      ? vi.access.accountGroups(a.groups.join(', '))
+      : vi.access.accountNoGroup;
+    head.append(name, role, groups);
+    const item = (label: string, icon: 'lock' | 'logout', fn: () => void) => {
+      const b = this.#doc.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'menuitem');
+      b.tabIndex = -1;
+      b.append(createIcon(icon));
+      const t = this.#doc.createElement('span');
+      t.textContent = label;
+      b.append(t);
+      b.addEventListener('click', () => {
+        this.toggleAccountMenu(false, true);
+        fn();
+      });
+      return b;
+    };
+    const menu = this.#doc.createElement('div');
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-label', vi.access.accountMenu(a.info.user));
+    menu.append(
+      item(vi.access.changePassword, 'lock', () => this.#h.onChangePassword?.()),
+      item(vi.logout, 'logout', () => this.#h.onLogout()),
+    );
+    am.replaceChildren(head, menu);
   }
 
   get navOpen(): boolean {
@@ -157,11 +260,14 @@ export class Shell {
   }
 
   /** Người dùng: có phiên → tên (role) và Đăng xuất; không → Đăng nhập (nếu đăng nhập được). */
-  setUser(info: SessionInfo | null, canLogin: boolean): void {
+  setUser(info: SessionInfo | null, canLogin: boolean, groups: readonly string[] = []): void {
     this.#user.hidden = info === null;
     this.#user.textContent = info ? vi.userLabel(info.user, info.role) : '';
     this.#logoutBtn.hidden = info === null;
     this.#loginBtn.hidden = info !== null || !canLogin;
+    this.#account = info ? { info, groups } : null;
+    if (this.#accountBtn) this.#accountBtn.hidden = info === null || !this.#h.onChangePassword;
+    if (!info) this.toggleAccountMenu(false);
   }
 
   /** Dải "Chế độ chỉ xem" khi mở bằng HTTP (hoặc HTTPS không chạy). */

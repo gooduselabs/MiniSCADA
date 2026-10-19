@@ -18,6 +18,7 @@ import {
   WriteOutcome,
   WriteSpec,
 } from '@mat/ui-components';
+import { AccessView } from './access.ts';
 import { vi } from './i18n/vi.ts';
 import type { WebSession } from './session.ts';
 
@@ -85,6 +86,7 @@ export class WebActionHost implements ActionHost {
   readonly #listeners = new Set<() => void>();
   #httpsDown = false;
   #projectChanging = false;
+  #access = new AccessView(null);
 
   constructor(o: WebActionHostOptions) {
     this.#o = o;
@@ -122,6 +124,27 @@ export class WebActionHost implements ActionHost {
 
   session(): SessionInfo | null {
     return this.#o.session.info;
+  }
+
+  /** Feature 013: quyền hiệu lực mới (tải sau khi có phiên, hoặc sau `access-changed`); widget tính lại khóa. */
+  setAccess(a: AccessView): void {
+    this.#access = a;
+    this.#emit();
+  }
+
+  /** Popup không có trong `screens` của phiên: nút/phần tử mở nó khóa (máy chủ trả 403 cho cấu hình popup). */
+  popupBlocked(popup: string): { code: 'NO_PERMISSION'; message: string } | null {
+    return this.#access.canView(popup) ? null : { code: 'NO_PERMISSION', message: '' };
+  }
+
+  /** Item trong `lockedItems`: khóa "Cần quyền thao tác" (chỉ hiển thị; máy chủ kiểm `operate` khi ghi). */
+  itemBlocked(ctx: { screen: string; item: string }): {
+    code: 'NO_PERMISSION';
+    message: string;
+  } | null {
+    return this.#access.isLocked(ctx.screen, ctx.item)
+      ? { code: 'NO_PERMISSION', message: vi.blockedNoPermission }
+      : null;
   }
 
   writeBlocked(): { code: WriteBlockCode; message: string } | null {

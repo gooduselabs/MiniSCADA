@@ -31,8 +31,15 @@ export function lockText(code: LockCode, detail?: string): string {
       return 'Đang có hộp xác nhận khác';
     case 'PROJECT_CHANGING':
       return 'Project đang thay đổi';
+    case 'NO_PERMISSION':
+      return 'Cần quyền thao tác';
+    case 'PREVIEW':
+      return 'Xem trước, không gửi lệnh';
   }
 }
+
+/** Nút hoặc phần tử SVG mở popup mà người dùng không được xem (feature 013). */
+export const POPUP_NO_PERMISSION = 'Cần quyền xem cửa sổ này';
 
 export const ROLE_LABEL: Record<string, string> = {
   viewer: 'viewer',
@@ -47,6 +54,7 @@ const REASON_TEXT: Record<string, string> = {
   SESSION_EXPIRED: 'Phiên đã hết hạn',
   SESSION_INVALID: 'Phiên không hợp lệ',
   FORBIDDEN: 'Không đủ quyền',
+  ACCESS_DENIED: 'Thiếu quyền thao tác',
   HTTPS_REQUIRED: 'Cần dùng HTTPS',
   NO_SUCH_TAG: 'Tag không tồn tại',
   READ_ONLY: 'Tag chỉ đọc',

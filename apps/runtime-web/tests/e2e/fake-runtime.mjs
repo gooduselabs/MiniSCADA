@@ -13,6 +13,7 @@ import { createServer as createHttps } from 'node:https';
 import { tmpdir } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import { WebSocketServer } from 'ws';
+import { makeAccess } from './access-fake.mjs';
 import { animDemo } from './anim-fixture.mjs';
 import { TAGS, alarmBoard, dashboard, legacyTank } from './fixture-project.mjs';
 import { historyProject, makeHistory } from './history-fake.mjs';
@@ -181,9 +182,25 @@ export async function startFakeRuntime(opts = {}) {
     requests: [],
     wsOpened: 0,
     wsCookie: 0,
+    sentTags: new Map(),
   };
   const sockets = new Set();
   let tick = 0;
+  // Feature 013: phân quyền giả (access-fake.mjs), chỉ khi kịch bản bật `options.access`.
+  const acc = opts.access
+    ? makeAccess(opts.access, {
+        proj: () => proj,
+        sessions,
+        json: (...a) => json(...a),
+        err: (...a) => err(...a),
+        readBody: (req) => readBody(req),
+        eq,
+        broadcast: (type) => {
+          for (const c of sockets) if (c.ws.readyState === 1) c.ws.send(JSON.stringify({ type }));
+        },
+      })
+    : null;
+  if (acc) acc.cfg.viewerLogin = cfg.viewerLogin;
 
   // ---- alarm giả (feature 009): live 1.3.0 (subscribeAlarms, alarmSnapshot, alarmDelta), REST ack/shelve/unshelve, lịch sử ----
   const ALARM_CLASSES = [
@@ -644,6 +661,19 @@ export async function startFakeRuntime(opts = {}) {
     if (cfg.brokenFiles.has(rel)) return err(res, 500, 'INTERNAL');
     const f = proj.files.get(rel);
     if (!f) return err(res, 404, 'NOT_FOUND');
+    const scr = acc ? proj.active.screens?.find((x) => x.file === rel) : null;
+    if (scr) {
+      const hidden = acc.screenFilter(secure ? sessionOf(req) : null, scr.id);
+      if (hidden === null) return err(res, 403, 'ACCESS_DENIED');
+      if (hidden.length) {
+        const drop = new Set(hidden);
+        const m = structuredClone(f.json);
+        m.items = m.items.filter((i) => !drop.has(i.id));
+        for (const r of m.layout?.rows ?? [])
+          for (const c of r.cells) if (drop.has(c.item)) delete c.item;
+        return json(res, 200, m);
+      }
+    }
     if (f.json) return json(res, 200, f.json);
     res.writeHead(200, {
       'content-type': f.type ?? 'application/json',
@@ -661,6 +691,18 @@ export async function startFakeRuntime(opts = {}) {
         return err(res, 503, 'NO_VALID_PROJECT', {
           errors: [{ code: 'E_SCHEMA', file: 'project.json', path: '/x', message: 'lỗi thử' }],
         });
+      if (acc) {
+        // Danh sách màn hình và menu lọc theo quyền (admin-api §6).
+        const ok = new Set(acc.effectiveOf(secure ? sessionOf(req) : null).effective.screens);
+        const a = structuredClone(proj.active);
+        a.screens = a.screens.filter((x) => ok.has(x.id));
+        const keep = (items) =>
+          items
+            .map((it) => (it.items ? { ...it, items: keep(it.items) } : it))
+            .filter((it) => (it.items ? it.items.length > 0 : !it.screen || ok.has(it.screen)));
+        if (a.navigation) a.navigation = { ...a.navigation, items: keep(a.navigation.items) };
+        return json(res, 200, a);
+      }
       return json(res, 200, proj.active);
     }
     if (path === '/api/v1/system/info' && m === 'GET') {
@@ -672,9 +714,17 @@ export async function startFakeRuntime(opts = {}) {
           https: Boolean(https) && !cfg.httpsDown,
           httpsPort: https?.address()?.port ?? null,
           login: true,
-          viewerLogin: cfg.viewerLogin,
+          // Feature 013: runtime có phân quyền (1.6.0) báo viewerLogin cả khi chưa đăng nhập; trang dựa vào đó.
+          ...(acc ? { viewerLogin: cfg.viewerLogin } : {}),
         },
         warnings: cfg.httpsDown ? ['HTTPS_DOWN'] : [],
+        // Feature 013: trang đăng nhập hiện tên project và thiết bị (system/info công khai).
+        ...(acc
+          ? {
+              project: { projectName: proj.active.project.projectName },
+              device: { name: 'BL335-trạm-bơm' },
+            }
+          : {}),
       });
     }
     if (path === '/api/v1/device/identity' && m === 'GET') {
@@ -708,6 +758,7 @@ export async function startFakeRuntime(opts = {}) {
     if (
       path.startsWith('/api/v1/alarms/') ||
       path.startsWith('/api/v1/web/') ||
+      path.startsWith('/api/v1/admin/') ||
       path.startsWith('/api/v1/tags/write')
     )
       return cookieApi(req, res, secure, path, url);
@@ -741,6 +792,24 @@ export async function startFakeRuntime(opts = {}) {
     const until = lockedUntil.get(name) ?? 0;
     if (until > Date.now())
       return err(res, 429, 'AUTH_LOCKED', { retryAfterS: Math.ceil((until - Date.now()) / 1000) });
+    if (acc) {
+      const a = acc.authenticate(name, body.password);
+      if (!a.ok)
+        return err(res, a.status, a.error, a.retryAfterS ? { retryAfterS: a.retryAfterS } : {});
+      const token = `matw_${randomBytes(32).toString('base64url')}`;
+      const csrf = randomBytes(32).toString('base64url');
+      sessions.set(token, {
+        user: name,
+        role: a.role,
+        groups: a.groups,
+        csrf,
+        ip: req.socket.remoteAddress,
+        last: Date.now(),
+      });
+      return json(res, 200, sessionBody(sessions.get(token)), {
+        'set-cookie': `${COOKIE}=${token}; Secure; HttpOnly; SameSite=Strict; Path=/`,
+      });
+    }
     const acct = ROLES[name];
     if (!acct || !eq(acct[0], body.password)) {
       const n = (fails.get(name) ?? 0) + 1;
@@ -769,6 +838,8 @@ export async function startFakeRuntime(opts = {}) {
     idleExpiresAt: new Date(Date.now() + 1800_000).toISOString(),
     idleTimeoutS: 1800,
     maxSessionS: 43200,
+    // Feature 013: chỉ runtime có phân quyền mới báo nhóm và viewerLogin (trang dựa vào đó để biết có web/access).
+    ...(acc ? { groups: acc.users.get(s.user)?.groups ?? [], viewerLogin: cfg.viewerLogin } : {}),
   });
 
   async function cookieApi(req, res, secure, path, url) {
@@ -784,6 +855,8 @@ export async function startFakeRuntime(opts = {}) {
         'set-cookie': `${COOKIE}=; Secure; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`,
       });
     }
+    if (acc && path === '/api/v1/web/access' && m === 'GET' && (s || cfg.viewerLogin === 'off'))
+      return acc.handle(req, res, s, path, url);
     if (!s) return err(res, 401, hasCookie ? 'SESSION_EXPIRED' : 'AUTH_REQUIRED');
     if (m !== 'GET') {
       if (!originOk(req)) return err(res, 403, 'ORIGIN_MISMATCH');
@@ -797,6 +870,8 @@ export async function startFakeRuntime(opts = {}) {
       log.touches++;
       return json(res, 204, undefined);
     }
+    if (acc && (path === '/api/v1/web/password' || path.startsWith('/api/v1/admin/')))
+      return acc.handle(req, res, s, path, url);
     if (path.startsWith('/api/v1/alarms/') && m === 'POST') return alarmApi(req, res, s, path);
     if (path === '/api/v1/tags/write' && m === 'POST') return write(req, res, s);
     if (path.startsWith('/api/v1/tags/write/') && m === 'GET') {
@@ -841,6 +916,9 @@ export async function startFakeRuntime(opts = {}) {
         error: 'FORBIDDEN',
         results: [{ requestId: r.requestId, status: 'REJECTED', reason: 'FORBIDDEN' }],
       });
+    // Feature 013: item phải có `operate` và binding của item chứa Tag ghi (admin-api §6).
+    if (acc && !acc.canWrite(s, r.context, r.tag))
+      return reject('ACCESS_DENIED', 'Thiếu quyền thao tác');
     const info = tagInfo.get(r.tag);
     if (!info || !values.has(r.tag)) return reject('NO_SUCH_TAG');
     if (info.access !== 'RW') return reject('READ_ONLY');
@@ -937,7 +1015,13 @@ export async function startFakeRuntime(opts = {}) {
       }
       if (m.type !== 'subscribe') return;
       log.subscribes.push([...m.tags]);
-      const known = m.tags.filter((t) => values.has(t));
+      // Feature 013: Tag ngoài live(P) vào `denied` (không có giá trị).
+      const allowed = acc ? acc.effectiveOf(sess).live : null;
+      const denied =
+        allowed && !acc.effectiveOf(sess).effective.admin
+          ? m.tags.filter((t) => values.has(t) && !allowed.has(t))
+          : [];
+      const known = m.tags.filter((t) => values.has(t) && !denied.includes(t));
       const unknown = m.tags.filter((t) => !values.has(t));
       if (!known.length)
         return send({
@@ -947,6 +1031,7 @@ export async function startFakeRuntime(opts = {}) {
           message: 'Không có Tag hợp lệ',
         });
       conn.ids = known;
+      for (const t of known) sentTo(conn, t);
       conn.sub = m.requestId;
       conn.seq = 1;
       conn.last = new Map(known.map((t) => [t, stamp(t)]));
@@ -967,13 +1052,21 @@ export async function startFakeRuntime(opts = {}) {
           };
         }),
         unknown,
+        ...(denied.length ? { denied } : {}),
       });
+      log.denied = denied;
     });
     ws.on('close', () => {
       clearInterval(hb);
       sockets.delete(conn);
     });
     ws.on('error', () => undefined);
+  }
+  /** Feature 013: Tag đã gửi giá trị cho từng người dùng (kiểm 0 giá trị Tag bị cấm). */
+  function sentTo(c, t) {
+    const k = c.sess?.user ?? '(ẩn danh)';
+    if (!log.sentTags.has(k)) log.sentTags.set(k, new Set());
+    log.sentTags.get(k).add(t);
   }
   const stamp = (t) => `${values.get(t)}|${quality.get(t)?.q ?? 'GOOD'}`;
   const timer = setInterval(() => {
@@ -984,12 +1077,16 @@ export async function startFakeRuntime(opts = {}) {
     for (const c of sockets) {
       if (!c.sub || c.ws.readyState !== 1) continue;
       const changed = [];
+      // Feature 013: quyền đổi giữa chừng: Tag không còn được phép thôi gửi (máy chủ thật gỡ đăng ký trong 2 s).
+      const e = acc ? acc.effectiveOf(c.sess) : null;
       c.ids.forEach((t, i) => {
+        if (e && !e.effective.admin && !e.live.has(t)) return;
         const s = stamp(t);
         if (c.last.get(t) !== s) {
           c.last.set(t, s);
           const q = quality.get(t);
           changed.push([i, values.get(t), q?.q ?? 'GOOD', ...(q ? [q.reason] : [])]);
+          sentTo(c, t);
         }
       });
       if (changed.length)
@@ -1014,6 +1111,8 @@ export async function startFakeRuntime(opts = {}) {
     log,
     cfg,
     alarm: alarmCtl,
+    /** Phân quyền giả (null khi kịch bản không bật). */
+    access: acc,
     /** Giữ snapshot alarm (chưa gửi sau subscribeAlarms) hoặc thả ra. */
     holdAlarmSnapshot(v) {
       alarm.holdSnapshot = v;
