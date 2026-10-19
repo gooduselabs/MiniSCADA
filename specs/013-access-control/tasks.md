@@ -79,7 +79,8 @@
 
 ## Phase 8: Polish
 
-- [ ] T031 Tài liệu: `docs/user/admin-guide.md` (Quản trị trên web, CLI mới, phục hồi), `operator-guide.md` (đăng nhập, đổi mật khẩu, khóa do quyền), ảnh chụp
+- [x] T031 Tài liệu: `docs/user/admin-guide.md` (Quản trị trên web, CLI mới, phục hồi), `operator-guide.md` (đăng nhập, đổi mật khẩu, khóa do quyền), ảnh chụp
+  - Ghi chú: admin-guide mục 4 viết lại (kho `/var/lib/mat-runtime/auth/`, khởi tạo một lần từ /etc; 4.1 Quản trị trên web từng tab, xác nhận lại, cách tính quyền, ví dụ ca A/Quản đốc, dải cảnh báo; 4.2 CLI mới; 4.3 phục hồi), 5.2 `viewerLogin`, sao lưu, sự cố, A20–A23; operator-guide mục 2 (đăng nhập bắt buộc, bị đăng xuất), 2.1 Đổi mật khẩu của tôi, 3.1 ẩn/khóa do quyền, V9–V10; engineer-guide 6.3 (neo `help-security`, tab Bảo mật, `E_SECURITY_*`, định danh ổn định). Ảnh: cảnh `web-quyen` trong `tools/docs-screenshots.mjs` (runtime giả access-fake; lọc theo tên cảnh; bản e2e thêm lượt `e2e-login`): op-dang-nhap-trang, op-can-quyen, adm-quan-tri-nguoi-dung, adm-quyen-theo-trang, adm-quyen-component, adm-xem-voi-tu-cach. help-topics.json không đổi (`screen:` → `help-screens` chứa 6.3). Mã lỗi API quản trị (LAST_ADMIN, IN_USE…) chưa có trong `schemas/error-codes.json`: tài liệu trích câu tiếng Việt thay vì mã.
 - [ ] T032 Đo hiệu năng 500 Tag, 10 client với quyền khác nhau (SC-006), `docs/reports/013-perf.md`
 - [ ] T033 `tools/ci-local.ps1` đầy đủ xanh; armhf qemu `access_*_test`
 
