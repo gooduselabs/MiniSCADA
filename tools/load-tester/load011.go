@@ -516,7 +516,7 @@ func aggregateLatency(rs []clientResult, o options) latencyDoc {
 	}
 	d := latencyDoc{
 		Method:      "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
-		ClockShared: isLoopback(o.host),
+		ClockShared: isLoopback(o.host) || o.sharedClock,
 		Relative:    newLatencyStats(rel),
 	}
 	if d.ClockShared {

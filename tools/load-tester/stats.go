@@ -36,6 +36,12 @@ type clientResult struct {
 	TerminatedAfterMs int64  `json:"terminatedAfterMs,omitempty"`
 	ProtocolVersion   string `json:"protocolVersion,omitempty"`  // from hello (T-048)
 	ProtocolMismatch  bool   `json:"protocolMismatch,omitempty"` // MAJOR differs from -proto 1
+	// Feature 013 (perf013.go): Tags in / denied by the first snapshot, text payload bytes read,
+	// receive wall clock (UnixMilli) of every access-changed.
+	SnapshotTags      int     `json:"snapshotTags"`
+	Denied            int     `json:"denied"`
+	BytesReceived     int64   `json:"bytesReceived"`
+	AccessChangedAtMs []int64 `json:"accessChangedAtMs,omitempty"`
 	// Per-delta delays kept for --latency (feature 011): relative (above the fastest message) and
 	// absolute (receive wall clock - ts). Not written per client.
 	lagSamples []float64
