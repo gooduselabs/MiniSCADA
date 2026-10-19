@@ -137,6 +137,12 @@ Cột "Rủi ro còn lại" là thứ chấp nhận ở bản 1.0; mục 5 gom l
 - **Biện pháp:** Authenticode SHA-256 + dấu thời gian (ADR-035, `sign.ps1`, `-Release` từ chối chứng chỉ thử); `SHA256SUMS` ký; SBOM CycloneDX; `npm audit`, `cargo audit`, bảng CVE vendored (T056), rà license (T057); SAST `cppcheck` + `clang-tidy` ([011-sast](../reports/011-sast.md)); fuzz 7 mục tiêu (T058).
 - **Rủi ro còn lại:** chứng chỉ ký thật là việc công ty; SmartScreen có thể cảnh báo lúc đầu.
 
+### I-15. Phân quyền theo người dùng và API quản trị (feature 013, ADR-042)
+
+- **Đe dọa:** người dùng đọc dữ liệu của trang hoặc component không được cấp qua đường phụ (live, `/project/*`, `projects/active`, lịch sử, báo cáo, alarm) dù giao diện đã ẩn (K6); gửi lệnh ghi bằng tay từ component bị khóa; leo quyền qua API quản trị (vai trò thấp gọi thẳng, tự sửa vai trò của mình, CSRF từ trang độc); đoán mật khẩu admin rồi tạo tài khoản; admin tự khóa mình hoặc xóa người quản trị cuối; hai admin ghi đè nhau; kho quyền hỏng mở toang quyền; lỗ hổng trong runtime sửa được tài khoản (kho chuyển sang `/var/lib/mat-runtime/auth`, runtime ghi được).
+- **Biện pháp:** quyền hiệu lực tính ở máy chủ theo phiên (`computeAccess` thuần, vector chung C++/TS); **mọi** đường dữ liệu lọc theo tập Tag được phép (bảng [admin-api §6](../../specs/013-access-control/contracts/admin-api.md)); màn hình bị cấm 403, item ẩn bị cắt khỏi tệp màn hình trả về; lệnh ghi từ cookie phải mang `context` và item phải `operate` và có Tag trong binding; quyền chỉ thu hẹp, không vượt vai trò; API quản trị chỉ administrator, chỉ HTTPS, CSRF và `Origin`, xác nhận lại mật khẩu cho thao tác nhạy cảm (tính vào khóa tạm), 30 yêu cầu/phút/phiên, thân ≤ 64 KiB, `rev` chống ghi đè (409), chặn `LAST_ADMIN`; đổi vai trò, nhóm, trạng thái, mật khẩu hủy mọi phiên của người đó; kho hỏng → chỉ administrator vào (an toàn mặc định), `.bak` để khôi phục; audit mọi thay đổi (trước/sau, không có mật khẩu) và mọi từ chối; CLI root phục hồi (`--access-reset`).
+- **Rủi ro còn lại:** RR-11; quyền theo Tag dùng trực tiếp trong binding, không theo đầu vào gián tiếp của Tag tính toán hay logic (Tag tính toán là Tag riêng, phải được cấp riêng).
+
 ## 5. Rủi ro còn lại được chấp nhận ở bản 1.0
 
 | # | Rủi ro | Vì sao chấp nhận | Giảm nhẹ |
@@ -151,6 +157,7 @@ Cột "Rủi ro còn lại" là thứ chấp nhận ở bản 1.0; mục 5 gom l
 | RR-8 | XSS trong Studio có bán kính IPC lớn (008 F17) | ứng dụng một cửa sổ | CSP chặt, bộ lọc chung |
 | RR-9 | Gia cố thiết bị chưa áp dụng trên BL335 của dự án | đổi `sshd` có thể mất truy cập | T064 ⚠️🔌, cảnh báo `SSH_ROOT_PASSWORD` |
 | RR-10 | Lộ khóa phát hành OTA | gốc tin cậy phải ở đâu đó | khóa ngoại tuyến, hai khóa, OTA mặc định tắt |
+| RR-11 | Kho tài khoản do runtime ghi được (`/var/lib/mat-runtime/auth`, 013) | người dùng yêu cầu quản lý tài khoản trên web (D22); runtime vốn đã giữ quyền ghi PLC | API hẹp, xác nhận lại, audit, systemd `ProtectSystem=strict`, CLI root phục hồi |
 
 ## 6. Ánh xạ phát hiện Medium trở lên
 
