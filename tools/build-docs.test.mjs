@@ -183,22 +183,30 @@ test('tauri.conf.json đưa docs-html/ vào gói và dựng tài liệu trước
 
 // Rà soát T062 F7: ảnh chỉ được nhúng khi nằm trong docs/ (không đọc tệp ngoài, kể cả qua liên kết tượng trưng);
 // --out có sẵn mà không phải thư mục do build-docs tạo (không có tệp đánh dấu) thì từ chối, không xóa gì.
-test('ảnh ngoài docs/ (../, liên kết tượng trưng) không được nhúng', () => {
+test('ảnh ngoài docs/ (../, liên kết tượng trưng) không được nhúng', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'mat-build-docs-img-'));
   try {
     mkdirSync(join(root, 'docs/user'), { recursive: true });
     writeFileSync(join(root, 'secret.png'), PNG);
-    symlinkSync(join(root, 'secret.png'), join(root, 'docs/user/link.png'));
+    // Windows không bật Developer Mode thì không tạo được liên kết tượng trưng (EPERM): vẫn kiểm `../`, bỏ ca liên kết.
+    let linked = true;
+    try {
+      symlinkSync(join(root, 'secret.png'), join(root, 'docs/user/link.png'));
+    } catch (e) {
+      if (e?.code !== 'EPERM') throw e;
+      linked = false;
+      t.diagnostic('bỏ ca liên kết tượng trưng: hệ điều hành không cho tạo (EPERM)');
+    }
     writeFileSync(
       join(root, 'docs/user/README.md'),
-      '# A\n\n![lộ](../../secret.png) ![nối](link.png)\n',
+      '# A\n\n![lộ](../../secret.png)' + (linked ? ' ![nối](link.png)' : '') + '\n',
     );
     const out = join(root, 'out');
     buildDocs({ root, outDir: out, sources: ['docs/user'] });
     const html = readFileSync(join(out, 'user/index.html'), 'utf8');
     assert.doesNotMatch(html, /data:image/);
     assert.match(html, /\[ảnh: lộ\]/);
-    assert.match(html, /\[ảnh: nối\]/);
+    if (linked) assert.match(html, /\[ảnh: nối\]/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
