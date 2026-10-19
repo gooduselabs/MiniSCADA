@@ -4,6 +4,7 @@
 // not covered by this tool.
 //
 //	load-tester -host H -tags 500  -clients 10 -extra 1 -duration 14400 -latency -out l1.json   # L1
+//	  ... add -alternate -fingerprint <sha256> for odd clients over wss://H:8443 (tls.go)          # L1 8080/8443
 //	load-tester -host H -tags 1000 -clients 10 -extra 0 -duration 3600 -latency -out l2.json    # L2
 //	load-tester -host H -tags 500  -clients 10 -extra 1 -extra-attempts 50 -duration 120 -reentry 5 -out l3.json
 //	load-tester -host H -tags 500  -clients 10 -flap 50 -out l6.json                            # tool-side close
@@ -116,7 +117,7 @@ func scenarioCode(c loadConfig) string {
 func notMeasured(scenario string) []string {
 	switch scenario {
 	case "L1", "L2":
-		// The tool only opens ws:// (8080); L1 asks for 8080 and 8443 alternately.
+		// L1 asks for 8080 and 8443 alternately: measured only with -alternate (tls.go, withAlternation).
 		return []string{"cpuAvgPct", "cpuPeakPct", "rssMaxMB", "wss8443Alternation"}
 	case "L3":
 		return []string{"newClientAfterRelease35s"}

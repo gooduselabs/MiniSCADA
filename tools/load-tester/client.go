@@ -31,9 +31,12 @@ type msg struct {
 func dial(ctx context.Context, o options) (*websocket.Conn, error) {
 	dctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	var opts *websocket.DialOptions
-	if o.origin != "" {
-		opts = &websocket.DialOptions{HTTPHeader: http.Header{"Origin": []string{o.origin}}}
+	opts := &websocket.DialOptions{}
+	if origin := o.originHeader(); origin != "" {
+		opts.HTTPHeader = http.Header{"Origin": []string{origin}}
+	}
+	if o.useTLS {
+		opts.HTTPClient = o.tls.httpClient()
 	}
 	c, _, err := websocket.Dial(dctx, o.wsURL(), opts)
 	if err != nil {
@@ -54,7 +57,7 @@ func subscribeMsg(o options, requestID string) []byte {
 }
 
 func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode clientMode) clientResult {
-	res := clientResult{ClientIndex: idx, Mode: [...]string{"normal", "silent", "slow"}[mode]}
+	res := clientResult{ClientIndex: idx, Mode: [...]string{"normal", "silent", "slow"}[mode], Scheme: o.scheme()}
 	c, err := dial(ctx, o)
 	if err != nil {
 		res.CloseCode = -1
