@@ -290,6 +290,18 @@ const char* gateMessage(std::string_view error) {
         {"STORE_IO", "Lỗi đọc hoặc ghi kho project của thiết bị."},
         {"RECEIVE_ABORTED", "Mất kết nối khi nhận gói."},
         {"RECEIVE_TIMEOUT", "Không nhận xong gói trong 10 phút."},
+        // Feature 013 (contracts/admin-api.md): accounts, groups, rules, access.
+        {"CONFLICT", "Dữ liệu đã đổi từ lúc tải. Hãy tải lại rồi thử lại."},
+        {"LAST_ADMIN", "Phải còn ít nhất một quản trị viên đang bật."},
+        {"IN_USE", "Nhóm còn thành viên hoặc còn trong quy tắc quyền."},
+        {"REAUTH_REQUIRED", "Cần nhập lại đúng mật khẩu của bạn để xác nhận."},
+        {"WEAK_PASSWORD", "Mật khẩu không đạt quy tắc (15 đến 128 ký tự)."},
+        {"EXISTS", "Đã có."},
+        {"RATE_LIMITED", "Quá nhiều yêu cầu. Hãy chậm lại."},
+        {"ACCESS_DENIED", "Bạn không có quyền với nội dung này."},
+        {"STORE_INVALID", "Kho quyền trên thiết bị bị hỏng; chỉ quản trị viên vào được."},
+        {"STORE_IO", "Không ghi được kho tài khoản và quyền của thiết bị."},
+        {"NO_BACKUP", "Không có bản sao trước để khôi phục."},
     };
     for (const Entry& e : kMessages)
         if (error == e.code) return e.message;

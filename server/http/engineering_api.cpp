@@ -12,6 +12,7 @@
 #include "civetweb.h"
 #include "core/audit/audit_log.hpp"
 #include "core/audit/audit_record_json.hpp"
+#include "core/auth/access_service.hpp"
 #include "core/auth/auth_service.hpp"
 #include "core/auth/password_hash.hpp"
 #include "core/common/json_limits.hpp"
@@ -22,6 +23,7 @@
 #include "core/project-store/store.hpp"
 #include "nlohmann/json.hpp"
 #include "server/host_policy.hpp"
+#include "server/http/admin_api.hpp"
 #include "server/http/alarms_api.hpp"
 #include "server/http/engineering_api_internal.hpp"
 #include "server/http/history_api.hpp"
@@ -204,6 +206,15 @@ void EngineeringApi::setSerial(SerialBackend backend) {
         opt_.features.push_back("serial-ports");
 }
 
+void EngineeringApi::setAdmin(AdminApi* admin) {
+    admin_ = admin;
+    if (admin &&
+        std::find(opt_.features.begin(), opt_.features.end(), "admin") == opt_.features.end())
+        opt_.features.push_back("admin");  // feature 013
+}
+
+void EngineeringApi::setAccess(AccessService* access) { access_ = access; }
+
 void EngineeringApi::setHistory(HistoryApi* api) {
     history_ = api;
     if (api) opt_.features.push_back("history");
@@ -269,8 +280,10 @@ int EngineeringApi::handle(mg_connection* c) {
         path == kDeployPath || (path == "/api/v1/system/update" && r.method == "POST");
     if (std::strcmp(d.rule->method, "POST") == 0 && !packageUpload) {
         // JSON bodies (device-api §1.2).
-        const size_t limit =
-            path == kLoginPath || path == kWebLoginPath ? kLoginBodyMaxBytes : kJsonBodyMaxBytes;
+        const bool admin = path.rfind("/api/v1/admin/", 0) == 0 || path == "/api/v1/web/password";
+        const size_t limit = path == kLoginPath || path == kWebLoginPath
+                                 ? kLoginBodyMaxBytes
+                                 : admin ? kAdminBodyMaxBytes : kJsonBodyMaxBytes;
         if (chunked) return sendError(c, 411, "LENGTH_REQUIRED", close);
         if (ri->content_length > static_cast<long long>(limit)) {
             if (!hugeBody) drain(c);
@@ -285,6 +298,14 @@ int EngineeringApi::handle(mg_connection* c) {
     if (path == kWebLogoutPath) return webLogout(c, r, d, close);
     if (path == kWebSessionPath) return webSession(c, d, close);
     if (path == kWebTouchPath) return webTouch(c, close);
+    // Feature 013: the admin API and the page's access (admin_api.cpp); the log of the admin page
+    // is the audit read of §7 for a cookie.
+    if (path == "/api/v1/admin/audit")
+        return diag_.proc ? auditRead(c, r, d, close) : sendError(c, 501, "NOT_IMPLEMENTED", close);
+    if (path.rfind("/api/v1/admin/", 0) == 0 || path == "/api/v1/web/access" ||
+        path == "/api/v1/web/password")
+        return admin_ ? admin_->handle(c, r, d, close)
+                      : sendError(c, 501, "NOT_IMPLEMENTED", close);
     if (path.rfind("/api/v1/project/", 0) == 0) return projectRoute(c, r, d, close);
     if (diag_.proc && path == kDiagnosticsPath) return diagnostics(c, close);
     if (diag_.proc && path == kAuditPath) return auditRead(c, r, d, close);
@@ -612,7 +633,14 @@ int EngineeringApi::auditRead(mg_connection* c, const GateRequest& r, const Gate
                               bool close) {
     std::map<std::string, std::string> params;
     std::optional<AuditQuery> query;
-    if (parseQuery(mg_get_request_info(c)->query_string, params)) query = auditQueryOf(params);
+    const bool adminPage = r.path == "/api/v1/admin/audit";  // feature 013: the same, for a cookie
+    if (parseQuery(mg_get_request_info(c)->query_string, params)) {
+        if (adminPage && params.count("beforeId") && !params.count("before")) {
+            params["before"] = params["beforeId"];
+            params.erase("beforeId");
+        }
+        query = auditQueryOf(params);
+    }
     if (!query) return sendError(c, 400, "BAD_REQUEST", close);
 
     // The page first, then the record: nothing leaves the device without its audit.read row, and
@@ -620,10 +648,11 @@ int EngineeringApi::auditRead(mg_connection* c, const GateRequest& r, const Gate
     AuditPage page;
     try {
         page = audit_.query(*query);
-        AuditEvent e(AuditAction::AuditRead, AuditResult::Ok, AuditChannel::Https, r.from.text());
+        AuditEvent e(AuditAction::AuditRead, AuditResult::Ok,
+                     d.viaCookie ? AuditChannel::Web : AuditChannel::Https, r.from.text());
         e.user = d.access.user;
         if (d.access.role) e.role = roleName(*d.access.role);
-        e.target = kAuditPath;
+        e.target = adminPage ? "/api/v1/admin/audit" : kAuditPath;
         json used = json::object();
         for (const auto& [name, value] : params) {
             int64_t n = 0;
@@ -707,6 +736,12 @@ int EngineeringApi::alarmsPost(mg_connection* c, const GateRequest& r, const Gat
     if (d.access.role) who.role = roleName(*d.access.role);
     who.source = r.from.text();
     who.channel = d.viaCookie ? AuditChannel::Web : AuditChannel::Https;
+    // Feature 013: only the alarms whose source Tag this person sees (D21).
+    if (access_) {
+        const SessionAccessPtr a = access_->forAccess(d.access);
+        if (!a->all())
+            who.allowed = [a](const std::string& id) { return a->access.alarmAllowed(id); };
+    }
     const AlarmApiResult res = alarmsapi::post(verb, body, *alarms_.glue, who);
     return send(c, res.status, jsonText(res.body), close);
 }
