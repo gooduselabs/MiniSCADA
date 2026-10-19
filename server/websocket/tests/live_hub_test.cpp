@@ -4,8 +4,10 @@
 
 #include <atomic>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <mutex>
+#include <random>
 #include <set>
 #include <thread>
 
@@ -475,4 +477,192 @@ TEST_F(Fixture, DeltasCarryTheCommitTimeOfTheirRound) {
     hub->tick();  // no commit time given: the hub's own clock at the start of the round
     ASSERT_EQ(tx.deltaStamps.size(), 2u);
     EXPECT_EQ(tx.deltaStamps[1], now);
+}
+
+// Feature 011 (CPU of the live path on the BL335): the hub formats each changed Tag once per tick
+// and reuses it for every session. The bytes of every delta must stay those of the formatter of
+// live 1.3.0 before that change, kept here as the reference: one entry per subscribed changed Tag,
+// in ascending store order, [position,value,"QUALITY"[,"REASON"]].
+namespace {
+
+struct RefSession {
+    std::string subscriptionId;
+    std::map<size_t, uint32_t> position;  // store index -> position
+    int64_t sequence = 0;
+    bool subscribed = false;
+};
+
+std::string refDelta(const TagStore& store, RefSession& s, const std::vector<size_t>& dirty,
+                     int64_t ts) {
+    std::string out;
+    size_t n = 0;
+    for (size_t i : dirty) {
+        auto p = s.position.find(i);
+        if (p == s.position.end()) continue;
+        if (n == 0) {
+            out += "{\"type\":\"delta\",\"subscriptionId\":";
+            appendJsonString(out, s.subscriptionId);
+            out += ",\"sequence\":" + std::to_string(s.sequence + 1) +
+                   ",\"ts\":" + std::to_string(ts) + ",\"tags\":[";
+        } else {
+            out += ',';
+        }
+        const TagValue v = store.get(i);
+        out += "[" + std::to_string(p->second) + ",";
+        store.appendValueJson(out, i);
+        out += ",\"";
+        out += qualityName(v.quality);
+        out += '"';
+        if (v.quality != Quality::GOOD && !v.reason.empty()) {
+            out += ',';
+            appendJsonString(out, v.reason);
+        }
+        out += ']';
+        ++n;
+    }
+    if (n == 0) return {};
+    out += "]}";
+    ++s.sequence;
+    return out;
+}
+
+}  // namespace
+
+TEST(LiveHubDeltaBytes, SameAsTheReferenceFormatterForManySessions) {
+    TagStore store;
+    const TagType types[] = {TagType::BOOL,    TagType::INT16, TagType::UINT16, TagType::INT32,
+                             TagType::UINT32,  TagType::INT64, TagType::UINT64, TagType::FLOAT32,
+                             TagType::FLOAT64, TagType::STRING};
+    const size_t kTags = 150;
+    for (size_t i = 0; i < kTags; ++i)
+        store.add({"T" + std::to_string(i) + (i % 13 == 0 ? "\"q\\" : ""), types[i % 10], ""});
+    std::mt19937 rng(20261019);
+    auto randomValue = [&](size_t i) -> TagScalar {
+        const int r = static_cast<int>(rng() % 100);
+        switch (store.def(i).type) {
+            case TagType::BOOL:
+                return r < 50;
+            case TagType::STRING: {
+                const char* texts[] = {"", "ok", "a\"b\\c\n\t", "Mức nước đầy", "\x01\x1f"};
+                return std::string(texts[r % 5]);
+            }
+            case TagType::INT64:
+                return r < 50 ? TagScalar(int64_t{-9007199254740993} + r)
+                              : TagScalar(static_cast<double>(r) * 1e17);
+            case TagType::UINT64:
+                return r < 50 ? TagScalar(uint64_t{18446744073709551615u} - uint64_t(r))
+                              : TagScalar(static_cast<double>(r) * 3e17);
+            case TagType::FLOAT32:
+            case TagType::FLOAT64: {
+                const double specials[] = {0.0, -0.0, 1e-300, 123456789.123, 1.0 / 3.0};
+                if (r < 3) return std::numeric_limits<double>::quiet_NaN();
+                if (r < 5) return std::numeric_limits<double>::infinity();
+                if (r < 30) return specials[r % 5];
+                return (static_cast<double>(rng() % 2000000) - 1e6) / 997.0;
+            }
+            default:
+                return r < 10 ? TagScalar(std::monostate{}) : TagScalar(int64_t(r * 1000 - 50000));
+        }
+    };
+    auto change = [&](size_t i, std::set<size_t>& dirty) {
+        const int r = static_cast<int>(rng() % 10);
+        const Quality q = r < 6 ? Quality::GOOD : r < 8 ? Quality::BAD : Quality::UNCERTAIN;
+        const char* reasons[] = {"", "COMM_TIMEOUT", "bad \"reason\"\\"};
+        if (store.set(i, randomValue(i), q, reasons[rng() % 3], 7, 8)) dirty.insert(i);
+    };
+    std::set<size_t> ignored;
+    for (size_t i = 0; i < kTags; ++i) change(i, ignored);
+
+    FakeTransport tx;
+    HubOptions o;
+    o.serverVersion = "t";
+    o.maxClients = 20;
+    o.heartbeatMs = 1000;
+    int64_t now = 5000;
+    LiveHub hub(store, tx, o, [&] { return now; });
+    store.takeDirty();
+
+    const uint64_t kSessions = 14;
+    std::map<uint64_t, RefSession> ref;
+    std::map<uint64_t, std::vector<std::string>> expected;
+    auto subscribe = [&](uint64_t sid, int round) {
+        // random tags, with duplicates and unknown ids, in random order; ids that need escaping
+        const size_t want = 1 + rng() % (rng() % 3 == 0 ? kTags : 20);
+        json tags = json::array();
+        for (size_t k = 0; k < want; ++k) {
+            if (rng() % 17 == 0) tags.push_back("NOPE" + std::to_string(k));
+            const size_t i = rng() % kTags;
+            tags.push_back(store.def(i).id);
+            if (rng() % 9 == 0) tags.push_back(store.def(i).id);
+        }
+        const std::string rid =
+            "r" + std::to_string(sid) + "-" + std::to_string(round) + (sid % 3 == 0 ? "\"é\\" : "");
+        const std::string m = json{
+            {"type", "subscribe"},
+            {"requestId", rid},
+            {"tags", tags},
+            {"mode", "delta"}}.dump();
+        hub.onMessage(sid, m.data(), m.size());
+        RefSession& r = ref[sid];
+        r.subscriptionId = rid;
+        r.position.clear();
+        uint32_t pos = 0;
+        for (const auto& t : tags) {
+            const auto i = store.indexOf(t.get<std::string>());
+            if (i && r.position.emplace(*i, pos).second) ++pos;
+        }
+        r.subscribed = true;
+        r.sequence = tx.ofType(sid, "snapshot").back()["sequence"].get<int64_t>();
+    };
+    for (uint64_t sid = 1; sid <= kSessions; ++sid) {
+        hub.onOpen(sid);
+        if (sid != kSessions) subscribe(sid, 0);  // the last one only gets heartbeats
+    }
+
+    for (int round = 1; round <= 120; ++round) {
+        now += 250;
+        // between ticks: some sessions subscribe again (new positions) or unsubscribe
+        if (round % 7 == 0) subscribe(1 + rng() % (kSessions - 1), round);
+        if (round % 29 == 0) {
+            const uint64_t sid = 1 + rng() % (kSessions - 1);
+            const std::string m = R"({"type":"unsubscribe"})";
+            hub.onMessage(sid, m.data(), m.size());
+            ref[sid].subscribed = false;
+            ref[sid].position.clear();
+        }
+        std::set<size_t> dirty;
+        const int mode = round % 5;  // none, a few, many, all
+        const size_t changes = mode == 0 ? 0 : mode == 1 ? 3 : mode == 2 ? 40 : kTags * 2;
+        for (size_t k = 0; k < changes; ++k) change(mode >= 3 ? k % kTags : rng() % kTags, dirty);
+        hub.tick();
+        const std::vector<size_t> d(dirty.begin(), dirty.end());
+        for (auto& [sid, r] : ref) {
+            if (!r.subscribed) continue;
+            const std::string e = refDelta(store, r, d, now);
+            if (!e.empty()) expected[sid].push_back(e);
+        }
+    }
+
+    size_t compared = 0;
+    for (uint64_t sid = 1; sid <= kSessions; ++sid) {
+        std::vector<std::string> got;
+        for (const auto& m : tx.sent[sid])
+            if (m.rfind("{\"type\":\"delta\"", 0) == 0) got.push_back(m);
+        ASSERT_EQ(got.size(), expected[sid].size()) << "session " << sid;
+        for (size_t k = 0; k < got.size(); ++k) ASSERT_EQ(got[k], expected[sid][k]) << sid;
+        compared += got.size();
+    }
+    EXPECT_GT(compared, 500u);
+    EXPECT_TRUE(expected[kSessions].empty());
+    // the heartbeat is unchanged too
+    const std::string hbPrefix = "{\"type\":\"heartbeat\",\"ts\":";
+    size_t heartbeats = 0;
+    for (const auto& m : tx.sent[kSessions]) {
+        if (m.rfind("{\"type\":\"heartbeat\"", 0) != 0) continue;
+        ++heartbeats;
+        EXPECT_EQ(m.substr(0, hbPrefix.size()), hbPrefix);
+        const std::string ts = m.substr(hbPrefix.size(), m.size() - hbPrefix.size() - 1);
+        EXPECT_EQ(m, hbPrefix + std::to_string(std::stoll(ts)) + "}");
+    }
+    EXPECT_GE(heartbeats, 25u);
 }

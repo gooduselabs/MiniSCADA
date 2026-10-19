@@ -547,6 +547,12 @@ add_executable(tls_cipher_bench EXCLUDE_FROM_ALL server/bench/tls_cipher_bench.c
 target_compile_options(tls_cipher_bench PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(tls_cipher_bench PRIVATE mat_mbedtls)
 
+# Feature 011: what LiveHub::tick costs (L1: 500 Tags, 10 sessions, a delta every 250 ms), us per
+# tick on x64 and the BL335. On request only, never deployed.
+add_executable(live_bench EXCLUDE_FROM_ALL server/bench/live_bench.cpp)
+target_compile_options(live_bench PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(live_bench PRIVATE mat_core)
+
 # Unit tests (host build only)
 # Cross build with the unit tests configured (feature 006 T003): the tests are EXCLUDE_FROM_ALL and
 # built one by one by deployment/toolchain/test-armhf.sh, which runs them under qemu-user: a fault

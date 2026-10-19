@@ -118,6 +118,7 @@ class WsClient {
     struct Frame {
         int opcode = -1;  // -1: nothing before the timeout, -2: connection closed
         std::string payload;
+        std::string header;  // the header bytes as received (FIN, opcode, mask bit, length)
         int closeCode() const {
             return payload.size() >= 2 ? (static_cast<unsigned char>(payload[0]) << 8) |
                                              static_cast<unsigned char>(payload[1])
@@ -160,6 +161,7 @@ class WsClient {
         const ssize_t got = readExact(reinterpret_cast<char*>(h), 2, timeoutMs);
         if (got == 0) f.opcode = -2;
         if (got != 2) return f;
+        f.header.assign(reinterpret_cast<const char*>(h), 2);
         uint64_t len = h[1] & 0x7F;
         if (len >= 126) {
             unsigned char ext[8];
@@ -168,6 +170,7 @@ class WsClient {
                 f.opcode = -2;
                 return f;
             }
+            f.header.append(reinterpret_cast<const char*>(ext), n);
             len = 0;
             for (size_t i = 0; i < n; ++i) len = (len << 8) | ext[i];
         }
