@@ -51,12 +51,13 @@
   - Ghi chú: `server/tests/access_enforce_test.cpp` (bộ lọc projects/active, màn hình, báo cáo, ghi của trang, live hub denied/access-changed/alarm) + ca alarm và lịch sử qua web-it access.
 - [x] T020 [US3] Thực thi ở `http_api.cpp`, `live_hub.*`, `civet_transport.cpp`, `history_api.cpp`, alarm; `GET /api/v1/web/access`; `/api/v1/admin/access*`, `/admin/effective`
   - Ghi chú: lọc ở http_api (qua `access_filter`), history_api (`tagFilter`), alarms (GET cần page:alarms, POST 403), live hub hỏi lại quyền mỗi 1 s; access-changed đo 1 lần trên x64 ≤ 2 s.
+  - Ghi chú (luồng B, 2026-10-20): counts của alarm tính trên larm(P) ở mọi chỗ (GET alarms, câu trả lời ack/shelve/unshelve/disable/enable, alarmSnapshot/alarmDelta theo từng phiên qua countsFor, khối larms của system/info); quyền của phiên đổi → hub gửi lại alarmSnapshot (bỏ alarm đã mất). ccess.json xem lại mỗi 1 s: quy tắc sửa bằng CLI có hiệu lực ≤ 2 s.
 - [x] T021 [US3] Trang: `access.ts` (tải EffectiveAccess), menu lọc, trang "không có quyền", xử lý `access-changed`
   - Xong: `access.ts` + test; menu theo `screens`/`pages` + mục Quản trị cho admin; route `denied` giữ hash; 403 `ACCESS_DENIED` của `/project` → "Không có quyền xem trang này"; live `access-changed` (live-client `onAccessChanged`, `denied` như `unknown`) → tải lại quyền, dựng lại menu/màn hình (màn hình mới được xem → tải lại trang). e2e `access.e2e.mjs` (28 kiểm, gồm 0 giá trị Tag bị cấm).
 - [x] T022 [US3] Tab Quyền theo trang (ma trận, đặt nhiều trang, sao chép)
   - Xong: hàng màn hình/popup/trang hệ thống/nhóm lưu trữ/mẫu báo cáo, cột Mọi người/vai trò/nhóm/người dùng; "Mặc định (theo project)" khác "Đã đặt" và "Chưa lưu"; đặt nhiều trang, sao chép từ trang khác, Về mặc định; bản nháp chung lưu theo lô ≤ 500 với `rev`.
 - [x] T023 [US3] web-it `tests/web-it/scenarios/access.mjs`: bắt live của người bị cấm 0 giá trị Tag cấm; history, alarm, project file
-  - Ghi chú: web-it `access` 28/28 xanh x64 (dashboard-demo không có lưu trữ và alarm: phần lịch sử, alarm của kịch bản chỉ ở gtest).
+  - Ghi chú: web-it `access` 28/28 xanh x64 (dashboard-demo không có lưu trữ và alarm). Lịch sử và alarm qua runtime thật: web-it `access-data` (project `tests/web-it/make-access-data.mjs`: dashboard-demo + nhóm lưu trữ `song` + 2 alarm) 16/16 xanh x64 — alarm, số đếm (REST, live, system/info), lệnh, lịch sử alarm, catalog và series lọc theo quyền, alarmSnapshot mới sau khi quyền đổi (965 ms); docs/reports/013-access-data-x64.json.
 
 ## Phase 6: US4 Quyền theo component (P2)
 
