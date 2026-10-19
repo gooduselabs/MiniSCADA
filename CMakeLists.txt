@@ -541,6 +541,12 @@ target_compile_options(logic_bench PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(logic_bench PRIVATE mat_runtime_engine mat_startup mat_cli mat_historian
                       mat_core)
 
+# Feature 011: speed of the TLS record ciphers (AES-GCM, ChaCha20-Poly1305) with the project's
+# Mbed TLS build, for choosing the suite order on the BL335 (no AES instructions). On request only.
+add_executable(tls_cipher_bench EXCLUDE_FROM_ALL server/bench/tls_cipher_bench.cpp)
+target_compile_options(tls_cipher_bench PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(tls_cipher_bench PRIVATE mat_mbedtls)
+
 # Unit tests (host build only)
 # Cross build with the unit tests configured (feature 006 T003): the tests are EXCLUDE_FROM_ALL and
 # built one by one by deployment/toolchain/test-armhf.sh, which runs them under qemu-user: a fault
