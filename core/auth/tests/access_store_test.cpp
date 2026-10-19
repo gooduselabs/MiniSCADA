@@ -257,8 +257,10 @@ TEST(AccessStoreView, ReadsAgainWhenTheFileChanges) {
                   },
                   err),
               TxnStatus::Ok);
-    EXPECT_FALSE(v.refresh(now + 500)) << "at most every 2 s";
-    EXPECT_TRUE(v.refresh(now + 2500));
+    // At most every second: with the hub's check of every second, a rule the device command
+    // changes is in force within 2 s, like one changed on the web (contracts/admin-api.md §6).
+    EXPECT_FALSE(v.refresh(now + 500)) << "at most every second";
+    EXPECT_TRUE(v.refresh(now + kAccessRecheckMs));
     EXPECT_EQ(v.state(), AccessFileState::Ok);
     EXPECT_EQ(v.file().rev, 1);
     EXPECT_FALSE(v.refresh(now + 5000)) << "same file: not read";
