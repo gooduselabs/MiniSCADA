@@ -5,6 +5,8 @@ export const vi = {
   on: 'Bật',
   off: 'Tắt',
   noValue: '—',
+  /** Hướng của card khi bật trend (feature 012). */
+  trend: { up: 'tăng', down: 'giảm', flat: 'không đổi' },
   unknownValue: '?',
   quality: {
     GOOD: 'Tốt',

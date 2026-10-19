@@ -35,6 +35,8 @@ export const viScreensInsp = {
   'wprop.unit': 'Đơn vị',
   'wprop.fontSize': 'Cỡ chữ',
   'wprop.showQuality': 'Hiện chất lượng',
+  'wprop.sparkline': 'Đường xu hướng nhỏ',
+  'wprop.trend': 'Mũi tên tăng giảm',
   'wprop.valueColor': 'Màu giá trị',
   'wprop.background': 'Màu nền',
   'wprop.text': 'Nội dung',

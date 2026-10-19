@@ -202,6 +202,8 @@ describe('inspectorModelOf', () => {
       'unit',
       'fontSize',
       'showQuality',
+      'sparkline',
+      'trend',
       'valueColor',
       'background',
     ]);

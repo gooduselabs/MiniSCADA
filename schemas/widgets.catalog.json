@@ -104,6 +104,18 @@
           "group": "display"
         },
         {
+          "name": "sparkline",
+          "kind": "bool",
+          "default": false,
+          "group": "display"
+        },
+        {
+          "name": "trend",
+          "kind": "bool",
+          "default": false,
+          "group": "display"
+        },
+        {
           "name": "valueColor",
           "kind": "color",
           "allowAuto": true,
