@@ -9,14 +9,14 @@
 
 ## Phase 2: Foundational (luồng A + B lõi)
 
-- [ ] T003 [P] Bộ sinh `tests/access-vectors/generate.mjs` + ≥ 40 ca theo access-model §7 (kết quả viết tay, không sinh bằng bộ tính)
-- [ ] T004 [P] Test Vitest `packages/access-model/src/compute.test.ts` chạy mọi vector (đỏ)
-- [ ] T005 `packages/access-model/src/compute.ts` (`computeAccess`), `catalog.ts` (`catalogFromProject`) cho xanh
+- [x] T003 [P] Bộ sinh `tests/access-vectors/generate.mjs` + ≥ 40 ca theo access-model §7 (kết quả viết tay, không sinh bằng bộ tính) — 74 ca; quy ước chi tiết (mồ côi gồm mức không áp được, khóa chỉ cho item được xem, alarm không phụ thuộc `page:alarms`) ở `tests/access-vectors/README.md`
+- [x] T004 [P] Test Vitest `packages/access-model/src/compute.test.ts` chạy mọi vector (đỏ) — 79 test, đỏ trước khi cài
+- [x] T005 `packages/access-model/src/compute.ts` (`computeAccess`), `catalog.ts` (`catalogFromProject`) cho xanh — 85 test xanh; catalog test trên grid-demo, history-demo, alarm-demo; popup có tham số bung theo `args`; alarm theo thiết bị (không Tag) chưa vào danh mục
 - [ ] T006 [P] gtest `core/auth/tests/access_model_test.cpp` + `access_vectors_test.cpp` (đọc `tests/access-vectors`) (đỏ)
 - [ ] T007 `core/auth/access_model.{hpp,cpp}` + `access_catalog.{hpp,cpp}` cho xanh
 - [ ] T008 [P] gtest `core/auth/tests/access_store_test.cpp`: users 1.0→1.1, khởi tạo từ `/etc`, `flock`, `rev`/409, `.bak`, tệp hỏng → chỉ admin, giới hạn kích thước (đỏ)
 - [ ] T009 `core/auth/access_store.{hpp,cpp}`, `account_store.*` (đường mới, `groups`, `lastLoginAt`, 200 tài khoản) cho xanh
-- [ ] T010 [P] Schema `schemas/screen.schema.json`: `item.security.view/operate`, `screen.security.view`; luật `E_SECURITY_LEVEL`, `E_SECURITY_ITEM` ở `packages/project-schema/src/rules-11.ts` và `core/project-manager/rules_11.cpp`; vector `tests/project-vectors/v11-security-*` (test trước)
+- [x] T010 [P] Schema `schemas/screen.schema.json`: `item.security.view/operate`, `screen.security.view`; luật `E_SECURITY_LEVEL`, `E_SECURITY_ITEM` ở `packages/project-schema/src/rules-11.ts` và `core/project-manager/rules_11.cpp`; vector `tests/project-vectors/v11-security-*` (test trước) — 23 ca, luật ở `tests/project-vectors/README-013.md` (`E_SECURITY_LEVEL`: operate viewer, thấp hơn view, khác minRole, hoặc security mới ở project 1.0); TS và C++ xanh
 
 ## Phase 3: US1 Đăng nhập bắt buộc (P1)
 
@@ -46,7 +46,7 @@
 - [ ] T025 [US4] Cài đặt ở `http_api.cpp`, `tags_api.cpp`
 - [ ] T026 [US4] Trang: component ẩn / khóa "cần quyền thao tác" (`lockedItems`), ô lưới trống
 - [ ] T027 [US4] Tab Quyền theo component: xem trước màn hình bấm chọn + danh sách, "ai thấy, ai thao tác" (qua `/admin/effective`), Xem với tư cách (chỉ đọc)
-- [ ] T028 [US4] Studio Inspector tab Bảo mật: `view`, `operate` mặc định (test trước)
+- [x] T028 [US4] Studio Inspector tab Bảo mật: `view`, `operate` mặc định (test trước) — chỉ ở project 1.1 (1.0 giữ ô minRole cũ); `setItemAccess`, Thuộc tính màn hình có "Vai trò tối thiểu để xem"; 15 test
 - [ ] T029 [US4] web-it `tests/web-it/scenarios/admin-attack.mjs`: vai trò thấp gọi API quản trị, CSRF, sửa chính mình leo thang, xóa admin cuối, ghi bằng curl không quyền
 
 ## Phase 7: US5 Quy tắc qua cập nhật project (P3)
