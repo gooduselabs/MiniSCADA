@@ -326,6 +326,14 @@ a:focus-visible {
   text-align: center;
   color: var(--mat-text-muted);
 }
+/* `display` ở hai rule trên thắng thuộc tính `hidden` (kiểu của trình duyệt): màn hình ẩn vẫn chiếm cả khung, trang Alarm,
+   Lịch sử alarm, Lịch sử dữ liệu và Báo cáo bị đẩy xuống dưới khung `overflow: hidden` nên không thấy (phát hiện khi chụp ảnh
+   tài liệu, T203). */
+.screen mat-screen[hidden],
+.screen-loading[hidden],
+.screen-failed[hidden] {
+  display: none;
+}
 .screen-failed h2 {
   margin: 0 0 8px;
   font-size: 16px;
