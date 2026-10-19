@@ -63,6 +63,8 @@ struct ClientOptions {
 
     TlsVersion tls = TlsVersion::Default;
     std::string ciphers;  // TLS 1.2 suites, OpenSSL names (CURLOPT_SSL_CIPHER_LIST); empty: default
+    // TLS 1.3 suites in the client's order, OpenSSL names (CURLOPT_TLS13_CIPHERS); empty: default.
+    std::string tls13Ciphers;
     long timeoutMs = 10000;
     // Feature 011 (T039): the source address of the connection ("127.0.0.2"); empty: any.
     std::string localAddress;

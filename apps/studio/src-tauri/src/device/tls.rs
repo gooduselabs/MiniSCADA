@@ -7,7 +7,8 @@
 //! - Chế độ dò (`device_probe`): verifier chỉ ghi lại fingerprint; bắt tay xong thì đóng ngay, không
 //!   gửi byte ứng dụng nào.
 //! - Provider `ring`, bộ mã ChaCha20-Poly1305 xếp đầu (ADR-010: Cortex-A7 của BL335 không có lệnh
-//!   AES; Mbed TLS chọn bộ mã TLS 1.3 theo thứ tự của client).
+//!   AES). Từ 2026-10-19 runtime tự chọn ChaCha20 cả với TLS 1.3 (mAT patch 1 của Mbed TLS); thứ
+//!   tự ở đây vẫn giữ để máy chủ nào theo thứ tự của client cũng chọn ChaCha20.
 //! - Không nối lại phiên TLS: mỗi kết nối đều kiểm ghim và chữ ký bắt tay.
 
 use rustls::client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
