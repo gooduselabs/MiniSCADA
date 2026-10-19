@@ -209,6 +209,18 @@ expect v2 B
 has "HTTPS tắt (httpsPort = 0)" "httpsPort = 0: phải báo HTTPS tắt"
 hasnt "SHA256 Fingerprint" "httpsPort = 0: không in fingerprint"
 rm -f "$W/https-down"
+# Feature 013 (T002, FR-001): runtime.json đang có không bị ghi đè khi nâng cấp (thiết bị đang chạy
+# giữ viewerLogin của nó: không có khóa là off, có cảnh báo); bản cài mới lấy runtime.json của gói.
+[ "$(cat /etc/mat-runtime/runtime.json)" = '{"port": 8080, "httpsPort": 0}' ] || fail "deploy ghi đè runtime.json đang có"
+has "XEM KHÔNG CẦN ĐĂNG NHẬP" "viewerLogin off: deploy phải cảnh báo xem không cần đăng nhập"
+fresh
+printf '{"port": 8080, "viewerLogin": "required"}\n' > "$W/pkg-v1/deployment/runtime.json"
+tar -czf "$W/v1.tar.gz" -C "$W/pkg-v1" . && (cd "$W" && sha256sum "v1.tar.gz" > "v1.tar.gz.sha256")
+deploy v1 < /dev/null
+grep -q '"viewerLogin": "required"' /etc/mat-runtime/runtime.json || fail "bản cài mới phải lấy runtime.json của gói (viewerLogin required)"
+has "viewerLogin: required" "viewerLogin required: deploy phải báo"
+hasnt "XEM KHÔNG CẦN ĐĂNG NHẬP" "viewerLogin required: không cảnh báo"
+grep -q '"viewerLogin": "required"' "$SRC/deployment/config/runtime.json" || fail "deployment/config/runtime.json phải để viewerLogin required (bản cài mới)"
 
 # Feature 011 (T051, FR-013, FR-017, FR-033): lời nhắc allowedHosts, mật khẩu 15–128 ký tự, cảnh báo SSH khi
 # root đăng nhập được bằng mật khẩu (đọc sshd_config chỉ đọc; không bao giờ sửa). MAT_SSHD_CONFIG trỏ file giả;
