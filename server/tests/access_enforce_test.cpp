@@ -176,12 +176,15 @@ struct FakeTransport : LiveTransport {
     }
 };
 
+// The counts it gives are {"active":n}, n the number of present instances the filter keeps.
 struct FakeAlarms : AlarmLiveSource {
     bool hasAlarms() const override { return true; }
     AlarmLiveSnapshot snapshot(bool) override {
         AlarmLiveSnapshot s;
         s.instances = {R"({"id":"M1_FAULT"})", R"({"id":"COST_HIGH.H"})"};
         s.ids = {"M1_FAULT", "COST_HIGH.H"};
+        s.counts = countsOf({});
+        if (withCountsFor) s.countsFor = [this](const AlarmIdFilter& f) { return countsOf(f); };
         return s;
     }
     AlarmLiveBatch takeChanges() override {
@@ -189,9 +192,18 @@ struct FakeAlarms : AlarmLiveSource {
         b.revision = 2;
         b.changes = std::move(next);
         next.clear();
+        b.counts = countsOf({});
+        if (withCountsFor) b.countsFor = [this](const AlarmIdFilter& f) { return countsOf(f); };
         return b;
     }
+    std::string countsOf(const AlarmIdFilter& f) const {
+        int n = 0;
+        for (const auto& id : present) n += !f || f(id) ? 1 : 0;
+        return "{\"active\":" + std::to_string(n) + "}";
+    }
     std::vector<AlarmLiveChange> next;
+    Strings present = {"M1_FAULT", "COST_HIGH.H"};
+    bool withCountsFor = true;
 };
 
 struct HubRig {
@@ -290,6 +302,51 @@ TEST(AccessEnforce, TheAlarmsOfASessionFollowItsGrant) {
     ASSERT_EQ(deltas.size(), 1u);
     EXPECT_EQ(deltas[0]["changed"].size(), 1u);
     EXPECT_EQ(deltas[0]["changed"][0]["id"], "M1_FAULT");
+}
+
+// alarm(P) also for the counts (the banner, the badge, the title): a session counts only the
+// alarms it may see, in the snapshot and in every delta; a session that sees everything gets the
+// engine's counts. A source that cannot count for a filter gives such a session zero counts.
+TEST(AccessEnforce, TheAlarmCountsOfASessionAreOfTheAlarmsItMaySee) {
+    HubRig r;
+    r.grant = HubRig::only({0}, "a", [](const std::string& id) { return id == "M1_FAULT"; });
+    auto everything = std::make_shared<LiveGrant>();
+    r.hub->onOpen(1, true, [&r] { return r.grant; });
+    r.hub->onOpen(2, true, [everything] { return everything; });
+    r.hub->tick();
+    r.send(1, R"({"type":"subscribeAlarms","requestId":"a1"})");
+    r.send(2, R"({"type":"subscribeAlarms","requestId":"a2"})");
+    ASSERT_EQ(r.tx.ofType(1, "alarmSnapshot").size(), 1u);
+    EXPECT_EQ(r.tx.ofType(1, "alarmSnapshot")[0]["counts"]["active"], 1);
+    EXPECT_EQ(r.tx.ofType(2, "alarmSnapshot")[0]["counts"]["active"], 2);
+    r.alarms.present = {"M1_FAULT", "COST_HIGH.H", "COST_HIGH.HH"};
+    r.alarms.next = {{"COST_HIGH.HH", R"({"id":"COST_HIGH.HH"})", R"({"id":"COST_HIGH.HH"})"},
+                     {"M1_FAULT", R"({"id":"M1_FAULT","x":1})", R"({"id":"M1_FAULT","x":1})"}};
+    r.hub->tick();
+    ASSERT_EQ(r.tx.ofType(1, "alarmDelta").size(), 1u);
+    EXPECT_EQ(r.tx.ofType(1, "alarmDelta")[0]["counts"]["active"], 1);
+    EXPECT_EQ(r.tx.ofType(2, "alarmDelta")[0]["counts"]["active"], 3);
+    for (const auto& s : r.tx.sent[1]) EXPECT_EQ(s.find("COST_HIGH"), std::string::npos) << s;
+
+    // the access changes: a new snapshot of what the session may see now (and its counts)
+    r.grant = HubRig::only({0}, "b", [](const std::string&) { return false; });
+    r.now += 1000;
+    r.hub->tick();
+    ASSERT_EQ(r.tx.ofType(1, "access-changed").size(), 1u);
+    const auto again = r.tx.ofType(1, "alarmSnapshot");
+    ASSERT_EQ(again.size(), 2u);
+    EXPECT_EQ(again[1]["subscriptionId"], "a1");
+    EXPECT_TRUE(again[1]["instances"].empty()) << "M1_FAULT is gone from the page";
+    EXPECT_EQ(again[1]["counts"]["active"], 0);
+    EXPECT_GT(again[1]["sequence"].get<int64_t>(), r.tx.ofType(1, "alarmDelta")[0]["sequence"]);
+
+    HubRig old;
+    old.alarms.withCountsFor = false;
+    old.grant = HubRig::only({0}, "a", [](const std::string& id) { return id == "M1_FAULT"; });
+    old.hub->onOpen(1, true, [&old] { return old.grant; });
+    old.hub->tick();
+    old.send(1, R"({"type":"subscribeAlarms","requestId":"a1"})");
+    EXPECT_EQ(old.tx.ofType(1, "alarmSnapshot")[0]["counts"]["active"], 0);
 }
 
 TEST(AccessEnforce, AGrantFromAnAccess) {
