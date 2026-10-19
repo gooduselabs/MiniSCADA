@@ -731,5 +731,65 @@
     },
     "result": "không tăng: RSS mỗi tab cuối 43–49 MB (đỉnh lúc mở 138 MB), JS heap ≤ 3,6 MB, độ dốc âm",
     "pass": true
+  },
+  "L1alternateChaCha": {
+    "task": "T079 (L1 xen kẽ, sau ưu tiên ChaCha20)",
+    "date": "2026-10-19 10:02–11:02",
+    "runtime": "1.0.0-rc.1",
+    "releaseSeq": 14,
+    "project": "soak-std10 (500 Tag)",
+    "durationS": 3600,
+    "negotiated": {
+      "tls13": "TLS_CHACHA20_POLY1305_SHA256",
+      "tls12": "ECDHE-ECDSA-CHACHA20-POLY1305"
+    },
+    "cipherBenchOnDevice": {
+      "aes128gcmMBps": 6.69,
+      "aes256gcmMBps": 6.13,
+      "chacha20poly1305MBps": 25.37,
+      "record": "16 KiB"
+    },
+    "device": {
+      "cpuAvgPctOneCore": 30.4,
+      "cpuAvgPctMachine": 15.2,
+      "cpuPeakPctOneCore": 50.3,
+      "rssAvgMB": 19.4,
+      "rssMaxMB": 19.6
+    },
+    "summaryByScheme": {
+      "ws": {
+        "accepted": 5,
+        "totalSeqGaps": 0,
+        "maxLagP95Ms": 67,
+        "extraRejectedCorrectly": true
+      },
+      "wss": {
+        "accepted": 5,
+        "totalSeqGaps": 0,
+        "maxLagP95Ms": 55,
+        "extraRejectedCorrectly": true
+      }
+    },
+    "latencyByScheme": {
+      "ws": {
+        "count": 72000,
+        "p50Ms": 28,
+        "p95Ms": 60,
+        "maxMs": 626
+      },
+      "wss": {
+        "count": 72000,
+        "p50Ms": 34,
+        "p95Ms": 51,
+        "maxMs": 559
+      }
+    },
+    "criteria": {
+      "cpuAvg<=30% (one core)": "fail by 0.4 (30.4); 15.2 % of the machine",
+      "cpuPeak<=60%": "pass",
+      "rss": "pass",
+      "seqGaps==0": "pass"
+    },
+    "note": "ChaCha20 giảm phần TLS từ ~7 xuống ~1 điểm; L1 chỉ ws đã 28,9–29,4 %; đang giảm CPU đường live (định dạng delta một lần mỗi tick, nhánh gd6-live-cpu)"
   }
 }

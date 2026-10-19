@@ -358,3 +358,11 @@ Trạng thái cuối: runtime `1.0.0-rc.1` releaseSeq 13 active, `tank-demo` 0.1
 | 08:37 | Sao lưu `runtime.json` vào `/root/mat-stage-011/t079b`; mật khẩu ngẫu nhiên mới, bật `mat-t079-eng`, `mat-t079-xem`; `maxLiveClientsPerSource` 10; khởi động lại | 09:42 đã khôi phục |
 | 08:37–09:41 | Nạp `soak-std10`, `svg-l5`, rồi `tank-demo` (3 lần `committed`); L1 xen kẽ 1 giờ; 10 tab Chrome 10 phút | — |
 | 09:42 | Khôi phục `runtime.json` (SHA-256 gốc), tắt tài khoản, xóa thư mục tạm | — |
+
+## 2026-10-19 10:01–11:03 — cài releaseSeq 14 (ChaCha20, sửa CSS trang vận hành), đo lại L1 xen kẽ
+
+| Giờ | Thay đổi | Hoàn tác |
+|---|---|---|
+| 09:58 | `tls_cipher_bench` trong `/tmp` (xóa sau khi chạy) | — |
+| 10:01 | `deploy.sh` gói `1.0.0-rc.1` releaseSeq 14 (commit `f6ae5bf8`), kiểm sức khỏe OK sau 1 s; releaseSeq 13 sang `/opt/mat-runtime.prev` | `sh /opt/mat-runtime/deployment/rollback.sh` |
+| 10:01–11:03 | Như mục 08:37 (tài khoản thử, `maxLiveClientsPerSource` 10, `soak-std10`, L1 xen kẽ 1 giờ, nạp lại `tank-demo`), khôi phục `runtime.json` (SHA-256 gốc) | — |
