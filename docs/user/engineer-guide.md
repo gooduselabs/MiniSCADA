@@ -4,7 +4,7 @@ Dành cho kỹ sư tự động hóa dựng project, nạp xuống BL335 và ch�
 
 Áp dụng cho bản 1.0: Studio 1.0, runtime 1.0.0 (API thiết bị 1.5.0), định dạng project 1.0.0. Studio vẫn mở được project định dạng 0.1 đến 0.6 (mục 3); logic, template và faceplate cần định dạng 1.0.0 và runtime 1.0.0 trở lên. Thuật ngữ: [glossary.md](glossary.md). Mã lỗi: [error-codes.md](error-codes.md).
 
-Ảnh chụp màn hình: chờ (tài liệu chưa có ảnh; tên nút, menu và thông báo được trích nguyên văn từ Studio).
+Tên nút, menu và thông báo được trích nguyên văn từ Studio. Ảnh chụp màn hình chụp giao diện web của Studio (cùng giao diện với Studio trên Windows; thiết bị là thiết bị giả lập của bộ kiểm thử) trên Chrome (macOS, chế độ headless, khung 1366 × 768, theme sáng) với dữ liệu mẫu, dựng lại được bằng `node tools/docs-screenshots.mjs`; trên Windows phông chữ và khung cửa sổ có thể khác chút.
 
 ## 1. Chuẩn bị
 
@@ -34,6 +34,8 @@ Studio bố trí như một công cụ kỹ thuật: cây project bên trái, v�
 - Task card bên phải đổi theo editor đang mở: **Toolbox** (widget, ký hiệu) ở editor Màn hình, **Khối / Tag** ở editor Logic, **Công cụ vẽ** (công cụ và bảng màu tô, màu viền) ở trình vẽ SVG.
 - Phím tắt: menu **Trợ giúp** > **Phím tắt**.
 - Tài liệu này: menu **Trợ giúp** > **Hướng dẫn sử dụng** (F1) mở bản HTML đi kèm bộ cài, đúng mục của editor đang mở; không cần mạng.
+
+![Cửa sổ Studio: menu và thanh công cụ ở trên, cây project bên trái, editor Màn hình "Bơm" ở giữa đang xem trước Mô phỏng, dock Thuộc tính ở dưới, Toolbox bên phải, thanh trạng thái dưới cùng](img/eng-giao-dien-studio.png)
 
 <a id="help-project"></a>
 
@@ -65,6 +67,8 @@ Với `training-demo`, kênh "PLC giả lập (huấn luyện)" trỏ `127.0.0.1
 
 **Nhóm quét**: Nhanh (250 ms), Thường (1 s), Chậm (5 s). Đặt Tag quan trọng vào nhóm Nhanh, đừng đặt tất cả.
 
+![Editor Kết nối: kênh Modbus TCP và RTU với thiết bị trường, nút Thêm kênh Modbus TCP, Thêm kênh Modbus RTU, Thêm thiết bị trường; chu kỳ của nhóm quét Nhanh, Thường, Chậm](img/eng-ket-noi.png)
+
 <a id="help-tags"></a>
 
 ## 5. Tag
@@ -85,6 +89,8 @@ Mở **Tag** > **Bảng Tag mặc định**. Mỗi dòng là một Tag.
 - **Giữ qua mất điện** chỉ cho Tag nội bộ (`E_RETAIN`).
 - Nhiều Tag: **Thêm hàng loạt…**, **Nhập CSV…**, **Dán từ Excel**.
 - **Tag tính toán**: editor riêng có ô **Biểu thức**, danh sách **Tag đầu vào**, **Xem trước**. Lỗi thường gặp: `E_EXPR_SYNTAX`, `E_EXPR_UNKNOWN_TAG`, `E_EXPR_CYCLE`.
+
+![Bảng Tag mặc định: Thêm Tag, Thêm hàng loạt, Nhập CSV, Xuất CSV; lưới với cột Tên, Loại, Kiểu, Mô tả, Đơn vị, Thiết bị trường, Địa chỉ](img/eng-bang-tag.png)
 
 <a id="help-screens"></a>
 
@@ -137,6 +143,9 @@ Tab editor riêng để vẽ và sửa SVG đơn giản ngay trong Studio, khôn
 
 - Cây project, mục **Đồ họa SVG**: nhấp một tệp để mở tab trình vẽ. Mục cuối **Mới: SVG trống…** mở tab tạo tệp mới.
 - Trên màn hình, chọn một item svg rồi **Sửa trong trình vẽ** (menu chuột phải, Ctrl+Alt+Enter) mở đúng tệp của item. Enter hoặc nhấp đúp item svg vẫn là "vào đồ họa" để gắn Tag (mục 7.2).
+
+![Trình vẽ SVG mở tệp tram-bom.svg: Toolbox dọc bên trái canvas, panel Lớp và Thuộc tính bên phải canvas, task card Công cụ vẽ với màu tô và màu viền, dock báo phần giữ nguyên và khóa sửa nút](img/eng-trinh-ve-svg.png)
+
 - **Mới: SVG trống**: đặt tên (tệp `graphics/<tên>.svg`; trùng tên thì nút **Tạo và mở** bị khóa), chọn kích thước viewBox (Ký hiệu 100 × 100, Nhỏ 200 × 160, Vừa 400 × 300, Màn hình 1280 × 720, hoặc tự nhập W, H từ 1 đến 10.000), bước lưới, tên lớp đầu, nền trắng (lớp "Nền" khóa sẵn). Tệp mới có dấu chưa lưu; chỉ ghi xuống đĩa khi **Lưu**.
 
 **Bố cục**: thanh công cụ của trình vẽ ở trên (Lưu, Hoàn tác, Làm lại, số bước hoàn tác, nhóm, căn chỉnh, phân bố, cùng cỡ, thứ tự, bật tắt bắt dính, bước lưới, Hiện lưới, chip tự lưu); Toolbox công cụ dọc bên trái; canvas có thước, lưới, tay nắm, đường gióng; bên phải panel **Lớp** (trên) và **Thuộc tính** (dưới); dải trạng thái dưới cùng (tọa độ con trỏ, zoom, phần tử đang chọn, công cụ, kiểu bắt dính). Tab **Thuộc tính** của dock dưới cho biết viewBox, số nút / 20.000, độ sâu / 32, cỡ / 5 MB và các cảnh báo của tệp (`W_SVG_FONT`, đường cong khóa sửa nút, phần tử giữ nguyên).
@@ -210,6 +219,11 @@ Cần project định dạng 1.0.0 (mục 3); project cũ hơn thì các lệnh 
 - **Template**: một nhóm widget vẽ một lần, có tham số, lưu ở `templates/<id>.template.json`. Chọn các widget trên màn hình, nhấp phải, **Tạo template…** (hoặc tìm "Tạo template" trong **Tìm lệnh…**). Hộp "Tạo template từ vùng chọn" cho đặt id, tên, tối đa 16 tham số và chọn chỗ nào thay bằng tham số. Tham số có kiểu `tagPrefix`, `string`, `number`, `color`; trong item viết `{tên}`, ví dụ `{prefix}.RUN`. Đây là thay chuỗi thuần, không phải biểu thức, không lồng. Template tối đa 120 item và chỉ gồm widget: item SVG không đưa vào template được.
 - Mọi template nằm ở mục **Template** trên cây; trang của một template có danh sách bản sao (màn hình, trạng thái "khớp template" hay "lệch template"), các nút **Thêm bản sao…**, **Tham số…**, **Xóa template…**.
 - **Bản sao**: **Thêm bản sao…**, chọn màn hình, đặt **Id bản sao** và giá trị tham số (ví dụ `prefix` = `PUMP07`; ô trống lấy mặc định). Khi lưu, bản sao được bung thành item thường, id dạng `<bản sao>.<item>` (ví dụ `pump7.lamp`); runtime không cần biết template.
+
+![Trang template bom: Thêm bản sao, Cập nhật mọi bản sao (20), Xóa template; tham số prefix và title; danh sách bản sao với trạng thái khớp template](img/eng-template.png)
+
+![Hộp Thêm bản sao của bom: màn hình, Id bản sao, X, Y và giá trị từng tham số](img/eng-template-ban-sao.png)
+
 - Sửa template rồi **Cập nhật mọi bản sao (n)**: giữ riêng vị trí, cỡ, giá trị tham số và id của từng bản sao; một bước hoàn tác (Ctrl+Z). Item thêm tay vào bản sao bị xóa khi cập nhật (inspector báo `W_TEMPLATE_DRIFT`); muốn giữ thì **Bung thành item thường** cho bản sao đó trước. Xóa template còn bản sao: các bản sao được giữ lại dạng item thường.
 - **Faceplate**: màn hình popup có tham số. Mở màn hình popup, trong inspector bấm **Tạo faceplate (tham số cho popup)**: Studio đổi tiền tố Tag chung của popup thành tham số `prefix`. Ở nút gọi popup, hành động **Mở popup** có ô **args…** để truyền giá trị, ví dụ mở `bom-chi-tiet` với `prefix` = `PUMP07`. Nút thuộc bản sao template lấy `args` từ tham số của template (chỉ xem). Studio kiểm trước mọi tổ hợp `args` được gọi; tham số sai thì báo `E_TEMPLATE_PARAM` hoặc `E_POPUP_ARGS`, Tag không có thì `E_TEMPLATE_TAG_REF`. Trên trang vận hành, popup chỉ đăng ký các Tag có trong project; `args` sai thì popup không mở và báo "tham số của cửa sổ sai (…)".
 
@@ -246,7 +260,15 @@ Chi tiết từng khối (theo engine của runtime; **Thử logic** trong Studi
 - Ghi từ logic **mặc định tắt trên thiết bị** (`logic.writes` = `off`): luật vẫn chạy, nhưng không lệnh nào tới PLC. Chỉ quản trị viên bật được, bằng quyền root trên thiết bị ([admin-guide.md](admin-guide.md) mục 9). Mỗi lệnh ghi của logic có audit với người thực hiện `logic:<id luật>`.
 - **Dừng khẩn:** administrator dừng mọi lệnh ghi PLC của logic từ Studio (**Dừng ghi của logic…**); có hiệu lực ngay và giữ qua khởi động lại; luật, timer, counter vẫn chạy. Chỉ root bỏ được lệnh dừng, bằng `mat-runtime --logic-writes-reset` trên thiết bị (không có nút bật lại trong Studio: API trả `LOGIC_ENABLE_ROOT_ONLY`). Chi tiết: [admin-guide.md](admin-guide.md) mục 9.
 - **Thử logic** (dock dưới): chạy mô phỏng ngay trong Studio, không cần thiết bị. **Chạy**/**Dừng** (Space), **Một quét**, tua ×1, ×10, ×100; **Đặt tay** giá trị và quality (GOOD, UNCERTAIN, BAD) của từng đầu vào; đường thời gian đầu vào, đầu ra (co giãn theo thời gian đã chạy, tối đa 5 phút, 30 phút, 2 giờ theo tốc độ) và danh sách hành động phát sinh. Lệnh ghi trong mô phỏng chỉ áp vào Tag mô phỏng ("Không gửi gì tới thiết bị"). **Lưu kịch bản…** lưu ca thử thành tệp JSON.
+
+![Editor Logic nhóm Luật: Kiểm tra, Thêm khối, Thử logic; nút nhóm Luật, Timer, Counter, Cộng dồn, Giờ chạy, Lịch, Ghi PLC; bảng hai luật bơm; Inspector của luật đang chọn với ô điều kiện; task card Khối / Tag](img/eng-logic.png)
+
+![Thử logic ở tốc độ ×100: đặt tay đầu vào, đường thời gian của Tag và luật, hành động phát sinh, trạng thái khối; dòng cuối ghi không gửi gì tới thiết bị](img/eng-thu-logic.png)
+
 - **Online**: bảng khối có thêm cột **Trạng thái**, **Lần bắn cuối**, **Số lần** đọc từ thiết bị; thanh công cụ của tab có chip "Ghi PLC: tắt", "Ghi PLC: bật" hoặc "Ghi PLC: dừng" (nhấp để xem chi tiết; administrator có **Dừng ghi của logic…**, xem [admin-guide.md](admin-guide.md) mục 9). Inspector của counter, cộng dồn, giờ chạy có nút **Đặt lại về 0 trên thiết bị** (engineer, có audit).
+
+![Editor Logic khi Online: chip Ghi PLC: bật trên thanh công cụ; Inspector có Trên thiết bị OK và lần bắn cuối](img/eng-logic-online.png)
+
 - Khi nạp xuống project có ghi từ logic, hộp xem trước có mục "Logic sẽ tự động ghi N Tag xuống PLC" kèm bảng Tag, giá trị cho phép, tần suất và luật ghi, và trạng thái ghi PLC của thiết bị đích (thiết bị đang tắt ghi thì có cảnh báo `W_LOGIC_WRITES_OFF`). Phải tích "Tôi đã xem danh sách…" mới nạp xuống được.
 - Logic không thay logic an toàn của PLC: khóa liên động và dừng khẩn phải nằm trong PLC.
 
@@ -259,6 +281,9 @@ Chi tiết từng khối (theo engine của runtime; **Thử logic** trong Studi
 1. **Online** > **Thiết bị trong mạng…**: Studio tìm runtime trong mạng LAN. Không thấy (khác mạng con, VPN): **Thêm theo địa chỉ…**.
 2. Lần đầu, hộp "Xác nhận chứng chỉ" hiện **Fingerprint SHA-256 của chứng chỉ thiết bị**. So **từng cặp ký tự** với fingerprint do quản trị viên đọc trên thiết bị. Khớp thì **Ghim và tiếp tục**. Không khớp: dừng, báo quản trị viên.
 3. **Đăng nhập…**: nhập tài khoản engineer.
+
+![Hộp Thiết bị trong mạng: card mạng, Tìm lại, bảng BL335-01 và BL335-02 với địa chỉ, runtime, project, trạng thái; chi tiết thiết bị đang chọn kèm fingerprint SHA-256; Thêm theo địa chỉ, Đọc lên để so sánh, Đọc lên thành project mới, Online](img/eng-thiet-bi-trong-mang.png)
+
 4. Fingerprint đổi sau này ("Chứng chỉ đã đổi"): chỉ **Gỡ ghim và xác nhận lại** khi quản trị viên xác nhận đã sinh lại chứng chỉ.
 
 ### 10.2. Nạp xuống
@@ -269,6 +294,8 @@ Chi tiết từng khối (theo engine của runtime; **Thử logic** trong Studi
 4. Thiết bị chạy các bước: Gửi gói lên thiết bị, Kiểm tra gói, Kiểm tra project, Sao lưu bản đang chạy, Kích hoạt bản mới, Kiểm tra sức khỏe (15 s).
 5. Lỗi trước bước kích hoạt: thiết bị không đổi gì. Kích hoạt xong mà kiểm tra sức khỏe không đạt: thiết bị **tự quay về** bản trước.
 6. Trang vận hành đang mở tự tải lại ("Đang nạp project mới…").
+
+![Hộp Nạp xuống, xem trước: Kiểm tra project, Tương thích runtime, Thay project đang chạy, Client sẽ tải lại, Dung lượng gói, Lưu trữ dữ liệu, Kết nối, Màn hình, Logic sẽ tự động ghi 1 Tag xuống PLC; hai ô xác nhận; nút Nạp xuống khóa tới khi tích](img/eng-nap-xuong.png)
 
 Nạp xuống nên làm ngoài giờ cao điểm và báo trước cho người vận hành.
 

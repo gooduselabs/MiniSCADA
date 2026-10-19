@@ -2,7 +2,7 @@
 
 Dành cho người vận hành dùng trang mAT SCADA trên Chrome hằng ngày. Tài liệu ngắn, đọc trong 20 phút. Từ ngữ lạ: xem [Thuật ngữ](glossary.md). Mã lỗi: xem [Mã lỗi và cảnh báo](error-codes.md).
 
-Áp dụng cho runtime 1.0.0 (bản 1.0); phần lớn cũng đúng với runtime 0.9. Chữ trên màn hình trong tài liệu này lấy đúng từ phần mềm. Ảnh chụp màn hình: chờ.
+Áp dụng cho runtime 1.0.0 (bản 1.0); phần lớn cũng đúng với runtime 0.9. Chữ trên màn hình trong tài liệu này lấy đúng từ phần mềm. Ảnh chụp màn hình chụp giao diện web của trang vận hành trên Chrome (macOS, chế độ headless, khung 1366 × 768, theme sáng) với dữ liệu mẫu, dựng lại được bằng `node tools/docs-screenshots.mjs`; trên Windows phông chữ và khung cửa sổ có thể khác chút; màn hình của nhà máy bạn do kỹ sư vẽ nên khác ảnh.
 
 ## 1. Mở trang
 
@@ -14,6 +14,8 @@ Dành cho người vận hành dùng trang mAT SCADA trên Chrome hằng ngày. 
 
 Trang mở ở màn hình đầu. Menu bên trái (hoặc trên) chứa các màn hình. Cửa sổ hẹp thì bấm nút menu ("Mở menu"). Đầu trang hiện "project · màn hình".
 
+![Trang vận hành: thanh trên có tên project, màn hình, trạng thái Trực tuyến và tài khoản; banner alarm đỏ; menu bên trái; màn hình Tổng quan với thẻ giá trị, đồng hồ kim và thẻ Nhiệt độ có dấu BAD](img/op-man-hinh.png)
+
 Một số nút mở cửa sổ chi tiết (popup) cho từng thiết bị, ví dụ bấm vào bơm P-07 mở cửa sổ chi tiết của đúng bơm P-07. Trước khi điều khiển, kiểm nhãn trên cửa sổ và tên Tag trong hộp xác nhận (mục 5) đúng thiết bị mình muốn. Đóng bằng nút **Đóng** hoặc Esc. Trang báo "tham số của cửa sổ sai (…)" thì cửa sổ không mở: báo kỹ sư.
 
 ## 2. Đăng nhập và đăng xuất
@@ -24,6 +26,8 @@ Cần đăng nhập để điều khiển, xem lịch sử, xem báo cáo. Xem g
 2. Nhập **Tài khoản** và **Mật khẩu**, bấm **Đăng nhập**.
 3. Đúng: thanh trên hiện tên của bạn và vai trò, ví dụ "vanhanh1 (operator)".
 4. Xong ca: bấm **Đăng xuất**.
+
+![Hộp Đăng nhập với ô Tài khoản, Mật khẩu và nút Hủy, Đăng nhập](img/op-dang-nhap.png)
 
 Thông báo khi không đăng nhập được:
 
@@ -46,6 +50,8 @@ Trang ở chế độ chỉ xem khi:
 
 Nút điều khiển bị khóa hiện biểu tượng ổ khóa và lý do, ví dụ "Đăng nhập để điều khiển", "Cần quyền operator", "Tag chỉ đọc", "Mất kết nối dữ liệu".
 
+![Trang mở bằng http: dải vàng "Chế độ chỉ xem. Mở bằng HTTPS để điều khiển." kèm liên kết Mở bằng HTTPS; nút Xác nhận alarm bị khóa](img/op-chi-xem.png)
+
 ## 4. Đọc giá trị và trạng thái
 
 Mỗi giá trị có một dấu ở góc khi dữ liệu không tốt. Không có dấu là giá trị tốt (GOOD).
@@ -67,6 +73,8 @@ Cần: trang `https://`, đã đăng nhập, vai trò `operator` trở lên.
 2. Hộp **Xác nhận ghi giá trị** hiện: Tag, mô tả, thiết bị, giá trị hiện tại → giá trị mới, đơn vị, giới hạn, tài khoản của bạn.
 3. Đọc kỹ. Đúng thì bấm **Xác nhận**. Sai thì bấm **Hủy** hoặc Esc. Nút **Hủy** được chọn sẵn để tránh bấm nhầm.
 4. Xem dải kết quả ngay trên nút.
+
+![Hộp Xác nhận ghi giá trị: Tag TANK01.SP, mô tả, thiết bị trường, giá trị 70.0 % → 42.5 %, đơn vị, giới hạn 0–100, tài khoản; nút Hủy được chọn sẵn](img/op-xac-nhan-ghi.png)
 
 Kết quả lệnh:
 
@@ -105,6 +113,8 @@ Xử lý một alarm:
 
 Lịch sử alarm: menu **Lịch sử alarm**.
 
+![Trang Alarm: banner Khẩn cấp, tab Đang có và Tạm ẩn, bộ lọc, nút Xác nhận, Xác nhận tất cả, Tạm ẩn; bảng ba alarm mức Khẩn cấp, Quan trọng, Nhỏ đang có, chưa xác nhận](img/op-alarm.png)
+
 ## 7. Mất kết nối
 
 Góc trên hiện trạng thái kết nối:
@@ -130,6 +140,10 @@ Cần trang `https://` và đăng nhập.
 
 - **Lịch sử**: chọn nhóm lưu trữ, chọn tối đa 16 Tag, chọn khoảng (1 giờ đến 30 ngày, Hôm nay, Hôm qua). Có biểu đồ và bảng; **Xuất CSV** để tải.
 - **Báo cáo**: chọn kỳ (Ngày, Ngày làm việc, Tháng), bấm **Xem**, rồi tải **CSV**, **CSV Excel**, **XLSX** hoặc **PDF**.
+
+![Trang Lịch sử dữ liệu: nhóm Áp suất, hai Tag, khoảng 8 giờ; biểu đồ đường áp suất và trạng thái bơm; bảng giá trị có Xuất CSV](img/op-lich-su.png)
+
+![Trang báo cáo Điện năng theo ngày: ô Ngày, nút Xem, CSV, CSV Excel, XLSX, PDF; bảng theo giờ có hàng Tổng và dòng Dữ liệu đủ 100,0 %](img/op-bao-cao.png)
 
 ## 9. Khi có sự cố: làm gì, gọi ai
 

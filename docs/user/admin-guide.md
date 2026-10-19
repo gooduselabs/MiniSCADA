@@ -4,7 +4,7 @@ Dành cho người cài đặt và giữ hệ thống chạy: thiết bị BL335
 
 Áp dụng cho bản 1.0: runtime 1.0.0 (API thiết bị 1.5.0) và Studio 1.0. Mọi mục trong tài liệu này đã có trong runtime 1.0.0: khóa đăng nhập, kiểm `Host`, giới hạn kết nối theo nguồn, `--check-data`, chẩn đoán, ghi PLC từ logic, cập nhật runtime qua mạng (OTA, gói `.matupdate`, `mat-updater`), kiểm chữ ký bản phát hành. Riêng chữ ký số Authenticode của bộ cài Studio cần chứng chỉ ký mã thật của công ty: bản thử và bản rc chưa có (mục 2.2).
 
-Ảnh chụp màn hình: chờ (tài liệu chưa có ảnh; chữ trên màn hình được trích nguyên văn từ phần mềm).
+Chữ trên màn hình được trích nguyên văn từ phần mềm. Ảnh chụp màn hình chụp giao diện web của Studio (thiết bị là thiết bị giả lập của bộ kiểm thử) trên Chrome (macOS, chế độ headless, khung 1366 × 768, theme sáng) với dữ liệu mẫu, dựng lại được bằng `node tools/docs-screenshots.mjs`; trên Windows phông chữ và khung cửa sổ có thể khác chút.
 
 Quy ước trong tài liệu:
 
@@ -253,6 +253,14 @@ Thay đổi bằng `--trust-key` có audit `system.keys.updated` ở lần khở
 4. Nhập lại mật khẩu của mình rồi bấm **Cập nhật**. Mật khẩu sai trả `REAUTH_FAILED` và được tính như đăng nhập sai (khóa theo cặp tên, IP; `AUTH_LOCKED`, `LOGIN_BUSY` như mục 4).
 5. Theo dõi: "Thiết bị đang áp dụng bản cập nhật…", rồi "Dịch vụ runtime đang khởi động lại, Studio chờ thiết bị trả lời…". **Không tắt nguồn thiết bị.** Dịch vụ ngừng khoảng 10–30 s; trang vận hành tự nối lại. Phiên đăng nhập của Studio mất khi runtime khởi động lại: đăng nhập lại để xem kết quả.
 
+![Hộp Cập nhật runtime, bước chọn gói: runtime đang chạy 1.0.0, gói mat-runtime-1.0.1.matupdate, bản trước 0.9.5; nút Quay về bản trước, Hủy, Tải lên và kiểm](img/adm-ota-chon-tep.png)
+
+![Hộp Cập nhật runtime, kế hoạch: phiên bản 1.0.0 → 1.0.1, số phát hành, project đang chạy Tương thích, thời gian ngừng khoảng 25 s, người ký release-primary; cảnh báo ngừng dịch vụ; ô Mật khẩu của admin; nút Hủy gói, Đóng, Cập nhật](img/adm-ota-ke-hoach.png)
+
+![Hộp Cập nhật runtime đang theo dõi: Thiết bị đang áp dụng bản cập nhật, cảnh báo không tắt nguồn thiết bị](img/adm-ota-theo-doi.png)
+
+![Hộp Cập nhật runtime, kết quả: Đã cập nhật runtime lên 1.0.1, bản 1.0.0 giữ làm bản trước; nút Quay về bản trước, Đóng](img/adm-ota-ket-qua.png)
+
 Trạng thái mà thiết bị báo (`GET /api/v1/system/update`, Studio đọc):
 
 | Trạng thái | Ý nghĩa |
@@ -325,6 +333,8 @@ Ngưỡng tham khảo: RSS ≤ 150 MB, CPU trung bình ≤ 30 %, `liveLagP95Ms` 
 ### Cảnh báo của thiết bị
 
 `system/info` có danh sách mã `warnings`; Studio hiện chúng ở thông tin thiết bị. `warningDetails` cho mỗi mã thêm thông điệp tiếng Việt, thời điểm bắt đầu (`since`) và `detail` (ví dụ danh sách Tag của `PULSE_STUCK`); `detail` chỉ có khi request mang phiên đăng nhập (giảm thông tin cho người dò từ ngoài). Cảnh báo tự hết khi nguyên nhân hết, trừ `UPDATE_ROLLED_BACK` (giữ 30 ngày).
+
+![Trang Thiết bị trong Studio (administrator, Online): mục Cảnh báo của thiết bị có ba chip SSH root bằng mật khẩu, Giờ chưa đồng bộ, Logic không ghi PLC kèm việc cần làm; khung Cập nhật runtime; thanh trạng thái cũng hiện các chip cảnh báo](img/adm-trang-thiet-bi.png)
 
 | Mã | Ý nghĩa | Việc cần làm |
 |---|---|---|
