@@ -4,6 +4,9 @@ Mở rộng [project-format-1.0.md](../../011-pilot-hardening/contracts/project-
 
 ## 1. Phiên bản
 
+**Bộ schema:** theo quy ước của [schemas/README.md](../../../schemas/README.md) ("dòng 1.x chỉ thêm ở thư mục gốc, MINOR"), định dạng 1.1 dùng **cùng bộ schema ở thư mục gốc `schemas/`** với 1.0 (chỉ thêm trường tùy chọn: `layout` của màn hình, `theme` của project; `x`, `y`, `width`, `height` của item thành tùy chọn ở schema). `schemas/1.0/` (bản đóng băng 1.0.0) không đổi. Bộ kiểm C++ chọn cùng bộ (set 10) cho `1.0.x` và `1.1.x`. Khác biệt giữa 1.0 và 1.1 do **luật** kiểm (§3): `E_LAYOUT_VERSION`.
+
+
 - Mọi tệp của project 1.1 có `schemaVersion` `1.1.x`; `minRuntimeVersion` ≥ `1.1.0`.
 - Bộ kiểm hiểu 0.1 đến 1.1; `1.2` trở lên: từ chối (`UNSUPPORTED_VERSION` ở Studio, "định dạng mới hơn").
 - Nâng cấp: `migrateTo11(files)` từ 0.1 … 1.0 trong một lần (một thư mục sao lưu), bước cuối 1.0 → 1.1 chỉ đổi `schemaVersion` và `minRuntimeVersion` (`bumpFormat`). Đã là 1.1: `ALREADY_11`.
@@ -51,8 +54,9 @@ Tệp được ghi theo thứ tự khóa ổn định (`format-03.ts`): `schemaV
 | `E_LAYOUT_ITEM_POS` | lỗi | item của màn hình có `layout` mang `x`, `y`, `width` hoặc `height` | `/items/<i>/x` (trường đầu tiên có) |
 | `E_LAYOUT_LIMIT` | lỗi | > 100 hàng, 0 hoặc > 12 ô một hàng | `/layout/rows`, `/layout/rows/<r>/cells` |
 | `W_LAYOUT_ITEM_ORPHAN` | cảnh báo | item không ô nào trỏ tới | `/items/<i>` |
+| `E_LAYOUT_VERSION` | lỗi | `layout` (màn hình) hoặc `theme` (project) trong project có `schemaVersion` < 1.1; hoặc project 1.1 có `minRuntimeVersion` < 1.1.0 | `/layout`, `/theme`, `/minRuntimeVersion` |
 
-Màn hình không có `layout`: item phải có `x`, `y`, `width`, `height` (lỗi schema như 1.0).
+Màn hình không có `layout`: item thiếu một trong `x`, `y`, `width`, `height` là `E_LAYOUT_ITEM_POS` (đường dẫn `/items/<i>/<trường thiếu đầu tiên>`), vì schema 1.x đã nới các trường này thành tùy chọn.
 
 ## 4. `theme` của project
 

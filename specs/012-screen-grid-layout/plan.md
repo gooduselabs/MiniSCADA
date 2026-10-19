@@ -63,7 +63,7 @@ specs/012-screen-grid-layout/
 ### Source Code (repository root)
 
 ```text
-schemas/1.1/                       # bản đóng băng định dạng 1.1 (screen thêm layout, project thêm theme)
+schemas/screen.schema.json, project.schema.json  # dòng 1.x ở thư mục gốc: thêm layout, theme (MINOR)
 schemas/screen.schema.json         # bản hiện hành = 1.1
 schemas/error-codes.json           # E_LAYOUT_*, W_LAYOUT_ITEM_ORPHAN
 packages/project-schema/src/
