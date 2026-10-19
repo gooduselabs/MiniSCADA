@@ -6,7 +6,10 @@ import { safeColor } from '../format/color.ts';
 
 /** Phần API của một biểu đồ ECharts mà widget dùng. */
 export interface ChartInstance {
-  setOption(option: object, opts?: { notMerge?: boolean; lazyUpdate?: boolean }): void;
+  setOption(
+    option: object,
+    opts?: { notMerge?: boolean; lazyUpdate?: boolean; replaceMerge?: string[] },
+  ): void;
   resize(opts?: { width?: number | 'auto'; height?: number | 'auto' }): void;
   dispose(): void;
 }

@@ -1,6 +1,7 @@
 // Tiện ích dùng chung cho test widget (không phải mã chạy thật).
 import type { ValueTable } from '@mat/expression';
 import type { WidgetItem } from '@mat/project-schema';
+import { setEChartsLoader } from '../chart/echarts-lite.ts';
 import { FakeActionHost, MemoryTagSource } from '../host/memory-source.ts';
 import type { TagInfo } from '../host/types.ts';
 import { registerWidgets } from './register.ts';
@@ -65,4 +66,52 @@ export function textOf(el: Element, sel: string): string {
 
 export const cleanup = (): void => {
   document.body.replaceChildren();
+  setEChartsLoader(null);
 };
+
+/** Một biểu đồ của ECharts giả: phần tử chứa, tùy chọn init, mọi option đã đặt. */
+export interface FakeChart {
+  el: HTMLElement;
+  init: { width?: number; height?: number } | undefined;
+  options: Array<Record<string, unknown>>;
+  resized: number;
+  disposed: boolean;
+}
+
+/** Thay ECharts bằng bản giả ghi lại option (feature 012): test đọc option thay vì điểm ảnh. */
+export function fakeECharts(): { charts: FakeChart[]; option(): Record<string, unknown> } {
+  const charts: FakeChart[] = [];
+  setEChartsLoader(async () => ({
+    init(el, init) {
+      const c: FakeChart = { el, init, options: [], resized: 0, disposed: false };
+      charts.push(c);
+      return {
+        setOption: (o) => void c.options.push(o as Record<string, unknown>),
+        resize: () => void c.resized++,
+        dispose: () => void (c.disposed = true),
+      };
+    },
+  }));
+  return {
+    charts,
+    option: () => {
+      const o = charts.at(-1)?.options.at(-1);
+      if (!o) throw new Error('chưa có option nào');
+      return o;
+    },
+  };
+}
+
+/** Gắn widget biểu đồ và chờ ECharts (giả hoặc thật) nhận option đầu tiên. */
+export async function mountChart(it: WidgetItem, source: MemoryTagSource): Promise<El> {
+  const el = await mount(it, source);
+  await (el as unknown as { chartReady: Promise<void> }).chartReady;
+  await el.updateComplete;
+  return el;
+}
+
+/** Gọi formatter (hàm) của ECharts như ECharts gọi. */
+export function callFormatter(f: unknown, params: Record<string, unknown>): unknown {
+  if (typeof f !== 'function') throw new Error('formatter không phải hàm');
+  return (f as (p: Record<string, unknown>) => unknown)(params);
+}
