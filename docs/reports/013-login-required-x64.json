@@ -1,0 +1,142 @@
+{
+  "scenario": "login-required",
+  "checks": [
+    {
+      "name": "/ không phiên: 302 /login",
+      "pass": true,
+      "detail": "302 /login"
+    },
+    {
+      "name": "/index.html không phiên: 302 /login",
+      "pass": true,
+      "detail": "302 /login"
+    },
+    {
+      "name": "/api/v1/projects/active không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "/api/v1/web/access không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập.\"}"
+    },
+    {
+      "name": "/api/v1/web/session không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập.\"}"
+    },
+    {
+      "name": "/api/v1/alarms không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "/api/v1/alarms/history không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "/api/v1/history/catalog không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập.\"}"
+    },
+    {
+      "name": "/api/v1/logic không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập.\"}"
+    },
+    {
+      "name": "/api/v1/admin/users không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập.\"}"
+    },
+    {
+      "name": "/api/v1/admin/access không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập.\"}"
+    },
+    {
+      "name": "/project/screens/tong-quan.svg không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "/project/screens/tong-quan.bindings.json không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "/project/screens/tong-quan.screen.json không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "/project/screens/bon-nuoc.screen.json không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "/project/screens/giam-sat.screen.json không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "/project/screens/bom1.screen.json không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "/project/screens/bom.screen.json không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "/project/screens/bom-chi-tiet.screen.json không phiên: 401, không có dữ liệu",
+      "pass": true,
+      "detail": "401 {\"error\":\"AUTH_REQUIRED\",\"message\":\"Cần đăng nhập để xem.\"}"
+    },
+    {
+      "name": "cookie bịa: 401",
+      "pass": true,
+      "detail": "401"
+    },
+    {
+      "name": "cookie sau đăng xuất: 401",
+      "pass": true,
+      "detail": "401"
+    },
+    {
+      "name": "ghi Tag không phiên: 401",
+      "pass": true,
+      "detail": "401"
+    },
+    {
+      "name": "live không phiên: 401",
+      "pass": true,
+      "detail": "401 "
+    },
+    {
+      "name": "system/info khách: không Tag, không project",
+      "pass": true,
+      "detail": "runtimeVersion,web"
+    },
+    {
+      "name": "HTTP projects/active: 401/403, không dữ liệu",
+      "pass": true,
+      "detail": "401"
+    },
+    {
+      "name": "có phiên: web/access 200 với screens",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "web/session có groups và viewerLogin required",
+      "pass": true,
+      "detail": "\"required\""
+    }
+  ],
+  "measures": {},
+  "pass": true
+}
