@@ -2,27 +2,27 @@
   "scenario": "open",
   "checks": [
     {
-      "name": "màn hình chuẩn (20 widget, 100 Tag) có giá trị sống ≤ 2 s kể từ mở trang (đo 235 ms)",
+      "name": "màn hình chuẩn (20 widget, 100 Tag) có giá trị sống ≤ 2 s kể từ mở trang (đo 185 ms)",
       "pass": true
     },
     {
-      "name": "màn hình 250 item dựng xong và có giá trị ≤ 2 s sau khi chọn (đo 50 ms)",
+      "name": "màn hình 250 item dựng xong và có giá trị ≤ 2 s sau khi chọn (đo 25 ms)",
       "pass": true
     },
     {
-      "name": "chuyển lại màn hình đã mở ≤ 500 ms (đo 13 ms)",
+      "name": "chuyển lại màn hình đã mở ≤ 500 ms (đo 19 ms)",
       "pass": true
     },
     {
-      "name": "mở lạnh trực tiếp #/lon (250 item) ≤ 2 s (đo 170 ms)",
+      "name": "mở lạnh trực tiếp #/lon (250 item) ≤ 2 s (đo 714 ms)",
       "pass": true
     }
   ],
   "measures": {
-    "openStandardMs": 235,
-    "open250Ms": 50,
-    "switchBackMs": 13,
-    "open250ColdMs": 170
+    "openStandardMs": 185,
+    "open250Ms": 25,
+    "switchBackMs": 19,
+    "open250ColdMs": 714
   },
   "pass": true
 }

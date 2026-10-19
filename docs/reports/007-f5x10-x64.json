@@ -2,9 +2,9 @@
   "scenario": "f5x10",
   "checks": [
     {
-      "name": "10 phiên F5 cùng lúc: mọi trang có giá trị sống ≤ 5 s (3 vòng, chậm nhất 498, 437, 457 ms)",
+      "name": "10 phiên F5 cùng lúc: mọi trang có giá trị sống ≤ 5 s (3 vòng, chậm nhất 517, 499, 519 ms)",
       "pass": true,
-      "detail": "[498,437,457]"
+      "detail": "[517,499,519]"
     },
     {
       "name": "0 trang báo lỗi 4429 (đầy chỗ) do dựng phiên chậm",
@@ -14,11 +14,11 @@
   ],
   "measures": {
     "f5x10WorstMs": [
-      498,
-      437,
-      457
+      517,
+      499,
+      519
     ],
-    "f5x10Median": 457
+    "f5x10Median": 517
   },
   "pass": true
 }

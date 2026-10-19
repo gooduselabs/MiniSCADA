@@ -1,7 +1,7 @@
 {
   "feature": "011",
   "task": "T120",
-  "date": "2026-10-18T16:18:14",
+  "date": "2026-10-19T08:09:46",
   "machine": "Docker mat-armhf (aarch64), real mat-runtime of that architecture, fake systemctl",
   "note": "lab: MAT_RATE_S=0; health check 60 s, stable 5 s as on the device",
   "scenarios": {
@@ -260,7 +260,7 @@
           "detail": "KEYSET_KEY"
         }
       ],
-      "seconds": 4.4
+      "seconds": 4.0
     },
     "downgrade": {
       "passed": true,
@@ -297,7 +297,7 @@
       ],
       "apply": 202,
       "last": {
-        "updateId": "upd_5b9bfd0321aac57c",
+        "updateId": "upd_ca53d0ea43d1e1a3",
         "op": "keyset",
         "result": "committed",
         "from": "1.0.0-rc.1",
@@ -307,8 +307,8 @@
         "user": "admin",
         "code": "",
         "reason": "",
-        "finishedAt": "2026-10-18T16:18:37Z",
-        "finishedAtMs": 1792340317000,
+        "finishedAt": "2026-10-19T08:10:08Z",
+        "finishedAtMs": 1792397408000,
         "audited": false
       },
       "keysAfter": 2,
@@ -386,9 +386,9 @@
       "passed": true,
       "result": "rolled-back",
       "reason": "health check failed after 60 s",
-      "secondsToBack": 89.3,
+      "secondsToBack": 89.4,
       "failedKept": true,
-      "seconds": 89.3
+      "seconds": 89.4
     }
   },
   "passed": true

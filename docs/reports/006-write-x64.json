@@ -4,7 +4,7 @@
     {
       "name": "FLOAT32 R.SP = 75: CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T15:59:39.641Z\",\"readback\":75,\"receivedAt\":\"2026-10-18T15:59:39.430Z\",\"requestId\":\"14377768-59fe-47c7-806d-de6d25477768\",\"status\":\"CONFIRMED\",\"tag\":\"R.SP\",\"value\":75}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-19T07:50:24.353Z\",\"readback\":75,\"receivedAt\":\"2026-10-19T07:50:24.211Z\",\"requestId\":\"179de68d-abf8-4fa0-8980-e51f530de68d\",\"status\":\"CONFIRMED\",\"tag\":\"R.SP\",\"value\":75}"
     },
     {
       "name": "FLOAT32 R.SP = 75: the simulator holds [17046,0]",
@@ -14,7 +14,7 @@
     {
       "name": "INT16 R.CNT = -5: CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T15:59:39.891Z\",\"readback\":-5,\"receivedAt\":\"2026-10-18T15:59:39.663Z\",\"requestId\":\"14377769-492f-45c3-86ad-6c9a28b47769\",\"status\":\"CONFIRMED\",\"tag\":\"R.CNT\",\"value\":-5}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-19T07:50:24.603Z\",\"readback\":-5,\"receivedAt\":\"2026-10-19T07:50:24.436Z\",\"requestId\":\"179de68e-db7f-4b8a-8dea-fee35730e68e\",\"status\":\"CONFIRMED\",\"tag\":\"R.CNT\",\"value\":-5}"
     },
     {
       "name": "INT16 R.CNT = -5: the simulator holds [65531]",
@@ -24,7 +24,7 @@
     {
       "name": "coil R.RUN = true (05, readback): CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T15:59:40.142Z\",\"readback\":true,\"receivedAt\":\"2026-10-18T15:59:40.117Z\",\"requestId\":\"1437776a-bed0-4fdf-81e2-b2c3c4a5776a\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":true}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-19T07:50:24.854Z\",\"readback\":true,\"receivedAt\":\"2026-10-19T07:50:24.669Z\",\"requestId\":\"179de68f-844d-4714-8fb1-97393c3ae68f\",\"status\":\"CONFIRMED\",\"tag\":\"R.RUN\",\"value\":true}"
     },
     {
       "name": "coil R.RUN = true (05, readback): the simulator holds [1]",
@@ -34,7 +34,7 @@
     {
       "name": "coil R.PULSE = true (no readback): CONFIRMED (NO_READBACK)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-18T15:59:40.392Z\",\"receivedAt\":\"2026-10-18T15:59:40.349Z\",\"requestId\":\"1437776b-d314-46b0-8c6e-99547a68776b\",\"status\":\"CONFIRMED\",\"tag\":\"R.PULSE\",\"value\":true}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-19T07:50:25.104Z\",\"receivedAt\":\"2026-10-19T07:50:24.897Z\",\"requestId\":\"179de690-07c0-480a-890c-51e65082e690\",\"status\":\"CONFIRMED\",\"tag\":\"R.PULSE\",\"value\":true}"
     },
     {
       "name": "coil R.PULSE = true (no readback): the simulator holds [1]",
@@ -44,7 +44,7 @@
     {
       "name": "bit R.FLAG = true (mask, function 22): CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T15:59:40.642Z\",\"readback\":true,\"receivedAt\":\"2026-10-18T15:59:40.577Z\",\"requestId\":\"1437776c-3e1b-4747-8838-946e8cc6776c\",\"status\":\"CONFIRMED\",\"tag\":\"R.FLAG\",\"value\":true}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-19T07:50:25.352Z\",\"readback\":true,\"receivedAt\":\"2026-10-19T07:50:25.127Z\",\"requestId\":\"179de691-67a6-4b5e-8614-878bf6a5e691\",\"status\":\"CONFIRMED\",\"tag\":\"R.FLAG\",\"value\":true}"
     },
     {
       "name": "bit R.FLAG = true (mask, function 22): the simulator holds [8]",
@@ -54,7 +54,7 @@
     {
       "name": "scaled R.SCALED_SP = 50 (raw 13824): CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T15:59:40.898Z\",\"readback\":13824,\"receivedAt\":\"2026-10-18T15:59:40.803Z\",\"requestId\":\"1437776d-8451-4efe-8b74-fe30dd4c776d\",\"status\":\"CONFIRMED\",\"tag\":\"R.SCALED_SP\",\"value\":50}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-19T07:50:25.605Z\",\"readback\":13824,\"receivedAt\":\"2026-10-19T07:50:25.572Z\",\"requestId\":\"179de692-aa65-46c6-8f39-d4e05295e692\",\"status\":\"CONFIRMED\",\"tag\":\"R.SCALED_SP\",\"value\":50}"
     },
     {
       "name": "scaled R.SCALED_SP = 50 (raw 13824): the simulator holds [13824]",
@@ -64,7 +64,7 @@
     {
       "name": "STRING R.NAMEW: CONFIRMED (CONFIRMED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-18T15:59:41.142Z\",\"readback\":\"Bơm 2\",\"receivedAt\":\"2026-10-18T15:59:41.031Z\",\"requestId\":\"1437776e-e5c5-4e26-84a2-3a79e524776e\",\"status\":\"CONFIRMED\",\"tag\":\"R.NAMEW\",\"value\":\"Bơm 2\"}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-19T07:50:25.852Z\",\"readback\":\"Bơm 2\",\"receivedAt\":\"2026-10-19T07:50:25.805Z\",\"requestId\":\"179de693-ae5a-47de-85b9-47fe3cc3e693\",\"status\":\"CONFIRMED\",\"tag\":\"R.NAMEW\",\"value\":\"Bơm 2\"}"
     },
     {
       "name": "STRING R.NAMEW: the simulator holds [17094,41325,8242,0]",
@@ -74,57 +74,57 @@
     {
       "name": "internal R.INT = 33: CONFIRMED (APPLIED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-18T15:59:41.392Z\",\"receivedAt\":\"2026-10-18T15:59:41.257Z\",\"requestId\":\"1437776f-ab43-4dec-8af4-b40a3b8a776f\",\"status\":\"CONFIRMED\",\"tag\":\"R.INT\",\"value\":33}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-19T07:50:26.102Z\",\"receivedAt\":\"2026-10-19T07:50:26.030Z\",\"requestId\":\"179de694-54db-48c3-8462-d94e6025e694\",\"status\":\"CONFIRMED\",\"tag\":\"R.INT\",\"value\":33}"
     },
     {
       "name": "simulation manual R.SIMMAN = 9: CONFIRMED (APPLIED)",
       "pass": true,
-      "detail": "200 {\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-18T15:59:41.648Z\",\"receivedAt\":\"2026-10-18T15:59:41.483Z\",\"requestId\":\"14377770-257a-431e-80df-5e1744c37770\",\"status\":\"CONFIRMED\",\"tag\":\"R.SIMMAN\",\"value\":9}"
+      "detail": "200 {\"clockOk\":false,\"code\":\"APPLIED\",\"finishedAt\":\"2026-10-19T07:50:26.351Z\",\"receivedAt\":\"2026-10-19T07:50:26.253Z\",\"requestId\":\"179de695-ddf7-4e7e-86f5-9a13b624e695\",\"status\":\"CONFIRMED\",\"tag\":\"R.SIMMAN\",\"value\":9}"
     },
     {
       "name": "the Tag carries the value read back at once",
       "pass": true,
-      "detail": "{\"value\":75,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792339179641}"
+      "detail": "{\"value\":75,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792396224353}"
     },
     {
       "name": "no such Tag: REJECTED NO_SUCH_TAG",
       "pass": true,
-      "detail": "200 {\"message\":\"Không có Tag này trên thiết bị.\",\"reason\":\"NO_SUCH_TAG\",\"requestId\":\"14377771-2f8e-416f-8fe8-f2abc4347771\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Không có Tag này trên thiết bị.\",\"reason\":\"NO_SUCH_TAG\",\"requestId\":\"179de696-62cc-4103-82ce-26ceee34e696\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "read only: REJECTED READ_ONLY",
       "pass": true,
-      "detail": "200 {\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"14377772-8872-4347-80f3-725d22937772\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"179de697-70e7-4ae1-807c-49760fc0e697\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "bad type: REJECTED BAD_TYPE",
       "pass": true,
-      "detail": "200 {\"message\":\"Giá trị không đúng kiểu của Tag.\",\"reason\":\"BAD_TYPE\",\"requestId\":\"14377773-1291-4769-8a8e-9e2e88807773\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Giá trị không đúng kiểu của Tag.\",\"reason\":\"BAD_TYPE\",\"requestId\":\"179de698-9652-4fdd-834c-27dd0fdde698\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "not finite: REJECTED NOT_FINITE",
       "pass": true,
-      "detail": "200 {\"message\":\"Giá trị phải là số hữu hạn.\",\"reason\":\"NOT_FINITE\",\"requestId\":\"14377774-a087-440c-8d40-b59a54417774\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Giá trị phải là số hữu hạn.\",\"reason\":\"NOT_FINITE\",\"requestId\":\"179de699-2acb-4f9d-8071-a60cf4b1e699\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "out of limits: REJECTED OUT_OF_LIMITS",
       "pass": true,
-      "detail": "200 {\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"14377775-98c9-4379-8f96-0588e7967775\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"179de69a-ce1a-4755-8546-bce23f3be69a\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "out of type range: REJECTED OUT_OF_TYPE_RANGE",
       "pass": true,
-      "detail": "200 {\"message\":\"Giá trị ngoài khoảng của kiểu dữ liệu.\",\"reason\":\"OUT_OF_TYPE_RANGE\",\"requestId\":\"14377776-4e37-4d04-895c-eb38ed5c7776\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Giá trị ngoài khoảng của kiểu dữ liệu.\",\"reason\":\"OUT_OF_TYPE_RANGE\",\"requestId\":\"179de69b-2637-4edb-8764-13ce1910e69b\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "out of raw range: REJECTED OUT_OF_RAW_RANGE",
       "pass": true,
-      "detail": "200 {\"message\":\"Giá trị ngoài khoảng thô của thiết bị trường sau khi đổi thang.\",\"reason\":\"OUT_OF_RAW_RANGE\",\"requestId\":\"14377777-5f1e-45da-83f7-48176c557777\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Giá trị ngoài khoảng thô của thiết bị trường sau khi đổi thang.\",\"reason\":\"OUT_OF_RAW_RANGE\",\"requestId\":\"179de69c-8b9b-4c12-89e0-ea8f0b6ae69c\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "string too long: REJECTED STRING_TOO_LONG",
       "pass": true,
-      "detail": "200 {\"message\":\"Chuỗi dài hơn mức cho phép.\",\"reason\":\"STRING_TOO_LONG\",\"requestId\":\"14377778-d20f-4135-8ed0-7e8349017778\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Chuỗi dài hơn mức cho phép.\",\"reason\":\"STRING_TOO_LONG\",\"requestId\":\"179de69d-26d5-4fbc-87a1-6754a5cce69d\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "the same request id again: duplicate, run once",
@@ -137,12 +137,12 @@
     {
       "name": "a device exception on the write: FAILED DEVICE_EXCEPTION 03",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-18T15:59:42.649Z\",\"receivedAt\":\"2026-10-18T15:59:42.549Z\",\"requestId\":\"1437777b-8bd2-4211-8351-0d727e32777b\",\"status\":\"FAILED\",\"tag\":\"R.CNT\",\"value\":21}"
+      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"03\",\"meaning\":\"giá trị dữ liệu không hợp lệ\"},\"finishedAt\":\"2026-10-19T07:50:27.355Z\",\"receivedAt\":\"2026-10-19T07:50:27.327Z\",\"requestId\":\"179de6a0-5a7d-416e-8fc1-fe441228e6a0\",\"status\":\"FAILED\",\"tag\":\"R.CNT\",\"value\":21}"
     },
     {
       "name": "no answer to the write: TIMEOUT WRITE_TIMEOUT, never sent twice",
       "pass": true,
-      "detail": "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-18T15:59:46.150Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-18T15:59:45.542Z\",\"requestId\":\"1437777d-cf29-4b86-8ada-413574a9777d\",\"status\":\"TIMEOUT\",\"tag\":\"R.SP\",\"value\":60}"
+      "detail": "{\"clockOk\":false,\"code\":\"WRITE_TIMEOUT\",\"finishedAt\":\"2026-10-19T07:50:30.852Z\",\"message\":\"Thiết bị trường không trả lời: không chắc đã ghi.\",\"receivedAt\":\"2026-10-19T07:50:30.331Z\",\"requestId\":\"179de6a2-05a3-4d0b-86be-03c4c971e6a2\",\"status\":\"TIMEOUT\",\"tag\":\"R.SP\",\"value\":60}"
     },
     {
       "name": "the write that timed out reached the simulator exactly once",
@@ -152,7 +152,7 @@
     {
       "name": "connection lost: REJECTED CONNECTION_BAD",
       "pass": true,
-      "detail": "200 {\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"1437777e-9588-4ec4-8aea-d6b20327777e\",\"status\":\"REJECTED\"}"
+      "detail": "200 {\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"179de6a3-5671-445d-86cc-08280c42e6a3\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "more than the burst in a moment: RATE_LIMITED with retryAfterMs",
@@ -232,7 +232,7 @@
     {
       "name": "audit: the record of receipt has the facts of FR-039",
       "pass": true,
-      "detail": "{\"action\":\"tag.write\",\"channel\":\"https\",\"clockOk\":false,\"code\":\"ACCEPTED\",\"count\":1,\"detail\":{\"kind\":\"internal\",\"new\":44,\"old\":{\"quality\":\"GOOD\",\"value\":33},\"requestId\":\"14377788-9e37-4f50-896d-b80727b77788\"},\"id\":66,\"result\":\"started\",\"role\":\"operator\",\"source\":\"172.30.6.50:44028\",\"target\":\"R.INT\",\"ts\":1792339250221,\"user\":\"vh1\"}"
+      "detail": "{\"action\":\"tag.write\",\"channel\":\"https\",\"clockOk\":false,\"code\":\"ACCEPTED\",\"count\":1,\"detail\":{\"kind\":\"internal\",\"new\":44,\"old\":{\"quality\":\"GOOD\",\"value\":33},\"requestId\":\"179de6ad-2584-439a-8aaa-fb249ccfe6ad\"},\"id\":66,\"result\":\"started\",\"role\":\"operator\",\"source\":\"172.30.6.50:36128\",\"target\":\"R.INT\",\"ts\":1792396294928,\"user\":\"vh1\"}"
     },
     {
       "name": "at least 95 % of the confirmed commands took 2 s or less (SC-007)",
@@ -244,15 +244,15 @@
     "writesAtTheSimulator": 10,
     "commandsAccepted": 22,
     "confirmedMs": [
-      223,
       224,
       225,
       225,
       226,
       228,
-      231,
-      248,
-      450
+      229,
+      230,
+      242,
+      443
     ],
     "keys": 10
   },

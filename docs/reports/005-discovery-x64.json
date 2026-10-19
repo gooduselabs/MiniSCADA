@@ -1,6 +1,6 @@
 {
   "scenario": "discovery-x64",
-  "at": "2026-10-18T15:55:40Z",
+  "at": "2026-10-19T07:46:21Z",
   "runtime": "x64 (image mat-armhf), supervise.sh, tests/device-it/compose.yaml",
   "checks": [
     {
@@ -11,12 +11,12 @@
     {
       "name": "quét broadcast: thấy rt1 trong ≤ 3 s",
       "pass": true,
-      "detail": 1.1
+      "detail": 1.8
     },
     {
       "name": "quét broadcast: thấy rt2 trong ≤ 3 s",
       "pass": true,
-      "detail": 1.2
+      "detail": 1.8
     },
     {
       "name": "quét broadcast: rt3 (discoveryEnabled false) im lặng",
@@ -34,7 +34,7 @@
     {
       "name": "trả lời: ip = địa chỉ nguồn, prefix 24, https 8443, fp 64 hex",
       "pass": true,
-      "detail": "{\"v\":1,\"id\":\"3b6a6a75-fb11-47eb-aeb6-a6ca248c11f8\",\"name\":\"rt1\",\"model\":\"BL335\",\"mac\":\"CE:20:66:54:18:04\",\"ip\":\"172.30.5.10\",\"prefix\":24,\"runtime\":\"1.0.0-rc.1\",\"api\":\"1.5.0\",\"status\":\"running\",\"project\":{\"id\":\"tank-demo\",\"name\":\"Trạm bơm nước (demo Sprint 1)\",\"version\":\"0.1.0\",\"digest\":\"sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7\"},\"https\":8443,\"http\":8080,\"fp\":\"40de18b733f705a359e1622adc124172ef0d02653a9d30d049b4ca8bf8c61f92\"}"
+      "detail": "{\"v\":1,\"id\":\"90e77ac7-bb6e-4d43-ba19-883a75ba9948\",\"name\":\"rt1\",\"model\":\"BL335\",\"mac\":\"76:D0:D0:63:C3:CE\",\"ip\":\"172.30.5.10\",\"prefix\":24,\"runtime\":\"1.0.0-rc.1\",\"api\":\"1.5.0\",\"status\":\"running\",\"project\":{\"id\":\"tank-demo\",\"name\":\"Trạm bơm nước (demo Sprint 1)\",\"version\":\"0.1.0\",\"digest\":\"sha256:9ba112c6ddbd961f0336f8b246ff172826d544130a7fe1168cb10b2b2861edb7\"},\"https\":8443,\"http\":8080,\"fp\":\"218ed0471bb55d476444950a2dbb66d8a3082080f56120e32fbfeb87bcec87ab\"}"
     },
     {
       "name": "hai runtime có deviceId khác nhau",
@@ -77,16 +77,16 @@
     "sweep": {
       "replies": 6,
       "firstReplyMs": {
-        "rt1": 1.1,
-        "rt2": 1.2
+        "rt1": 1.8,
+        "rt2": 1.8
       },
       "maxReplyBytes": 489,
       "sample": {
         "v": 1,
-        "id": "3b6a6a75-fb11-47eb-aeb6-a6ca248c11f8",
+        "id": "90e77ac7-bb6e-4d43-ba19-883a75ba9948",
         "name": "rt1",
         "model": "BL335",
-        "mac": "CE:20:66:54:18:04",
+        "mac": "76:D0:D0:63:C3:CE",
         "ip": "172.30.5.10",
         "prefix": 24,
         "runtime": "1.0.0-rc.1",
@@ -100,7 +100,7 @@
         },
         "https": 8443,
         "http": 8080,
-        "fp": "40de18b733f705a359e1622adc124172ef0d02653a9d30d049b4ca8bf8c61f92"
+        "fp": "218ed0471bb55d476444950a2dbb66d8a3082080f56120e32fbfeb87bcec87ab"
       }
     },
     "secondNetworkViaNat": {

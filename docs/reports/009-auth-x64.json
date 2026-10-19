@@ -84,7 +84,7 @@
     {
       "name": "audit alarm.ack: có dòng ok cho IT_FAULT, người vh1, kênh web, role operator",
       "pass": true,
-      "detail": "{\"action\":\"alarm.ack\",\"channel\":\"web\",\"clockOk\":false,\"code\":null,\"count\":1,\"detail\":{\"from\":\"ACTIVE_UNACK\",\"occurrence\":20},\"id\":64,\"result\":\"ok\",\"role\":\"operator\",\"source\":\"172.30.19.1:40272\",\"target\":\"IT_FAULT\",\"ts\":1792340077549,\"user\":\"vh1\"}"
+      "detail": "{\"action\":\"alarm.ack\",\"channel\":\"web\",\"clockOk\":false,\"code\":null,\"count\":1,\"detail\":{\"from\":\"ACTIVE_UNACK\",\"occurrence\":20},\"id\":64,\"result\":\"ok\",\"role\":\"operator\",\"source\":\"172.30.19.1:39144\",\"target\":\"IT_FAULT\",\"ts\":1792397131334,\"user\":\"vh1\"}"
     },
     {
       "name": "audit đủ trường (ts, người, role, kênh, hành động, đích, kết quả, chi tiết)",
@@ -104,7 +104,7 @@
     {
       "name": "thứ tự: ts của dòng audit ack ≤ tsAck của lần xảy ra (audit trước)",
       "pass": true,
-      "detail": "audit=1792340077549 tsAck=1792340077597"
+      "detail": "audit=1792397131334 tsAck=1792397131355"
     }
   ],
   "measures": {},

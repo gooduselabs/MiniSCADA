@@ -4,12 +4,12 @@
     {
       "name": "probe ok with a read: OK",
       "pass": true,
-      "detail": "200 {\"code\":\"OK\",\"connectMs\":0,\"ok\":true,\"read\":{\"count\":1,\"fc\":3,\"offset\":1,\"registers\":[\"FB2E\"]},\"responseMs\":0}"
+      "detail": "200 {\"code\":\"OK\",\"connectMs\":1,\"ok\":true,\"read\":{\"count\":1,\"fc\":3,\"offset\":1,\"registers\":[\"FB2E\"]},\"responseMs\":0}"
     },
     {
       "name": "probe ok with a read: within connect + wait + 2 s",
       "pass": true,
-      "detail": "28 ms"
+      "detail": "29 ms"
     },
     {
       "name": "probe ok: raw registers are returned (INT16 -1234 = FB2E)",
@@ -18,27 +18,27 @@
     {
       "name": "probe wrong port: REFUSED",
       "pass": true,
-      "detail": "200 {\"code\":\"REFUSED\",\"connectMs\":1,\"message\":\"PLC từ chối kết nối (có thể đã đủ số kết nối)\",\"ok\":false}"
+      "detail": "200 {\"code\":\"REFUSED\",\"connectMs\":0,\"message\":\"PLC từ chối kết nối (có thể đã đủ số kết nối)\",\"ok\":false}"
     },
     {
       "name": "probe wrong port: within connect + wait + 2 s",
       "pass": true,
-      "detail": "3 ms"
+      "detail": "4 ms"
     },
     {
       "name": "probe unreachable name: DNS",
       "pass": true,
-      "detail": "200 {\"code\":\"DNS\",\"connectMs\":13,\"message\":\"Không phân giải được tên máy\",\"ok\":false}"
+      "detail": "200 {\"code\":\"DNS\",\"connectMs\":18,\"message\":\"Không phân giải được tên máy\",\"ok\":false}"
     },
     {
       "name": "probe unreachable name: within connect + wait + 2 s",
       "pass": true,
-      "detail": "17 ms"
+      "detail": "21 ms"
     },
     {
       "name": "probe exception 02: EXCEPTION",
       "pass": true,
-      "detail": "200 {\"code\":\"EXCEPTION\",\"connectMs\":1,\"exception\":{\"code\":\"02\",\"meaning\":\"địa chỉ không hợp lệ\"},\"message\":\"PLC trả lời bằng mã lỗi (exception)\",\"ok\":false,\"responseMs\":0}"
+      "detail": "200 {\"code\":\"EXCEPTION\",\"connectMs\":0,\"exception\":{\"code\":\"02\",\"meaning\":\"địa chỉ không hợp lệ\"},\"message\":\"PLC trả lời bằng mã lỗi (exception)\",\"ok\":false,\"responseMs\":1}"
     },
     {
       "name": "probe exception 02: within connect + wait + 2 s",
@@ -48,17 +48,17 @@
     {
       "name": "probe no answer: TIMEOUT",
       "pass": true,
-      "detail": "200 {\"code\":\"TIMEOUT\",\"connectMs\":0,\"message\":\"PLC không trả lời trong thời gian chờ\",\"ok\":false,\"responseMs\":401}"
+      "detail": "200 {\"code\":\"TIMEOUT\",\"connectMs\":1,\"message\":\"PLC không trả lời trong thời gian chờ\",\"ok\":false,\"responseMs\":403}"
     },
     {
       "name": "probe no answer: within connect + wait + 2 s",
       "pass": true,
-      "detail": "410 ms"
+      "detail": "412 ms"
     },
     {
       "name": "the channel that runs lost no lap during the tests (no gap above 1.6 s)",
       "pass": true,
-      "detail": "max gap 1009 ms over 4 reads"
+      "detail": "max gap 1004 ms over 4 reads"
     },
     {
       "name": "the Tags of the channel stayed GOOD",
@@ -66,7 +66,7 @@
     }
   ],
   "measures": {
-    "channelMaxGapMs": 1009
+    "channelMaxGapMs": 1004
   },
   "pass": true
 }

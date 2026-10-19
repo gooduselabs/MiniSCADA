@@ -4,7 +4,7 @@
     {
       "name": "SIGTERM: IT_FAULT vẫn ACTIVE_ACK cùng lần xảy ra, đã xác nhận bởi vh1",
       "pass": true,
-      "detail": "occurrence before 14: {\"ackUser\":\"vh1\",\"alarmId\":\"IT_FAULT\",\"area\":\"bom\",\"class\":\"critical\",\"clockOk\":true,\"disabled\":false,\"id\":\"IT_FAULT\",\"inputBad\":false,\"name\":\"Bơm IT lỗi\",\"occurrence\":14,\"priority\":\"critical\",\"qualityActive\":\"GOOD\",\"rev\":8,\"startup\":false,\"state\":\"ACTIVE_ACK\",\"text\":\"Bơm IT lỗi\",\"tsAck\":1792340034654,\"tsActive\":1792340034406,\"type\":\"digital\",\"valueActive\":true}"
+      "detail": "occurrence before 14: {\"ackUser\":\"vh1\",\"alarmId\":\"IT_FAULT\",\"area\":\"bom\",\"class\":\"critical\",\"clockOk\":true,\"disabled\":false,\"id\":\"IT_FAULT\",\"inputBad\":false,\"name\":\"Bơm IT lỗi\",\"occurrence\":14,\"priority\":\"critical\",\"qualityActive\":\"GOOD\",\"rev\":8,\"startup\":false,\"state\":\"ACTIVE_ACK\",\"text\":\"Bơm IT lỗi\",\"tsAck\":1792397085393,\"tsActive\":1792397085147,\"type\":\"digital\",\"valueActive\":true}"
     },
     {
       "name": "SIGTERM: IT_FAULT2 vẫn ACTIVE_UNACK cùng lần xảy ra, không cờ startup giả",
@@ -28,7 +28,7 @@
     {
       "name": "system/info.alarms.logState",
       "pass": true,
-      "detail": "{\"active\":4,\"dbBytes\":32768,\"disabled\":1,\"droppedChanges\":0,\"evalMaxMs\":0.19,\"evalWindowS\":60,\"instances\":7,\"logState\":\"running\",\"shelved\":0,\"unacked\":3}"
+      "detail": "{\"active\":4,\"dbBytes\":32768,\"disabled\":1,\"droppedChanges\":0,\"evalMaxMs\":0.09,\"evalWindowS\":60,\"instances\":7,\"logState\":\"running\",\"shelved\":0,\"unacked\":3}"
     },
     {
       "name": "kill -9: IT_FAULT (đã xác nhận, hết khi chết) → NORMAL sau khi dựng lại",
@@ -65,7 +65,7 @@
     {
       "name": "--alarm-db-check lần cuối: ok",
       "pass": true,
-      "detail": "{\"ackWithoutAudit\":[],\"acked\":13,\"integrity\":\"ok\",\"open\":4,\"path\":\"/data/alarm.db\",\"rows\":17,\"schema\":1,\"state\":\"ok\"}"
+      "detail": "{\"ackWithoutAudit\":[],\"acked\":13,\"integrity\":\"ok\",\"open\":4,\"path\":\"/data/alarm.db\",\"rows\":19,\"schema\":1,\"state\":\"ok\"}"
     }
   ],
   "measures": {

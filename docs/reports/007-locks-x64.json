@@ -24,7 +24,7 @@
     {
       "name": "khóa mất kết nối thiết bị: CONNECTION_BAD",
       "pass": true,
-      "detail": "{\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"8869c0af-cae9-4291-a605-d1c9df180485\",\"status\":\"REJECTED\"}"
+      "detail": "{\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"764676fc-8175-41d0-941b-cb9935e06fea\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "mọi khóa: 0 lệnh ghi tới giả lập",
@@ -34,7 +34,7 @@
     {
       "name": "viewer: web/session trả role viewer để trang khóa nút",
       "pass": true,
-      "detail": "{\"csrfToken\":\"puQI95nBo2TYnp_QuJUA7dplbXgV2P5sPNFuTGKLHQI\",\"expiresAt\":\"2026-10-19T04:06:08Z\",\"idleExpiresAt\":\"2026-10-18T16:36:08Z\",\"idleTimeoutS\":1800,\"maxSessionS\":43200,\"role\":\"viewer\",\"user\":\"xem1\"}"
+      "detail": "{\"csrfToken\":\"uGQiu5Bt2y1gZIv1OXBXLNxir1vQxN1vz3dMvoID2kU\",\"expiresAt\":\"2026-10-19T19:56:55Z\",\"idleExpiresAt\":\"2026-10-19T08:26:55Z\",\"idleTimeoutS\":1800,\"maxSessionS\":43200,\"role\":\"viewer\",\"user\":\"xem1\"}"
     },
     {
       "name": "system/info công khai có khối web (trang dựng dải chỉ xem)",
