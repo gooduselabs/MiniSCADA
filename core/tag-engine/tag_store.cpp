@@ -241,6 +241,10 @@ void TagStore::appendDeltaEntryJson(std::string& out, size_t position, size_t i)
     char buf[32];
     std::snprintf(buf, sizeof buf, "[%zu,", position);
     out += buf;
+    deltaTailLocked(out, i);
+}
+
+void TagStore::deltaTailLocked(std::string& out, size_t i) const {
     valueJsonLocked(out, i);
     out += ",\"";
     out += qualityName(values_[i].quality);
@@ -250,6 +254,18 @@ void TagStore::appendDeltaEntryJson(std::string& out, size_t position, size_t i)
         appendJsonString(out, values_[i].reason);
     }
     out += ']';
+}
+
+void TagStore::appendDeltaTails(const std::vector<size_t>& indices, std::string& out,
+                                std::vector<size_t>& ends) const {
+    std::lock_guard<std::mutex> g(mu_);
+    ends.clear();
+    ends.reserve(indices.size());
+    for (size_t i : indices) {
+        if (i >= values_.size()) throw std::out_of_range("TagStore::appendDeltaTails: bad index");
+        deltaTailLocked(out, i);
+        ends.push_back(out.size());
+    }
 }
 
 }  // namespace mat

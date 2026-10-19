@@ -41,6 +41,36 @@ bool sendWebSocketClose(mg_connection* c, int code, const std::string& reason) {
     p += reason.substr(0, 120);
     return mg_websocket_write(c, MG_WEBSOCKET_OPCODE_CONNECTION_CLOSE, p.data(), p.size()) > 0;
 }
+
+// Feature 011 (CPU of the live path): one text frame (RFC 6455 §5.2, from the server: FIN, no
+// mask) written with ONE mg_write, header and payload in `frame`. mg_websocket_write writes the
+// 2-4 header bytes and the payload apart: two TLS records (two AEAD runs, two send calls) for each
+// message over wss, two send calls over ws. The bytes of the stream are the same. Returns how many
+// bytes of `text` went out, as mg_websocket_write does: text.size() when the whole frame did.
+int writeTextFrame(mg_connection* c, std::string& frame, const std::string& text) {
+    const uint64_t n = text.size();
+    frame.clear();
+    frame.push_back(static_cast<char>(0x80 | MG_WEBSOCKET_OPCODE_TEXT));
+    if (n < 126) {
+        frame.push_back(static_cast<char>(n));
+    } else if (n <= 0xFFFF) {
+        frame.push_back(static_cast<char>(126));
+        frame.push_back(static_cast<char>((n >> 8) & 0xFF));
+        frame.push_back(static_cast<char>(n & 0xFF));
+    } else {
+        frame.push_back(static_cast<char>(127));
+        for (int shift = 56; shift >= 0; shift -= 8)
+            frame.push_back(static_cast<char>((n >> shift) & 0xFF));
+    }
+    const int header = static_cast<int>(frame.size());
+    frame += text;
+    mg_lock_connection(c);  // as mg_websocket_write: CivetWeb's own pong goes through this lock
+    const int w = mg_write(c, frame.data(), frame.size());
+    mg_unlock_connection(c);
+    if (frame.capacity() > (64u << 10)) std::string().swap(frame);  // after a large snapshot
+    if (w == header + static_cast<int>(n)) return static_cast<int>(n);
+    return w > header ? w - header : -1;
+}
 }  // namespace
 
 CivetLiveTransport::CivetLiveTransport(Options opt, Clock monotonic)
@@ -215,6 +245,7 @@ void CivetLiveTransport::writerLoop(Session* s) {
         ~Done() { s->writerDone = true; }
     } done{s};
     SendQueue::Item it;
+    std::string frame;  // reused: header + payload of one frame
     while (s->queue.pop(it, -1) == SendQueue::PopStatus::Item) {
         if (it.closeCode != 0) {
             // The grace period starts before the write: a client that cannot even take the close
@@ -225,8 +256,7 @@ void CivetLiveTransport::writerLoop(Session* s) {
                 s->closeSent = it.closeCode;
             return;
         }
-        const int n =
-            mg_websocket_write(s->conn, MG_WEBSOCKET_OPCODE_TEXT, it.text.data(), it.text.size());
+        const int n = writeTextFrame(s->conn, frame, it.text);
         if (it.stampMono != 0 && n == static_cast<int>(it.text.size())) {
             const int64_t now = s->owner->clock_();  // FR-009: commit -> frame written
             s->owner->lag_.add(now, now - it.stampMono);

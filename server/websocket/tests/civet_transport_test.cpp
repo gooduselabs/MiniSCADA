@@ -289,6 +289,37 @@ TEST(CivetTransport, ShortWriteDropsTheSession) {
     EXPECT_TRUE(slow->closedWithin(10000));
 }
 
+// Feature 011 (CPU of the live path): the writer sends header and payload of a frame with one
+// write (one TLS record over wss). The frame is the one mg_websocket_write sent: FIN + text, no
+// mask, the shortest length form (7 bits, 16 bits from 126, 64 bits above 65535), the payload as
+// is.
+TEST(CivetTransport, TextFramesKeepTheirBytesAtEveryLengthForm) {
+    Rig r(10);
+    auto c = r.client();
+    for (size_t len : {size_t{0}, size_t{1}, size_t{125}, size_t{126}, size_t{127}, size_t{65535},
+                       size_t{65536}, size_t{70001}}) {
+        std::string text(len, '\0');
+        for (size_t k = 0; k < len; ++k) text[k] = static_cast<char>('a' + (k * 7 + len) % 26);
+        ASSERT_EQ(r.transport.push(1, text), SendQueue::PushResult::Ok);
+        const auto f = c->read(5000);
+        std::string header = "\x81";
+        if (len < 126) {
+            header += static_cast<char>(len);
+        } else if (len <= 0xFFFF) {
+            header += '\x7e';
+            header += static_cast<char>(len >> 8);
+            header += static_cast<char>(len & 0xFF);
+        } else {
+            header += '\x7f';
+            for (int shift = 56; shift >= 0; shift -= 8)
+                header += static_cast<char>((uint64_t{len} >> shift) & 0xFF);
+        }
+        EXPECT_EQ(f.opcode, 1) << len;
+        EXPECT_EQ(f.header, header) << len;
+        EXPECT_EQ(f.payload, text) << len;
+    }
+}
+
 // ---- feature 006: the source filter and the sessions of the live upgrade (FR-055a, live 1.2.0 §2,
 // §3) ----
 

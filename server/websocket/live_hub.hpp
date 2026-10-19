@@ -12,7 +12,6 @@
 #include <mutex>
 #include <optional>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "core/common/json_limits.hpp"
@@ -138,8 +137,12 @@ class LiveHub {
     struct Session {
         std::string subscriptionId;
         bool subscribed = false;
-        std::vector<size_t> tags;                       // store index per position
-        std::unordered_map<size_t, uint32_t> position;  // store index -> position
+        std::vector<size_t> tags;  // store index per position
+        // store index -> position, kNoPosition when not subscribed; as long as the highest
+        // subscribed index + 1 (a lookup per changed Tag and session in every tick).
+        std::vector<uint32_t> positionOf;
+        // {"type":"delta","subscriptionId":"…","sequence": (the same in every delta)
+        std::string deltaPrefix;
         int64_t sequence = 0;
         int errorStreak = 0;
         bool dead = false;  // overflowed / closing: no more pushes
@@ -189,6 +192,12 @@ class LiveHub {
     RejectedAckFn onRejectedAck_;
     int64_t alarmRevision_ = 0;  // of the last batch
     std::string alarmCounts_ = "{}";
+    // Buffers of tick(), kept between ticks so that a tick allocates only the texts it enqueues:
+    // the part of each changed Tag's entry that is the same for every session (formatted once per
+    // tick), its end offsets, and the delta being built.
+    std::string deltaTails_;
+    std::vector<size_t> deltaTailEnds_;
+    std::string deltaOut_;
 };
 
 }  // namespace mat

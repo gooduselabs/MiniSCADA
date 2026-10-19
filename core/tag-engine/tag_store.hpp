@@ -78,9 +78,15 @@ class TagStore {
     void appendSnapshotJson(std::string& out, size_t i) const;
     // [index,value,"QUALITY"[,"REASON"]] with the caller-provided index
     void appendDeltaEntryJson(std::string& out, size_t position, size_t i) const;
+    // The part of that entry after "[index," (value,"QUALITY"[,"REASON"]]), which is the same for
+    // every live session: appended for each of `indices` under one lock; ends[k] is the end of
+    // entry k in `out` (feature 011: formatted once per tick, not once per session).
+    void appendDeltaTails(const std::vector<size_t>& indices, std::string& out,
+                          std::vector<size_t>& ends) const;
 
    private:
     void valueJsonLocked(std::string& out, size_t i) const;
+    void deltaTailLocked(std::string& out, size_t i) const;
     bool setLocked(size_t i, TagScalar v, Quality q, std::string reason, int64_t sourceTs,
                    int64_t serverTs);
 
