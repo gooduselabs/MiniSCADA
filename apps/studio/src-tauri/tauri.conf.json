@@ -47,6 +47,18 @@
       },
       "nsis": {
         "installMode": "currentUser"
+      },
+      "signCommand": {
+        "cmd": "powershell",
+        "args": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "../../../tools/release/sign.ps1",
+          "-Path",
+          "%1"
+        ]
       }
     }
   }
