@@ -3,12 +3,15 @@
 // `mat-w-*`, popup ở lớp phủ riêng. Dùng chung cho trang runtime và xem trước Studio.
 import { LitElement, css, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
-import type {
-  ElementBindings02,
-  Item,
-  ScreenModel,
-  SvgItem,
-  WidgetItem,
+import {
+  catalogWidget,
+  type ElementBindings02,
+  type GridLayout,
+  type GridScreen,
+  type Item,
+  type ScreenModel,
+  type SvgItem,
+  type WidgetItem,
 } from '@mat/project-schema';
 import { safeColor } from '../format/color.ts';
 import type { ActionHost, AlarmSource, TagSource } from '../host/types.ts';
@@ -26,6 +29,18 @@ export { nextFocusIndex };
 
 /** Thời gian giữ thông báo ở vùng status (ms). */
 const STATUS_MS = 6000;
+/** Bố cục lưới (feature 012, FR-026): dưới chiều rộng này các ô xếp chồng một cột. */
+export const GRID_NARROW_PX = 768;
+
+/** Cột bắt đầu (tính từ 1) của từng ô trong hàng: sau các ô trước và khoảng trống `offset` của chính ô. */
+function cellStarts(cells: GridLayout['rows'][number]['cells']): number[] {
+  let next = 1;
+  return cells.map((c) => {
+    const start = next + (c.offset ?? 0);
+    next = start + c.span;
+    return start;
+  });
+}
 
 /** Phần phụ thuộc môi trường có thể tiêm (jsdom thiếu ResizeObserver/rAF). */
 export interface ScreenEnv {
@@ -166,8 +181,28 @@ export class MatScreen extends LitElement {
     .item {
       position: absolute;
     }
-    .frame.edit .item {
+    .frame.edit .item,
+    .grid.edit .item {
       pointer-events: none;
+    }
+    /* bố cục lưới (định dạng 1.1, feature 012): cuộn dọc, không co cả màn hình */
+    .grid {
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .grid > .row {
+      display: grid;
+      box-sizing: border-box;
+    }
+    .grid .cell {
+      position: relative;
+      min-width: 0;
+      display: flex;
+    }
+    .grid .cell > .item {
+      flex: 1 1 auto;
     }
     .svg-host {
       width: 100%;
@@ -291,7 +326,9 @@ export class MatScreen extends LitElement {
   /** Hình chữ nhật item theo đơn vị thiết kế (cho lớp phủ của Studio). */
   itemRect(id: string): Rect | null {
     const it = this.screen?.items.find((i) => i.id === id);
-    return it ? { x: it.x, y: it.y, width: it.width, height: it.height } : null;
+    // item của màn hình lưới không có tọa độ thiết kế (ô quyết định cỡ)
+    if (!it || this.#layout() || typeof it.x !== 'number') return null;
+    return { x: it.x, y: it.y, width: it.width, height: it.height };
   }
 
   /** Resolve khi mọi item đã dựng và các item `svg` đã tải xong. */
@@ -421,13 +458,33 @@ export class MatScreen extends LitElement {
     return this.renderRoot.querySelector<HTMLElement>('.frame');
   }
 
+  /** Bố cục lưới của màn hình (định dạng 1.1), hoặc null (bố cục tự do). */
+  #layout(): GridLayout | null {
+    const l = (this.screen as unknown as GridScreen | undefined)?.layout;
+    return l && l.mode === 'grid' && Array.isArray(l.rows) ? l : null;
+  }
+
+  /** Ô (đã dựng bởi render) chứa item `id` của màn hình lưới. */
+  #cellFor(itemId: string): HTMLElement | null {
+    const l = this.#layout();
+    if (!l) return null;
+    for (const r of l.rows)
+      for (const c of r.cells)
+        if (c.item === itemId)
+          return this.renderRoot.querySelector<HTMLElement>(
+            `.cell[data-cell-id="${CSS.escape(c.id)}"]`,
+          );
+    return null;
+  }
+
   #popupScreen(): MatScreen | null {
     return this.renderRoot?.querySelector<MatScreen>('.popup-body > mat-screen') ?? null;
   }
 
   #reconcile(): void {
+    const grid = this.#layout();
     const frame = this.#frameEl();
-    if (!frame || !this.screen) return;
+    if ((!frame && !grid) || !this.screen) return;
     // Slot gắn với một màn hình: item cùng id ở màn hình khác không dùng lại phần tử (và trạng thái nội bộ) cũ.
     if (this.#slotsScreenId !== this.screen.id) {
       for (const s of this.#slots.values()) this.#destroy(s);
@@ -461,11 +518,20 @@ export class MatScreen extends LitElement {
       order.push(slot.wrapper);
     }
 
-    // Sắp thứ tự lớp: chỉ di chuyển phần tử lệch chỗ (di chuyển làm widget ngắt và nối lại).
-    order.forEach((w, i) => {
-      if (frame.children[i] !== w) frame.insertBefore(w, frame.children[i] ?? null);
-    });
-    while (frame.children.length > order.length) frame.lastElementChild!.remove();
+    if (grid) {
+      // Lưới: mỗi item vào ô của nó; chỉ di chuyển khi lệch ô (di chuyển làm widget ngắt và nối lại).
+      for (const { item } of layers) {
+        const w = this.#slots.get(item.id)!.wrapper;
+        const cell = this.#cellFor(item.id);
+        if (cell && w.parentElement !== cell) cell.append(w);
+      }
+    } else if (frame) {
+      // Sắp thứ tự lớp: chỉ di chuyển phần tử lệch chỗ (di chuyển làm widget ngắt và nối lại).
+      order.forEach((w, i) => {
+        if (frame.children[i] !== w) frame.insertBefore(w, frame.children[i] ?? null);
+      });
+      while (frame.children.length > order.length) frame.lastElementChild!.remove();
+    }
 
     this.#emitTags();
     this.#checkReady();
@@ -480,6 +546,15 @@ export class MatScreen extends LitElement {
 
   #place(wrapper: HTMLElement, item: Item): void {
     const s = wrapper.style;
+    if (this.#layout()) {
+      // lưới: item điền đầy ô
+      s.position = 'relative';
+      s.left = '';
+      s.top = '';
+      s.width = '100%';
+      s.height = '100%';
+      return;
+    }
     s.position = 'absolute';
     s.left = `${item.x}px`;
     s.top = `${item.y}px`;
@@ -694,8 +769,71 @@ export class MatScreen extends LitElement {
 
   // ---- render ------------------------------------------------------------------------------------------------
 
+  /** Bố cục lưới (định dạng 1.1, feature 012): hàng là lưới 12 cột, ô giữ chỗ; widget được gắn vào ô ở #reconcile. */
+  #gridTemplate(l: GridLayout): TemplateResult {
+    const s = this.screen;
+    const narrow = this.#size().width > 0 && this.#size().width < GRID_NARROW_PX;
+    const gap = l.gap ?? 12;
+    const byId = new Map(s.items.map((i) => [i.id, i]));
+    const minOf = (id: string | undefined): number => {
+      const it = id === undefined ? undefined : byId.get(id);
+      return it?.type === 'widget' ? (catalogWidget(it.widget)?.minSize[1] ?? 0) : 0;
+    };
+    return html`<div
+        class="viewport"
+        style=${styleMap({ background: safeColor(s.background), overflow: 'hidden auto' })}
+      >
+        <div
+          class="grid ${narrow ? 'narrow' : ''} ${this.mode === 'edit' ? 'edit' : ''}"
+          style=${styleMap({ padding: `${l.padding ?? 16}px`, rowGap: `${gap}px` })}
+        >
+          ${l.rows.map((r) => {
+            const starts = cellStarts(r.cells);
+            const auto = r.height === 'auto';
+            const rowMin = auto ? Math.max(0, ...r.cells.map((c) => minOf(c.item))) : 0;
+            return html`<div
+              class="row"
+              data-row-id=${r.id}
+              style=${styleMap({
+                gridTemplateColumns: narrow ? '1fr' : 'repeat(12, minmax(0, 1fr))',
+                columnGap: `${r.gap ?? gap}px`,
+                rowGap: `${gap}px`,
+                height: auto ? undefined : `${r.height}px`,
+                minHeight: auto && rowMin > 0 ? `${rowMin}px` : undefined,
+              })}
+            >
+              ${r.cells.map(
+                (c, i) =>
+                  html`<div
+                    class="cell"
+                    data-cell-id=${c.id}
+                    style=${styleMap({
+                      gridColumn: narrow ? '1 / -1' : `${starts[i]} / span ${c.span}`,
+                      alignSelf: c.align && c.align !== 'stretch' ? c.align : undefined,
+                      minHeight: c.minHeight ? `${c.minHeight}px` : undefined,
+                    })}
+                  ></div>`,
+              )}
+            </div>`;
+          })}
+        </div>
+      </div>
+      <div
+        class="status-bar"
+        role="status"
+        aria-live="polite"
+        data-kind=${this.#statusKind}
+        ?hidden=${!this.#statusMsg}
+      >
+        ${this.#statusMsg}
+      </div>
+      ${this.#popupTemplate()}`;
+  }
+
   protected override render(): TemplateResult {
     const s = this.screen;
+    const grid = this.#layout();
+    if (s && grid) return this.#gridTemplate(grid);
     const fit = this.#fit();
     const w = s?.size.width ?? 0;
     const h = s?.size.height ?? 0;
