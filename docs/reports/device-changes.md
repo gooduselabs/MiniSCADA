@@ -350,3 +350,11 @@ Trạng thái cuối: runtime `1.0.0-rc.1` releaseSeq 13 active, `tank-demo` 0.1
 ## 2026-10-19 04:05 — FR-037, FR-040 trên BL335 (chỉ đọc)
 
 `MAT_SAMPLE_DIR=/tmp/mat-sample-t079 MAT_SAMPLE_PERIOD_S=10 MAT_SAMPLE_COUNT=6 sh /opt/mat-runtime/deployment/mat-sample.sh` (ghi vào `/tmp`, đã xóa) và `mat-runtime --check-data --json`. Không thay đổi cấu hình hay dữ liệu.
+
+## 2026-10-19 08:37–09:42 — T079 phần còn lại trên releaseSeq 13
+
+| Giờ | Thay đổi | Hoàn tác |
+|---|---|---|
+| 08:37 | Sao lưu `runtime.json` vào `/root/mat-stage-011/t079b`; mật khẩu ngẫu nhiên mới, bật `mat-t079-eng`, `mat-t079-xem`; `maxLiveClientsPerSource` 10; khởi động lại | 09:42 đã khôi phục |
+| 08:37–09:41 | Nạp `soak-std10`, `svg-l5`, rồi `tank-demo` (3 lần `committed`); L1 xen kẽ 1 giờ; 10 tab Chrome 10 phút | — |
+| 09:42 | Khôi phục `runtime.json` (SHA-256 gốc), tắt tài khoản, xóa thư mục tạm | — |

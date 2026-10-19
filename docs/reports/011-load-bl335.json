@@ -654,5 +654,82 @@
     "extraRejectedCorrectly": true,
     "seqGaps": 0,
     "pass": true
+  },
+  "L1alternate": {
+    "task": "T079 (L1 xen kẽ ws 8080 / wss 8443)",
+    "date": "2026-10-19 08:38–09:38",
+    "runtime": "1.0.0-rc.1",
+    "releaseSeq": 13,
+    "project": "soak-std10 (500 Tag)",
+    "durationS": 3600,
+    "device": {
+      "cpuAvgPctOneCore": 36.2,
+      "cpuAvgPctMachine": 18.1,
+      "cpuPeakPctOneCore": 47.8,
+      "rssAvgMB": 19.3,
+      "rssMaxMB": 20.1,
+      "threads": [99, 109],
+      "memAvailMinMB": 871.8
+    },
+    "summaryByScheme": {
+      "ws": {
+        "accepted": 5,
+        "totalSeqGaps": 0,
+        "maxLagP95Ms": 68,
+        "extraRejectedCorrectly": true
+      },
+      "wss": {
+        "accepted": 5,
+        "totalSeqGaps": 0,
+        "maxLagP95Ms": 48,
+        "extraRejectedCorrectly": true
+      }
+    },
+    "latencyByScheme": {
+      "ws": {
+        "count": 71999,
+        "p50Ms": 26,
+        "p95Ms": 61,
+        "maxMs": 194
+      },
+      "wss": {
+        "count": 71999,
+        "p50Ms": 24,
+        "p95Ms": 43,
+        "maxMs": 171
+      }
+    },
+    "tlsVerify": "pinned-sha256",
+    "criteria": {
+      "cpuAvg<=30% (one core)": "fail (36.2)",
+      "cpuPeak<=60%": "pass",
+      "rss": "pass",
+      "seqGaps==0 both schemes": "pass"
+    },
+    "note": "TLS cho 5/10 client thêm ~7 điểm CPU một lõi so với L1 chỉ ws (28,9 %): Cortex-A7 không có lệnh AES phần cứng; đang thử ưu tiên ChaCha20-Poly1305 (nhánh gd6-tls-cpu)"
+  },
+  "L5tabRss": {
+    "task": "T079 (L5 RSS tab Chrome)",
+    "date": "2026-10-19 09:30–09:40",
+    "project": "svg-l5 (400 phần tử, 50 hoạt cảnh)",
+    "pages": 10,
+    "seconds": 600,
+    "chrome": "chrome-headless-shell 155 trên macOS (máy dev), mỗi tab một renderer",
+    "summary": {
+      "tabRssMaxMB": 137.7,
+      "tabRssEndMB": [44.8, 43, 44.7, 43.1, 43.3, 47.4, 43.2, 48.7, 44.6, 43.3],
+      "tabRssSlopeMaxMBPerHour": -358.2,
+      "jsHeapMaxMB": 3.6
+    },
+    "renderersTotal": {
+      "start": 1301.4,
+      "end": 464.1,
+      "max": 1301.4,
+      "samples": 60,
+      "slopeMBPerHour": -4240.17,
+      "slopeAfterWarmupMBPerHour": -4038.94
+    },
+    "result": "không tăng: RSS mỗi tab cuối 43–49 MB (đỉnh lúc mở 138 MB), JS heap ≤ 3,6 MB, độ dốc âm",
+    "pass": true
   }
 }

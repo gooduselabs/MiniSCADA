@@ -140,6 +140,11 @@ Số x64 của 010 (runtime 0.9.0, tham khảo, không thay số 011): 10 client
 
 2026-10-18 14:04, BL335 `1.0.0-rc.1` releaseSeq 13, `tank-demo`, 10 client + 1 thừa, 5 vòng mỗi cách: client 1 **đóng sạch** → client mới vào sau 9 ms (5/5); client 1 **im lặng** (không trả ping) → 14,9–15,1 s (5/5, đúng hạn heartbeat 15 s); ngưỡng ≤ 35 s: **Đạt**. Client 11 bị từ chối 4429, 0 mất sequence. `011-load-bl335.json` khóa `L3reentryTool`.
 
+### 3.1c T079 phần còn lại: L1 xen kẽ 8080/8443 và RSS tab L5 (2026-10-19)
+
+- **L1 xen kẽ** (`load-tester -alternate -tls-port 8443 -fingerprint …`, 1 giờ, `soak-std10` 500 Tag, 5 client `ws` + 5 client `wss`, rc.1 releaseSeq 13): 0 mất sequence cả hai đường, client 11 bị từ chối đúng; trễ p95 `ws` 61 ms, `wss` 43 ms; RSS tối đa 20,1 MB (**Đạt**); CPU trung bình **36,2 % một lõi** (18,1 % cả máy), đỉnh 47,8 % — **Không đạt** ngưỡng trung bình ≤ 30 % (L1 chỉ `ws`: 28,9 %). Nguyên nhân dự kiến: TLS cho một nửa client trên Cortex-A7 không có lệnh AES phần cứng. Phương án đang làm: ưu tiên ChaCha20-Poly1305 (nhánh `gd6-tls-cpu`), đo lại sau.
+- **L5 RSS tab** (`tools/measure/tab-rss.mjs`, 10 tab `svg-l5`, 10 phút, mỗi tab một renderer): RSS cuối mỗi tab 43–49 MB (đỉnh lúc mở 138 MB rồi giảm), JS heap ≤ 3,6 MB, độ dốc âm — không rò rỉ (**Đạt**).
+
 ### 3.1b T080: L2 1.000 Tag (SC-012)
 
 2026-10-18 09:51–10:51, BL335, runtime `1.0.0-rc.1` releaseSeq 12, project `bench-1000` (1.000 Tag mô phỏng, định dạng 0.6 — kiểm luôn bản sửa gói thiếu `schemas/0.6`), `load-tester` 10 client + 1 thừa, 1 giờ, CPU tính theo một lõi:
