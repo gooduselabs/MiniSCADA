@@ -13,25 +13,12 @@ import {
   type GridRow,
   type ScreenModel,
 } from '@mat/project-schema';
+import type { EditResult } from './screen-doc.ts';
 import { nextItemId } from './screen-edit/clipboard.ts';
 
-export type GridRejection =
-  | 'not-grid'
-  | 'unknown-row'
-  | 'unknown-cell'
-  | 'unknown-widget'
-  | 'cell-occupied'
-  | 'row-overflow'
-  | 'bad-preset'
-  | 'max-rows'
-  | 'max-cells';
-
-export interface GridEditResult {
-  doc: ScreenModel;
-  /** Vùng chọn item sau thao tác (vắng = giữ nguyên). */
-  selection?: string[];
-  rejected?: GridRejection;
-}
+/** Kết quả như screen-doc.ts (lý do từ chối của lưới nằm trong `Rejection` chung). */
+export type GridEditResult = EditResult;
+export type GridRejection = NonNullable<EditResult['rejected']>;
 
 /** Mẫu chia cột của nút Thêm hàng (FR-016). */
 export const GRID_PRESETS: readonly (readonly number[])[] = [

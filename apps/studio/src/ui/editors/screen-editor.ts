@@ -1,7 +1,7 @@
 // Editor Màn hình 0.3 (feature 007, T112, FR-058, FR-067, FR-071): thanh công cụ + canvas, gắn lệnh của bảng lệnh vào hành
 // động trên tài liệu màn hình (model/screen-doc.ts), nhận widget kéo từ Toolbox và Tag kéo từ Details, báo cho thanh trạng
 // thái và ngữ cảnh lệnh. Màn hình 0.1 và 0.2 vẫn dùng `screen-preview.ts` (xem, kiểm tra, xem trước, nạp xuống nguyên trạng).
-import { catalogWidget } from '@mat/project-schema';
+import { catalogWidget, type ScreenModel } from '@mat/project-schema';
 import { html, nothing } from 'lit';
 import type { CommandId } from '../../app/commands.ts';
 import { bindTag } from '../../app/screen-bind.ts';
@@ -25,6 +25,8 @@ import { inspectorModelOf } from '../../model/screen-catalog.ts';
 import type { ReorderOp } from '../../model/screen-edit/layers.ts';
 import { AppElement, icon } from '../base.ts';
 import { registerEditor } from '../registry.ts';
+import type { MatGridEditor } from '../screen/mat-grid-editor.ts';
+import '../screen/mat-grid-editor.ts';
 import type { MatScreenCanvas } from '../screen/mat-screen-canvas.ts';
 import '../screen/mat-screen-canvas.ts';
 import '../screen/mat-screen-toolbar.ts';
@@ -73,6 +75,30 @@ const EDITOR_COMMANDS: readonly CommandId[] = [
   'screen.toolHand',
 ];
 
+/**
+ * Lệnh chỉ có nghĩa ở bố cục tự do (tọa độ): trên màn hình lưới (feature 012) báo không dùng được, không đổi tài liệu.
+ * Xóa, chọn tất cả, khóa, ẩn, xem trước vẫn dùng được.
+ */
+const FREE_ONLY: ReadonlySet<CommandId> = new Set<CommandId>([
+  'screen.copy',
+  'screen.paste',
+  'screen.duplicate',
+  ...(Object.keys(ALIGN) as CommandId[]),
+  'screen.distributeH',
+  'screen.distributeV',
+  'screen.sameWidth',
+  'screen.sameHeight',
+  ...(Object.keys(ORDER) as CommandId[]),
+  'screen.toggleGrid',
+  'screen.toggleSnap',
+  'screen.zoomIn',
+  'screen.zoomOut',
+  'screen.zoomFit',
+  'screen.zoom100',
+  'screen.toolSelect',
+  'screen.toolHand',
+]);
+
 /** Editor đang hiện (chỉ một): các handler đăng ký một lần ở app gọi vào đây. */
 let current: MatScreenEditor | null = null;
 const setCurrent = (e: MatScreenEditor | null): void => {
@@ -116,6 +142,16 @@ export class MatScreenEditor extends AppElement {
     return this.querySelector<MatScreenCanvas>('mat-screen-canvas');
   }
 
+  private gridEditor(): MatGridEditor | null {
+    return this.querySelector<MatGridEditor>('mat-grid-editor');
+  }
+
+  /** Màn hình đang mở dùng bố cục lưới (định dạng 1.1). */
+  private isGrid(): boolean {
+    const d = this.app.screenModel(this.screenId) as (ScreenModel & { layout?: unknown }) | null;
+    return d?.layout !== undefined;
+  }
+
   private sel(): readonly string[] {
     return this.app.selectedItems(this.screenId);
   }
@@ -125,6 +161,12 @@ export class MatScreenEditor extends AppElement {
     const app = this.app;
     if (app.screens.previewMode !== 'off') {
       app.toast(t('reason.screenPreviewLocked'));
+      return;
+    }
+    // bố cục lưới: gắn vào ô đang chọn (FR-017)
+    const gridEd = this.gridEditor();
+    if (gridEd) {
+      gridEd.attachToSelected(type);
       return;
     }
     const spec = catalogWidget(type);
@@ -139,6 +181,10 @@ export class MatScreenEditor extends AppElement {
   /** Thi hành lệnh của bảng lệnh trên màn hình đang mở. */
   exec(id: CommandId): void {
     const app = this.app;
+    if (FREE_ONLY.has(id) && this.isGrid()) {
+      app.toast(t('lay.freeOnly'));
+      return;
+    }
     const sel = [...this.sel()];
     const sid = this.screenId;
     const edit = (fn: Parameters<typeof app.editScreen>[1], key?: string) =>
@@ -308,9 +354,16 @@ export class MatScreenEditor extends AppElement {
       @canvas-tag-drop=${this.onTagDrop}
       @contextmenu=${(e: MouseEvent) => this.onContextMenu(e)}
     >
-      <mat-screen-toolbar .app=${this.app} .screenId=${this.screenId}></mat-screen-toolbar>
       ${this.readOnlyBanner()}
-      <mat-screen-canvas .app=${this.app} .screenId=${this.screenId}></mat-screen-canvas>
+      ${
+        this.isGrid()
+          ? html`<mat-grid-editor .app=${this.app} .screenId=${this.screenId}></mat-grid-editor>`
+          : html`<mat-screen-toolbar
+                .app=${this.app}
+                .screenId=${this.screenId}
+              ></mat-screen-toolbar>
+              <mat-screen-canvas .app=${this.app} .screenId=${this.screenId}></mat-screen-canvas>`
+      }
       ${this.menuView()}
     </div>`;
   }

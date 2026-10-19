@@ -44,6 +44,11 @@ export class MatDialog extends AppElement {
           { choice: 'ok', label: 'dlg.sim.switch', primary: true },
           { choice: 'cancel', label: 'dlg.cancel' },
         ];
+      case 'gridReplace':
+        return [
+          { choice: 'ok', label: 'dlg.gridReplace.ok' },
+          { choice: 'cancel', label: 'dlg.cancel', primary: true },
+        ];
       default:
         return [{ choice: 'ok', label: 'dlg.close', primary: true }];
     }
@@ -63,6 +68,8 @@ export class MatDialog extends AppElement {
         return { title: t('dlg.about.title'), icon: 'info' };
       case 'simSwitch':
         return { title: t('dlg.sim.title'), icon: 'play' };
+      case 'gridReplace':
+        return { title: t('dlg.gridReplace.title'), icon: 'warn' };
     }
   }
 
@@ -74,6 +81,8 @@ export class MatDialog extends AppElement {
         return html`<p>${t('dlg.conflict.text', { file: spec.rel })}</p>`;
       case 'simSwitch':
         return html`<p>${t(spec.to === 'sim' ? 'dlg.sim.toSim' : 'dlg.sim.toOnline')}</p>`;
+      case 'gridReplace':
+        return html`<p>${t('dlg.gridReplace.text', { from: spec.from, to: spec.to })}</p>`;
       case 'saveError':
         return html`<p>${t('dlg.saveError.text', { file: spec.rel, reason: spec.reason })}</p>`;
       case 'shortcuts': {

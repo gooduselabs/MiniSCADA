@@ -55,7 +55,16 @@ export type Rejection =
   | 'bad-action'
   | 'bad-security'
   | 'bad-screen-prop'
-  | 'empty';
+  | 'empty'
+  // bố cục lưới (feature 012, grid-ops.ts)
+  | 'not-grid'
+  | 'unknown-row'
+  | 'unknown-cell'
+  | 'cell-occupied'
+  | 'row-overflow'
+  | 'bad-preset'
+  | 'max-rows'
+  | 'max-cells';
 
 export interface EditResult {
   doc: ScreenModel;

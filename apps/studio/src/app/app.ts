@@ -109,7 +109,9 @@ export type CoreDialogSpec =
   | { kind: 'shortcuts' }
   | { kind: 'about' }
   /** Online và Mô phỏng không chạy cùng lúc: hỏi trước khi chuyển (FR-052). `to` là chế độ sắp bật. */
-  | { kind: 'simSwitch'; to: 'sim' | 'online' };
+  | { kind: 'simSwitch'; to: 'sim' | 'online' }
+  /** Bố cục lưới (feature 012, FR-018): thả widget vào ô đã có component. `from`, `to` là tên hiển thị. */
+  | { kind: 'gridReplace'; from: string; to: string };
 
 /**
  * Hộp thoại Online của feature 005 (ui/dialogs/*): Thiết bị trong mạng, xác nhận chứng chỉ, đăng nhập. Mở theo
@@ -340,6 +342,14 @@ const REJECT_TEXT: Readonly<Record<Rejection, MessageKey>> = {
   'bad-security': 'scr.rej.badSecurity',
   'bad-screen-prop': 'scr.rej.badScreenProp',
   empty: 'scr.rej.empty',
+  'not-grid': 'scr.rej.notGrid',
+  'unknown-row': 'scr.rej.unknownRow',
+  'unknown-cell': 'scr.rej.unknownCell',
+  'cell-occupied': 'scr.rej.cellOccupied',
+  'row-overflow': 'scr.rej.rowOverflow',
+  'bad-preset': 'scr.rej.badPreset',
+  'max-rows': 'scr.rej.maxRows',
+  'max-cells': 'scr.rej.maxCells',
 };
 
 /** Câu cho lỗi của `store.upgrade()`. */

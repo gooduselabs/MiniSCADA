@@ -1,0 +1,174 @@
+/* Trình soạn bố cục lưới (feature 012, T028): thanh công cụ trên, trang xem trước ở giữa vùng làm việc, lớp phủ theo ô
+   (đặt vào slot `cell-<id>` của <mat-screen>). CSS có phạm vi theo tên thẻ, dùng token của Studio (theme/tokens.css). */
+mat-grid-editor {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-grid-editor .ge {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+mat-grid-editor .ge-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+mat-grid-editor .ge-add {
+  position: relative;
+}
+mat-grid-editor .ge-presets {
+  position: absolute;
+  z-index: 30;
+  top: 100%;
+  left: 0;
+  display: grid;
+  gap: 2px;
+  min-width: 200px;
+  padding: 4px;
+  margin-top: 2px;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+mat-grid-editor .ge-presets button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+mat-grid-editor .ge-presets button:hover,
+mat-grid-editor .ge-presets button:focus-visible {
+  background: var(--hover);
+}
+mat-grid-editor .ge-preview {
+  display: flex;
+  gap: 2px;
+  width: 72px;
+  height: 12px;
+}
+mat-grid-editor .ge-preview i {
+  display: block;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+}
+mat-grid-editor .ge-props,
+mat-grid-editor .ge-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+mat-grid-editor .ge-props b {
+  font-size: var(--fs-s);
+  color: var(--muted);
+  margin-right: 2px;
+}
+mat-grid-editor .ge-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-s);
+}
+mat-grid-editor .ge-field input[type='number'] {
+  width: 56px;
+}
+mat-grid-editor .ge-sep {
+  flex: 1;
+}
+mat-grid-editor .btn.seg[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+mat-grid-editor .ge-empty {
+  padding: 12px;
+  color: var(--muted);
+}
+mat-grid-editor .ge-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  background: var(--desk);
+}
+mat-grid-editor .ge-page {
+  margin: 0 auto;
+  min-height: 100%;
+  background: var(--canvas);
+  box-shadow: var(--shadow);
+}
+mat-grid-editor .ge-page mat-screen {
+  height: auto;
+  min-height: 400px;
+}
+/* lớp phủ của ô */
+mat-grid-editor .ge-cell {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed transparent;
+  border-radius: var(--radius);
+  outline: none;
+  cursor: pointer;
+}
+mat-grid-editor .ge-cell:hover {
+  border-color: var(--border-2);
+}
+mat-grid-editor .ge-cell.empty {
+  border-color: var(--border-2);
+  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+}
+mat-grid-editor .ge-cell.sel {
+  border: 2px solid var(--accent);
+}
+mat-grid-editor .ge-cell:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+mat-grid-editor .ge-cell.over {
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+}
+mat-grid-editor .ge-drop {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: var(--fs-s);
+  pointer-events: none;
+}
+mat-grid-editor .ge-tag {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  color: var(--muted);
+  pointer-events: none;
+}
+mat-grid-editor .ge-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -9px;
+  width: 6px;
+  cursor: col-resize;
+  border-radius: 3px;
+}
+mat-grid-editor .ge-divider:hover {
+  background: var(--accent);
+}

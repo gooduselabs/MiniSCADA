@@ -10,6 +10,7 @@ import { viDeploy } from './vi-deploy.ts';
 import { viDevice } from './vi-device.ts';
 import { viGrid } from './vi-grid.ts';
 import { viImport } from './vi-import.ts';
+import { viLayout } from './vi-layout.ts';
 import { viLogging } from './vi-logging.ts';
 import { viOnline } from './vi-online.ts';
 import { viProject02 } from './vi-project02.ts';
@@ -454,6 +455,7 @@ export const viMessages = {
   ...viTags2,
   ...viExpr,
   ...viGrid,
+  ...viLayout,
   ...viProject02,
   ...viDevice,
   ...viLogging,
