@@ -75,7 +75,8 @@ export function chartSvg(t: ReportTable, spec: ChartSpec, o: ChartRender): strin
             textStyle: { fontFamily: o.font, color: p.text, fontSize: 8 },
           }
         : { show: false },
-      grid: { left: 8, right: 12, top: many ? 22 : 18, bottom: 4, containLabel: true },
+      // ECharts 6: outerBounds mặc định giữ nhãn trục trong khung (containLabel cần mô-đun cũ riêng).
+      grid: { left: 8, right: 12, top: many ? 22 : 18, bottom: 4 },
       xAxis: {
         type: 'category',
         data: t.rows.map((r) => r.label),
