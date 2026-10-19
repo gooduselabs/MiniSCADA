@@ -1,6 +1,6 @@
 // Tương thích 0.1–0.3 của trang với bản trước feature 008 (T107, SC-011): cùng project, cùng giá trị Tag cố định, hai bản trang
 // (bản trước 008 build từ commit cuối của 007, và bản hiện tại) trên runtime giả; so phần tử đích, giá trị binding, kiểu hiển thị và
-// ảnh chụp (≤ 0,5 % điểm ảnh khác).
+// ảnh chụp (≤ 0,5 % điểm ảnh khác, ngoài vùng widget biểu đồ mà 012 vẽ lại).
 //   node tests/web-it/compat-008.mjs --project <tên trong projects/> --old-dist <thư mục dist-device bản cũ> --base <https://127.0.0.1:cổng>
 //        [--new-dist apps/runtime-web/dist-device] [--out <thư mục ảnh>] [--dir <thư mục project, tương đối từ gốc repo>]
 // `--dir` mặc định `projects/<tên>`; dashboard-demo đã lên 1.0 (011, T175) nên web-it dùng bản 0.3 đóng băng
@@ -27,6 +27,8 @@ const BASE = opt('--base', 'https://127.0.0.1:18443');
 const outDir = resolve(opt('--out', join(here, 'out', 'compat-008')));
 const checks = [];
 const measures = {};
+// Widget vẽ lại có chủ đích ở feature 012 (ECharts cho đồng hồ, cột, tròn; chú giải dạng chip của xu hướng).
+const CHART_WIDGETS = ['gauge', 'bar', 'pie', 'line'];
 const check = (name, pass, detail = '') =>
   checks.push({ name, pass: Boolean(pass), detail: detail === '' ? undefined : String(detail) });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -174,6 +176,7 @@ try {
   // ---- 2. Hai bản trang trên runtime giả với cùng tài liệu và giá trị hằng
   const snaps = {};
   const shots = {};
+  const masks = {};
   for (const [label, dist] of [
     ['cũ', oldDist],
     ['mới', newDist],
@@ -209,6 +212,23 @@ try {
       const r = el.getBoundingClientRect();
       return { x: Math.floor(r.x), y: Math.floor(r.y), width: Math.ceil(r.width), height: Math.ceil(r.height) };
     })()`);
+    // Feature 012 (FR-033, ADR-040) vẽ lại đồng hồ, biểu đồ cột, tròn và chú giải xu hướng: vùng của các widget này
+    // bỏ khỏi phép so ảnh (đo trên trang mới, tọa độ theo khung chụp); bố cục, chữ, màu, SVG vẫn phải giống.
+    masks[label] = await page.evaluate(`(function(box){
+      const out = [];
+      const sel = '${CHART_WIDGETS.map((w) => 'mat-w-' + w).join(',')}';
+      const found = [];
+      const walk = (root) => {
+        found.push(...root.querySelectorAll(sel));
+        for (const e of root.querySelectorAll('*')) if (e.shadowRoot) walk(e.shadowRoot);
+      };
+      walk(document);
+      for (const el of found) {
+        const r = el.getBoundingClientRect();
+        if (r.width && r.height) out.push([Math.floor(r.x - box.x), Math.floor(r.y - box.y), Math.ceil(r.width), Math.ceil(r.height)]);
+      }
+      return out;
+    })(${JSON.stringify(box)})`);
     shots[label] = (await page.screenshot({ clip: box, encoding: 'base64' })).toString();
     writeFileSync(join(outDir, `${project}-${label}.png`), Buffer.from(shots[label], 'base64'));
     measures[`${label}Console`] = problems
@@ -291,17 +311,24 @@ try {
   const cmp = await browser.newPage();
   await cmp.goto('about:blank');
   const pct = await cmp.evaluate(
-    `(async (a, b) => {
+    `(async (a, b, masks) => {
       const load = (b64) => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = 'data:image/png;base64,' + b64; });
       const [x, y] = await Promise.all([load(a), load(b)]);
       if (x.width !== y.width || x.height !== y.height) return { sizeMismatch: [x.width, x.height, y.width, y.height] };
       const g = (i) => { const c = document.createElement('canvas'); c.width = i.width; c.height = i.height; const t = c.getContext('2d'); t.drawImage(i, 0, 0); return t.getImageData(0, 0, i.width, i.height).data; };
       const p = g(x), q = g(y);
-      let d = 0;
-      for (let k = 0; k < p.length; k += 4)
+      const skip = new Uint8Array(x.width * x.height);
+      for (const [mx, my, mw, mh] of masks)
+        for (let j = Math.max(0, my); j < Math.min(x.height, my + mh); j++)
+          skip.fill(1, j * x.width + Math.max(0, mx), j * x.width + Math.min(x.width, mx + mw));
+      let d = 0, n = 0;
+      for (let k = 0; k < p.length; k += 4) {
+        if (skip[k / 4]) continue;
+        n++;
         if (Math.abs(p[k] - q[k]) > 8 || Math.abs(p[k + 1] - q[k + 1]) > 8 || Math.abs(p[k + 2] - q[k + 2]) > 8) d++;
-      return { diffPct: (d / (p.length / 4)) * 100, pixels: p.length / 4 };
-    })(${JSON.stringify(shots['cũ'])}, ${JSON.stringify(shots['mới'])})`,
+      }
+      return { diffPct: (d / n) * 100, pixels: n, maskedPixels: p.length / 4 - n };
+    })(${JSON.stringify(shots['cũ'])}, ${JSON.stringify(shots['mới'])}, ${JSON.stringify(masks['mới'] ?? [])})`,
   );
   await cmp.close();
   measures.screenshot = pct;
