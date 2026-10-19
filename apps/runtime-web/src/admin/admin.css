@@ -564,6 +564,12 @@
   background: var(--hue-soft);
   border: 1px solid color-mix(in srgb, var(--hue) 50%, transparent);
 }
+.ad-lockcell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
 .ad-name {
   font-weight: 650;
 }
@@ -732,8 +738,22 @@
 
 /* Quyền theo component */
 .ad-comp {
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  grid-template-areas:
+    'main main'
+    'side insp';
   align-items: start;
+}
+.ad-comp-main {
+  grid-area: main;
+  display: grid;
+  gap: 8px;
+}
+.ad-comp-side {
+  grid-area: side;
+}
+.ad-comp .ad-inspector {
+  grid-area: insp;
 }
 .ad-comp-side,
 .ad-inspector {
@@ -742,7 +762,7 @@
   align-content: start;
 }
 .ad-inspector {
-  padding: 14px;
+  padding: 16px;
   background: var(--mat-surface-2);
   border: 1px solid var(--mat-border);
   border-radius: 14px;
@@ -827,7 +847,8 @@
 }
 .ad-preview {
   position: relative;
-  height: 480px;
+  height: min(560px, 60vh);
+  min-height: 320px;
   border: 1px solid var(--mat-border);
   border-radius: 14px;
   overflow: hidden;
@@ -1117,9 +1138,10 @@
   transform: none;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .ad-comp {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'main' 'side' 'insp';
   }
   .ad-inspector {
     position: static;
@@ -1135,4 +1157,16 @@
   .ad-head {
     flex-wrap: wrap;
   }
+}
+.ad-comp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+.ad-comp-head .ad-field {
+  min-width: 260px;
+}
+.ad-comp-head .ad-sub {
+  margin-bottom: 10px;
 }

@@ -18,7 +18,7 @@ import { LiveTagSource } from './live-source.ts';
 import { LoginDialog } from './login-dialog.ts';
 import { buildMenu, type AlarmMenuOptions } from './menu.ts';
 import { loginUrl } from './next.ts';
-import { PasswordDialog } from './password-dialog.ts';
+import type { PasswordDialog } from './password-dialog.ts';
 import { PopupHost } from './popup-host.ts';
 import { ProjectStore, ScreenLoadError, type ApiIssue } from './project-store.ts';
 import {
@@ -124,12 +124,16 @@ async function main(): Promise<void> {
     onLogin: () => loginDialog?.open(),
     onLogout: () => void logout(),
     onSelect: (id) => router?.go(id),
-    onChangePassword: () => passwordDialog?.open(),
+    // Hộp Đổi mật khẩu tải lười (chunk riêng, không vào gói khởi động).
+    onChangePassword: () =>
+      void import('./password-dialog.ts').then((m) => {
+        passwordDialog ??= new m.PasswordDialog(shell.modalRoot, {
+          changePassword: (o, n) => session.changePassword(o, n),
+        });
+        passwordDialog.open();
+      }),
   });
   loginDialog = new LoginDialog(shell.modalRoot, session);
-  passwordDialog = new PasswordDialog(shell.modalRoot, {
-    changePassword: (o, n) => session.changePassword(o, n),
-  });
   session.watchActivity(document);
 
   // Feature 013: thiết bị bắt buộc đăng nhập (`viewerLogin: required`, báo trong web/session): mọi 401 và live 4401 đưa
@@ -604,7 +608,12 @@ async function main(): Promise<void> {
     if (started) router?.resync();
   };
   const loadAccess = async () => {
-    if (!https) return;
+    // Chỉ runtime có phân quyền (device-api 1.6.0) báo `viewerLogin` trong web/session: runtime cũ không có web/access
+    // (khỏi gọi để nhận 404). Phiên ẩn danh (`viewerLogin: off`): máy chủ vẫn tự lọc, trang hiện như cũ.
+    if (!https || session.viewerLogin === null) {
+      applyAccess(new AccessView(null));
+      return;
+    }
     const r = await fetchAccess();
     if (r.status === 'unauthorized') return onUnauthorized();
     if (r.status === 'ok') applyAccess(new AccessView(r.access));

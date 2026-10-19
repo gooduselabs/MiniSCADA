@@ -717,6 +717,13 @@ export async function startFakeRuntime(opts = {}) {
           viewerLogin: cfg.viewerLogin,
         },
         warnings: cfg.httpsDown ? ['HTTPS_DOWN'] : [],
+        // Feature 013: trang đăng nhập hiện tên project và thiết bị (system/info công khai).
+        ...(acc
+          ? {
+              project: { projectName: proj.active.project.projectName },
+              device: { name: 'BL335-trạm-bơm' },
+            }
+          : {}),
       });
     }
     if (path === '/api/v1/device/identity' && m === 'GET') {
@@ -830,8 +837,8 @@ export async function startFakeRuntime(opts = {}) {
     idleExpiresAt: new Date(Date.now() + 1800_000).toISOString(),
     idleTimeoutS: 1800,
     maxSessionS: 43200,
-    groups: acc?.users.get(s.user)?.groups ?? s.groups ?? [],
-    viewerLogin: cfg.viewerLogin,
+    // Feature 013: chỉ runtime có phân quyền mới báo nhóm và viewerLogin (trang dựa vào đó để biết có web/access).
+    ...(acc ? { groups: acc.users.get(s.user)?.groups ?? [], viewerLogin: cfg.viewerLogin } : {}),
   });
 
   async function cookieApi(req, res, secure, path, url) {

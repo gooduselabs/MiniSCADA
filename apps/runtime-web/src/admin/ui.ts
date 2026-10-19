@@ -3,6 +3,7 @@
 // thông báo ngắn (aria-live).
 import { createIcon } from '../icons.ts';
 import { viAdmin } from '../i18n/vi-admin.ts';
+import { weakReason } from '../i18n/vi-account.ts';
 import { AdminApiError } from './api.ts';
 
 type Child = Node | string | null | undefined | false;
@@ -80,26 +81,11 @@ export function errorText(e: unknown): string {
   if (!(e instanceof AdminApiError))
     return viAdmin.errors.unknown('ERROR', e instanceof Error ? e.message : String(e));
   const known = (viAdmin.errors as Record<string, unknown>)[e.code];
-  if (e.code === 'WEAK_PASSWORD') return `${viAdmin.errors.weak}${weakTail(e.reason, e.message)}`;
+  if (e.code === 'WEAK_PASSWORD')
+    return `${viAdmin.errors.weak}${weakReason(e.reason, e.message !== e.code ? e.message : undefined)}`;
   if (typeof known === 'string') return known;
   if (e.code === 'CONFLICT') return viAdmin.banner.conflict;
   return viAdmin.errors.unknown(e.code, e.message !== e.code ? e.message : undefined);
-}
-
-function weakTail(reason?: string, message?: string): string {
-  switch (reason) {
-    case 'TOO_SHORT':
-      return ': cần ít nhất 15 ký tự';
-    case 'TOO_LONG':
-      return ': tối đa 128 ký tự';
-    case 'CONTAINS_NAME':
-    case 'SAME_AS_NAME':
-      return ': không được chứa tên tài khoản';
-    case 'COMMON':
-      return ': mật khẩu quá phổ biến';
-    default:
-      return message && message !== 'WEAK_PASSWORD' ? `: ${message}` : reason ? ` (${reason})` : '';
-  }
 }
 
 let dialogSeq = 0;

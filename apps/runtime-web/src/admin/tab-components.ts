@@ -63,18 +63,27 @@ export class ComponentsTab implements AdminTab {
       { class: 'ad-tabbody ad-comp' },
       h(
         'section',
-        { class: 'ad-comp-side' },
+        { class: 'ad-comp-main' },
         h(
           'div',
-          { class: 'ad-field' },
-          h('label', { text: C.screen, attrs: { for: 'ad-comp-screen' } }),
-          this.#screenSel,
+          { class: 'ad-comp-head' },
+          h(
+            'div',
+            { class: 'ad-field' },
+            h('label', { text: C.screen, attrs: { for: 'ad-comp-screen' } }),
+            this.#screenSel,
+          ),
+          this.#previewHead,
         ),
+        this.#preview.el,
+      ),
+      h(
+        'section',
+        { class: 'ad-comp-side' },
         h('h3', { class: 'ad-sub', text: C.items }),
         this.#search,
         this.#list,
       ),
-      h('section', { class: 'ad-comp-main' }, this.#previewHead, this.#preview.el),
       this.#inspector,
     );
   }

@@ -1,7 +1,7 @@
 // Hộp "Đổi mật khẩu của tôi" (feature 013, US2 AC7, FR-005; admin-api §1 `POST /api/v1/web/password`): <dialog> modal
 // gốc (focus giữ trong hộp, Esc đóng), ba ô mật khẩu với autocomplete đúng, chỉ báo độ dài 15–128 (progressbar có nhãn),
 // kiểm khớp trước khi gửi. Mật khẩu bị xóa khỏi DOM ngay khi gửi; trang không lưu gì. Mọi chữ qua textContent.
-import { vi } from './i18n/vi.ts';
+import { viAccount as T } from './i18n/vi-account.ts';
 import type { PasswordResult } from './session.ts';
 
 export const PW_MIN = 15;
@@ -13,9 +13,9 @@ export interface PasswordDialogDeps {
 
 /** Chỉ báo độ dài (đếm theo điểm mã Unicode, như máy chủ đếm ký tự). */
 export function passwordHint(n: number): { ok: boolean; text: string } {
-  if (n > PW_MAX) return { ok: false, text: vi.access.pwTooLong };
-  if (n < PW_MIN) return { ok: false, text: vi.access.pwShort(n) };
-  return { ok: true, text: vi.access.pwOk };
+  if (n > PW_MAX) return { ok: false, text: T.pwTooLong };
+  if (n < PW_MIN) return { ok: false, text: T.pwShort(n) };
+  return { ok: true, text: T.pwOk };
 }
 
 const len = (s: string) => [...s.normalize('NFC')].length;
@@ -56,18 +56,18 @@ export class PasswordDialog {
     d.className = 'login-dialog pw-dialog';
     const title = document.createElement('h2');
     title.id = 'pw-title';
-    title.textContent = vi.access.pwTitle;
+    title.textContent = T.pwTitle;
     d.setAttribute('aria-labelledby', title.id);
 
     const form = document.createElement('form');
     form.noValidate = true;
-    const [fo, old] = field('pw-old', vi.access.pwOld, 'current-password');
-    const [fn, nw] = field('pw-new', vi.access.pwNew, 'new-password');
-    const [fr, rep] = field('pw-repeat', vi.access.pwRepeat, 'new-password');
+    const [fo, old] = field('pw-old', T.pwOld, 'current-password');
+    const [fn, nw] = field('pw-new', T.pwNew, 'new-password');
+    const [fr, rep] = field('pw-repeat', T.pwRepeat, 'new-password');
     const rule = document.createElement('p');
     rule.className = 'pw-rule';
     rule.id = 'pw-rule';
-    rule.textContent = vi.access.pwRule;
+    rule.textContent = T.pwRule;
     nw.setAttribute('aria-describedby', 'pw-rule pw-meter-text');
 
     const meter = document.createElement('div');
@@ -75,7 +75,7 @@ export class PasswordDialog {
     const bar = document.createElement('div');
     bar.className = 'pw-bar';
     bar.setAttribute('role', 'progressbar');
-    bar.setAttribute('aria-label', vi.access.pwNew);
+    bar.setAttribute('aria-label', T.pwNew);
     bar.setAttribute('aria-valuemin', '0');
     bar.setAttribute('aria-valuemax', String(PW_MIN));
     bar.setAttribute('aria-valuenow', '0');
@@ -101,12 +101,12 @@ export class PasswordDialog {
     actions.className = 'login-actions';
     const cancel = document.createElement('button');
     cancel.type = 'button';
-    cancel.textContent = vi.access.pwCancel;
+    cancel.textContent = T.pwCancel;
     cancel.addEventListener('click', () => this.close());
     const submit = document.createElement('button');
     submit.type = 'submit';
     submit.className = 'primary';
-    submit.textContent = vi.access.pwSubmit;
+    submit.textContent = T.pwSubmit;
     actions.append(cancel, submit);
     form.append(fo, fn, fr, error, done, actions);
     d.append(title, form);
@@ -142,14 +142,14 @@ export class PasswordDialog {
         this.#showError(text);
         focus.focus();
       };
-      if (!o) return bad(vi.access.pwEmptyOld, old);
+      if (!o) return bad(T.pwEmptyOld, old);
       const hint = passwordHint(len(n));
       if (!hint.ok) return bad(hint.text, nw);
-      if (n !== r) return bad(vi.access.pwMismatch, rep);
-      if (n === o) return bad(vi.access.pwSame, nw);
+      if (n !== r) return bad(T.pwMismatch, rep);
+      if (n === o) return bad(T.pwSame, nw);
       this.#busy = true;
       submit.disabled = true;
-      submit.textContent = vi.access.pwBusy;
+      submit.textContent = T.pwBusy;
       error.hidden = true;
       const p = deps.changePassword(o, n);
       old.value = nw.value = rep.value = ''; // xóa khỏi DOM ngay khi gửi
@@ -193,7 +193,7 @@ export class PasswordDialog {
     this.#done.hidden = true;
     this.#busy = false;
     this.#submit.disabled = false;
-    this.#submit.textContent = vi.access.pwSubmit;
+    this.#submit.textContent = T.pwSubmit;
     for (const i of [this.#old, this.#new, this.#repeat]) i.parentElement!.hidden = false;
     this.#meter();
   }
@@ -207,26 +207,25 @@ export class PasswordDialog {
     const n = len(this.#new.value);
     const h = passwordHint(n);
     this.#bar.setAttribute('aria-valuenow', String(Math.min(n, PW_MIN)));
-    this.#bar.setAttribute('aria-valuetext', `${vi.access.pwCount(n)}. ${h.text}`);
+    this.#bar.setAttribute('aria-valuetext', `${T.pwCount(n)}. ${h.text}`);
     this.#fill.style.width = `${Math.min(100, (n / PW_MIN) * 100)}%`;
     this.#bar.dataset.state = n === 0 ? 'empty' : h.ok ? 'ok' : n > PW_MAX ? 'bad' : 'short';
-    this.#meterText.textContent =
-      n === 0 ? vi.access.pwCount(0) : `${vi.access.pwCount(n)} · ${h.text}`;
+    this.#meterText.textContent = n === 0 ? T.pwCount(0) : `${T.pwCount(n)} · ${h.text}`;
   }
 
   #finish(r: PasswordResult): void {
     this.#busy = false;
     this.#submit.disabled = false;
     if (r.ok) {
-      this.#done.textContent = vi.access.pwDone;
+      this.#done.textContent = T.pwDone;
       this.#done.hidden = false;
       for (const i of [this.#old, this.#new, this.#repeat]) i.parentElement!.hidden = true;
-      this.#submit.textContent = vi.access.pwClose;
+      this.#submit.textContent = T.pwClose;
       this.#submit.focus();
       return;
     }
-    this.#submit.textContent = vi.access.pwSubmit;
-    this.#showError(vi.access.pwError(r.code, r.reason, r.message, r.retryAfterS));
+    this.#submit.textContent = T.pwSubmit;
+    this.#showError(T.pwError(r.code, r.reason, r.message, r.retryAfterS));
     (r.code === 'WEAK_PASSWORD' ? this.#new : this.#old).focus();
   }
 

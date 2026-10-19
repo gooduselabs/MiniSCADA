@@ -181,24 +181,31 @@ export class UsersTab implements AdminTab {
     this.#body.replaceChildren(
       ...list.map((u, i) => {
         const locked = u.locked && u.locked.until > now ? u.locked : null;
+        // Bố cục flex nằm trong một div: ô bảng giữ display: table-cell (viền hàng thẳng).
         const nameCell = h(
           'td',
-          { class: 'ad-namecell' },
-          h('span', {
-            class: `ad-avatar hue-${i % 12}`,
-            text: u.name.slice(0, 1).toUpperCase(),
-            attrs: { 'aria-hidden': 'true' },
-          }),
-          h('span', { class: 'ad-name', text: u.name }),
-          u.name === this.#c.me ? h('span', { class: 'ad-you', text: `(${viAdmin.you})` }) : null,
+          {},
+          h(
+            'div',
+            { class: 'ad-namecell' },
+            h('span', {
+              class: `ad-avatar hue-${i % 12}`,
+              text: u.name.slice(0, 1).toUpperCase(),
+              attrs: { 'aria-hidden': 'true' },
+            }),
+            h('span', { class: 'ad-name', text: u.name }),
+            u.name === this.#c.me ? h('span', { class: 'ad-you', text: `(${viAdmin.you})` }) : null,
+          ),
         );
-        const groups = h('td', { class: 'ad-chips' });
+        const chips = h('div', { class: 'ad-chips' });
+        const groups = h('td', {}, chips);
         if (u.groups.length)
-          for (const g of u.groups) groups.append(chip(groupName.get(g) ?? g, groupHue(ids, g)));
-        else groups.append(h('span', { class: 'muted', text: T.noGroup }));
-        const lockCell = h('td');
+          for (const g of u.groups) chips.append(chip(groupName.get(g) ?? g, groupHue(ids, g)));
+        else chips.append(h('span', { class: 'muted', text: T.noGroup }));
+        const lockBox = h('div', { class: 'ad-lockcell' });
+        const lockCell = h('td', {}, lockBox);
         if (locked) {
-          lockCell.append(
+          lockBox.append(
             pill(T.lockedUntil(fmtTime(locked.until)), 'warn'),
             button(T.unlock, () => void this.#unlock(u), {
               small: true,
@@ -206,7 +213,7 @@ export class UsersTab implements AdminTab {
               kind: 'subtle',
             }),
           );
-        } else lockCell.append(h('span', { class: 'muted', text: viAdmin.none }));
+        } else lockBox.append(h('span', { class: 'muted', text: viAdmin.none }));
         const last = h('td', {
           text: relativeTime(u.lastLoginAt, now),
           ...(u.lastLoginAt ? { title: fmtTime(u.lastLoginAt) } : {}),
