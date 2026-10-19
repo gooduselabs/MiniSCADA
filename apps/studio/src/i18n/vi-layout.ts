@@ -48,6 +48,27 @@ export const viLayout = {
   'dlg.gridReplace.title': 'Thay component của ô?',
   'dlg.gridReplace.text': 'Ô đang có {from}. Thay bằng {to}? Có thể hoàn tác bằng Ctrl+Z.',
   'dlg.gridReplace.ok': 'Thay',
+  // chuyển tự do → lưới (US5, FR-040; grid-convert.ts, ui/dialogs/grid-convert-dialog.ts)
+  'cmd.screen.convertToGrid': 'Chuyển sang bố cục lưới…',
+  'reason.alreadyGrid': 'Màn hình đã dùng bố cục lưới',
+  'lay.convert.toolbar': 'Chuyển sang lưới',
+  'lay.convert.title': 'Chuyển "{name}" sang bố cục lưới',
+  'lay.convert.summary': '{rows} hàng, {items} component, lưới 12 cột',
+  'lay.convert.rule':
+    'Đề xuất từ vị trí hiện tại: component cùng dải dọc vào một hàng, xếp trái sang phải; độ rộng làm tròn theo 12 cột. Vị trí và kích thước tự do bị bỏ, binding, sự kiện và thuộc tính giữ nguyên.',
+  'lay.convert.row': 'Hàng {n}: {spans}',
+  'lay.convert.heightAuto': 'cao tự động',
+  'lay.convert.heightPx': 'cao {px} px',
+  'lay.convert.empty': 'Màn hình chưa có component: tạo một hàng 12 cột trống.',
+  'lay.convert.after':
+    'Áp xong vẫn chỉnh được hàng và ô trong trình soạn lưới. Hoàn tác (Ctrl+Z) đưa màn hình về đúng bản tự do.',
+  'lay.convert.warnings': 'Cần xem lại',
+  'lay.convert.w.overlap': 'Hàng {row}: {items} chồng lên component bên trái, được xếp liền sau.',
+  'lay.convert.w.squeezed': 'Hàng {row}: không đủ 12 cột, độ rộng một số ô đã bị thu hẹp.',
+  'lay.convert.w.split': 'Hàng {row}: dải có hơn 12 component, tách thành nhiều hàng.',
+  'lay.convert.w.maxRows': 'Bố cục có hơn 100 hàng (giới hạn của màn hình lưới): chưa áp được.',
+  'lay.convert.apply': 'Áp',
+  'lay.convert.done': 'Đã chuyển sang bố cục lưới ({rows} hàng). Ctrl+Z để hoàn tác.',
   // lý do từ chối (grid-ops.ts)
   'scr.rej.notGrid': 'Màn hình này không dùng bố cục lưới.',
   'scr.rej.unknownRow': 'Không có hàng này.',

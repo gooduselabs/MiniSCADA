@@ -781,7 +781,18 @@ export class StudioStore {
       alarmCount: this.s.outline.alarms?.alarms.length ?? 0,
       format10: this.s.outline.format10,
       format11: this.s.outline.format11,
+      screenIsGrid: open && this.activeScreenIsGrid(),
       ...ui,
     };
+  }
+
+  /** Màn hình của tab đang chọn có bố cục lưới (`layout`, định dạng 1.1). */
+  private activeScreenIsGrid(): boolean {
+    const a = this.s.active;
+    if (!a.startsWith('screen:')) return false;
+    const id = a.slice('screen:'.length);
+    const m = this.s.outline.screens.find((s) => s.id === id)?.model as
+      { layout?: unknown } | null | undefined;
+    return m?.layout !== undefined;
   }
 }
