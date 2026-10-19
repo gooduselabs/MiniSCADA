@@ -81,13 +81,18 @@ table.rpt {
   font-variant-numeric: tabular-nums;
 }
 table.rpt th {
-  position: sticky;
-  top: 0;
   background: var(--mat-surface-2);
   text-align: left;
   padding: 4px 10px;
   border-bottom: 1px solid var(--mat-border-strong);
   white-space: nowrap;
+}
+/* Chỉ tiêu đề cột dính trên; nhãn hàng (th scope=row) cuộn theo hàng, nhãn "Tổng" dính dưới cùng các ô của hàng tổng
+   (trước đây mọi th đều dính trên, nhãn của hàng tổng không dính nên hàng tổng mang nhãn của hàng nằm dưới nó; T203). */
+table.rpt thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 table.rpt td {
   padding: 3px 10px;
@@ -104,6 +109,7 @@ table.rpt td.pending {
   color: var(--mat-text-muted);
   font-style: italic;
 }
+table.rpt tr.total th,
 table.rpt tr.total td {
   font-weight: 600;
   background: var(--mat-surface-2);
