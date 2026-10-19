@@ -781,7 +781,7 @@ const stringList = (v: unknown): string[] =>
 export const isVersion02 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^(0\.[2-6]|1\.0)\.\d+$/.test(project.schemaVersion);
+  /^(0\.[2-6]|1\.[01])\.\d+$/.test(project.schemaVersion);
 
 /**
  * project.json khai schemaVersion 0.3.x trở lên (màn hình nhiều item, feature 007; 0.4 thêm binding động hóa và sự kiện của
@@ -791,13 +791,13 @@ export const isVersion02 = (project: unknown): boolean =>
 export const isVersion03 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^(0\.[3-6]|1\.0)\.\d+$/.test(project.schemaVersion);
+  /^(0\.[3-6]|1\.[01])\.\d+$/.test(project.schemaVersion);
 
 /** project.json khai schemaVersion 0.5.x trở lên (alarm, feature 009; 0.6 và 1.0 là tập con siêu của 0.5 nên cũng có alarm). */
 export const isVersion05 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^(0\.[56]|1\.0)\.\d+$/.test(project.schemaVersion);
+  /^(0\.[56]|1\.[01])\.\d+$/.test(project.schemaVersion);
 
 /**
  * project.json khai schemaVersion 0.6.x trở lên (lưu trữ nâng cao và báo cáo, feature 010; 1.0 là tập con siêu của 0.6);
@@ -806,13 +806,22 @@ export const isVersion05 = (project: unknown): boolean =>
 export const isVersion06 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^(0\.6|1\.0)\.\d+$/.test(project.schemaVersion);
+  /^(0\.6|1\.[01])\.\d+$/.test(project.schemaVersion);
 
-/** project.json khai schemaVersion 1.0.x (logic, template, faceplate, feature 011): định dạng hiện hành của Studio. */
+/**
+ * project.json khai schemaVersion họ 1.x mà Studio hiểu (1.0: logic, template, faceplate, feature 011; 1.1 thêm bố cục
+ * lưới và chủ đề, feature 012).
+ */
 export const isVersion10 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^1\.0\.\d+$/.test(project.schemaVersion);
+  /^1\.[01]\.\d+$/.test(project.schemaVersion);
+
+/** project.json khai schemaVersion 1.1.x (bố cục lưới, chủ đề, feature 012): định dạng hiện hành của Studio. */
+export const isVersion11 = (project: unknown): boolean =>
+  isObject(project) &&
+  typeof project.schemaVersion === 'string' &&
+  /^1\.1\.\d+$/.test(project.schemaVersion);
 
 /**
  * Đường dẫn các file sửa được theo đối tượng (data-model §13.1): project.json, file Tag; project 0.2 thêm file kết
@@ -1214,8 +1223,10 @@ export interface ProjectOutline {
   /** null: project không có mẫu báo cáo. */
   reportsFile: string | null;
   reports: ReportsConfig | null;
-  /** Định dạng 1.0 (feature 011): định dạng hiện hành; project cũ hơn được đề nghị nâng cấp. */
+  /** Họ 1.x (feature 011): template, logic sửa được. */
   format10: boolean;
+  /** Định dạng 1.1 (feature 012): định dạng hiện hành (bố cục lưới, chủ đề); project cũ hơn được đề nghị nâng cấp. */
+  format11: boolean;
   /** `logic` của project.json 1.0 (null: không có). */
   logicFile: string | null;
   /** Nội dung logic.json đọc được (null: không có hoặc sai hình). */
@@ -1314,6 +1325,7 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
   const format10 = isVersion10(project);
   return {
     format10,
+    format11: isVersion11(project),
     logicFile: format10 && typeof rec.logic === 'string' ? rec.logic : null,
     logic: (() => {
       const v = format10 && typeof rec.logic === 'string' ? files[rec.logic] : undefined;

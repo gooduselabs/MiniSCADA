@@ -8,6 +8,7 @@ import {
   migrateTo05,
   migrateTo06,
   migrateTo10,
+  migrateTo11,
   stripBom,
   validateProject,
   type Issue,
@@ -303,7 +304,7 @@ export class StudioStore {
       return;
     }
     const outline = outlineOf(filesOf(docs));
-    const old = !outline.format10 && outline.project !== null;
+    const old = !outline.format11 && outline.project !== null;
     this.s = { ...initialState(), project: { display } };
     this.set({ docs, outline, pendingUpgrade: old });
     void this.runValidate();
@@ -372,7 +373,9 @@ export class StudioStore {
    * `migrateTo10` (hoặc `migrateTo06`, `migrateTo05`, `migrateTo04` khi `target` là 0.6, 0.5, 0.4) rồi làm sạch SVG theo allowlist 0.4 (giữ id và UID;
    * `svg-upgrade.ts`): file SVG đổi vào danh sách sao lưu, báo cáo vào `changes` trước dòng "Ghi lại".
    */
-  private async migrateClean(target: '0.4' | '0.5' | '0.6' | '1.0' = '1.0'): Promise<UpgradePlan> {
+  private async migrateClean(
+    target: '0.4' | '0.5' | '0.6' | '1.0' | '1.1' = '1.1',
+  ): Promise<UpgradePlan> {
     const step =
       target === '0.4'
         ? migrateTo04
@@ -380,7 +383,9 @@ export class StudioStore {
           ? migrateTo05
           : target === '0.6'
             ? migrateTo06
-            : migrateTo10;
+            : target === '1.0'
+              ? migrateTo10
+              : migrateTo11;
     const r = await step(this.textsOf());
     if (!r.ok) return r;
     const { files, change } = cleanSvgFiles(r.files);
@@ -420,7 +425,7 @@ export class StudioStore {
    * đã viết lại. Không hoàn tác được (lịch sử bắt đầu lại).
    */
   async upgrade(
-    target: '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '1.0' = '1.0',
+    target: '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '1.0' | '1.1' = '1.1',
   ): Promise<UpgradeOutcome> {
     if (!this.s.project) return { ok: false, error: { code: 'NO_PROJECT' } };
     const texts = this.textsOf();

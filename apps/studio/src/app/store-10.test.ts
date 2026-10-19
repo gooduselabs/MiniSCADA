@@ -27,14 +27,15 @@ describe('StudioStore: định dạng 1.0', () => {
   beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] }));
   afterEach(() => vi.useRealTimers());
 
-  it('mở project 1.0: không đề nghị nâng cấp, đọc logic.json và template, hợp lệ', async () => {
+  it('mở project 1.0: đọc logic.json và template, hợp lệ; được đề nghị nâng cấp lên 1.1 (feature 012)', async () => {
     const files = vector10();
     delete files['expected.json'];
     const { store } = await opened(files);
     const s = store.state;
     expect(s.refusal).toBeNull();
-    expect(s.pendingUpgrade).toBe(false);
+    expect(s.pendingUpgrade).toBe(true);
     expect(s.outline.format10).toBe(true);
+    expect(s.outline.format11).toBe(false);
     expect(s.outline.format06).toBe(true); // lưu trữ, báo cáo sửa được như 0.6
     expect(s.outline.logicFile).toBe('logic.json');
     expect(s.outline.templateFiles).toEqual(['templates/bom.template.json']);
@@ -50,12 +51,13 @@ describe('StudioStore: định dạng 1.0', () => {
     expect(store.state.pendingUpgrade).toBe(true);
     await vi.advanceTimersByTimeAsync(10);
     await store.idle();
+    // kế hoạch của hộp thoại nhắm định dạng hiện hành 1.1 (feature 012); đích 1.0 vẫn chọn được
     const plan = store.state.upgradePlan;
     expect(plan && plan.ok && plan.changes).toContainEqual({
       kind: 'minRuntime',
-      version: '1.0.0',
+      version: '1.1.0',
     });
-    const r = await store.upgrade();
+    const r = await store.upgrade('1.0');
     expect(r.ok).toBe(true);
     expect(store.state.pendingUpgrade).toBe(false);
     expect(store.state.outline.format10).toBe(true);
