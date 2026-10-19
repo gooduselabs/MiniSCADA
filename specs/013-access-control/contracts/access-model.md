@@ -13,7 +13,7 @@ Nguồn: [spec](../spec.md) FR-010 đến FR-037, [kế hoạch](../../../docs/p
 - Thư mục `auth/` 0700. Đọc từ chối tệp là liên kết, không phải tệp thường, hoặc nhóm/người khác ghi được (giữ luật của `readUsersFile`).
 - **Ghi:** khóa `flock` loại trừ trên chính thư mục `auth/` (cả runtime và CLI; luồng B, 2026-10-19: khóa thư mục thay cho tệp `auth/.lock`, để root và matscada mở được mà không phải đổi chủ một tệp khóa), đọc lại, kiểm `rev`, ghi tệp tạm cùng thư mục, fsync, rename, fsync thư mục; giữ bản trước là `<tệp>.bak` (một bản, tạo bằng hard link trước khi rename, nên người đọc không bao giờ thấy tệp bị thiếu).
 - Mỗi tệp có `rev` (số nguyên tăng mỗi lần ghi). Mọi yêu cầu sửa của API mang `rev` đã đọc; khác thì `409 CONFLICT`.
-- Runtime đọc lại khi tệp đổi (như `AccountStore::refresh`, tối đa 2 s/lần) để CLI sửa cũng có hiệu lực.
+- Runtime đọc lại khi tệp đổi (như `AccountStore::refresh`: `users.json` tối đa 2 s/lần, `access.json` tối đa 1 s/lần để quy tắc sửa bằng CLI có hiệu lực ≤ 2 s như trên web) để CLI sửa cũng có hiệu lực.
 - **Hỏng** (JSON sai, sai schemaVersion, vượt giới hạn): runtime ghi log và audit `access.store-invalid`, coi như **mọi quy tắc từ chối** trừ `administrator` (FR-036); trang Quản trị hiện lỗi và nút **Khôi phục bản trước** (`.bak`). `users.json` hỏng giữ hành vi cũ (không ai đăng nhập được, CLI phục hồi).
 
 ### 1.1. `users.json` 1.1.0
