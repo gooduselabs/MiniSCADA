@@ -2,7 +2,7 @@
 // packages/ui-components/src/styles/themes/*.css (theme.test.ts kiểm khớp) để gói này không phụ thuộc ui-components.
 // Báo cáo luôn in trên giấy trắng: chủ đề `dark` dùng bảng màu vivid (nền tối tốn mực và khó đọc khi in).
 
-import type { ReportTheme } from '../types.ts';
+import type { ReportTheme } from './types.ts';
 
 export type { ReportTheme };
 

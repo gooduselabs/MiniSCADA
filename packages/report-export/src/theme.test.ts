@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { REPORT_PALETTES } from './theme.ts';
 
-const THEMES = resolve(__dirname, '../../../ui-components/src/styles/themes');
+const THEMES = resolve(__dirname, '../../ui-components/src/styles/themes');
 
 function lightTokens(name: string): Map<string, string> {
   const css = readFileSync(resolve(THEMES, `${name}.css`), 'utf8');

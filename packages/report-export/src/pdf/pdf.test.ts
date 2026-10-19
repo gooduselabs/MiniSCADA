@@ -3,7 +3,7 @@
 import { extractText, getDocumentProxy } from 'unpdf';
 import { describe, expect, it } from 'vitest';
 import { buildPdf, pdfDefinition } from './pdf.ts';
-import { REPORT_PALETTES, reportPalette } from './theme.ts';
+import { REPORT_PALETTES, reportPalette } from '../theme.ts';
 import type { ReportTable } from '@mat/history-math';
 import { LABELS, META, tableFromVector } from '../testing.ts';
 

@@ -6,7 +6,7 @@ import { formatLocal, formatNumber, type ReportTable } from '@mat/history-math';
 import { columnHeader, coverageText } from '../csv/csv.ts';
 import type { ExportLabels, ExportMeta } from '../types.ts';
 import { chartSpec, chartSvg } from './chart.ts';
-import { reportPalette, type ReportPalette } from './theme.ts';
+import { reportPalette, type ReportPalette } from '../theme.ts';
 
 type Cell = { text: string; [k: string]: unknown };
 type Node = Record<string, unknown>;

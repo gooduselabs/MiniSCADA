@@ -7,7 +7,7 @@ import { GridComponent, LegendComponent } from 'echarts/components';
 import * as echarts from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
 import { formatNumber, type ReportTable } from '@mat/history-math';
-import type { ReportPalette } from './theme.ts';
+import type { ReportPalette } from '../theme.ts';
 
 echarts.use([BarChart, LineChart, GridComponent, LegendComponent, SVGRenderer]);
 
