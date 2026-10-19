@@ -75,7 +75,11 @@ export default async function run(ctx) {
     xs.join(','),
   );
   ctx.check('600 px: ô 2 nằm dưới ô 1', n.c2[1] > n.c1[1] + n.c1[3] - 1);
-  ctx.check('600 px: ô của hàng cao cố định không bị bẹp (đồng hồ ≥ 280 px)', n.c6[3] >= 280, n.c6[3]);
+  ctx.check(
+    '600 px: ô của hàng cao cố định không bị bẹp (đồng hồ ≥ 280 px)',
+    n.c6[3] >= 280,
+    n.c6[3],
+  );
   const hscroll = await page.evaluate(
     () => document.documentElement.scrollWidth > window.innerWidth + 1,
   );
