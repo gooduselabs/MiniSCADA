@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_LAYOUT_SPAN"],"runtimeVersion":"1.1.0","issues":[{"code":"E_LAYOUT_SPAN","file":"screens/tong-quan.screen.json","path":"/layout/rows/0/cells/2/span"}]}

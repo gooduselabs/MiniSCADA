@@ -12,14 +12,14 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 446 mã.
+Tổng cộng 455 mã.
 
 ## Mục lục
 
 - [Định dạng và phiên bản project](#format) (13)
 - [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (33)
 - [Biểu thức của Tag tính toán](#expression) (10)
-- [Màn hình, widget, binding và điều hướng](#screens) (38)
+- [Màn hình, widget, binding và điều hướng](#screens) (47)
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (32)
 - [Alarm](#alarm) (46)
 - [Lưu trữ, lịch sử và báo cáo](#history) (41)
@@ -123,6 +123,14 @@ Tổng cộng 446 mã.
 | `E_DUP_UID` | — | `elementUid` trùng trong màn hình hoặc trong bindings | `core/project-manager`, `packages/project-schema` |
 | `E_ITEM_ID` | — | Id item sai dạng hoặc trùng | `core/project-manager`, `packages/project-schema` |
 | `E_ITEM_SIZE` | — | Cỡ nhỏ hơn `minSize` của loại, hoặc ≤ 0 | `core/project-manager`, `packages/project-schema` |
+| `E_LAYOUT_COLUMNS` | — | Bố cục lưới phải có đúng 12 cột (mode grid) | `packages/project-schema` |
+| `E_LAYOUT_ID` | — | Id hàng hoặc ô của bố cục lưới sai dạng hoặc bị trùng | `packages/project-schema` |
+| `E_LAYOUT_ITEM_DUP` | — | Một component nằm ở nhiều ô của bố cục lưới | `packages/project-schema` |
+| `E_LAYOUT_ITEM_POS` | — | Component của màn hình lưới có tọa độ, hoặc component của màn hình tự do thiếu tọa độ | `packages/project-schema` |
+| `E_LAYOUT_ITEM_REF` | — | Ô của bố cục lưới trỏ tới component không có trên màn hình | `packages/project-schema` |
+| `E_LAYOUT_LIMIT` | — | Bố cục lưới quá 100 hàng, hoặc một hàng không có ô hay có quá 12 ô | `packages/project-schema` |
+| `E_LAYOUT_SPAN` | — | Độ rộng ô ngoài 1 đến 12 cột, khoảng trống trước ô ngoài 0 đến 11, hoặc tổng các ô của một hàng quá 12 cột | `packages/project-schema` |
+| `E_LAYOUT_VERSION` | — | Bố cục lưới và chủ đề cần project định dạng 1.1 và runtime 1.1.0 trở lên | `packages/project-schema` |
 | `E_NAV` | — | Mục menu trỏ tới màn hình không có hoặc popup; nhóm lồng nhóm; nhóm rỗng | `core/project-manager`, `packages/project-schema` |
 | `E_POPUP_ARGS` | — | Tham số `args` của hành động mở popup thiếu, thừa, sai kiểu, hoặc popup được mở với quá 1.000 bộ tham số khác nhau | `core/project-manager`, `packages/project-schema` |
 | `E_REF_TAG` | — | Binding trỏ Tag không tồn tại | `core/project-manager`, `packages/project-schema` |
@@ -150,6 +158,7 @@ Tổng cộng 446 mã.
 | `W_CONFIRM_NONE` | — | Widget điều khiển đặt `confirm: "none"`: ghi không cần xác nhận | `core/project-manager`, `packages/project-schema` |
 | `W_ITEM_COVERED` | — | Widget bị item phía trên che hoàn toàn | `core/project-manager`, `packages/project-schema` |
 | `W_ITEM_OUTSIDE` | — | Item nằm hoàn toàn ngoài màn hình | `core/project-manager`, `packages/project-schema` |
+| `W_LAYOUT_ITEM_ORPHAN` | — | Component của màn hình lưới không nằm trong ô nào nên không hiển thị | `packages/project-schema` |
 | `W_PULSE_READBACK` | — | Hành động `pulse` trên Tag bật đọc lại | `core/project-manager`, `packages/project-schema` |
 | `W_SCREEN_EMPTY` | — | Màn hình không có item | `core/project-manager`, `packages/project-schema` |
 | `W_SCREEN_TAGS_MANY` | — | Màn hình > 500 Tag riêng biệt | `core/project-manager`, `packages/project-schema` |

@@ -531,11 +531,11 @@ export function cases02(base01) {
     ['E_SCHEMA_VERSION'],
   );
   bad(
-    'v02-invalid-schema-version-1.1', // trước feature 011 là 1.0 (nay được hỗ trợ); 1.1 chưa có (contract 1.0 §1)
+    'v02-invalid-schema-version-1.2', // trước feature 011 là 1.0, trước 012 là 1.1 (nay được hỗ trợ); 1.2 chưa có
     (f) => {
       for (const k of Object.keys(f)) delete f[k];
       Object.assign(f, base01());
-      for (const v of Object.values(f)) if (typeof v === 'object') v.schemaVersion = '1.1.0';
+      for (const v of Object.values(f)) if (typeof v === 'object') v.schemaVersion = '1.2.0';
     },
     ['E_SCHEMA_VERSION'],
   );

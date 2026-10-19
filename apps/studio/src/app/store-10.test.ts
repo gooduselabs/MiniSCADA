@@ -72,8 +72,8 @@ describe('StudioStore: định dạng 1.0', () => {
     expect(platform.control.writes.map((w) => w.rel)).not.toContain('logic.json');
   });
 
-  it('project 1.1.0 và 0.7.0: từ chối (Studio chưa hiểu)', async () => {
-    for (const v of ['1.1.0', '0.7.0', '2.0.0']) {
+  it('project 1.2.0 và 0.7.0: từ chối (Studio chưa hiểu; 1.1 có từ feature 012)', async () => {
+    for (const v of ['1.2.0', '0.7.0', '2.0.0']) {
       const files = historyDemo();
       files['project.json'] = files['project.json']!.replace('"0.6.0"', `"${v}"`);
       const platform = createMockPlatform();

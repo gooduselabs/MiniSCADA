@@ -180,9 +180,9 @@ for (const [name, src] of [
 }
 // ---- không nâng cấp được ----
 err('error-already-1.0', retag(v03(), '1.0.0', '1.0.0'), { code: 'ALREADY_10' });
-err('error-unsupported-1.1', retag(v03(), '1.1.0', '1.1.0'), {
+err('error-unsupported-1.2', retag(v03(), '1.2.0', '1.2.0'), {
   code: 'UNSUPPORTED_VERSION',
-  version: '1.1.0',
+  version: '1.2.0',
 });
 err('error-unsupported-0.7', retag(v03(), '0.7.0', '0.10.0'), {
   code: 'UNSUPPORTED_VERSION',

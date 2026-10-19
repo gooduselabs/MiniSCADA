@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_LAYOUT_ID"],"runtimeVersion":"1.1.0","issues":[{"code":"E_LAYOUT_ID","file":"screens/tong-quan.screen.json","path":"/layout/rows/1/id"}]}

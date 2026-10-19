@@ -79,6 +79,7 @@ import { runRules02, type Rule02Input } from './rules-02.ts';
 import { runRules03, type Rule03Screen } from './rules-03.ts';
 import { runRules05 } from './rules-05.ts';
 import { runRules10 } from './rules-10.ts';
+import { runRules11 } from './rules-11.ts';
 import type { LoadedProject10, LogicDoc, Project10, TemplateDoc } from './types-10.ts';
 import { runRules04 } from './rules-04.ts';
 import { svgContentRules, svgTooLargeIssue } from './rules-04-svg.ts';
@@ -690,7 +691,7 @@ async function validateProject03(
       p5.alarmFile !== undefined && out.bytes.has(p5.alarmFile)
         ? { alarmsBytes: out.bytes.get(p5.alarmFile)! }
         : {};
-    if (set === '1.0')
+    if (set === '1.0') {
       r = runRules10({
         ...input,
         project: project as Project10,
@@ -700,7 +701,10 @@ async function validateProject03(
         templates,
         ...(logic ? { logic } : {}),
       });
-    else if (set === '0.5' || set === '0.6') {
+      // họ 1.x: bố cục lưới, chủ đề (feature 012, rules-11.ts)
+      const r11 = runRules11({ project: project as Project10, screens });
+      r = { errors: [...r.errors, ...r11.errors], warnings: [...r.warnings, ...r11.warnings] };
+    } else if (set === '0.5' || set === '0.6') {
       r = runRules05({
         ...input,
         project: p5,

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "tong-quan",
+  "name": "Tổng quan",
+  "size": {
+    "width": 1920,
+    "height": 1080
+  },
+  "layout": {
+    "mode": "grid",
+    "columns": 12,
+    "gap": 12,
+    "padding": 16,
+    "rows": []
+  },
+  "items": [
+    {
+      "id": "luu_luong",
+      "type": "widget",
+      "widget": "card",
+      "props": {
+        "label": "Lưu lượng bơm 7"
+      },
+      "tags": {
+        "value": "PUMP07.FLOW"
+      }
+    },
+    {
+      "id": "dong_ho",
+      "type": "widget",
+      "widget": "gauge",
+      "tags": {
+        "value": "PUMP08.FLOW"
+      }
+    },
+    {
+      "id": "den",
+      "type": "widget",
+      "widget": "lamp",
+      "tags": {
+        "state": "PUMP07.RUN"
+      }
+    },
+    {
+      "id": "xu_huong",
+      "type": "widget",
+      "widget": "line",
+      "tags": {
+        "series": [
+          "PUMP07.FLOW"
+        ]
+      }
+    },
+    {
+      "id": "khung",
+      "type": "widget",
+      "widget": "panel"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_LAYOUT_LIMIT"],"runtimeVersion":"1.1.0","warnings":["W_LAYOUT_ITEM_ORPHAN"],"issues":[{"code":"E_LAYOUT_LIMIT","file":"screens/tong-quan.screen.json","path":"/layout/rows/1/cells"}]}

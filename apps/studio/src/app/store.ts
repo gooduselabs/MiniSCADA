@@ -185,9 +185,9 @@ function newerVersion(project: unknown): string | null {
       ? (project as { schemaVersion?: unknown }).schemaVersion
       : undefined;
   const m = typeof v === 'string' ? /^(\d+)\.(\d+)\./.exec(v) : null;
-  // hiểu 0.1 đến 0.6 và 1.0 (feature 011); 0.7+, 1.1+ chưa có (contracts/project-format-1.0.md §1)
+  // hiểu 0.1 đến 0.6, 1.0 (feature 011) và 1.1 (feature 012); 0.7+, 1.2+ chưa có (contracts/project-format-1.1.md §1)
   const [major, minor] = m ? [Number(m[1]), Number(m[2])] : [0, 0];
-  return m && (major > 1 || (major === 1 && minor > 0) || (major === 0 && minor > 6))
+  return m && (major > 1 || (major === 1 && minor > 1) || (major === 0 && minor > 6))
     ? (v as string)
     : null;
 }

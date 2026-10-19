@@ -34,7 +34,7 @@ describe('tests/migration-vectors/0.6-to-1.0', () => {
       'from-0.4-svg-demo',
       'from-0.5-alarm-demo',
       'error-already-1.0',
-      'error-unsupported-1.1',
+      'error-unsupported-1.2',
       'error-unreadable-project',
     ])
       expect(cases).toContain(c);

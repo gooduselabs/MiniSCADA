@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "tong-quan",
+  "name": "Tổng quan",
+  "size": {
+    "width": 1920,
+    "height": 1080
+  },
+  "layout": {
+    "mode": "grid",
+    "columns": 12,
+    "gap": 12,
+    "padding": 16,
+    "rows": []
+  },
+  "items": []
+}

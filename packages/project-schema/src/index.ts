@@ -72,6 +72,8 @@ export { toScreenModel, legacyScreenTo03, SIZE_MIN, SIZE_MAX } from './to-screen
 export type { LegacyConversion } from './to-screen-model.ts';
 // feature 011 (định dạng 1.0): template, faceplate, logic.json
 export * from './types-10.ts';
+export * from './types-11.ts';
+export * from './layout.ts';
 export * from './params.ts';
 export { runRules10 } from './rules-10.ts';
 export type { Rule10Input } from './rules-10.ts';
