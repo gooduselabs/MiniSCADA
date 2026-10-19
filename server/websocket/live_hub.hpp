@@ -58,10 +58,16 @@ struct AlarmLiveChange {
     // The same without account names and free text, for a connection without a sign-in (M1).
     std::string publicJson;
 };
+// Feature 013 (contracts/access-model.md §4, alarm(P)): the alarms a session may see, by instance
+// id, and the counts (§3.3) over only those, of the same view as the message that carries it.
+using AlarmIdFilter = std::function<bool(const std::string& id)>;
+using AlarmCountsFn = std::function<std::string(const AlarmIdFilter& allow)>;
 struct AlarmLiveBatch {
     int64_t revision = 0;
     std::string counts = "{}";  // §3.3
     std::vector<AlarmLiveChange> changes;
+    // The counts for a session that may not see every alarm; empty: such a session gets zeros.
+    AlarmCountsFn countsFor;
 };
 struct AlarmLiveSnapshot {
     bool ready = true;  // false: the engine has not run its first tick (§7)
@@ -71,6 +77,7 @@ struct AlarmLiveSnapshot {
     std::string areas = "[]";
     std::vector<std::string> instances;  // one JSON object text each
     std::vector<std::string> ids;        // feature 013: the id of each instance (same order)
+    AlarmCountsFn countsFor;             // feature 013: as AlarmLiveBatch::countsFor
 };
 
 // Feature 013 (live 1.4.0, contracts/admin-api.md §6): what one session may receive. `all`: every
@@ -78,8 +85,8 @@ struct AlarmLiveSnapshot {
 // a grant with another fingerprint unsubscribes the Tags lost and sends {"type":"access-changed"}.
 struct LiveGrant {
     bool all = true;
-    std::unordered_set<size_t> tags;                        // store indexes, when !all
-    std::function<bool(const std::string& alarmId)> alarm;  // empty: every alarm
+    std::unordered_set<size_t> tags;  // store indexes, when !all
+    AlarmIdFilter alarm;              // empty: every alarm
     std::string fingerprint;
     bool tag(size_t i) const { return all || tags.count(i) > 0; }
     bool alarmOk(const std::string& id) const { return all || !alarm || alarm(id); }
@@ -193,6 +200,10 @@ class LiveHub {
         int64_t nextGrantCheck = 0;
     };
     void grantTickLocked(int64_t monoNow);
+    // Feature 013: `all` (the engine's counts) for a session that sees every alarm, else the
+    // counts `fn` gives for its grant (zeros without `fn`).
+    static std::string countsForLocked(const Session& s, const std::string& all,
+                                       const AlarmCountsFn& fn);
 
     void subscribeAlarmsLocked(uint64_t sid, Session& s, const std::string& requestId);
     void startSnapshotLocked(uint64_t sid, Session& s, AlarmLiveSnapshot snap);
@@ -220,6 +231,7 @@ class LiveHub {
     RejectedAckFn onRejectedAck_;
     int64_t alarmRevision_ = 0;  // of the last batch
     std::string alarmCounts_ = "{}";
+    AlarmCountsFn alarmCountsFor_;  // feature 013: of the last batch
     // Buffers of tick(), kept between ticks so that a tick allocates only the texts it enqueues:
     // the part of each changed Tag's entry that is the same for every session (formatted once per
     // tick), its end offsets, and the delta being built.

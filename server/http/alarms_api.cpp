@@ -397,8 +397,7 @@ void keepAllowed(json& body, const char* list, const char* key, const AlarmFilte
 }  // namespace
 
 int getList(mg_connection* c, AlarmGlue& glue, bool full, const AlarmFilter& allow) {
-    json body = glue.listJson(full);
-    keepAllowed(body, "instances", "id", allow);
+    json body = glue.listJson(full, allow);  // feature 013: the instances and counts of `allow`
     return sendResult(c, {200, std::move(body)});
 }
 

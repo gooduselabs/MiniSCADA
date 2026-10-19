@@ -114,11 +114,18 @@ void LiveHub::subscribeAlarmsLocked(uint64_t sid, Session& s, const std::string&
     startSnapshotLocked(sid, s, std::move(snap));
 }
 
+std::string LiveHub::countsForLocked(const Session& s, const std::string& all,
+                                     const AlarmCountsFn& fn) {
+    if (!s.grant || s.grant->all || !s.grant->alarm) return all;
+    return fn ? fn(s.grant->alarm) : std::string(kZeroCounts);
+}
+
 void LiveHub::startSnapshotLocked(uint64_t sid, Session& s, AlarmLiveSnapshot snap) {
     // Feature 013: only the alarms the session may see.
-    if (s.grant && !s.grant->all && s.grant->alarm && snap.ids.size() == snap.instances.size()) {
-        std::vector<std::string> kept;
-        for (size_t i = 0; i < snap.instances.size(); ++i)
+    if (s.grant && !s.grant->all && s.grant->alarm) {
+        std::vector<std::string> kept;  // ids that do not match the instances: none is kept
+        const size_t n = snap.ids.size() == snap.instances.size() ? snap.instances.size() : 0;
+        for (size_t i = 0; i < n; ++i)
             if (s.grant->alarmOk(snap.ids[i])) kept.push_back(std::move(snap.instances[i]));
         snap.instances = std::move(kept);
         snap.ids.clear();
@@ -126,7 +133,7 @@ void LiveHub::startSnapshotLocked(uint64_t sid, Session& s, AlarmLiveSnapshot sn
     Session::SnapshotParts p;
     p.classes = std::move(snap.classes);
     p.areas = std::move(snap.areas);
-    p.counts = std::move(snap.counts);
+    p.counts = countsForLocked(s, snap.counts, snap.countsFor);  // feature 013: alarm(P)
     p.revision = snap.revision;
     for (size_t i = 0; i < snap.instances.size(); i += kAlarmChunk) {
         const size_t end = std::min(snap.instances.size(), i + kAlarmChunk);
@@ -206,7 +213,8 @@ void LiveHub::flushAlarmLocked(uint64_t sid, Session& s) {
         out += ",\"sequence\":" + std::to_string(s.alarmSequence + 1) +
                ",\"ts\":" + std::to_string(clock_()) +
                ",\"revision\":" + std::to_string(alarmRevision_) + ",\"changed\":[" + changed +
-               "],\"removed\":[" + removed + "],\"counts\":" + alarmCounts_ + "}";
+               "],\"removed\":[" + removed +
+               "],\"counts\":" + countsForLocked(s, alarmCounts_, alarmCountsFor_) + "}";
         const int fillNow = tx_.queueFillPercent(sid);  // an empty queue always takes one message
         const int projected = fillNow + static_cast<int>(out.size() * 100 / capacity);
         if (fillNow > 0 && projected > kAlarmHoldHighPct) {
@@ -225,6 +233,7 @@ void LiveHub::alarmTickLocked(int64_t) {
     if (!b.changes.empty()) {
         alarmRevision_ = b.revision;
         alarmCounts_ = b.counts;
+        alarmCountsFor_ = std::move(b.countsFor);
     }
     for (auto& kv : sessions_) {
         Session& s = kv.second;
@@ -361,6 +370,18 @@ void LiveHub::grantTickLocked(int64_t monoNow) {
                 it = s.grant->alarmOk(it->first) ? std::next(it) : s.alarmPending.erase(it);
         }
         sendLocked(kv.first, s, "{\"type\":\"access-changed\"}");
+        // The alarms again (live 1.3.0 §2: a new snapshot of the same subscription): the page drops
+        // those it lost and its counts are of what it may see now.
+        if (alarms_ && s.alarmSubscribed && !s.alarmWaiting && !s.dead) {
+            s.alarmPending.clear();
+            s.snapshot.reset();
+            s.holding = false;
+            AlarmLiveSnapshot snap = alarms_->snapshot(s.authenticated);
+            if (snap.ready)
+                startSnapshotLocked(kv.first, s, std::move(snap));
+            else
+                s.alarmWaiting = true;
+        }
     }
 }
 

@@ -346,7 +346,16 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
             for (const std::string& w : api->opt_.device->deviceWarnings()) warnings.push_back(w);
         }
         if (api->opt_.alarms) {  // feature 009 (device-api-1.3 §4.1)
-            info["alarms"] = api->opt_.alarms->infoJson();
+            // Feature 013: the instances and counts of the alarms this caller may see (alarm(P)).
+            alarmsapi::AlarmFilter allow;
+            if (api->opt_.accessOf && api->opt_.gate) {
+                const SessionAccessPtr a = api->opt_.accessOf(api->opt_.gate->originOf(c));
+                if (!a)
+                    allow = [](const std::string&) { return false; };
+                else if (!a->all())
+                    allow = [a](const std::string& id) { return a->access.alarmAllowed(id); };
+            }
+            info["alarms"] = api->opt_.alarms->infoJson(allow);
             for (const std::string& w : api->opt_.alarms->warnings()) warnings.push_back(w);
         }
         // Feature 011 (device-api-011 §5): the 1.0 sources, then one detail per code, same order.
