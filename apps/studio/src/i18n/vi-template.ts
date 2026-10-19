@@ -7,6 +7,7 @@ export const viTemplate = {
   'cmd.screen.updateInstances': 'Cập nhật mọi bản sao…',
   'cmd.screen.faceplate': 'Tạo faceplate (tham số cho popup)',
   'reason.needFormat10': 'Cần project định dạng 1.0.0 (nâng cấp project)',
+  'reason.needFormat11': 'Cần project định dạng 1.1.0 (nâng cấp project)',
   'reason.noInstanceSel': 'Chọn một item của bản sao template',
   'reason.notPopup': 'Chỉ dùng cho màn hình popup',
 

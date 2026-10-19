@@ -2,6 +2,7 @@
 // chỗ trỏ tới một màn hình (hộp thoại Xóa), đặt màn hình đầu. Hàm thuần trên cấu trúc project đọc được (outlineOf);
 // trả danh sách sửa đổi để store áp thành MỘT bước hoàn tác.
 import type { Action, BindingSet04, ScreenKind, ScreenModel } from '@mat/project-schema';
+import { emptyGridLayout } from './grid-ops.ts';
 import type { ProjectEdit, ProjectOutline } from './project-doc.ts';
 
 export const DEFAULT_SCREEN_SIZE = { width: 1920, height: 1080 } as const;
@@ -24,10 +25,20 @@ export function newScreenId(taken: Iterable<string>, kind: ScreenKind): string {
   }
 }
 
-/** Màn hình rỗng; `name` do tầng giao diện dịch. */
-export function newScreen(kind: ScreenKind, id: string, name: string): ScreenModel {
+/** Bố cục của màn hình mới: `grid` (định dạng 1.1, feature 012: một hàng 12 cột trống) hoặc `free` (tọa độ tự do). */
+export type ScreenLayoutKind = 'grid' | 'free';
+
+/**
+ * Màn hình rỗng; `name` do tầng giao diện dịch. `schemaVersion` được store ghi theo project.json khi áp (`screenUpsert`).
+ */
+export function newScreen(
+  kind: ScreenKind,
+  id: string,
+  name: string,
+  layout: ScreenLayoutKind = 'free',
+): ScreenModel {
   const size = kind === 'popup' ? DEFAULT_POPUP_SIZE : DEFAULT_SCREEN_SIZE;
-  return {
+  const s: ScreenModel = {
     schemaVersion: '0.3.0',
     id,
     name,
@@ -36,6 +47,7 @@ export function newScreen(kind: ScreenKind, id: string, name: string): ScreenMod
     fitMode: 'contain',
     items: [],
   };
+  return layout === 'grid' ? ({ ...s, layout: emptyGridLayout() } as ScreenModel) : s;
 }
 
 const screensOf = (o: Pick<ProjectOutline, 'screens'>): ScreenModel[] =>
@@ -49,11 +61,15 @@ export function planAddScreen(
   o: Pick<ProjectOutline, 'screens'>,
   kind: ScreenKind,
   nameOf: (n: number) => string,
+  layout: ScreenLayoutKind = 'free',
 ): { id: string; edits: ProjectEdit[] } | null {
   if (o.screens.length >= MAX_SCREENS) return null;
   const id = newScreenId(screenIds(o), kind);
   const n = Number(id.slice(id.lastIndexOf('-') + 1));
-  return { id, edits: [{ kind: 'screenUpsert', screen: newScreen(kind, id, nameOf(n)) }] };
+  return {
+    id,
+    edits: [{ kind: 'screenUpsert', screen: newScreen(kind, id, nameOf(n), layout) }],
+  };
 }
 
 /**

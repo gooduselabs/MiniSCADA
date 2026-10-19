@@ -780,6 +780,7 @@ export class StudioStore {
       hasTags: (this.s.outline.tags?.tags.length ?? 0) > 0,
       alarmCount: this.s.outline.alarms?.alarms.length ?? 0,
       format10: this.s.outline.format10,
+      format11: this.s.outline.format11,
       ...ui,
     };
   }

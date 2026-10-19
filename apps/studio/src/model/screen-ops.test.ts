@@ -54,6 +54,24 @@ describe('id và màn hình mới', () => {
     const again = planAddScreen(o, 'screen', (n) => `Màn hình mới ${n}`)!;
     expect(again.id).toBe('man-hinh-2');
   });
+
+  it('bố cục lưới (feature 012): màn hình mới có một hàng 12 cột trống, không item', () => {
+    const s = newScreen('screen', 'a', 'A', 'grid') as unknown as Record<string, unknown>;
+    expect(s.layout).toEqual({
+      mode: 'grid',
+      columns: 12,
+      gap: 12,
+      padding: 16,
+      rows: [{ id: 'r1', height: 'auto', cells: [{ id: 'c1', span: 12 }] }],
+    });
+    expect(s.items).toEqual([]);
+    expect('layout' in (newScreen('screen', 'b', 'B') as object)).toBe(false);
+    const d = docs();
+    const plan = planAddScreen(outline(d), 'screen', (n) => `Màn hình mới ${n}`, 'grid')!;
+    const model = outline(applyDocEdits(d, plan.edits)).screens.find((x) => x.id === plan.id)!
+      .model as unknown as Record<string, unknown>;
+    expect(model.layout).toBeDefined();
+  });
 });
 
 describe('nhân bản', () => {

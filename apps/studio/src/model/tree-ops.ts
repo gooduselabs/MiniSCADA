@@ -131,7 +131,12 @@ export function planAdd(
     case 'screens':
     case 'screen': {
       if (o.schema !== '0.3') return { edits: [], select: '' };
-      const plan = planAddScreen(o, 'screen', (n) => t('screen.newName', { n }));
+      const plan = planAddScreen(
+        o,
+        'screen',
+        (n) => t('screen.newName', { n }),
+        o.format11 ? 'grid' : 'free',
+      );
       return plan ? { edits: plan.edits, select: `screen:${plan.id}` } : { edits: [], select: '' };
     }
     default:

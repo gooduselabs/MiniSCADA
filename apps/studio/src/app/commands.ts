@@ -92,6 +92,8 @@ export type CommandId =
   | 'open.driverDiag'
   // Feature 007: màn hình 0.3 (cây, trình bố trí). Không có menu: bảng lệnh, thanh công cụ editor, menu chuột phải.
   | 'screen.add'
+  /** Feature 012: thêm màn hình bố cục tự do (tọa độ) trên project 1.1; `screen.add` tạo màn hình lưới. */
+  | 'screen.addFree'
   | 'screen.addPopup'
   | 'screen.setEntry'
   | 'screen.props'
@@ -201,6 +203,8 @@ export interface CommandContext {
   // ---- Feature 011 ----
   /** Project ở định dạng 1.0 (template, faceplate). */
   format10: boolean;
+  /** Project ở định dạng 1.1 (bố cục lưới, chủ đề; feature 012). */
+  format11: boolean;
   /** Vùng chọn của editor Màn hình có item của bản sao template. */
   screenTplSel: boolean;
   /** Vùng chọn của editor Màn hình là đúng một item `svg` (lệnh "Sửa trong trình vẽ"). */
@@ -243,6 +247,7 @@ export const EMPTY_CONTEXT: CommandContext = {
   hasTags: false,
   alarmCount: 0,
   format10: false,
+  format11: false,
   screenTplSel: false,
   screenSvgItem: false,
   svgEditor: false,
@@ -315,6 +320,8 @@ const selected =
 
 /** Project 1.0 (template, faceplate, feature 011). */
 const format10: Check = (c) => c.format10 || 'reason.needFormat10';
+/** Project 1.1 (bố cục lưới, feature 012). */
+const format11: Check = (c) => c.format11 || 'reason.needFormat11';
 const tplSelected: Check = (c) => c.screenTplSel || 'reason.noInstanceSel';
 const popupOpen: Check = (c) => c.screenIsPopup || 'reason.notPopup';
 
@@ -633,6 +640,7 @@ export const COMMANDS: readonly CommandSpec[] = [
 
   // ---- Feature 007: màn hình 0.3 ----
   cmd('screen.add', null, all(needProject, editable, project03), { icon: 'plus' }),
+  cmd('screen.addFree', null, all(needProject, editable, format11), { icon: 'plus' }),
   cmd('screen.addPopup', null, all(needProject, editable, project03), { icon: 'popup' }),
   cmd('screen.setEntry', null, all(needProject, editable, project03, screenOpen, notPopup), {
     icon: 'home',

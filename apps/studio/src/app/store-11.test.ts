@@ -95,3 +95,31 @@ describe('StudioApp.upgradeProject lên 1.1', () => {
       expect(app.ui.toast?.text ?? '').not.toMatch(/Không nâng cấp được/);
     });
 });
+
+describe('Thêm màn hình trên project 1.1 (FR-015)', () => {
+  beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] }));
+  afterEach(() => vi.useRealTimers());
+
+  it('Thêm màn hình: bố cục lưới (mặc định); Thêm màn hình (tự do): không có layout; cả hai 1.1.0', async () => {
+    const platform = createMockPlatform();
+    platform.control.useProject(vector('v11-valid-full'));
+    const data = new Map<string, string>();
+    const storage = {
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => void data.set(k, v),
+    };
+    const app = new StudioApp({ platform, storage, windowWidth: 1400, versionGate: false });
+    await app.start();
+    await app.run('project.open');
+    await app.store.idle();
+    await app.run('screen.add');
+    await app.run('screen.addFree');
+    const model = (id: string) =>
+      app.store.state.outline.screens.find((s) => s.id === id)?.model as unknown as
+        Record<string, unknown> | undefined;
+    expect(model('man-hinh-1')?.layout).toBeDefined();
+    expect(model('man-hinh-1')?.schemaVersion).toBe('1.1.0');
+    expect(model('man-hinh-2')).toBeDefined();
+    expect(model('man-hinh-2')?.layout).toBeUndefined();
+  });
+});

@@ -15,6 +15,7 @@ export const viScreens = {
   // ---- Lệnh (bảng lệnh Ctrl+Shift+P, thanh công cụ editor, menu chuột phải) ----
   'cmd.screen.add': 'Thêm màn hình',
   'cmd.screen.addPopup': 'Thêm popup',
+  'cmd.screen.addFree': 'Thêm màn hình (bố cục tự do)',
   'cmd.screen.setEntry': 'Đặt làm màn hình đầu',
   'cmd.screen.props': 'Thuộc tính màn hình…',
   'cmd.open.navigation': 'Mở Điều hướng',

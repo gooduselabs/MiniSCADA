@@ -9,7 +9,7 @@ import {
   currentName,
   type RenameResult,
 } from '../model/tree-ops.ts';
-import { planAddScreen, planSetEntry } from '../model/screen-ops.ts';
+import { planAddScreen, planSetEntry, type ScreenLayoutKind } from '../model/screen-ops.ts';
 import { refOfNode, type NodeRef } from '../model/tree.ts';
 import type { StudioApp } from './app.ts';
 
@@ -31,9 +31,17 @@ export function treeAdd(app: StudioApp): void {
 }
 
 /** Thêm màn hình hoặc popup của project 0.3 và mở editor của nó (feature 007, FR-065). */
-export function screenAdd(app: StudioApp, kind: 'screen' | 'popup'): void {
-  const plan = planAddScreen(app.store.state.outline, kind, (n) =>
-    t(kind === 'popup' ? 'screen.newPopupName' : 'screen.newName', { n }),
+export function screenAdd(
+  app: StudioApp,
+  kind: 'screen' | 'popup',
+  layout: ScreenLayoutKind = app.store.state.outline.format11 ? 'grid' : 'free',
+): void {
+  // feature 012: project 1.1 tạo màn hình lưới (mặc định, FR-015); `screen.addFree` chọn tự do
+  const plan = planAddScreen(
+    app.store.state.outline,
+    kind,
+    (n) => t(kind === 'popup' ? 'screen.newPopupName' : 'screen.newName', { n }),
+    layout,
   );
   if (!plan) return;
   app.store.edit(plan.edits);
