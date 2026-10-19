@@ -495,12 +495,13 @@ void Rules10::before(Rules03Input& in, std::vector<ProjectIssue>& errors) {
     const std::string version = project["schemaVersion"].get<std::string>();
     const WidgetCatalog& catalog = *in_.catalog;
 
-    // ---- logic.json (T135): newer than 1.0.x is E_LOGIC_VERSION, another version than the
-    // project's is E_SCHEMA_VERSION; the same version runs the E_LOGIC_* / W_LOGIC_* rules
-    // (rules_logic) and its outputs become internal read-only Tags for the later rules. ----
+    // ---- logic.json (T135): newer than 1.0.x and 1.1.x (feature 012: the 1.x family) is
+    // E_LOGIC_VERSION, another version than the project's is E_SCHEMA_VERSION; the same version
+    // runs the E_LOGIC_* / W_LOGIC_* rules (rules_logic) and its outputs become internal read-only
+    // Tags for the later rules. ----
     if (in_.logic) {
         const std::string lv = (*in_.logic)["schemaVersion"].get<std::string>();
-        static const std::regex kSupported10("^1\\.0\\.\\d+$");
+        static const std::regex kSupported10("^1\\.[01]\\.\\d+$");
         const bool newer = !std::regex_match(lv, kSupported10) && compareSemver(lv, "1.0.0") > 0;
         if (lv == version || newer) {
             const logic::TagInfoMap tagInfo =

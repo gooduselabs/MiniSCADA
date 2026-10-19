@@ -314,6 +314,7 @@ add_library(mat_core STATIC
   core/project-manager/rules_04.cpp
   core/project-manager/rules_010.cpp
   core/project-manager/rules_10.cpp
+  core/project-manager/rules_11.cpp
   core/project-manager/widget_catalog.cpp
   core/project-manager/logging_estimate.cpp
   core/project-manager/rules_logic.cpp

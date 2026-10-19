@@ -149,7 +149,8 @@ class Rules {
                                       s.bindings["schemaVersion"].get<std::string>());
         }
         const std::string prefix = in_.schema + ".";  // "0.2." .. "0.6.", "1.0."
-        if (!isFormat(pv, prefix.c_str()))
+        // "1.0": the 1.x family that shares the root schemas, 1.0.x and 1.1.x (feature 012)
+        if (!isFormat(pv, prefix.c_str()) && !(in_.schema == "1.0" && isFormat(pv, "1.1.")))
             add("E_SCHEMA_VERSION", "project.json", "/schemaVersion",
                 "schemaVersion " + pv + " is not " + in_.schema + ".x");
         for (const auto& [file, v] : versions)

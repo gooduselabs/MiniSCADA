@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <optional>
 #include <set>
 
@@ -120,9 +121,16 @@ struct Rect {
     double x, y, w, h;
 };
 
+// A coordinate of an item; NaN when absent (feature 012: optional in the 1.x schemas, an item of a
+// grid screen has none). Every comparison with NaN is false, as with `undefined` in rules-03.ts, so
+// E_ITEM_SIZE, W_ITEM_OUTSIDE and W_ITEM_COVERED leave such an item alone.
+double coord(const json& item, const char* k) {
+    return item.contains(k) && item[k].is_number() ? item[k].get<double>()
+                                                   : std::numeric_limits<double>::quiet_NaN();
+}
+
 Rect rectOf(const json& item) {
-    return {item["x"].get<double>(), item["y"].get<double>(), item["width"].get<double>(),
-            item["height"].get<double>()};
+    return {coord(item, "x"), coord(item, "y"), coord(item, "width"), coord(item, "height")};
 }
 
 bool isOutside(const Rect& r, double sw, double sh) {
@@ -492,9 +500,8 @@ class Rules {
     void svgItem(const Rules03Input::ScreenDoc& s, const json& item, size_t i) {
         const std::string& file = s.file;
         const std::string p = "/items/" + std::to_string(i);
-        if (item["width"].get<double>() <= 0)
-            add("E_ITEM_SIZE", file, p + "/width", "width must be > 0");
-        if (item["height"].get<double>() <= 0)
+        if (coord(item, "width") <= 0) add("E_ITEM_SIZE", file, p + "/width", "width must be > 0");
+        if (coord(item, "height") <= 0)
             add("E_ITEM_SIZE", file, p + "/height", "height must be > 0");
         std::set<std::string> uids;
         const json& els = item["elements"];
@@ -565,7 +572,7 @@ class Rules {
         const std::string p = "/items/" + std::to_string(i);
         const std::string widget = item["widget"].get<std::string>();
         const WidgetSpec* spec = in_.catalog->find(widget);
-        const double w = item["width"].get<double>(), h = item["height"].get<double>();
+        const double w = coord(item, "width"), h = coord(item, "height");
         if (!spec) {
             add("E_WIDGET_UNKNOWN", file, p + "/widget",
                 "widget '" + widget + "' is not in the catalog");

@@ -899,10 +899,12 @@ int main(int argc, char** argv) {
         return historianInfoJson(historianInput,
                                  historian ? historian->status() : HistorianStatus{});
     };
+    // the project formats this runtime reads (1.1: feature 012, grid layout and theme)
+    const nlohmann::json schemaVersions = {"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "1.0", "1.1"};
     HttpApi api(hopt, [&] {
         return nlohmann::json{{"runtimeVersion", kRuntimeVersion},
                               {"protocolVersion", kLiveProtocolVersion},
-                              {"schemaVersions", {"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "1.0"}},
+                              {"schemaVersions", schemaVersions},
                               {"clients", transport.active()},
                               {"maxClients", transport.maxClients()},
                               {"rejectedTotal", transport.rejectedTotal()},
