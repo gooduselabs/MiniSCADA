@@ -13,6 +13,7 @@
 
 #include <set>
 #include <string>
+#include <vector>
 
 // The project configuration, not the upstream default (mbedtls/mbedtls_config.h).
 #if !defined(MAT_MBEDTLS_CONFIG_H)
@@ -140,4 +141,17 @@ TEST(MbedtlsConfig, PsaCryptoStartsAndGivesRandomBytes) {
     ASSERT_EQ(psa_generate_random(b, sizeof b), PSA_SUCCESS);
     EXPECT_NE(std::string(reinterpret_cast<char*>(a), sizeof a),
               std::string(reinterpret_cast<char*>(b), sizeof b));
+}
+
+// The server's order (TLS 1.2 upstream, TLS 1.3 with mAT patch 1): ChaCha20-Poly1305 before
+// AES-GCM in each version, since the Cortex-A7 of the BL335 has no AES instructions.
+#if !defined(MAT_SSL_TLS13_SERVER_ORDER)
+#error "MAT_SSL_TLS13_SERVER_ORDER must be on (TLS 1.3 suite in the server's order)"
+#endif
+TEST(MbedtlsConfig, ChaCha20ComesFirstInEachVersion) {
+    std::vector<int> order;
+    for (const int* id = mbedtls_ssl_list_ciphersuites(); *id != 0; ++id) order.push_back(*id);
+    ASSERT_EQ(order.size(), 6u);
+    EXPECT_EQ(order[0], MBEDTLS_TLS1_3_CHACHA20_POLY1305_SHA256);
+    EXPECT_EQ(order[3], MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256);
 }

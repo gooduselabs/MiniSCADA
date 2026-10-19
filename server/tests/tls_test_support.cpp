@@ -228,6 +228,8 @@ HttpResult CurlClient::perform(const HttpRequest* req) {
     curl_easy_setopt(c, CURLOPT_SSLVERSION, version);
     if (!options_.ciphers.empty())
         curl_easy_setopt(c, CURLOPT_SSL_CIPHER_LIST, options_.ciphers.c_str());
+    if (!options_.tls13Ciphers.empty())
+        curl_easy_setopt(c, CURLOPT_TLS13_CIPHERS, options_.tls13Ciphers.c_str());
     const std::string iface = "host!" + options_.localAddress;
     if (!options_.localAddress.empty()) curl_easy_setopt(c, CURLOPT_INTERFACE, iface.c_str());
     // Verbose text goes to info_, never to stderr (tests capture stderr).

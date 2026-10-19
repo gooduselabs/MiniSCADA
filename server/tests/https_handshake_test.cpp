@@ -280,8 +280,8 @@ TEST(HttpsHandshake, FailedSslSetupRefusesTheConnection) {
 }
 
 // TLS policy (mat_mbedtls_config.h, T007): TLS 1.2 in the server's order, ChaCha20-Poly1305 first
-// (no AES instructions on the Cortex-A7); TLS 1.3 in the client's order.
-TEST(HttpsTlsPolicy, Tls12PicksChaCha20AndTls13Works) {
+// (no AES instructions on the Cortex-A7).
+TEST(HttpsTlsPolicy, Tls12PicksChaCha20) {
     TlsTestServer s;
     ASSERT_NE(s.port, 0);
     const HttpResult t12 = httpsGet(s.port, "/tls", {TlsVersion::Tls12});
@@ -290,11 +290,42 @@ TEST(HttpsTlsPolicy, Tls12PicksChaCha20AndTls13Works) {
               std::string::npos)
         << t12.info;
     EXPECT_EQ(t12.body, "ok-tls");
+}
 
-    const HttpResult t13 = httpsGet(s.port, "/tls", {TlsVersion::Tls13});
-    EXPECT_TRUE(t13.ok()) << t13.error;
-    EXPECT_NE(t13.info.find("SSL connection using TLSv1.3 / TLS_"), std::string::npos) << t13.info;
-    EXPECT_EQ(t13.body, "ok-tls");
+// TLS 1.3 in the server's order too (mAT patch 1 of Mbed TLS, MAT_SSL_TLS13_SERVER_ORDER): upstream
+// takes the client's first suite, so OpenSSL and Node (AES-256-GCM first) and Chrome on a PC with
+// AES instructions (AES-128-GCM first) got software AES on the BL335 (L1: 36 % of a core, not
+// 29 %). AES-GCM stays as the fallback for a client without ChaCha20-Poly1305.
+TEST(HttpsTlsPolicy, Tls13PicksChaCha20InTheServersOrder) {
+    TlsTestServer s;
+    ASSERT_NE(s.port, 0);
+    const auto get = [&](const std::string& suites) {
+        ClientOptions o(TlsVersion::Tls13);
+        o.tls13Ciphers = suites;
+        return httpsGet(s.port, "/tls", o);
+    };
+    const std::string chacha = "SSL connection using TLSv1.3 / TLS_CHACHA20_POLY1305_SHA256";
+    // OpenSSL 1.1.1 default order: AES-256-GCM, ChaCha20-Poly1305, AES-128-GCM.
+    const HttpResult byDefault = get("");
+    EXPECT_TRUE(byDefault.ok()) << byDefault.error;
+    EXPECT_NE(byDefault.info.find(chacha), std::string::npos) << byDefault.info;
+    EXPECT_EQ(byDefault.body, "ok-tls");
+    // Chrome's order on a machine with AES instructions: AES-128-GCM, AES-256-GCM, ChaCha20.
+    const HttpResult aesFirst =
+        get("TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256");
+    EXPECT_TRUE(aesFirst.ok()) << aesFirst.error;
+    EXPECT_NE(aesFirst.info.find(chacha), std::string::npos) << aesFirst.info;
+    // Fallback: a client without ChaCha20-Poly1305 still connects with AES-GCM.
+    const HttpResult aes128 = get("TLS_AES_128_GCM_SHA256");
+    EXPECT_TRUE(aes128.ok()) << aes128.error;
+    EXPECT_NE(aes128.info.find("SSL connection using TLSv1.3 / TLS_AES_128_GCM_SHA256"),
+              std::string::npos)
+        << aes128.info;
+    const HttpResult aes256 = get("TLS_AES_256_GCM_SHA384");
+    EXPECT_TRUE(aes256.ok()) << aes256.error;
+    EXPECT_NE(aes256.info.find("SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384"),
+              std::string::npos)
+        << aes256.info;
 }
 
 // No CBC suite and no RSA key exchange; after refusing, the server still serves.

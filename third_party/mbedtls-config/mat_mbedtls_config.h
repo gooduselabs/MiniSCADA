@@ -40,9 +40,13 @@
 #define MBEDTLS_SSL_KEEP_PEER_CERTIFICATE     /* required by the TLS 1.3 code of 3.6 */
 #define MBEDTLS_SSL_EXTENDED_MASTER_SECRET    /* TLS 1.2, RFC 7627 */
 #define MBEDTLS_SSL_ALL_ALERT_MESSAGES
-/* AEAD suites only. TLS 1.2 follows this order (server choice): ChaCha20-Poly1305 first, because
- * the Cortex-A7 has no AES instructions and table-based AES is slower and leaks timing (upstream
- * SECURITY.md, "Block ciphers"). TLS 1.3 follows the client's order. */
+/* AEAD suites only, chosen in this order (server choice) on TLS 1.2 and 1.3: ChaCha20-Poly1305
+ * first, because the Cortex-A7 has no AES instructions and table-based AES is slower and leaks
+ * timing (upstream SECURITY.md, "Block ciphers"); AES-GCM stays for clients without ChaCha20.
+ * TLS 1.2 does it upstream; TLS 1.3 upstream takes the client's first suite (AES-256-GCM for
+ * OpenSSL/Node, AES-128-GCM for Chrome on a PC with AES instructions), so MAT_SSL_TLS13_SERVER_ORDER
+ * turns on "mAT patch 1" of library/ssl_tls13_server.c (ssl_tls13_select_ciphersuite). */
+#define MAT_SSL_TLS13_SERVER_ORDER
 #define MBEDTLS_SSL_CIPHERSUITES                           \
     MBEDTLS_TLS1_3_CHACHA20_POLY1305_SHA256,               \
     MBEDTLS_TLS1_3_AES_128_GCM_SHA256,                     \

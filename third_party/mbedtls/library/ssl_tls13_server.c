@@ -48,6 +48,9 @@ static void ssl_tls13_select_ciphersuite(
     const mbedtls_ssl_ciphersuite_t **selected_ciphersuite_info)
 {
     *selected_ciphersuite_info = NULL;
+#if defined(MAT_SSL_TLS13_SERVER_ORDER)
+    size_t best_rank = 0; /* mAT patch 1: index in the server's list of the suite kept so far */
+#endif
 
     /*
      * In a compliant ClientHello the byte-length of the list of ciphersuites
@@ -88,9 +91,32 @@ static void ssl_tls13_select_ciphersuite(
             }
         }
 
+#if defined(MAT_SSL_TLS13_SERVER_ORDER)
+        /* mAT patch 1: keep the acceptable suite that comes first in the server's list
+         * (conf->ciphersuite_list), like TLS 1.2 does by default, instead of the client's first. */
+        {
+            const int *list = ssl->conf->ciphersuite_list;
+            size_t rank = 0;
+            while (list[rank] != 0 && list[rank] != (int) id) {
+                rank++;
+            }
+            if (*selected_ciphersuite_info == NULL || rank < best_rank) {
+                *selected_ciphersuite_info = info;
+                best_rank = rank;
+            }
+            continue;
+        }
+#else
         *selected_ciphersuite_info = info;
         return;
+#endif
     }
+
+#if defined(MAT_SSL_TLS13_SERVER_ORDER)
+    if (*selected_ciphersuite_info != NULL) {
+        return;
+    }
+#endif
 
     MBEDTLS_SSL_DEBUG_MSG(1, ("No matched ciphersuite, psk_ciphersuite_id=%x, psk_hash_alg=%lx",
                               (unsigned) psk_ciphersuite_id,
