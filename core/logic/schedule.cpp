@@ -147,6 +147,7 @@ ScheduleBlock::ScheduleBlock(const nlohmann::json& def)
     if (const auto tz = numberOf(def, "tzOffsetMin")) tz_ = static_cast<int>(*tz);
     try {
         compiled_.emplace(def_);
+        def_ = nlohmann::json();  // T147: read only when it could not be compiled
     } catch (const nlohmann::json::exception&) {
         compiled_.reset();  // read at each scan, as before (it throws there too)
     }

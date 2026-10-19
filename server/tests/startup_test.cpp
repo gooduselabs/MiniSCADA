@@ -463,3 +463,14 @@ TEST(StartupActive04, Projects03And01StillRunAndAnUnknownSchemaVersionIsRefused)
     EXPECT_FALSE(v09.active);
     EXPECT_EQ(v09.errors[0]["code"], "E_RUNTIME_TOO_OLD");
 }
+
+// T147: the Tags of the model are appended one by one; the model that runs keeps no spare room
+// (a vector that doubled kept up to twice the ~0.86 kB of a TagModel on 64 bit per Tag).
+TEST(StartupMemory, ModelTagsKeepNoSpareCapacity) {
+    TagStore store;
+    const ActiveProject a = activate("valid-screen-1000-tags", 10, store);
+    ASSERT_TRUE(a.active) << a.errors.dump();
+    ASSERT_TRUE(a.model != nullptr);
+    ASSERT_GT(a.model->tags.size(), 1u);
+    EXPECT_EQ(a.model->tags.capacity(), a.model->tags.size());
+}

@@ -19,6 +19,7 @@
 
 #include "core/audit/audit_log.hpp"
 #include "core/auth/tests/auth_test_support.hpp"
+#include "core/common/json_text.hpp"
 #include "core/tag-engine/tests/write_fakes.hpp"
 #include "server/logic_glue.hpp"
 #include "server/tests/logic_fakes.hpp"
@@ -177,6 +178,23 @@ TEST(LogicWrite, TheDurableAuditRecordComesBeforeAnythingIsSent) {
     EXPECT_LT(started, sent) << "audit record of receipt before the driver";
     EXPECT_EQ(r.backend.sent[0].first, r.idx("RUN"));
     EXPECT_EQ(std::get<bool>(r.backend.cmd(0).raw), true);
+}
+
+// T147: GET /api/v1/logic is written one block at a time; the text is the one of the whole tree.
+TEST(LogicStatusText, IsTheTextOfStatusByteForByte) {
+    json doc = docWith(json::array({lowRule()}));
+    doc["timers"] = json::array(
+        {{{"id", "t1"}, {"kind", "ton"}, {"in", "LEVEL_R < 20"}, {"pt", 1000}, {"q", "L.T"}}});
+    Rig r(doc, on());
+    EXPECT_EQ(r.logic->statusText(), jsonText(r.logic->status())) << "before any scan";
+    fall(r, 0);  // the rule fires: edgeId, fired, lastFired; the timer has an output
+    r.scan(2000);
+    const std::string text = r.logic->statusText();
+    EXPECT_EQ(text, jsonText(r.logic->status()));
+    const json j = json::parse(text);
+    ASSERT_EQ(j["blocks"].size(), 2u);
+    EXPECT_TRUE(j["blocks"][0]["lastFired"].is_string() || j["blocks"][1]["lastFired"].is_string());
+    EXPECT_EQ(r.logic->statusText(), text) << "the same again (the reserve of the last size)";
 }
 
 TEST(LogicWrite, ActorIsLogicRuleChannelLogicWithAtMost8Inputs) {

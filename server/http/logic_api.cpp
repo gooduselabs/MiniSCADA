@@ -36,10 +36,10 @@ int EngineeringApi::logicRoute(mg_connection* c, const GateRequest& r, const Gat
     LogicSubsystem* logic = logic_.logic ? logic_.logic() : nullptr;
     if (path == "/api/v1/logic") {
         if (!logic) return send(c, 200, jsonText(json{{"enabled", false}}), close);
-        const std::string text = jsonText(logic->status());
-        // T147: the tree of the maximum (550 blocks) is ~1 MB of small blocks for 77 KB of text,
-        // in the arena of this worker; its pages go back to the kernel now, not at the next
-        // trim of the main loop (the Studio's online view asks every few seconds)
+        // T147: written one block at a time (statusText), not through the ~1 MB tree of the
+        // maximum (550 blocks); what it freed in the arena of this worker goes back to the
+        // kernel now, not at the next trim of the main loop (the Studio asks every few seconds)
+        const std::string text = logic->statusText();
         trimMalloc();
         return send(c, 200, text, close);
     }

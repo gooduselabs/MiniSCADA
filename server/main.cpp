@@ -456,10 +456,13 @@ int main(int argc, char** argv) {
                                          : "E_NO_VALID_PROJECT",
                                      "project.json", "", startup.decision.reason});
     } else if (startup.runDir == cfg.projectDir && legacyValidation) {
-        validation = *legacyValidation;
+        validation = std::move(*legacyValidation);
     } else {
         validation = validateProject(startup.runDir, cfg.schemasDir);
     }
+    // T147: the validation of projectDir made for its adoption (first start without state.json)
+    // is not read again; its documents (~0.8 MB for the logic maximum) stayed for the whole run
+    legacyValidation.reset();
     std::optional<std::string> digest;
     if (validation.valid) {
         std::string err;
@@ -1198,6 +1201,10 @@ int main(int argc, char** argv) {
     // T148: with logic the Tag Engine round (and the logic scan in it) also runs at every
     // multiple of logic.scanMs; the live deltas and the rest of the loop stay at deltaPeriodMs.
     const auto loopStart = std::chrono::steady_clock::now();
+    // T147: every part of the runtime has taken what it needs from the documents of the project
+    // (Tag model, logic, alarms, history, discovery): the parsed JSON trees (~1.2 MB for 500 Tag)
+    // are not read again (a deploy starts the process again)
+    validation.project.reset();
     TickSchedule schedule(cfg.deltaPeriodMs, rtEngine.logic() ? cfg.logicScanMs : 0);
     int64_t nextAuditFlush = monoMs() + kAuditFlushMs;
     int64_t nextAuditMaintain = monoMs() + kAuditMaintainMs;  // open() ran it once

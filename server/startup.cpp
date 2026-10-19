@@ -59,6 +59,9 @@ ActiveProject activateProject(const ProjectValidation& v, size_t configMaxClient
         return a;
     }
     if (simLoad) addSimLoadTags(*model);
+    // T147: the Tags were appended one by one; a vector that doubled keeps up to twice the room
+    // (856 bytes a TagModel on 64 bit: ~0.6 MB for the 1350 Tag of the logic maximum)
+    model->tags.shrink_to_fit();
     addModelTagsToStore(*model, store);
     a.model = std::make_shared<const ProjectModel>(std::move(*model));
     a.active = true;

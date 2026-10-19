@@ -50,7 +50,7 @@ Cách đọc: **Đạt** là test hoặc kịch bản tự động xanh, số đ
 | SC-025 | Độ chính xác logic | Đạt | Vitest + ctest 52 ca |
 | SC-026 | Logic retain 100 vòng `kill -9` | Đạt (x64) | T146 `retain-kill` 100 vòng: mất tối đa count 6, total 0,95, giờ chạy 0,0027 (≤ một `flushS`), 0 lần giảm, 0 ghi trùng cạnh; `retain-lost` 5/5 (`011-logic-x64.json`). BL335 cắt điện (D5) là T149 |
 | SC-027 | Ghi từ logic qua giả lập Modbus | Đạt (x64) | T146 `rules` 9/9 (audit đủ trường trước khi gửi), `writes-off` 0 lệnh, `throttle` chặn 35/35 cạnh thừa; validator từ chối ghi Tag không khai báo |
-| SC-028 | Logic tối đa trên BL335 | Đạt | **T148 xong** (releaseSeq 13, quét theo sự kiện): CPU +2,5 điểm một lõi, RSS +3,8 MB, quét trung vị 1,05 ms, p99 2,6 ms (`011-logic-bl335.json` `remeasureEventDriven`). Ghi chú T147 (x64, Linux arm64 64 bit, L1 1 giờ): CPU +1,11, quét p99 2,92 ms đạt, RSS +5,4 MiB vượt 0,4 — chỉ báo, không chặn rc vì số thiết bị đích đạt (`011-load.md` §1.6) |
+| SC-028 | Logic tối đa trên BL335 | Đạt | **T148 xong** (releaseSeq 13, quét theo sự kiện): CPU +2,5 điểm một lõi, RSS +3,8 MB, quét trung vị 1,05 ms, p99 2,6 ms (`011-logic-bl335.json` `remeasureEventDriven`). T147 xong (x64, Linux arm64 64 bit, L1 1 giờ, sau sửa bộ nhớ 2026-10-19): CPU +0,58, RSS +4,49 MiB, quét p99 2,7 ms — đạt (`011-logic-load-x64.json` `runtimeL1b`) |
 | SC-029 | Kỹ sư dựng luật bơm ≤ 25 phút | Chờ người | H3 |
 | SC-030 | Round-trip ≥ 20 fixture | Đạt | 26 fixture, ảnh khác 0 % |
 | SC-031 | ≥ 150 ca hình học | Đạt | ~270 ca |
@@ -76,7 +76,7 @@ Tổng: **27 Đạt, 0 Không đạt, 2 Chưa đo (SC-013 hoãn theo quyết đ�
 3. **eMMC:** ghi khối toàn máy BL335 nền 2,6–4,7 GB/ngày khi mat tắt (dịch vụ khác); quyết định T201 kết luận ngưỡng 2 GB/ngày theo phần ghi của mat (`sqlite-vfs`); tuổi thọ tuyệt đối cần datasheet (T082). Bố cục phân vùng A/B chưa khớp Master Plan §6.3 (OS dev image, phụ thuộc ADR-002).
 4. **CPU L1 theo một lõi còn biên 1,1 điểm** (28,9/30 %): project lớn hơn `soak-standard` (logic, nhiều lịch sử) cần đo trước khi hứa với khách hàng.
 5. **T079 chưa đóng:** `mat-sample` chưa chạy trên BL335, L1 chưa xen kẽ 8443 (`load-tester` chưa có `wss://`), RSS tab ở L5 chưa đo. Lỗi gói thiếu `schemas/0.6` đã sửa và kiểm (T080).
-6. **T147 (x64):** RSS logic tối đa trên Linux arm64 64 bit +5,4 MiB (ngưỡng +5 MB) ở L1 1 giờ; nguồn chưa phân tích (`smaps`); BL335 đạt nên không chặn rc.
+6. **T147 (x64): xong 2026-10-19.** RSS logic tối đa trên Linux arm64 64 bit trước +5,4 MiB; nguồn là dữ liệu dựng lúc khởi động giữ suốt đời và cây JSON của `GET /logic`; sau sửa +4,49 MiB ở L1 1 giờ (`runtimeL1b`).
 7. **Chưa có mã cảnh báo** cho RAM khả dụng < 250 MB và tuổi thọ eMMC > 70 % (Master Plan §6.1, §6.3); số có trong `system/diagnostics`, theo dõi bằng collector khi pilot.
 8. **Ký số và cài đặt trên Windows** chưa chạy (signtool, Authenticode, bộ cài NSIS, PowerShell 5.1, WebView2); không có chứng chỉ thật, chưa có khóa phát hành thật.
 9. **Collector pilot**: `audit` chỉ cho administrator mà collector dùng viewer (ghi `FORBIDDEN`); chưa thử Credential Manager trên PowerShell 5.1.
@@ -125,7 +125,7 @@ Danh sách tập trung ở [docs/pilot/customer-checklist.md](../pilot/customer-
 | P1–P4 | Cài rc lên site và bàn thử, chạy pilot ≥ 30 ngày, đo trễ Chrome, `EXT_CSD` và soak 30 ngày bàn thử (T196), Tech Lead ký vào và Go/No-Go | T193–T198 |
 | Windows | Spike signtool, chứng chỉ thử, dựng bộ cài ký, `release.ps1` đủ 9 bước, ca hỏng 1–5, ảnh chụp Studio | T009, T088, T091–T094, T098, T102, T203 |
 
-Việc làm được không cần người nhưng chưa xong: phần còn lại của T079 (`mat-sample` trên BL335, `wss://` cho L1 xen kẽ 8443, RSS tab L5), ghi chú RSS x64 của T147 (không chặn), T189 (collector viewer và `audit`), T208 (`/speckit-analyze` cuối; chuyển ADR chỉ ở T198).
+Việc làm được không cần người nhưng chưa xong: phần còn lại của T079 (`mat-sample` trên BL335, `wss://` cho L1 xen kẽ 8443, RSS tab L5), T189 (collector viewer và `audit`), T208 (`/speckit-analyze` cuối; chuyển ADR chỉ ở T198).
 
 ## 6. Số đo chính đã có
 
@@ -140,7 +140,7 @@ Việc làm được không cần người nhưng chưa xong: phần còn lại 
 | BL335 `mat-update-verify` | ≈ 16 ms/lần kiểm (Cortex-A7, gói 5 KiB) | `device-changes.md` 2026-10-17 |
 | BL335 ghi khối toàn máy | mat tắt 2,6–4,7 GB/ngày, mat chạy 3,5–3,8 GB/ngày (0.9.0, cửa sổ 3 phút); phần mat ước < ~1 GB/ngày | `011-soak.md` §4 |
 | x64 L1 1 giờ, L4, L6, L8 | CPU 4,3 %, RSS ≤ 25 MB; F5 tối đa 494 ms; 500/500 nối lại; đăng nhập 82 ms | `011-load-x64.json`, `011-flap-x64.json` |
-| x64 L7 logic tối đa, L1 1 giờ | +1,11 điểm CPU, RSS +5,4 MiB (vượt 0,4; ghi chú T147), quét p99 2,92 ms | `011-logic-load-x64.json` `runtimeL1` |
+| x64 L7 logic tối đa, L1 1 giờ | +0,58 điểm CPU, RSS +4,49 MiB, quét p99 2,7 ms (T147 xong; trước sửa +5,4 MiB) | `011-logic-load-x64.json` `runtimeL1b` (trước: `runtimeL1`) |
 | x64 soak 24 giờ (T076) | 48/48 đoạn, 0 mất sequence, 47 `kill -9` (trung vị 1,04 s), 9/9 nạp xuống, RSS ≤ 34,1 MB, WAL 4,3 MB | `011-soak-x64.json` |
 | x64 mất điện (`kill -9`, T077) | 150 vòng (100 ngẫu nhiên, D1, D3, D4, D5 × 10) đạt; READY trung vị 514 ms, tối đa 12,1 s; 0 lệnh ACCEPTED thiếu audit | `011-powercut-x64.json` |
 | OTA lab | ngừng ≤ 9,6 s, toàn bộ ≤ 17,6 s; 40/40 kill; quay về 89,3 s | `011-update-x64.json` |

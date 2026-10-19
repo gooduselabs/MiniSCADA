@@ -234,5 +234,108 @@
     },
     "checkNotes": "\"718/716 samples over 3600 s\" failed the rule >= 719: each sample waits 5 s and then makes one HTTPS request, so the loop drifts; a rig check, not a measure. The rule is now >= 95 % (684); with it both pass. The verdict above does not depend on it.",
     "rssNotes": "RSS grows over the hour on both sides (baseline: 15.8 MB in a 30 s try, 22.6 MB average, 27.1 MB max over 1 h), so the hour-long run sees more than the 600 s run of key runtime (+4.6 MB on the 300-Tag logic-load). The extra of logic is about the same at the average and at the max (+5.4 / +5.6 MiB), so it is not a slope of logic alone; its source in the hour-long run was not analysed (smaps not sampled). On the BL335 (32 bit, T148 remeasureEventDriven) the same pair gave +3.8 MB."
+  },
+  "runtimeL1b": {
+    "task": "T147",
+    "date": "2026-10-19T06:51:43.975Z",
+    "machine": "Darwin arm64; Docker mat-armhf aarch64 (Linux aarch64 on Apple Silicon, not a real x64)",
+    "project": "soak-std10 (soak-standard of tools/gen-bench-projects.mjs in format 1.0: 500 Tag, 200 logged, 3 screens) vs. soak-logic (the same + logic.json of projects/logic-load: 550 blocks + 200 internal Tag INT.R*); the clients subscribe to the same 500 Tag on both sides",
+    "clients": 10,
+    "seconds": 3600,
+    "baseline": {
+      "label": "baseline",
+      "seconds": 3600,
+      "clients": 10,
+      "tags": 500,
+      "cpuAvgPct": 3.96,
+      "cpuMaxPct": 5.78,
+      "rssAvgKb": 19509,
+      "rssMaxKb": 22660,
+      "rssAnonAvgKb": 13145,
+      "rssAnonMaxKb": 17656,
+      "liveUpdates": 68948760,
+      "sequenceGaps": 0
+    },
+    "logic": {
+      "label": "logic",
+      "seconds": 3600,
+      "clients": 10,
+      "tags": 500,
+      "cpuAvgPct": 4.54,
+      "cpuMaxPct": 10.06,
+      "rssAvgKb": 24105,
+      "rssMaxKb": 28732,
+      "rssAnonAvgKb": 16637,
+      "rssAnonMaxKb": 21252,
+      "liveUpdates": 68953180,
+      "sequenceGaps": 0,
+      "scanLastMsMax": 2.61,
+      "scanP99MsMax": 2.7,
+      "scanOverrun": 0,
+      "scanPeriodMs": 100,
+      "scanLastMsMedian": 0.24,
+      "scanP99MsMedian": 0.56,
+      "scanP99MsEnd": 0.66,
+      "scanIntervalMs": 100.01,
+      "scans": 36075,
+      "scanSamples": 717
+    },
+    "extraCpuPoints": 0.58,
+    "extraRssKb": 4596,
+    "extraRssMaxKb": 6072,
+    "extraRssAnonKb": 3492,
+    "checks": [
+      {
+        "name": "718 samples over 3600 s (>= 95 % of one per 5 s)",
+        "pass": true
+      },
+      {
+        "name": "0 live sequence gaps",
+        "pass": true,
+        "detail": "0"
+      },
+      {
+        "name": "the project runs: the clients get live updates",
+        "pass": true,
+        "detail": "68948760"
+      },
+      {
+        "name": "717 samples over 3600 s (>= 95 % of one per 5 s)",
+        "pass": true
+      },
+      {
+        "name": "0 live sequence gaps",
+        "pass": true,
+        "detail": "0"
+      },
+      {
+        "name": "the project runs: the clients get live updates",
+        "pass": true,
+        "detail": "68953180"
+      },
+      {
+        "name": "logic scan p99 <= 5 ms (FR-095)",
+        "pass": true,
+        "detail": "2.7"
+      },
+      {
+        "name": "logic scan overrun 0",
+        "pass": true,
+        "detail": "0"
+      },
+      {
+        "name": "x64 logic maximum: <= +3 CPU points, <= +5 MB RSS (SC-028; x64 pre-check, BL335 is T148)",
+        "pass": true,
+        "detail": "+0.58 points, +4596 kB"
+      }
+    ],
+    "pass": true,
+    "build": "runtime Release gd6-t147 839dc1e8 (ccf56cec + 839dc1e8 trên gd6 59d93f65)",
+    "notes": [
+      "Same command as runtimeL1 (--scenario load --load-base soak --seconds 3600 --clients 10), new key; runtimeL1 (before) +5575 kB RSS, +1.11 CPU points, scan p99 max 2.92 ms.",
+      "Where the extra x64 RSS went (15 min A/B, smaps + malloc_info + mallinfo per startup stage; 2 glibc arenas, 0 mmap chunks): live data, not arena fragmentation. B - A in use at start +4.1 MB: legacy validation of projectDir kept for the whole run (first start, adoption) 0.79 MB; ProjectModel Tag vector grown by doubling (TagModel 856 B, 1350 Tag -> capacity 2048) 0.6 MB + 850 extra Tag 0.7 MB; TagStore 0.31 MB; logic engine + glue 1.53 MB (rules 0.34, slots/bind 0.40, outputs 0.14, schedules 0.10 incl. a copy of each document); logic.json tree freed after start. Plus ~0.8 MB free-but-resident holes in the main heap from the ~1 MB JSON tree of GET /logic every 5 s.",
+      "Fixes: legacy validation and the project JSON trees (LoadedProject) released once used; model Tags shrink_to_fit; schedule documents dropped once compiled; GET /logic written block by block (statusText, same bytes). 15 min A/B: +5344 -> +4418 kB RSS; both sides 1.9-2.8 MB lower.",
+      "A first 1 h run with ccf56cec only (without statusText): +5063 kB RSS, +0.08 CPU points, scan p99 max 8.01 ms with 1 overrun (one spike, lastMs 13.85 ms; probably GET /logic building its 1 MB tree under the engine mutex, not proven): not counted."
+    ]
   }
 }

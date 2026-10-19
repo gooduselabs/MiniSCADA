@@ -45,11 +45,11 @@ Runtime **`1.0.0-rc.1` releaseSeq 13** (cài bằng `deploy.sh` 2026-10-18 12:32
 
 **Ghi chú còn mở, không chặn rc (tự làm được nếu muốn):**
 
-- **T079** (chưa đánh dấu): cài/chạy `mat-sample` trên BL335 (đã đạt 2026-10-19), L1 xen kẽ 8443 và RSS tab ở L5: công cụ đã có (`load-tester -alternate -fingerprint`, `tools/measure/tab-rss.mjs`; cách đo ở test-protocols §1), còn chạy trên BL335. Các ngưỡng của SC-011 đã Đạt; lỗi gói thiếu `schemas/0.6` đã sửa.
-- **T147** (chưa đánh dấu): L7 trên x64 64 bit RSS +5,4 MiB (ngưỡng +5 MB) ở L1 1 giờ; BL335 +3,8 MB đạt nên chỉ báo. Nếu cần: lấy `smaps`, hoặc đo cặp project có cùng 200 Tag nội bộ ở hai bên (`011-load.md` §1.6).
+- **T079 xong (2026-10-19, releaseSeq 15):** L1 xen kẽ ws 8080 / wss 8443 1 giờ CPU 10,5 % một lõi (trước 36,2 %) sau ưu tiên ChaCha20 (`gd6-tls-cpu`) và live hub định dạng một lần mỗi tick (`gd6-live-cpu`); `mat-sample`, `--check-data`, RSS tab L5 đạt.
+- **T147 xong (2026-10-19, nhánh `gd6-t147`):** L7 x64 L1 1 giờ RSS +4,49 MiB (trước +5,4), CPU +0,58, quét p99 2,7 ms; nguồn là dữ liệu dựng lúc khởi động giữ suốt đời và cây JSON của `GET /logic` (`011-load.md` §1.6, `runtimeL1b`).
 - T189: collector dùng viewer nhưng `audit` đòi administrator (ghi `FORBIDDEN`).
 
-**Cần Windows:** T009 (spike signtool), T088, T091–T094, T098, T102 (dựng bộ cài NSIS, ký thử, `release.ps1` đủ 9 bước, ca hỏng 1–5), T167 (Telex/Unikey, NVDA), ảnh chụp Studio cho T203, đo lại `screen-perf` trên Windows.
+**Cần Windows:** T009, T088, T091–T094, T098 đã xong trên Windows 11 (nhánh `gd6-windows`, 2026-10-19); còn T102 (lượt `release.ps1` không `-SkipCi`, dựng armhf trong cùng lượt), T167 (Telex/Unikey, NVDA), đo lại `screen-perf` trên Windows; ảnh chụp T203 đã làm từ giao diện web.
 
 **Cần người, công ty hoặc khách hàng:** T064 (gia cố SSH, đổi mật khẩu root, có người ở cạnh), T082 (datasheet eMMC), T083–T086 và T123 (bộ điều khiển nguồn, cắt mạng), T149 (PLC hoặc giả lập do người dùng chọn), T103–T105 (chứng chỉ ký mã thật, khóa phát hành ngoại tuyến, Windows sạch), T150, T186 (người thử, huấn luyện), T192–T197 (pilot, gồm soak 30 ngày bàn thử và eMMC ở T196).
 
