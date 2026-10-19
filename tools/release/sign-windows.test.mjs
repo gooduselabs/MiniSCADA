@@ -18,6 +18,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { acquireCertLock, releaseCertLock } from './lib/cert-lock.mjs';
 import { findPwsh, runPwsh } from './lib/pwsh.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -85,10 +86,14 @@ const lastJson = (r) => JSON.parse(r.stdout.trim().split(/\r?\n/).pop());
 let cert = null;
 before(() => {
   if (skip) return;
+  acquireCertLock();
   certScript('-Remove'); // sạch trước khi bắt đầu
 });
 after(() => {
-  if (!skip) certScript('-Remove');
+  if (!skip) {
+    certScript('-Remove');
+    releaseCertLock();
+  }
   temps.forEach((d) => rmSync(d, { recursive: true, force: true }));
 });
 

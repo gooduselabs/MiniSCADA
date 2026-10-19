@@ -9,6 +9,7 @@ import { dirname, join } from 'node:path';
 import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { makeRelease } from './lib/make-release-fixture.mjs';
+import { acquireCertLock, releaseCertLock } from './lib/cert-lock.mjs';
 import { findPwsh, runPwsh } from './lib/pwsh.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -35,13 +36,17 @@ const count = (store, like) =>
 let cert = null;
 before(() => {
   if (skip) return;
+  acquireCertLock();
   script('make-test-cert.ps1', ['-Remove']);
   const r = script('make-test-cert.ps1', ['-Json']);
   assert.equal(r.status, 0, r.stdout + r.stderr);
   cert = JSON.parse(r.stdout.trim().split(/\r?\n/).pop());
 });
 after(() => {
-  if (!skip) script('make-test-cert.ps1', ['-Remove']);
+  if (!skip) {
+    script('make-test-cert.ps1', ['-Remove']);
+    releaseCertLock();
+  }
   temps.forEach((d) => rmSync(d, { recursive: true, force: true }));
 });
 
