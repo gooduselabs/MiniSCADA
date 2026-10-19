@@ -205,8 +205,13 @@ function Find-MatSigningCert([string]$Thumbprint, [string]$Mode) {
         return $null
     }
     if ($Mode -eq 'test') {
-        return Get-ChildItem -Path 'Cert:\CurrentUser\My' -CodeSigningCert -ErrorAction SilentlyContinue |
-            Where-Object { $_.Subject -like '*mAT SCADA TEST*' } | Sort-Object NotAfter -Descending | Select-Object -First 1
+        # Không dùng -CodeSigningCert (tham số động của nhà cung cấp Cert:): vắng khi powershell 5.1 do pwsh 7 sinh ra
+        # thừa hưởng PSModulePath của PS7 (Tauri chạy sign.ps1 theo cách đó trong release.ps1). Tự lọc theo EKU.
+        return Get-ChildItem -Path 'Cert:\CurrentUser\My' -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.Subject -like '*mAT SCADA TEST*' -and $_.HasPrivateKey -and
+                (@($_.EnhancedKeyUsageList | Where-Object { $_.ObjectId -eq $MatCodeSigningEku }).Count -gt 0)
+            } | Sort-Object NotAfter -Descending | Select-Object -First 1
     }
     return $null
 }

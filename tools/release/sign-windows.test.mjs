@@ -301,3 +301,30 @@ test('make-test-cert.ps1 -Remove: gỡ chứng chỉ thử khỏi Cert:\\Current
   // Gỡ khi không còn gì vẫn xong (idempotent).
   assert.equal(certScript('-Remove').status, 0);
 });
+
+// Tauri (chạy trong `release.ps1` dưới pwsh 7) gọi `powershell` 5.1 thừa hưởng PSModulePath của PS7: tham số động
+// `-CodeSigningCert` của Get-ChildItem biến mất. sign.ps1 -Mode test phải tìm chứng chỉ thử mà không cần nó.
+test(
+  'sign.ps1 -Mode test chạy được từ powershell 5.1 do pwsh 7 sinh ra (PSModulePath của PS7)',
+  {
+    skip:
+      skip ||
+      (spawnSync('pwsh', ['-NoProfile', '-Command', 'exit 0']).status !== 0 && 'không có pwsh 7'),
+  },
+  () => {
+    assert.equal(certScript('-Json').status, 0); // ca -Remove ở trên đã gỡ chứng chỉ
+    const d = tmp();
+    const exe = makeExe(d, 'p.exe');
+    const r = spawnSync(
+      'pwsh',
+      [
+        '-NoProfile',
+        '-Command',
+        `powershell -NoProfile -ExecutionPolicy Bypass -File '${join(here, 'sign.ps1')}' -Path '${exe}' -LogPath '${join(d, 'l.json')}'; exit $LASTEXITCODE`,
+      ],
+      { encoding: 'utf8' },
+    );
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /Successfully signed/);
+  },
+);
