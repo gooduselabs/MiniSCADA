@@ -181,6 +181,13 @@ TEST(TagStoreReason, JsonCarriesTheReasonOnlyWhenNotGood) {
     d += ' ';
     s.appendDeltaEntryJson(d, 4, 1);
     EXPECT_EQ(d, "[3,1.5,\"GOOD\"] [4,2.5,\"UNCERTAIN\",\"CLAMPED\"]");
+    // feature 011: the part after "[index," for several Tags at once, with the end of each
+    std::string tails = "x";
+    std::vector<size_t> ends;
+    s.appendDeltaTails({1, 0}, tails, ends);
+    EXPECT_EQ(tails, "x2.5,\"UNCERTAIN\",\"CLAMPED\"]1.5,\"GOOD\"]");
+    EXPECT_EQ(ends, (std::vector<size_t>{27, 38}));
+    EXPECT_THROW(s.appendDeltaTails({2}, tails, ends), std::out_of_range);
 }
 
 TEST(TagStoreBatch, AppliesEverythingAndCountsTheChanges) {

@@ -1,6 +1,8 @@
 #include "server/websocket/live_hub.hpp"
 
 #include <algorithm>
+#include <charconv>
+#include <cstdint>
 #include <cstdio>
 #include <iterator>
 
@@ -75,6 +77,15 @@ size_t LiveHub::alarmHeldSessions() const {
 }
 
 namespace {
+constexpr uint32_t kNoPosition = UINT32_MAX;
+
+// Decimal text of `v` into `buf` (at least 24 bytes), as %lld / %u print it; returns the length.
+template <typename T>
+size_t formatInt(char* buf, T v) {
+    const auto r = std::to_chars(buf, buf + 24, v);
+    return static_cast<size_t>(r.ptr - buf);
+}
+
 const char* kZeroCounts =
     "{\"active\":0,\"unack\":0,\"rtnUnack\":0,\"shelved\":0,\"disabled\":0,\"byPriority\":{"
     "\"critical\":{\"active\":0,\"unack\":0},\"major\":{\"active\":0,\"unack\":0},"
@@ -257,15 +268,16 @@ void LiveHub::subscribeLocked(uint64_t sid, Session& s, const std::string& reque
                               const std::vector<std::string>& tags) {
     std::vector<size_t> idx;
     std::vector<std::string> unknown;
-    std::unordered_map<size_t, uint32_t> pos;
+    std::vector<uint32_t> pos;
     for (const auto& id : tags) {
         auto i = store_.indexOf(id);
         if (!i) {
             unknown.push_back(id);
             continue;
         }
-        if (pos.count(*i)) continue;  // duplicates are ignored
-        pos.emplace(*i, static_cast<uint32_t>(idx.size()));
+        if (*i >= pos.size()) pos.resize(*i + 1, kNoPosition);
+        if (pos[*i] != kNoPosition) continue;  // duplicates are ignored
+        pos[*i] = static_cast<uint32_t>(idx.size());
         idx.push_back(*i);
     }
     if (idx.empty()) {
@@ -274,7 +286,10 @@ void LiveHub::subscribeLocked(uint64_t sid, Session& s, const std::string& reque
     }
     s.subscriptionId = requestId;
     s.tags = std::move(idx);
-    s.position = std::move(pos);
+    s.positionOf = std::move(pos);
+    s.deltaPrefix = "{\"type\":\"delta\",\"subscriptionId\":";
+    appendJsonString(s.deltaPrefix, s.subscriptionId);
+    s.deltaPrefix += ",\"sequence\":";
     s.subscribed = true;
 
     std::string out;
@@ -352,7 +367,7 @@ void LiveHub::onMessage(uint64_t sid, const char* data, size_t len) {
         s.errorStreak = 0;
         s.subscribed = false;
         s.tags.clear();
-        s.position.clear();
+        s.positionOf.clear();
         return;
     }
     if (type == "subscribeAlarms") {
@@ -399,34 +414,56 @@ void LiveHub::tick(int64_t commitMono) {
     const int64_t monoNow = mono_();
     const int64_t commit = commitMono != 0 ? commitMono : monoNow;
     const std::vector<size_t> dirty = store_.takeDirty();
-    if (!dirty.empty()) {
-        std::string out;
+    const bool anySubscribed = std::any_of(sessions_.begin(), sessions_.end(), [](const auto& kv) {
+        return kv.second.subscribed && !kv.second.dead;
+    });
+    if (!dirty.empty() && anySubscribed) {
+        // value,"QUALITY"[,"REASON"]] of every changed Tag, once for all sessions (feature 011:
+        // the same bytes as one appendDeltaEntryJson per session and Tag, which formatted every
+        // value 10 times with 10 sessions; live_bench); only "[position," and the header differ
+        // between sessions. One store lock per tick instead of one per session and Tag.
+        deltaTails_.clear();
+        store_.appendDeltaTails(dirty, deltaTails_, deltaTailEnds_);
+        char tsText[24];
+        const size_t tsLen = formatInt(tsText, now);
+        std::string& out = deltaOut_;
         for (auto& kv : sessions_) {
             Session& s = kv.second;
             if (!s.subscribed || s.dead) continue;
             out.clear();
             size_t n = 0;
-            for (size_t i : dirty) {
-                auto p = s.position.find(i);
-                if (p == s.position.end()) continue;
+            size_t tailStart = 0;
+            const size_t known = s.positionOf.size();
+            for (size_t k = 0; k < dirty.size(); ++k) {
+                const size_t i = dirty[k];
+                const size_t tailEnd = deltaTailEnds_[k];
+                const uint32_t pos = i < known ? s.positionOf[i] : kNoPosition;
+                if (pos == kNoPosition) {
+                    tailStart = tailEnd;
+                    continue;
+                }
                 if (n == 0) {
-                    out += "{\"type\":\"delta\",\"subscriptionId\":";
-                    appendJsonString(out, s.subscriptionId);
-                    char buf[96];
-                    std::snprintf(buf, sizeof buf, ",\"sequence\":%lld,\"ts\":%lld,\"tags\":[",
-                                  static_cast<long long>(s.sequence) + 1,
-                                  static_cast<long long>(now));
-                    out += buf;
+                    char seq[24];
+                    out += s.deltaPrefix;
+                    out.append(seq, formatInt(seq, s.sequence + 1));
+                    out += ",\"ts\":";
+                    out.append(tsText, tsLen);
+                    out += ",\"tags\":[";
                 } else {
                     out += ',';
                 }
-                store_.appendDeltaEntryJson(out, p->second, i);
+                char posText[24];
+                out += '[';
+                out.append(posText, formatInt(posText, pos));
+                out += ',';
+                out.append(deltaTails_, tailStart, tailEnd - tailStart);
+                tailStart = tailEnd;
                 ++n;
             }
             if (n == 0) continue;
             out += "]}";
             ++s.sequence;
-            sendLocked(kv.first, s, out, commit);
+            sendLocked(kv.first, s, std::string(out), commit);  // `out` keeps its capacity
         }
     }
     alarmTickLocked(now);
