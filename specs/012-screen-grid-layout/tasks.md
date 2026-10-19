@@ -73,7 +73,8 @@
 
 **Independent Test**: quickstart §4.
 
-- [ ] T037 [US3] Spike R2 `tools/spikes/charts-r2/`: trang mẫu 12 widget bằng ECharts lite và uPlot; đo gzip, thời gian vẽ, CPU 1 Hz; ghi kết quả vào `specs/012-screen-grid-layout/research.md` mục R2 và `docs/adr/040-grid-layout-and-theme.md`; nếu ECharts lite > 350 KB gzip chuyển sang phương án Chart.js của R2
+- [x] T037 [US3] Spike R2 `tools/spikes/charts-r2/`: trang mẫu 12 widget bằng ECharts lite và uPlot; đo gzip, thời gian vẽ, CPU 1 Hz; ghi kết quả vào `specs/012-screen-grid-layout/research.md` mục R2 và `docs/adr/040-grid-layout-and-theme.md`; nếu ECharts lite > 350 KB gzip chuyển sang phương án Chart.js của R2
+  - Ghi chú khi làm (2026-10-19, nhánh 012-theme): `node tools/spikes/charts-r2/run.mjs` (build Vite, gzip mức 9, Chrome thật). ECharts lite 200,8 KB gzip (≤ 350 KB): chốt ECharts, không dùng Chart.js. Vẽ 12 widget 106 ms (SVG); CPU 1 Hz trung vị 6,9 %/tab với 10 tab. Phát hiện: chunk ECharts có 11 chỗ `innerHTML` (cổng nội dung SC-020), xử lý ở T047. Số liệu ở research R2; ADR 040 viết ở T053 (chưa có tệp ADR).
 - [ ] T038 [US3] Viết test tương phản `packages/ui-components/src/styles/themes.test.ts` cho 3 chủ đề (mọi cặp chữ/nền ≥ 4,5:1, đủ token của [contracts/ui-theme.md](contracts/ui-theme.md) §2) (đỏ)
 - [ ] T039 [US3] Sinh `packages/ui-components/src/styles/themes/vivid.css`, `industrial.css` (giá trị hiện có), `dark.css` từ Radix Colors bằng `tools/gen-theme-tokens.mjs`; nạp trong `tokens.css`; phông Inter (`@font-face` trỏ woff2 tự chứa, latin + latin-ext)
 - [ ] T040 [US3] Studio: chọn chủ đề ở Thiết lập project (`apps/studio/src/ui/editors/project-settings*.ts`), project mới ghi `theme: "vivid"`, canvas và xem trước đặt `data-mat-theme` (test)

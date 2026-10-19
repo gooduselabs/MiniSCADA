@@ -14,6 +14,12 @@ Phiên bản thư viện lấy bằng `npm view` ngày 2026-10-19. Kích thướ
 - **Rationale**: ECharts có cột, tròn/vành khuyên, đồng hồ, bản đồ nhiệt, hoạt ảnh, theme, tooltip đẹp, giấy phép Apache-2.0 (qua cổng giấy phép), có renderer SVG dùng lại cho báo cáo (R6). uPlot vẫn nhanh nhất cho 10.000 đến 100.000 điểm; viết lại xu hướng là rủi ro không cần.
 - **Spike T-R2 (đo)**: kích thước gzip của gói ECharts tối thiểu (mục tiêu ≤ 350 KB), thời gian vẽ 12 widget, CPU ở 1 Hz × 10 client. Nếu vượt: dùng Chart.js 4.5.1 (MIT) cho cột/tròn và giữ đồng hồ SVG tay vẽ lại.
 - **Alternatives**: chỉ cải tiến SVG tay (rẻ nhất nhưng người dùng chê; khó có tooltip, hoạt ảnh); ECharts cho cả xu hướng (nặng hơn uPlot nhiều ở 50.000 điểm).
+- **Kết quả spike T037 (2026-10-19, nhánh 012-theme, `node tools/spikes/charts-r2/run.mjs`, Vite 8.3.4, Chrome 155, máy dev Windows)**:
+  - Chunk ECharts lite của spike (`echarts/core` + Bar, Pie, Gauge, Heatmap, Grid, Tooltip, Legend, **VisualMap** (bản đồ nhiệt cần), SVGRenderer, CanvasRenderer): **599,3 KB thô, 200,8 KB gzip mức 9** (169,6 KB brotli), tách riêng và tải lười; chunk khởi động của trang mẫu (uPlot + mã trang) 24,0 KB gzip. **Đạt mục tiêu ≤ 350 KB: chốt ECharts 6.1.0, không dùng phương án Chart.js.**
+  - Thời gian (trung vị 5 lần, 12 widget: 3 cột, 2 tròn, 2 vành khuyên, 3 đồng hồ, 1 bản đồ nhiệt 24 × 7, 1 xu hướng uPlot 10.000 điểm × 3 chuỗi): nạp chunk 30 ms (máy cục bộ), vẽ lần đầu 106 ms (SVG), 96 ms (Canvas).
+  - CPU khi cập nhật mọi widget 1 Hz, 10 tab cùng lúc trong 30 s (TaskDuration của DevTools): mỗi tab trung vị 6,9 % một lõi, lớn nhất 33,2 % (một tab); mỗi máy vận hành thường mở một tab nên con số đáng xét là ~7 %.
+  - Cổng nội dung bản thiết bị (`apps/runtime-web/scripts/package-web.mjs`, SC-020): chunk ECharts **không** có `eval(` hay `new Function`, nhưng có **11 chỗ `innerHTML`** (xóa nội dung khi dispose/clear, đọc `getSvgDom().innerHTML` khi `connect`, và nội dung tooltip HTML). Xử lý: widget không đưa chuỗi HTML vào ECharts (formatter tooltip trả phần tử DOM dựng bằng `textContent`; nhãn là chuỗi thuần zrender vẽ thành chữ SVG); cổng cho phép đúng số chỗ đó **chỉ** trong chunk ECharts, số chỗ đổi (đổi phiên bản) thì cổng báo lỗi để xem lại (T047).
+  - Bản dùng thật (`packages/ui-components/src/chart/echarts-lite.ts`) bỏ CanvasRenderer, chỉ giữ **SVGRenderer** (nét sắc khi phóng, dùng lại cho báo cáo R6; chênh thời gian vẽ với Canvas nhỏ).
 
 ## R3. Bảng màu và chủ đề
 
