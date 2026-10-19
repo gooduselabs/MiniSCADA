@@ -266,9 +266,11 @@ export function setRowProps(doc: ScreenModel, rowId: string, p: RowProps): GridE
         : Math.max(ROW_HEIGHT.min, Math.min(ROW_HEIGHT.max, Math.round(p.height)));
   if (p.gap === null) delete next.gap;
   else if (p.gap !== undefined) next.gap = Math.max(0, Math.min(64, Math.round(p.gap)));
-  const ordered: GridRow = { id: next.id, height: next.height };
-  if (next.gap !== undefined) ordered.gap = next.gap;
-  ordered.cells = next.cells;
+  // thứ tự khóa chuẩn (format-03.ts ROW_KEYS): id, height, gap, cells
+  const ordered: GridRow =
+    next.gap === undefined
+      ? { id: next.id, height: next.height, cells: next.cells }
+      : { id: next.id, height: next.height, gap: next.gap, cells: next.cells };
   if (JSON.stringify(ordered) === JSON.stringify(cur)) return { doc };
   return withLayout(
     doc,
