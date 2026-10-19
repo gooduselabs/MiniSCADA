@@ -112,10 +112,15 @@ export class MatBar extends MatEChartWidget {
     const horizontal = this.#horizontal;
     const rule = (x: unknown): number | undefined =>
       typeof x === 'number' && Number.isFinite(x) ? x : undefined;
-    const { min, max } = resolveScale(
-      rows.map((r) => r.value),
-      { min: rule(this.item.props?.min), max: rule(this.item.props?.max) },
-    );
+    // Thang: min/max đặt tay thì dùng (cặp suy biến sửa như trước qua resolveScale); vắng thì để ECharts tự co với số
+    // tròn, luôn gồm 0 (trục giá trị không bật `scale`) như thang tự co từ 0 trước đây.
+    const pMin = rule(this.item.props?.min);
+    const pMax = rule(this.item.props?.max);
+    const fixedScale =
+      pMin !== undefined && pMax !== undefined
+        ? resolveScale([], { min: pMin, max: pMax })
+        : { min: pMin, max: pMax };
+    const { min, max } = fixedScale;
     const showValues = this.prop('showValues', true);
     const W = Math.max(this.item.width || 400, 40);
     const band = Math.max((W - 16) / rows.length, 12);
@@ -128,11 +133,12 @@ export class MatBar extends MatEChartWidget {
       if (r.value === null)
         return {
           value: 0,
-          itemStyle: { color: t.colors[i % 12]!, opacity: 0 },
+          // Cột rỗng trong suốt (không dùng opacity 0: nhãn của phần tử cũng mờ theo), chữ ngay trên đường 0.
+          itemStyle: { color: 'transparent', opacity: 1 },
           label: {
             show: true,
             formatter: r.qv.badge || vi.noValue,
-            position: horizontal ? 'insideLeft' : 'insideBottom',
+            position,
             color: markColor(r.qv),
             fontWeight: 700,
           },
@@ -171,17 +177,16 @@ export class MatBar extends MatEChartWidget {
       type: 'value',
       min,
       max,
-      splitNumber: 4,
       axisLabel: { color: t.muted },
       splitLine: { lineStyle: { color: t.border, type: 'dashed' } },
     };
     return {
+      // ECharts 6: outerBounds mặc định giữ nhãn trục trong khung (thay containLabel cũ, cần mô-đun riêng).
       grid: {
         left: 8,
         right: horizontal ? (showValues ? 48 : 16) : 8,
         top: horizontal ? 8 : 20,
         bottom: 4,
-        containLabel: true,
       },
       xAxis: horizontal ? value : category,
       yAxis: horizontal ? category : value,
@@ -189,7 +194,7 @@ export class MatBar extends MatEChartWidget {
         trigger: 'item',
         formatter: (p: { dataIndex: number }) => {
           const r = rows[p.dataIndex];
-          if (!r) return '';
+          if (!r) return this.ownerDocument.createElement('div');
           return tooltipContent(this.ownerDocument, '', [
             {
               color: t.colors[p.dataIndex % 12]!,

@@ -216,7 +216,7 @@ export class MatPie extends MatEChartWidget {
         trigger: 'item',
         formatter: (p: { dataIndex: number }) => {
           const r = shown[p.dataIndex];
-          if (!r) return '';
+          if (!r) return this.ownerDocument.createElement('div');
           return tooltipContent(this.ownerDocument, '', [
             {
               color: t.colors[r.i % 12]!,

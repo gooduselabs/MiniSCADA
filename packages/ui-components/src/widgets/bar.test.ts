@@ -52,13 +52,16 @@ describe('mat-w-bar (FR-030, FR-033)', () => {
     expect(ec.charts).toHaveLength(1);
   });
 
-  it('thang tự co từ 0 khi không đặt min/max (như trước)', async () => {
+  it('thang tự co (gồm 0) khi không đặt min/max; cặp min/max suy biến sửa như trước', async () => {
     const ec = fakeECharts();
     const src = makeSource([tagInfo('a'), tagInfo('b')]);
     src.set('a', { value: -5, quality: 'GOOD' });
     src.set('b', { value: 20, quality: 'GOOD' });
     await mountChart(bar(['a', 'b']), src);
-    expect(axes(ec.option()).y).toMatchObject({ min: -5, max: 20 });
+    const y = axes(ec.option()).y as Axis & { scale?: boolean };
+    expect([y.min, y.max, y.scale]).toEqual([undefined, undefined, undefined]); // ECharts tự co, luôn gồm 0
+    await mountChart(bar(['a', 'b'], { min: 10, max: 5 }), src);
+    expect(axes(ec.option()).y).toMatchObject({ min: 10, max: 11 });
   });
 
   it('nhãn và số hiện đúng; showValues=false ẩn số; labels thắng mô tả Tag', async () => {
@@ -111,7 +114,7 @@ describe('mat-w-bar (FR-030, FR-033)', () => {
     await mountChart(bar(['a', 'b', 'c']), src);
     const data = series(ec.option()).data;
     expect(data.map((d) => d.value)).toEqual([0, 0, 0]);
-    expect(data.every((d) => d.itemStyle.opacity === 0)).toBe(true);
+    expect(data.every((d) => d.itemStyle.color === 'transparent')).toBe(true);
     expect(data.map((d) => d.label?.show && d.label.formatter)).toEqual(['BAD', 'STALE', '?']);
   });
 
@@ -136,6 +139,19 @@ describe('mat-w-bar (FR-030, FR-033)', () => {
     const el = await mountChart(widgetItem('bar', {}), makeSource([]));
     expect(textOf(el, '.empty')).toBe('Không có dữ liệu');
     expect(ec.charts).toHaveLength(0);
+    expect(ec.loads()).toBe(0);
+  });
+
+  it('màn hình không có biểu đồ không nạp ECharts (FR-042)', async () => {
+    const ec = fakeECharts();
+    const src = makeSource([tagInfo('a')]);
+    src.set('a', { value: 1, quality: 'GOOD' });
+    for (const w of ['card', 'label', 'lamp', 'level'])
+      await mount(widgetItem(w, { value: 'a' }), src);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(ec.loads()).toBe(0);
+    await mountChart(bar(['a']), src);
+    expect(ec.loads()).toBe(1);
   });
 
   it('XSS: nhãn và tên Tag là chữ thuần (trục, tooltip dựng bằng DOM)', async () => {
@@ -180,7 +196,8 @@ describe('mat-w-bar (FR-030, FR-033)', () => {
     expect(ec.charts[0]!.disposed).toBe(true);
   });
 
-  it('vẽ thật bằng ECharts lite (SVG) trong Shadow DOM', async () => {
+  // Nạp ECharts thật lần đầu (biến đổi ~600 KB mã) chậm khi nhiều worker chạy song song: hạn 30 s.
+  it('vẽ thật bằng ECharts lite (SVG) trong Shadow DOM', { timeout: 30_000 }, async () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
     const src = makeSource([tagInfo('a'), tagInfo('b')]);
     src.set('a', { value: 3, quality: 'GOOD' });

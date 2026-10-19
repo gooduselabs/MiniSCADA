@@ -107,7 +107,8 @@ describe('mat-w-pie (FR-030)', () => {
     expect(tip.textContent).toContain('25%');
   });
 
-  it('vẽ thật bằng ECharts lite (SVG)', async () => {
+  // Nạp ECharts thật lần đầu (biến đổi ~600 KB mã) chậm khi nhiều worker chạy song song: hạn 30 s.
+  it('vẽ thật bằng ECharts lite (SVG)', { timeout: 30_000 }, async () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
     cleanup();
     const src = makeSource([tagInfo('a'), tagInfo('b')]);

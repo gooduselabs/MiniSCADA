@@ -79,21 +79,33 @@ export interface FakeChart {
 }
 
 /** Thay ECharts bằng bản giả ghi lại option (feature 012): test đọc option thay vì điểm ảnh. */
-export function fakeECharts(): { charts: FakeChart[]; option(): Record<string, unknown> } {
+export function fakeECharts(): {
+  charts: FakeChart[];
+  /** Số lần thư viện được nạp (loadECharts gọi bộ nạp). */
+  loads: () => number;
+  option(): Record<string, unknown>;
+} {
   const charts: FakeChart[] = [];
-  setEChartsLoader(async () => ({
-    init(el, init) {
-      const c: FakeChart = { el, init, options: [], resized: 0, disposed: false };
-      charts.push(c);
-      return {
-        setOption: (o) => void c.options.push(o as Record<string, unknown>),
-        resize: () => void c.resized++,
-        dispose: () => void (c.disposed = true),
-      };
-    },
-  }));
+  let loads = 0;
+  setEChartsLoader(
+    async () => (
+      loads++,
+      {
+        init(el, init) {
+          const c: FakeChart = { el, init, options: [], resized: 0, disposed: false };
+          charts.push(c);
+          return {
+            setOption: (o) => void c.options.push(o as Record<string, unknown>),
+            resize: () => void c.resized++,
+            dispose: () => void (c.disposed = true),
+          };
+        },
+      }
+    ),
+  );
   return {
     charts,
+    loads: () => loads,
     option: () => {
       const o = charts.at(-1)?.options.at(-1);
       if (!o) throw new Error('chưa có option nào');

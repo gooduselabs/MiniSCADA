@@ -44,23 +44,28 @@ describe('loadECharts', () => {
     await expect(loadECharts()).resolves.toBeTruthy();
   });
 
-  it('bản thật: vẽ được biểu đồ cột SVG (renderer SVG, không cần canvas)', async () => {
-    // jsdom không có canvas: zrender đo chữ bằng ước lượng (tránh lỗi 'Not implemented' trên console).
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
-    const lib = await loadECharts();
-    const box = document.createElement('div');
-    document.body.append(box);
-    const chart = lib.init(box, { width: 300, height: 200 });
-    chart.setOption({
-      animation: false,
-      xAxis: { type: 'category', data: ['a', 'b'] },
-      yAxis: { type: 'value' },
-      series: [{ type: 'bar', data: [1, 2] }],
-    });
-    expect(box.querySelector('svg')).not.toBeNull();
-    expect(box.querySelectorAll('svg path').length).toBeGreaterThan(1);
-    chart.dispose();
-  });
+  // Nạp ECharts thật lần đầu chậm khi nhiều worker chạy song song: hạn 30 s.
+  it(
+    'bản thật: vẽ được biểu đồ cột SVG (renderer SVG, không cần canvas)',
+    { timeout: 30_000 },
+    async () => {
+      // jsdom không có canvas: zrender đo chữ bằng ước lượng (tránh lỗi 'Not implemented' trên console).
+      vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+      const lib = await loadECharts();
+      const box = document.createElement('div');
+      document.body.append(box);
+      const chart = lib.init(box, { width: 300, height: 200 });
+      chart.setOption({
+        animation: false,
+        xAxis: { type: 'category', data: ['a', 'b'] },
+        yAxis: { type: 'value' },
+        series: [{ type: 'bar', data: [1, 2] }],
+      });
+      expect(box.querySelector('svg')).not.toBeNull();
+      expect(box.querySelectorAll('svg path').length).toBeGreaterThan(1);
+      chart.dispose();
+    },
+  );
 });
 
 describe('theme từ token', () => {

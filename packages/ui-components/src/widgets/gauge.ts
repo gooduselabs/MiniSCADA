@@ -94,6 +94,8 @@ export class MatGauge extends MatEChartWidget {
     const width = 12;
     const ends = new Set([min, max]);
     return {
+      // Không tooltip: số đọc đã hiện dưới đồng hồ; tooltip mặc định của ECharts dựng HTML từ chuỗi (cổng SC-020).
+      tooltip: { show: false },
       series: [
         {
           type: 'gauge',

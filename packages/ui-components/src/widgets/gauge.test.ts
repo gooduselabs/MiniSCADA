@@ -179,12 +179,15 @@ describe('mat-w-gauge (FR-027)', () => {
     await mount(gauge({ min: 0, max: 50 }), src);
     const s = gs() as GaugeSeries & { axisLabel: { formatter: (v: number) => string } };
     expect([s.type, s.startAngle, s.endAngle]).toEqual(['gauge', 180, 0]);
+    // không tooltip (số đọc đã hiện; tooltip mặc định của ECharts dựng HTML từ chuỗi)
+    expect(ec.option().tooltip).toMatchObject({ show: false });
     expect(s.axisLabel.formatter(0)).toBe('0');
     expect(s.axisLabel.formatter(50)).toBe('50');
     expect(s.axisLabel.formatter(25)).toBe('');
   });
 
-  it('vẽ thật bằng ECharts lite (SVG)', async () => {
+  // Nạp ECharts thật lần đầu (biến đổi ~600 KB mã) chậm khi nhiều worker chạy song song: hạn 30 s.
+  it('vẽ thật bằng ECharts lite (SVG)', { timeout: 30_000 }, async () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
     cleanup();
     const src = makeSource([tagInfo('t1')]);
