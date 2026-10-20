@@ -37,6 +37,7 @@ import {
   type ValueTableDoc,
   type WatchTableDoc,
 } from '@mat/project-schema';
+import { logicLayoutFile, readLayout, type LogicLayoutDoc } from './logic-layout.ts';
 
 export type ProjectField =
   | 'projectName'
@@ -132,6 +133,8 @@ export type ProjectEdit =
   // ---- Feature 011 (định dạng 1.0): logic ----
   /** Thay cả logic.json; lần đầu tạo `logic.json` và thêm `logic` vào project.json (editor Logic: mỗi lần sửa một bước hoàn tác). */
   | { kind: 'logicSet'; doc: LogicDoc }
+  /** Feature 015: thay cả tệp phụ vị trí của sơ đồ Logic (`<logic>.layout.json`, chỉ của Studio, không vào gói nạp xuống). */
+  | { kind: 'logicLayoutSet'; doc: LogicLayoutDoc }
   | { kind: 'batch'; edits: readonly ProjectEdit[] };
 
 export interface EditableProject {
@@ -155,6 +158,8 @@ export interface EditableProject {
   templates?: Record<string, TemplateDoc>;
   /** Định dạng 1.0: logic.json (thiếu: project chưa có logic). */
   logic?: LogicDoc | null;
+  /** Feature 015: vị trí của sơ đồ Logic (thiếu: chưa có tệp phụ). */
+  logicLayout?: LogicLayoutDoc | null;
 }
 
 const clone = <T>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
@@ -190,6 +195,7 @@ export interface Touched {
   reports: boolean;
   templates: Set<string>;
   logic: boolean;
+  logicLayout: boolean;
 }
 
 const newTouched = (): Touched => ({
@@ -206,6 +212,7 @@ const newTouched = (): Touched => ({
   reports: false,
   templates: new Set(),
   logic: false,
+  logicLayout: false,
 });
 
 /** Áp các sửa đổi lên bản sao (không đụng bản gốc); giữ thứ tự khóa và trường không sửa. */
@@ -232,6 +239,7 @@ export function applyEdits(
     ...(base.reports !== undefined ? { reports: clone(base.reports) } : {}),
     ...(base.templates ? { templates: clone(base.templates) } : {}),
     ...(base.logic !== undefined ? { logic: clone(base.logic) } : {}),
+    ...(base.logicLayout !== undefined ? { logicLayout: clone(base.logicLayout) } : {}),
   };
   const touched = newTouched();
   run(state, edits, touched);
@@ -494,6 +502,11 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
         }
         s.logic = clone(e.doc);
         touched.logic = true;
+        break;
+      }
+      case 'logicLayoutSet': {
+        s.logicLayout = clone(e.doc);
+        touched.logicLayout = true;
         break;
       }
       case 'svgBindings': {
@@ -860,7 +873,10 @@ export function editableRels(docs: ProjectDocs): Set<string> {
     for (const f of stringList((p as Record<string, unknown>).templates))
       if (TEMPLATE_REL.test(f)) out.add(f);
     const logic = (p as Record<string, unknown>).logic;
-    if (typeof logic === 'string') out.add(logic);
+    if (typeof logic === 'string') {
+      out.add(logic);
+      out.add(logicLayoutFile(logic));
+    }
   }
   for (const f of svgBindingFiles(docs)) out.add(f);
   return out;
@@ -997,6 +1013,8 @@ function editableOf(docs: ProjectDocs): EditableProject | null {
     const lf = (p as unknown as Record<string, unknown>).logic;
     const l = typeof lf === 'string' ? docs[lf] : undefined;
     state.logic = l && !l.removed && isObject(l.value) ? (l.value as unknown as LogicDoc) : null;
+    const ll = typeof lf === 'string' ? docs[logicLayoutFile(lf)] : undefined;
+    state.logicLayout = ll && !ll.removed && isObject(ll.value) ? readLayout(ll.value) : null;
   }
   return state;
 }
@@ -1065,6 +1083,11 @@ export function applyDocEdits(
   for (const id of touched.templates) syncTable(templateFile(id), state.templates?.[id]);
   if (touched.logic && state.logic)
     syncTable(typeof rec06.logic === 'string' ? rec06.logic : LOGIC_FILE, state.logic);
+  if (touched.logicLayout && state.logicLayout)
+    syncTable(
+      logicLayoutFile(typeof rec06.logic === 'string' ? rec06.logic : LOGIC_FILE),
+      state.logicLayout,
+    );
   return out;
 }
 
@@ -1237,6 +1260,8 @@ export interface ProjectOutline {
   logicFile: string | null;
   /** Nội dung logic.json đọc được (null: không có hoặc sai hình). */
   logic: LogicDoc | null;
+  /** Feature 015: vị trí của sơ đồ Logic (tệp phụ; thiếu hay hỏng là rỗng). */
+  logicLayout: LogicLayoutDoc;
   /** `templates` của project.json 1.0 (đường dẫn, theo thứ tự khai). */
   templateFiles: string[];
   /** Template đọc được (theo `templateFiles`, chỉ đường dẫn `templates/<id>.template.json`); `doc` null khi thiếu hay sai hình. */
@@ -1337,6 +1362,9 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
       const v = format10 && typeof rec.logic === 'string' ? files[rec.logic] : undefined;
       return isObject(v) && typeof v.schemaVersion === 'string' ? (v as unknown as LogicDoc) : null;
     })(),
+    logicLayout: readLayout(
+      format10 && typeof rec.logic === 'string' ? files[logicLayoutFile(rec.logic)] : undefined,
+    ),
     templateFiles: format10 ? stringList(rec.templates) : [],
     templates: format10
       ? stringList(rec.templates).flatMap((file): TemplateOutline[] => {

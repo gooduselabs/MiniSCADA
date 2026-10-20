@@ -1705,6 +1705,12 @@ export class StudioApp {
     this.emit();
   }
 
+  /** Feature 015: gập/mở khung dưới (Inspector, Thông tin, Thử logic); chiều cao được nhớ. */
+  setInspectorCollapsed(collapsed: boolean): void {
+    if (collapsed !== this.ws.inspectorCollapsed)
+      this.setWorkspace({ inspectorCollapsed: collapsed });
+  }
+
   setTheme(theme: Theme): void {
     this.setWorkspace({ theme });
   }
@@ -1714,7 +1720,9 @@ export class StudioApp {
     patch: Partial<Pick<Workspace, 'leftWidth' | 'detailsHeight' | 'inspectorHeight'>>,
     dims = { leftColumnHeight: 0, centerHeight: 0 },
   ): void {
-    this.ws = clampLayout({ ...this.ws, ...patch }, dims);
+    // đổi chiều cao khung dưới (kéo thanh chia) thì mở lại khung nếu đang gập
+    const open = patch.inspectorHeight !== undefined ? { inspectorCollapsed: false } : {};
+    this.ws = clampLayout({ ...this.ws, ...patch, ...open }, dims);
     saveWorkspace(this.storage, this.ws);
     this.emit();
   }

@@ -27,6 +27,7 @@ import type {
   RecentFailure,
   WriteFailure,
 } from '../platform/types.ts';
+import { logicLayoutFile } from '../model/logic-layout.ts';
 import { cleanSvgFiles, type UpgradeChange } from '../model/svg-upgrade.ts';
 import type { EditorId } from '../model/tree.ts';
 import {
@@ -337,6 +338,8 @@ export class StudioStore {
     await read(outline.alarmFile);
     await read(outline.alarmClassFile);
     await read(outline.logicFile);
+    // Feature 015: tệp phụ vị trí của sơ đồ Logic (không có thì sơ đồ tự sắp xếp).
+    if (outline.logicFile) await read(logicLayoutFile(outline.logicFile));
     for (const f of outline.templateFiles) await read(f);
     for (const v of outline.valueTables) await read(v.file);
     for (const w of outline.watchTables) await read(w.file);

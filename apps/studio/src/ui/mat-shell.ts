@@ -343,7 +343,9 @@ export class MatShell extends AppElement {
     const vars = {
       '--left-w': `${ws.leftWidth}px`,
       '--details-h': `${ws.detailsHeight}px`,
-      '--insp-h': `${ws.inspectorHeight}px`,
+      '--insp-h': ws.inspectorCollapsed
+        ? 'var(--insp-collapsed-h, 32px)'
+        : `${ws.inspectorHeight}px`,
     };
     const online = app.online();
     const simulating = app.simulating() && !online;
