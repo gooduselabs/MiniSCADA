@@ -150,11 +150,13 @@ async function screens(browser) {
   await page.goBack();
   await until(async () => (await hash(page)) === '#/bon-nuoc', 'Back về #/bon-nuoc');
   check('Back quay lại màn hình trước', true);
-  await openApp(page, `${BASE}/#/khong-co`);
+  // Feature 013: máy chủ bỏ màn hình bị cấm khỏi danh sách, nên với phiên bị giới hạn (không phải administrator,
+  // kể cả ẩn danh) id lạ là "Không có quyền", giữ hash, không lộ màn hình nào có thật (route `deny` ở main.ts).
+  await openApp(page, `${BASE}/#/khong-co`, '.access-panel:not([hidden])');
   check(
-    'id lạ: về màn hình đầu kèm thông báo',
-    (await hash(page)) === '#/tong-quan' &&
-      (await page.$eval('#app-notice', (e) => !e.hidden && e.textContent.includes('khong-co'))),
+    'id lạ (phiên bị giới hạn): "Không có quyền", hash giữ nguyên',
+    (await hash(page)) === '#/khong-co' &&
+      (await page.$eval('.access-panel', (e) => e.textContent.includes('Không có quyền'))),
   );
   await openApp(page, `${BASE}/#/tong-quan`);
   await deepEval(
