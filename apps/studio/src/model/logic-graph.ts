@@ -13,18 +13,22 @@ import { LAYOUT_GRID, type LogicLayoutDoc, type NodePos } from './logic-layout.t
 export const GEOM = {
   blockW: 208,
   head: 30,
-  row: 22,
+  row: 24,
   foot: 24,
   tagW: 184,
   tagH: 32,
+  /** Toán hạng Tag gắn vào chân (hộp tên Tag). */
+  opH: 22,
   gateHead: 18,
-  gateRow: 18,
-  gapX: 40,
-  gapY: 10,
-  colGap: 72,
-  rowGap: 28,
+  gateRow: 22,
+  gapX: 32,
+  gapY: 8,
+  colGap: 64,
+  rowGap: 24,
   margin: 32,
 } as const;
+/** Tỉ lệ rộng : cao mà sắp xếp tự động nhắm tới (gập cột cao thành cột phụ). */
+const ASPECT = 2.4;
 /** Độ sâu tối đa của cây cổng; sâu hơn gói thành nút "Biểu thức". */
 const MAX_DEPTH = 4;
 
@@ -322,6 +326,8 @@ const gateWidth = (g: GateSpec, text: string): number =>
         ),
       )
     : Math.max(64, 28 + g.title.length * 7.4);
+/** Bề rộng hộp toán hạng theo độ dài id Tag (chữ mono 11 px). */
+const opWidth = (tag: string): number => Math.max(64, Math.min(220, 30 + tag.length * 6.7));
 const gateHeight = (n: number) => Math.max(34, GEOM.gateHead + n * GEOM.gateRow + 6);
 
 export function blockRows(kind: LogicKind): number {
@@ -333,10 +339,11 @@ const portY = (i: number) => GEOM.head + i * GEOM.row + GEOM.row / 2;
 
 // ---------- Dựng ----------
 interface Pending {
-  tag: string;
+  /** Tag mang giá trị (dây từ toán hạng hoặc từ đầu ra khối). */
+  tag?: string;
   to: WireEnd;
   type: PortType;
-  /** Dây từ cổng ra của một cổng suy ra (không mang Tag). */
+  /** Dây từ cổng ra `out` của một nút gắn (cổng suy ra, toán hạng Tag); thiếu: từ đầu ra khối sinh `tag`. */
   from?: string;
 }
 
@@ -345,7 +352,8 @@ interface BuiltTree {
   node: GNode;
   w: number;
   h: number;
-  kids: Array<{ t: BuiltTree; pin: number }>;
+  /** Con theo thứ tự chân; `t` null: chỗ trống của chân nối dây từ khối khác (giữ cây con đúng hàng chân). */
+  kids: Array<{ t: BuiltTree | null; h: number; pin: number }>;
 }
 
 interface TreeOut {
@@ -398,10 +406,13 @@ export function buildLogicGraph(doc: LogicDoc, input: GraphInput): LogicGraph {
       const h = blockHeight(kind);
       const subtrees: Array<{ out: TreeOut; py: number }> = [];
       let gateN = 0;
-      const want = (tag: string, to: WireEnd, type: PortType) => {
-        pend.push({ tag, to, type });
+      /** Tag là đầu ra của khối: dây từ khối đó (không toán hạng). Trả false khi Tag không phải đầu ra. */
+      const want = (tag: string, to: WireEnd, type: PortType): boolean => {
         const src = outputs.get(tag);
-        if (src && src.block !== id) dep.add(src.block);
+        if (!src) return false;
+        pend.push({ tag, to, type });
+        if (src.block !== id) dep.add(src.block);
+        return true;
       };
 
       ins.forEach(([field, type, optional], i) => {
@@ -433,12 +444,49 @@ export function buildLogicGraph(doc: LogicDoc, input: GraphInput): LogicGraph {
         }
         const cps = Array.from(raw);
         const op = operandOf(parsed.root, cps, 0);
-        if (op.k === 'tag') {
-          want(op.id, { node: id, port: field }, type);
-          return;
-        }
         if (op.k === 'const') {
           port.text = op.text;
+          return;
+        }
+        /** Toán hạng Tag (FBD: hộp tên Tag gắn vào chân, đi theo khối). */
+        const operand = (tag: string, span: [number, number] | undefined): BuiltTree => {
+          const key = `t:${id}:${field}:${gateN++}`;
+          const ty = tagTypes.get(tag);
+          const w = opWidth(tag);
+          const node: GNode = {
+            key,
+            type: 'tag',
+            id: tag,
+            owner: id,
+            kind,
+            slot: span ? { kind, id, field, span } : { kind, id, field },
+            x: 0,
+            y: 0,
+            w,
+            h: GEOM.opH,
+            ports: [
+              {
+                key: 'out',
+                side: 'out',
+                label: '',
+                type: portTypeOf(ty),
+                dx: w,
+                dy: GEOM.opH / 2,
+                tag,
+              },
+            ],
+            movable: false,
+            ...(ty ? { tagType: ty } : { missing: true }),
+            ...(pm ? { mark: pm } : {}),
+          };
+          return { node, w, h: GEOM.opH, kids: [] };
+        };
+        if (op.k === 'tag') {
+          if (want(op.id, { node: id, port: field }, type)) return;
+          const t = operand(op.id, undefined);
+          pend.push({ tag: op.id, to: { node: id, port: field }, type, from: t.node.key });
+          t.node.x = -GEOM.gapX - t.w;
+          subtrees.push({ out: { nodes: [t.node], w: t.w, h: t.h }, py: portY(i) });
           return;
         }
         // cây cổng: dựng tương đối (gốc ở 0,0), đặt sau
@@ -464,7 +512,7 @@ export function buildLogicGraph(doc: LogicDoc, input: GraphInput): LogicGraph {
             movable: false,
             ...(pm ? { mark: pm } : {}),
           };
-          const kids: Array<{ t: BuiltTree; pin: number }> = [];
+          const kids: BuiltTree['kids'] = [];
           g.pins.forEach((p, j) => {
             const pkey = `p${j}`;
             const pin: GPort = {
@@ -478,17 +526,24 @@ export function buildLogicGraph(doc: LogicDoc, input: GraphInput): LogicGraph {
             };
             if (pm) pin.mark = pm;
             gnode.ports.push(pin);
-            if (p.k === 'tag') want(p.id, { node: key, port: pkey }, g.pinType);
-            else if (p.k === 'const') pin.text = p.text;
+            if (p.k === 'tag') {
+              if (want(p.id, { node: key, port: pkey }, g.pinType))
+                kids.push({ t: null, h: GEOM.gateRow, pin: j });
+              else {
+                const t = operand(p.id, [p.s, p.e]);
+                kids.push({ t, h: t.h, pin: j });
+                pend.push({
+                  tag: p.id,
+                  to: { node: key, port: pkey },
+                  type: g.pinType,
+                  from: t.node.key,
+                });
+              }
+            } else if (p.k === 'const') pin.text = p.text;
             else {
               const t = build(p.g, depth + 1);
-              kids.push({ t, pin: j });
-              pend.push({
-                tag: '',
-                to: { node: key, port: pkey },
-                type: g.pinType,
-                from: t.node.key,
-              });
+              kids.push({ t, h: t.h, pin: j });
+              pend.push({ to: { node: key, port: pkey }, type: g.pinType, from: t.node.key });
             }
           });
           gnode.ports.push({
@@ -500,11 +555,11 @@ export function buildLogicGraph(doc: LogicDoc, input: GraphInput): LogicGraph {
             dy: gh / 2,
           });
           const kidsH =
-            kids.reduce((s, k) => s + k.t.h, 0) + Math.max(0, kids.length - 1) * GEOM.gapY;
-          const kidsW = kids.reduce((m, k) => Math.max(m, k.t.w), 0);
+            kids.reduce((s, k) => s + k.h, 0) + Math.max(0, kids.length - 1) * GEOM.gapY;
+          const kidsW = kids.reduce((m, k) => Math.max(m, k.t?.w ?? 0), 0);
           return {
             node: gnode,
-            w: w + (kids.length ? GEOM.gapX + kidsW : 0),
+            w: w + (kidsW ? GEOM.gapX + kidsW : 0),
             h: Math.max(gh, kidsH),
             kids,
           };
@@ -519,16 +574,15 @@ export function buildLogicGraph(doc: LogicDoc, input: GraphInput): LogicGraph {
           let y =
             top +
             (t.h -
-              (t.kids.reduce((s, k) => s + k.t.h, 0) +
-                Math.max(0, t.kids.length - 1) * GEOM.gapY)) /
+              (t.kids.reduce((s, k) => s + k.h, 0) + Math.max(0, t.kids.length - 1) * GEOM.gapY)) /
               2;
           for (const k of t.kids) {
-            place(k.t, t.node.x - GEOM.gapX, y);
-            y += k.t.h + GEOM.gapY;
+            if (k.t) place(k.t, t.node.x - GEOM.gapX, y);
+            y += k.h + GEOM.gapY;
           }
         };
         place(tree, -GEOM.gapX, 0);
-        pend.push({ tag: '', to: { node: id, port: field }, type, from: tree.node.key });
+        pend.push({ to: { node: id, port: field }, type, from: tree.node.key });
         subtrees.push({ out: { nodes: placed, w: tree.w, h: tree.h }, py: portY(i) });
       });
 
@@ -617,8 +671,7 @@ export function buildLogicGraph(doc: LogicDoc, input: GraphInput): LogicGraph {
     }
   }
 
-  // ---------- Tag đầu vào ----------
-  const tagNodes = new Map<string, GNode>();
+  // ---------- Dây dữ liệu ----------
   const wires: Wire[] = [];
   let wn = 0;
   for (const p of pend) {
@@ -628,59 +681,22 @@ export function buildLogicGraph(doc: LogicDoc, input: GraphInput): LogicGraph {
         from: { node: p.from, port: 'out' },
         to: p.to,
         kind: 'data',
-        type: p.type,
+        type: p.tag ? portTypeOf(tagTypes.get(p.tag)) : p.type,
+        ...(p.tag ? { tag: p.tag } : {}),
       });
       continue;
     }
-    const src = outputs.get(p.tag);
-    if (src) {
-      wires.push({
-        key: `w${wn++}`,
-        from: { node: src.block, port: src.field },
-        to: p.to,
-        kind: 'data',
-        type: portTypeOf(tagTypes.get(p.tag)),
-        tag: p.tag,
-      });
-      continue;
-    }
-    let tn = tagNodes.get(p.tag);
-    if (!tn) {
-      const ty = tagTypes.get(p.tag);
-      tn = {
-        key: `tag:${p.tag}`,
-        type: 'tag',
-        id: p.tag,
-        x: 0,
-        y: 0,
-        w: GEOM.tagW,
-        h: GEOM.tagH,
-        ports: [
-          {
-            key: 'out',
-            side: 'out',
-            label: '',
-            type: portTypeOf(ty),
-            dx: GEOM.tagW,
-            dy: GEOM.tagH / 2,
-            tag: p.tag,
-          },
-        ],
-        movable: true,
-        ...(ty ? { tagType: ty } : { missing: true }),
-      };
-      tagNodes.set(p.tag, tn);
-    }
+    const src = p.tag ? outputs.get(p.tag) : undefined;
+    if (!src || !p.tag) continue;
     wires.push({
       key: `w${wn++}`,
-      from: { node: tn.key, port: 'out' },
+      from: { node: src.block, port: src.field },
       to: p.to,
       kind: 'data',
       type: portTypeOf(tagTypes.get(p.tag)),
       tag: p.tag,
     });
   }
-
   // ---------- Hành động của luật ----------
   const writesIds = new Set(blocksOf(doc, 'writes').map((w) => w.id));
   const outNodes = new Map<string, GNode>();
@@ -738,7 +754,7 @@ export function buildLogicGraph(doc: LogicDoc, input: GraphInput): LogicGraph {
       });
     }
   }
-  nodes.push(...tagNodes.values(), ...outNodes.values());
+  nodes.push(...outNodes.values());
 
   // dây vào cổng vào có lỗi cũng đỏ
   const portMark = new Map<string, Mark>();
@@ -829,9 +845,11 @@ function autoLayout(
   let maxRank = 1;
   for (const n of movable)
     if (n.type === 'block' && n.kind !== 'writes') maxRank = Math.max(maxRank, rankOf(n.key));
+  // Luật không có đầu ra cho khối khác: xếp chung cột ngoài cùng bên phải (như mạng FBD kết thúc ở cuộn), ngay trước Ghi PLC.
   const col = new Map<string, number>();
   for (const n of movable) {
     if (n.type === 'tag') col.set(n.key, 0);
+    else if (n.type === 'block' && n.kind === 'rule') col.set(n.key, maxRank);
     else if (n.type === 'block' && n.kind !== 'writes') col.set(n.key, rank.get(n.key)!);
   }
   for (const n of movable) {
@@ -839,23 +857,21 @@ function autoLayout(
     const src = actionTargets.get(n.key);
     col.set(
       n.key,
-      src && src.size ? Math.max(...[...src].map((r) => rank.get(r) ?? 1)) + 1 : maxRank + 1,
+      src && src.size ? Math.max(...[...src].map((r) => col.get(r) ?? 1)) + 1 : maxRank + 1,
     );
   }
   const ncol = Math.max(...col.values(), 0) + 1;
   const cols: GNode[][] = Array.from({ length: ncol }, () => []);
   for (const n of movable) cols[col.get(n.key)!]!.push(n);
 
-  // x của từng cột: chừa cây cổng bên trái
-  const xs: number[] = [];
-  let x = GEOM.margin;
-  for (let c = 0; c < ncol; c++) {
-    const list = cols[c]!;
-    const left = list.reduce((m, n) => Math.max(m, trees.get(n.key)?.left ?? 0), 0);
-    const w = list.reduce((m, n) => Math.max(m, n.w), 0);
-    xs[c] = snapUp(x + left);
-    x = xs[c]! + w + GEOM.colGap;
-  }
+  // Cột cao quá thì gập sang cột phụ: sơ đồ gần tỉ lệ ASPECT (vùng vẽ của editor rộng hơn cao).
+  const unitH = (n: GNode) => {
+    const t = trees.get(n.key);
+    return (t ? t.bottom - t.top : n.h) + GEOM.rowGap;
+  };
+  const unitW = (n: GNode) => n.w + (trees.get(n.key)?.left ?? 0) + GEOM.colGap;
+  const area = movable.reduce((s, n) => s + unitH(n) * unitW(n), 0);
+  const maxH = Math.max(3 * (blockHeight('counter') + GEOM.rowGap), Math.sqrt(area / ASPECT));
 
   const pos = new Map<string, NodePos>();
   const order = new Map(movable.map((n, i) => [n.key, i]));
@@ -870,16 +886,26 @@ function autoLayout(
     const n = byKey.get(k);
     return p && n ? p.y + n.h / 2 : undefined;
   };
-  const stack = (list: GNode[], c: number) => {
+  /** Xếp một cột từ x0 (chừa cây cổng bên trái), gập cột phụ khi quá maxH; trả x của cột kế. */
+  const stack = (list: readonly GNode[], x0: number): number => {
+    if (list.length === 0) return x0;
+    const left = list.reduce((m, n) => Math.max(m, trees.get(n.key)?.left ?? 0), 0);
+    const w = list.reduce((m, n) => Math.max(m, n.w), 0);
+    let x = snapUp(x0 + left);
     let cursor = GEOM.margin;
     for (const n of list) {
       const t = trees.get(n.key);
       const top = t ? t.top : 0;
       const bottom = t ? t.bottom : n.h;
+      if (cursor > GEOM.margin && cursor + (bottom - top) > GEOM.margin + maxH) {
+        x = snapUp(x + w + GEOM.colGap + left);
+        cursor = GEOM.margin;
+      }
       const y = snapUp(cursor - top);
-      pos.set(n.key, { x: xs[c]!, y });
+      pos.set(n.key, { x, y });
       cursor = y + bottom + GEOM.rowGap;
     }
+    return x + w + GEOM.colGap;
   };
   const bary = (n: GNode): number | undefined => {
     const ys = sources(n)
@@ -887,13 +913,19 @@ function autoLayout(
       .filter((v): v is number => v !== undefined);
     return ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : undefined;
   };
-  // lượt 1: khối theo thứ tự tài liệu; lượt 2: theo trọng tâm nguồn
-  for (let c = 1; c < ncol; c++) stack(cols[c]!, c);
+  // lượt 1: thứ tự tài liệu (Tag theo lần dùng đầu); lượt 2: khối theo trọng tâm nguồn
+  const starts: number[] = [];
+  let x: number = GEOM.margin;
+  for (let c = 0; c < ncol; c++) {
+    starts[c] = x;
+    x = stack(cols[c]!, x);
+  }
+  x = starts[1] ?? x;
   for (let c = 1; c < ncol; c++) {
     const list = cols[c]!;
     const key = new Map(list.map((n) => [n.key, bary(n) ?? pos.get(n.key)!.y]));
     list.sort((a, b) => key.get(a.key)! - key.get(b.key)! || order.get(a.key)! - order.get(b.key)!);
-    stack(list, c);
+    x = stack(list, x);
   }
   // Tag: trọng tâm nơi dùng (neo khối chủ của cổng)
   const owner = new Map<string, string>();
@@ -905,7 +937,7 @@ function autoLayout(
   const tags = cols[0]!;
   const tkey = new Map(tags.map((n) => [n.key, center(owner.get(n.key) ?? '') ?? 0]));
   tags.sort((a, b) => tkey.get(a.key)! - tkey.get(b.key)! || order.get(a.key)! - order.get(b.key)!);
-  stack(tags, 0);
+  stack(tags, GEOM.margin);
   for (const [k, p] of pos) pos.set(k, { x: snapNear(p.x), y: snapNear(p.y) });
   return pos;
 }

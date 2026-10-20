@@ -55,25 +55,31 @@ describe('buildLogicGraph: nút và cổng', () => {
     expect(node(g, 's_day').ports.map((p) => p.key)).toEqual(['out']);
   });
 
-  it('Tag đầu vào là nút riêng (một nút mỗi Tag), Tag là đầu ra khối thì dây từ cổng ra của khối', () => {
+  it('Tag đầu vào là hộp toán hạng gắn vào chân (đi theo khối); Tag là đầu ra khối thì dây từ cổng ra của khối', () => {
     const g = graph();
-    const tags = g.nodes
-      .filter((n) => n.type === 'tag')
-      .map((n) => n.id)
-      .sort();
-    expect(tags).toEqual(['FLOW01', 'PUMP01.RUN', 'PUMP01.RUN_CMD', 'TANK01.LEVEL']);
+    const ops = g.nodes.filter((n) => n.type === 'tag');
+    expect(ops.map((n) => n.id).sort()).toEqual([
+      'FLOW01',
+      'PUMP01.RUN',
+      'PUMP01.RUN',
+      'PUMP01.RUN_CMD',
+      'TANK01.LEVEL',
+      'TANK01.LEVEL',
+    ]);
+    expect(ops.every((n) => !n.movable && n.owner && n.tagType)).toBe(true);
+    const op = ops.find((n) => n.owner === 'c_starts')!;
+    expect(op.x + op.w).toBeLessThan(node(g, 'c_starts').x);
+    expect(op.slot).toEqual({ kind: 'counter', id: 'c_starts', field: 'up' });
     const fromDay = g.wires.filter((w) => w.from.node === 's_day' && w.from.port === 'out');
     expect(fromDay).toHaveLength(1);
     expect(node(g, fromDay[0]!.to.node).gate).toBe('and');
-    // PUMP01.RUN vào cả counter và giờ chạy từ cùng một nút Tag
     expect(
       g.wires
-        .filter((w) => w.from.node === 'tag:PUMP01.RUN')
+        .filter((w) => w.tag === 'PUMP01.RUN')
         .map((w) => w.to.node)
         .sort(),
     ).toEqual(['c_starts', 'h_pump']);
   });
-
   it('cổng suy ra: so sánh với hằng là cổng một chân "> 80", && là AND với chân trỏ đúng đoạn nguồn', () => {
     const g = graph();
     const cmp = g.nodes.find((n) => n.owner === 'pump_high_level' && n.type === 'gate')!;
@@ -168,13 +174,15 @@ describe('buildLogicGraph: nút và cổng', () => {
 });
 
 describe('buildLogicGraph: sắp xếp', () => {
-  it('tự sắp xếp: Tag bên trái, khối theo hạng phụ thuộc, Ghi PLC bên phải, không chồng nhau', () => {
+  it('tự sắp xếp: toán hạng bên trái cổng, khối theo hạng phụ thuộc, Ghi PLC bên phải, không chồng nhau', () => {
     const g = graph();
-    const tag = node(g, 'tag:TANK01.LEVEL');
+    const tag = g.nodes.find((n) => n.type === 'tag' && n.owner === 'pump_low_level')!;
     const day = node(g, 's_day');
     const low = node(g, 'pump_low_level');
     const w = node(g, 'w_pump_run');
-    expect(tag.x).toBeLessThan(day.x);
+    const cmp = g.nodes.find((n) => n.owner === 'pump_low_level' && n.gate === 'cmp')!;
+    expect(tag.x + tag.w).toBeLessThanOrEqual(cmp.x);
+    expect(day.x + day.w).toBeLessThan(tag.x);
     expect(day.x + day.w).toBeLessThan(low.x);
     expect(low.x + low.w).toBeLessThan(w.x);
     const all = g.nodes;
