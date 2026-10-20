@@ -12,17 +12,19 @@ namespace mat {
 
 using nlohmann::json;
 
-namespace {
-
-const char* const kPosFields[] = {"x", "y", "width", "height"};
-
 // ^1\.1\.\d+$ (SUPPORTED_SCHEMA_11 of codes.ts)
-bool is11(const std::string& v) {
+bool isSchema11(const std::string& v) {
     if (v.size() <= 4 || v.compare(0, 4, "1.1.") != 0) return false;
     for (size_t i = 4; i < v.size(); ++i)
         if (v[i] < '0' || v[i] > '9') return false;
     return true;
 }
+
+namespace {
+
+const char* const kPosFields[] = {"x", "y", "width", "height"};
+
+bool is11(const std::string& v) { return isSchema11(v); }
 
 // ^[a-z][a-z0-9_-]{0,31}$ (LAYOUT_ID_RE of rules-11.ts)
 bool isLayoutId(const json& id) {

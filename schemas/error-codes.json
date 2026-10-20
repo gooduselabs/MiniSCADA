@@ -1441,6 +1441,13 @@
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
+      "code": "E_RPT_KIND",
+      "http": null,
+      "group": "history",
+      "message": "Khóa báo cáo của định dạng 1.1 (org, kind, week/range, tiles, chart, onTime/starts) ở project cũ, hoặc không hợp với loại báo cáo (alarm/logic có group/columns; equipment chỉ Tag BOOL và onTime/starts; starts ngoài equipment)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
       "code": "E_RPT_LIMIT",
       "http": null,
       "group": "history",

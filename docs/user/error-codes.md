@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 469 mã.
+Tổng cộng 470 mã.
 
 ## Mục lục
 
@@ -22,7 +22,7 @@ Tổng cộng 469 mã.
 - [Màn hình, widget, binding và điều hướng](#screens) (49)
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (32)
 - [Alarm](#alarm) (46)
-- [Lưu trữ, lịch sử và báo cáo](#history) (41)
+- [Lưu trữ, lịch sử và báo cáo](#history) (42)
 - [Gói project (.matscada)](#package) (16)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
 - [Đăng nhập, phiên và truy cập HTTP](#auth) (37)
@@ -285,6 +285,7 @@ Tổng cộng 469 mã.
 | `E_NAV_REPORT` | — | `navigation[].report` không có trong `reports.json` (hoặc không có `reportsFile`) | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_DUP_ID` | — | Trùng `id` mẫu báo cáo | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_FN` | — | Hàm tổng hợp lặp trong một cột của báo cáo | `core/project-manager`, `packages/project-schema` |
+| `E_RPT_KIND` | — | Khóa báo cáo của định dạng 1.1 (org, kind, week/range, tiles, chart, onTime/starts) ở project cũ, hoặc không hợp với loại báo cáo (alarm/logic có group/columns; equipment chỉ Tag BOOL và onTime/starts; starts ngoài equipment) | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_LIMIT` | — | Quá 24 cột (Tag × hàm) hoặc quá 24 Tag | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_NO_AGG` | — | Nhóm không có `aggregates`, hoặc Tag có `aggregate:false`, hoặc Tag kiểu chuỗi | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_PERIOD` | — | `shifts` với `day` hoặc `month`; thiếu `shifts` khi `shift`; `rowMinutes` với kỳ khác `day` | `core/project-manager`, `packages/project-schema` |

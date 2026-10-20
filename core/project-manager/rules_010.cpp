@@ -60,18 +60,73 @@ bool isShiftCount(double n) {
 }
 
 void reportRules(const json& cfg, const json* logging, bool hasLoggingFile,
-                 const std::map<std::string, std::string>* tagTypes, const Rule010Add& add) {
+                 const std::map<std::string, std::string>* tagTypes, const Rule010Add& add,
+                 bool format11) {
     static const std::regex kShiftStart(R"(^([01]\d|2[0-3]):[0-5]\d$)");
+    static const json kEmpty = json::array();
+    const auto isEquipmentFn = [](const std::string& f) { return f == "onTime" || f == "starts"; };
     std::set<std::string> ids;
+    if (!format11 && cfg.contains("org")) add("E_RPT_KIND", "/org", "org needs format 1.1");
     const json& reports = cfg["reports"];
     for (size_t i = 0; i < reports.size(); ++i) {
         const json& r = reports[i];
         const std::string p = "/reports/" + idx(i);
         const std::string id = r["id"].get<std::string>();
         if (!ids.insert(id).second) add("E_RPT_DUP_ID", p + "/id", "id '" + id + "' is duplicated");
+        const json& columns = r.contains("columns") ? r["columns"] : kEmpty;
+        const std::string period = r["period"].get<std::string>();
+
+        // keys of format 1.1 (feature 015) in an older project
+        if (!format11) {
+            const auto need = [&](const std::string& key) {
+                add("E_RPT_KIND", p + "/" + key, key + " needs format 1.1");
+            };
+            if (r.contains("kind")) need("kind");
+            if (period == "week" || period == "range") need("period");
+            if (r.contains("tiles")) need("tiles");
+            if (r.contains("chart")) need("chart");
+            for (size_t j = 0; j < columns.size(); ++j) {
+                const json& fns = columns[j]["functions"];
+                for (size_t k = 0; k < fns.size(); ++k)
+                    if (isEquipmentFn(fns[k].get<std::string>()))
+                        need("columns/" + idx(j) + "/functions/" + idx(k));
+            }
+        }
+
+        // the kind of report
+        const std::string kind = r.contains("kind") ? r["kind"].get<std::string>() : "table";
+        const bool events = kind == "alarm" || kind == "logic";
+        if (events) {
+            if (r.contains("group"))
+                add("E_RPT_KIND", p + "/group", "a " + kind + " report has no group");
+            if (r.contains("columns"))
+                add("E_RPT_KIND", p + "/columns", "a " + kind + " report has no columns");
+        } else {
+            for (size_t j = 0; j < columns.size(); ++j) {
+                const std::string tagId = columns[j]["tagId"].get<std::string>();
+                std::string type;  // "" when unknown
+                if (tagTypes) {
+                    const auto it = tagTypes->find(tagId);
+                    if (it != tagTypes->end()) type = it->second;
+                }
+                if (kind == "equipment" && !type.empty() && type != "BOOL")
+                    add("E_RPT_KIND", p + "/columns/" + idx(j) + "/tagId",
+                        "an equipment report takes BOOL Tags only");
+                const json& fns = columns[j]["functions"];
+                for (size_t k = 0; k < fns.size(); ++k) {
+                    const std::string f = fns[k].get<std::string>();
+                    const std::string fp = p + "/columns/" + idx(j) + "/functions/" + idx(k);
+                    if (kind == "equipment" && !isEquipmentFn(f))
+                        add("E_RPT_KIND", fp, "an equipment report has onTime and starts only");
+                    else if (kind == "table" && f == "starts")
+                        add("E_RPT_KIND", fp, "starts is for equipment reports only");
+                    else if (kind == "table" && f == "onTime" && !type.empty() && type != "BOOL")
+                        add("E_RPT_FN", fp, "onTime is for BOOL Tags only");
+                }
+            }
+        }
 
         // period and shifts
-        const std::string period = r["period"].get<std::string>();
         if (period == "shift") {
             if (!r.contains("shifts")) {
                 add("E_RPT_PERIOD", p, "period shift needs shifts");
@@ -90,11 +145,11 @@ void reportRules(const json& cfg, const json* logging, bool hasLoggingFile,
         }
         if (r.contains("rowMinutes") && period != "day")
             add("E_RPT_PERIOD", p, "rowMinutes is only for period day");
+        if (events) continue;  // alarm, logic: no Tag history read
 
         // repeated functions, number of columns
         size_t pairs = 0;
         std::set<std::string> tagIds;
-        const json& columns = r["columns"];
         for (size_t j = 0; j < columns.size(); ++j) {
             std::set<std::string> seen;
             const json& fns = columns[j]["functions"];

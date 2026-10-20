@@ -20,7 +20,7 @@ import type { CatalogItem, CatalogScreen, ResourceCatalog, Role } from './types.
 export interface CatalogProjectInput {
   screens: Record<string, { screen: unknown; bindings: Record<string, unknown> }>;
   logging?: { groups: ReadonlyArray<{ id: string; tags: ReadonlyArray<{ tagId: string }> }> };
-  reports?: { reports: ReadonlyArray<{ id: string; columns: ReadonlyArray<{ tagId: string }> }> };
+  reports?: { reports: ReadonlyArray<{ id: string; columns?: ReadonlyArray<{ tagId: string }> }> };
   alarms?: { alarms: ReadonlyArray<{ id: string; tag?: string }> };
 }
 
@@ -134,7 +134,7 @@ export function catalogFromProject(project: CatalogProjectInput): ResourceCatalo
     })),
     reports: (project.reports?.reports ?? []).map((r) => ({
       id: r.id,
-      tags: sortedTags(r.columns.map((c) => c.tagId)),
+      tags: sortedTags((r.columns ?? []).map((c) => c.tagId)),
     })),
     alarms: (project.alarms?.alarms ?? []).map((a) => ({
       id: a.id,

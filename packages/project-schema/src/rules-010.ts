@@ -1,8 +1,14 @@
 // Luật của feature 010: mẫu báo cáo (E_RPT_*, E_NAV_REPORT) và widget lịch sử (E_WIDGET_HISTORY_*, tổ hợp
 // bucket/period). Bản C++ (core/project-manager/rules_010.*) cho cùng mã và vị trí trên tests/project-vectors
-// (v06-report-*) và tests/widget-catalog-vectors (history-*).
+// (v06-report-*, v11-report-*) và tests/widget-catalog-vectors (history-*).
 import type { ErrorCode, Issue } from './codes.ts';
-import { SHIFT_COUNTS, REPORT_LIMITS, type ReportsConfig } from './reports.ts';
+import {
+  EQUIPMENT_FNS,
+  EVENT_KINDS,
+  REPORT_LIMITS,
+  SHIFT_COUNTS,
+  type ReportsConfig,
+} from './reports.ts';
 import type { LoggingConfig, LoggingGroup, TagDataType } from './types.ts';
 
 const SHIFT_START = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -10,7 +16,9 @@ const isNumOrBool = (t: TagDataType | undefined) => t !== undefined && t !== 'ST
 
 /**
  * Luật reports.json. `logging` là undefined khi project không có `loggingFile` (`hasLoggingFile` false: nhóm không tra
- * được: E_RPT_REF_GROUP) hoặc khi file đó lỗi (`hasLoggingFile` true: bỏ qua luật cần nó).
+ * được: E_RPT_REF_GROUP) hoặc khi file đó lỗi (`hasLoggingFile` true: bỏ qua luật cần nó). `format11`: project định dạng
+ * 1.1 (feature 015, specs/015-reports/plan.md mục Hợp đồng: khóa mới ở project cũ là E_RPT_KIND). Bản C++ theo đúng thứ
+ * tự này: core/project-manager/rules_010.cpp.
  */
 export function reportRules(
   cfg: ReportsConfig,
@@ -18,15 +26,55 @@ export function reportRules(
   logging: LoggingConfig | undefined,
   hasLoggingFile: boolean,
   tagTypes: Map<string, TagDataType> | undefined,
+  format11 = false,
 ): Issue[] {
   const out: Issue[] = [];
   const add = (code: ErrorCode, path: string, message: string) =>
     out.push({ code, file, path, message });
   const ids = new Set<string>();
+  if (!format11 && cfg.org !== undefined) add('E_RPT_KIND', '/org', 'org cần định dạng 1.1');
   cfg.reports.forEach((r, i) => {
     const p = `/reports/${i}`;
     if (ids.has(r.id)) add('E_RPT_DUP_ID', `${p}/id`, `id '${r.id}' bị trùng`);
     ids.add(r.id);
+    const columns = r.columns ?? [];
+
+    // khóa của định dạng 1.1 (feature 015) ở project cũ
+    if (!format11) {
+      const need = (key: string) => add('E_RPT_KIND', `${p}/${key}`, `${key} cần định dạng 1.1`);
+      if (r.kind !== undefined) need('kind');
+      if (r.period === 'week' || r.period === 'range') need('period');
+      if (r.tiles !== undefined) need('tiles');
+      if (r.chart !== undefined) need('chart');
+      columns.forEach((c, j) =>
+        c.functions.forEach((f, k) => {
+          if (EQUIPMENT_FNS.includes(f)) need(`columns/${j}/functions/${k}`);
+        }),
+      );
+    }
+
+    // loại báo cáo
+    const kind = r.kind ?? 'table';
+    const events = EVENT_KINDS.includes(kind);
+    if (events) {
+      if (r.group !== undefined) add('E_RPT_KIND', `${p}/group`, `báo cáo ${kind} không có group`);
+      if (r.columns !== undefined)
+        add('E_RPT_KIND', `${p}/columns`, `báo cáo ${kind} không có columns`);
+    } else
+      columns.forEach((c, j) => {
+        const type = tagTypes?.get(c.tagId);
+        if (kind === 'equipment' && type !== undefined && type !== 'BOOL')
+          add('E_RPT_KIND', `${p}/columns/${j}/tagId`, 'báo cáo thiết bị chỉ nhận Tag BOOL');
+        c.functions.forEach((f, k) => {
+          const fp = `${p}/columns/${j}/functions/${k}`;
+          if (kind === 'equipment' && !EQUIPMENT_FNS.includes(f))
+            add('E_RPT_KIND', fp, 'báo cáo thiết bị chỉ có hàm onTime, starts');
+          else if (kind === 'table' && f === 'starts')
+            add('E_RPT_KIND', fp, 'starts chỉ có ở báo cáo thiết bị');
+          else if (kind === 'table' && f === 'onTime' && type !== undefined && type !== 'BOOL')
+            add('E_RPT_FN', fp, 'onTime chỉ dùng cho Tag BOOL');
+        });
+      });
 
     // kỳ và ca
     if (r.period === 'shift') {
@@ -36,10 +84,11 @@ export function reportRules(
     } else if (r.shifts !== undefined) add('E_RPT_PERIOD', p, 'shifts chỉ dùng với kỳ shift');
     if (r.rowMinutes !== undefined && r.period !== 'day')
       add('E_RPT_PERIOD', p, 'rowMinutes chỉ dùng với kỳ day');
+    if (events) return; // alarm, logic: không đọc lưu trữ Tag
 
     // hàm lặp, số cột
     let pairs = 0;
-    r.columns.forEach((c, j) => {
+    columns.forEach((c, j) => {
       const seen = new Set<string>();
       c.functions.forEach((f, k) => {
         if (seen.has(f)) add('E_RPT_FN', `${p}/columns/${j}/functions/${k}`, `hàm '${f}' lặp`);
@@ -49,7 +98,7 @@ export function reportRules(
     });
     if (
       pairs > REPORT_LIMITS.columns ||
-      new Set(r.columns.map((c) => c.tagId)).size > REPORT_LIMITS.tags
+      new Set(columns.map((c) => c.tagId)).size > REPORT_LIMITS.tags
     )
       add('E_RPT_LIMIT', `${p}/columns`, 'quá 24 cột (Tag x hàm) hoặc quá 24 Tag');
 
@@ -62,7 +111,7 @@ export function reportRules(
     if (!g) return add('E_RPT_REF_GROUP', `${p}/group`, `không có nhóm '${r.group}'`);
     if (g.aggregates === undefined)
       return add('E_RPT_NO_AGG', `${p}/group`, `nhóm '${g.id}' không bật tổng hợp`);
-    r.columns.forEach((c, j) => {
+    columns.forEach((c, j) => {
       const lt = g.tags.find((t) => t.tagId === c.tagId);
       const cp = `${p}/columns/${j}/tagId`;
       if (!lt) return add('E_RPT_REF_TAG', cp, `Tag '${c.tagId}' không thuộc nhóm '${g.id}'`);

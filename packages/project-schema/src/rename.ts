@@ -164,7 +164,7 @@ export function renameTag(project: RenameProject, from: string, to: string): Ren
     const rep = clone(project.reports);
     let changed = false;
     rep.reports.forEach((r, ri) =>
-      r.columns.forEach((c, ci) => {
+      r.columns?.forEach((c, ci) => {
         if (c.tagId !== from) return;
         c.tagId = to;
         changed = true;

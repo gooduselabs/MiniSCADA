@@ -8,6 +8,7 @@
 
 #include "core/project-manager/rules_010.hpp"
 #include "core/project-manager/rules_04.hpp"
+#include "core/project-manager/rules_11.hpp"
 
 namespace mat {
 
@@ -259,11 +260,15 @@ class Rules {
         // are skipped when that file failed
         if (in_.reports && project_.contains("reportsFile")) {
             const std::string file = project_["reportsFile"].get<std::string>();
-            reportRules(*in_.reports, in_.loggingDoc, project_.contains("loggingFile"),
-                        in_.tags ? &tagType_ : nullptr,
-                        [&](const char* code, const std::string& path, const std::string& msg) {
-                            add(code, file, path, msg);
-                        });
+            const bool format11 = project_["schemaVersion"].is_string() &&
+                                  isSchema11(project_["schemaVersion"].get<std::string>());
+            reportRules(
+                *in_.reports, in_.loggingDoc, project_.contains("loggingFile"),
+                in_.tags ? &tagType_ : nullptr,
+                [&](const char* code, const std::string& path, const std::string& msg) {
+                    add(code, file, path, msg);
+                },
+                format11);
         }
     }
 

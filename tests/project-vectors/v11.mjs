@@ -5,6 +5,7 @@
 // Mỗi ca: [tên, hàm sửa base11, mã lỗi (tập), cảnh báo (tập), thêm { issues, runtimeVersion }]. `runtimeVersion` mặc định
 // 1.1.0 trong expected.json (bộ chạy truyền cho validator).
 import { base10 } from './v10.mjs';
+import { reportCases } from './v11-reports.mjs';
 
 export const V11 = '1.1.0';
 export const RUNTIME_11 = '1.1.0';
@@ -381,6 +382,7 @@ export function cases11() {
   ]);
 
   securityCases(ok, bad);
+  reportCases(ok, bad, to10); // feature 015 (README-015.md)
   return C;
 }
 

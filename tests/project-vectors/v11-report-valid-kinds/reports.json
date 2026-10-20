@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.1.0",
+  "reports": [
+    {
+      "id": "dien-ngay",
+      "name": "Điện năng theo ngày",
+      "group": "dien",
+      "period": "day",
+      "rowMinutes": 60,
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm chạy",
+          "unit": "giờ",
+          "functions": [
+            "onTime"
+          ]
+        }
+      ],
+      "tiles": false,
+      "chart": "bar"
+    },
+    {
+      "id": "van-hanh-bom",
+      "name": "Vận hành bơm",
+      "kind": "equipment",
+      "group": "dien",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "columns": [
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "label": "Bơm 1",
+          "functions": [
+            "onTime",
+            "starts"
+          ]
+        },
+        {
+          "tagId": "PUMP01.FAULT",
+          "functions": [
+            "starts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alarm-ca",
+      "name": "Alarm theo ca",
+      "kind": "alarm",
+      "period": "shift",
+      "shifts": {
+        "count": 2,
+        "start": "07:00"
+      }
+    },
+    {
+      "id": "logic-tuan",
+      "name": "Logic theo tuần",
+      "kind": "logic",
+      "period": "week",
+      "chart": "none"
+    }
+  ],
+  "org": "Nhà máy nước Bình An"
+}

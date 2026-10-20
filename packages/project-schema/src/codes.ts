@@ -134,6 +134,7 @@ export const ERROR_CODES = [
   'E_RPT_SHIFT',
   'E_RPT_FN',
   'E_RPT_LIMIT',
+  'E_RPT_KIND',
   'E_NAV_REPORT',
   'E_WIDGET_HISTORY_GROUP',
   'E_WIDGET_HISTORY_TAG',

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.1.0",
+  "reports": [
+    {
+      "id": "dien-ngay",
+      "name": "Điện năng theo ngày",
+      "group": "dien",
+      "period": "day",
+      "rowMinutes": 60,
+      "totals": true,
+      "kind": "equipment"
+    }
+  ]
+}

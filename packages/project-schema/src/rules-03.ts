@@ -7,6 +7,7 @@
 // Quy ước `path` (JSON Pointer tới khóa sai trong file màn hình): xem contracts/project-format-0.3.md §7.3.
 import {
   MAX_SCREEN_TAGS,
+  SUPPORTED_SCHEMA_11,
   WARN_SCREEN_TAGS,
   type ErrorCode,
   type Issue,
@@ -284,6 +285,7 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
         input.logging,
         project.loggingFile !== undefined,
         tags ? tagType : undefined,
+        SUPPORTED_SCHEMA_11.test(String(project.schemaVersion)),
       ),
     );
 

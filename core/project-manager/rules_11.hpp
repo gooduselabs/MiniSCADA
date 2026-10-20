@@ -6,6 +6,7 @@
 // a free-layout screen). The same codes and paths on tests/project-vectors (cases v11-*,
 // README-012.md).
 #pragma once
+#include <string>
 #include <vector>
 
 #include "core/project-manager/project_validator.hpp"
@@ -16,6 +17,10 @@
 namespace mat {
 
 constexpr const char* kMinRuntime11 = "1.1.0";  // E_LAYOUT_VERSION of a 1.1 project
+
+// A schemaVersion of format 1.1 (^1\.1\.\d+$, SUPPORTED_SCHEMA_11 of codes.ts).
+bool isSchema11(const std::string& v);
+
 constexpr int kGridColumns = 12;
 constexpr size_t kGridMaxRows = 100;
 constexpr size_t kGridMaxCellsPerRow = 12;

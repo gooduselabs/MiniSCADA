@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.1.0",
+  "reports": [
+    {
+      "id": "alarm-ngay",
+      "name": "Alarm",
+      "kind": "alarm",
+      "period": "day",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      }
+    }
+  ]
+}
