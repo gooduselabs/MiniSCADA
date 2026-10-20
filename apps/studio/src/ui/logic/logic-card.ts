@@ -5,7 +5,7 @@
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
 import type { StudioApp } from '../../app/app.ts';
-import { fold, t } from '../../i18n/index.ts';
+import { fold, t, type MessageKey } from '../../i18n/index.ts';
 import { formatBytes } from '../../model/device.ts';
 import {
   KIND_LIMIT,
@@ -16,29 +16,41 @@ import {
 } from '../../model/logic-doc.ts';
 import { icon } from '../base.ts';
 import { KIND_ICON, kindLabel } from './logic-parts.ts';
-import { addLogicBlock, isKind, logicDoc, projectTags } from './logic-state.ts';
+import type { GateTool } from '../../model/logic-graph-edit.ts';
+import type { NodePos } from '../../model/logic-layout.ts';
+import { addLogicBlock, isKind, logicDoc, logicUi, projectTags } from './logic-state.ts';
 
 /** Loại dữ liệu kéo thả của một khối (bảng khối của editor nhận). */
 export const LOGIC_BLOCK_MIME = 'application/x-mat-logic-block';
+/** Feature 015: cổng AND/OR/NOT/so sánh kéo vào một cổng vào trên sơ đồ (bọc biểu thức). */
+export const LOGIC_GATE_MIME = 'application/x-mat-logic-gate';
+const GATES: readonly GateTool[] = ['and', 'or', 'not', 'cmp'];
 /** Số Tag hiện tối đa khi chưa lọc (project 1000 Tag vẫn nhẹ). */
 const TAG_SHOW = 200;
 const filters = new WeakMap<StudioApp, string>();
 
-function addFromCard(app: StudioApp, kind: LogicKind, full: boolean): void {
+function addFromCard(app: StudioApp, kind: LogicKind, full: boolean, at?: NodePos): void {
   if (full) {
     app.toast(t('tc.logic.full', { kind: kindLabel(kind), n: KIND_LIMIT[kind] }));
     return;
   }
-  addLogicBlock(app, kind);
+  // Sơ đồ đang mở: khối mới ở giữa vùng nhìn (thả: ở chỗ thả).
+  addLogicBlock(app, kind, at ?? diagramCenter(app));
 }
 
-/** Thả một khối kéo từ task card lên bảng khối: thêm khối nhóm đó. Trả true khi đã xử lý. */
-export function dropLogicBlock(app: StudioApp, e: DragEvent): boolean {
+/** Tâm vùng nhìn của sơ đồ khi editor Logic ở khung nhìn Sơ đồ (undefined: đang ở Bảng). */
+export function diagramCenter(app: StudioApp): NodePos | undefined {
+  if (logicUi(app).view !== 'diagram' || typeof document === 'undefined') return undefined;
+  return document.querySelector('mat-logic-diagram')?.centerPos();
+}
+
+/** Thả một khối kéo từ task card lên bảng khối (hoặc sơ đồ, `at`): thêm khối nhóm đó. Trả true khi đã xử lý. */
+export function dropLogicBlock(app: StudioApp, e: DragEvent, at?: NodePos): boolean {
   const kind = e.dataTransfer?.getData(LOGIC_BLOCK_MIME) ?? '';
   if (!isKind(kind)) return false;
   e.preventDefault();
   const counts = blockCounts(logicDoc(app));
-  addFromCard(app, kind, counts[kind] >= KIND_LIMIT[kind]);
+  addFromCard(app, kind, counts[kind] >= KIND_LIMIT[kind], at);
   return true;
 }
 
@@ -88,6 +100,7 @@ export function renderLogicCard(app: StudioApp, refresh: () => void) {
         })}
       </div>
     </div>
+    ${logicUi(app).view === 'diagram' ? gatesSection(ro) : nothing}
     <div class="tc-sec2 grow">
       <div class="pane-h">
         <span>${t('tc.logic.tags')}</span><span class="lc">${t('tc.logic.tagsSub')}</span>
@@ -143,5 +156,35 @@ export function renderLogicCard(app: StudioApp, refresh: () => void) {
           </div>`
         : nothing
     }
+  </div>`;
+}
+
+/** Cổng logic kéo vào sơ đồ (feature 015): chỉ ở khung nhìn Sơ đồ. */
+function gatesSection(ro: boolean) {
+  return html`<div class="tc-sec2">
+    <div class="pane-h">
+      <span>${t('tc.logic.gates')}</span><span class="lc">${t('tc.logic.gatesSub')}</span>
+    </div>
+    <div class="tc-gates" role="list">
+      ${GATES.map((g) => {
+        const label = t(`lgd.gate.${g}` as MessageKey);
+        return html`<div
+          class="gate"
+          role="listitem"
+          tabindex="-1"
+          draggable=${ro ? 'false' : 'true'}
+          data-gate=${g}
+          aria-disabled=${ro ? 'true' : 'false'}
+          title=${t('tc.logic.gateTip', { gate: label })}
+          @dragstart=${(e: DragEvent) => {
+            if (!e.dataTransfer) return;
+            e.dataTransfer.setData(LOGIC_GATE_MIME, g);
+            e.dataTransfer.effectAllowed = 'copy';
+          }}
+        >
+          ${icon('grip', 'sm')}<span class="mono">${label}</span>
+        </div>`;
+      })}
+    </div>
   </div>`;
 }

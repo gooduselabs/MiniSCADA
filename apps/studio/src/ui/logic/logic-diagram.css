@@ -1,0 +1,493 @@
+/* Sơ đồ khối của editor Logic (feature 015). Chỉ token của theme, không mã màu cứng. Màu luôn kèm chữ/hình: dây TRUE xanh
+   lá và dày hơn, lỗi đỏ kèm viền và dòng ở tab Thông tin, trạng thái khối là chip có chữ. */
+
+.lg-dia {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.lgd-tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  min-width: 0;
+  overflow: hidden;
+}
+.lgd-tools .tbtn {
+  height: 26px;
+}
+.lgd-z {
+  min-width: 44px;
+  text-align: center;
+}
+.lgd-keys {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.lgd-live {
+  flex: none;
+}
+.lg-view button {
+  min-width: 64px;
+}
+
+.lgd-view {
+  container: lgd / size;
+  position: relative;
+  flex: 1;
+  min-height: 120px;
+  overflow: hidden;
+  background: var(--panel-2);
+  outline: none;
+  touch-action: none;
+  cursor: default;
+}
+.lgd-view:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.lgd-view.panning {
+  cursor: grabbing;
+}
+.lgd-view.wiring {
+  cursor: crosshair;
+}
+.lgd-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  user-select: none;
+  font-family: var(--font);
+}
+.lgd-dot {
+  fill: var(--border-2);
+}
+
+/* ---- Nút ---- */
+.lgd-svg .nd {
+  cursor: pointer;
+  outline: none;
+}
+.lgd-svg .nd-bg {
+  fill: var(--panel);
+  stroke: var(--border-2);
+  stroke-width: 1;
+}
+.lgd-svg .blk .nd-bg {
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.12));
+}
+.lgd-svg .nd-head {
+  fill: var(--panel-2);
+}
+.lgd-svg .k-rule .nd-head {
+  fill: var(--accent-soft);
+}
+.lgd-svg .k-timer .nd-head {
+  fill: var(--info-soft);
+}
+.lgd-svg .k-counter .nd-head {
+  fill: var(--tpl-soft);
+}
+.lgd-svg .k-totalizer .nd-head {
+  fill: var(--sim-soft);
+}
+.lgd-svg .k-runhours .nd-head {
+  fill: var(--online-soft);
+}
+.lgd-svg .k-schedule .nd-head {
+  fill: var(--ok-soft);
+}
+.lgd-svg .k-writes .nd-head {
+  fill: var(--warn-soft);
+}
+.lgd-svg .nd-ic {
+  color: var(--fg);
+}
+.lgd-svg .nd-kind {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--fg);
+}
+.lgd-svg .nd-id {
+  font-family: var(--mono);
+  font-size: 11px;
+  fill: var(--fg);
+}
+.lgd-svg .nd-sep {
+  stroke: var(--border);
+}
+.lgd-svg .nd-detail {
+  font-size: 11px;
+  fill: var(--muted);
+}
+.lgd-svg .nd-extra {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--accent);
+}
+.lgd-svg .nd.sel > .nd-bg,
+.lgd-svg .nd:focus-visible > .nd-bg {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+.lgd-svg .nd.warn > .nd-bg {
+  stroke: var(--warn);
+  stroke-width: 2;
+}
+.lgd-svg .nd.err > .nd-bg {
+  stroke: var(--err);
+  stroke-width: 2.5;
+}
+.lgd-svg .nd.err.sel > .nd-bg {
+  stroke-dasharray: 8 3;
+}
+.lgd-svg .nd.off {
+  opacity: 0.6;
+}
+.lgd-svg .nd.fire > .nd-bg {
+  fill: var(--ok-soft);
+  stroke: var(--ok);
+  stroke-width: 3;
+  animation: lgd-fire 0.9s ease-out;
+}
+@keyframes lgd-fire {
+  from {
+    stroke-width: 7;
+  }
+  to {
+    stroke-width: 3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lgd-svg .nd.fire > .nd-bg {
+    animation: none;
+  }
+}
+
+/* Tag đầu vào (bo tròn) và Tag đích */
+.lgd-svg .nd-tag {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  fill: var(--fg);
+}
+.lgd-svg .nd-type {
+  font-size: 10px;
+  fill: var(--muted);
+}
+.lgd-svg .nd-val {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  fill: var(--accent);
+}
+.lgd-svg .tagn.on > .nd-bg,
+.lgd-svg .outn.on > .nd-bg {
+  fill: var(--ok-soft);
+  stroke: var(--ok);
+  stroke-width: 2;
+}
+.lgd-svg .tagn.on .nd-val,
+.lgd-svg .outn.on .nd-val {
+  fill: var(--ok);
+}
+.lgd-svg .outn > .nd-bg {
+  fill: var(--panel);
+  stroke-dasharray: 5 3;
+}
+.lgd-svg .nd.missing > .nd-bg {
+  stroke: var(--err);
+  stroke-dasharray: 4 3;
+}
+
+/* Toán hạng Tag gắn vào chân (FBD) */
+.lgd-svg .opn > .nd-bg {
+  fill: var(--panel);
+  stroke: var(--border-2);
+}
+.lgd-svg .opn .nd-tag {
+  font-size: 11px;
+}
+.lgd-svg .opn.own > .nd-bg {
+  stroke: var(--accent);
+}
+.lgd-svg .opn.on > .nd-bg {
+  fill: var(--ok-soft);
+  stroke: var(--ok);
+  stroke-width: 1.6;
+}
+.lgd-svg .opn.err > .nd-bg {
+  stroke: var(--err);
+  stroke-width: 1.6;
+}
+
+/* Cổng suy ra (AND, OR, NOT, so sánh, biểu thức) */
+.lgd-svg .gate > .nd-bg {
+  fill: var(--panel);
+  stroke: var(--fg);
+  stroke-width: 1.2;
+}
+.lgd-svg .gate.g-expr > .nd-bg {
+  stroke-dasharray: 4 2;
+}
+.lgd-svg .gt-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--fg);
+}
+.lgd-svg .gate.own > .nd-bg {
+  stroke: var(--accent);
+  stroke-width: 1.8;
+}
+.lgd-svg .gate.on > .nd-bg {
+  fill: var(--ok-soft);
+  stroke: var(--ok);
+  stroke-width: 2;
+}
+.lgd-svg .gate.err > .nd-bg {
+  stroke: var(--err);
+  stroke-width: 2;
+}
+
+/* ---- Cổng ---- */
+.lgd-svg .pt-hit {
+  fill: transparent;
+}
+.lgd-svg .pt.out .pt-hit {
+  cursor: crosshair;
+}
+.lgd-svg .pt-dot {
+  fill: var(--panel);
+  stroke: var(--muted);
+  stroke-width: 1.6;
+}
+.lgd-svg .pt.ty-bool .pt-dot {
+  stroke: var(--info);
+}
+.lgd-svg .pt.ty-num .pt-dot {
+  stroke: var(--tplc);
+}
+.lgd-svg .pt.out .pt-dot {
+  fill: var(--panel-2);
+}
+.lgd-svg .pt-dot.on {
+  fill: var(--ok);
+  stroke: var(--ok);
+}
+.lgd-svg .pt.hover .pt-dot {
+  stroke: var(--accent);
+  stroke-width: 3.5;
+}
+.lgd-svg .pt.dim {
+  opacity: 0.3;
+}
+.lgd-svg .pt.warn .pt-dot {
+  stroke: var(--warn);
+  fill: var(--warn-soft);
+}
+.lgd-svg .pt.err .pt-dot {
+  stroke: var(--err);
+  stroke-width: 2.2;
+  fill: var(--err-soft);
+}
+.lgd-svg .pt-lab {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  fill: var(--muted);
+}
+.lgd-svg .pt-lab.sm {
+  font-size: 9.5px;
+}
+.lgd-svg .pt-text {
+  font-family: var(--mono);
+  font-size: 11px;
+  fill: var(--fg);
+}
+.lgd-svg .pt-text.unset {
+  fill: var(--muted);
+  font-style: italic;
+}
+.lgd-svg .pt-text.broken,
+.lgd-svg .pt.err .pt-text.unset {
+  fill: var(--err);
+}
+.lgd-svg .pv {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: var(--accent);
+  paint-order: stroke;
+  stroke: var(--panel-2);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* ---- Chip trạng thái trên khối (màu kèm chữ mã) ---- */
+.lgd-svg .chip-bg {
+  fill: var(--panel-2);
+  stroke: var(--border-2);
+}
+.lgd-svg .chip-tx {
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--fg);
+}
+.lgd-svg .st-OK .chip-bg {
+  fill: var(--ok-soft);
+  stroke: var(--ok);
+}
+.lgd-svg .st-SUSPENDED .chip-bg {
+  fill: var(--warn-soft);
+  stroke: var(--warn);
+}
+.lgd-svg .st-THROTTLED .chip-bg {
+  fill: var(--info-soft);
+  stroke: var(--info);
+}
+
+/* ---- Dây ---- */
+.lgd-svg .wr-line {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.6;
+}
+.lgd-svg .wr-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 12;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.lgd-svg .wr.on .wr-line {
+  stroke: var(--ok);
+  stroke-width: 3;
+}
+.lgd-svg .wr.bad .wr-line {
+  stroke-dasharray: 2 3;
+}
+.lgd-svg .wr-halo {
+  fill: none;
+  stroke: var(--panel-2);
+  stroke-width: 5;
+  stroke-opacity: 0.85;
+}
+.lgd-svg .wr.act .wr-line {
+  stroke: var(--warn);
+  stroke-width: 1.8;
+  stroke-dasharray: 7 4;
+}
+.lgd-svg .wr.hl .wr-line {
+  stroke: var(--accent);
+  stroke-width: 2.2;
+}
+.lgd-svg .wr.hl.on .wr-line {
+  stroke: var(--ok);
+  stroke-width: 3;
+}
+.lgd-svg .wr.warn .wr-line {
+  stroke: var(--warn);
+}
+.lgd-svg .wr.err .wr-line {
+  stroke: var(--err);
+  stroke-width: 2.2;
+}
+.lgd-svg .wr.sel .wr-line {
+  stroke: var(--accent);
+  stroke-width: 3.5;
+}
+.lgd-svg .wr-drag {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  pointer-events: none;
+}
+
+/* ---- Bản đồ nhỏ, trang trống ---- */
+.lgd-mini {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 168px;
+  height: 104px;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  overflow: hidden;
+}
+.lgd-mini svg {
+  display: block;
+}
+.lgd-mini .mn {
+  fill: var(--border-2);
+}
+.lgd-mini .mn.k-rule,
+.lgd-mini .mn.k-writes {
+  fill: var(--muted);
+}
+.lgd-mini .mn.gate {
+  fill: var(--border);
+}
+.lgd-mini .mn.sel {
+  fill: var(--accent);
+}
+.lgd-mini .mn.err {
+  fill: var(--err);
+}
+.lgd-mini .mn-view {
+  fill: var(--accent);
+  fill-opacity: 0.12;
+  stroke: var(--accent);
+}
+.lgd-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* ---- Task card: cổng logic ---- */
+.tc-logic .tc-gates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px 8px 8px;
+}
+.tc-logic .tc-gates .gate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-2);
+  cursor: grab;
+  font-size: var(--fs-s);
+}
+.tc-logic .tc-gates .gate[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.6;
+}
+@container lgd (max-height: 280px) {
+  .lgd-mini {
+    display: none;
+  }
+}

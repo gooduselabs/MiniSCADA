@@ -7,6 +7,7 @@ import { LOGIC_TAGS, pumpLogic } from '../../model/logic-fixtures.ts';
 import { readProjectDir, REPO } from '../../model/test-fixtures.ts';
 import { createMockPlatform, type MockPlatform } from '../../platform/mock.ts';
 import { newOnlineApp, type OnlineEnv } from '../online-test-helpers.ts';
+import { logicUi, type LogicView } from './logic-state.ts';
 
 const json = (v: unknown) => JSON.stringify(v, null, 2) + '\n';
 
@@ -29,8 +30,10 @@ export function logicProjectFiles(logic: LogicDoc | null = pumpLogic()): Record<
   return files;
 }
 
+/** `view`: khung nhìn của editor (test của 011 dùng Bảng; sơ đồ của 015 truyền 'diagram'). */
 export async function newLogicApp(
   logic: LogicDoc | null = pumpLogic(),
+  view: LogicView = 'table',
 ): Promise<{ app: StudioApp; platform: MockPlatform }> {
   const platform = createMockPlatform();
   platform.control.useProject(logicProjectFiles(logic), 'D:/Projects/tram-bom');
@@ -38,14 +41,17 @@ export async function newLogicApp(
   await app.start();
   await app.run('project.open');
   await app.store.idle();
+  logicUi(app).view = view;
   return { app, platform };
 }
 
 /** App có thiết bị giả runtime 1.0 (system/info.logic) và project có logic, chưa Online. */
 export async function newLogicOnlineApp(
   writes: 'off' | 'on' | 'stopped' = 'on',
+  view: LogicView = 'table',
 ): Promise<OnlineEnv> {
   const env = await newOnlineApp({ files: logicProjectFiles() });
+  logicUi(env.app).view = view;
   env.dev.control.setRuntime('BL335-01', '1.0.0');
   env.dev.control.setLogic('BL335-01', {
     writes,

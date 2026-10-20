@@ -20,6 +20,7 @@ import '../editors/expression-input.ts';
 import { stateChip } from './logic-parts.ts';
 import {
   editLogic,
+  editLogicRenamed,
   liveOnline,
   logicDoc,
   logicUi,
@@ -202,7 +203,7 @@ export function idInput(c: FieldCtx): TemplateResult {
             return;
           }
           ui.idMsg = null;
-          editLogic(c.app, r.doc);
+          editLogicRenamed(c.app, r.doc, c.b.id, to);
           select(c.app, c.kind, to);
         }}
       />

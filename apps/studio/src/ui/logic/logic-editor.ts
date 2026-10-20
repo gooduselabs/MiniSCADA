@@ -14,13 +14,12 @@ import {
   emptyLogic,
   issueTarget,
   moveBlock,
-  removeBlock,
   retainBytesPerDay,
   type LogicKind,
 } from '../../model/logic-doc.ts';
 import { AppElement, icon } from '../base.ts';
 import { registerDock, registerEditor } from '../registry.ts';
-import { LOGIC_BLOCK_MIME, dropLogicBlock } from './logic-card.ts';
+import { LOGIC_BLOCK_MIME, diagramCenter, dropLogicBlock } from './logic-card.ts';
 import { KIND_ICON, kindLabel } from './logic-parts.ts';
 import {
   addLogicBlock,
@@ -31,15 +30,19 @@ import {
   logicUi,
   DOCK_HEIGHT,
   ensureDockHeight,
+  removeLogicBlock,
   restoreDockHeight,
   select,
   selectedId,
   setDockTab,
   setKind,
+  setView,
   startLive,
   stopLive,
+  testDockHeight,
 } from './logic-state.ts';
 import { rulesTable } from './rules-table.ts';
+import './logic-diagram.ts';
 import './logic-dock.ts';
 import './plc-chip.ts';
 import './logic.css';
@@ -57,7 +60,7 @@ export class LogicEditor extends AppElement {
     startLive(this.app);
     ensureDockHeight(
       this.app,
-      logicUi(this.app).dockTab === 'test' ? DOCK_HEIGHT.test : DOCK_HEIGHT.info,
+      logicUi(this.app).dockTab === 'test' ? testDockHeight(this.app) : DOCK_HEIGHT.info,
     );
     document.addEventListener('pointerdown', this.onDoc, true);
   }
@@ -83,7 +86,7 @@ export class LogicEditor extends AppElement {
   }
 
   private add(kind: LogicKind): void {
-    addLogicBlock(this.app, kind);
+    addLogicBlock(this.app, kind, diagramCenter(this.app));
   }
 
   private removeSelected(): void {
@@ -94,7 +97,7 @@ export class LogicEditor extends AppElement {
     if (!doc || !id) return;
     const list = blocksOf(doc, kind);
     const i = list.findIndex((b) => b.id === id);
-    editLogic(app, removeBlock(doc, kind, id));
+    removeLogicBlock(app, kind, id);
     select(app, kind, list[i + 1]?.id ?? list[i - 1]?.id ?? null);
   }
 
@@ -169,6 +172,7 @@ export class LogicEditor extends AppElement {
     const writesOff =
       online && support.logic && support.logicWrites === 'off' && (doc.writes ?? []).length > 0;
     const retain = retainBytesPerDay(doc, 60);
+    const diagram = ui.view === 'diagram';
     return html`<div
       class="ed ed-fill lg-ed"
       @keydown=${(e: KeyboardEvent) => this.onKey(e)}
@@ -184,6 +188,27 @@ export class LogicEditor extends AppElement {
       }}
     >
       <div class="ed-tools lg-tools" role="toolbar" aria-label=${t('logic.toolbar')}>
+        <span class="seg lg-view" role="group" aria-label=${t('lgd.view')}>
+          <button
+            type="button"
+            data-view="diagram"
+            aria-pressed=${diagram ? 'true' : 'false'}
+            title=${t('lgd.view.diagramTip')}
+            @click=${() => setView(app, 'diagram')}
+          >
+            ${icon('d-node', 'sm')}${t('lgd.view.diagram')}
+          </button>
+          <button
+            type="button"
+            data-view="table"
+            aria-pressed=${diagram ? 'false' : 'true'}
+            title=${t('lgd.view.tableTip')}
+            @click=${() => setView(app, 'table')}
+          >
+            ${icon('list', 'sm')}${t('lgd.view.table')}
+          </button>
+        </span>
+        <span class="tsep"></span>
         <button
           type="button"
           class="tbtn"
@@ -276,28 +301,32 @@ export class LogicEditor extends AppElement {
         >
           ${icon('x')}${t('logic.tb.delete')}
         </button>
-        <button
-          type="button"
-          class="ibtn"
-          data-act="up"
-          aria-label=${t('logic.tb.up')}
-          title=${t('logic.tb.up')}
-          ?disabled=${ro || !sel}
-          @click=${() => this.move(-1)}
-        >
-          ${icon('forward')}
-        </button>
-        <button
-          type="button"
-          class="ibtn"
-          data-act="down"
-          aria-label=${t('logic.tb.down')}
-          title=${t('logic.tb.down')}
-          ?disabled=${ro || !sel}
-          @click=${() => this.move(1)}
-        >
-          ${icon('backward')}
-        </button>
+        ${
+          diagram
+            ? nothing
+            : html`<button
+                  type="button"
+                  class="ibtn"
+                  data-act="up"
+                  aria-label=${t('logic.tb.up')}
+                  title=${t('logic.tb.up')}
+                  ?disabled=${ro || !sel}
+                  @click=${() => this.move(-1)}
+                >
+                  ${icon('forward')}
+                </button>
+                <button
+                  type="button"
+                  class="ibtn"
+                  data-act="down"
+                  aria-label=${t('logic.tb.down')}
+                  title=${t('logic.tb.down')}
+                  ?disabled=${ro || !sel}
+                  @click=${() => this.move(1)}
+                >
+                  ${icon('backward')}
+                </button> `
+        }
         <span class="grow"></span>
         ${
           errors
@@ -315,47 +344,51 @@ export class LogicEditor extends AppElement {
             : nothing
         }
       </div>
-      <div class="ed-tools lg-sub">
-        <span class="seg lg-seg" role="group" aria-label=${t('logic.groups')}>
-          ${LOGIC_KINDS.map(
-            (k) =>
-              html`<button
-                type="button"
-                data-kind=${k}
-                aria-pressed=${k === kind ? 'true' : 'false'}
-                @click=${() => setKind(app, k)}
-              >
-                ${icon(KIND_ICON[k], 'sm')}${kindLabel(k)}
-              </button>`,
-          )}
-        </span>
-        <input
-          class="input sm"
-          data-role="search"
-          type="search"
-          placeholder=${t('logic.search')}
-          aria-label=${t('logic.search')}
-          .value=${ui.search}
-          @input=${(e: Event) => {
-            ui.search = (e.target as HTMLInputElement).value;
-            app.requestRender();
-          }}
-        />
-        <label class="row inline sm-text"
-          ><input
-            type="checkbox"
-            data-role="only-err"
-            .checked=${ui.onlyErr}
-            @change=${(e: Event) => {
-              ui.onlyErr = (e.target as HTMLInputElement).checked;
-              app.requestRender();
-            }}
-          />${t('logic.onlyErr')}</label
-        >
-        <span class="grow"></span>
-        <span class="muted sm-text">${t('logic.keys')}</span>
-      </div>
-      <div class="gridwrap">${rulesTable(app, kind)}</div>
+      ${
+        diagram
+          ? html`<mat-logic-diagram class="lg-dia" .app=${app}></mat-logic-diagram>`
+          : html`<div class="ed-tools lg-sub">
+                <span class="seg lg-seg" role="group" aria-label=${t('logic.groups')}>
+                  ${LOGIC_KINDS.map(
+                    (k) =>
+                      html`<button
+                        type="button"
+                        data-kind=${k}
+                        aria-pressed=${k === kind ? 'true' : 'false'}
+                        @click=${() => setKind(app, k)}
+                      >
+                        ${icon(KIND_ICON[k], 'sm')}${kindLabel(k)}
+                      </button>`,
+                  )}
+                </span>
+                <input
+                  class="input sm"
+                  data-role="search"
+                  type="search"
+                  placeholder=${t('logic.search')}
+                  aria-label=${t('logic.search')}
+                  .value=${ui.search}
+                  @input=${(e: Event) => {
+                    ui.search = (e.target as HTMLInputElement).value;
+                    app.requestRender();
+                  }}
+                />
+                <label class="row inline sm-text"
+                  ><input
+                    type="checkbox"
+                    data-role="only-err"
+                    .checked=${ui.onlyErr}
+                    @change=${(e: Event) => {
+                      ui.onlyErr = (e.target as HTMLInputElement).checked;
+                      app.requestRender();
+                    }}
+                  />${t('logic.onlyErr')}</label
+                >
+                <span class="grow"></span>
+                <span class="muted sm-text">${t('logic.keys')}</span>
+              </div>
+              <div class="gridwrap">${rulesTable(app, kind)}</div> `
+      }
       <div class="lg-counts sm-text muted" role="status">
         ${LOGIC_KINDS.map((k) => `${kindLabel(k)} ${counts[k]}/${KIND_LIMIT[k]}`).join(' · ')} ·
         ${t('logic.retainEstimate', { size: formatBytes(retain) })}

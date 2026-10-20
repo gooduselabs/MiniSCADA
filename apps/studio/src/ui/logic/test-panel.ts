@@ -14,7 +14,7 @@ import {
 } from '../../model/logic-sim.ts';
 import { AppElement, icon } from '../base.ts';
 import { ACTION_ICON, actionLabel, num, stateChip } from './logic-parts.ts';
-import { logicDoc, projectTags } from './logic-state.ts';
+import { logicDoc, logicSim, projectTags, simChanged } from './logic-state.ts';
 
 const TICK_MS = 100;
 const DOW = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
@@ -60,7 +60,6 @@ interface Lane {
 
 export class LogicTestPanel extends AppElement {
   private simRef: LogicSim | null = null;
-  private simDoc: unknown = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   /** Bề ngang đo được của vùng đường thời gian (px): vẽ đúng cỡ, chữ không bị thu nhỏ. */
   private tlWidth = 0;
@@ -69,16 +68,14 @@ export class LogicTestPanel extends AppElement {
   private observer: ResizeObserver | null = null;
   private observed: Element | null = null;
 
-  /** Bộ chạy của tài liệu hiện tại (tạo lại khi logic.json đổi). */
+  /** Bộ chạy của tài liệu hiện tại (dùng chung với sơ đồ, tạo lại khi logic.json đổi; feature 015). */
   get sim(): LogicSim | null {
-    const doc = logicDoc(this.app);
-    if (!doc) return null;
-    if (this.simDoc !== doc || !this.simRef) {
+    const sim = logicSim(this.app);
+    if (sim !== this.simRef) {
       this.stop();
-      this.simRef = new LogicSim({ doc, tags: projectTags(this.app) });
-      this.simDoc = doc;
+      this.simRef = sim;
     }
-    return this.simRef;
+    return sim;
   }
 
   get running(): boolean {
@@ -96,6 +93,7 @@ export class LogicTestPanel extends AppElement {
 
   protected override detached(): void {
     this.stop();
+    simChanged(this.app);
     window.removeEventListener('resize', this.onResize);
     this.observer?.disconnect();
     this.observer = null;
@@ -103,6 +101,8 @@ export class LogicTestPanel extends AppElement {
   }
 
   protected override updated(): void {
+    // sơ đồ hiện giá trị của cùng bộ chạy: báo sau mỗi lần vẽ (mỗi quét, đặt tay, đặt lại)
+    simChanged(this.app);
     const wrap = this.querySelector<HTMLElement>('.tlwrap');
     if (wrap && wrap !== this.observed && typeof ResizeObserver !== 'undefined') {
       this.observer ??= new ResizeObserver(() => this.requestUpdate());

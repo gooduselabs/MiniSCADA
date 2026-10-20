@@ -26,6 +26,7 @@ import { viAlarm } from './vi-alarm.ts';
 import { viHistory } from './vi-history.ts';
 import { viTemplate } from './vi-template.ts';
 import { viLogic } from './vi-logic.ts';
+import { viLogicDiagram } from './vi-logic-diagram.ts';
 import { viSvgDraw } from './vi-svgdraw.ts';
 import { viUpdate } from './vi-update.ts';
 import { viNewProject } from './vi-newproject.ts';
@@ -479,6 +480,7 @@ export const viMessages = {
   ...viHistory,
   ...viTemplate,
   ...viLogic,
+  ...viLogicDiagram,
   ...viSvgDraw,
   ...viUpdate,
 } as const;
