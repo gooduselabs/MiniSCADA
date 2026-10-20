@@ -27,6 +27,7 @@
 #include "server/http/alarms_api.hpp"
 #include "server/http/engineering_api_internal.hpp"
 #include "server/http/history_api.hpp"
+#include "server/logic_glue.hpp"
 #include "server/websocket/live_hub.hpp"
 
 namespace mat {
@@ -318,6 +319,8 @@ int EngineeringApi::handle(mg_connection* c) {
     }
     if (tags_.coordinator && path == kTagsWriteIdPath) return tagsAsk(c, r, d, close);
     if (path.rfind("/api/v1/alarms/", 0) == 0) return alarmsPost(c, r, d, close);  // feature 009
+    if (logic_.logic && path == "/api/v1/logic/events")
+        return logicEvents(c, r, d, close);  // feature 015
     if (logic_.logic && path.rfind("/api/v1/logic", 0) == 0)
         return logicRoute(c, r, d, close);  // feature 011
     if (update_.service && path.rfind("/api/v1/system/update", 0) == 0)
@@ -669,6 +672,78 @@ int EngineeringApi::auditRead(mg_connection* c, const GateRequest& r, const Gate
     json records = json::array();
     for (const AuditRecord& rec : page.records) records.push_back(auditRecordJson(rec));
     const json body = {{"records", records},
+                       {"next", page.next ? json(*page.next) : json(nullptr)}};
+    return send(c, 200, jsonText(body), close);
+}
+
+namespace {
+constexpr int64_t kLogicEventsMaxRangeMs = 366LL * 24 * 3600 * 1000;
+constexpr int kLogicEventsMaxLimit = 200;
+constexpr int kLogicEventsDefaultLimit = 100;
+}  // namespace
+
+int EngineeringApi::logicEvents(mg_connection* c, const GateRequest& r, const GateDecision& d,
+                                bool close) {
+    (void)r;
+    // Feature 013: a restricted person reads the writes of logic through the report page only.
+    if (access_) {
+        const SessionAccessPtr a = access_->forAccess(d.access);
+        if (a && !a->all() && !a->access.canViewPage("reports"))
+            return sendError(c, 403, "ACCESS_DENIED", close, "",
+                             {{"message", "Bạn không có quyền xem báo cáo."}});
+    }
+    std::map<std::string, std::string> p;
+    int64_t from = 0, to = 0, before = 0, limit = kLogicEventsDefaultLimit;
+    bool ok = parseQuery(mg_get_request_info(c)->query_string, p);
+    for (const auto& kv : p)
+        if (kv.first != "from" && kv.first != "to" && kv.first != "before" && kv.first != "limit")
+            ok = false;
+    ok = ok && p.count("from") && p.count("to") && parseCount(p["from"], from) &&
+         parseCount(p["to"], to) && from < to && to - from <= kLogicEventsMaxRangeMs;
+    if (ok && p.count("before")) ok = parseCount(p["before"], before) && before > 0;
+    if (ok && p.count("limit"))
+        ok = parseCount(p["limit"], limit) && limit >= 1 && limit <= kLogicEventsMaxLimit;
+    if (!ok)
+        return sendError(
+            c, 400, "BAD_REQUEST", close, "",
+            {{"message", "Cần from < to (ms UTC, tối đa 366 ngày), before > 0, limit 1-200."}});
+    LogicSubsystem* logic = logic_.logic ? logic_.logic() : nullptr;
+    if (!logic)
+        return send(
+            c, 200,
+            jsonText(json{{"enabled", false}, {"events", json::array()}, {"next", nullptr}}),
+            close);
+    AuditQuery q;
+    q.fromMs = from;
+    q.toMs = to;
+    q.actionPrefix = "logic.";
+    if (p.count("before")) q.beforeId = before;
+    q.limit = static_cast<int>(limit);
+    AuditPage page;
+    try {
+        page = audit_.query(q);
+    } catch (const std::exception&) {
+        return sendError(c, 503, "AUDIT_UNAVAILABLE", close);
+    }
+    json events = json::array();
+    for (const AuditRecord& rec : page.records) {
+        // the writes of the rules: their end (not "started"), and the ones the limits refused
+        const bool write = rec.action == "logic.write" && rec.result != "started";
+        if (!write && rec.action != "logic.write.suppressed" && rec.action != "logic.throttled")
+            continue;
+        std::string rule = rec.user.value_or("");
+        if (rule.rfind("logic:", 0) == 0) rule = rule.substr(6);
+        events.push_back({{"id", rec.id},
+                          {"ts", rec.tsMs},
+                          {"rule", rule},
+                          {"action", rec.action},
+                          {"tag", rec.target ? json(*rec.target) : json(nullptr)},
+                          {"result", rec.result},
+                          {"code", rec.code ? json(*rec.code) : json(nullptr)},
+                          {"detail", rec.detail ? json(*rec.detail) : json(nullptr)}});
+    }
+    const json body = {{"enabled", true},
+                       {"events", events},
                        {"next", page.next ? json(*page.next) : json(nullptr)}};
     return send(c, 200, jsonText(body), close);
 }

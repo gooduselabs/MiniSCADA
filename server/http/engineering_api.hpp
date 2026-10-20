@@ -248,6 +248,11 @@ class EngineeringApi {
     // The routes of logic (logic_api.cpp).
     int logicRoute(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                    bool close);
+    // Feature 015 (specs/015-reports/plan.md): GET /api/v1/logic/events, the writes of logic
+    // (audit logic.write*, not the "started" rows) for the report page; a person restricted by
+    // feature 013 needs page:reports. No audit.read row (a filtered read of the page).
+    int logicEvents(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                    bool close);
     // The routes of OTA (update_api.cpp).
     int updateRoute(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                     bool close);

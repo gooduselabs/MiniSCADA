@@ -110,6 +110,9 @@ const std::vector<EndpointRule>& endpointRules() {
         // (cookie, a poll: no idle restart); stopping the writes (administrator) and resetting a
         // block (engineer) change the device: Bearer only, cookieAllowed false.
         {"GET", "/api/v1/logic", true, Role::Viewer, false, false, true},
+        // feature 015 (specs/015-reports/plan.md): the writes of logic for the report page (cookie,
+        // viewer; page:reports for a person restricted by feature 013), a read: no idle restart.
+        {"GET", "/api/v1/logic/events", true, Role::Viewer, false, false, true},
         {"POST", "/api/v1/logic/writes", true, Role::Administrator, true, true, false},
         {"POST", "/api/v1/logic/reset", true, Role::Engineer, true, true, false},
         // feature 011 (device-api-011 §3): OTA. Administrator, Bearer only (cookieAllowed false),

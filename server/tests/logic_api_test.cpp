@@ -215,3 +215,91 @@ TEST(LogicApi, AWriteToALogicTagIsRejectedOwnedByLogic) {
     EXPECT_EQ(denied[0].code.value_or(""), "OWNED_BY_LOGIC");
     EXPECT_EQ(r.st->backend.count(), 0u);
 }
+
+// ---- feature 015 (specs/015-reports/plan.md): GET /api/v1/logic/events for the report page ----
+
+namespace {
+
+void logicRow(ApiRig& r, AuditAction a, AuditResult res, const std::string& rule,
+              const std::string& tag, const std::string& detail = "") {
+    AuditEvent e(a, res, AuditChannel::Logic, "system");
+    e.user = "logic:" + rule;
+    e.target = tag;
+    if (!detail.empty()) e.detail = detail;
+    r.audit->append(e);
+}
+
+std::string eventsPath(int64_t from, int64_t to, const std::string& more = "") {
+    return "/api/v1/logic/events?from=" + std::to_string(from) + "&to=" + std::to_string(to) + more;
+}
+
+}  // namespace
+
+TEST(LogicEvents, TheTableHasTheReadForTheCookieOfThePage) {
+    const EndpointRule* ev = findEndpointRule("GET", "/api/v1/logic/events");
+    ASSERT_NE(ev, nullptr);
+    EXPECT_EQ(ev->minRole, Role::Viewer);
+    EXPECT_TRUE(ev->cookieAllowed);
+    EXPECT_FALSE(ev->changesDevice);
+    EXPECT_FALSE(ev->refreshesSession);
+    EXPECT_EQ(findEndpointRule("POST", "/api/v1/logic/events"), nullptr);
+}
+
+TEST(LogicEvents, AViewerReadsTheEndOfTheWritesNewestFirstWithoutTheStartedRows) {
+    Rig r;
+    logicRow(r, AuditAction::LogicWrite, AuditResult::Started, "bom_tat", "PUMP.CMD");
+    logicRow(r, AuditAction::LogicWrite, AuditResult::Ok, "bom_tat", "PUMP.CMD",
+             R"({"value":false})");
+    logicRow(r, AuditAction::LogicWrite, AuditResult::Failed, "bom_bat", "PUMP.CMD");
+    logicRow(r, AuditAction::LogicReset, AuditResult::Ok, "c_starts", "c_starts");
+    const HttpResult res = r.getAs("xem1", eventsPath(kApiT0 - 1000, kApiT0 + 1000));
+    ASSERT_EQ(res.status, 200) << res.body;
+    const json b = bodyJson(res);
+    EXPECT_EQ(b["enabled"], true);
+    ASSERT_EQ(b["events"].size(), 2u) << res.body;
+    EXPECT_EQ(b["events"][0]["rule"], "bom_bat");
+    EXPECT_EQ(b["events"][0]["result"], "failed");
+    EXPECT_EQ(b["events"][1]["rule"], "bom_tat");
+    EXPECT_EQ(b["events"][1]["action"], "logic.write");
+    EXPECT_EQ(b["events"][1]["tag"], "PUMP.CMD");
+    EXPECT_EQ(b["events"][1]["detail"], R"({"value":false})");
+    EXPECT_EQ(b["events"][1]["ts"], kApiT0);
+    EXPECT_TRUE(b["next"].is_null());
+    EXPECT_TRUE(r.records("audit.read").empty()) << "a filtered read of the page: no audit row";
+    // outside the range: nothing
+    EXPECT_EQ(bodyJson(r.getAs("xem1", eventsPath(kApiT0 + 1, kApiT0 + 2)))["events"].size(), 0u);
+    // no session: 401
+    EXPECT_EQ(r.call(getReq(eventsPath(kApiT0 - 1000, kApiT0 + 1000))).status, 401);
+}
+
+TEST(LogicEvents, PagesWithBeforeAndLimit) {
+    Rig r;
+    for (int i = 0; i < 5; ++i)
+        logicRow(r, AuditAction::LogicWrite, AuditResult::Ok, "r" + std::to_string(i), "T");
+    const json p1 = bodyJson(r.getAs("xem1", eventsPath(kApiT0 - 1, kApiT0 + 1, "&limit=2")));
+    ASSERT_EQ(p1["events"].size(), 2u);
+    EXPECT_EQ(p1["events"][0]["rule"], "r4");
+    ASSERT_TRUE(p1["next"].is_number());
+    const json p2 = bodyJson(r.getAs(
+        "xem1", eventsPath(kApiT0 - 1, kApiT0 + 1,
+                           "&limit=2&before=" + std::to_string(p1["next"].get<int64_t>()))));
+    ASSERT_EQ(p2["events"].size(), 2u);
+    EXPECT_EQ(p2["events"][0]["rule"], "r2");
+}
+
+TEST(LogicEvents, BadParametersAre400AndWithoutLogicTheAnswerIsEnabledFalse) {
+    Rig r;
+    for (const std::string& q : std::vector<std::string>{
+             "/api/v1/logic/events", "/api/v1/logic/events?from=5&to=5",
+             "/api/v1/logic/events?from=1&to=99999999999999",
+             "/api/v1/logic/events?from=1&to=2&limit=0",
+             "/api/v1/logic/events?from=1&to=2&limit=201",
+             "/api/v1/logic/events?from=1&to=2&before=0", "/api/v1/logic/events?from=1&to=2&x=1",
+             "/api/v1/logic/events?from=-1&to=2"})
+        EXPECT_EQ(r.getAs("xem1", q).status, 400) << q;
+    Rig none(false);
+    const HttpResult res = none.getAs("xem1", eventsPath(1, 2));
+    ASSERT_EQ(res.status, 200) << res.body;
+    EXPECT_EQ(bodyJson(res)["enabled"], false);
+    EXPECT_EQ(bodyJson(res)["events"].size(), 0u);
+}

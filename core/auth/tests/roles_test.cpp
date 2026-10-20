@@ -84,6 +84,8 @@ const std::vector<Expected> kContract14 = {
 // device-api of feature 011 (device-api-011 §4): logic
 const std::vector<Expected> kContract011 = {
     {"GET", "/api/v1/logic", true, Role::Viewer, false, false},
+    // feature 015: the writes of logic for the report page (cookie, viewer)
+    {"GET", "/api/v1/logic/events", true, Role::Viewer, false, false},
     {"POST", "/api/v1/logic/writes", true, Role::Administrator, true, true},
     {"POST", "/api/v1/logic/reset", true, Role::Engineer, true, true},
     // device-api-011 §3: OTA, administrator only, Bearer only (not in the cookie list below)
@@ -292,7 +294,9 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
         "GET /api/v1/history/aggregate", "GET /api/v1/history/rows",
         "GET /api/v1/history/export.csv",
         // feature 011: the state of logic (its two POST routes: no cookie)
-        "GET /api/v1/logic"};
+        "GET /api/v1/logic",
+        // feature 015: the writes of logic for the report page
+        "GET /api/v1/logic/events"};
     // feature 013: the page's access, the own password and the whole admin API
     for (const auto& e : kContract16) cookie.insert(e.method + " " + e.path);
     std::set<std::string> seen;
