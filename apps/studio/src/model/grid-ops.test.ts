@@ -17,6 +17,7 @@ import {
   setCellProps,
   setRowProps,
 } from './grid-ops.ts';
+import type { RowTemplateId } from './grid-ops.ts';
 import { remove } from './screen-doc.ts';
 
 type G = ScreenModel & { layout: GridLayout };
@@ -214,8 +215,8 @@ describe('addTemplateRow (feature 014)', () => {
   });
 
   it('3 biểu đồ, 2 biểu đồ + 1, 1 biểu đồ rộng: chiều cao, cột, widget có tiêu đề', async () => {
-    const { addTemplateRow, ROW_TEMPLATES } = await import('./grid-ops.ts');
-    const kinds = (id: keyof typeof ROW_TEMPLATES) => {
+    const { addTemplateRow } = await import('./grid-ops.ts');
+    const kinds = (id: RowTemplateId) => {
       const r = addTemplateRow(doc(), id, name);
       const row = L(r.doc).rows[1]!;
       return {
