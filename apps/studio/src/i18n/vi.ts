@@ -28,6 +28,7 @@ import { viTemplate } from './vi-template.ts';
 import { viLogic } from './vi-logic.ts';
 import { viSvgDraw } from './vi-svgdraw.ts';
 import { viUpdate } from './vi-update.ts';
+import { viNewProject } from './vi-newproject.ts';
 
 const viCore = {
   // ---- Giai đoạn của lộ trình v2: nhãn cạnh mục chưa làm (cây, task card, trang giai đoạn) ----
@@ -133,7 +134,8 @@ const viCore = {
   'tree.users': 'Người dùng và quyền',
   'tree.library': 'Thư viện project',
   'tree.noProject': 'Chưa mở project',
-  'tree.noProjectHint': 'Mở thư mục project (Ctrl+O) để xem cấu trúc project.',
+  'tree.noProjectHint':
+    'Tạo project mới (Ctrl+N) hoặc mở thư mục project (Ctrl+O) để xem cấu trúc project.',
   'tree.withPhase': '{label} · có ở {phase}',
 
   // ---- Trạng thái thiết bị: chữ đi kèm chấm màu (màu không là tín hiệu duy nhất, FR-012) ----
@@ -344,7 +346,7 @@ const viCore = {
   // ---- Tab Bắt đầu (FR-003) ----
   'start.welcome': 'mAT Studio',
   'start.welcomeText':
-    'Mở một thư mục project để bắt đầu. Project gồm project.json, tags.json, màn hình SVG và cấu hình lưu trữ.',
+    'Tạo project mới từ mẫu, hoặc mở một thư mục project có sẵn. Project gồm project.json, tags.json, màn hình và cấu hình lưu trữ.',
   'start.summary':
     '{path} · project {version} · {tags} Tag · {screens} màn hình · {groups} nhóm lưu trữ',
   'start.quick': 'Tác vụ nhanh',
@@ -451,6 +453,7 @@ const viCore = {
 
 export const viMessages = {
   ...viCore,
+  ...viNewProject,
   ...viTags,
   ...viTags2,
   ...viExpr,

@@ -1231,6 +1231,85 @@ table.grid {
 .start-hero p {
   margin: 4px 0 0;
 }
+/* Chưa mở project: hai nút lớn Tạo project mới, Mở project… (2026-10-20) */
+.start-actions {
+  flex-basis: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 340px));
+  gap: 12px;
+}
+.start-action {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 76px;
+  padding: 14px 16px;
+  text-align: left;
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--fg);
+  transition:
+    border-color var(--motion),
+    background var(--motion),
+    box-shadow var(--motion);
+}
+.start-action:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.start-action .sa-ic {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.start-action .sa-ic .ic {
+  width: 24px;
+  height: 24px;
+}
+.start-action .sa-t {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.start-action b {
+  font-size: 15px;
+  font-weight: 600;
+}
+.start-action small {
+  color: var(--muted);
+  font-size: var(--fs-s);
+}
+.start-action kbd {
+  align-self: start;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.start-action.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.start-action.primary:hover {
+  filter: brightness(1.07);
+}
+.start-action.primary .sa-ic {
+  background: color-mix(in srgb, var(--accent-ink) 18%, transparent);
+  color: var(--accent-ink);
+}
+.start-action.primary small {
+  color: var(--accent-ink);
+}
+.start-action.primary kbd {
+  color: var(--accent-ink);
+  background: transparent;
+  border-color: var(--accent-ink);
+}
 .start-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
@@ -1769,7 +1848,8 @@ legend {
   .center {
     grid-template-rows: 32px minmax(0, 1fr) 4px 160px;
   }
-  .tiles {
+  .tiles,
+  .start-actions {
     grid-template-columns: minmax(0, 1fr);
   }
   .start {

@@ -65,7 +65,7 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
 
 /// Tên thiết bị của Windows: `CON`, `PRN`, `AUX`, `NUL`, `COM1`-`COM9`, `LPT1`-`LPT9`, kèm đuôi hay
 /// không (`con.json`), không phân biệt hoa thường; khoảng trắng trước đuôi cũng bị Windows bỏ.
-fn is_windows_device_name(segment: &str) -> bool {
+pub fn is_windows_device_name(segment: &str) -> bool {
     let stem = segment
         .split('.')
         .next()

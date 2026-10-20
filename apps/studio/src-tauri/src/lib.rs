@@ -3,6 +3,7 @@ mod device;
 mod discovery;
 mod editor_fs;
 mod help;
+mod new_project;
 mod package;
 mod project_fs;
 mod recent;
@@ -66,6 +67,78 @@ fn open_folder(app: &AppHandle, path: PathBuf) -> PickResult {
     let display = path.display().to_string();
     *app.state::<ProjectRoot>().0.lock().unwrap() = Some(path);
     PickResult { display }
+}
+
+/// Thư mục cha của lệnh Project mới… (2026-10-20): Documents\mAT SCADA mặc định, hoặc thư mục người dùng chọn qua
+/// hộp thoại. Như `ProjectRoot`, giao diện không truyền được đường dẫn.
+#[derive(Default)]
+struct NewParent(Mutex<Option<PathBuf>>);
+
+fn set_parent(app: &AppHandle, path: PathBuf) -> PickResult {
+    let display = path.display().to_string();
+    *app.state::<NewParent>().0.lock().unwrap() = Some(path);
+    PickResult { display }
+}
+
+/// Thư mục cha mặc định của project mới: `<Documents>\mAT SCADA` (chưa tạo cho tới khi tạo project).
+#[tauri::command]
+fn project_parent_default(app: AppHandle) -> Result<PickResult, String> {
+    let docs = app
+        .path()
+        .document_dir()
+        .or_else(|_| app.path().home_dir())
+        .map_err(|e| e.to_string())?;
+    Ok(set_parent(&app, docs.join("mAT SCADA")))
+}
+
+/// Hộp thoại chọn thư mục cha của project mới; `null` nếu hủy.
+#[tauri::command]
+async fn project_parent_pick(app: AppHandle) -> Result<Option<PickResult>, String> {
+    let picked = app
+        .dialog()
+        .file()
+        .set_title("Chọn thư mục chứa project mới")
+        .blocking_pick_folder();
+    let Some(path) = picked else { return Ok(None) };
+    let path = path.into_path().map_err(|e| e.to_string())?;
+    Ok(Some(set_parent(&app, path)))
+}
+
+/// Thư mục `<cha>/<id>` còn dùng được không (`"free"`, `"empty"`, `"exists-project"`, `"not-empty"`).
+#[tauri::command]
+fn project_new_check(
+    id: String,
+    state: State<'_, NewParent>,
+) -> Result<new_project::TargetState, new_project::CreateError> {
+    let parent = state
+        .0
+        .lock()
+        .unwrap()
+        .clone()
+        .ok_or(new_project::CreateError::NoParent)?;
+    new_project::target_state(&parent, &id)
+}
+
+/// Tạo project mới `<cha>/<id>` với các file giao diện dựng sẵn, rồi mở nó (như Mở project).
+#[tauri::command]
+async fn project_create(
+    app: AppHandle,
+    id: String,
+    files: Vec<new_project::NewFile>,
+) -> Result<PickResult, new_project::CreateError> {
+    let parent = app
+        .state::<NewParent>()
+        .0
+        .lock()
+        .unwrap()
+        .clone()
+        .ok_or(new_project::CreateError::NoParent)?;
+    let dir = new_project::create_project(&parent, &id, &files).inspect_err(|e| {
+        if let new_project::CreateError::Io(detail) = e {
+            eprintln!("project_create {id}: {detail}");
+        }
+    })?;
+    Ok(open_folder(&app, dir))
 }
 
 /// IPC smoke test: lets the frontend confirm the Rust side is alive.
@@ -221,6 +294,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(ProjectRoot::default())
+        .manage(NewParent::default())
         // Feature 005: lượt quét tìm thiết bị và các kết nối live (chỉ trong bộ nhớ).
         .manage(Discovery::default())
         .manage(LiveHub::default())
@@ -248,6 +322,11 @@ pub fn run() {
             project_recent,
             project_open_recent,
             project_forget_recent,
+            // Project mới… (2026-10-20): thư mục cha, kiểm thư mục đích, tạo và mở.
+            project_parent_default,
+            project_parent_pick,
+            project_new_check,
+            project_create,
             project_read,
             project_write,
             open_device_web,

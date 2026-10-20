@@ -19,6 +19,8 @@ interface ToolButton {
 
 const GROUPS: ReadonlyArray<readonly ToolButton[]> = [
   [
+    { cmd: 'project.new', optional: true },
+    { cmd: 'project.open', optional: true },
     { cmd: 'project.save' },
     { cmd: 'edit.undo', optional: true },
     { cmd: 'edit.redo', optional: true },
@@ -32,8 +34,9 @@ const GROUPS: ReadonlyArray<readonly ToolButton[]> = [
 ];
 
 export class MatToolbar extends AppElement {
-  // Nút đầu (ngăn kéo cây) chỉ hiện khi cửa sổ hẹp: điểm dừng Tab mặc định là nút Lưu.
-  private focusIdx = 1;
+  // Nút đầu (ngăn kéo cây) chỉ hiện khi cửa sổ hẹp; sau đó là Project mới, Mở project: điểm dừng Tab mặc định là
+  // nút Lưu.
+  private focusIdx = 3;
 
   override connectedCallback(): void {
     super.connectedCallback();

@@ -11,6 +11,7 @@ import { SVG_COMMANDS, SVG_KEYS, type SvgCommandId } from '../model/svg/keys.ts'
 export type MenuId = 'project' | 'edit' | 'view' | 'online' | 'tools' | 'help';
 
 export type CommandId =
+  | 'project.new'
   | 'project.open'
   | 'project.openRecent'
   | 'project.save'
@@ -437,6 +438,7 @@ const cmd = (
 
 /** Theo thứ tự của contract; lệnh chỉ có trong bảng lệnh ở cuối. */
 export const COMMANDS: readonly CommandSpec[] = [
+  cmd('project.new', 'project', always, { shortcut: 'Ctrl+N', icon: 'fnew' }),
   cmd('project.open', 'project', always, { shortcut: 'Ctrl+O', icon: 'project' }),
   cmd('project.openRecent', 'project', always),
   cmd(
@@ -767,6 +769,7 @@ export const MENU_LABEL: Readonly<Record<MenuId, MessageKey>> = {
 /** Nội dung từng menu; `-` là vạch ngăn. `project.openRecent` là menu con (danh sách gần đây). */
 export const MENUS: Readonly<Record<MenuId, ReadonlyArray<CommandId | '-'>>> = {
   project: [
+    'project.new',
     'project.open',
     'project.openRecent',
     '-',

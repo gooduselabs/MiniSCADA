@@ -42,6 +42,32 @@ export type WriteOutcome = { hash: string } | { error: WriteFailure; detail?: st
 
 export type RecentFailure = 'no-such-entry' | 'missing';
 
+// ---- Project mới (2026-10-20) ----
+
+/** Thư mục `<cha>/<mã>` của project mới: chưa có, trống, đã có project, có file khác. */
+export type NewTargetState = 'free' | 'empty' | 'exists-project' | 'not-empty';
+export type CreateFailure =
+  'no-parent' | 'bad-id' | 'exists-project' | 'not-empty' | 'bad-path' | 'io';
+export type CreateOutcome = PickResult | { error: CreateFailure; detail?: string };
+const CREATE_FAILURES: readonly CreateFailure[] = [
+  'no-parent',
+  'bad-id',
+  'exists-project',
+  'not-empty',
+  'bad-path',
+  'io',
+];
+
+/** Lỗi `project_create`/`project_new_check` của Rust → mã và chi tiết. */
+export function asCreateFailure(e: unknown): { error: CreateFailure; detail?: string } {
+  const err = ipcError(e);
+  if (err && CREATE_FAILURES.includes(err.code as CreateFailure))
+    return err.detail === undefined
+      ? { error: err.code as CreateFailure }
+      : { error: err.code as CreateFailure, detail: err.detail };
+  return { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
+}
+
 // ---- Feature 006 (contracts/tauri-commands-006.md §5, §6) ----
 
 /** `project_backup`: thư mục sao lưu mới (`dir` tương đối để hiện, `abs` chỉ để hiện và mở bằng Explorer). */
@@ -96,6 +122,14 @@ export interface Platform {
   recentProjects(): Promise<RecentEntry[]>;
   openRecent(index: number): Promise<PickResult | { error: RecentFailure }>;
   forgetRecent(index: number): Promise<void>;
+  /** Project mới: đặt thư mục cha về mặc định (Documents\mAT SCADA), trả đường dẫn để hiện. */
+  newProjectParentDefault(): Promise<PickResult>;
+  /** Project mới: hộp thoại chọn thư mục cha; `null` khi hủy (thư mục cha giữ nguyên). */
+  newProjectParentPick(): Promise<PickResult | null>;
+  /** Project mới: thư mục `<cha>/<id>` còn dùng được không. */
+  newProjectCheck(id: string): Promise<NewTargetState | { error: CreateFailure; detail?: string }>;
+  /** Project mới: tạo `<cha>/<id>` với `files` (đường dẫn tương đối → nội dung) rồi đặt làm project đang mở. */
+  createProject(id: string, files: Record<string, string>): Promise<CreateOutcome>;
   read(rel: string): Promise<ReadOutcome>;
   /** `expectedHash` = hash lúc đọc (`null` khi tạo file mới); `force` ghi đè cả khi file đã đổi. */
   write(

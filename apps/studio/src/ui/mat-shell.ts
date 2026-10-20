@@ -22,6 +22,7 @@ import './mat-dialog.ts';
 import './dialogs/upgrade-dialog.ts';
 import './dialogs/rename-dialog.ts';
 import './dialogs/screen-props-dialog.ts';
+import './dialogs/new-project-dialog.ts';
 import './dialogs/delete-screen-dialog.ts';
 import './dialogs/bulk-add-dialog.ts';
 import './dialogs/rename-tag-dialog.ts';
@@ -417,6 +418,7 @@ export class MatShell extends AppElement {
       <mat-upgrade-dialog .app=${app}></mat-upgrade-dialog>
       <mat-rename-dialog .app=${app}></mat-rename-dialog>
       <mat-screen-props-dialog .app=${app}></mat-screen-props-dialog>
+      <mat-new-project-dialog .app=${app}></mat-new-project-dialog>
       <mat-delete-screen-dialog .app=${app}></mat-delete-screen-dialog>
       <mat-bulk-add-dialog .app=${app}></mat-bulk-add-dialog>
       <mat-rename-tag-dialog .app=${app}></mat-rename-tag-dialog>

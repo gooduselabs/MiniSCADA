@@ -61,8 +61,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
   const rows = contractRows();
 
   it('contract có đủ các mục (kiểm bộ đọc contract)', () => {
-    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005, cộng 10 lệnh của feature 006 (T084, T152, T189), cộng Hướng dẫn sử dụng (feature 011, T178).
-    expect(rows.length).toBe(49);
+    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005, cộng 10 lệnh của feature 006 (T084, T152, T189), cộng Hướng dẫn sử dụng (feature 011, T178), cộng Project mới… (2026-10-20).
+    expect(rows.length).toBe(50);
     expect(rows.find((r) => r.id === 'online.download')).toEqual({
       id: 'online.download',
       label: 'Nạp xuống…',

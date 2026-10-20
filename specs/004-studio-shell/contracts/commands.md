@@ -17,6 +17,7 @@ Cột "Bật khi":
 
 | Lệnh | Nhãn | Phím | Bật khi |
 |---|---|---|---|
+| `project.new` | Project mới… | Ctrl+N | luôn (2026-10-20: hộp thoại Project mới, tạo thư mục con theo mã project) |
 | `project.open` | Mở project… | Ctrl+O | luôn |
 | `project.openRecent` | Mở gần đây › (danh sách) | | luôn |
 | `project.save` | Lưu | Ctrl+S | project, có thay đổi chưa lưu |

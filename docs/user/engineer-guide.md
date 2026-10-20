@@ -28,7 +28,7 @@ Giả lập mở cổng 1502 trên máy tính, có mức bồn (`HR100`) và lư
 Studio bố trí như một công cụ kỹ thuật: cây project bên trái, vùng editor theo tab ở giữa, Inspector bên phải, thanh trạng thái ở dưới.
 
 - Menu: **Project**, **Sửa**, **Xem**, **Online**, **Công cụ**, **Trợ giúp**.
-- Thanh công cụ: Lưu, hoàn tác, **Kiểm tra**, **Nạp xuống**, **Đọc lên**, **So sánh**, **Online**/**Offline**, **Thiết bị**, **Mô phỏng**, **Tìm lệnh…** (Ctrl+Shift+P).
+- Thanh công cụ: **Project mới**, **Mở project**, Lưu, hoàn tác, **Kiểm tra**, **Nạp xuống**, **Đọc lên**, **So sánh**, **Online**/**Offline**, **Thiết bị**, **Mô phỏng**, **Tìm lệnh…** (Ctrl+Shift+P).
 - Thanh trạng thái: trạng thái thiết bị ("Không kết nối", "Đang theo dõi", "Online"), tài khoản, số lỗi và cảnh báo, chip so sánh với thiết bị, nhãn "MÔ PHỎNG" khi đang mô phỏng.
 - Chế độ Online có viền cam quanh cửa sổ.
 - Task card bên phải đổi theo editor đang mở: **Toolbox** (widget, ký hiệu) ở editor Màn hình, **Khối / Tag** ở editor Logic, **Công cụ vẽ** (công cụ và bảng màu tô, màu viền) ở trình vẽ SVG.
@@ -41,9 +41,17 @@ Studio bố trí như một công cụ kỹ thuật: cây project bên trái, v�
 
 ## 3. Mở và tạo project
 
-Studio chưa có lệnh "tạo project trống". Có hai cách bắt đầu:
+**Project mới** (cách thường dùng): **Project** > **Project mới…** (Ctrl+N), hoặc nút lớn **Tạo project mới** ở tab **Bắt đầu** khi chưa mở project. Hộp thoại **Project mới** hỏi:
 
-- **Từ project mẫu:** chép `projects/training-demo/` thành thư mục mới, mở bằng **Project** > **Mở project…** (Ctrl+O). Đổi tên trong **Thiết lập project**.
+- **Tên project** (bắt buộc, tối đa 80 ký tự).
+- **Mã project**: tự sinh từ tên, bỏ dấu, chữ thường, gạch nối (`Trạm bơm Số 1` → `tram-bom-so-1`); sửa được, 2–48 ký tự. Mã là `projectId` và là tên thư mục project. Nút mũi tên vòng sinh lại mã từ tên.
+- **Thư mục chứa**: mặc định `Documents\mAT SCADA`; **Chọn…** để chọn thư mục khác, **Mặc định** để quay về. Studio tạo thư mục con theo mã project trong thư mục chứa; dòng **Project sẽ nằm ở** hiện đường dẫn đầy đủ và báo ngay nếu thư mục đó đã có project hoặc có tệp khác (khi đó không tạo được, đổi mã hoặc thư mục chứa).
+- **Mẫu**: **Trống** (một màn hình lưới **Tổng quan** với một hàng ba ô trống, chưa có Tag và kết nối) hoặc **Mẫu trạm bơm** (Tag mô phỏng, màn hình lưới **Bảng điều khiển** có biểu đồ xu hướng, đồng hồ, bảng Tag, faceplate bơm; chạy được ngay ở chế độ **Mô phỏng**).
+- **Chủ đề giao diện** của trang vận hành: **Sáng đa sắc** (mặc định), **Công nghiệp trầm**, **Tối**; đổi lại được trong **Thiết lập project**.
+ **Tạo project**: Studio ghi project định dạng 1.1, mở nó (cây project đầy đủ) và mở sẵn màn hình đầu. Đang có thay đổi chưa lưu thì Studio hỏi Lưu, Không lưu hay Hủy trước khi mở hộp thoại, như khi mở project khác. Project vừa tạo lên đầu danh sách **Mở gần đây** (tab **Bắt đầu** và menu **Project**).
+ cách khác:
+
+- **Từ project mẫu có sẵn:** chép `projects/training-demo/` (bài thực hành của tài liệu này) thành thư mục mới, mở bằng **Project** > **Mở project…** (Ctrl+O). Đổi tên trong **Thiết lập project**.
 - **Từ thiết bị:** **Online** > **Thiết bị trong mạng…** > chọn thiết bị > **Đọc lên thành project mới** (mục 10).
 
 Lưu bằng Ctrl+S. Studio cho lưu cả khi còn lỗi ("Đã lưu … Còn n lỗi: thiết bị sẽ từ chối project này."), nhưng không cho nạp xuống.

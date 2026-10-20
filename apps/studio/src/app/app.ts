@@ -57,10 +57,12 @@ import {
 import type {
   AppInfo,
   AppSignature,
+  CreateFailure,
   Platform,
   RecentEntry,
   WriteFailure,
 } from '../platform/types.ts';
+import { buildNewProject, type NewProjectOptions } from '../model/new-project.ts';
 import { commandById, type CommandContext, type CommandId } from './commands.ts';
 import { helpTarget } from './help.ts';
 import { refOfNode } from '../model/tree.ts';
@@ -166,7 +168,9 @@ export type OnlineDialogSpec =
   | { kind: 'svgExternal'; rel: string }
   | { kind: 'svgDelete'; rel: string }
   | { kind: 'svgPasteReport'; rel: string }
-  | { kind: 'svgLayerDelete'; rel: string; layer: string };
+  | { kind: 'svgLayerDelete'; rel: string; layer: string }
+  // Project mới… (2026-10-20, ui/dialogs/new-project-dialog.ts).
+  | { kind: 'newProject' };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<
@@ -226,7 +230,8 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'svgExternal' ||
   d?.kind === 'svgDelete' ||
   d?.kind === 'svgPasteReport' ||
-  d?.kind === 'svgLayerDelete';
+  d?.kind === 'svgLayerDelete' ||
+  d?.kind === 'newProject';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -1054,6 +1059,8 @@ export class StudioApp {
       return;
     }
     switch (spec.id) {
+      case 'project.new':
+        return this.newProject();
       case 'project.open':
         return this.openProject();
       case 'project.openRecent':
@@ -1370,6 +1377,31 @@ export class StudioApp {
       this.toast(t('toast.recentMissing'));
       await this.refreshRecent();
     }
+  }
+
+  /** Project mới… (Ctrl+N): còn thay đổi chưa lưu thì hỏi như Mở project, rồi mở hộp thoại Project mới. */
+  async newProject(): Promise<void> {
+    if (!(await this.settleUnsaved())) return;
+    this.openDialog({ kind: 'newProject' });
+  }
+
+  /**
+   * Tạo project mới (hộp thoại Project mới): dựng bộ file theo mẫu, ghi vào `<thư mục cha>/<mã>` qua platform (Rust từ
+   * chối thư mục đã có project hay có file khác), rồi mở như Mở project và mở sẵn màn hình đầu. Lỗi thì hộp thoại giữ
+   * nguyên để người dùng sửa.
+   */
+  async createNewProject(
+    o: NewProjectOptions,
+  ): Promise<true | { error: CreateFailure; detail?: string }> {
+    const built = buildNewProject(o);
+    const r = await this.platform.createProject(o.id, built.files);
+    if ('error' in r) return r;
+    if (this.u.dialog?.kind === 'newProject') this.u = { ...this.u, dialog: null };
+    await this.store.openPicked(r.display);
+    await this.afterOpen();
+    this.openEditor(`screen:${built.entryScreen}`);
+    this.toast(t('np.done', { name: o.name.trim(), dir: r.display }));
+    return true;
   }
 
   async closeProject(): Promise<void> {

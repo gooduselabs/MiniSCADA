@@ -1,8 +1,9 @@
 // Tab Bắt đầu (feature 004, T053, FR-003, mockup bản 1): tóm tắt project đang mở, tác vụ nhanh, tối đa 10
 // project gần đây (mục mất thư mục thì báo và cho bỏ khỏi danh sách), lộ trình v2 (chức năng nào ở giai
-// đoạn nào). Không đóng được.
+// đoạn nào). Không đóng được. Chưa mở project (2026-10-20): hai nút lớn Tạo project mới (Ctrl+N) và Mở project… (Ctrl+O),
+// danh sách gần đây ngay dưới.
 import { html, nothing } from 'lit';
-import type { CommandId } from '../../app/commands.ts';
+import { commandById, type CommandId } from '../../app/commands.ts';
 import { t, type MessageKey } from '../../i18n/index.ts';
 import type { IconName } from '../../icons/icons.ts';
 import type { RecentEntry } from '../../platform/types.ts';
@@ -100,25 +101,83 @@ export class StartPage extends AppElement {
     </div>`;
   }
 
+  private recentList() {
+    const recent = this.app.ui.recent;
+    return recent.length
+      ? html`<div class="list">${recent.map((r) => this.recentRow(r))}</div>`
+      : html`<p class="help">${t('start.recentEmpty')}</p>`;
+  }
+
+  /** Nút lớn của tab Bắt đầu khi chưa mở project (Tạo project mới, Mở project…). */
+  private bigAction(
+    cmd: CommandId,
+    ic: IconName,
+    title: MessageKey,
+    text: MessageKey,
+    primary: boolean,
+  ) {
+    const shortcut = commandById(cmd)?.shortcut;
+    return html`<button
+      class="start-action ${primary ? 'primary' : ''}"
+      type="button"
+      data-cmd=${cmd}
+      @click=${() => void this.app.run(cmd)}
+    >
+      <span class="sa-ic">${icon(ic)}</span>
+      <span class="sa-t"><b>${t(title)}</b><small>${t(text)}</small></span>
+      ${shortcut ? html`<kbd>${shortcut}</kbd>` : nothing}
+    </button>`;
+  }
+
   protected override render() {
     const app = this.app;
     const { errors, warnings } = app.counts();
     const hasProject = app.store.state.project !== null;
-    const recent = app.ui.recent;
     return html`<div class="ed start">
       <div class="start-hero">
         ${this.hero()}
-        <div class="row">
-          <button class="btn primary" type="button" @click=${() => void app.run('project.open')}>
-            ${icon('project')}${t('cmd.project.open')}
-          </button>
-        </div>
+        ${
+          hasProject
+            ? html`<div class="row">
+                <button
+                  class="btn"
+                  type="button"
+                  data-cmd="project.new"
+                  @click=${() => void app.run('project.new')}
+                >
+                  ${icon('fnew')}${t('cmd.project.new')}
+                </button>
+                <button
+                  class="btn primary"
+                  type="button"
+                  data-cmd="project.open"
+                  @click=${() => void app.run('project.open')}
+                >
+                  ${icon('project')}${t('cmd.project.open')}
+                </button>
+              </div>`
+            : html`<div class="start-actions">
+                ${this.bigAction('project.new', 'fnew', 'start.new', 'start.newText', true)}
+                ${this.bigAction('project.open', 'project', 'cmd.project.open', 'start.openText', false)}
+              </div>`
+        }
       </div>
       <div class="start-grid">
         <div>
-          <h2 class="sec">${t('start.quick')}</h2>
+          ${
+            hasProject
+              ? nothing
+              : html`<h2 class="sec">${t('start.recent')}</h2>
+                  ${this.recentList()}`
+          }
+          <h2 class="sec ${hasProject ? '' : 'gap'}">${t('start.quick')}</h2>
           <div class="tiles">
-            ${this.tile('project.open', 'project', 'start.tile.open', t('start.tile.openText'))}
+            ${
+              hasProject
+                ? html`${this.tile('project.new', 'fnew', 'start.new', t('start.newText'))}
+                  ${this.tile('project.open', 'project', 'start.tile.open', t('start.tile.openText'))}`
+                : nothing
+            }
             ${this.tile(
               'tools.validate',
               'check',
@@ -131,11 +190,11 @@ export class StartPage extends AppElement {
             ${this.tile('online.connect', 'online', 'start.tile.connect', t('start.tile.connectText'))}
             ${this.tile('online.devices', 'device', 'start.tile.devices', t('start.tile.devicesText'))}
           </div>
-          <h2 class="sec gap">${t('start.recent')}</h2>
           ${
-            recent.length
-              ? html`<div class="list">${recent.map((r) => this.recentRow(r))}</div>`
-              : html`<p class="help">${t('start.recentEmpty')}</p>`
+            hasProject
+              ? html`<h2 class="sec gap">${t('start.recent')}</h2>
+                  ${this.recentList()}`
+              : nothing
           }
         </div>
         <div>

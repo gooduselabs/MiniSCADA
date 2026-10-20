@@ -53,6 +53,10 @@ function dirPlatform(root: string): Platform {
     recentProjects: async () => [],
     openRecent: async () => ({ error: 'missing' }),
     forgetRecent: async () => undefined,
+    newProjectParentDefault: async () => ({ display: root }),
+    newProjectParentPick: async () => null,
+    newProjectCheck: async () => ({ error: 'no-parent' }),
+    createProject: async () => ({ error: 'no-parent' }),
     read: async (rel): Promise<ReadOutcome> => {
       const r = await source.read(rel);
       if (!('text' in r)) return { error: r.error };
