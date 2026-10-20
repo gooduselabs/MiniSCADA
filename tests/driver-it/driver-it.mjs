@@ -14,15 +14,16 @@
 //   node driver-it.mjs wait-bad --since <epoch ms> | wait-good      (used by the script for the cable)
 //
 // Passwords come from the environment (MAT_IT_PW_ADMIN, _KYSU1, _VH1, _VH2, _XEM1). The runtime is
-// `rt`, the simulator `sim` (control API on :1503). The live channel is read with the WebSocket of
-// Node. HTTPS calls go through tools/measure/device-api.mjs (pinned fingerprint).
+// `rt`, the simulator `sim` (control API on :1503). HTTPS calls go through tools/measure/device-api.mjs
+// (pinned fingerprint); the live channel too, as kysu1 with a Bearer token: from feature 013 an
+// anonymous live session only gets the Tags of the items it views, the engineer's tools every Tag.
 import { mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import http from 'node:http';
-import { login, pinnedRequest } from '../../tools/measure/device-api.mjs';
+import { login, pinnedRequest, pinnedWebSocket } from '../../tools/measure/device-api.mjs';
 
 const RT = 'rt';
 const BASE = `https://${RT}:8443`;
-const WS = `ws://${RT}:8080/api/v1/live`;
+const LIVE_USER = 'kysu1'; // an engineer (contracts/access-model.md §4)
 const SIM = `http://sim:1503`;
 
 const args = process.argv.slice(2);
@@ -102,11 +103,13 @@ class Live {
     this.everBad = new Set(); // Tags that were BAD at some moment after the snapshot
   }
   async open() {
-    this.ws = new WebSocket(WS);
-    await new Promise((resolve, reject) => {
-      this.ws.onopen = resolve;
-      this.ws.onerror = (e) => reject(new Error(`websocket: ${e.message ?? 'error'}`));
-    });
+    try {
+      this.ws = await pinnedWebSocket(BASE, fp, await token(LIVE_USER));
+    } catch {
+      // the runtime started again since the sign-in: a new token
+      tokens[LIVE_USER] = undefined;
+      this.ws = await pinnedWebSocket(BASE, fp, await token(LIVE_USER));
+    }
     this.ws.onmessage = (ev) => this.onMessage(JSON.parse(ev.data));
     // the server drops a client that is silent for 15 s: a heartbeat every 5 s
     this.beat = setInterval(() => {

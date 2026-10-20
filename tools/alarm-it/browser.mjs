@@ -3,6 +3,7 @@
 //   node tools/alarm-it/browser.mjs <latency|history|budget> [--seconds N] [--root <repo>]
 // Chrome (puppeteer-core) trên máy dev vào runtime x64 trong Docker (https://127.0.0.1:28443). In một dòng JSON.
 import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import {
   copyFileSync,
   existsSync,
@@ -18,7 +19,9 @@ import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import puppeteer from 'puppeteer-core';
 import { DatabaseSync } from 'node:sqlite';
+import { login, pinnedRequest } from '../measure/device-api.mjs';
 import {
+  CONTAINER,
   HTTPS,
   LiveProbe,
   dexec,
@@ -297,9 +300,42 @@ async function history() {
     const lite = JSON.parse(JSON.stringify(info.queries));
     const from7 = endMs - 7 * 86400000;
     const toMs = endMs + 60000;
+    // Feature 013: the seeded alarm ids are not in the project, so only an administrator (the page) and an
+    // engineer's tool (Bearer, access-model §4) see them; a guest gets 0 rows. Accounts of this rig only.
+    const pw = {
+      admin: randomBytes(18).toString('base64url'),
+      kysu1: randomBytes(18).toString('base64url'),
+    };
+    for (const [user, role] of [
+      ['admin', 'administrator'],
+      ['kysu1', 'engineer'],
+    ])
+      execFileSync(
+        'docker',
+        [
+          'exec',
+          '-e',
+          `MAT_IT_PW_X=${pw[user]}`,
+          CONTAINER,
+          'sh',
+          '/src/tests/device-it/add-user.sh',
+          user,
+          role,
+          'MAT_IT_PW_X',
+        ],
+        { stdio: 'ignore' },
+      );
+    const fp = /Fingerprint=([0-9A-Fa-f:]+)/
+      .exec(dexec('/build/x64/bin/mat-runtime --cert-fingerprint --data-dir /data'))[1]
+      .replace(/:/g, '')
+      .toLowerCase();
+    const tokenR = await login(HTTPS, fp, 'kysu1', pw.kysu1);
+    if (tokenR.status !== 200) throw new Error(`login kysu1: ${tokenR.status} ${tokenR.body}`);
     const get = async (qs) => {
       const t = performance.now();
-      const x = await httpGet(`/api/v1/alarms/history?${qs}`);
+      const x = await pinnedRequest(HTTPS, fp, 'GET', `/api/v1/alarms/history?${qs}`, {
+        token: tokenR.json.token,
+      });
       return { ...x, ms: performance.now() - t };
     };
     // đếm bằng cách lật hết trang
@@ -400,6 +436,17 @@ async function history() {
       downloadPath: dl,
       eventsEnabled: true,
     });
+    // the page as an administrator (cookie session made by the page itself, as the login page does)
+    await page.goto(`${HTTPS}/api/v1/system/info`, { waitUntil: 'domcontentloaded' });
+    const signedIn = await page.evaluate(async (password) => {
+      const res = await fetch('/api/v1/web/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ username: 'admin', password }),
+      });
+      return res.status;
+    }, pw.admin);
+    if (signedIn !== 200) throw new Error(`login web admin: ${signedIn}`);
     const tOpen = Date.now();
     await page.goto(`${HTTPS}/#/alarm-history`, { waitUntil: 'domcontentloaded' });
     await waitFor(

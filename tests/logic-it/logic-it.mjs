@@ -20,6 +20,7 @@ import {
   deployPackage,
   login,
   pinnedRequest,
+  pinnedWebSocket,
   versions,
   waitOperation,
 } from '../../tools/measure/device-api.mjs';
@@ -27,7 +28,6 @@ import { buildPackage, readProjectDir, variant } from '../device-it/pack.mjs';
 
 const RT = 'rt';
 const BASE = `https://${RT}:8443`;
-const WS = `ws://${RT}:8080/api/v1/live`;
 const SIM = 'http://sim:1503';
 const PROJECT_DIR = '/src/tests/logic-it/projects/logic-it';
 
@@ -598,12 +598,9 @@ async function runLoad() {
   let updates = 0;
   let gaps = 0;
   for (let i = 0; i < clients; i++) {
-    const ws = new WebSocket(WS);
+    // an engineer's tool sees every Tag (feature 013, access-model §4); an anonymous session would not
+    const ws = await pinnedWebSocket(BASE, fp, await token('kysu1'));
     let last = 0;
-    await new Promise((res, rej) => {
-      ws.onopen = res;
-      ws.onerror = () => rej(new Error('ws'));
-    });
     ws.onmessage = (ev) => {
       const m = JSON.parse(ev.data);
       if (m.type === 'snapshot') last = m.sequence;

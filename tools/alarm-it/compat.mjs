@@ -358,11 +358,14 @@ async function partC() {
       hello && !(hello.features ?? []).includes('alarms'),
       JSON.stringify(hello?.features),
     );
+    // Feature 013 (live 1.4.0): phiên ẩn danh chỉ nhận Tag của item được xem; Tag ngoài màn hình vào `denied`
+    // (không giá trị), không phải `unknown`. Mỗi Tag hoặc có giá trị hoặc bị từ chối, ít nhất một có giá trị.
     r.check(
       `C: ${name}: Tag đăng ký có snapshot, không Tag lạ (${tags.join(',')})`,
       Boolean(snap) &&
         (snap.unknown ?? []).length === 0 &&
-        (snap.tags ?? []).length === tags.length,
+        (snap.tags ?? []).length > 0 &&
+        (snap.tags ?? []).length + (snap.denied ?? []).length === tags.length,
       JSON.stringify(snap ?? null).slice(0, 200),
     );
     const sub = await new Promise((res) => {

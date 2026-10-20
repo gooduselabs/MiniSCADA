@@ -106,6 +106,7 @@ Thêm điều kiện cha:
 - `alarm(P)` = alarm có Tag nguồn thuộc `live(P)` (D21); trang Alarm cần `page:alarms`. Alarm **không có Tag nguồn** (chất lượng của thiết bị) thuộc `alarm(P)` khi `P` xem được `page:alarms` (quyết định của luồng B, 2026-10-19). Administrator: mọi thứ.
 - Tag của **bảng theo dõi** (watch tables của project) thuộc `live(P)` khi `P` xem được `page:watch` (trang Bảng theo dõi đăng ký chúng); không thuộc danh mục của vector §7.
 - Kho hỏng: mọi tài nguyên từ chối mọi người trừ administrator (kể cả khi không có quy tắc).
+- **Công cụ kỹ thuật** (sửa 2026-10-20): phiên kênh **Bearer** (Studio Online, bảng theo dõi, chẩn đoán, lịch sử trong Studio, công cụ đo) có vai trò ≥ engineer **không bị lọc** như administrator: mọi Tag ở live, lịch sử, mọi alarm, mọi tệp `/project/*` (người này đã tải được cả gói project qua `/api/v1/project/package`). Phiên **cookie** của trang web theo quy tắc ở mọi vai trò trừ administrator; phiên Bearer viewer/operator vẫn theo quy tắc. `EffectiveAccess` (§5, xem với tư cách) không đổi: nó là quyền trên trang web.
 
 Bộ tính phải là hàm thuần (`computeAccess(project, store, P) → EffectiveAccess`), tính trước khi đăng nhập, khi nạp project, khi `rev` của kho đổi, giữ trong phiên; tra cứu bằng bảng băm (SC-006).
 
