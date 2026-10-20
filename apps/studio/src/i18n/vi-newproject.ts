@@ -27,6 +27,9 @@ export const viNewProject = {
   'np.tpl.pump': 'Mẫu trạm bơm',
   'np.tpl.pumpText':
     'Tag mô phỏng, màn hình lưới Bảng điều khiển, biểu đồ xu hướng, đồng hồ, bảng Tag, faceplate bơm.',
+  'np.tpl.dashboard': 'Dashboard tối',
+  'np.tpl.dashboardText':
+    'Một màn hình dashboard: thẻ chỉ số màu, biểu đồ có tiêu đề và đường ngưỡng, trạng thái bơm; chủ đề Tối.',
   'np.theme': 'Chủ đề giao diện',
   'np.themeHelp': 'Chủ đề của trang vận hành trên thiết bị; đổi lại được trong Thiết lập project.',
   'np.theme.vivid': 'Sáng đa sắc',

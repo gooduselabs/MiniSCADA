@@ -202,6 +202,26 @@ mat-new-project-dialog .np-tpl-thumb.pump i.wide {
   opacity: 0.35;
 }
 
+/* Mẫu Dashboard tối (feature 014): nền tối, thẻ chỉ số màu đặc */
+mat-new-project-dialog .np-tpl-thumb.dashboard {
+  background: #1f2a33;
+  border-color: #3d4b57;
+}
+mat-new-project-dialog .np-tpl-thumb.dashboard i {
+  border: 0;
+  background: #0f7f75;
+}
+mat-new-project-dialog .np-tpl-thumb.dashboard i:nth-child(2) {
+  background: #2563eb;
+}
+mat-new-project-dialog .np-tpl-thumb.dashboard i:nth-child(3) {
+  background: #e11d48;
+}
+mat-new-project-dialog .np-tpl-thumb.dashboard i.wide {
+  grid-column: span 3;
+  background: #2b3640;
+}
+
 /* Chủ đề: ba thẻ ngang, ô màu là màu của chủ đề trang vận hành */
 mat-new-project-dialog .np-themes {
   display: grid;

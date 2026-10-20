@@ -101,7 +101,7 @@ describe('mat-grid-editor', () => {
     expect(rows).toHaveLength(4);
     expect(rows[3]!.height).toBe(116);
     const items = rows[3]!.cells.map((c) => model(app).items.find((i) => i.id === c.item)!);
-    expect(items.map((i) => (i as { props: { label: string } }).props.label)).toEqual([
+    expect(items.map((i) => (i as unknown as { props: { label: string } }).props.label)).toEqual([
       'Chỉ số 1',
       'Chỉ số 2',
       'Chỉ số 3',

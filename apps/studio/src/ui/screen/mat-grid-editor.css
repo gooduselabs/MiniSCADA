@@ -57,7 +57,7 @@ mat-grid-editor .ge-presets button:focus-visible {
 }
 /* Feature 014: menu Thêm hàng hai phần (mẫu chia cột, mẫu hàng có sẵn widget) */
 mat-grid-editor .ge-presets:has(.ge-tpls) {
-  grid-template-columns: auto minmax(260px, auto);
+  grid-template-columns: minmax(170px, auto) minmax(300px, auto);
   align-items: start;
   gap: 4px 8px;
 }
@@ -75,16 +75,30 @@ mat-grid-editor .ge-sec-h {
   font-weight: 600;
   color: var(--muted);
 }
+mat-grid-editor .ge-sec > button {
+  white-space: nowrap;
+}
 mat-grid-editor .ge-tpl-pv {
   display: flex;
   gap: 3px;
   flex: none;
   width: 96px;
   height: 30px;
+  overflow: hidden;
 }
 mat-grid-editor .ge-tpl-pv i {
   display: block;
+  min-width: 0;
+  width: auto;
+  height: 100%;
   border-radius: 3px;
+}
+mat-grid-editor .ge-tpl {
+  align-items: flex-start;
+}
+mat-grid-editor .ge-tpl-t small {
+  white-space: normal;
+  max-width: 220px;
 }
 mat-grid-editor .ge-tpl-pv i.chart {
   background: linear-gradient(to bottom, var(--border-2) 0 6px, var(--panel-2) 6px);

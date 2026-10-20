@@ -13,6 +13,7 @@ import {
   PROJECT_NAME_MAX,
   isValidProjectId,
   projectIdFromName,
+  TEMPLATE_THEME,
   type NewProjectTemplate,
   type NewProjectTheme,
 } from '../../model/new-project.ts';
@@ -24,6 +25,7 @@ import './new-project-dialog.css';
 const TEMPLATE_TEXT: Readonly<Record<NewProjectTemplate, readonly [MessageKey, MessageKey]>> = {
   blank: ['np.tpl.blank', 'np.tpl.blankText'],
   pump: ['np.tpl.pump', 'np.tpl.pumpText'],
+  dashboard: ['np.tpl.dashboard', 'np.tpl.dashboardText'],
 };
 const THEME_TEXT: Readonly<Record<NewProjectTheme, MessageKey>> = {
   vivid: 'np.theme.vivid',
@@ -240,7 +242,10 @@ export class MatNewProjectDialog extends OnlineDialog {
         name="np-template"
         value=${tpl}
         .checked=${on}
-        @change=${() => this.patch({ template: tpl })}
+        @change=${() =>
+          this.patch(
+            TEMPLATE_THEME[tpl] ? { template: tpl, theme: TEMPLATE_THEME[tpl] } : { template: tpl },
+          )}
       />
       <span class="np-tpl-thumb ${tpl}" aria-hidden="true">
         ${

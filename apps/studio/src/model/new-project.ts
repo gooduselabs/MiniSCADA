@@ -1,16 +1,22 @@
 // Project mới (lệnh Project → Project mới…, 2026-10-20): dựng bộ file của project định dạng 1.1 từ tên, mã, mẫu và
 // chủ đề. Hàm thuần: ghi đĩa do lệnh Rust `project_create` (tạo thư mục con `<mã>` trong thư mục cha đã chọn).
 //
-// Hai mẫu: "Trống" (một màn hình lưới `tong-quan` có một hàng ba ô trống, chưa có Tag) và "Trạm bơm" dựng từ
-// projects/grid-demo nhúng vào bản build lúc build (bộ cài không có thư mục projects/), chỉ đổi mã, tên và chủ đề.
+// Ba mẫu: "Trống" (một màn hình lưới `tong-quan` có một hàng ba ô trống, chưa có Tag), "Trạm bơm" dựng từ
+// projects/grid-demo nhúng vào bản build lúc build (bộ cài không có thư mục projects/), chỉ đổi mã, tên và chủ đề, và
+// "Dashboard" (feature 014): chỉ màn hình Bảng điều khiển của grid-demo (thẻ chỉ số màu, biểu đồ có tiêu đề và ngưỡng)
+// cùng Tag, kết nối, bảng giá trị của nó; hộp thoại gợi ý chủ đề Tối cho mẫu này.
 import { t } from '../i18n/index.ts';
 
 /** Mẫu của project mới. */
-export type NewProjectTemplate = 'blank' | 'pump';
+export type NewProjectTemplate = 'blank' | 'pump' | 'dashboard';
 /** Chủ đề giao diện trang vận hành (`theme` của project.json 1.1). */
 export type NewProjectTheme = 'vivid' | 'industrial' | 'dark';
 
-export const NEW_PROJECT_TEMPLATES: readonly NewProjectTemplate[] = ['blank', 'pump'];
+export const NEW_PROJECT_TEMPLATES: readonly NewProjectTemplate[] = ['blank', 'pump', 'dashboard'];
+/** Chủ đề gợi ý khi chọn mẫu (người dùng đổi lại được). */
+export const TEMPLATE_THEME: Readonly<Partial<Record<NewProjectTemplate, NewProjectTheme>>> = {
+  dashboard: 'dark',
+};
 export const NEW_PROJECT_THEMES: readonly NewProjectTheme[] = ['vivid', 'industrial', 'dark'];
 
 export interface NewProjectOptions {
@@ -130,10 +136,46 @@ function pumpFiles(o: NewProjectOptions, name: string): Record<string, string> {
   return files;
 }
 
+// ---- Mẫu dashboard (feature 014): một màn hình của grid-demo ----
+
+const DASHBOARD_SCREEN = 'bang-dieu-khien';
+
+function dashboardFiles(o: NewProjectOptions, name: string): Record<string, string> {
+  const all = pumpFiles(o, name);
+  const project = JSON.parse(all['project.json']) as Record<string, unknown> & {
+    navigation?: { items?: Array<{ screen?: string }> };
+  };
+  const keep = (rel: string): boolean =>
+    rel === 'project.json' ||
+    rel === project.tagFile ||
+    rel === project.connectionFile ||
+    rel.startsWith('value-tables/') ||
+    rel === `screens/${DASHBOARD_SCREEN}.screen.json`;
+  const files: Record<string, string> = {};
+  for (const [rel, v] of Object.entries(all)) if (keep(rel)) files[rel] = v;
+  const rest = { ...project };
+  delete rest.templates;
+  files['project.json'] = text({
+    ...rest,
+    entryScreen: DASHBOARD_SCREEN,
+    screens: [DASHBOARD_SCREEN],
+    navigation: {
+      ...project.navigation,
+      items: (project.navigation?.items ?? []).filter((i) => i.screen === DASHBOARD_SCREEN),
+    },
+  });
+  return files;
+}
+
 /** Bộ file của project mới. Tên cắt khoảng trắng hai đầu; mã phải đã hợp lệ (`isValidProjectId`). */
 export function buildNewProject(o: NewProjectOptions): NewProjectFiles {
   const name = o.name.trim();
-  const files = o.template === 'pump' ? pumpFiles(o, name) : blankFiles(o, name);
+  const files =
+    o.template === 'pump'
+      ? pumpFiles(o, name)
+      : o.template === 'dashboard'
+        ? dashboardFiles(o, name)
+        : blankFiles(o, name);
   const entry = (JSON.parse(files['project.json']) as { entryScreen: string }).entryScreen;
   return { files, entryScreen: entry };
 }

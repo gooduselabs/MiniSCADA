@@ -6,6 +6,7 @@ import {
   buildNewProject,
   isValidProjectId,
   projectIdFromName,
+  TEMPLATE_THEME,
   type NewProjectTemplate,
   type NewProjectTheme,
 } from './new-project.ts';
@@ -67,6 +68,8 @@ describe('buildNewProject', () => {
     ['blank', 'dark'],
     ['pump', 'vivid'],
     ['pump', 'dark'],
+    ['dashboard', 'dark'],
+    ['dashboard', 'vivid'],
   ];
 
   it.each(cases)('mẫu %s, chủ đề %s: hợp lệ 1.1, 0 lỗi', async (template, theme) => {
@@ -129,6 +132,26 @@ describe('buildNewProject', () => {
     expect(Object.values(r.files).some((v) => /"widget":\s*"line"/.test(v))).toBe(true);
     expect(r.entryScreen).toBe(json(r.files, 'project.json').entryScreen);
     expect(r.files[`screens/${r.entryScreen}.screen.json`]).toBeDefined();
+  });
+
+  // Feature 014: mẫu Dashboard tối (một màn hình dashboard của grid-demo, gợi ý chủ đề dark).
+  it('mẫu dashboard: một màn hình lưới có thẻ chỉ số màu và biểu đồ có ngưỡng, chỉ các tệp nó cần', () => {
+    const r = buildNewProject({ name: 'D', id: 'd1', template: 'dashboard', theme: 'dark' });
+    expect(r.entryScreen).toBe('bang-dieu-khien');
+    const p = json(r.files, 'project.json');
+    expect(p.screens).toEqual(['bang-dieu-khien']);
+    expect(p.templates).toBeUndefined();
+    expect((p.navigation as { items: unknown[] }).items).toEqual([
+      expect.objectContaining({ screen: 'bang-dieu-khien' }),
+    ]);
+    expect(Object.keys(r.files).filter((k) => k.endsWith('.screen.json'))).toEqual([
+      'screens/bang-dieu-khien.screen.json',
+    ]);
+    expect(Object.keys(r.files).some((k) => k.endsWith('.svg'))).toBe(false);
+    const s = r.files['screens/bang-dieu-khien.screen.json']!;
+    expect(s).toMatch(/"widget":s*"stat-tile"/);
+    expect(s).toMatch(/"highLimit"/);
+    expect(TEMPLATE_THEME.dashboard).toBe('dark');
   });
 
   it('tên được cắt khoảng trắng hai đầu', () => {
