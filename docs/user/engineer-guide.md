@@ -320,11 +320,13 @@ Sơ đồ không đổi định dạng `logic.json`. Vị trí khối lưu riên
 
 - **Thêm khối**: kéo khối từ task card **Khối / Tag** vào sơ đồ (đặt ở chỗ thả), hoặc **Thêm khối** / Insert (đặt giữa vùng nhìn).
 - **Dời khối**: kéo khối (căn lưới 16 px, giữ Alt để dời tự do) hoặc phím mũi tên (16 px, Shift: 64 px). **Tự sắp xếp** xếp lại mọi khối từ trái sang phải theo phụ thuộc.
+- **Chọn nhiều khối**: Shift+bấm từng khối, hoặc kéo khung trên nền; Ctrl+A chọn hết, Esc bỏ chọn nhóm. Kéo, mũi tên, Delete, Ctrl+D áp cho cả nhóm, mỗi thao tác một bước hoàn tác.
 - **Nối dây**: kéo từ cổng ra (Tag hoặc đầu ra khối) tới cổng vào hoặc chân của cổng logic: Studio thay đúng phần biểu thức đó bằng tên Tag. Kéo ↑/↓ của luật tới mục Ghi PLC thêm hành động Ghi PLC (giá trị cho phép đầu tiên), tới Tag đích thêm Đặt Tag `true`. Kéo một Tag từ task card thả vào cổng vào cũng nối. Khi đang kéo, cổng khác kiểu mờ đi.
 - **Cổng logic**: kéo **AND**, **OR**, **NOT**, **So sánh** ở task card thả vào một cổng vào để bọc biểu thức hiện có (ví dụ `(x) && true`), rồi nối Tag vào chân còn trống.
 - **Xóa dây**: nhấp dây rồi Delete (bỏ toán hạng khỏi AND/OR, cổng vào của khối thành trống). **Xóa khối**: Delete; **Nhân bản**: Ctrl+D (đầu ra theo id mới). Mỗi thao tác hoàn tác được bằng một lần Ctrl+Z.
 - Nhấp một khối (hoặc Tab tới nó) để sửa ở **Inspector** như ở Bảng; Enter đưa con trỏ vào ô Id. Nhấp cổng logic hay hộp Tag đưa con trỏ vào đúng ô biểu thức.
-- **Zoom**: Ctrl + lăn chuột, nút − / + (phím − +), **Vừa khung** (phím 0), **100 %**; kéo nền hoặc lăn chuột để dời. Bản đồ nhỏ ở góc phải dưới: nhấp để tới vùng đó.
+- **Zoom**: Ctrl + lăn chuột, nút − / + (phím − +), **Vừa khung** (phím 0; không thu dưới 90 % để chữ còn đọc được, sơ đồ lớn hơn thì cuộn), **100 %**; lăn chuột, giữ Space rồi kéo, hoặc kéo bằng nút giữa để dời. Bản đồ nhỏ ở góc phải dưới: nhấp để tới vùng đó.
+- **Khung dưới** (Inspector, Thông tin, Thử logic): kéo thanh chia để đổi chiều cao; nút ˅ ở góc phải hoặc Ctrl+J gập/mở (Studio nhớ chiều cao). Mở **Thử logic** ở Sơ đồ, khung dưới tự thấp lại để vùng vẽ còn ít nhất 55 % chiều cao.
 - **Lỗi** của bộ kiểm tra hiện ngay trên sơ đồ: khối có lỗi viền đỏ, cổng vào và dây của biểu thức lỗi màu đỏ, Tag không có trong project là hộp viền đứt đỏ; danh sách vẫn ở tab **Thông tin**, nhấp đúp một dòng để chọn khối trên sơ đồ.
 - **Thử logic** và **Online**: sơ đồ hiện giá trị sống. Dây và cổng BOOL đang TRUE màu xanh lá, giá trị số ghi cạnh cổng ra, khối vừa bắn sáng lên, timer đang đếm hiện "còn x s", mục Ghi PLC hiện giá trị Tag đích; mỗi khối có chip trạng thái (OK, SUSPENDED, THROTTLED, DISABLED; Online kèm số lần bắn).
 

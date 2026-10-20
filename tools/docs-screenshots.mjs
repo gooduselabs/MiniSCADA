@@ -530,20 +530,21 @@ async function online(page, user, shot) {
 }
 
 /** Sơ đồ khối Logic (feature 015): mức phóng `z`, khối `key` ở giữa vùng vẽ (lệch trái để thấy cổng phía trước nó). */
-async function diagramCenter(page, key, z) {
+async function diagramCenter(page, key, z, dy = 0) {
   await page.evaluate(
-    (k, zoom) => {
+    (k, zoom, off) => {
       const d = document.querySelector('mat-logic-diagram');
       const n = d.graph().byKey.get(k);
       const v = d.querySelector('.lgd-view');
       d.setViewport({
         z: zoom,
-        tx: v.clientWidth / 2 - (n.x + n.w / 2 - 100) * zoom,
-        ty: v.clientHeight / 2 - (n.y + n.h / 2) * zoom,
+        tx: v.clientWidth / 2 - (n.x + n.w / 2 - 44) * zoom,
+        ty: v.clientHeight / 2 - (n.y + n.h / 2 + off) * zoom,
       });
     },
     key,
     z,
+    dy,
   );
   await sleep(300);
 }
@@ -666,9 +667,11 @@ const studioScenes = [
       });
       await page.waitForSelector('mat-taskcards .tc-logic [data-gate="and"]');
       await page.setViewport({ ...VIEWPORT, height: 900 });
+      // cây project hẹp lại để vùng vẽ rộng hơn (sơ đồ ở 90 %, mức nhỏ nhất của Vừa khung)
+      await page.evaluate(() => window.__matApp.setLayout({ leftWidth: 200 }));
       await sleep(400);
       await page.$eval('mat-logic-diagram g[data-node="bom1_bat_muc_thap"]', (g) => g.focus());
-      await diagramCenter(page, 'bom1_bat_muc_thap', 0.78);
+      await diagramCenter(page, 'bom1_bat_muc_thap', 0.9, -70);
       await shot('eng-logic-so-do');
       // Lỗi trên sơ đồ: Tag lạ và Tag số vào điều kiện BOOL (validator tô đỏ cổng, dây, khối).
       await page.evaluate(() => {
@@ -679,7 +682,7 @@ const studioScenes = [
         app.store.edit([{ kind: 'logicSet', doc }]);
       });
       await sleep(400);
-      await diagramCenter(page, 'bom1_bat_muc_thap', 0.78);
+      await diagramCenter(page, 'bom1_bat_muc_thap', 0.9, -70);
       await shot('eng-logic-so-do-loi');
       await page.evaluate(() => window.__matApp.store.undo());
       await sleep(200);
@@ -702,9 +705,10 @@ const studioScenes = [
         8000,
       );
       await clickSel(page, 'mat-logic-test [data-act="play"]');
-      await diagramCenter(page, 'bom1_tat_muc_cao', 0.78);
+      await diagramCenter(page, 'bom1_tat_muc_cao', 0.9, 70);
       await shot('eng-logic-so-do-thu');
       await clickSel(page, 'mat-logic-dock [data-tab="info"]');
+      await page.evaluate(() => window.__matApp.setLayout({ leftWidth: 264 }));
       await page.setViewport(VIEWPORT);
       // Bảng (khung nhìn của 011).
       await clickSel(page, 'mat-logic-editor [data-view="table"]');
