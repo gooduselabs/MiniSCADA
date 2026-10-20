@@ -1,6 +1,6 @@
 // Kiểu dùng chung của @mat/report-export. Chuỗi hiển thị (tên hàm, "Tổng", "Người xuất"...) do nơi gọi cấp từ
 // i18n của ứng dụng: gói này không chứa chuỗi giao diện.
-import type { AggFn } from '@mat/history-math';
+import type { ReportFn } from '@mat/history-math';
 
 export interface ExportLabels {
   /** "Kỳ" (đứng trước `periodLabel`). */
@@ -17,7 +17,7 @@ export interface ExportLabels {
   /** "Dữ liệu đủ" (đứng trước phần trăm). */
   coverage: string;
   /** Tên hàm hiển thị ở tiêu đề cột. */
-  fn: Record<AggFn, string>;
+  fn: Record<ReportFn, string>;
 }
 
 export interface ExportMeta {

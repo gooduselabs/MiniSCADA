@@ -27,10 +27,12 @@ function number(text: string, style: CsvStyle): string {
 }
 
 export function columnHeader(
-  col: { label: string; fn: keyof ExportLabels['fn']; unit: string },
+  col: { label: string; fn: keyof ExportLabels['fn']; unit: string; plain?: boolean },
   labels: ExportLabels,
 ): string {
-  return `${col.label} - ${labels.fn[col.fn]}${col.unit ? ` (${col.unit})` : ''}`;
+  const unit = col.unit ? ` (${col.unit})` : '';
+  // cột của báo cáo sự kiện (feature 015): không kèm tên hàm
+  return col.plain ? `${col.label}${unit}` : `${col.label} - ${labels.fn[col.fn] ?? col.fn}${unit}`;
 }
 
 export function coverageText(t: ReportTable, labels: ExportLabels): string {
@@ -45,12 +47,24 @@ export function toCsv(t: ReportTable, opts: CsvOptions): string {
   const line = (cells: string[]) => cells.join(sep) + '\r\n';
   let out = '';
   out += line([text(t.title)]);
+  if (t.org) out += line([text(t.org)]);
   out += line([text(`${labels.period}: ${t.periodLabel}`)]);
-  out += line([text(labels.rowHeader), ...t.columns.map((c) => text(columnHeader(c, labels)))]);
+  out += line([
+    text(t.rowHeader ?? labels.rowHeader),
+    ...t.columns.map((c) => text(columnHeader(c, labels))),
+  ]);
   for (const r of t.rows) out += line([text(r.label), ...r.text.map((c) => number(c, opts.style))]);
   if (t.totalsText)
     out += line([text(labels.total), ...t.totalsText.map((c) => number(c, opts.style))]);
-  out += line([text(coverageText(t, labels))]);
+  if (t.showCoverage !== false) out += line([text(coverageText(t, labels))]);
+  for (const n of t.notes ?? []) out += line([text(n)]);
+  // bảng phụ (feature 015): dòng trống, tiêu đề, đầu bảng, các hàng; ô số theo kiểu CSV
+  for (const s of t.sections ?? []) {
+    out += '\r\n' + line([text(s.title)]);
+    out += line(s.columns.map((c) => text(c.label)));
+    for (const r of s.rows)
+      out += line(r.map((v, k) => (s.columns[k]?.numeric ? number(v, opts.style) : text(v))));
+  }
   return out;
 }
 

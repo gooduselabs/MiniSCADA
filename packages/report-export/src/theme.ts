@@ -101,3 +101,17 @@ export const REPORT_PALETTES: Record<'vivid' | 'industrial', ReportPalette> = { 
 export function reportPalette(theme: ReportTheme | undefined): ReportPalette {
   return theme === 'industrial' ? industrial : vivid;
 }
+
+/** Màu nền thẻ chỉ số (feature 014/015): cùng giá trị `--mat-tile-*` ở mọi chủ đề, chữ trắng ≥ 4,5:1. */
+export const TILE_HEX: Record<string, string> = {
+  teal: '#0f7f75',
+  blue: '#2563eb',
+  rose: '#e11d48',
+  violet: '#7c3aed',
+  olive: '#4d7c0f',
+  indigo: '#4f46e5',
+  orange: '#c2410c',
+  cyan: '#0e7490',
+  green: '#15803d',
+  slate: '#475569',
+};

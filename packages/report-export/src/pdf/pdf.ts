@@ -2,11 +2,18 @@
 // nhấn của chủ đề (logo tùy chọn), thẻ số liệu tổng hợp, biểu đồ vector (ECharts SSR SVG, chart.ts), bảng kẻ xen kẽ
 // lặp hàng tiêu đề khi sang trang, chân trang có số trang; phông Inter nhúng (pdf-fonts.ts) đủ dấu tiếng Việt. Khổ và hướng
 // theo mẫu báo cáo; bảng quá rộng chia nhóm cột như trước (planLayout).
-import { formatLocal, formatNumber, type ReportTable } from '@mat/history-math';
+import {
+  TILE_ORDER,
+  formatLocal,
+  formatNumber,
+  type ReportSection,
+  type ReportTable,
+  type ReportTile,
+} from '@mat/history-math';
 import { columnHeader, coverageText } from '../csv/csv.ts';
 import type { ExportLabels, ExportMeta } from '../types.ts';
-import { chartSpec, chartSvg } from './chart.ts';
-import { reportPalette, type ReportPalette } from '../theme.ts';
+import { chartOf, chartSvg } from './chart.ts';
+import { TILE_HEX, reportPalette, type ReportPalette } from '../theme.ts';
 
 type Cell = { text: string; [k: string]: unknown };
 type Node = Record<string, unknown>;
@@ -131,6 +138,9 @@ function headerBand(
   const ink = p.accentInk;
   const info: Node = {
     stack: [
+      ...(t.org
+        ? [{ text: t.org.toUpperCase(), color: ink, fontSize: 8, bold: true, margin: [0, 0, 0, 2] }]
+        : []),
       { text: t.title, color: ink, fontSize: 15, bold: true, margin: [0, 0, 0, 3] },
       { text: `${labels.period}: ${t.periodLabel}`, color: ink, fontSize: 9 },
       {
@@ -173,21 +183,48 @@ function headerBand(
   };
 }
 
-function summaryCards(t: ReportTable, labels: ExportLabels, p: ReportPalette): Node {
-  const card = (i: number, label: string, value: string, unit: string): Node => ({
+/** Thẻ của bảng 010 (không có `tiles`): dòng tổng của các cột đầu và độ đủ dữ liệu. */
+function derivedTiles(t: ReportTable, labels: ExportLabels): ReportTile[] {
+  const out: ReportTile[] = [];
+  if (t.totalsText)
+    t.columns.slice(0, MAX_CARDS).forEach((c, k) => {
+      const v = t.totalsText![k] ?? '';
+      if (v !== '')
+        out.push({
+          label: `${c.label} (${labels.fn[c.fn] ?? c.fn})`,
+          value: t.totals?.[k] ?? null,
+          text: v,
+          unit: c.unit,
+          color: TILE_ORDER[k % TILE_ORDER.length]!,
+        });
+    });
+  out.push({
+    label: labels.coverage,
+    value: t.coverage * 100,
+    text: formatNumber(t.coverage * 100, 1),
+    unit: '%',
+    color: 'slate',
+  });
+  return out;
+}
+
+/** Thẻ chỉ số màu đặc như `stat-tile` (feature 014/015): nhãn nhỏ, số lớn, chữ trắng. */
+function summaryCards(t: ReportTable, labels: ExportLabels): Node | null {
+  const tiles = t.tiles ?? derivedTiles(t, labels);
+  if (tiles.length === 0) return null;
+  const card = (x: ReportTile): Node => ({
     table: {
-      widths: [3, '*'],
+      widths: ['*'],
       body: [
         [
-          { text: '', fillColor: p.chart[i % p.chart.length] },
           {
-            fillColor: p.zebra,
+            fillColor: TILE_HEX[x.color] ?? TILE_HEX.teal,
             stack: [
-              { text: label, color: p.muted, fontSize: 7.5, margin: [0, 0, 0, 2] },
+              { text: x.label, color: '#ffffff', fontSize: 7.5, margin: [0, 0, 0, 3] },
               {
                 text: [
-                  { text: value, fontSize: 14, bold: true, color: p.text },
-                  ...(unit ? [{ text: ` ${unit}`, fontSize: 8, color: p.muted }] : []),
+                  { text: x.text, fontSize: 15, bold: true, color: '#ffffff' },
+                  ...(x.unit ? [{ text: ` ${x.unit}`, fontSize: 8, color: '#ffffff' }] : []),
                 ],
               },
             ],
@@ -198,20 +235,81 @@ function summaryCards(t: ReportTable, labels: ExportLabels, p: ReportPalette): N
     layout: {
       hLineWidth: () => 0,
       vLineWidth: () => 0,
-      paddingLeft: (i: number) => (i === 0 ? 0 : 8),
-      paddingRight: (i: number) => (i === 0 ? 0 : 8),
-      paddingTop: () => 6,
-      paddingBottom: () => 6,
+      paddingLeft: () => 10,
+      paddingRight: () => 8,
+      paddingTop: () => 8,
+      paddingBottom: () => 8,
     },
   });
-  const cards: Node[] = [];
-  if (t.totalsText)
-    t.columns.slice(0, MAX_CARDS).forEach((c, k) => {
-      const v = t.totalsText![k] ?? '';
-      if (v !== '') cards.push(card(k, `${c.label} (${labels.fn[c.fn]})`, v, c.unit));
-    });
-  cards.push(card(cards.length, labels.coverage, formatNumber(t.coverage * 100, 1), '%'));
-  return { id: 'summary-cards', columns: cards, columnGap: 8, margin: [0, 0, 0, 10] };
+  return { id: 'summary-cards', columns: tiles.map(card), columnGap: 8, margin: [0, 0, 0, 10] };
+}
+
+/** Khung có thanh tiêu đề (như `.frame .head` của trang): tiêu đề nền nhạt, thân `body`. */
+function framed(title: string, body: Node, p: ReportPalette, extra: Node = {}): Node {
+  return {
+    table: {
+      widths: ['*'],
+      body: [[{ text: title, bold: true, fontSize: 8.5, fillColor: p.zebra }], [body]],
+    },
+    layout: {
+      hLineWidth: (i: number, node: { table: { body: unknown[] } }) =>
+        i === 0 || i === 1 || i === node.table.body.length ? 0.5 : 0,
+      vLineWidth: () => 0.5,
+      hLineColor: () => p.border,
+      vLineColor: () => p.border,
+      paddingLeft: () => 8,
+      paddingRight: () => 8,
+      paddingTop: (i: number) => (i === 0 ? 5 : 6),
+      paddingBottom: (i: number) => (i === 0 ? 4 : 6),
+    },
+    margin: [0, 0, 0, 10],
+    ...extra,
+  };
+}
+
+/** Bảng phụ (thống kê, danh sách sự kiện): đầu bảng màu nhấn, sọc, ô số canh phải, chữ dài xuống dòng. */
+function sectionTable(s: ReportSection, p: ReportPalette): Node {
+  const head = s.columns.map((c) => ({
+    text: c.label,
+    bold: true,
+    color: p.accentInk,
+    alignment: c.numeric ? 'right' : 'left',
+  }));
+  const body: Cell[][] = [head];
+  for (const r of s.rows)
+    body.push(
+      r.map((v, k) =>
+        s.columns[k]?.numeric ? { text: v, alignment: 'right', noWrap: true } : { text: v },
+      ),
+    );
+  if (s.rows.length === 0) body.push([{ text: '–', colSpan: s.columns.length }]);
+  return {
+    stack: [
+      { text: s.title, bold: true, fontSize: 9.5, color: p.accent, margin: [0, 6, 0, 4] },
+      {
+        table: {
+          headerRows: 1,
+          dontBreakRows: true,
+          widths: s.columns.map((c, k) =>
+            c.numeric ? 'auto' : k === s.columns.length - 1 || k === 0 ? '*' : 'auto',
+          ),
+          body,
+        },
+        layout: {
+          fillColor: (row: number): string | null =>
+            row === 0 ? p.accent : row % 2 === 0 ? p.zebra : null,
+          hLineWidth: (i: number) => (i === body.length ? 0.75 : 0),
+          hLineColor: () => p.border,
+          vLineWidth: () => 0,
+          paddingLeft: () => 6,
+          paddingRight: () => 6,
+          paddingTop: () => 3,
+          paddingBottom: () => 3,
+        },
+      },
+    ],
+    margin: [0, 4, 0, 6],
+  };
 }
 
 function chartBlock(
@@ -221,19 +319,15 @@ function chartBlock(
   p: ReportPalette,
 ): Node | null {
   if (meta.chart === false) return null;
-  const spec = chartSpec(t);
-  if (!spec) return null;
+  const c = chartOf(t, (k) => columnHeader(t.columns[k]!, labels));
+  if (!c) return null;
   const [pw, ph] = pageSize(meta);
-  const width = pw - 2 * MARGIN_X;
-  const height = Math.round(Math.min(200, Math.max(140, ph * 0.26)));
-  const svg = chartSvg(t, spec, {
-    width,
-    height,
-    palette: p,
-    names: spec.columns.map((k) => columnHeader(t.columns[k]!, labels)),
-    font: FONT,
+  const width = pw - 2 * MARGIN_X - 17; // trong khung: đệm 8 + 8, viền 0,5 + 0,5
+  const height = Math.round(Math.min(190, Math.max(130, ph * 0.24)));
+  const svg = chartSvg(c, { width, height, palette: p, font: FONT });
+  return framed(c.title, { id: 'chart', svg, width, height, font: FONT }, p, {
+    unbreakable: true,
   });
-  return { id: 'chart', svg, width, height, font: FONT, margin: [0, 0, 0, 10] };
 }
 
 function dataTables(
@@ -244,7 +338,7 @@ function dataTables(
 ): Node[] {
   return layout.groups.map((group, gi) => {
     const head: Cell[] = [
-      { text: labels.rowHeader, bold: true, color: p.accentInk, alignment: 'left' },
+      { text: t.rowHeader ?? labels.rowHeader, bold: true, color: p.accentInk, alignment: 'left' },
       ...group.map((k) => ({
         text: columnHeader(t.columns[k]!, labels),
         bold: true,
@@ -313,8 +407,16 @@ export function pdfDefinition(
   const p = reportPalette(meta.theme);
   const layout = planLayout(t, meta, labels);
   const chart = chartBlock(t, meta, labels, p);
+  const cards = summaryCards(t, labels);
   const paper = meta.paper ?? {};
   const lineEnd = pageSize(meta)[0] - 2 * MARGIN_X;
+  const note = (text: string) => ({
+    text,
+    margin: [0, 4, 0, 0],
+    italics: true,
+    color: p.muted,
+    fontSize: 7.5,
+  });
   return {
     pageSize: paper.size ?? 'A4',
     pageOrientation: paper.orientation ?? 'portrait',
@@ -322,16 +424,12 @@ export function pdfDefinition(
     defaultStyle: { font: FONT, fontSize: layout.fontSize, color: p.text },
     content: [
       headerBand(t, meta, labels, p),
-      summaryCards(t, labels, p),
+      ...(cards ? [cards] : []),
       ...(chart ? [chart] : []),
       ...dataTables(t, labels, layout, p),
-      {
-        text: coverageText(t, labels),
-        margin: [0, 6, 0, 0],
-        italics: true,
-        color: p.muted,
-        fontSize: 7.5,
-      },
+      ...(t.showCoverage !== false ? [note(coverageText(t, labels))] : []),
+      ...(t.notes ?? []).map(note),
+      ...(t.sections ?? []).map((s) => sectionTable(s, p)),
     ],
     footer: (current: number, count: number) => ({
       margin: [MARGIN_X, 10, MARGIN_X, 0],

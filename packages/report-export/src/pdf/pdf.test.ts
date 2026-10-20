@@ -218,7 +218,11 @@ describe('PDF mẫu mới: định nghĩa tài liệu (T048)', () => {
     expect(all.join(' ')).toContain(t.columns[0]!.unit);
     expect(all.join(' ')).toContain(LABELS.coverage);
     // bảng không có dòng tổng: chỉ còn thẻ dữ liệu đủ
-    const noTot = pdfDefinition({ ...t, totals: null, totalsText: null }, META, LABELS);
+    const noTot = pdfDefinition(
+      { ...t, tiles: undefined, totals: null, totalsText: null },
+      META,
+      LABELS,
+    );
     const c2 = texts(nodes(noTot.content).find((n) => n.id === 'summary-cards'));
     expect(c2.join(' ')).toContain(LABELS.coverage);
     expect(c2).not.toContain(t.totalsText![0]);

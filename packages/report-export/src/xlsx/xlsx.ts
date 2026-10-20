@@ -46,11 +46,16 @@ const toNumber = (text: string): number => {
   return Number.isFinite(n) ? n : Number.NaN;
 };
 
-// Kiểu ô cố định (cellXfs); kiểu số theo (decimals, đơn vị) nối sau, mỗi định dạng hai kiểu: thường và đậm.
+// Kiểu ô cố định (cellXfs); kiểu số theo (decimals, đơn vị) nối sau, mỗi định dạng ba kiểu: thường, sọc, dòng tổng.
 const STYLE_BOLD = 1;
 const STYLE_HEADER = 2;
 const STYLE_TITLE = 3;
-const FIXED_XFS = 4;
+const STYLE_ZEBRA = 4;
+const STYLE_TOTAL = 5;
+const STYLE_SECTION = 6;
+const STYLE_MUTED = 7;
+const FIXED_XFS = 8;
+const PER_FMT = 3;
 
 const sanitizeSheetName = (s: string | undefined): string => {
   const n = stripControl(s ?? '')
@@ -73,30 +78,47 @@ export function numberFormat(decimals: number, unit: string): string {
   return `#,##0${d ? `.${'0'.repeat(d)}` : ''}${u ? `" ${u}"` : ''}`;
 }
 
+// fonts: 0 thường, 1 đậm, 2 đậm chữ trên nền nhấn, 3 tiêu đề lớn màu nhấn, 4 tiêu đề mục màu nhấn, 5 chữ nhạt nghiêng
+// fills: 0 none, 1 gray125 (bắt buộc), 2 nhấn (đầu bảng), 3 sọc, 4 dòng tổng
+// borders: 0 không, 1 gạch dưới mảnh, 2 gạch trên đậm màu nhấn (dòng tổng)
 function stylesXml(formats: string[], p: ReportPalette): string {
   const numFmts = formats
     .map((code, i) => `<numFmt numFmtId="${164 + i}" formatCode="${xmlText(code)}"/>`)
     .join('');
-  const xf = (numFmtId: number, fontId: number) =>
-    `<xf numFmtId="${numFmtId}" fontId="${fontId}" fillId="0" borderId="0" xfId="0"${numFmtId ? ' applyNumberFormat="1"' : ''}${fontId ? ' applyFont="1"' : ''}/>`;
+  const xf = (numFmtId: number, fontId: number, fillId = 0, borderId = 0) =>
+    `<xf numFmtId="${numFmtId}" fontId="${fontId}" fillId="${fillId}" borderId="${borderId}" xfId="0"` +
+    `${numFmtId ? ' applyNumberFormat="1"' : ''}${fontId ? ' applyFont="1"' : ''}` +
+    `${fillId ? ' applyFill="1"' : ''}${borderId ? ' applyBorder="1"' : ''}/>`;
   const xfs = [
     xf(0, 0),
     xf(0, 1),
     `<xf numFmtId="0" fontId="2" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>`,
     xf(0, 3),
-    ...formats.flatMap((_, i) => [xf(164 + i, 0), xf(164 + i, 1)]),
+    xf(0, 0, 3),
+    xf(0, 1, 4, 2),
+    xf(0, 4),
+    xf(0, 5),
+    ...formats.flatMap((_, i) => [xf(164 + i, 0), xf(164 + i, 0, 3), xf(164 + i, 1, 4, 2)]),
   ];
+  const solid = (hex: string) =>
+    `<fill><patternFill patternType="solid"><fgColor rgb="${argb(hex)}"/><bgColor indexed="64"/></patternFill></fill>`;
   return (
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
     `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
     (formats.length ? `<numFmts count="${formats.length}">${numFmts}</numFmts>` : '') +
-    `<fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font>` +
+    `<fonts count="6"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font>` +
     `<font><b/><sz val="11"/><color rgb="${argb(p.accentInk)}"/><name val="Calibri"/></font>` +
-    `<font><b/><sz val="14"/><color rgb="${argb(p.accent)}"/><name val="Calibri"/></font></fonts>` +
-    `<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>` +
-    `<fill><patternFill patternType="solid"><fgColor rgb="${argb(p.accent)}"/><bgColor indexed="64"/></patternFill></fill></fills>` +
-    `<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>` +
-    `<border><left/><right/><top/><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders>` +
+    `<font><b/><sz val="14"/><color rgb="${argb(p.accent)}"/><name val="Calibri"/></font>` +
+    `<font><b/><sz val="12"/><color rgb="${argb(p.accent)}"/><name val="Calibri"/></font>` +
+    `<font><i/><sz val="10"/><color rgb="${argb(p.muted)}"/><name val="Calibri"/></font></fonts>` +
+    `<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>` +
+    solid(p.accent) +
+    solid(p.zebra) +
+    solid(p.chartSoft[0]!) +
+    `</fills>` +
+    `<borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border>` +
+    `<border><left/><right/><top/><bottom style="thin"><color auto="1"/></bottom><diagonal/></border>` +
+    `<border><left/><right/><top style="medium"><color rgb="${argb(p.accent)}"/></top><bottom/><diagonal/></border></borders>` +
     `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>` +
     `<cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs>` +
     `<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>` +
@@ -130,21 +152,28 @@ function wrapLines(text: string, width: number): number {
 export function buildXlsx(t: ReportTable, meta: ExportMeta, labels: ExportLabels): Uint8Array {
   const p = reportPalette(meta.theme);
   const formats: string[] = [];
-  const fmtOf = t.columns.map((c) => {
-    const code = numberFormat(c.decimals, c.unit);
+  const fmtIndex = (code: string) => {
     let i = formats.indexOf(code);
     if (i < 0) i = formats.push(code) - 1;
     return i;
-  });
-  const numStyle = (k: number, bold: boolean) => FIXED_XFS + 2 * fmtOf[k]! + (bold ? 1 : 0);
+  };
+  const fmtOf = t.columns.map((c) => fmtIndex(numberFormat(c.decimals, c.unit)));
+  /** Kiểu ô số của cột `k`: 0 thường, 1 sọc, 2 dòng tổng. */
+  const numStyle = (k: number, kind: 0 | 1 | 2) => FIXED_XFS + PER_FMT * fmtOf[k]! + kind;
+  const tiles = t.tiles ?? [];
+  const tileFmt = tiles.map((x) => fmtIndex(numberFormat(decimalsOf(x.text), x.unit)));
+  const sections = t.sections ?? [];
+  const intFmt = fmtIndex(numberFormat(0, ''));
+  const oneFmt = fmtIndex(numberFormat(1, ''));
+  const rowHeader = t.rowHeader ?? labels.rowHeader;
 
   // Độ rộng: cột nhãn theo nhãn dài nhất; cột số theo số dài nhất kèm đơn vị, tiêu đề cột xuống dòng (≤ 3 dòng) thay vì
-  // kéo rộng cột, nhưng không hẹp hơn từ dài nhất của tiêu đề.
+  // kéo rộng cột, nhưng không hẹp hơn từ dài nhất của tiêu đề. Bảng phụ nới cột theo ô của chúng.
   const headers = t.columns.map((c) => guardFormula(columnHeader(c, labels)));
   const widths: number[] = [
     clampW(
       Math.max(
-        len(labels.rowHeader),
+        len(rowHeader),
         len(labels.total),
         ...t.rows.map((r) => len(guardFormula(r.label))),
       ) + 2,
@@ -160,8 +189,13 @@ export function buildXlsx(t: ReportTable, meta: ExportMeta, labels: ExportLabels
       return clampW(Math.max(num, word, len(h) / HEADER_LINES + 1));
     }),
   ];
+  for (const s of sections)
+    s.columns.forEach((col, k) => {
+      const w = clampW(Math.max(len(col.label), ...s.rows.map((r) => len(r[k] ?? ''))) + 2);
+      widths[k] = Math.max(widths[k] ?? MIN_W, w);
+    });
   const headerLines = Math.max(
-    wrapLines(labels.rowHeader, widths[0]! - 1),
+    wrapLines(rowHeader, widths[0]! - 1),
     ...headers.map((h, k) => wrapLines(h, widths[k + 1]! - 1)),
   );
 
@@ -184,35 +218,65 @@ export function buildXlsx(t: ReportTable, meta: ExportMeta, labels: ExportLabels
   };
 
   meta1(t.title, STYLE_TITLE, ' ht="21" customHeight="1"');
+  if (t.org) meta1(t.org, STYLE_BOLD);
   meta1(`${labels.period}: ${t.periodLabel}`);
   meta1(`${labels.exportedBy}: ${meta.exportedBy}`);
   meta1(`${labels.exportedAt}: ${formatLocal(meta.exportedAt, meta.tz, 'sec')}`);
+  // thẻ tổng hợp: nhãn | giá trị (số có đơn vị)
+  tiles.forEach((x, i) => {
+    r++;
+    const style = FIXED_XFS + PER_FMT * tileFmt[i]!;
+    push([str(x.label, 0, STYLE_BOLD), cell(x.text === '–' ? '' : x.text, 1, style)]);
+  });
 
   r++;
   const headerRow = r;
   push(
     [
-      str(labels.rowHeader, 0, STYLE_HEADER),
+      str(rowHeader, 0, STYLE_HEADER),
       ...t.columns.map((c, i) => str(columnHeader(c, labels), i + 1, STYLE_HEADER)),
     ],
     ` ht="${headerLines * LINE_HT}" customHeight="1"`,
   );
-  for (const row of t.rows) {
+  t.rows.forEach((row, i) => {
     r++;
+    const zebra = i % 2 === 1;
     push([
-      str(row.label, 0, 0),
-      ...row.text.map((text, k) => cell(text, k + 1, numStyle(k, false))),
+      str(row.label, 0, zebra ? STYLE_ZEBRA : 0),
+      ...row.text.map((text, k) => cell(text, k + 1, numStyle(k, zebra ? 1 : 0))),
     ]);
-  }
+  });
   if (t.totalsText) {
     r++;
     push([
-      str(labels.total, 0, STYLE_BOLD),
-      ...t.totalsText.map((text, k) => cell(text, k + 1, numStyle(k, true))),
+      str(labels.total, 0, STYLE_TOTAL),
+      ...t.totalsText.map((text, k) => cell(text, k + 1, numStyle(k, 2))),
     ]);
   }
-  meta1(coverageText(t, labels));
+  if (t.showCoverage !== false) meta1(coverageText(t, labels), STYLE_MUTED);
+  for (const n of t.notes ?? []) meta1(n, STYLE_MUTED);
 
+  // bảng phụ: dòng trống, tiêu đề mục, đầu bảng, các hàng (ô số là số)
+  for (const s of sections) {
+    r++;
+    meta1(s.title, STYLE_SECTION, ' ht="18" customHeight="1"');
+    r++;
+    push(s.columns.map((c, k) => str(c.label, k, STYLE_HEADER)));
+    s.rows.forEach((row, i) => {
+      r++;
+      const zebra = i % 2 === 1;
+      push(
+        row.map((text, k) => {
+          const v = s.values?.[i]?.[k] ?? null;
+          if (s.columns[k]?.numeric && v !== null && Number.isFinite(v)) {
+            const f = Number.isInteger(v) ? intFmt : oneFmt;
+            return `<c r="${colName(k)}${r}" s="${FIXED_XFS + PER_FMT * f + (zebra ? 1 : 0)}"><v>${v}</v></c>`;
+          }
+          return str(text, k, zebra ? STYLE_ZEBRA : 0);
+        }),
+      );
+    });
+  }
   const cols = widths
     .map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`)
     .join('');
@@ -248,4 +312,10 @@ export function buildXlsx(t: ReportTable, meta: ExportMeta, labels: ExportLabels
     'xl/worksheets/sheet1.xml': strToU8(sheet),
   };
   return zipSync(files, { level: 6, mtime: meta.exportedAt });
+}
+
+/** Số chữ số thập phân của chữ số vi-VN đã định dạng ('12,50' -> 2). */
+function decimalsOf(text: string): number {
+  const i = text.indexOf(',');
+  return i < 0 ? 0 : text.length - i - 1;
 }

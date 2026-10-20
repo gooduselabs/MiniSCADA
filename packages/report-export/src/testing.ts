@@ -38,6 +38,8 @@ export const LABELS: ExportLabels = {
     last: 'cuối kỳ',
     delta: 'chênh lệch',
     count: 'số dòng',
+    onTime: 'thời gian ON',
+    starts: 'số lần bật',
   },
 };
 
