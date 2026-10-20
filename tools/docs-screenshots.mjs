@@ -393,6 +393,7 @@ function toPalettePng(png) {
 const DASHBOARD_DEMO = join(ROOT, 'projects/dashboard-demo');
 const SVG_DEMO = join(ROOT, 'projects/svg-demo');
 const GRID_DEMO = join(ROOT, 'projects/grid-demo');
+const HISTORY_DEMO = join(ROOT, 'projects/history-demo');
 const PW = 'mat-docs-screenshots';
 
 /** logic.json mẫu cho projects/dashboard-demo (chỉ trong bộ nhớ, không ghi vào project mẫu). */
@@ -533,6 +534,19 @@ async function online(page, user, shot) {
 
 /** Mỗi cảnh: tên nhóm, hàm nhận { page, shot(name) }. Ảnh tên `<tiền tố>-<tên>.png`. */
 const studioScenes = [
+  {
+    // feature 015: trình thiết kế báo cáo (cấu trúc, xem trước trực tiếp, thuộc tính)
+    name: 'studio-bao-cao',
+    async run({ page, shot }) {
+      await openAndWait(page, readProject(HISTORY_DEMO), 'D:\\Projects\\history-demo');
+      await closeTaskCard(page);
+      await expandNode(page, 'reports');
+      await treeNode(page, 'report:dien-ngay');
+      await page.waitForSelector('mat-templates-editor');
+      await sleep(2500);
+      await shot('eng-thiet-ke-bao-cao');
+    },
+  },
   {
     name: 'studio-tong-quan',
     async run({ page, shot }) {
