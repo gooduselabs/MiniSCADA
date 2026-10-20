@@ -148,6 +148,23 @@ async function dragMouse(page, a, b, steps = 8) {
   await sleep(120);
 }
 const N = (key) => `mat-logic-diagram g[data-node="${key}"]`;
+/** Toàn cảnh ở mức nhỏ (để kéo dây giữa hai khối xa nhau). */
+const overview = (page) =>
+  page.evaluate(() => {
+    const d = document.querySelector('mat-logic-diagram');
+    const b = d.graph().bounds;
+    const v = d.querySelector('.lgd-view');
+    const z = Math.min(0.9, (v.clientWidth - 200) / b.w, (v.clientHeight - 20) / b.h);
+    d.setViewport({ z, tx: 10 - b.x * z, ty: 10 - b.y * z });
+    return d.updateComplete;
+  });
+/** Đưa khối vào vùng nhìn (Vừa khung không thu dưới 90 % nên sơ đồ có thể lớn hơn vùng nhìn). */
+const show = (page, key) =>
+  page.evaluate((k) => {
+    const d = document.querySelector('mat-logic-diagram');
+    d.reveal(d.graph().byKey.get(k));
+    return d.updateComplete;
+  }, key);
 
 export default async function logicDiagram(ctx) {
   const { page, check } = ctx;
@@ -198,6 +215,7 @@ export default async function logicDiagram(ctx) {
   await axeScopedBoth(ctx, 'sơ đồ khối Logic', []);
 
   // ---------- 2. Chọn khối → Inspector; kéo khối ghi layout ----------
+  await show(page, 't_start');
   await page.click(`${N('t_start')} .nd-kind`);
   await waitFor(page, () => document.querySelector('mat-logic-dock [data-field="pt"]') !== null);
   check(
@@ -223,6 +241,7 @@ export default async function logicDiagram(ctx) {
   check('Ctrl+Z bỏ dời khối (một bước)', true);
 
   // ---------- 3. Nối dây bằng kéo cổng: FLOW01 → không; INT.MODE_AUTO? dùng PUMP01.RUN → t_start.in ----------
+  await overview(page);
   const from = await centerOf(
     page,
     'mat-logic-diagram g.opn[data-tag="PUMP01.RUN"] [data-outport] .pt-dot',
@@ -341,6 +360,17 @@ export default async function logicDiagram(ctx) {
   // ---------- 7. Thử logic: giá trị trên dây, khối bắn sáng ----------
   await clickSel(page, 'mat-logic-editor [data-act="test"]');
   await page.waitForSelector('mat-logic-test [data-act="step"]');
+  await sleep(200);
+  const share = await page.evaluate(() => {
+    const v = document.querySelector('mat-logic-diagram .lgd-view').getBoundingClientRect().height;
+    const c = document.querySelector('.center').getBoundingClientRect().height;
+    return { v: Math.round(v), c: Math.round(c) };
+  });
+  check(
+    'mở Thử logic: vùng vẽ vẫn ≥ 55 % chiều cao vùng giữa',
+    share.v >= share.c * 0.55,
+    JSON.stringify(share),
+  );
   await clickSel(page, 'mat-logic-test [data-act="step"]');
   await clickSel(page, 'mat-logic-test [data-manual="TANK01.LEVEL"]');
   await page.$eval('mat-logic-test [data-value="TANK01.LEVEL"]', (e) => {
@@ -421,4 +451,71 @@ export default async function logicDiagram(ctx) {
   await sleep(200);
   await ctx.shot('so-do-toi');
   await setTheme(page, 'light');
+
+  // ---------- 9. Khung dưới gập/mở, Vừa khung không dưới 90 % ----------
+  const h0 = await page.evaluate(() => window.__matApp.workspace.inspectorHeight);
+  await clickSel(page, 'mat-logic-dock [data-act="dock-toggle"]');
+  await sleep(150);
+  const col = await page.evaluate(() => ({
+    collapsed: window.__matApp.workspace.inspectorCollapsed,
+    h: Math.round(document.querySelector('mat-inspector').getBoundingClientRect().height),
+  }));
+  check('nút gập: khung dưới chỉ còn dải tab', col.collapsed && col.h <= 40, JSON.stringify(col));
+  await page.$eval(N('t_start'), (e) => e.focus());
+  await page.keyboard.down('Control');
+  await page.keyboard.press('KeyJ');
+  await page.keyboard.up('Control');
+  await sleep(150);
+  check(
+    'Ctrl+J mở lại, đúng chiều cao cũ',
+    await page.evaluate(
+      (h) =>
+        !window.__matApp.workspace.inspectorCollapsed &&
+        window.__matApp.workspace.inspectorHeight === h,
+      h0,
+    ),
+  );
+  await clickSel(page, 'mat-logic-diagram [data-act="fit"]');
+  await sleep(100);
+  const zf = await page.$eval('mat-logic-diagram [data-role="zoom"]', (e) =>
+    parseInt(e.textContent, 10),
+  );
+  check('Vừa khung: không thu dưới 90 %', zf >= 90, String(zf));
+
+  // ---------- 10. Hiệu năng: vẽ 200 khối ≤ 500 ms trong Chrome ----------
+  const ms = await page.evaluate(async () => {
+    const app = window.__matApp;
+    const doc = { schemaVersion: '1.0.0', rules: [], timers: [], counters: [] };
+    for (let i = 0; i < 100; i++)
+      doc.rules.push({
+        id: `r_${i}`,
+        when: `TANK01.LEVEL > ${i} && LOGIC.T_${i % 50}.Q`,
+        hold: 1000,
+        onRise: [{ do: 'setTag', tag: 'INT.MODE_AUTO', value: true }],
+      });
+    for (let i = 0; i < 50; i++)
+      doc.timers.push({
+        id: `t_${i}`,
+        kind: 'ton',
+        in: 'PUMP01.RUN',
+        pt: 1000,
+        q: `LOGIC.T_${i}.Q`,
+      });
+    for (let i = 0; i < 50; i++)
+      doc.counters.push({ id: `c_${i}`, up: `LOGIC.T_${i}.Q`, value: `LOGIC.C_${i}.V` });
+    const dia = document.querySelector('mat-logic-diagram');
+    const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
+    await frame();
+    const t0 = performance.now();
+    app.store.edit([{ kind: 'logicSet', doc }]);
+    await dia.updateComplete;
+    await frame();
+    await frame();
+    return performance.now() - t0;
+  });
+  const n200 = await page.$$eval('mat-logic-diagram g.blk', (g) => g.length);
+  check('vẽ 200 khối ≤ 500 ms', n200 === 200 && ms <= 500, `${n200} khối, ${Math.round(ms)} ms`);
+  console.log(`  (đo) vẽ 200 khối: ${Math.round(ms)} ms`);
+  await ctx.shot('so-do-200');
+  await page.evaluate(() => window.__matApp.store.undo());
 }

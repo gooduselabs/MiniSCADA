@@ -40,6 +40,7 @@ import {
   startLive,
   stopLive,
   testDockHeight,
+  toggleDock,
 } from './logic-state.ts';
 import { rulesTable } from './rules-table.ts';
 import './logic-diagram.ts';
@@ -111,6 +112,12 @@ export class LogicEditor extends AppElement {
 
   private onKey(e: KeyboardEvent): void {
     const tag = (e.target as HTMLElement).tagName;
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'j' || e.key === 'J')) {
+      // Ctrl+J: gập/mở khung dưới (feature 015), cả khi focus trong ô nhập
+      e.preventDefault();
+      toggleDock(this.app);
+      return;
+    }
     if (/INPUT|TEXTAREA|SELECT/.test(tag) || this.app.store.state.readOnly) return;
     if (e.key === 'Insert') {
       e.preventDefault();
