@@ -25,10 +25,16 @@ export class MatPie extends MatEChartWidget {
     MatEChartWidget.styles,
     css`
       .w {
+        padding: 6px 8px;
+      }
+      .pane,
+      .framed > .pane {
+        flex: 1;
+        min-height: 0;
+        display: flex;
         flex-direction: row;
         align-items: center;
         gap: 10px;
-        padding: 6px 8px;
       }
       .pie {
         flex: 1 1 50%;
@@ -148,38 +154,42 @@ export class MatPie extends MatEChartWidget {
           })
           .join(', ')}`;
 
-    return html`<div class="w">
-      <div class="pie" role="img" aria-label=${aria}>
-        ${empty ? html`<div class="none"></div>` : html`<div class="ec" part="chart"></div>`}
-        ${
-          donut && !empty && this.prop('showTotal', false)
-            ? html`<div class="total">${totalText}</div>`
-            : nothing
-        }
+    const title = this.titleText();
+    return html`<div class="w ${title ? 'framed' : ''}">
+      ${this.head()}
+      <div class="pane ${title ? 'body' : ''}">
+        <div class="pie" role="img" aria-label=${aria}>
+          ${empty ? html`<div class="none"></div>` : html`<div class="ec" part="chart"></div>`}
+          ${
+            donut && !empty && this.prop('showTotal', false)
+              ? html`<div class="total">${totalText}</div>`
+              : nothing
+          }
+        </div>
+        <ul class="legend">
+          ${res.empty ? html`<li class="empty">${vi.chart.noData}</li>` : nothing}
+          ${rows.map((r) => {
+            const s = res.slices[r.i]!;
+            return html`<li>
+              <span
+                class="sw"
+                style=${styleMap({ background: `var(--mat-chart-${(r.i % 12) + 1})` })}
+              ></span>
+              <span class="ellipsis" title=${r.label}>${r.label}</span>
+              ${
+                s.included
+                  ? html`<span class="val">${r.text}</span>${
+                        showPct ? html`<span class="pct">${this.#pct(s.fraction)}</span>` : nothing
+                      }`
+                  : html`<span class="excl"
+                      >${vi.chart.excluded}
+                      (${s.reason === 'negative' ? vi.chart.negative : qvs[r.i]!.badge || 'BAD'})</span
+                    >`
+              }
+            </li>`;
+          })}
+        </ul>
       </div>
-      <ul class="legend">
-        ${res.empty ? html`<li class="empty">${vi.chart.noData}</li>` : nothing}
-        ${rows.map((r) => {
-          const s = res.slices[r.i]!;
-          return html`<li>
-            <span
-              class="sw"
-              style=${styleMap({ background: `var(--mat-chart-${(r.i % 12) + 1})` })}
-            ></span>
-            <span class="ellipsis" title=${r.label}>${r.label}</span>
-            ${
-              s.included
-                ? html`<span class="val">${r.text}</span>${
-                      showPct ? html`<span class="pct">${this.#pct(s.fraction)}</span>` : nothing
-                    }`
-                : html`<span class="excl"
-                    >${vi.chart.excluded}
-                    (${s.reason === 'negative' ? vi.chart.negative : qvs[r.i]!.badge || 'BAD'})</span
-                  >`
-            }
-          </li>`;
-        })}
-      </ul>
       <table class="sr-only">
         <caption>
           ${vi.chart.seriesTable}

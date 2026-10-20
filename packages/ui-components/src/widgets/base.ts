@@ -123,6 +123,17 @@ export class MatWidget extends LitElement {
       : nothing;
   }
 
+  /** Tiêu đề khung (feature 014): thuộc tính `title`, rỗng là không có thanh tiêu đề. */
+  protected titleText(): string {
+    return this.prop('title', '');
+  }
+
+  /** Thanh tiêu đề của khung (chữ thuần, Lit thoát); không có tiêu đề thì không vẽ. */
+  protected head(): TemplateResult | typeof nothing {
+    const t = this.titleText();
+    return t ? html`<div class="head" part="head">${t}</div>` : nothing;
+  }
+
   // ---- vòng đời ----------------------------------------------------------------------------------------------
 
   override connectedCallback(): void {

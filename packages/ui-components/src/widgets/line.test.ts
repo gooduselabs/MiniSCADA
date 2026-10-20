@@ -366,3 +366,49 @@ describe('mat-w-line (FR-029, SC-018)', () => {
     expect(typeof f).toBe('function');
   });
 });
+
+// Feature 014: khung có tiêu đề, đường ngưỡng cao/thấp (màu đỏ/xanh ngọc, có trong chú giải), nhãn trục.
+describe('mat-w-line: tiêu đề, ngưỡng, nhãn trục (feature 014)', () => {
+  it('title: thanh tiêu đề ở đầu khung; không đặt thì không có', async () => {
+    const src = makeSource([tagInfo('a')]);
+    const el = await mount(line(['a'], { title: 'Biểu đồ nhiệt độ' }), src);
+    expect(textOf(el, '.head')).toBe('Biểu đồ nhiệt độ');
+    expect(el.shadowRoot!.querySelector('.w')!.classList.contains('framed')).toBe(true);
+    const plain = await mount(line(['a']), src);
+    expect(plain.shadowRoot!.querySelector('.head')).toBeNull();
+  });
+
+  it('highLimit, lowLimit: truyền cho đồ thị kèm màu, có mục chú giải; trục Y gồm cả ngưỡng', async () => {
+    const src = makeSource([tagInfo('a', { unit: '°C' })]);
+    const el = await mount(line(['a'], { highLimit: 80, lowLimit: 20 }), src);
+    await plotReady(el);
+    const o = h.creates.at(-1)!.opts;
+    expect(o.limits?.map((l) => [l.kind, l.value])).toEqual([
+      ['high', 80],
+      ['low', 20],
+    ]);
+    expect(o.yRange(40, 50)[1]).toBeGreaterThanOrEqual(80);
+    expect(o.yRange(40, 50)[0]).toBeLessThanOrEqual(20);
+    const items = [...el.shadowRoot!.querySelectorAll('.legend li.limit')].map((x) =>
+      (x.textContent ?? '').replace(/\s+/g, ' ').trim(),
+    );
+    expect(items).toEqual(['Ngưỡng cao 80 °C', 'Ngưỡng thấp 20 °C']);
+  });
+
+  it('yMin, yMax cố định thắng ngưỡng; không có ngưỡng thì không có mục chú giải', async () => {
+    const src = makeSource([tagInfo('a')]);
+    const el = await mount(line(['a'], { highLimit: 80, yMin: 0, yMax: 50 }), src);
+    await plotReady(el);
+    expect(h.creates.at(-1)!.opts.yRange(10, 20)).toEqual([0, 50]);
+    const none = await mount(line(['a']), src);
+    expect(none.shadowRoot!.querySelector('.legend li.limit')).toBeNull();
+  });
+
+  it('xLabel, yLabel: truyền cho đồ thị', async () => {
+    const src = makeSource([tagInfo('a')]);
+    const el = await mount(line(['a'], { xLabel: 'Thời gian', yLabel: 'Giá trị' }), src);
+    await plotReady(el);
+    const o = h.creates.at(-1)!.opts;
+    expect([o.xLabel, o.yLabel]).toEqual(['Thời gian', 'Giá trị']);
+  });
+});

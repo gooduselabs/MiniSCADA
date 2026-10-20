@@ -8,10 +8,12 @@ import {
   autoYRange,
   FALLBACK_SERIES_COLORS,
   loadUPlot,
+  rangeWithLimits,
   SERIES_DASHES,
   singleSeriesFill,
   type PlotAdapter,
   type PlotFactory,
+  type PlotLimit,
   type PlotOptions,
 } from '../chart/line-chart.ts';
 import { ChartWindow } from '../chart/window.ts';
@@ -221,6 +223,29 @@ export class MatLine extends MatWidget {
     return this.#labels()[i] || this.source.info(ids[i]!)?.description || ids[i] || '';
   }
 
+  /** Ngưỡng cao, thấp (feature 014): số hữu hạn ở props. */
+  #limits(): Array<Omit<PlotLimit, 'color'>> {
+    const out: Array<Omit<PlotLimit, 'color'>> = [];
+    for (const [kind, name] of [
+      ['high', 'highLimit'],
+      ['low', 'lowLimit'],
+    ] as const) {
+      const v = this.item?.props?.[name];
+      if (typeof v === 'number' && Number.isFinite(v)) out.push({ kind, value: v });
+    }
+    return out;
+  }
+
+  #limitColor(kind: PlotLimit['kind']): string {
+    return kind === 'high'
+      ? this.#cssColor('--mat-alarm-red', '#c42b2b')
+      : this.#cssColor('--mat-alarm-teal', '#0b6b73');
+  }
+
+  #axisText(name: 'xLabel' | 'yLabel'): string {
+    return this.prop(name, '');
+  }
+
   #yFixed(): { yMin?: number; yMax?: number } {
     const a = this.item?.props?.yMin;
     const b = this.item?.props?.yMax;
@@ -266,6 +291,9 @@ export class MatLine extends MatWidget {
       this.prop('grid', true),
       JSON.stringify(this.#yFixed()),
       JSON.stringify(this.#labels()),
+      JSON.stringify(this.#limits()),
+      this.#axisText('xLabel'),
+      this.#axisText('yLabel'),
     ].join('|');
     if (plotKey !== this.#plotKey) {
       this.#plotKey = plotKey;
@@ -328,6 +356,8 @@ export class MatLine extends MatWidget {
           show: this.source.info(id) !== undefined,
         }));
         const fills = singleSeriesFill(series);
+        const limits = this.#limits().map((l) => ({ ...l, color: this.#limitColor(l.kind) }));
+        const limitValues = limits.map((l) => l.value);
         const opts: PlotOptions = {
           width: host.clientWidth || this.item.width || 300,
           height: host.clientHeight || Math.max(60, (this.item.height || 200) - 60),
@@ -336,7 +366,13 @@ export class MatLine extends MatWidget {
           surfaceColor: this.#cssColor('--mat-surface', '#ffffff'),
           grid: this.prop('grid', true),
           xRange: () => [this.#nowSec - this.#windowSec(), this.#nowSec],
-          yRange: (min, max) => autoYRange(min, max, fixed.yMin, fixed.yMax),
+          yRange: (min, max) => {
+            const [a, b] = rangeWithLimits(min, max, limitValues);
+            return autoYRange(a, b, fixed.yMin, fixed.yMax);
+          },
+          limits,
+          xLabel: this.#axisText('xLabel'),
+          yLabel: this.#axisText('yLabel'),
           onCursor: (idx) => {
             this._cursor = idx;
           },
@@ -463,8 +499,22 @@ export class MatLine extends MatWidget {
             })}
           </div>`
         : nothing;
-    return html`<div class="w">
-      <div class="imgwrap" role="img" aria-label=${ariaLabel}>
+    const title = this.titleText();
+    const limits = this.#limits();
+    const unit = rows.find((r) => !r.gone)?.fmt.unit ?? '';
+    const limitText = (l: Omit<PlotLimit, 'color'>) =>
+      `${l.kind === 'high' ? vi.dash.highLimit : vi.dash.lowLimit} ${formatValue(
+        { value: l.value, quality: 'GOOD' },
+        rows[0]?.info,
+        { decimals: this.decimals(rows[0]?.info) },
+      ).text.replace(/.0+$/, '')}${unit ? ' ' + unit : ''}`;
+    return html`<div class="w ${title ? 'framed' : ''}">
+      ${this.head()}
+      <div
+        class="imgwrap ${title ? 'body' : ''}"
+        role="img"
+        aria-label=${[ariaLabel, ...limits.map(limitText)].join('; ')}
+      >
         <div class="plot">
           ${this._failed ? html`<div class="plot-error">${vi.chart.loadFailed}</div>` : nothing}
         </div>
@@ -504,6 +554,28 @@ export class MatLine extends MatWidget {
                                   : nothing
                               }`
                       }
+                    </li>`,
+                )}
+                ${limits.map(
+                  (l) =>
+                    html`<li
+                      class="limit"
+                      style=${styleMap({
+                        '--soft': `var(--mat-alarm-${l.kind === 'high' ? 'red' : 'teal'}-soft)`,
+                      })}
+                    >
+                      <svg viewBox="0 0 26 8" aria-hidden="true">
+                        <line
+                          x1="0"
+                          y1="4"
+                          x2="26"
+                          y2="4"
+                          stroke=${`var(--mat-alarm-${l.kind === 'high' ? 'red' : 'teal'})`}
+                          stroke-width="2"
+                          stroke-dasharray="6 4"
+                        />
+                      </svg>
+                      <span class="name">${limitText(l)}</span>
                     </li>`,
                 )}
               </ul>`

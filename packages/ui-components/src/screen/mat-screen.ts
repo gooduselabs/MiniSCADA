@@ -650,6 +650,8 @@ export class MatScreen extends LitElement {
     el.mode = this.mode;
     el.context = { screen: this.screen.id, widget: item.id };
     if (isHistoryWidget(item.widget)) el.history = this.history;
+    // Feature 014: ảnh SVG của project tải qua cùng đường với item svg.
+    if (item.widget === 'image') el.loadSvg = this.loadSvg;
   }
 
   #update(slot: Slot, item: Item): void {
@@ -672,6 +674,7 @@ export class MatScreen extends LitElement {
       if (el.host !== this.host) el.host = this.host;
       if (el.alarms !== this.alarms) el.alarms = this.alarms;
       if (isHistoryWidget(item.widget) && el.history !== this.history) el.history = this.history;
+      if (item.widget === 'image' && el.loadSvg !== this.loadSvg) el.loadSvg = this.loadSvg;
       if (el.mode !== this.mode) el.mode = this.mode;
       const ctx = el.context as { screen: string; widget: string } | undefined;
       if (!ctx || ctx.screen !== this.screen.id || ctx.widget !== item.id)

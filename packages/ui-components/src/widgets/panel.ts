@@ -1,5 +1,5 @@
 // Widget `panel` (FR-027): khung và tiêu đề, không Tag, không nhận sự kiện. Vẽ ở lớp dưới các widget khác theo thứ tự
-// `items` do người thiết kế đặt (việc xếp lớp thuộc <mat-screen>).
+// `items` do người thiết kế đặt (việc xếp lớp thuộc <mat-screen>). Feature 014: `variant` = `card` vẽ khung có thanh tiêu đề.
 import { css, html, nothing, type TemplateResult } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
 import { safeColor } from '../format/color.ts';
@@ -15,6 +15,9 @@ export class MatPanel extends MatWidget {
       .w {
         justify-content: flex-start;
         background: var(--mat-surface-2);
+      }
+      .w.card {
+        background: var(--mat-surface);
       }
       .w.no-border {
         border-color: transparent;
@@ -34,6 +37,17 @@ export class MatPanel extends MatWidget {
   protected override renderWidget(): TemplateResult {
     const title = this.prop('title', '');
     const bg = safeColor(this.item.props?.background);
+    // Feature 014: kiểu "card có header" như khung biểu đồ (thanh tiêu đề, nền khung, bo góc, bóng).
+    if (this.prop('variant', 'plain') === 'card')
+      return html`<div
+        class="w framed card ${this.prop('border', true) ? '' : 'no-border'}"
+        role="group"
+        aria-label=${title}
+        style=${styleMap({ background: bg })}
+      >
+        ${title && this.prop('showTitle', true) ? this.head() : nothing}
+        <div class="body"></div>
+      </div>`;
     return html`<div
       class="w ${this.prop('border', true) ? '' : 'no-border'}"
       role="group"

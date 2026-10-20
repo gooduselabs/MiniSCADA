@@ -2,7 +2,7 @@
 
 <!-- Sinh bởi tools/gen-widget-docs.mjs từ schemas/widgets.catalog.json. Không sửa tay: sửa danh mục rồi chạy lại. -->
 
-Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 21 widget (phiên bản danh mục 0.5.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
+Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 28 widget (phiên bản danh mục 0.6.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
 
 ## Nhúng
 
@@ -95,6 +95,7 @@ Nhóm: Hiển thị. Cỡ mặc định 240 × 200, nhỏ nhất 120 × 100.
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
+| `title` | string | `""` | ≤ 60 ký tự |
 | `label` | string | `""` | ≤ 40 ký tự |
 | `min` | number | theo Tag (`min`) |  |
 | `max` | number | theo Tag (`max`) |  |
@@ -132,6 +133,114 @@ Nhóm: Hiển thị. Cỡ mặc định 400 × 300, nhỏ nhất 80 × 60.
 | `showTitle` | bool | `true` |  |
 | `background` | color | `"auto"` |  |
 | `border` | bool | `true` |  |
+| `variant` | enum | `"plain"` | `plain`, `card` |
+
+### `stat-tile` (`<mat-w-stat-tile>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 280 × 116, nhỏ nhất 160 × 96.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `value` | có | không | number, bool, string | không |
+| `alarm` | không | không | bool | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
+| `color` | enum | `"teal"` | `teal`, `blue`, `rose`, `violet`, `olive`, `indigo`, `orange`, `cyan`, `green`, `slate` |
+| `icon` | enum | `"none"` | `none`, `thermometer`, `droplet`, `wave`, `wind`, `sun`, `lightbulb`, `gas`, `flame`, `fan`, `snowflake`, `pump`, `valve`, `bolt`, `power`, `pressure`, `tank`, `motor`, `gear`, `clock`, `alert`, `star` |
+| `statusText` | bool | `true` |  |
+| `sparkline` | bool | `false` |  |
+| `trend` | bool | `false` |  |
+
+### `kpi` (`<mat-w-kpi>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 260 × 120, nhỏ nhất 160 × 96.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `value` | có | không | number | không |
+| `goal` | không | không | number | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
+| `goal` | number |  |  |
+| `higherIsBetter` | bool | `true` |  |
+
+### `progress` (`<mat-w-progress>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 260 × 72, nhỏ nhất 120 × 40.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `value` | có | không | number | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `min` | number | theo Tag (`min`) |  |
+| `max` | number | theo Tag (`max`) |  |
+| `decimals` | int | `1` | ≥ 0, ≤ 6 |
+| `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
+| `shape` | enum | `"bar"` | `bar`, `ring` |
+| `color` | color | `"auto"` |  |
+| `showValue` | bool | `true` |  |
+
+### `status-list` (`<mat-w-status-list>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 300 × 200, nhỏ nhất 160 × 64.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `items` | có | có (≤ 16) | bool, number | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `title` | string | `""` | ≤ 60 ký tự |
+| `labels` | array | `[]` | ≤ 16 phần tử |
+| `onText` | string | `""` | ≤ 16 ký tự |
+| `offText` | string | `""` | ≤ 16 ký tự |
+| `columns` | int | `1` | ≥ 1, ≤ 4 |
+
+### `clock` (`<mat-w-clock>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 240 × 72, nhỏ nhất 120 × 40.
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `format` | enum | `"datetime"` | `datetime`, `time`, `date` |
+| `utcOffset` | string | `"+07:00"` | ≤ 6 ký tự |
+| `seconds` | bool | `true` |  |
+
+### `text` (`<mat-w-text>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 320 × 120, nhỏ nhất 80 × 32.
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `title` | string | `""` | ≤ 60 ký tự |
+| `text` | string | `""` | ≤ 300 ký tự |
+| `fontSize` | enum | `"m"` | `s`, `m`, `l` |
+| `align` | enum | `"left"` | `left`, `center`, `right` |
+| `color` | color | `"auto"` |  |
+| `background` | color | `"auto"` |  |
+
+### `image` (`<mat-w-image>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 320 × 240, nhỏ nhất 48 × 48.
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `title` | string | `""` | ≤ 60 ký tự |
+| `src` | string | `""` | ≤ 128 ký tự |
+| `fit` | enum | `"contain"` | `contain`, `cover` |
+| `alt` | string | `""` | ≤ 80 ký tự |
 
 ## Nhóm Biểu đồ
 
@@ -145,6 +254,7 @@ Nhóm: Biểu đồ. Cỡ mặc định 600 × 300, nhỏ nhất 240 × 140.
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
+| `title` | string | `""` | ≤ 60 ký tự |
 | `windowSec` | int | `60` | ≥ 10, ≤ 3600 |
 | `sampleMs` | int | `1000` | ≥ 250, ≤ 60000 |
 | `yMin` | number |  |  |
@@ -152,6 +262,10 @@ Nhóm: Biểu đồ. Cỡ mặc định 600 × 300, nhỏ nhất 240 × 140.
 | `legend` | bool | `true` |  |
 | `grid` | bool | `true` |  |
 | `labels` | array | `[]` | ≤ 8 phần tử |
+| `highLimit` | number |  |  |
+| `lowLimit` | number |  |  |
+| `xLabel` | string | `""` | ≤ 24 ký tự |
+| `yLabel` | string | `""` | ≤ 24 ký tự |
 
 ### `bar` (`<mat-w-bar>`)
 
@@ -163,6 +277,7 @@ Nhóm: Biểu đồ. Cỡ mặc định 400 × 260, nhỏ nhất 160 × 120.
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
+| `title` | string | `""` | ≤ 60 ký tự |
 | `orientation` | enum | `"vertical"` | `vertical`, `horizontal` |
 | `min` | number |  |  |
 | `max` | number |  |  |
@@ -180,6 +295,7 @@ Nhóm: Biểu đồ. Cỡ mặc định 280 × 280, nhỏ nhất 120 × 120.
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
+| `title` | string | `""` | ≤ 60 ký tự |
 | `donut` | bool | `true` |  |
 | `decimals` | int | `1` | ≥ 0, ≤ 6 |
 | `showPercent` | bool | `true` |  |

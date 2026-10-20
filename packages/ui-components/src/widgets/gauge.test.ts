@@ -189,22 +189,22 @@ describe('mat-w-gauge (FR-027)', () => {
   // Bán kính theo cả rộng và cao của khung (px), không theo nửa cạnh ngắn ('92%'): khung rộng thấp không còn đồng hồ
   // nhỏ hẳn bản SVG trước 012 (compat-008 dashboard-demo).
   // Tâm cách đáy 10 px (núm kim đường kính 10): núm không đè số đọc bên dưới (T054, ảnh trước/sau 012).
-  it('bán kính lấy hết khung: min(rộng/2, cao) trừ lề, tâm cách đáy đủ cho núm kim', async () => {
+  // Feature 014: đồng hồ gọn trong khung (phản hồi 2026-10-20 "đồng hồ kim to chiếm cả ô"): bán kính ≤ 38 % bề rộng,
+  // ≤ 150 px, vẫn bị chặn bởi chiều cao; nửa vòng giữa vùng vẽ theo chiều dọc, núm kim không chạm đáy.
+  it('bán kính vừa phải: chặn bởi chiều cao, 38 % bề rộng, 150 px; tâm cách đáy đủ cho núm kim', async () => {
     const src = makeSource([tagInfo('t1')]);
     src.set('t1', { value: 5, quality: 'GOOD' });
-    const wide = { ...gauge(), width: 300, height: 100 };
-    await mount(wide, src);
-    const s = gs() as GaugeSeries & {
-      radius: number;
-      center: [string, number];
-      anchor: { size: number };
-    };
-    expect(s.radius).toBe(100 - 10 - 6);
-    expect(s.center).toEqual(['50%', 100 - 10]);
+    type S = GaugeSeries & { radius: number; center: [string, number]; anchor: { size: number } };
+    await mount({ ...gauge(), width: 300, height: 100 }, src);
+    let s = gs() as S;
+    expect(s.radius).toBe(100 - 18);
     expect(s.center[1] + s.anchor.size / 2).toBeLessThanOrEqual(100 - 4);
-    const tall = { ...gauge(), width: 120, height: 300 };
-    await mount(tall, src);
-    expect((gs() as GaugeSeries & { radius: number }).radius).toBe(120 / 2 - 6);
+    await mount({ ...gauge(), width: 120, height: 300 }, src);
+    expect((gs() as S).radius).toBeCloseTo(120 * 0.38, 5);
+    await mount({ ...gauge(), width: 900, height: 600 }, src);
+    s = gs() as S;
+    expect(s.radius).toBe(150);
+    expect(s.center[1]).toBe((600 + 150) / 2 + 4);
   });
 
   // Nạp ECharts thật lần đầu (biến đổi ~600 KB mã) chậm khi nhiều worker chạy song song: hạn 30 s.

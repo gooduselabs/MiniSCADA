@@ -30,6 +30,29 @@ export interface PlotOptions {
   font?: string;
   /** Màu bề mặt (--mat-surface): ruột điểm con trỏ, feature 012. */
   surfaceColor?: string;
+  /** Đường ngưỡng ngang nét đứt (feature 014): ngưỡng cao, ngưỡng thấp. */
+  limits?: PlotLimit[];
+  /** Nhãn trục thời gian và trục giá trị (feature 014); rỗng là không có. */
+  xLabel?: string;
+  yLabel?: string;
+}
+
+export interface PlotLimit {
+  kind: 'high' | 'low';
+  value: number;
+  color: string;
+}
+
+/** Khoảng dữ liệu nới để gồm cả các ngưỡng (đường ngưỡng luôn nằm trong khung khi trục Y tự co). */
+export function rangeWithLimits(
+  dataMin: number | null,
+  dataMax: number | null,
+  limits: readonly number[],
+): [number | null, number | null] {
+  const vals = [dataMin, dataMax, ...limits].filter(
+    (v): v is number => typeof v === 'number' && Number.isFinite(v),
+  );
+  return vals.length ? [Math.min(...vals), Math.max(...vals)] : [null, null];
 }
 
 export interface PlotAdapter {
@@ -173,6 +196,35 @@ export function clockLabels(splits: readonly number[]): string[] {
   });
 }
 
+/** Nhãn trục của uPlot (feature 014); chuỗi rỗng là không có nhãn. */
+function axisLabel(text: string | undefined, font?: string): Record<string, unknown> {
+  return text ? { label: text, labelSize: 18, ...(font ? { labelFont: `11px ${font}` } : {}) } : {};
+}
+
+/** Vẽ đường ngưỡng ngang nét đứt trên canvas của uPlot (sau khi vẽ chuỗi). */
+function drawLimits(u: import('uplot'), limits: readonly PlotLimit[]): void {
+  if (!limits.length) return;
+  const ctx = u.ctx;
+  const { left, top, width, height } = u.bbox;
+  const dpr = globalThis.devicePixelRatio || 1;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(left, top, width, height);
+  ctx.clip();
+  for (const l of limits) {
+    const y = Math.round(u.valToPos(l.value, 'y', true)) + 0.5;
+    if (!Number.isFinite(y)) continue;
+    ctx.beginPath();
+    ctx.strokeStyle = l.color;
+    ctx.lineWidth = 1.5 * dpr;
+    ctx.setLineDash([6 * dpr, 4 * dpr]);
+    ctx.moveTo(left, y);
+    ctx.lineTo(left + width, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 /** Nạp uPlot (import lười) và trả nhà máy dựng đồ thị. */
 export async function loadUPlot(): Promise<PlotFactory> {
   const mod = await import('uplot');
@@ -203,8 +255,9 @@ export async function loadUPlot(): Promise<PlotFactory> {
             // "HH:mm:ss" rộng hơn nhãn mặc định: giãn vạch để chữ không chạm nhau.
             space: 80,
             values: (_u: unknown, splits: number[]) => clockLabels(splits),
+            ...axisLabel(o.xLabel, o.font),
           },
-          axisStyle(o),
+          { ...axisStyle(o), ...axisLabel(o.yLabel, o.font) },
         ],
         series: [
           {},
@@ -221,6 +274,7 @@ export async function loadUPlot(): Promise<PlotFactory> {
         ],
         hooks: {
           setCursor: [(p) => o.onCursor(p.cursor.idx ?? null)],
+          draw: [(p) => drawLimits(p, o.limits ?? [])],
         },
       },
       data as unknown as import('uplot').AlignedData,

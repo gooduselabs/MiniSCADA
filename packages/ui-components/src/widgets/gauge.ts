@@ -29,8 +29,8 @@ export class MatGauge extends MatEChartWidget {
         margin-top: 0;
       }
       .value {
-        font-size: 20px;
-        font-weight: 600;
+        font-size: 24px;
+        font-weight: 700;
         font-variant-numeric: tabular-nums;
       }
       .unit {
@@ -65,6 +65,31 @@ export class MatGauge extends MatEChartWidget {
     const label = this.prop('label', '');
     const valueText = fmt.unit ? `${fmt.text} ${fmt.unit}` : fmt.text;
     const ariaLabel = label || this.nameOf(id);
+    const title = this.titleText();
+    const readout = this.prop('showValue', true)
+      ? html`<div class="readout">
+          <span class="value ${qv.dim ? 'dim' : ''}">${fmt.text}</span>
+          ${fmt.unit ? html`<span class="unit">${fmt.unit}</span>` : nothing}
+        </div>`
+      : nothing;
+    if (title)
+      return html`<div
+        class="w framed ${qv.cls}"
+        role="meter"
+        aria-label=${[title, label].filter(Boolean).join(': ') || ariaLabel}
+        aria-valuemin=${min}
+        aria-valuemax=${max}
+        aria-valuenow=${known ? n : nothing}
+        aria-valuetext=${[valueText, qv.aria].filter(Boolean).join(', ')}
+      >
+        ${this.head()}
+        <div class="body">
+          ${label ? html`<div class="label ellipsis">${label}</div>` : nothing}
+          <div class="ec" part="chart" aria-hidden="true"></div>
+          ${readout}
+        </div>
+        ${this.badge(qv)}
+      </div>`;
     return html`<div
       class="w ${qv.cls}"
       role="meter"
@@ -76,15 +101,7 @@ export class MatGauge extends MatEChartWidget {
     >
       ${label ? html`<div class="label ellipsis">${label}</div>` : nothing}
       <div class="ec" part="chart" aria-hidden="true"></div>
-      ${
-        this.prop('showValue', true)
-          ? html`<div class="readout">
-              <span class="value ${qv.dim ? 'dim' : ''}">${fmt.text}</span>
-              ${fmt.unit ? html`<span class="unit">${fmt.unit}</span>` : nothing}
-            </div>`
-          : nothing
-      }
-      ${this.badge(qv)}
+      ${readout} ${this.badge(qv)}
     </div>`;
   }
 
@@ -97,9 +114,10 @@ export class MatGauge extends MatEChartWidget {
     // Nửa vòng: bán kính bị chặn bởi nửa bề rộng và bởi chiều cao (tâm sát đáy), tính bằng px; '92%' của ECharts tính
     // theo nửa cạnh ngắn nên khung rộng thấp chỉ dùng nửa chiều cao.
     const { width: w, height: h } = this.chartSize();
-    // Tâm cách đáy 10 px: núm kim (đường kính 10) không đè số đọc bên dưới.
-    const cy = h - 10;
-    const radius = Math.max(10, Math.min(w / 2 - 6, cy - 6));
+    // Feature 014: bán kính vừa phải (≤ 38 % bề rộng, ≤ 150 px) để đồng hồ gọn trong khung rộng; nửa vòng nằm giữa
+    // vùng vẽ theo chiều dọc, tâm cách đáy ít nhất 10 px (núm kim không đè số đọc bên dưới).
+    const radius = Math.max(10, Math.min(w / 2 - 10, h - 18, w * 0.38, 150));
+    const cy = Math.min(h - 10, (h + radius) / 2 + 4);
     return {
       // Không tooltip: số đọc đã hiện dưới đồng hồ; tooltip mặc định của ECharts dựng HTML từ chuỗi (cổng SC-020).
       tooltip: { show: false },

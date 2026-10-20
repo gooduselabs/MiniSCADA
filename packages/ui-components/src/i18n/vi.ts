@@ -55,6 +55,28 @@ export const vi = {
     percent: 'Phần trăm',
     cursorHint: 'Di chuột để đọc giá trị',
   },
+  /** Widget dashboard (feature 014). */
+  dash: {
+    status: 'Trạng thái',
+    /** Chữ trạng thái ngắn của thẻ chỉ số theo quality (không chỉ màu). */
+    statusWord: {
+      GOOD: 'Tốt',
+      UNCERTAIN: 'Không chắc',
+      BAD: 'Lỗi',
+      STALE: 'Mất dữ liệu',
+      UNKNOWN: 'Không rõ',
+    } satisfies Record<Quality, string>,
+    alarm: 'Cảnh báo',
+    goal: 'Mục tiêu',
+    ofGoal: 'so với mục tiêu',
+    highLimit: 'Ngưỡng cao',
+    lowLimit: 'Ngưỡng thấp',
+    imageEmpty: 'Chưa chọn ảnh',
+    imageFailed: 'Không tải được ảnh',
+    on: 'Bật',
+    off: 'Tắt',
+    noItems: 'Chưa gắn Tag',
+  },
   table: {
     label: 'Tag',
     value: 'Giá trị',
@@ -79,6 +101,13 @@ export const vi = {
     'tag-table': 'Bảng Tag',
     'alarm-list': 'Bảng alarm',
     'alarm-count': 'Số alarm',
+    'stat-tile': 'Thẻ chỉ số',
+    kpi: 'Chỉ số KPI',
+    progress: 'Thanh tiến độ',
+    'status-list': 'Danh sách trạng thái',
+    clock: 'Đồng hồ ngày giờ',
+    text: 'Ghi chú',
+    image: 'Ảnh',
   } as Record<string, string>,
 } as const;
 

@@ -74,15 +74,24 @@ export class MatBar extends MatEChartWidget {
       .join(', ');
     const aria =
       rows.length === 0 ? `${vi.widget.bar}: ${vi.chart.noData}` : `${vi.widget.bar}: ${summary}`;
-    const cls = `w ${horizontal ? 'horizontal' : 'vertical'}`;
+    const title = this.titleText();
+    const cls = `w ${horizontal ? 'horizontal' : 'vertical'} ${title ? 'framed' : ''}`;
 
     if (rows.length === 0)
       return html`<div class=${cls} role="img" aria-label=${aria}>
+        ${this.head()}
         <div class="empty">${vi.chart.noData}</div>
       </div>`;
 
     return html`<div class=${cls}>
-      <div class="ec" part="chart" role="img" aria-label=${aria}></div>
+      ${this.head()}
+      ${
+        title
+          ? html`<div class="body">
+              <div class="ec" part="chart" role="img" aria-label=${aria}></div>
+            </div>`
+          : html`<div class="ec" part="chart" role="img" aria-label=${aria}></div>`
+      }
       <table class="sr-only">
         <caption>
           ${vi.chart.seriesTable}
