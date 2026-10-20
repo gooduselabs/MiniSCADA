@@ -369,3 +369,121 @@ export function placeInGrid(doc: ScreenModel, item: ScreenModel['items'][number]
     items: [...doc.items, placed],
   } as GridDoc;
 }
+
+// ---- Mẫu hàng có sẵn widget (feature 014, phản hồi 2026-10-20: "kích thước ô card chart nhìn xấu") ----
+
+/** Loại tên của widget mẫu (khóa i18n `lay.tpl.<loại>` ở giao diện): thẻ chỉ số, các biểu đồ, đồng hồ. */
+export type TemplateNameKind = 'tile' | 'chartLine' | 'chartBar' | 'chartPie' | 'gauge';
+
+interface TemplateCell {
+  span: number;
+  widget: string;
+  /** Thuộc tính tên (`label` của thẻ, `title` của khung) điền bằng hàm đặt tên của bên gọi. */
+  name: { prop: 'label' | 'title'; kind: TemplateNameKind };
+  props: Readonly<Record<string, string | number | boolean>>;
+}
+
+export type RowTemplateId = 'tiles4' | 'charts3' | 'charts2plus1' | 'wide';
+
+const TILE_LOOK: ReadonlyArray<{ color: string; icon: string }> = [
+  { color: 'teal', icon: 'thermometer' },
+  { color: 'blue', icon: 'droplet' },
+  { color: 'rose', icon: 'bolt' },
+  { color: 'violet', icon: 'pressure' },
+];
+
+const lineCell = (span: number): TemplateCell => ({
+  span,
+  widget: 'line',
+  name: { prop: 'title', kind: 'chartLine' },
+  props: { windowSec: 300 },
+});
+const barCell = (span: number): TemplateCell => ({
+  span,
+  widget: 'bar',
+  name: { prop: 'title', kind: 'chartBar' },
+  props: {},
+});
+
+/**
+ * Mẫu hàng: chiều cao cố định (các ô cùng hàng cao bằng nhau) và widget đặt sẵn với tên, màu, biểu tượng; người dùng chỉ
+ * việc gắn Tag. Cỡ theo dashboard tham khảo: hàng thẻ 116 px, hàng biểu đồ 260 px, biểu đồ rộng 300 px.
+ */
+export const ROW_TEMPLATES: Readonly<
+  Record<RowTemplateId, { height: number; cells: readonly TemplateCell[] }>
+> = {
+  tiles4: {
+    height: 116,
+    cells: TILE_LOOK.map((look) => ({
+      span: 3,
+      widget: 'stat-tile',
+      name: { prop: 'label', kind: 'tile' },
+      props: { color: look.color, icon: look.icon },
+    })),
+  },
+  charts3: {
+    height: 260,
+    cells: [
+      lineCell(4),
+      barCell(4),
+      { span: 4, widget: 'pie', name: { prop: 'title', kind: 'chartPie' }, props: {} },
+    ],
+  },
+  charts2plus1: {
+    height: 260,
+    cells: [
+      lineCell(5),
+      barCell(4),
+      { span: 3, widget: 'gauge', name: { prop: 'title', kind: 'gauge' }, props: {} },
+    ],
+  },
+  wide: { height: 300, cells: [lineCell(12)] },
+};
+
+export const ROW_TEMPLATE_IDS = Object.keys(ROW_TEMPLATES) as RowTemplateId[];
+
+/**
+ * Thêm hàng theo mẫu ở vị trí `at` (mặc định cuối): hàng cao cố định, mỗi ô một widget mới (chưa gắn Tag) có tên do
+ * `nameOf(loại, thứ tự trong hàng)` đặt. Chọn widget đầu tiên. Một sửa đổi (một bước hoàn tác) ở bên gọi.
+ */
+export function addTemplateRow(
+  doc: ScreenModel,
+  id: RowTemplateId,
+  nameOf: (kind: TemplateNameKind, n: number) => string,
+  at?: number,
+): GridEditResult {
+  const tpl = ROW_TEMPLATES[id];
+  if (!tpl) return reject(doc, 'bad-preset');
+  const added = addRow(
+    doc,
+    tpl.cells.map((c) => c.span),
+    at,
+  );
+  if (added.rejected) return added;
+  const l = layoutOf(added.doc)!;
+  const rowIndex =
+    at === undefined ? l.rows.length - 1 : Math.max(0, Math.min(at, l.rows.length - 1));
+  const row = l.rows[rowIndex]!;
+  const taken = new Set(doc.items.map((i) => i.id));
+  const counts = new Map<TemplateNameKind, number>();
+  const items: ScreenModel['items'] = [];
+  const cells = row.cells.map((cell, i) => {
+    const c = tpl.cells[i]!;
+    const n = (counts.get(c.name.kind) ?? 0) + 1;
+    counts.set(c.name.kind, n);
+    const itemId = nextItemId(c.widget.replace(/-/g, '_'), taken);
+    taken.add(itemId);
+    items.push({
+      id: itemId,
+      type: 'widget',
+      widget: c.widget,
+      props: { [c.name.prop]: nameOf(c.name.kind, n), ...c.props },
+    } as unknown as ScreenModel['items'][number]);
+    return { ...cell, item: itemId };
+  });
+  const layout = mapRow(l, rowIndex, (r) => ({ ...r, height: tpl.height, cells }));
+  return {
+    ...withLayout(added.doc, layout, [...added.doc.items, ...items]),
+    selection: items.length ? [items[0]!.id] : [],
+  };
+}

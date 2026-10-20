@@ -193,3 +193,84 @@ describe('placeInGrid (nhập SVG, ký hiệu vào màn hình lưới)', () => {
     expect(more.layout.rows[1]!.cells).toEqual([{ id: 'c4', span: 12, item: 'svg_1' }]);
   });
 });
+
+// Feature 014: mẫu hàng có sẵn widget (Thêm hàng → "4 thẻ chỉ số", "3 biểu đồ", "2 biểu đồ + 1", "1 biểu đồ rộng").
+describe('addTemplateRow (feature 014)', () => {
+  const name = (kind: string, n: number) => `${kind} ${n}`;
+  it('4 thẻ chỉ số: hàng cao 116, bốn ô 3 cột, mỗi ô một stat-tile màu khác nhau, chọn ô đầu', async () => {
+    const { addTemplateRow } = await import('./grid-ops.ts');
+    const r = addTemplateRow(doc(), 'tiles4', name);
+    expect(r.rejected).toBeUndefined();
+    const row = L(r.doc).rows[1]!;
+    expect(row.height).toBe(116);
+    expect(row.cells.map((c) => c.span)).toEqual([3, 3, 3, 3]);
+    const items = row.cells.map((c) => r.doc.items.find((i) => i.id === c.item)!);
+    expect(items.map((i) => (i as { widget: string }).widget)).toEqual(Array(4).fill('stat-tile'));
+    const props = items.map((i) => (i as { props: Record<string, unknown> }).props);
+    expect(new Set(props.map((p) => p.color)).size).toBe(4);
+    expect(props.map((p) => p.label)).toEqual(['tile 1', 'tile 2', 'tile 3', 'tile 4']);
+    expect(items.every((i) => !('x' in i) && !('tags' in i))).toBe(true);
+    expect(r.selection).toEqual([items[0]!.id]);
+  });
+
+  it('3 biểu đồ, 2 biểu đồ + 1, 1 biểu đồ rộng: chiều cao, cột, widget có tiêu đề', async () => {
+    const { addTemplateRow, ROW_TEMPLATES } = await import('./grid-ops.ts');
+    const kinds = (id: keyof typeof ROW_TEMPLATES) => {
+      const r = addTemplateRow(doc(), id, name);
+      const row = L(r.doc).rows[1]!;
+      return {
+        height: row.height,
+        spans: row.cells.map((c) => c.span),
+        widgets: row.cells.map(
+          (c) => (r.doc.items.find((i) => i.id === c.item) as { widget: string }).widget,
+        ),
+        titles: row.cells.map(
+          (c) =>
+            (r.doc.items.find((i) => i.id === c.item) as { props: { title?: string } }).props.title,
+        ),
+      };
+    };
+    expect(kinds('charts3')).toEqual({
+      height: 260,
+      spans: [4, 4, 4],
+      widgets: ['line', 'bar', 'pie'],
+      titles: ['chartLine 1', 'chartBar 1', 'chartPie 1'],
+    });
+    expect(kinds('charts2plus1')).toMatchObject({
+      height: 260,
+      spans: [5, 4, 3],
+      widgets: ['line', 'bar', 'gauge'],
+    });
+    expect(kinds('wide')).toMatchObject({ height: 300, spans: [12], widgets: ['line'] });
+  });
+
+  it('id item không trùng khi thêm hai lần; chèn sau hàng chỉ định; màn hình tự do bị từ chối', async () => {
+    const { addTemplateRow } = await import('./grid-ops.ts');
+    const a = addTemplateRow(doc(), 'tiles4', name);
+    const b = addTemplateRow(a.doc, 'tiles4', name, 0);
+    const ids = b.doc.items.map((i) => i.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(L(b.doc).rows[0]!.height).toBe(116);
+    const free = { ...doc(), layout: undefined } as unknown as ScreenModel;
+    expect(addTemplateRow(free, 'wide', name).rejected).toBe('not-grid');
+  });
+
+  it('props của widget mẫu hợp lệ theo danh mục', async () => {
+    const { addTemplateRow, ROW_TEMPLATES } = await import('./grid-ops.ts');
+    const { catalogWidget, checkPropValue } = await import('@mat/project-schema');
+    for (const id of Object.keys(ROW_TEMPLATES) as Array<keyof typeof ROW_TEMPLATES>) {
+      const r = addTemplateRow(doc(), id, name);
+      for (const it of r.doc.items.slice(1) as Array<{
+        widget: string;
+        props: Record<string, unknown>;
+      }>) {
+        const spec = catalogWidget(it.widget)!;
+        for (const [k, v] of Object.entries(it.props)) {
+          const p = spec.props.find((x) => x.name === k);
+          expect(p, `${it.widget}.${k}`).toBeDefined();
+          expect(checkPropValue(p!, v), `${it.widget}.${k}`).toBeNull();
+        }
+      }
+    }
+  });
+});

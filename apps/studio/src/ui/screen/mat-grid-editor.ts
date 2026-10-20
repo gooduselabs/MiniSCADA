@@ -17,6 +17,7 @@ import { t, type MessageKey } from '../../i18n/index.ts';
 import {
   addCell,
   addRow,
+  addTemplateRow,
   attachWidget,
   GRID_PRESETS,
   moveCell,
@@ -25,8 +26,12 @@ import {
   removeRow,
   replaceWidget,
   resizeDivider,
+  ROW_TEMPLATE_IDS,
+  ROW_TEMPLATES,
   setCellProps,
   setRowProps,
+  type RowTemplateId,
+  type TemplateNameKind,
 } from '../../model/grid-ops.ts';
 import { hostTagInfo } from '../../model/preview-hosts.ts';
 import { remove } from '../../model/screen-doc.ts';
@@ -157,6 +162,21 @@ export class MatGridEditor extends AppElement {
       const rows = (r.doc as GridDoc).layout.rows;
       const row = rows[at ? at.r + 1 : rows.length - 1];
       if (row?.cells[0]) this.select(row.cells[0].id);
+    }
+  }
+
+  /** Thêm hàng theo mẫu có sẵn widget (feature 014) sau hàng của ô đang chọn, chọn ô đầu của hàng mới. */
+  private addRowTemplate(id: RowTemplateId): void {
+    this.presetsOpen = false;
+    const at = this.find(this.selCell);
+    const nameOf = (kind: TemplateNameKind, n: number): string =>
+      kind === 'tile' ? t('lay.tpl.tileLabel', { n }) : t(`lay.tpl.${kind}` as MessageKey);
+    const r = this.edit((d) => addTemplateRow(d, id, nameOf, at ? at.r + 1 : undefined));
+    if (r && !r.rejected) {
+      const rows = (r.doc as GridDoc).layout.rows;
+      const row = rows[at ? at.r + 1 : rows.length - 1];
+      if (row?.cells[0]) this.select(row.cells[0].id);
+      this.app.toast(t('lay.tpl.added', { name: t(`lay.tpl.${id}` as MessageKey) }));
     }
   }
 
@@ -387,28 +407,59 @@ export class MatGridEditor extends AppElement {
         ${
           this.presetsOpen
             ? html`<div class="ge-presets" role="menu" aria-label=${t('lay.presetMenu')}>
-                ${GRID_PRESETS.map(
-                  (p) =>
-                    html`<button
-                      type="button"
-                      role="menuitem"
-                      data-preset=${p.join('+')}
-                      @click=${() => this.addRowPreset(p)}
-                    >
-                      <span class="ge-preview">
-                        ${p.map((s) => html`<i style=${`flex:${s}`}></i>`)}
-                      </span>
-                      <span>${p.join(' + ')}</span>
-                    </button>`,
-                )}
-                <button
-                  type="button"
-                  role="menuitem"
-                  data-preset="custom"
-                  @click=${() => this.addRowCustom()}
-                >
-                  ${t('lay.presetCustom')}
-                </button>
+                <div class="ge-sec" role="group" aria-label=${t('lay.presetMenu')}>
+                  <b class="ge-sec-h">${t('lay.presetMenu')}</b>
+                  ${GRID_PRESETS.map(
+                    (p) =>
+                      html`<button
+                        type="button"
+                        role="menuitem"
+                        data-preset=${p.join('+')}
+                        @click=${() => this.addRowPreset(p)}
+                      >
+                        <span class="ge-preview">
+                          ${p.map((s) => html`<i style=${`flex:${s}`}></i>`)}
+                        </span>
+                        <span>${p.join(' + ')}</span>
+                      </button>`,
+                  )}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    data-preset="custom"
+                    @click=${() => this.addRowCustom()}
+                  >
+                    ${t('lay.presetCustom')}
+                  </button>
+                </div>
+                <div class="ge-sec ge-tpls" role="group" aria-label=${t('lay.tplMenu')}>
+                  <b class="ge-sec-h">${t('lay.tplMenu')}</b>
+                  ${ROW_TEMPLATE_IDS.map(
+                    (id) =>
+                      html`<button
+                        type="button"
+                        role="menuitem"
+                        class="ge-tpl"
+                        data-template=${id}
+                        title=${t(`lay.tpl.${id}.hint` as MessageKey)}
+                        @click=${() => this.addRowTemplate(id)}
+                      >
+                        <span class="ge-tpl-pv" aria-hidden="true">
+                          ${ROW_TEMPLATES[id].cells.map(
+                            (c, i) =>
+                              html`<i
+                                class=${c.widget === 'stat-tile' ? `tile tile-${i}` : 'chart'}
+                                style=${`flex:${c.span}`}
+                              ></i>`,
+                          )}
+                        </span>
+                        <span class="ge-tpl-t">
+                          <span>${t(`lay.tpl.${id}` as MessageKey)}</span>
+                          <small>${t(`lay.tpl.${id}.hint` as MessageKey)}</small>
+                        </span>
+                      </button>`,
+                  )}
+                </div>
               </div>`
             : nothing
         }

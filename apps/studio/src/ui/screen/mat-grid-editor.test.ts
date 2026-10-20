@@ -85,6 +85,34 @@ describe('mat-grid-editor', () => {
     expect(model(app).layout.rows).toHaveLength(3);
   });
 
+  // Feature 014: mẫu hàng có sẵn widget bên cạnh mẫu chia cột.
+  it('Thêm hàng → "4 thẻ chỉ số": hàng cao 116 với bốn thẻ màu có tên, chọn ô đầu, một bước hoàn tác', async () => {
+    const { app, el } = await open();
+    el.querySelector<HTMLButtonElement>('[data-act="add-row"]')!.click();
+    await settled(el);
+    const tpls = [...el.querySelectorAll<HTMLElement>('[data-template]')].map(
+      (b) => b.dataset.template,
+    );
+    expect(tpls).toEqual(['tiles4', 'charts3', 'charts2plus1', 'wide']);
+    expect(text(el.querySelector('[data-template="tiles4"]'))).toContain('4 thẻ chỉ số');
+    el.querySelector<HTMLButtonElement>('[data-template="tiles4"]')!.click();
+    await settled(el);
+    const rows = model(app).layout.rows;
+    expect(rows).toHaveLength(4);
+    expect(rows[3]!.height).toBe(116);
+    const items = rows[3]!.cells.map((c) => model(app).items.find((i) => i.id === c.item)!);
+    expect(items.map((i) => (i as { props: { label: string } }).props.label)).toEqual([
+      'Chỉ số 1',
+      'Chỉ số 2',
+      'Chỉ số 3',
+      'Chỉ số 4',
+    ]);
+    expect(cellEl(el, rows[3]!.cells[0]!.id).classList.contains('sel')).toBe(true);
+    await app.run('edit.undo');
+    await settled(el);
+    expect(model(app).layout.rows).toHaveLength(3);
+  });
+
   it('chọn ô: ô có component chọn luôn item (Inspector); ô trống bỏ chọn item', async () => {
     const { app, el } = await open();
     cellEl(el, 'c1').click();

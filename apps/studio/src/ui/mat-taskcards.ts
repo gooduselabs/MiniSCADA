@@ -64,6 +64,14 @@ export const WIDGET_ICON: Readonly<Record<string, IconName>> = {
   'history-table': 'hist-table',
   'history-bar': 'hist-bar',
   'history-pie': 'hist-pie',
+  // feature 014: widget dashboard
+  'stat-tile': 'card',
+  kpi: 'sum',
+  progress: 'slider',
+  'status-list': 'list',
+  clock: 'timer',
+  text: 'text',
+  image: 'shape',
 };
 
 const TOOLBOX: ReadonlyArray<{ group: MessageKey; phase: Phase; tools: readonly Tool[] }> = [

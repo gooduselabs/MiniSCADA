@@ -55,6 +55,61 @@ mat-grid-editor .ge-presets button:hover,
 mat-grid-editor .ge-presets button:focus-visible {
   background: var(--hover);
 }
+/* Feature 014: menu Thêm hàng hai phần (mẫu chia cột, mẫu hàng có sẵn widget) */
+mat-grid-editor .ge-presets:has(.ge-tpls) {
+  grid-template-columns: auto minmax(260px, auto);
+  align-items: start;
+  gap: 4px 8px;
+}
+mat-grid-editor .ge-sec {
+  display: grid;
+  gap: 2px;
+}
+mat-grid-editor .ge-tpls {
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+mat-grid-editor .ge-sec-h {
+  padding: 4px 8px 2px;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--muted);
+}
+mat-grid-editor .ge-tpl-pv {
+  display: flex;
+  gap: 3px;
+  flex: none;
+  width: 96px;
+  height: 30px;
+}
+mat-grid-editor .ge-tpl-pv i {
+  display: block;
+  border-radius: 3px;
+}
+mat-grid-editor .ge-tpl-pv i.chart {
+  background: linear-gradient(to bottom, var(--border-2) 0 6px, var(--panel-2) 6px);
+  border: 1px solid var(--border-2);
+}
+mat-grid-editor .ge-tpl-pv i.tile-0 {
+  background: #0f7f75;
+}
+mat-grid-editor .ge-tpl-pv i.tile-1 {
+  background: #2563eb;
+}
+mat-grid-editor .ge-tpl-pv i.tile-2 {
+  background: #e11d48;
+}
+mat-grid-editor .ge-tpl-pv i.tile-3 {
+  background: #7c3aed;
+}
+mat-grid-editor .ge-tpl-t {
+  display: grid;
+  gap: 1px;
+}
+mat-grid-editor .ge-tpl-t small {
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
 mat-grid-editor .ge-preview {
   display: flex;
   gap: 2px;
