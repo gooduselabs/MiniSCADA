@@ -407,7 +407,39 @@ Kỹ sư không cập nhật runtime: việc này cần tài khoản administrat
 
 - **Alarm** > **Danh sách alarm**: loại **Số** (bit), **Ngưỡng** (HH, H, L, LL, Deadband, Trễ bật, Trễ tắt), **Quality**. **Lớp alarm**: ưu tiên, màu, nhấp nháy, cần xác nhận, âm thanh. **Thử alarm** để xem trước.
 - **Lưu trữ**: nhóm theo **Chu kỳ**, **Thay đổi**, **Kết hợp** hoặc **Kích hoạt**; khung **Ước tính ghi** cho số MB/ngày. Vượt ngân sách ghi thì Studio hỏi trước khi nạp xuống. Ghi nhiều làm mòn bộ nhớ eMMC: chỉ lưu Tag cần.
-- **Báo cáo**: mẫu theo ngày, ca, tháng; **Xem trước báo cáo** với dữ liệu mô phỏng hoặc dữ liệu thiết bị.
+- **Báo cáo**: xem mục 12.1.
+
+### 12.1. Thiết kế báo cáo
+
+**Thêm báo cáo**: chuột phải **Báo cáo** trên cây > **Thêm báo cáo…** (hoặc bảng lệnh Ctrl+Shift+P > "Thêm báo cáo"). Trang Báo cáo có **thư viện mẫu**: **Báo cáo ca**, **Báo cáo ngày**, **Báo cáo tháng**, **Báo cáo năng lượng**, **Báo cáo alarm**, **Vận hành thiết bị**, **Ghi PLC của logic**. Chọn một mẫu: Studio dựng sẵn cột từ nhóm lưu trữ có **Tổng hợp** (Tag số cho báo cáo bảng, Tag BOOL cho vận hành thiết bị, Tag có đơn vị kWh, kW cho năng lượng) rồi mở trình thiết kế.
+
+![Thư viện mẫu báo cáo: bảy thẻ mẫu và bảng các báo cáo của project (tên, loại, nhóm lưu trữ, kỳ, số cột)](img/eng-thu-vien-mau-bao-cao.png)
+
+Trình thiết kế có ba vùng:
+
+- **Cấu trúc báo cáo** (trái): **Thông tin chung**, **Kỳ và nhóm hàng**, **Thẻ tổng hợp**, **Biểu đồ**, **Cột** (mỗi cột một mục), **Trang in**. Mục có lỗi có dấu đỏ.
+- **Xem trước trực tiếp** (giữa): báo cáo dựng bằng **đúng mã của trang vận hành** trên **Dữ liệu mô phỏng** (hoặc **Dữ liệu thiết bị** khi Online). Bấm vào dải tiêu đề, hàng thẻ, biểu đồ hay tiêu đề cột để chọn phần đó. Nút **CSV**, **CSV (Excel vi-VN)**, **XLSX**, **PDF** xuất thử.
+- **Thuộc tính** (phải): trường của phần đang chọn.
+
+![Trình thiết kế báo cáo Năng lượng theo ngày: Cấu trúc bên trái (cột Công suất đang chọn), xem trước có dải tiêu đề, thẻ màu, biểu đồ; Thuộc tính của cột bên phải: Tag, nhãn, đơn vị, số lẻ, hàm](img/eng-thiet-ke-bao-cao.png)
+
+Thao tác:
+
+1. **Thông tin chung**: tên, id, **Loại báo cáo** (Bảng tổng hợp, Vận hành thiết bị, Sự kiện alarm, Ghi PLC của logic), nhóm lưu trữ (chỉ nhóm có Tổng hợp), tiêu đề.
+2. **Kỳ và nhóm hàng**: **Ngày** (hàng 15, 30 hoặc 60 phút), **Ca** (2, 3, 4, 6, 8 hoặc 12 ca từ giờ bắt đầu; nhãn ca hiện ngay), **Tuần** và **Tháng** (hàng theo ngày), **Khoảng ngày** (người xem chọn từ ngày đến ngày, tối đa 31 ngày).
+3. **Thêm cột**: kéo Tag từ panel **Tag** thả vào vùng xem trước hoặc Cấu trúc, hoặc gõ tên ở ô **Thêm cột** (có gợi ý). Chỉ nhận Tag của nhóm lưu trữ; Vận hành thiết bị chỉ nhận Tag BOOL.
+4. **Cột**: Tag, nhãn, đơn vị (**Gợi ý đơn vị**: kW + Tổng ra kWh, Thời gian ON ra giờ), số lẻ, hàm: **Trung bình**, **Nhỏ nhất**, **Lớn nhất**, **Tổng (tích phân)**, **Đầu kỳ**, **Cuối kỳ**, **Chênh lệch**, **Số mẫu**, **Thời gian ON** (Tag BOOL). Vận hành thiết bị: **Thời gian ON**, **Số lần bật**. **Lên**, **Xuống** đổi thứ tự; **Bỏ cột**.
+5. **Thẻ tổng hợp**: bật, tắt hàng thẻ (giá trị cả kỳ của tối đa 4 cột đầu và Dữ liệu đủ).
+6. **Biểu đồ**: **Tự chọn** (các cột cùng đơn vị với cột đầu; hàm cộng dồn vẽ cột, còn lại vẽ đường), **Đường**, **Cột**, **Không vẽ**.
+7. **Trang in**: **Tên đơn vị** (chung cho mọi báo cáo; trống thì dùng tên project), khổ A4/A3, hướng, chân trang, dòng tổng.
+
+Mỗi thay đổi hoàn tác được (Ctrl+Z). Lỗi `E_RPT_*` hiện tại trường và ở tab **Thông tin** của dock dưới (nhấp đúp để tới đúng chỗ); vẫn lưu được khi còn lỗi.
+
+Báo cáo alarm và logic không có cột Tag: xem trước dùng sự kiện mô phỏng từ alarm và luật của project.
+
+![Trình thiết kế với báo cáo Alarm theo ngày: thẻ số lần xuất hiện, chưa xác nhận, thời gian trung bình tới xác nhận, đang còn; biểu đồ số lần xuất hiện theo giờ](img/eng-thiet-ke-bao-cao-alarm.png)
+
+**Định dạng 1.1**: loại báo cáo, kỳ Tuần và Khoảng ngày, thẻ, biểu đồ, Thời gian ON và Tên đơn vị cần project định dạng 1.1. Project cũ: các tùy chọn này bị khóa kèm lý do; mở lại project và đồng ý nâng cấp ở hộp **Mở project định dạng …**. Project mẫu: `projects/report-demo`.
 
 <a id="help-errors"></a>
 

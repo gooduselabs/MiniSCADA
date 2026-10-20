@@ -1200,9 +1200,6 @@ const webScenes = [
       await drawn();
       await sleep(800);
       await shot('op-bao-cao');
-      await page.setViewport({ ...VIEWPORT, height: 1500 });
-      await sleep(400);
-      await shot('op-bao-cao-day-du');
       const open = async (hash, name, chart = true) => {
         await page.evaluate((h) => (window.location.hash = h), hash);
         await until(
@@ -1219,11 +1216,11 @@ const webScenes = [
         );
         if (chart) await drawn();
         await sleep(800);
-        await shot(name);
+        if (name) await shot(name);
       };
       await open(`#/report/van-hanh-bom?d=${day}`, 'op-bao-cao-thiet-bi');
       await open(`#/report/alarm-ngay?d=${day}`, 'op-bao-cao-alarm');
-      await open(`#/report/logic-ngay?d=${day}`, 'op-bao-cao-logic');
+      await open(`#/report/logic-ngay?d=${day}`, null);
       await page.setViewport(VIEWPORT);
       // trang đầu của PDF: báo cáo logic (cột chồng) và báo cáo điện ngày (thẻ, biểu đồ)
       await shotPdfPage(await downloadPdf(page), 'op-bao-cao-pdf-logic');

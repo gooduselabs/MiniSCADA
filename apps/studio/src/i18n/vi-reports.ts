@@ -31,7 +31,7 @@ export const viReports = {
   'rpt.ds.on': 'Bật',
   'rpt.ds.off': 'Tắt',
   'rpt.ds.kind': 'Loại báo cáo',
-  'rpt.ds.need11': 'Cần định dạng project 1.1 (Project → Nâng cấp định dạng).',
+  'rpt.ds.need11': 'Cần định dạng project 1.1 (mở lại project và đồng ý nâng cấp).',
   'rpt.ds.banner11':
     'Project định dạng cũ: loại báo cáo, kỳ tuần/khoảng, thẻ, biểu đồ và thời gian ON cần định dạng 1.1.',
   'rpt.ds.grouping': 'Nhóm hàng',

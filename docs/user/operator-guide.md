@@ -185,11 +185,34 @@ Trang **tự nối lại**, không cần F5. Kèm theo là "Cập nhật cuối 
 Cần trang `https://` và đăng nhập.
 
 - **Lịch sử**: chọn nhóm lưu trữ, chọn tối đa 16 Tag, chọn khoảng (1 giờ đến 30 ngày, Hôm nay, Hôm qua). Có biểu đồ và bảng; **Xuất CSV** để tải.
-- **Báo cáo**: chọn kỳ (Ngày, Ngày làm việc, Tháng), bấm **Xem**, rồi tải **CSV**, **CSV Excel**, **XLSX** hoặc **PDF**.
+- **Báo cáo**: chọn kỳ rồi bấm **Xem**. Kỳ theo mẫu: **Ngày**, **Ngày làm việc** (báo cáo ca: ca đêm sau 0 giờ thuộc ngày làm việc hôm trước), **Tuần** (thứ Hai đến Chủ nhật), **Tháng**, hoặc **Từ ngày** – **Đến ngày** (tối đa 31 ngày). Đường dẫn giữ kỳ đã chọn (F5 vẫn xem đúng kỳ đó). Tải **CSV**, **CSV Excel**, **XLSX** hoặc **PDF**: các tệp có cùng số với trang.
 
 ![Trang Lịch sử dữ liệu: nhóm Áp suất, hai Tag, khoảng 8 giờ; biểu đồ đường áp suất và trạng thái bơm; bảng giá trị có Xuất CSV](img/op-lich-su.png)
 
-![Trang báo cáo Điện năng theo ngày: ô Ngày, nút Xem, CSV, CSV Excel, XLSX, PDF; bảng theo giờ có hàng Tổng và dòng Dữ liệu đủ 100,0 %](img/op-bao-cao.png)
+### 8.1. Đọc một báo cáo
+
+Từ trên xuống:
+
+1. **Dải tiêu đề**: tên đơn vị, tên báo cáo, kỳ.
+2. **Thẻ tổng hợp** màu: giá trị cả kỳ của các cột đầu (ví dụ tổng điện năng, công suất trung bình, lớn nhất) và **Dữ liệu đủ** (phần trăm thời gian có dữ liệu; dưới 100 % là thiết bị có lúc không ghi).
+3. **Biểu đồ** trong khung có tiêu đề: rê chuột lên cột hay điểm để xem số.
+4. **Bảng số liệu**: một hàng mỗi giờ, ca hoặc ngày; hàng xen màu; **Tổng** ở cuối luôn thấy khi cuộn. Hàng của kỳ chưa tới ghi "chưa tới"; ô gạch chấm là hàng thiếu dữ liệu (dưới 95 %).
+
+![Trang báo cáo Điện năng theo ngày: dải tiêu đề Nhà máy nước Bình An, năm thẻ màu (điện năng chênh lệch, lớn nhất, công suất trung bình, lớn nhất, dữ liệu đủ), biểu đồ cột theo giờ, bảng có hàng Tổng](img/op-bao-cao.png)
+
+### 8.2. Báo cáo alarm, vận hành thiết bị, logic
+
+- **Báo cáo alarm**: số lần alarm xuất hiện, được xác nhận, hết theo giờ (ca, ngày); thẻ **Số lần xuất hiện**, **Chưa xác nhận**, **TB tới xác nhận** (phút), **Đang còn**; bảng **Theo mức ưu tiên**, **Theo khu vực**, **Top 10 alarm xảy ra nhiều nhất** và **Danh sách sự kiện** (thời điểm, sự kiện, alarm, mức, khu, nội dung, người xác nhận). Cần quyền xem trang Alarm. Mỗi kỳ đọc tối đa 5.000 lần xảy ra; danh sách hiện 1.000 sự kiện đầu (báo cáo ghi rõ khi bị cắt).
+- **Vận hành thiết bị**: **thời gian ON** (giờ chạy) và **số lần bật** của bơm, quạt theo giờ, ca hoặc ngày. Lần bật ngay tại đầu kỳ không được đếm (không biết trạng thái trước kỳ). Nhóm lưu trữ ghi quá nhiều dòng (trên 10.000 dòng trong kỳ) thì cột số lần bật để trống kèm ghi chú.
+- **Ghi PLC của logic**: các lần luật logic ghi PLC (**Thành công**, **Lỗi**, **Bị chặn** do tắt ghi hay giới hạn tần suất), theo luật và danh sách. Thiết bị chạy runtime cũ báo "chưa hỗ trợ báo cáo logic".
+
+![Báo cáo vận hành bơm theo ca: thẻ thời gian ON và số lần bật của Bơm 1, dữ liệu đủ; biểu đồ cột giờ chạy theo ca; bảng ba ca và hàng Tổng](img/op-bao-cao-thiet-bi.png)
+
+![Báo cáo alarm theo ngày: thẻ số lần xuất hiện, chưa xác nhận, thời gian trung bình tới xác nhận, đang còn; biểu đồ số lần theo giờ; bảng và thống kê theo mức ưu tiên](img/op-bao-cao-alarm.png)
+
+![Trang đầu PDF của báo cáo Điện năng theo ngày: dải tiêu đề, năm thẻ màu, biểu đồ cột trong khung, bảng sọc](img/op-bao-cao-pdf.png)
+
+![Trang đầu PDF của báo cáo logic: dải tiêu đề, bốn thẻ, biểu đồ cột chồng thành công, lỗi, bị chặn; bảng theo giờ](img/op-bao-cao-pdf-logic.png)
 
 ## 9. Khi có sự cố: làm gì, gọi ai
 
