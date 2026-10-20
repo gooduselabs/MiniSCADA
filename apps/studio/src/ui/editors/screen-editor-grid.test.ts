@@ -36,17 +36,22 @@ const model = (app: StudioApp) =>
   app.screenModel('tong-quan') as ScreenModel & { layout: GridLayout };
 
 describe('mat-screen-editor: bố cục lưới', () => {
-  it('màn hình lưới mở trình soạn lưới, màn hình tự do vẫn mở canvas', async () => {
-    const grid = await open('tong-quan');
-    expect(grid.el.querySelector('mat-grid-editor')).not.toBeNull();
-    expect(grid.el.querySelector('mat-screen-canvas')).toBeNull();
-    // xem trước theo chủ đề của project (FR-030): token --mat-* của widget đổi theo
-    expect(document.documentElement.dataset.matTheme).toBe('vivid');
-    cleanup();
-    const free = await open('main');
-    expect(free.el.querySelector('mat-screen-canvas')).not.toBeNull();
-    expect(free.el.querySelector('mat-grid-editor')).toBeNull();
-  });
+  // Ca đầu nạp lạnh trình soạn và mat-screen (vài trăm KB mã): chậm khi nhiều worker chạy song song, hạn 30 s.
+  it(
+    'màn hình lưới mở trình soạn lưới, màn hình tự do vẫn mở canvas',
+    { timeout: 30_000 },
+    async () => {
+      const grid = await open('tong-quan');
+      expect(grid.el.querySelector('mat-grid-editor')).not.toBeNull();
+      expect(grid.el.querySelector('mat-screen-canvas')).toBeNull();
+      // xem trước theo chủ đề của project (FR-030): token --mat-* của widget đổi theo
+      expect(document.documentElement.dataset.matTheme).toBe('vivid');
+      cleanup();
+      const free = await open('main');
+      expect(free.el.querySelector('mat-screen-canvas')).not.toBeNull();
+      expect(free.el.querySelector('mat-grid-editor')).toBeNull();
+    },
+  );
 
   it('Toolbox gắn widget vào ô đang chọn', async () => {
     const { app, el } = await open('tong-quan');
