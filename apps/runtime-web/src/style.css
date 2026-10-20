@@ -161,8 +161,10 @@ a:focus-visible {
   display: none;
 }
 .band a {
-  color: var(--mat-info);
+  /* feature 014: chữ thường + gạch chân (xanh info trên nền vàng nhạt của vivid chỉ 4,4:1, axe color-contrast) */
+  color: var(--mat-text);
   font-weight: 600;
+  text-decoration: underline;
 }
 .band.notice {
   background: var(--mat-surface-2);
