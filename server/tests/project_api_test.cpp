@@ -890,6 +890,12 @@ TEST(ProjectApi, ADeployWhoseRestartFailsEndsFailedAndFreesTheLock) {
         r.waitOp(bodyJson(res)["opId"], [](const json& j) { return j["result"] != "running"; });
     EXPECT_EQ(op["result"], "failed");
     EXPECT_EQ(op["error"]["code"], "EXEC_FAILED");
+    // The record says "failed" before the worker frees the lock and clears the pending state (a slow
+    // machine sees the gap): wait for both, bounded.
+    for (int i = 0; i < 250 && (r.pipeline->current().has_value() ||
+                                r.store->state().pending.has_value());
+         ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
     EXPECT_FALSE(r.pipeline->current().has_value());
     // The lock is free and the version that ran keeps running.
     EXPECT_EQ(r.store->state().active, 7);
