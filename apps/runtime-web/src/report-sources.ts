@@ -3,21 +3,10 @@
 // cookie của trang (cùng nguồn gốc). Lỗi trả mã của API (`ACCESS_DENIED`, `AUTH_REQUIRED`…), `NOT_SUPPORTED` khi
 // runtime chưa có đường đọc (404, 501), `NETWORK` khi mất kết nối.
 import type { AlarmOccurrence, LogicEvent } from '@mat/history-math';
+import type { ReportEventSource } from '@mat/ui-components';
 
-export interface EventSources {
-  alarms(
-    from: number,
-    to: number,
-    max: number,
-    signal: AbortSignal,
-  ): Promise<{ items: AlarmOccurrence[]; truncated: boolean }>;
-  logic(
-    from: number,
-    to: number,
-    max: number,
-    signal: AbortSignal,
-  ): Promise<{ events: LogicEvent[]; truncated: boolean; enabled: boolean }>;
-}
+/** Nguồn sự kiện của trang (cùng giao diện với runner dùng chung của ui-components). */
+export type EventSources = ReportEventSource;
 
 export class EventSourceError extends Error {
   readonly code: string;

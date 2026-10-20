@@ -66,3 +66,4 @@ export { viHistory } from './i18n/history-vi.ts';
 export { isRangeKey, RANGE_KEYS, type RangeKey } from './chart/history-range.ts';
 export * from './report/report-view.ts';
 export { viReport, type ReportViewLabels } from './i18n/report-vi.ts';
+export * from './report/report-runner.ts';

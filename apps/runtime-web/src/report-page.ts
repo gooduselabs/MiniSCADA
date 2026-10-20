@@ -6,18 +6,11 @@
 // XLSX, PDF (khớp 100 % ô). Xuất file chạy HOÀN TOÀN trên trình duyệt: không gọi lại thiết bị. Mọi chữ do textContent
 // hoặc binding của Lit; tên mẫu, nhãn cột là văn bản thuần.
 import {
-  EVENT_LIMITS,
-  alarmReport,
-  buildReport,
-  countStarts,
   isoWeekOf,
   localParts,
-  logicReport,
   parseUtcOffset,
-  reportRequest,
   validSelection,
   workDayOffsetMs,
-  type AggregateResult as MathAggregate,
   type ReportSelection,
   type ReportTable,
   type ReportTemplate,
@@ -32,11 +25,14 @@ import {
   type ExportLabels,
   type ExportMeta,
 } from '@mat/report-export';
-import type { HistoryCatalogGroup, HistorySource } from '@mat/ui-components';
-import '@mat/ui-components';
+import {
+  runReport,
+  type HistoryCatalogGroup,
+  type HistorySource,
+  type ReportEventSource,
+} from '@mat/ui-components';
 import { viHist } from './i18n/vi-history.ts';
 import { exportLabels, viewLabels } from './i18n/vi-report.ts';
-import type { EventSources } from './report-sources.ts';
 
 export interface ReportTemplateDoc extends ReportTemplate {
   group?: string;
@@ -66,7 +62,7 @@ export interface ReportPageOptions {
   download: (name: string, mime: string, bytes: Uint8Array) => void;
   exporter?: ReportExporter;
   /** Nguồn alarm và logic (feature 015); thiếu thì mẫu alarm/logic báo "chưa hỗ trợ". */
-  events?: EventSources;
+  events?: ReportEventSource;
   /** Tên project: tên đơn vị mặc định khi reports.json không có `org`. */
   projectName?: () => string;
 }
@@ -83,9 +79,6 @@ const el = <K extends keyof HTMLElementTagNameMap>(
 };
 
 const p2 = (n: number) => String(n).padStart(2, '0');
-/** Trang đọc dòng thô tối đa cho số lần bật (20 × 500 = 10.000 dòng). */
-const MAX_ROW_PAGES = 20;
-const ROWS_PER_PAGE = 500;
 
 /** Khóa đường dẫn của kỳ theo loại kỳ. */
 const SEL_KEYS: Record<ReportTemplate['period'], Array<keyof ReportSelection>> = {
@@ -354,10 +347,21 @@ export class ReportPage {
     this.#ac = ac;
     let table: ReportTable;
     try {
-      table =
-        kind === 'alarm' || kind === 'logic'
-          ? await this.#runEvents(tpl, sel, kind, ac.signal)
-          : await this.#runTable(tpl, sel, ac.signal);
+      table = await runReport({
+        template: tpl,
+        select: sel,
+        tz: this.#tz,
+        now: this.#o.now(),
+        signal: ac.signal,
+        history: this.#o.history,
+        ...(this.#o.events ? { events: this.#o.events } : {}),
+        shiftWord: viHist.shiftWord,
+        fnNames: exportLabels.fn,
+        coverageLabel: exportLabels.coverage,
+        org: this.#org,
+        ...(this.#o.tagInfo ? { tagInfo: this.#o.tagInfo } : {}),
+        notes: { startsCapped: viHist.report.startsCapped, noLogic: viHist.report.noLogic },
+      });
     } catch (e) {
       if (seq !== this.#seq || this.#disposed) return;
       const code = (e as { code?: string }).code ?? '';
@@ -387,122 +391,6 @@ export class ReportPage {
     this.#table = table;
     this.#render(table);
     this.#setExport(true);
-  }
-
-  #tagInfo(tpl: ReportTemplateDoc): Record<string, { description?: string; unit?: string }> {
-    const out: Record<string, { description?: string; unit?: string }> = {};
-    for (const c of tpl.columns ?? []) {
-      const i = this.#o.tagInfo?.(c.tagId);
-      if (i) out[c.tagId] = i;
-    }
-    return out;
-  }
-
-  async #runTable(
-    tpl: ReportTemplateDoc,
-    sel: ReportSelection,
-    signal: AbortSignal,
-  ): Promise<ReportTable> {
-    const g = this.#group!;
-    const req = reportRequest(tpl, sel, parseUtcOffset(g.timeZone), viHist.shiftWord);
-    const aggs = (await Promise.all(
-      req.batches.map((tags) =>
-        this.#o.history.aggregate(
-          {
-            group: g.id,
-            tags,
-            from: req.from,
-            to: req.to,
-            bucketMs: req.bucketMs,
-            offsetMs: req.offsetMs,
-            priority: 'user',
-          },
-          signal,
-        ),
-      ),
-    )) as MathAggregate[];
-    // số lần bật (hàm starts): đếm cạnh lên trên dòng thô, có trần
-    const startTags = [
-      ...new Set(
-        (tpl.columns ?? []).filter((c) => c.functions.includes('starts')).map((c) => c.tagId),
-      ),
-    ];
-    let starts: Record<string, Array<number | null>> | undefined;
-    let capped = false;
-    if (startTags.length > 0) {
-      const rows: Array<Array<number | boolean | null>> = [];
-      let after: number | undefined;
-      let complete = false;
-      for (let page = 0; page < MAX_ROW_PAGES; page++) {
-        const r = await this.#o.history.rows(
-          {
-            group: g.id,
-            tags: startTags,
-            from: req.from,
-            to: Math.min(req.to, this.#o.now()),
-            limit: ROWS_PER_PAGE,
-            order: 'asc',
-            ...(after !== undefined ? { after } : {}),
-            priority: 'user',
-          },
-          signal,
-        );
-        for (const row of r.rows)
-          rows.push(
-            row.map((v) => (typeof v === 'string' ? null : v)) as Array<number | boolean | null>,
-          );
-        if (r.next === null) {
-          complete = true;
-          break;
-        }
-        after = r.next;
-      }
-      capped = !complete;
-      starts = countStarts(rows, startTags, req, complete);
-    }
-    const t = buildReport({
-      template: tpl,
-      select: sel,
-      tz: g.timeZone,
-      now: this.#o.now(),
-      shiftWord: viHist.shiftWord,
-      tagInfo: this.#tagInfo(tpl),
-      aggregates: aggs,
-      ...(starts ? { starts } : {}),
-      fnNames: exportLabels.fn,
-      coverageLabel: exportLabels.coverage,
-      org: this.#org,
-    });
-    if (capped) t.notes = [...(t.notes ?? []), viHist.report.startsCapped];
-    return t;
-  }
-
-  async #runEvents(
-    tpl: ReportTemplateDoc,
-    sel: ReportSelection,
-    kind: 'alarm' | 'logic',
-    signal: AbortSignal,
-  ): Promise<ReportTable> {
-    const src = this.#o.events;
-    if (!src) throw Object.assign(new Error('NOT_SUPPORTED'), { code: 'NOT_SUPPORTED' });
-    const req = reportRequest(tpl, sel, parseUtcOffset(this.#tz), viHist.shiftWord);
-    const to = Math.min(req.to, this.#o.now());
-    const base = {
-      template: tpl,
-      select: sel,
-      tz: this.#tz,
-      now: this.#o.now(),
-      shiftWord: viHist.shiftWord,
-      org: this.#org,
-    };
-    if (kind === 'alarm') {
-      const r = await src.alarms(req.from, to, EVENT_LIMITS.alarms, signal);
-      return alarmReport({ ...base, items: r.items, truncated: r.truncated });
-    }
-    const r = await src.logic(req.from, to, EVENT_LIMITS.logic, signal);
-    const t = logicReport({ ...base, events: r.events, truncated: r.truncated });
-    if (!r.enabled) t.notes = [...(t.notes ?? []), viHist.report.noLogic];
-    return t;
   }
 
   #render(t: ReportTable): void {
