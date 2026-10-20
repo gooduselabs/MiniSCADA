@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.5.0",
+  "catalogVersion": "0.6.0",
   "actions": {
     "popup": {
       "keys": ["screen", "args"],
@@ -282,6 +282,13 @@
       ],
       "props": [
         {
+          "name": "title",
+          "kind": "string",
+          "maxLength": 60,
+          "default": "",
+          "group": "display"
+        },
+        {
           "name": "label",
           "kind": "string",
           "maxLength": 40,
@@ -477,6 +484,454 @@
           "kind": "bool",
           "default": true,
           "group": "display"
+        },
+        {
+          "name": "variant",
+          "kind": "enum",
+          "options": ["plain", "card"],
+          "default": "plain",
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "stat-tile",
+      "group": "display",
+      "label": "widget.stat-tile",
+      "defaultSize": [280, 116],
+      "minSize": [160, 96],
+      "slots": [
+        {
+          "name": "value",
+          "required": true,
+          "multi": false,
+          "types": ["number", "bool", "string"],
+          "needsWrite": false
+        },
+        {
+          "name": "alarm",
+          "required": false,
+          "multi": false,
+          "types": ["bool"],
+          "needsWrite": false
+        }
+      ],
+      "props": [
+        {
+          "name": "label",
+          "kind": "string",
+          "maxLength": 40,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "decimals",
+          "kind": "int",
+          "min": 0,
+          "max": 6,
+          "default": 1,
+          "group": "display"
+        },
+        {
+          "name": "unit",
+          "kind": "string",
+          "maxLength": 16,
+          "group": "display",
+          "fromTag": "unit"
+        },
+        {
+          "name": "color",
+          "kind": "enum",
+          "options": [
+            "teal",
+            "blue",
+            "rose",
+            "violet",
+            "olive",
+            "indigo",
+            "orange",
+            "cyan",
+            "green",
+            "slate"
+          ],
+          "default": "teal",
+          "group": "display"
+        },
+        {
+          "name": "icon",
+          "kind": "enum",
+          "options": [
+            "none",
+            "thermometer",
+            "droplet",
+            "wave",
+            "wind",
+            "sun",
+            "lightbulb",
+            "gas",
+            "flame",
+            "fan",
+            "snowflake",
+            "pump",
+            "valve",
+            "bolt",
+            "power",
+            "pressure",
+            "tank",
+            "motor",
+            "gear",
+            "clock",
+            "alert",
+            "star"
+          ],
+          "default": "none",
+          "group": "display"
+        },
+        {
+          "name": "statusText",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "sparkline",
+          "kind": "bool",
+          "default": false,
+          "group": "display"
+        },
+        {
+          "name": "trend",
+          "kind": "bool",
+          "default": false,
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "kpi",
+      "group": "display",
+      "label": "widget.kpi",
+      "defaultSize": [260, 120],
+      "minSize": [160, 96],
+      "slots": [
+        {
+          "name": "value",
+          "required": true,
+          "multi": false,
+          "types": ["number"],
+          "needsWrite": false
+        },
+        {
+          "name": "goal",
+          "required": false,
+          "multi": false,
+          "types": ["number"],
+          "needsWrite": false
+        }
+      ],
+      "props": [
+        {
+          "name": "label",
+          "kind": "string",
+          "maxLength": 40,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "decimals",
+          "kind": "int",
+          "min": 0,
+          "max": 6,
+          "default": 1,
+          "group": "display"
+        },
+        {
+          "name": "unit",
+          "kind": "string",
+          "maxLength": 16,
+          "group": "display",
+          "fromTag": "unit"
+        },
+        {
+          "name": "goal",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "higherIsBetter",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "progress",
+      "group": "display",
+      "label": "widget.progress",
+      "defaultSize": [260, 72],
+      "minSize": [120, 40],
+      "slots": [
+        {
+          "name": "value",
+          "required": true,
+          "multi": false,
+          "types": ["number"],
+          "needsWrite": false
+        }
+      ],
+      "props": [
+        {
+          "name": "label",
+          "kind": "string",
+          "maxLength": 40,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "min",
+          "kind": "number",
+          "group": "display",
+          "fromTag": "min",
+          "fallback": 0
+        },
+        {
+          "name": "max",
+          "kind": "number",
+          "group": "display",
+          "fromTag": "max",
+          "fallback": 100
+        },
+        {
+          "name": "decimals",
+          "kind": "int",
+          "min": 0,
+          "max": 6,
+          "default": 1,
+          "group": "display"
+        },
+        {
+          "name": "unit",
+          "kind": "string",
+          "maxLength": 16,
+          "group": "display",
+          "fromTag": "unit"
+        },
+        {
+          "name": "shape",
+          "kind": "enum",
+          "options": ["bar", "ring"],
+          "default": "bar",
+          "group": "display"
+        },
+        {
+          "name": "color",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
+          "group": "display"
+        },
+        {
+          "name": "showValue",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "status-list",
+      "group": "display",
+      "label": "widget.status-list",
+      "defaultSize": [300, 200],
+      "minSize": [160, 64],
+      "slots": [
+        {
+          "name": "items",
+          "required": true,
+          "multi": true,
+          "max": 16,
+          "types": ["bool", "number"],
+          "needsWrite": false
+        }
+      ],
+      "props": [
+        {
+          "name": "title",
+          "kind": "string",
+          "maxLength": 60,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "labels",
+          "kind": "array",
+          "items": {
+            "kind": "string",
+            "maxLength": 40
+          },
+          "maxItems": 16,
+          "default": [],
+          "group": "display"
+        },
+        {
+          "name": "onText",
+          "kind": "string",
+          "maxLength": 16,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "offText",
+          "kind": "string",
+          "maxLength": 16,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "columns",
+          "kind": "int",
+          "min": 1,
+          "max": 4,
+          "default": 1,
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "clock",
+      "group": "display",
+      "label": "widget.clock",
+      "defaultSize": [240, 72],
+      "minSize": [120, 40],
+      "slots": [],
+      "props": [
+        {
+          "name": "label",
+          "kind": "string",
+          "maxLength": 40,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "format",
+          "kind": "enum",
+          "options": ["datetime", "time", "date"],
+          "default": "datetime",
+          "group": "display"
+        },
+        {
+          "name": "utcOffset",
+          "kind": "string",
+          "maxLength": 6,
+          "pattern": "^[+-](0[0-9]|1[0-4]):[0-5][0-9]$",
+          "default": "+07:00",
+          "group": "display"
+        },
+        {
+          "name": "seconds",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "text",
+      "group": "display",
+      "label": "widget.text",
+      "defaultSize": [320, 120],
+      "minSize": [80, 32],
+      "slots": [],
+      "props": [
+        {
+          "name": "title",
+          "kind": "string",
+          "maxLength": 60,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "text",
+          "kind": "string",
+          "maxLength": 300,
+          "multiline": true,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "fontSize",
+          "kind": "enum",
+          "options": ["s", "m", "l"],
+          "default": "m",
+          "group": "display"
+        },
+        {
+          "name": "align",
+          "kind": "enum",
+          "options": ["left", "center", "right"],
+          "default": "left",
+          "group": "display"
+        },
+        {
+          "name": "color",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
+          "group": "display"
+        },
+        {
+          "name": "background",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "image",
+      "group": "display",
+      "label": "widget.image",
+      "defaultSize": [320, 240],
+      "minSize": [48, 48],
+      "slots": [],
+      "props": [
+        {
+          "name": "title",
+          "kind": "string",
+          "maxLength": 60,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "src",
+          "kind": "string",
+          "maxLength": 128,
+          "pattern": "^(graphics/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+[.]svg)?$",
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "fit",
+          "kind": "enum",
+          "options": ["contain", "cover"],
+          "default": "contain",
+          "group": "display"
+        },
+        {
+          "name": "alt",
+          "kind": "string",
+          "maxLength": 80,
+          "default": "",
+          "group": "display"
         }
       ],
       "events": []
@@ -498,6 +953,13 @@
         }
       ],
       "props": [
+        {
+          "name": "title",
+          "kind": "string",
+          "maxLength": 60,
+          "default": "",
+          "group": "display"
+        },
         {
           "name": "windowSec",
           "kind": "int",
@@ -546,6 +1008,30 @@
           "maxItems": 8,
           "default": [],
           "group": "display"
+        },
+        {
+          "name": "highLimit",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "lowLimit",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "xLabel",
+          "kind": "string",
+          "maxLength": 24,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "yLabel",
+          "kind": "string",
+          "maxLength": 24,
+          "default": "",
+          "group": "display"
         }
       ],
       "events": []
@@ -567,6 +1053,13 @@
         }
       ],
       "props": [
+        {
+          "name": "title",
+          "kind": "string",
+          "maxLength": 60,
+          "default": "",
+          "group": "display"
+        },
         {
           "name": "orientation",
           "kind": "enum",
@@ -629,6 +1122,13 @@
         }
       ],
       "props": [
+        {
+          "name": "title",
+          "kind": "string",
+          "maxLength": 60,
+          "default": "",
+          "group": "display"
+        },
         {
           "name": "donut",
           "kind": "bool",

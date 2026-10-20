@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "statuslist1",
+      "type": "widget",
+      "widget": "status-list",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 200,
+      "props": {
+        "title": "",
+        "labels": [],
+        "onText": "",
+        "offText": "",
+        "columns": 1
+      },
+      "tags": {
+        "items": [
+          "M.T001"
+        ]
+      }
+    }
+  ]
+}

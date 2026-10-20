@@ -16,6 +16,7 @@
       "width": 280,
       "height": 280,
       "props": {
+        "title": "",
         "donut": false,
         "decimals": 0,
         "showPercent": false,

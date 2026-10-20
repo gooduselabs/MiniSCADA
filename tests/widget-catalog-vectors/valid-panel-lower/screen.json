@@ -19,7 +19,8 @@
         "title": "",
         "showTitle": false,
         "background": "auto",
-        "border": false
+        "border": false,
+        "variant": "plain"
       }
     }
   ]

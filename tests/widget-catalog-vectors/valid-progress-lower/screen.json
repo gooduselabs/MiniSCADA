@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "progress1",
+      "type": "widget",
+      "widget": "progress",
+      "x": 0,
+      "y": 0,
+      "width": 260,
+      "height": 72,
+      "props": {
+        "label": "",
+        "decimals": 0,
+        "unit": "",
+        "shape": "bar",
+        "color": "auto",
+        "showValue": false,
+        "min": 0,
+        "max": 1
+      },
+      "tags": {
+        "value": "L.LEVEL"
+      }
+    }
+  ]
+}

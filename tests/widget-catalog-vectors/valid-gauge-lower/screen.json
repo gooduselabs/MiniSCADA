@@ -16,6 +16,7 @@
       "width": 240,
       "height": 200,
       "props": {
+        "title": "",
         "label": "",
         "decimals": 0,
         "unit": "",
