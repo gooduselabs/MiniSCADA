@@ -339,7 +339,7 @@ export class LogicDiagram extends AppElement {
     const nodes: Record<string, NodePos> = {};
     for (const n of g.nodes) if (n.movable) nodes[n.key] = { x: n.x, y: n.y };
     const next = { ...emptyLayout(), nodes };
-    const cur = this.layoutWithAll().nodes;
+    const cur = (logicLayout(app) ?? emptyLayout()).nodes;
     const same =
       Object.keys(cur).length === Object.keys(nodes).length &&
       Object.entries(nodes).every(([k, p]) => cur[k]?.x === p.x && cur[k]?.y === p.y);
@@ -655,6 +655,9 @@ export class LogicDiagram extends AppElement {
       this.fit();
       return;
     }
+    // phím trên một khối: thao tác trên chính khối đó (chọn nó trước nếu chưa chọn)
+    const focused = nodeEl && g ? g.byKey.get(nodeEl.dataset.node!) : undefined;
+    if (focused && this.selKey() !== focused.key && focused.movable) this.selectNode(focused);
     if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault();
       e.stopPropagation();
