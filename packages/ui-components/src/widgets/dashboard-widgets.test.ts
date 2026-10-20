@@ -178,6 +178,7 @@ describe('mat-w-image', () => {
     const el = (await mount(widgetItem('image', {}, props), src)) as El & {
       loadSvg?: unknown;
       imageReady: Promise<void>;
+      requestUpdate(): void;
     };
     el.loadSvg = load;
     el.requestUpdate();

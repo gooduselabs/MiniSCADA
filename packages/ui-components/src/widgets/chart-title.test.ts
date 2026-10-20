@@ -33,6 +33,18 @@ describe('khung có tiêu đề (feature 014)', () => {
       expect(plain.shadowRoot!.querySelector('.ec')).not.toBeNull();
     });
 
+  it('tag-table: title vẽ thanh tiêu đề, bảng trong thân khung', async () => {
+    const src = makeSource([tagInfo('a')]);
+    src.set('a', { value: 3, quality: 'GOOD' });
+    const el = await mount(
+      widgetItem('tag-table', { rows: ['a'] }, { title: 'Giá trị sống' }),
+      src,
+    );
+    expect(textOf(el, '.head')).toBe('Giá trị sống');
+    expect(el.shadowRoot!.querySelector('.framed .body table')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('table')!.getAttribute('aria-label')).toBe('Giá trị sống');
+  });
+
   it('tiêu đề là chữ thuần (không HTML)', async () => {
     fakeECharts();
     const src = makeSource([tagInfo('a')]);

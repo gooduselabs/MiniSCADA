@@ -5,6 +5,7 @@ import { css, html, nothing, type TemplateResult } from 'lit';
 import type { ChartTheme } from '../chart/echarts-lite.ts';
 import { fraction, gaugeStops, resolveRange, zoneSegments } from '../chart/geometry.ts';
 import { formatValue, numberOf } from '../format/format-value.ts';
+import { vi } from '../i18n/vi.ts';
 import { MatEChartWidget } from './chart-base.ts';
 
 export class MatGauge extends MatEChartWidget {
@@ -64,7 +65,7 @@ export class MatGauge extends MatEChartWidget {
     this.#state = { min, max, known, value: known ? n : min, dim: qv.dim };
     const label = this.prop('label', '');
     const valueText = fmt.unit ? `${fmt.text} ${fmt.unit}` : fmt.text;
-    const ariaLabel = label || this.nameOf(id);
+    const ariaLabel = label || this.nameOf(id) || vi.widget.gauge!;
     const title = this.titleText();
     const readout = this.prop('showValue', true)
       ? html`<div class="readout">
@@ -79,7 +80,7 @@ export class MatGauge extends MatEChartWidget {
         aria-label=${[title, label].filter(Boolean).join(': ') || ariaLabel}
         aria-valuemin=${min}
         aria-valuemax=${max}
-        aria-valuenow=${known ? n : nothing}
+        aria-valuenow=${known ? n : min}
         aria-valuetext=${[valueText, qv.aria].filter(Boolean).join(', ')}
       >
         ${this.head()}
@@ -96,7 +97,7 @@ export class MatGauge extends MatEChartWidget {
       aria-label=${ariaLabel}
       aria-valuemin=${min}
       aria-valuemax=${max}
-      aria-valuenow=${known ? n : nothing}
+      aria-valuenow=${known ? n : min}
       aria-valuetext=${[valueText, qv.aria].filter(Boolean).join(', ')}
     >
       ${label ? html`<div class="label ellipsis">${label}</div>` : nothing}

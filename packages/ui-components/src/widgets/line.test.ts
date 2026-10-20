@@ -392,7 +392,7 @@ describe('mat-w-line: tiêu đề, ngưỡng, nhãn trục (feature 014)', () =>
     const items = [...el.shadowRoot!.querySelectorAll('.legend li.limit')].map((x) =>
       (x.textContent ?? '').replace(/\s+/g, ' ').trim(),
     );
-    expect(items).toEqual(['Ngưỡng cao 80 °C', 'Ngưỡng thấp 20 °C']);
+    expect(items).toEqual(['Ngưỡng cao 80', 'Ngưỡng thấp 20']);
   });
 
   it('yMin, yMax cố định thắng ngưỡng; không có ngưỡng thì không có mục chú giải', async () => {

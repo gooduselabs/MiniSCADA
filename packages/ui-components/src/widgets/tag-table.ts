@@ -40,6 +40,14 @@ export class MatTagTable extends MatWidget {
         justify-content: flex-start;
         overflow: auto;
       }
+      /* feature 014: khung có thanh tiêu đề; bảng cuộn trong thân khung */
+      .w.framed {
+        overflow: hidden;
+      }
+      .framed > .body.tbl {
+        padding: 0;
+        overflow: auto;
+      }
       table {
         width: 100%;
         border-collapse: collapse;
@@ -242,22 +250,24 @@ export class MatTagTable extends MatWidget {
       }
     };
 
-    return html`<div class="w ${this.prop('dense', false) ? 'dense' : ''}">
-      <table role="table" aria-label=${vi.widget['tag-table']}>
-        <thead>
-          <tr>
-            ${cols.map(head)}
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map(
-            (r) =>
-              html`<tr class=${r.qv.cls}>
-                ${cols.map((c) => cell(c, r))}
-              </tr>`,
-          )}
-        </tbody>
-      </table>
+    const title = this.titleText();
+    const table = html`<table role="table" aria-label=${title || vi.widget['tag-table']!}>
+      <thead>
+        <tr>
+          ${cols.map(head)}
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(
+          (r) =>
+            html`<tr class=${r.qv.cls}>
+              ${cols.map((c) => cell(c, r))}
+            </tr>`,
+        )}
+      </tbody>
+    </table>`;
+    return html`<div class="w ${this.prop('dense', false) ? 'dense' : ''} ${title ? 'framed' : ''}">
+      ${this.head()} ${title ? html`<div class="body tbl">${table}</div>` : table}
     </div>`;
   }
 }

@@ -140,7 +140,8 @@ describe('mat-w-gauge (FR-027)', () => {
     expect(hidden.shadowRoot!.querySelector('.value')).toBeNull();
   });
 
-  it('quality: BAD hiện nhãn chữ và giá trị mờ; UNKNOWN hiện "?", không có aria-valuenow', async () => {
+  // Feature 014 (axe aria-required-attr): role=meter luôn có aria-valuenow; UNKNOWN đặt bằng min, chữ "?" ở valuetext.
+  it('quality: BAD hiện nhãn chữ và giá trị mờ; UNKNOWN hiện "?", aria-valuenow = min, valuetext "?"', async () => {
     const src = makeSource([tagInfo('t1')]);
     src.set('t1', { value: 50, quality: 'BAD' });
     const bad = await mount(gauge(), src);
@@ -148,7 +149,8 @@ describe('mat-w-gauge (FR-027)', () => {
     expect(bad.shadowRoot!.querySelector('.value')!.classList.contains('dim')).toBe(true);
     const unk = await mount(gauge(undefined, 'lạ'), src);
     expect(textOf(unk, '.value')).toBe('?');
-    expect(meter(unk).hasAttribute('aria-valuenow')).toBe(false);
+    expect(meter(unk).getAttribute('aria-valuenow')).toBe('0');
+    expect(meter(unk).getAttribute('aria-valuetext')).toContain('?');
     expect(gs().pointer.show).toBe(false);
   });
 

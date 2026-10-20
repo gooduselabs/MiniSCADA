@@ -198,7 +198,9 @@ export function clockLabels(splits: readonly number[]): string[] {
 
 /** Nhãn trục của uPlot (feature 014); chuỗi rỗng là không có nhãn. */
 function axisLabel(text: string | undefined, font?: string): Record<string, unknown> {
-  return text ? { label: text, labelSize: 18, ...(font ? { labelFont: `11px ${font}` } : {}) } : {};
+  return text
+    ? { label: text, labelSize: 16, labelGap: 0, ...(font ? { labelFont: `11px ${font}` } : {}) }
+    : {};
 }
 
 /** Vẽ đường ngưỡng ngang nét đứt trên canvas của uPlot (sau khi vẽ chuỗi). */
@@ -254,6 +256,9 @@ export async function loadUPlot(): Promise<PlotFactory> {
             ...axisStyle(o),
             // "HH:mm:ss" rộng hơn nhãn mặc định: giãn vạch để chữ không chạm nhau.
             space: 80,
+            // Feature 014: vùng nhãn trục thời gian gọn (mặc định của uPlot 50 px để trống nhiều dưới khung nhỏ).
+            size: 30,
+            gap: 4,
             values: (_u: unknown, splits: number[]) => clockLabels(splits),
             ...axisLabel(o.xLabel, o.font),
           },

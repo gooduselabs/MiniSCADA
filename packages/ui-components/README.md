@@ -314,6 +314,7 @@ Nhóm: Bảng. Cỡ mặc định 420 × 300, nhỏ nhất 240 × 80.
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
+| `title` | string | `""` | ≤ 60 ký tự |
 | `columns` | array | `["label","value","unit","quality"]` | ≤ 5 phần tử, không trùng; phần tử: `label`, `value`, `unit`, `quality`, `updated` |
 | `sortable` | bool | `true` |  |
 | `dense` | bool | `false` |  |

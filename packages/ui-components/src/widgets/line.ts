@@ -114,8 +114,8 @@ export class MatLine extends MatWidget {
         padding: 0;
         display: flex;
         flex-wrap: wrap;
-        gap: 2px 14px;
-        font-size: 12px;
+        gap: 3px 6px;
+        font-size: 11.5px;
       }
       .legend li {
         display: inline-flex;
@@ -125,7 +125,7 @@ export class MatLine extends MatWidget {
       }
       .legend svg {
         flex: none;
-        width: 26px;
+        width: 18px;
         height: 8px;
       }
       .legend .val {
@@ -148,7 +148,7 @@ export class MatLine extends MatWidget {
       /* Giao diện mới (feature 012): chú giải dạng thẻ nền nhạt theo màu đường, con trỏ dạng ô có chấm màu, đường
          gióng nét đứt màu viền. */
       .legend li {
-        padding: 1px 8px 1px 6px;
+        padding: 1px 7px 1px 5px;
         border-radius: 999px;
         background: var(--soft, transparent);
       }
@@ -501,13 +501,9 @@ export class MatLine extends MatWidget {
         : nothing;
     const title = this.titleText();
     const limits = this.#limits();
-    const unit = rows.find((r) => !r.gone)?.fmt.unit ?? '';
+    // Số của ngưỡng viết gọn (không thêm số lẻ thừa): 80, 5.5.
     const limitText = (l: Omit<PlotLimit, 'color'>) =>
-      `${l.kind === 'high' ? vi.dash.highLimit : vi.dash.lowLimit} ${formatValue(
-        { value: l.value, quality: 'GOOD' },
-        rows[0]?.info,
-        { decimals: this.decimals(rows[0]?.info) },
-      ).text.replace(/.0+$/, '')}${unit ? ' ' + unit : ''}`;
+      `${l.kind === 'high' ? vi.dash.highLimit : vi.dash.lowLimit} ${String(Number(l.value.toFixed(6)))}`;
     return html`<div class="w ${title ? 'framed' : ''}">
       ${this.head()}
       <div

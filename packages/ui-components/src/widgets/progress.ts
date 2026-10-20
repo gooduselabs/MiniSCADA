@@ -6,6 +6,7 @@ import { fraction, resolveRange } from '../chart/geometry.ts';
 import { safeColor } from '../format/color.ts';
 import { formatValue, numberOf } from '../format/format-value.ts';
 import { MatWidget } from './base.ts';
+import { vi } from '../i18n/vi.ts';
 
 const RING_R = 42;
 const RING_C = 2 * Math.PI * RING_R;
@@ -123,7 +124,7 @@ export class MatProgress extends MatWidget {
     const ring = this.prop('shape', 'bar') === 'ring';
     const valueText = `${fmt.text}${fmt.unit ? ' ' + fmt.unit : ''}`;
     const attrs = {
-      label: label || this.nameOf(id),
+      label: label || this.nameOf(id) || vi.widget.progress!,
       text: [`${valueText} (${pct})`, qv.aria].filter(Boolean).join(', '),
     };
     const cls = `w ${ring ? 'ring' : 'bar'} ${qv.cls} ${qv.dim ? 'dimmed' : ''}`;
@@ -136,7 +137,7 @@ export class MatProgress extends MatWidget {
         aria-label=${attrs.label}
         aria-valuemin=${min}
         aria-valuemax=${max}
-        aria-valuenow=${known ? n : nothing}
+        aria-valuenow=${known ? n : min}
         aria-valuetext=${attrs.text}
       >
         <svg viewBox="0 0 100 100" aria-hidden="true">
@@ -158,7 +159,7 @@ export class MatProgress extends MatWidget {
       aria-label=${attrs.label}
       aria-valuemin=${min}
       aria-valuemax=${max}
-      aria-valuenow=${known ? n : nothing}
+      aria-valuenow=${known ? n : min}
       aria-valuetext=${attrs.text}
     >
       <div class="top">

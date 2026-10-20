@@ -1187,6 +1187,13 @@
       ],
       "props": [
         {
+          "name": "title",
+          "kind": "string",
+          "maxLength": 60,
+          "default": "",
+          "group": "display"
+        },
+        {
           "name": "columns",
           "kind": "array",
           "items": {

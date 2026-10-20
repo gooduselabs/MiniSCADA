@@ -166,10 +166,10 @@ export class MatStatTile extends MatWidget {
         position: absolute;
         left: 0;
         right: 0;
-        bottom: 6px;
+        bottom: 4px;
         width: 100%;
-        height: 34%;
-        opacity: 0.45;
+        height: 26%;
+        opacity: 0.3;
         pointer-events: none;
       }
       .spark polyline {
