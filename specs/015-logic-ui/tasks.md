@@ -35,3 +35,10 @@
 - Thử logic ở Sơ đồ nâng khung dưới lên 380 px (Bảng: 460 px) để còn chỗ vẽ.
 - Không đổi `logic.json`, schema, `core/` (C++): không cần ctest cho feature này. Vị trí ở `logic.layout.json` (ngoài `projectFiles`, không vào gói; gói có tệp thừa bị E_PACKAGE_EXTRA_FILE nên tệp phụ không được đưa vào gói).
 - Kiểm cuối: lint, typecheck xanh; `npm test` gốc xanh trừ `screen-editor-grid.test.ts` (chập chờn khi chạy cả bộ, chạy riêng xanh) và `project-files.test.ts` cần `node tests/package-vectors/generate.mjs --out` trước (gói lớn không commit; chạy rồi xanh); e2e `logic-diagram` 36/36 và `logic` 47/47.
+## Vòng 2 (2026-10-20, theo điều phối)
+
+- [x] T016 Khối to hơn (rộng 248 px, chữ 12–13 px, cổng r 6), màu theo nhóm (dải trái, biểu tượng, đầu khối; cùng màu ở task card); Vừa khung không dưới 90 % (sơ đồ lớn thì cuộn)
+- [x] T017 Khung dưới gập/mở (nút, Ctrl+J; `inspectorCollapsed` trong workspace, nhớ chiều cao); Thử logic ở Sơ đồ đặt khung dưới để vùng vẽ ≥ 55 %; panel Thử logic ba cột khi khung thấp
+- [x] T018 Chọn nhiều khối: Shift+bấm, kéo khung trên nền (dời khung nhìn: Space + kéo, nút giữa, lăn chuột), Ctrl+A, Esc; nhóm dời/xóa/nhân bản một bước hoàn tác
+- [x] T019 Dây hành động vòng qua kênh ngoài mọi khối khi đường thẳng cắt khối (`model/logic-route.ts`, test 10 luật gập cột)
+- [x] T020 e2e đo vẽ 200 khối trong Chrome: ~260–280 ms (ngưỡng 500 ms)
