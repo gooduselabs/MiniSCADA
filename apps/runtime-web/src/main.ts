@@ -12,6 +12,7 @@ import { vi } from './i18n/vi.ts';
 import { HistoryPage } from './history-page.ts';
 import { createIcon } from './icons.ts';
 import { ReportPage } from './report-page.ts';
+import { fetchEventSources } from './report-sources.ts';
 import { HttpHistorySource } from './history-source.ts';
 import { viHist } from './i18n/vi-history.ts';
 import { LiveTagSource } from './live-source.ts';
@@ -323,6 +324,8 @@ async function main(): Promise<void> {
     history: histSource,
     now: () => source.now(),
     loadReports: () => store.reports(),
+    events: fetchEventSources(),
+    projectName: () => summary.name,
     userName: () => session.info?.user ?? '',
     tagInfo: (id) => {
       const t = tagById.get(id);

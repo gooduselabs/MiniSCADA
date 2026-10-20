@@ -1,15 +1,24 @@
-// Trang báo cáo `#/report/<id>` (feature 010, FR-040, FR-041; contracts/templates-config.md §4, §5, §6). Chọn kỳ
-// (ngày, ngày làm việc cho ca, hoặc tháng), nút Xem gọi `aggregate` theo `reportRequest` (chia lô ≤ 16 Tag, qua hàng
-// đợi chung của trang), dựng bảng bằng `buildReport` của @mat/history-math (một ReportTable cho màn hình, CSV,
-// XLSX và PDF nên khớp 100 % ô). Xuất file chạy HOÀN TOÀN trên trình duyệt: không gọi lại thiết bị. Mọi chữ do
-// textContent; tên mẫu, nhãn cột là văn bản thuần.
+// Trang báo cáo `#/report/<id>` (feature 010, FR-040, FR-041; contracts/templates-config.md §4, §5, §6; feature 015:
+// specs/015-reports/plan.md). Chọn kỳ (ngày, ngày làm việc cho ca, tuần ISO, tháng, khoảng ngày), nút Xem dựng MỘT
+// ReportTable bằng @mat/history-math theo loại mẫu: bảng tổng hợp (`aggregate`, chia lô ≤ 16 Tag, qua hàng đợi chung của
+// trang), thiết bị (giờ chạy từ `aggregate`, số lần bật từ dòng thô `rows`), alarm (`alarms/history`) hoặc logic
+// (`logic/events`). Bảng hiện bằng `<mat-report-view>` (ui-components, cùng mã với xem trước Studio) và là nguồn của CSV,
+// XLSX, PDF (khớp 100 % ô). Xuất file chạy HOÀN TOÀN trên trình duyệt: không gọi lại thiết bị. Mọi chữ do textContent
+// hoặc binding của Lit; tên mẫu, nhãn cột là văn bản thuần.
 import {
+  EVENT_LIMITS,
+  alarmReport,
   buildReport,
+  countStarts,
+  isoWeekOf,
   localParts,
+  logicReport,
   parseUtcOffset,
   reportRequest,
+  validSelection,
   workDayOffsetMs,
   type AggregateResult as MathAggregate,
+  type ReportSelection,
   type ReportTable,
   type ReportTemplate,
 } from '@mat/history-math';
@@ -24,14 +33,17 @@ import {
   type ExportMeta,
 } from '@mat/report-export';
 import type { HistoryCatalogGroup, HistorySource } from '@mat/ui-components';
+import '@mat/ui-components';
 import { viHist } from './i18n/vi-history.ts';
-import { exportLabels } from './i18n/vi-report.ts';
+import { exportLabels, viewLabels } from './i18n/vi-report.ts';
+import type { EventSources } from './report-sources.ts';
 
 export interface ReportTemplateDoc extends ReportTemplate {
-  group: string;
+  group?: string;
   paper?: { size?: 'A4' | 'A3'; orientation?: 'portrait' | 'landscape' };
 }
 export interface ReportsFile {
+  org?: string;
   reports: ReportTemplateDoc[];
 }
 
@@ -53,6 +65,10 @@ export interface ReportPageOptions {
   onUrl: (hash: string) => void;
   download: (name: string, mime: string, bytes: Uint8Array) => void;
   exporter?: ReportExporter;
+  /** Nguồn alarm và logic (feature 015); thiếu thì mẫu alarm/logic báo "chưa hỗ trợ". */
+  events?: EventSources;
+  /** Tên project: tên đơn vị mặc định khi reports.json không có `org`. */
+  projectName?: () => string;
 }
 
 const el = <K extends keyof HTMLElementTagNameMap>(
@@ -66,17 +82,35 @@ const el = <K extends keyof HTMLElementTagNameMap>(
   return e;
 };
 
-const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-const MONTH_RE = /^\d{4}-\d{2}$/;
 const p2 = (n: number) => String(n).padStart(2, '0');
-const LOW_COVERAGE = 0.95;
+/** Trang đọc dòng thô tối đa cho số lần bật (20 × 500 = 10.000 dòng). */
+const MAX_ROW_PAGES = 20;
+const ROWS_PER_PAGE = 500;
+
+/** Khóa đường dẫn của kỳ theo loại kỳ. */
+const SEL_KEYS: Record<ReportTemplate['period'], Array<keyof ReportSelection>> = {
+  day: ['d'],
+  shift: ['d'],
+  month: ['m'],
+  week: ['w'],
+  range: ['from', 'to'],
+};
+
+/** Độ lệch giờ địa phương của trình duyệt (`±HH:MM`): múi giờ của báo cáo alarm/logic khi không có nhóm lưu trữ. */
+function browserTz(now: number): string {
+  const off = -new Date(now).getTimezoneOffset();
+  const a = Math.abs(off);
+  return `${off < 0 ? '-' : '+'}${p2(Math.floor(a / 60))}:${p2(a % 60)}`;
+}
 
 export class ReportPage {
   readonly #o: ReportPageOptions;
   readonly #exp: ReportExporter;
   #tpl: ReportTemplateDoc | null = null;
+  #org = '';
   #group: HistoryCatalogGroup | null = null;
-  #sel: { d?: string; m?: string } = {};
+  #tz = '+07:00';
+  #sel: ReportSelection = {};
   #table: ReportTable | null = null;
   #seq = 0;
   #unsub: (() => void) | null = null;
@@ -98,7 +132,7 @@ export class ReportPage {
     });
   }
 
-  /** Hủy yêu cầu aggregate đang bay (chạy lại, rời trang, dispose): không giữ chỗ phiên ở máy chủ. */
+  /** Hủy yêu cầu đang bay (chạy lại, rời trang, dispose): không giữ chỗ phiên ở máy chủ. */
   #abort(): void {
     this.#ac?.abort();
     this.#ac = null;
@@ -116,6 +150,10 @@ export class ReportPage {
     this.#unsub?.();
     this.#unsub = null;
     this.#o.container.replaceChildren();
+  }
+
+  #kind(): NonNullable<ReportTemplate['kind']> {
+    return this.#tpl?.kind ?? 'table';
   }
 
   async show(id: string, params: URLSearchParams): Promise<void> {
@@ -139,24 +177,33 @@ export class ReportPage {
     const tpl = file.reports.find((r) => r.id === id);
     if (!tpl) return this.#message(viHist.report.notFound(id));
     this.#tpl = tpl;
+    this.#org = file.org ?? this.#o.projectName?.() ?? '';
+    const events = tpl.kind === 'alarm' || tpl.kind === 'logic';
     let cat;
     try {
       cat = await this.#o.history.catalog();
     } catch (e) {
-      if (seq === this.#seq && !this.#disposed) this.#fail(e);
-      return;
+      if (seq !== this.#seq || this.#disposed) return;
+      if (!events) return this.#fail(e);
+      cat = null; // alarm, logic không cần lưu trữ: chỉ lấy múi giờ nếu có
     }
     if (seq !== this.#seq || this.#disposed) return;
-    if (!cat.enabled) return this.#message(viHist.disabled);
-    const g = cat.groups.find((x) => x.id === tpl.group);
-    if (!g) return this.#message(`${viHist.report.noGroup} "${tpl.group}"`);
-    this.#group = g;
+    if (events) {
+      this.#group = null;
+      this.#tz = cat?.enabled
+        ? (cat.groups[0]?.timeZone ?? browserTz(this.#o.now()))
+        : browserTz(this.#o.now());
+    } else {
+      if (!cat!.enabled) return this.#message(viHist.disabled);
+      const g = cat!.groups.find((x) => x.id === tpl.group);
+      if (!g) return this.#message(`${viHist.report.noGroup} "${tpl.group}"`);
+      this.#group = g;
+      this.#tz = g.timeZone;
+    }
     this.#stateKind = 'ok';
-    this.#build(tpl, g);
-    const auto =
-      (tpl.period === 'month' ? params.get('m') : params.get('d')) !== null &&
-      this.#validSel() !== null;
-    if (auto) void this.#run();
+    this.#build(tpl);
+    const asked = SEL_KEYS[tpl.period].every((k) => params.get(k) !== null);
+    if (asked && this.#validSel() !== null) void this.#run();
   }
 
   // ---- giao diện ---------------------------------------------------------------------------------------------
@@ -190,52 +237,65 @@ export class ReportPage {
     this.#message(viHist.loadError);
   }
 
-  // Kỳ mặc định: ngày (tháng) đang chạy; mẫu theo ca lùi giờ bắt đầu ca 1 (ca đêm sau 00:00 vẫn thuộc
-  // ngày làm việc hôm trước).
-  #defaultSel(tpl: ReportTemplateDoc, g: HistoryCatalogGroup): { d?: string; m?: string } {
-    const p = localParts(this.#o.now() - workDayOffsetMs(tpl as never), parseUtcOffset(g.timeZone));
-    return tpl.period === 'month'
-      ? { m: `${p.y}-${p2(p.m)}` }
-      : { d: `${p.y}-${p2(p.m)}-${p2(p.d)}` };
+  // Kỳ mặc định: ngày (tuần, tháng) đang chạy; mẫu theo ca lùi giờ bắt đầu ca 1 (ca đêm sau 00:00 vẫn thuộc ngày làm
+  // việc hôm trước); khoảng: 7 ngày tới hôm nay.
+  #defaultSel(tpl: ReportTemplateDoc): ReportSelection {
+    const now = this.#o.now();
+    const tz = parseUtcOffset(this.#tz);
+    const p = localParts(now - workDayOffsetMs(tpl), tz);
+    const day = (q: { y: number; m: number; d: number }) => `${q.y}-${p2(q.m)}-${p2(q.d)}`;
+    switch (tpl.period) {
+      case 'month':
+        return { m: `${p.y}-${p2(p.m)}` };
+      case 'week':
+        return { w: isoWeekOf(p.y, p.m, p.d) };
+      case 'range':
+        return { from: day(localParts(now - 6 * 86_400_000, tz)), to: day(p) };
+      default:
+        return { d: day(p) };
+    }
   }
 
-  #build(tpl: ReportTemplateDoc, g: HistoryCatalogGroup): void {
-    const month = tpl.period === 'month';
-    const asked = this.#params.get(month ? 'm' : 'd');
-    const ok = asked !== null && (month ? MONTH_RE : DAY_RE).test(asked);
-    this.#sel = ok ? (month ? { m: asked } : { d: asked }) : this.#defaultSel(tpl, g);
-
-    const input = el('input');
-    input.type = month ? 'month' : 'date';
-    input.id = 'rpt-period';
-    input.value = (month ? this.#sel.m : this.#sel.d) ?? '';
-    input.addEventListener('change', () => {
-      this.#sel = month ? { m: input.value } : { d: input.value };
-    });
-    const label = el(
-      'label',
-      'hist-field',
-      (tpl.period === 'shift'
-        ? viHist.report.workDay
-        : month
-          ? viHist.report.month
-          : viHist.report.day) + ' ',
-    );
-    label.htmlFor = 'rpt-period';
-    label.append(input);
-
-    const view = el('button', 'btn view', viHist.report.view);
-    view.type = 'button';
-    view.addEventListener('click', () => void this.#run());
+  #build(tpl: ReportTemplateDoc): void {
+    const keys = SEL_KEYS[tpl.period];
+    const asked: ReportSelection = {};
+    for (const k of keys) {
+      const v = this.#params.get(k);
+      if (v !== null) asked[k] = v;
+    }
+    this.#sel = validSelection(tpl, asked) ? asked : this.#defaultSel(tpl);
 
     const bar = el('div', 'rpt-bar');
-    const grow = el('span', 'grow');
-    bar.append(label, view, grow);
+    const field = (key: keyof ReportSelection, type: string, text: string) => {
+      const input = el('input');
+      input.type = type;
+      input.id = `rpt-${key}`;
+      input.value = this.#sel[key] ?? '';
+      input.addEventListener('change', () => {
+        this.#sel = { ...this.#sel, [key]: input.value };
+      });
+      const label = el('label', 'hist-field', `${text} `);
+      label.htmlFor = input.id;
+      label.append(input);
+      bar.append(label);
+    };
+    const r = viHist.report;
+    if (tpl.period === 'month') field('m', 'month', r.month);
+    else if (tpl.period === 'week') field('w', 'week', r.week);
+    else if (tpl.period === 'range') {
+      field('from', 'date', r.from);
+      field('to', 'date', r.to);
+    } else field('d', 'date', tpl.period === 'shift' ? r.workDay : r.day);
+
+    const view = el('button', 'btn view', r.view);
+    view.type = 'button';
+    view.addEventListener('click', () => void this.#run());
+    bar.append(view, el('span', 'grow'));
     const defs: Array<[string, string, () => Promise<void>]> = [
-      ['csv', viHist.report.csv, () => this.#export('csv')],
-      ['csv-vi', viHist.report.csvVi, () => this.#export('csv-excel')],
-      ['xlsx', viHist.report.xlsx, () => this.#export('xlsx')],
-      ['pdf', viHist.report.pdf, () => this.#export('pdf')],
+      ['csv', r.csv, () => this.#export('csv')],
+      ['csv-vi', r.csvVi, () => this.#export('csv-excel')],
+      ['xlsx', r.xlsx, () => this.#export('xlsx')],
+      ['pdf', r.pdf, () => this.#export('pdf')],
     ];
     this.#buttons = {};
     for (const [cls, text, fn] of defs) {
@@ -247,17 +307,14 @@ export class ReportPage {
       bar.append(b);
     }
     this.#out = el('div', 'rpt-out');
-    const h = el('h2', undefined, tpl.name);
+    const h = el('h2', 'rpt-name', tpl.name);
     this.#o.container.replaceChildren(h, bar, this.#out);
-    void g;
   }
 
-  #validSel(): { d?: string; m?: string } | null {
+  #validSel(): ReportSelection | null {
     const tpl = this.#tpl;
     if (!tpl) return null;
-    const month = tpl.period === 'month';
-    const v = month ? this.#sel.m : this.#sel.d;
-    return v && (month ? MONTH_RE : DAY_RE).test(v) ? this.#sel : null;
+    return validSelection(tpl, this.#sel) ? this.#sel : null;
   }
 
   #setExport(on: boolean): void {
@@ -283,128 +340,178 @@ export class ReportPage {
 
   async #run(): Promise<void> {
     const tpl = this.#tpl;
-    const g = this.#group;
     const sel = this.#validSel();
-    if (!tpl || !g || !sel) return;
+    if (!tpl) return;
+    if (!sel) return this.#status(viHist.report.badPeriod, true);
+    const kind = this.#kind();
+    if ((kind === 'table' || kind === 'equipment') && !this.#group) return;
     const seq = ++this.#seq;
     this.#table = null;
     this.#setExport(false);
     this.#status(viHist.report.loading);
-    const tzMs = parseUtcOffset(g.timeZone);
-    const req = reportRequest(tpl, sel, tzMs, viHist.shiftWord);
     this.#abort();
     const ac = new AbortController();
     this.#ac = ac;
-    let aggs: MathAggregate[];
+    let table: ReportTable;
     try {
-      aggs = (await Promise.all(
-        req.batches.map((tags) =>
-          this.#o.history.aggregate(
-            {
-              group: g.id,
-              tags,
-              from: req.from,
-              to: req.to,
-              bucketMs: req.bucketMs,
-              offsetMs: req.offsetMs,
-              priority: 'user',
-            },
-            ac.signal,
-          ),
-        ),
-      )) as MathAggregate[];
+      table =
+        kind === 'alarm' || kind === 'logic'
+          ? await this.#runEvents(tpl, sel, kind, ac.signal)
+          : await this.#runTable(tpl, sel, ac.signal);
     } catch (e) {
       if (seq !== this.#seq || this.#disposed) return;
       const code = (e as { code?: string }).code ?? '';
       if (code === 'AUTH_REQUIRED' || code === 'SESSION_EXPIRED') return this.#fail(e);
       if (code === 'RANGE_TOO_LARGE') return this.#status(viHist.report.narrowPeriod, true);
+      if (code === 'ACCESS_DENIED' || code === 'FORBIDDEN')
+        return this.#status(
+          kind === 'alarm' ? viHist.report.noAlarmAccess : viHist.report.noAccess,
+          true,
+        );
+      if (code === 'NOT_SUPPORTED')
+        return this.#status(
+          kind === 'alarm' ? viHist.report.alarmUnsupported : viHist.report.logicUnsupported,
+          true,
+        );
       return this.#status(viHist.loadError, true, true);
     }
     if (seq !== this.#seq || this.#disposed) return;
-    const tagInfo: Record<string, { description?: string; unit?: string }> = {};
-    for (const c of tpl.columns) {
-      const i = this.#o.tagInfo?.(c.tagId);
-      if (i) tagInfo[c.tagId] = i;
-    }
-    const table = buildReport({
-      template: tpl,
-      select: sel,
-      tz: g.timeZone,
-      now: this.#o.now(),
-      shiftWord: viHist.shiftWord,
-      tagInfo,
-      aggregates: aggs,
-    });
     // Ghi kỳ vào đường dẫn để F5 giữ lựa chọn.
-    this.#o.onUrl(`#/report/${tpl.id}?${tpl.period === 'month' ? `m=${sel.m}` : `d=${sel.d}`}`);
-    const hasData = table.rows.some((r) => !r.pending && r.cells.some((c) => c !== null));
-    if (!hasData) return this.#status(viHist.report.empty);
+    const q = new URLSearchParams();
+    for (const k of SEL_KEYS[tpl.period]) q.set(k, sel[k] ?? '');
+    this.#o.onUrl(`#/report/${tpl.id}?${q.toString()}`);
+    if (kind === 'table' || kind === 'equipment') {
+      const hasData = table.rows.some((r) => !r.pending && r.cells.some((c) => c !== null));
+      if (!hasData) return this.#status(viHist.report.empty);
+    }
     this.#table = table;
     this.#render(table);
     this.#setExport(true);
   }
 
+  #tagInfo(tpl: ReportTemplateDoc): Record<string, { description?: string; unit?: string }> {
+    const out: Record<string, { description?: string; unit?: string }> = {};
+    for (const c of tpl.columns ?? []) {
+      const i = this.#o.tagInfo?.(c.tagId);
+      if (i) out[c.tagId] = i;
+    }
+    return out;
+  }
+
+  async #runTable(
+    tpl: ReportTemplateDoc,
+    sel: ReportSelection,
+    signal: AbortSignal,
+  ): Promise<ReportTable> {
+    const g = this.#group!;
+    const req = reportRequest(tpl, sel, parseUtcOffset(g.timeZone), viHist.shiftWord);
+    const aggs = (await Promise.all(
+      req.batches.map((tags) =>
+        this.#o.history.aggregate(
+          {
+            group: g.id,
+            tags,
+            from: req.from,
+            to: req.to,
+            bucketMs: req.bucketMs,
+            offsetMs: req.offsetMs,
+            priority: 'user',
+          },
+          signal,
+        ),
+      ),
+    )) as MathAggregate[];
+    // số lần bật (hàm starts): đếm cạnh lên trên dòng thô, có trần
+    const startTags = [
+      ...new Set(
+        (tpl.columns ?? []).filter((c) => c.functions.includes('starts')).map((c) => c.tagId),
+      ),
+    ];
+    let starts: Record<string, Array<number | null>> | undefined;
+    let capped = false;
+    if (startTags.length > 0) {
+      const rows: Array<Array<number | boolean | null>> = [];
+      let after: number | undefined;
+      let complete = false;
+      for (let page = 0; page < MAX_ROW_PAGES; page++) {
+        const r = await this.#o.history.rows(
+          {
+            group: g.id,
+            tags: startTags,
+            from: req.from,
+            to: Math.min(req.to, this.#o.now()),
+            limit: ROWS_PER_PAGE,
+            order: 'asc',
+            ...(after !== undefined ? { after } : {}),
+            priority: 'user',
+          },
+          signal,
+        );
+        for (const row of r.rows)
+          rows.push(
+            row.map((v) => (typeof v === 'string' ? null : v)) as Array<number | boolean | null>,
+          );
+        if (r.next === null) {
+          complete = true;
+          break;
+        }
+        after = r.next;
+      }
+      capped = !complete;
+      starts = countStarts(rows, startTags, req, complete);
+    }
+    const t = buildReport({
+      template: tpl,
+      select: sel,
+      tz: g.timeZone,
+      now: this.#o.now(),
+      shiftWord: viHist.shiftWord,
+      tagInfo: this.#tagInfo(tpl),
+      aggregates: aggs,
+      ...(starts ? { starts } : {}),
+      fnNames: exportLabels.fn,
+      coverageLabel: exportLabels.coverage,
+      org: this.#org,
+    });
+    if (capped) t.notes = [...(t.notes ?? []), viHist.report.startsCapped];
+    return t;
+  }
+
+  async #runEvents(
+    tpl: ReportTemplateDoc,
+    sel: ReportSelection,
+    kind: 'alarm' | 'logic',
+    signal: AbortSignal,
+  ): Promise<ReportTable> {
+    const src = this.#o.events;
+    if (!src) throw Object.assign(new Error('NOT_SUPPORTED'), { code: 'NOT_SUPPORTED' });
+    const req = reportRequest(tpl, sel, parseUtcOffset(this.#tz), viHist.shiftWord);
+    const to = Math.min(req.to, this.#o.now());
+    const base = {
+      template: tpl,
+      select: sel,
+      tz: this.#tz,
+      now: this.#o.now(),
+      shiftWord: viHist.shiftWord,
+      org: this.#org,
+    };
+    if (kind === 'alarm') {
+      const r = await src.alarms(req.from, to, EVENT_LIMITS.alarms, signal);
+      return alarmReport({ ...base, items: r.items, truncated: r.truncated });
+    }
+    const r = await src.logic(req.from, to, EVENT_LIMITS.logic, signal);
+    const t = logicReport({ ...base, events: r.events, truncated: r.truncated });
+    if (!r.enabled) t.notes = [...(t.notes ?? []), viHist.report.noLogic];
+    return t;
+  }
+
   #render(t: ReportTable): void {
     const out = this.#out;
     if (!out) return;
-    const nCols = t.columns.length;
-    const head = el('tr');
-    const th0 = el('th', undefined, viHist.report.time);
-    th0.scope = 'col';
-    head.append(th0);
-    for (const c of t.columns) {
-      const th = el(
-        'th',
-        undefined,
-        `${c.label}${c.unit ? ` (${c.unit})` : ''} · ${exportLabels.fn[c.fn]}`,
-      );
-      th.scope = 'col';
-      head.append(th);
-    }
-    const tbody = el('tbody');
-    for (const r of t.rows) {
-      const tr = el('tr');
-      const lab = el('th', undefined, r.label);
-      lab.scope = 'row';
-      tr.append(lab);
-      if (r.pending) {
-        const td = el('td', 'pending', viHist.report.pending);
-        td.colSpan = nCols;
-        tr.append(td);
-      } else {
-        const low = r.coverage < LOW_COVERAGE;
-        r.text.forEach((s) => {
-          const td = el('td', `num${low ? ' miss' : ''}`, s);
-          if (low) td.title = viHist.report.missingCell;
-          tr.append(td);
-        });
-      }
-      tbody.append(tr);
-    }
-    if (t.totalsText) {
-      const tr = el('tr', 'total');
-      const lab = el('th', undefined, viHist.report.total);
-      lab.scope = 'row';
-      tr.append(lab);
-      for (const s of t.totalsText) tr.append(el('td', 'num', s));
-      tbody.append(tr);
-    }
-    const table = el('table', 'rpt');
-    const cap = el('caption', 'sr-only', `${t.title} ${t.periodLabel}`);
-    const thead = el('thead');
-    thead.append(head);
-    table.append(cap, thead, tbody);
-    const scroll = el('div', 'rpt-scroll');
-    scroll.tabIndex = 0;
-    scroll.setAttribute('role', 'region');
-    scroll.setAttribute('aria-label', `${t.title || viHist.pageTitle} ${t.periodLabel}`);
-    scroll.append(table);
-    const cov = el(
-      'p',
-      'coverage hint',
-      viHist.report.coverage(`${(t.coverage * 100).toFixed(1).replace('.', ',')} %`),
-    );
-    out.replaceChildren(scroll, cov);
+    const view = document.createElement('mat-report-view');
+    view.labels = viewLabels;
+    view.table = t;
+    out.replaceChildren(view);
   }
 
   // ---- xuất file ---------------------------------------------------------------------------------------------
@@ -412,12 +519,11 @@ export class ReportPage {
   async #export(kind: 'csv' | 'csv-excel' | 'xlsx' | 'pdf'): Promise<void> {
     const t = this.#table;
     const tpl = this.#tpl;
-    const g = this.#group;
-    if (!t || !tpl || !g) return;
+    if (!t || !tpl) return;
     const meta: ExportMeta = {
       exportedBy: this.#o.userName(),
       exportedAt: this.#o.now(),
-      tz: g.timeZone,
+      tz: this.#tz,
       sheetName: tpl.name,
     };
     if (tpl.paper) meta.paper = tpl.paper;
@@ -433,7 +539,8 @@ export class ReportPage {
       else if (kind === 'xlsx') bytes = await this.#exp.xlsx(t, meta, exportLabels);
       else bytes = await this.#exp.pdf(t, meta, exportLabels, tpl.footer ?? '');
       const f = EXPORT_FORMATS[kind];
-      const key = this.#sel.m ?? this.#sel.d ?? '';
+      const s = this.#sel;
+      const key = s.m ?? s.w ?? s.d ?? (s.from ? `${s.from}_${s.to}` : '');
       this.#o.download(exportFileName(tpl.id, key, f.ext), f.mime, bytes);
     } catch {
       const name = kind === 'xlsx' ? 'XLSX' : kind === 'pdf' ? 'PDF' : 'CSV';

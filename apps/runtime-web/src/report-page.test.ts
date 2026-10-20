@@ -140,7 +140,10 @@ async function flush(): Promise<void> {
 
 const btn = (root: HTMLElement, cls: string) =>
   root.querySelector<HTMLButtonElement>(`button.${cls}`)!;
-const rowsOf = (root: HTMLElement) => [...root.querySelectorAll('table.rpt tbody tr')];
+/** Phần dựng của <mat-report-view> (feature 015): bảng và chú thích nằm trong shadow root. */
+const viewOf = (root: HTMLElement): ParentNode =>
+  root.querySelector('mat-report-view')?.shadowRoot ?? document.createDocumentFragment();
+const rowsOf = (root: HTMLElement) => [...viewOf(root).querySelectorAll('table.rpt tbody tr')];
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
@@ -213,7 +216,7 @@ describe('ReportPage: chọn kỳ và Xem', () => {
     btn(root, 'view').click();
     await flush();
     expect(rowsOf(root)[0]!.querySelector('td.miss')).not.toBeNull();
-    expect(root.querySelector('.coverage')!.textContent).toMatch(/Dữ liệu đủ \d+/);
+    expect(viewOf(root).querySelector('.coverage')!.textContent).toMatch(/Dữ liệu đủ \d+/);
   });
 
   it('đường dẫn ?d= giữ kỳ khi F5 và Xem ghi lại đường dẫn; tháng dùng ?m=', async () => {

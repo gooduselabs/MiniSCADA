@@ -1,5 +1,7 @@
-// Nhãn cho @mat/report-export (CSV, XLSX, PDF) của trang báo cáo (feature 010). Chuỗi trang ở vi-history.ts.
+// Nhãn cho @mat/report-export (CSV, XLSX, PDF) và `<mat-report-view>` của trang báo cáo (feature 010, 015). Chuỗi trang ở
+// vi-history.ts.
 import type { ExportLabels } from '@mat/report-export';
+import { viReport, type ReportViewLabels } from '@mat/ui-components';
 
 export const exportLabels: ExportLabels = {
   period: 'Kỳ',
@@ -19,5 +21,10 @@ export const exportLabels: ExportLabels = {
     last: 'cuối kỳ',
     delta: 'chênh lệch',
     count: 'số dòng',
+    onTime: 'thời gian ON',
+    starts: 'số lần bật',
   },
 };
+
+/** Chữ của `<mat-report-view>`: tên hàm như ở tệp xuất (cùng tiêu đề cột trên màn hình và trong tệp). */
+export const viewLabels: ReportViewLabels = { ...viReport, fn: exportLabels.fn };
