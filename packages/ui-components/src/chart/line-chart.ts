@@ -150,6 +150,29 @@ export function autoYRange(
   return [dataMin - pad, dataMax + pad];
 }
 
+const pad2 = (n: number): string => String(n).padStart(2, '0');
+
+/**
+ * Nhãn trục thời gian (giây epoch, giờ địa phương) kiểu 24 giờ: HH:mm, HH:mm:ss khi có vạch lẻ giây; vạch đầu và vạch
+ * sang ngày mới kèm dd/MM khi các vạch trải qua nhiều ngày. Thay nhãn mặc định của uPlot (kiểu Mỹ, "7:04am").
+ */
+export function clockLabels(splits: readonly number[]): string[] {
+  const dates = splits.map((s) => (Number.isFinite(s) ? new Date(s * 1000) : null));
+  const ok = dates.filter((d): d is Date => d !== null);
+  const withSec = ok.some((d) => d.getSeconds() !== 0);
+  const dayKey = (d: Date): string => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const multiDay = new Set(ok.map(dayKey)).size > 1;
+  let prevDay = '';
+  return dates.map((d) => {
+    if (!d) return '';
+    const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}${withSec ? `:${pad2(d.getSeconds())}` : ''}`;
+    const key = dayKey(d);
+    const showDay = multiDay && key !== prevDay;
+    prevDay = key;
+    return showDay ? `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)} ${time}` : time;
+  });
+}
+
 /** Nạp uPlot (import lười) và trả nhà máy dựng đồ thị. */
 export async function loadUPlot(): Promise<PlotFactory> {
   const mod = await import('uplot');
@@ -174,7 +197,15 @@ export async function loadUPlot(): Promise<PlotFactory> {
               o.yRange(Number.isFinite(min) ? min : null, Number.isFinite(max) ? max : null),
           },
         },
-        axes: [axisStyle(o), axisStyle(o)],
+        axes: [
+          {
+            ...axisStyle(o),
+            // "HH:mm:ss" rộng hơn nhãn mặc định: giãn vạch để chữ không chạm nhau.
+            space: 80,
+            values: (_u: unknown, splits: number[]) => clockLabels(splits),
+          },
+          axisStyle(o),
+        ],
         series: [
           {},
           ...o.series.map((s) => ({

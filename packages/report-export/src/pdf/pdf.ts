@@ -18,6 +18,8 @@ const CELL_PAD = 16; // pdfmake 0.3: đệm 8 pt mỗi bên (đo thật: bước
 const FONT_SIZES = [8, 7, 6];
 const MAX_CARDS = 4;
 const DATA_MAX = 150;
+/** Bảng hụt bề rộng trang không quá tỉ lệ này (sau trần DATA_MAX) thì trải cho đủ. */
+const FILL_GAP = 0.25;
 
 /**
  * Độ rộng ước (đơn vị em) theo Inter 4.1 (đo bằng fontkit trên tệp đã cắt, lấy số lớn hơn của Regular và SemiBold):
@@ -72,6 +74,14 @@ export function planLayout(t: ReportTable, meta: ExportMeta, labels: ExportLabel
       // Vừa trang: chia phần dư cho các cột số (mỗi cột tối đa DATA_MAX pt) để bảng trải rộng, tiêu đề ít xuống dòng.
       const extra = w.data.length ? Math.floor((avail - used) / w.data.length) : 0;
       const data = w.data.map((d) => Math.max(d, Math.min(d + extra, DATA_MAX)));
+      // Phần còn thiếu nhỏ (≤ FILL_GAP bề rộng) thì chia nốt cho cột số, bỏ trần: bảng thẳng mép phải với dải tiêu đề và
+      // thẻ số liệu thay vì hụt một khúc (T054). Bảng ít cột vẫn gọn.
+      const gap = avail - w.label - data.reduce((a, b) => a + b, 0);
+      if (data.length && gap > 0 && gap <= avail * FILL_GAP) {
+        const each = Math.floor(gap / data.length);
+        data.forEach((_, k) => (data[k]! += each));
+        data[data.length - 1]! += gap - each * data.length;
+      }
       return { fontSize: size, groups: [t.columns.map((_, k) => k)], widths: { ...w, data } };
     }
   }
