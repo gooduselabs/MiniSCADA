@@ -38,7 +38,11 @@ export function propLabel(f: FieldModel): string {
   return hasKey(shared) ? t(shared as MessageKey) : f.name;
 }
 
-export function optionLabel(v: string): string {
+/** Nhãn của một lựa chọn: riêng của thuộc tính (`<khóa i18n của thuộc tính>.<giá trị>`, feature 014) nếu có, không thì
+ * nhãn dùng chung `wopt.<giá trị>`, không thì chính giá trị. */
+export function optionLabel(v: string, f?: Pick<FieldModel, 'i18nKey'>): string {
+  const own = f ? `${f.i18nKey}.${v}` : '';
+  if (own && hasKey(own)) return t(own as MessageKey);
   const k = `wopt.${v}`;
   return hasKey(k) ? t(k as MessageKey) : v;
 }
@@ -48,7 +52,7 @@ function defaultHint(f: FieldModel): string | null {
   if (f.default === undefined || f.kind === 'array' || f.kind === 'object') return null;
   if (f.fromTag !== undefined) return t('pf.defaultFromTag');
   if (f.kind === 'bool') return f.default ? t('pf.on') : t('pf.off');
-  if (f.kind === 'enum') return optionLabel(String(f.default));
+  if (f.kind === 'enum') return optionLabel(String(f.default), f);
   const s = String(f.default);
   return s === '' ? null : s;
 }
@@ -122,6 +126,22 @@ function textField(
   };
   const onChange: OnText = (e) => apply((e.target as HTMLInputElement).value, true);
   const err = local.error ? t(local.error) : env.issue;
+  // Feature 014: chuỗi nhiều dòng (ghi chú) sửa bằng ô nhiều dòng; Enter xuống dòng, rời ô thì áp.
+  if (f.multiline)
+    return html`<textarea
+      id=${fieldId(f.name)}
+      class="pf-in pf-area"
+      rows="4"
+      spellcheck="false"
+      placeholder=${env.mixed ? t('pf.mixed') : ''}
+      maxlength=${f.maxLength !== undefined ? String(f.maxLength) : nothing}
+      .value=${env.mixed ? '' : value}
+      aria-invalid=${err ? 'true' : 'false'}
+      aria-describedby=${err ? `${fieldId(f.name)}-err` : nothing}
+      @input=${onInput}
+      @change=${onChange}
+      @compositionend=${onChange}
+    ></textarea>`;
   return html`<input
     id=${fieldId(f.name)}
     class="pf-in ${numeric ? 'mono num' : ''}"
@@ -394,7 +414,7 @@ export function renderField(
         ${(f.options ?? []).map(
           (o) =>
             html`<option value=${o} ?selected=${!env.mixed && (env.value ?? f.default) === o}>
-              ${optionLabel(o)}
+              ${optionLabel(o, f)}
             </option>`,
         )}
       </select>`;

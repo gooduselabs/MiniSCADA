@@ -1,0 +1,284 @@
+{
+  "scenario": "admin-attack",
+  "checks": [
+    {
+      "name": "B1-viewer: viewer đọc danh sách tài khoản",
+      "pass": true,
+      "detail": "HTTP 403 FORBIDDEN"
+    },
+    {
+      "name": "B2-viewer: viewer tạo tài khoản",
+      "pass": true,
+      "detail": "HTTP 403 FORBIDDEN"
+    },
+    {
+      "name": "B1-operator: operator đọc danh sách tài khoản",
+      "pass": true,
+      "detail": "HTTP 403 FORBIDDEN"
+    },
+    {
+      "name": "B2-operator: operator tạo tài khoản",
+      "pass": true,
+      "detail": "HTTP 403 FORBIDDEN"
+    },
+    {
+      "name": "B1-engineer: engineer đọc danh sách tài khoản",
+      "pass": true,
+      "detail": "HTTP 403 FORBIDDEN"
+    },
+    {
+      "name": "B2-engineer: engineer tạo tài khoản",
+      "pass": true,
+      "detail": "HTTP 403 FORBIDDEN"
+    },
+    {
+      "name": "B3: operator đặt quy tắc",
+      "pass": true,
+      "detail": "HTTP 403 FORBIDDEN"
+    },
+    {
+      "name": "B4: operator tự nâng mình lên administrator",
+      "pass": true,
+      "detail": "HTTP 403 FORBIDDEN"
+    },
+    {
+      "name": "B5: operator xem với tư cách admin",
+      "pass": true,
+      "detail": "HTTP 403 FORBIDDEN"
+    },
+    {
+      "name": "B6: Bearer operator: 403 FORBIDDEN",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "name": "B7: Bearer admin đọc được (công cụ)",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "B8: admin, thiếu X-MAT-CSRF",
+      "pass": true,
+      "detail": "HTTP 403 CSRF_FAILED"
+    },
+    {
+      "name": "B9: admin, Origin lạ",
+      "pass": true,
+      "detail": "HTTP 403 ORIGIN_MISMATCH"
+    },
+    {
+      "name": "B10: admin, thân text/plain",
+      "pass": true,
+      "detail": "HTTP 415 UNSUPPORTED_MEDIA_TYPE"
+    },
+    {
+      "name": "B11: thân > 64 KiB",
+      "pass": true,
+      "detail": "HTTP 413 BODY_TOO_LARGE"
+    },
+    {
+      "name": "B12: JSON sai",
+      "pass": true,
+      "detail": "HTTP 400 BAD_REQUEST"
+    },
+    {
+      "name": "B13: API quản trị qua HTTP: 403 HTTPS_REQUIRED",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "name": "B14: xóa administrator cuối",
+      "pass": true,
+      "detail": "HTTP 409 LAST_ADMIN"
+    },
+    {
+      "name": "B15: tắt administrator cuối",
+      "pass": true,
+      "detail": "HTTP 409 LAST_ADMIN"
+    },
+    {
+      "name": "B16: hạ vai trò không nhập lại mật khẩu",
+      "pass": true,
+      "detail": "HTTP 403 REAUTH_REQUIRED"
+    },
+    {
+      "name": "B17: xác nhận lại sai mật khẩu",
+      "pass": true,
+      "detail": "HTTP 403 REAUTH_REQUIRED"
+    },
+    {
+      "name": "B18: rev cũ",
+      "pass": true,
+      "detail": "HTTP 409 CONFLICT"
+    },
+    {
+      "name": "B19: quy tắc page:admin",
+      "pass": true,
+      "detail": "HTTP 400 BAD_REQUEST"
+    },
+    {
+      "name": "B20: viewer ghi qua component",
+      "pass": true,
+      "detail": "HTTP 403 FORBIDDEN"
+    },
+    {
+      "name": "B21: operator ghi qua btn_toggle (minRole engineer)",
+      "pass": true,
+      "detail": "HTTP 200 ACCESS_DENIED"
+    },
+    {
+      "name": "B20/B21: 0 lệnh tới giả lập",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "B22: quá 30 thay đổi/phút: 429 RATE_LIMITED",
+      "pass": true,
+      "detail": "4"
+    },
+    {
+      "name": "audit access.denied có FORBIDDEN",
+      "pass": true,
+      "detail": "HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,ACCESS_DENIED,AUTH_REQUIRED"
+    },
+    {
+      "name": "audit access.denied có CSRF_FAILED",
+      "pass": true,
+      "detail": "HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,ACCESS_DENIED,AUTH_REQUIRED"
+    },
+    {
+      "name": "audit access.denied có ORIGIN_MISMATCH",
+      "pass": true,
+      "detail": "HTTPS_REQUIRED,ORIGIN_MISMATCH,CSRF_FAILED,FORBIDDEN,ACCESS_DENIED,AUTH_REQUIRED"
+    },
+    {
+      "name": "audit: LAST_ADMIN và REAUTH_REQUIRED có dòng denied",
+      "pass": true,
+      "detail": "CONFLICT,REAUTH_REQUIRED,REAUTH_REQUIRED,LAST_ADMIN,LAST_ADMIN"
+    },
+    {
+      "name": "audit: tag.write denied ACCESS_DENIED (B21)",
+      "pass": true,
+      "detail": "4"
+    },
+    {
+      "name": "audit không chứa mật khẩu",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "caseTable": [
+      {
+        "id": "B1-viewer",
+        "status": 403,
+        "code": "FORBIDDEN"
+      },
+      {
+        "id": "B2-viewer",
+        "status": 403,
+        "code": "FORBIDDEN"
+      },
+      {
+        "id": "B1-operator",
+        "status": 403,
+        "code": "FORBIDDEN"
+      },
+      {
+        "id": "B2-operator",
+        "status": 403,
+        "code": "FORBIDDEN"
+      },
+      {
+        "id": "B1-engineer",
+        "status": 403,
+        "code": "FORBIDDEN"
+      },
+      {
+        "id": "B2-engineer",
+        "status": 403,
+        "code": "FORBIDDEN"
+      },
+      {
+        "id": "B3",
+        "status": 403,
+        "code": "FORBIDDEN"
+      },
+      {
+        "id": "B4",
+        "status": 403,
+        "code": "FORBIDDEN"
+      },
+      {
+        "id": "B5",
+        "status": 403,
+        "code": "FORBIDDEN"
+      },
+      {
+        "id": "B8",
+        "status": 403,
+        "code": "CSRF_FAILED"
+      },
+      {
+        "id": "B9",
+        "status": 403,
+        "code": "ORIGIN_MISMATCH"
+      },
+      {
+        "id": "B10",
+        "status": 415,
+        "code": "UNSUPPORTED_MEDIA_TYPE"
+      },
+      {
+        "id": "B11",
+        "status": 413,
+        "code": "BODY_TOO_LARGE"
+      },
+      {
+        "id": "B12",
+        "status": 400,
+        "code": "BAD_REQUEST"
+      },
+      {
+        "id": "B14",
+        "status": 409,
+        "code": "LAST_ADMIN"
+      },
+      {
+        "id": "B15",
+        "status": 409,
+        "code": "LAST_ADMIN"
+      },
+      {
+        "id": "B16",
+        "status": 403,
+        "code": "REAUTH_REQUIRED"
+      },
+      {
+        "id": "B17",
+        "status": 403,
+        "code": "REAUTH_REQUIRED"
+      },
+      {
+        "id": "B18",
+        "status": 409,
+        "code": "CONFLICT"
+      },
+      {
+        "id": "B19",
+        "status": 400,
+        "code": "BAD_REQUEST"
+      },
+      {
+        "id": "B20",
+        "status": 403,
+        "code": "FORBIDDEN"
+      },
+      {
+        "id": "B21",
+        "status": 200,
+        "code": "ACCESS_DENIED"
+      }
+    ]
+  },
+  "pass": true
+}

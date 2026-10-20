@@ -22,6 +22,10 @@ stlIfFind:/src/core/project-manager/project_validator.cpp
 stlIfFind:/src/core/project-manager/rules_02.cpp
 stlIfFind:/src/core/project-manager/rules_04.cpp
 stlIfFind:/src/core/tag-engine/write_coordinator.cpp
+# feature 013 (read each: the same C++17 init statement, the iterator compared with end())
+stlIfFind:/src/core/auth/access_service.cpp
+stlIfFind:/src/server/http/admin_api.cpp
+stlIfFind:/src/server/http/http_api.cpp
 
 # invalidFunctionArgBool: the HTTP handlers call their own helper
 # `int send(mg_connection*, int status, const std::string& body, bool close, ...)`

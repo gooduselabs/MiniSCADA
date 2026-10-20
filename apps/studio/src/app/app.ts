@@ -57,10 +57,12 @@ import {
 import type {
   AppInfo,
   AppSignature,
+  CreateFailure,
   Platform,
   RecentEntry,
   WriteFailure,
 } from '../platform/types.ts';
+import { buildNewProject, type NewProjectOptions } from '../model/new-project.ts';
 import { commandById, type CommandContext, type CommandId } from './commands.ts';
 import { helpTarget } from './help.ts';
 import { refOfNode } from '../model/tree.ts';
@@ -109,7 +111,9 @@ export type CoreDialogSpec =
   | { kind: 'shortcuts' }
   | { kind: 'about' }
   /** Online và Mô phỏng không chạy cùng lúc: hỏi trước khi chuyển (FR-052). `to` là chế độ sắp bật. */
-  | { kind: 'simSwitch'; to: 'sim' | 'online' };
+  | { kind: 'simSwitch'; to: 'sim' | 'online' }
+  /** Bố cục lưới (feature 012, FR-018): thả widget vào ô đã có component. `from`, `to` là tên hiển thị. */
+  | { kind: 'gridReplace'; from: string; to: string };
 
 /**
  * Hộp thoại Online của feature 005 (ui/dialogs/*): Thiết bị trong mạng, xác nhận chứng chỉ, đăng nhập. Mở theo
@@ -152,6 +156,8 @@ export type OnlineDialogSpec =
   | { kind: 'templateDelete'; tid: string }
   /** `args` của hành động Mở popup ở sự kiện nhấp của item `item` trên màn hình `screen`. */
   | { kind: 'popupArgs'; screen: string; item: string }
+  // Feature 012 (FR-040): xem trước chuyển màn hình tự do `screen` sang bố cục lưới (ui/dialogs/grid-convert-dialog.ts).
+  | { kind: 'gridConvert'; screen: string }
   // Feature 011 (FR-083): "Dừng ghi của logic" trên thiết bị đang Online (administrator).
   | { kind: 'logicStop' }
   // Feature 011 (FR-068): Cập nhật runtime (OTA) của thiết bị đang Online (administrator; ui/dialogs/update-wizard.ts).
@@ -162,7 +168,9 @@ export type OnlineDialogSpec =
   | { kind: 'svgExternal'; rel: string }
   | { kind: 'svgDelete'; rel: string }
   | { kind: 'svgPasteReport'; rel: string }
-  | { kind: 'svgLayerDelete'; rel: string; layer: string };
+  | { kind: 'svgLayerDelete'; rel: string; layer: string }
+  // Project mới… (2026-10-20, ui/dialogs/new-project-dialog.ts).
+  | { kind: 'newProject' };
 
 /** Loại hộp thoại chỉ có `kind` (không kèm dữ liệu). */
 export type SimpleDialogKind = Exclude<
@@ -179,6 +187,7 @@ export type SimpleDialogKind = Exclude<
   | { kind: 'templateUpdate' }
   | { kind: 'templateDelete' }
   | { kind: 'popupArgs' }
+  | { kind: 'gridConvert' }
   | { kind: 'svgExternal' }
   | { kind: 'svgDelete' }
   | { kind: 'svgPasteReport' }
@@ -214,13 +223,15 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'templateUpdate' ||
   d?.kind === 'templateDelete' ||
   d?.kind === 'popupArgs' ||
+  d?.kind === 'gridConvert' ||
   d?.kind === 'logicStop' ||
   d?.kind === 'runtimeUpdate' ||
   d?.kind === 'svgRestore' ||
   d?.kind === 'svgExternal' ||
   d?.kind === 'svgDelete' ||
   d?.kind === 'svgPasteReport' ||
-  d?.kind === 'svgLayerDelete';
+  d?.kind === 'svgLayerDelete' ||
+  d?.kind === 'newProject';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
 export type OnlineIntent = 'upload-new' | 'compare';
@@ -340,6 +351,14 @@ const REJECT_TEXT: Readonly<Record<Rejection, MessageKey>> = {
   'bad-security': 'scr.rej.badSecurity',
   'bad-screen-prop': 'scr.rej.badScreenProp',
   empty: 'scr.rej.empty',
+  'not-grid': 'scr.rej.notGrid',
+  'unknown-row': 'scr.rej.unknownRow',
+  'unknown-cell': 'scr.rej.unknownCell',
+  'cell-occupied': 'scr.rej.cellOccupied',
+  'row-overflow': 'scr.rej.rowOverflow',
+  'bad-preset': 'scr.rej.badPreset',
+  'max-rows': 'scr.rej.maxRows',
+  'max-cells': 'scr.rej.maxCells',
 };
 
 /** Câu cho lỗi của `store.upgrade()`. */
@@ -1040,6 +1059,8 @@ export class StudioApp {
       return;
     }
     switch (spec.id) {
+      case 'project.new':
+        return this.newProject();
       case 'project.open':
         return this.openProject();
       case 'project.openRecent':
@@ -1167,6 +1188,11 @@ export class StudioApp {
         return this.openReimport();
       case 'screen.add':
         return screenAdd(this, 'screen');
+      case 'report.add':
+        this.openEditor('reports');
+        return;
+      case 'screen.addFree':
+        return screenAdd(this, 'screen', 'free');
       case 'screen.addPopup':
         return screenAdd(this, 'popup');
       case 'screen.setEntry':
@@ -1185,6 +1211,10 @@ export class StudioApp {
         return openUpdateAll(this);
       case 'screen.faceplate':
         return makeFaceplate(this);
+      case 'screen.convertToGrid': {
+        const sid = currentScreenId(this);
+        return sid === null ? undefined : this.openDialog({ kind: 'gridConvert', screen: sid });
+      }
       case 'tree.add':
         return treeAdd(this);
       case 'tree.rename':
@@ -1279,7 +1309,8 @@ export class StudioApp {
 
   /** Nâng cấp trong bộ nhớ (nút Nâng cấp của hộp thoại). */
   async upgradeProject(): Promise<void> {
-    const r = await this.store.upgrade(this.store.state.outline.format06 ? '1.0' : '0.6'); // 0.6 đã có thì nâng tiếp lên 1.0; thấp hơn lên 0.6
+    // 0.6 trở lên thì nâng thẳng lên 1.1 (định dạng hiện hành, feature 012); thấp hơn lên 0.6
+    const r = await this.store.upgrade(this.store.state.outline.format06 ? '1.1' : '0.6');
     if (this.u.dialog?.kind === 'upgrade') this.u = { ...this.u, dialog: null };
     if (r.ok) {
       this.syncSessionTags();
@@ -1349,6 +1380,31 @@ export class StudioApp {
       this.toast(t('toast.recentMissing'));
       await this.refreshRecent();
     }
+  }
+
+  /** Project mới… (Ctrl+N): còn thay đổi chưa lưu thì hỏi như Mở project, rồi mở hộp thoại Project mới. */
+  async newProject(): Promise<void> {
+    if (!(await this.settleUnsaved())) return;
+    this.openDialog({ kind: 'newProject' });
+  }
+
+  /**
+   * Tạo project mới (hộp thoại Project mới): dựng bộ file theo mẫu, ghi vào `<thư mục cha>/<mã>` qua platform (Rust từ
+   * chối thư mục đã có project hay có file khác), rồi mở như Mở project và mở sẵn màn hình đầu. Lỗi thì hộp thoại giữ
+   * nguyên để người dùng sửa.
+   */
+  async createNewProject(
+    o: NewProjectOptions,
+  ): Promise<true | { error: CreateFailure; detail?: string }> {
+    const built = buildNewProject(o);
+    const r = await this.platform.createProject(o.id, built.files);
+    if ('error' in r) return r;
+    if (this.u.dialog?.kind === 'newProject') this.u = { ...this.u, dialog: null };
+    await this.store.openPicked(r.display);
+    await this.afterOpen();
+    this.openEditor(`screen:${built.entryScreen}`);
+    this.toast(t('np.done', { name: o.name.trim(), dir: r.display }));
+    return true;
   }
 
   async closeProject(): Promise<void> {
@@ -1649,6 +1705,12 @@ export class StudioApp {
     this.emit();
   }
 
+  /** Feature 015: gập/mở khung dưới (Inspector, Thông tin, Thử logic); chiều cao được nhớ. */
+  setInspectorCollapsed(collapsed: boolean): void {
+    if (collapsed !== this.ws.inspectorCollapsed)
+      this.setWorkspace({ inspectorCollapsed: collapsed });
+  }
+
   setTheme(theme: Theme): void {
     this.setWorkspace({ theme });
   }
@@ -1658,7 +1720,9 @@ export class StudioApp {
     patch: Partial<Pick<Workspace, 'leftWidth' | 'detailsHeight' | 'inspectorHeight'>>,
     dims = { leftColumnHeight: 0, centerHeight: 0 },
   ): void {
-    this.ws = clampLayout({ ...this.ws, ...patch }, dims);
+    // đổi chiều cao khung dưới (kéo thanh chia) thì mở lại khung nếu đang gập
+    const open = patch.inspectorHeight !== undefined ? { inspectorCollapsed: false } : {};
+    this.ws = clampLayout({ ...this.ws, ...patch, ...open }, dims);
     saveWorkspace(this.storage, this.ws);
     this.emit();
   }

@@ -136,6 +136,8 @@ bool WebContexts::startHttp(const WebOptions& o, std::string& error) {
                           "5000",
                           "enable_websocket_ping_pong",
                           "yes",
+                          "tcp_nodelay",
+                          "1",
                           "additional_header",
                           kAdditionalHeaders,
                           nullptr};
@@ -161,6 +163,10 @@ HttpsState WebContexts::startHttps(const WebOptions& o, const ServerCert& cert,
     const std::string keepAlive = std::to_string(kHttpsKeepAliveMs);
     // TLS policy (versions, suites, curves) is in third_party/mbedtls-config: with Mbed TLS,
     // CivetWeb's ssl_protocol_version and ssl_cipher_list do nothing (T007).
+    // tcp_nodelay (both contexts): CivetWeb sets TCP_NODELAY on every accepted socket before the
+    // TLS handshake (accept_new_connection), so it holds for the Mbed TLS records too. A handler
+    // writes the header and the body in two records; with Nagle the second waited for the
+    // client's delayed ACK and every kept-alive HTTPS call took ~44 ms (013-perf.md §6).
     const char* opts[] = {"listening_ports",
                           o.httpsListen.c_str(),
                           "ssl_certificate",
@@ -177,6 +183,8 @@ HttpsState WebContexts::startHttps(const WebOptions& o, const ServerCert& cert,
                           "5000",
                           "enable_websocket_ping_pong",
                           "yes",
+                          "tcp_nodelay",
+                          "1",
                           "additional_header",
                           kAdditionalHeaders,
                           nullptr};

@@ -396,8 +396,8 @@ TEST(WebLogin, EveryRoleSignsInAndTheAccountsAreStillOnlyManagedByCommand) {  //
         EXPECT_EQ(bodyJson(r)["role"], role);
     }
     for (const char* path :
-         {"/api/v1/web/register", "/api/v1/web/signup", "/api/v1/web/password", "/api/v1/web/reset",
-          "/api/v1/web/forgot", "/api/v1/web/account", "/api/v1/web/users"})
+         {"/api/v1/web/register", "/api/v1/web/signup", "/api/v1/web/reset", "/api/v1/web/forgot",
+          "/api/v1/web/account", "/api/v1/web/users"})  // 013: web/password exists (admin_api_test)
         for (const char* method : {"POST", "GET"}) {
             HttpRequest q;
             q.method = method;
@@ -615,7 +615,7 @@ TEST(WebPage, SystemInfoCarriesTheWebBlockAndTheCertificateWarnings) {
     EXPECT_EQ(info["web"]["httpsPort"], w.web.httpsPort());
     EXPECT_EQ(info["web"]["login"], true);
     EXPECT_EQ(info["web"]["viewerLogin"], "off");
-    EXPECT_EQ(info["device"]["apiVersion"], "1.5.0");
+    EXPECT_EQ(info["device"]["apiVersion"], "1.6.0");
     bool noIp = false, down = false;
     for (const auto& x : info["warnings"]) {
         noIp = noIp || x == "TLS_NO_IP_SAN";

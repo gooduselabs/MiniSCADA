@@ -12,9 +12,17 @@ import {
   blocksOf,
   checkLogicDoc,
   issueTarget,
+  removeBlock,
   type IssueTarget,
   type LogicKind,
 } from '../../model/logic-doc.ts';
+import {
+  placeNodes,
+  renameLayoutNode,
+  type LogicLayoutDoc,
+  type NodePos,
+} from '../../model/logic-layout.ts';
+import { LogicSim } from '../../model/logic-sim.ts';
 
 export const LIVE_POLL_MS = 3000;
 
@@ -38,6 +46,29 @@ export interface LogicUi {
   savedHeight: number | null;
   /** Lỗi mà F8 / Shift+F8 vừa nhảy tới (chỉ số trong danh sách có vị trí), -1 khi chưa nhảy. */
   issueCursor: number;
+  /** Feature 015: khung nhìn Sơ đồ (mặc định) hoặc Bảng. */
+  view: LogicView;
+  /** Nút Tag/Tag đích đang chọn trên sơ đồ (khối chọn theo `sel`). */
+  dsel: string | null;
+  /** Nhóm nút chọn trên sơ đồ (Shift+bấm, khung chọn); rỗng: chỉ khối chính. */
+  dmulti: string[];
+  /** Phóng và dời của sơ đồ (null: vừa khung ở lần vẽ đầu). */
+  dview: { z: number; tx: number; ty: number } | null;
+  /** Bộ chạy Thử logic dùng chung giữa bảng Thử logic và sơ đồ (tạo lại khi logic.json đổi). */
+  sim: LogicSim | null;
+  simDoc: unknown;
+  simListeners: Set<() => void>;
+}
+
+export type LogicView = 'diagram' | 'table';
+const VIEW_KEY = 'mat-studio.logic-view';
+
+function readView(): LogicView {
+  try {
+    return globalThis.localStorage?.getItem(VIEW_KEY) === 'table' ? 'table' : 'diagram';
+  } catch {
+    return 'diagram';
+  }
 }
 
 const states = new WeakMap<StudioApp, LogicUi>();
@@ -61,6 +92,13 @@ export function logicUi(app: StudioApp): LogicUi {
       check: null,
       savedHeight: null,
       issueCursor: -1,
+      view: readView(),
+      dsel: null,
+      dmulti: [],
+      dview: null,
+      sim: null,
+      simDoc: null,
+      simListeners: new Set(),
     };
     states.set(app, s);
   }
@@ -83,7 +121,26 @@ export function setKind(app: StudioApp, kind: LogicKind): void {
 }
 
 /** Chiều cao khung dưới cần cho Inspector (mockup: 288 px) và cho Thử logic (đường thời gian). */
-export const DOCK_HEIGHT = { info: 300, test: 460 } as const;
+export const DOCK_HEIGHT = { info: 300, test: 460, testDiagram: 380, testMin: 200 } as const;
+/** Phần vùng giữa dành cho vùng vẽ của sơ đồ khi Thử logic (feature 015: ≥ 55 %). */
+export const DIAGRAM_SHARE = 0.55;
+
+/**
+ * Chiều cao khung dưới cho Thử logic. Bảng: 460 px. Sơ đồ (feature 015): sao cho vùng vẽ còn ≥ DIAGRAM_SHARE chiều cao vùng
+ * giữa (đo phần khung của editor: thanh tab, thanh công cụ, dòng đếm), không thấp hơn `testMin`, không cao hơn 380 px.
+ */
+export function testDockHeight(app: StudioApp): number {
+  if (logicUi(app).view !== 'diagram') return DOCK_HEIGHT.test;
+  const center = dims().centerHeight;
+  if (center <= 0) return DOCK_HEIGHT.testDiagram;
+  const view = document
+    .querySelector('mat-logic-diagram .lgd-view')
+    ?.getBoundingClientRect().height;
+  const dock = app.workspace.inspectorCollapsed ? 32 : app.workspace.inspectorHeight;
+  const chrome = view !== undefined ? center - view - dock : 140;
+  const fit = Math.floor(center * (1 - DIAGRAM_SHARE) - chrome) - 8; // 8 px dư cho làm tròn
+  return Math.max(DOCK_HEIGHT.testMin, Math.min(DOCK_HEIGHT.testDiagram, fit));
+}
 
 function dims(): { leftColumnHeight: number; centerHeight: number } {
   if (typeof document === 'undefined') return { leftColumnHeight: 0, centerHeight: 0 };
@@ -97,7 +154,8 @@ function dims(): { leftColumnHeight: number; centerHeight: number } {
 export function ensureDockHeight(app: StudioApp, h: number): void {
   const ui = logicUi(app);
   const cur = app.workspace.inspectorHeight;
-  if (cur >= h) return;
+  // khung đang gập theo ý người dùng: không tự mở (feature 015)
+  if (cur >= h || app.workspace.inspectorCollapsed) return;
   if (ui.savedHeight === null) ui.savedHeight = cur;
   app.setLayout({ inspectorHeight: h }, dims());
 }
@@ -114,8 +172,18 @@ export function restoreDockHeight(app: StudioApp, keepAtLeast = 0): void {
 export function setDockTab(app: StudioApp, tab: 'info' | 'test'): void {
   const ui = logicUi(app);
   ui.dockTab = tab;
-  if (tab === 'test') ensureDockHeight(app, DOCK_HEIGHT.test);
-  else restoreDockHeight(app, DOCK_HEIGHT.info);
+  if (tab === 'test') {
+    app.setInspectorCollapsed(false);
+    const h = testDockHeight(app);
+    if (ui.view === 'diagram') {
+      // Sơ đồ: đặt đúng chiều cao để vùng vẽ còn ≥ 55 % (có thể thấp hơn hiện tại)
+      const cur = app.workspace.inspectorHeight;
+      if (cur !== h) {
+        if (ui.savedHeight === null) ui.savedHeight = cur;
+        app.setLayout({ inspectorHeight: h }, dims());
+      }
+    } else ensureDockHeight(app, h);
+  } else restoreDockHeight(app, DOCK_HEIGHT.info);
   app.requestRender();
 }
 
@@ -128,9 +196,91 @@ export const projectTags = (app: StudioApp): TagV1[] =>
 export const tableNames = (app: StudioApp): string[] =>
   app.store.state.outline.valueTables.map((v) => v.name);
 
-/** Một lần sửa logic.json = một bước hoàn tác (`merge`: gộp các lần gõ liên tiếp của cùng một ô). */
-export function editLogic(app: StudioApp, doc: LogicDoc, merge?: string): void {
-  app.store.edit([{ kind: 'logicSet', doc }], merge);
+/**
+ * Một lần sửa logic.json = một bước hoàn tác (`merge`: gộp các lần gõ liên tiếp của cùng một ô). `layout`: vị trí của
+ * sơ đồ đổi cùng lúc (thêm khối ở chỗ thả, đổi id, xóa), vẫn một bước.
+ */
+export function editLogic(
+  app: StudioApp,
+  doc: LogicDoc,
+  merge?: string,
+  layout?: LogicLayoutDoc,
+): void {
+  if (layout && layout !== logicLayout(app))
+    app.store.edit(
+      [
+        {
+          kind: 'batch',
+          edits: [
+            { kind: 'logicSet', doc },
+            { kind: 'logicLayoutSet', doc: layout },
+          ],
+        },
+      ],
+      merge,
+    );
+  else app.store.edit([{ kind: 'logicSet', doc }], merge);
+}
+
+/** Vị trí của sơ đồ (tệp phụ `<logic>.layout.json`; feature 015). */
+export const logicLayout = (app: StudioApp): LogicLayoutDoc => app.store.state.outline.logicLayout;
+
+/** Chỉ đổi vị trí (kéo khối, mũi tên, Tự sắp xếp): một bước hoàn tác (`merge` gộp các lần dịch liên tiếp). */
+export function editLayout(app: StudioApp, layout: LogicLayoutDoc, merge?: string): void {
+  app.store.edit([{ kind: 'logicLayoutSet', doc: layout }], merge);
+}
+
+/** Đổi id khối (Inspector): vị trí trên sơ đồ đi theo id mới, cùng một bước. */
+export function editLogicRenamed(app: StudioApp, doc: LogicDoc, from: string, to: string): void {
+  editLogic(app, doc, undefined, renameLayoutNode(logicLayout(app), from, to));
+}
+
+/** Xóa khối (Delete, nút Xóa, sơ đồ): vị trí của nó bị bỏ cùng một bước. */
+export function removeLogicBlock(app: StudioApp, kind: LogicKind, id: string): void {
+  const doc = logicDoc(app);
+  if (!doc) return;
+  const layout = logicLayout(app);
+  editLogic(
+    app,
+    removeBlock(doc, kind, id),
+    undefined,
+    layout.nodes[id] ? placeNodes(layout, { [id]: null }) : undefined,
+  );
+}
+
+export function setView(app: StudioApp, view: LogicView): void {
+  logicUi(app).view = view;
+  try {
+    globalThis.localStorage?.setItem(VIEW_KEY, view);
+  } catch {
+    // không lưu được (chế độ riêng tư): chỉ nhớ trong phiên
+  }
+  app.requestRender();
+}
+
+// ---------- Thử logic dùng chung (bảng Thử logic và sơ đồ; feature 015) ----------
+
+/** Bộ chạy của tài liệu hiện tại (tạo lại khi logic.json đổi); null khi chưa có logic. */
+export function logicSim(app: StudioApp): LogicSim | null {
+  const doc = logicDoc(app);
+  const ui = logicUi(app);
+  if (!doc) return null;
+  if (ui.simDoc !== doc || !ui.sim) {
+    ui.sim = new LogicSim({ doc, tags: projectTags(app) });
+    ui.simDoc = doc;
+  }
+  return ui.sim;
+}
+
+/** Bảng Thử logic vừa chạy hay đổi bộ chạy: báo sơ đồ vẽ lại giá trị. */
+export function simChanged(app: StudioApp): void {
+  for (const fn of logicUi(app).simListeners) fn();
+}
+
+export function onSimChange(app: StudioApp, fn: () => void): () => void {
+  const set = logicUi(app).simListeners;
+  set.add(fn);
+  return () => void set.delete(fn);
 }
 
 /** Khối đang chọn của nhóm (mặc định khối đầu). */
@@ -145,6 +295,8 @@ export function select(app: StudioApp, kind: LogicKind, id: string | null): void
   if (id === null) delete ui.sel[kind];
   else ui.sel[kind] = id;
   ui.idMsg = null;
+  ui.dsel = null;
+  ui.dmulti = [];
   app.requestRender();
 }
 
@@ -220,14 +372,18 @@ export function stepIssue(app: StudioApp, dir: 1 | -1): void {
 
 APP_EXTENSIONS.logicIssue = stepIssue;
 
-/** Thêm khối mới vào nhóm (sau khối đang chọn nếu cùng nhóm), chọn nó và focus ô Id. Thanh công cụ, Insert, task card. */
-export function addLogicBlock(app: StudioApp, kind: LogicKind): boolean {
+/**
+ * Thêm khối mới vào nhóm (sau khối đang chọn nếu cùng nhóm), chọn nó và focus ô Id. Thanh công cụ, Insert, task card.
+ * `at`: vị trí trên sơ đồ (thả từ task card), ghi cùng một bước hoàn tác.
+ */
+export function addLogicBlock(app: StudioApp, kind: LogicKind, at?: NodePos): boolean {
   const doc = logicDoc(app);
   if (!doc || app.store.state.readOnly) return false;
   const after = kindOf(app) === kind ? (selectedId(app, kind) ?? undefined) : undefined;
   const r = addBlock(doc, kind, after ? { after } : {});
   logicUi(app).menu = false;
-  editLogic(app, r.doc);
+  logicUi(app).dsel = null;
+  editLogic(app, r.doc, undefined, at ? placeNodes(logicLayout(app), { [r.id]: at }) : undefined);
   setKind(app, kind);
   select(app, kind, r.id);
   logicUi(app).focus = { id: r.id, field: 'id' };
@@ -292,4 +448,9 @@ export function stopLive(app: StudioApp): void {
 /** Hỏi lại ngay (sau khi dừng ghi, đặt lại khối). */
 export function refreshLive(app: StudioApp): void {
   void pollLive(app);
+}
+
+/** Gập/mở khung dưới (nút trên dải tab của khung, Ctrl+J trong tab Logic); chiều cao được nhớ (feature 015). */
+export function toggleDock(app: StudioApp): void {
+  app.setInspectorCollapsed(!app.workspace.inspectorCollapsed);
 }

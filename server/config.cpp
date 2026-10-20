@@ -335,6 +335,9 @@ bool applyJson(const json& j, RuntimeConfig& c, std::string& err,
         } else if (k == "usersFile") {
             if (!needPath()) return false;
             c.usersFile = v.get<std::string>();
+        } else if (k == "authDir") {  // feature 013: users.json and access.json of the device
+            if (!needPath()) return false;
+            c.authDir = v.get<std::string>();
         } else if (k == "auditRetentionDays") {
             if (!needInt()) return false;
             c.auditRetentionDays = v.get<int>();
@@ -548,6 +551,8 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
             ok = pathArg(c.projectStoreDir);
         } else if (a == "--users-file") {
             ok = pathArg(c.usersFile);
+        } else if (a == "--auth-dir") {
+            ok = pathArg(c.authDir);
         } else if (a == "--no-discovery") {
             c.discoveryEnabled = false;
         } else if (a == "--serial-ports") {  // feature 006: comma separated patterns
@@ -715,6 +720,8 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
         c.projectStoreDir = c.dataDir + (c.dataDir.back() == '/' ? "projects" : "/projects");
     if (c.retainDir.empty())
         c.retainDir = c.dataDir + (c.dataDir.back() == '/' ? "retain" : "/retain");
+    if (c.authDir.empty())  // feature 013
+        c.authDir = c.dataDir + (c.dataDir.back() == '/' ? "auth" : "/auth");
     if (c.threads < c.maxClients + 4) {
         r.warnings.push_back("threads " + std::to_string(c.threads) + " quá nhỏ: dùng " +
                              std::to_string(c.maxClients + 4));

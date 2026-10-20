@@ -21,6 +21,8 @@
         "unit": "",
         "fontSize": "s",
         "showQuality": false,
+        "sparkline": false,
+        "trend": false,
         "valueColor": "auto",
         "background": "auto"
       },

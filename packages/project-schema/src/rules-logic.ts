@@ -363,9 +363,13 @@ export function checkLogic(
   const flushS = opts.flushS ?? LOGIC_DEFAULTS.flushS;
   const tags = opts.tags;
 
-  // 0. phiên bản
-  if (!/^1\.0\.\d+$/.test(doc.schemaVersion)) {
-    err('E_LOGIC_VERSION', '/schemaVersion', `logic.json ${doc.schemaVersion}: chỉ hiểu 1.0.x`);
+  // 0. phiên bản (họ 1.x: 1.0 và 1.1 dùng cùng định dạng logic.json, feature 012)
+  if (!/^1\.[01]\.\d+$/.test(doc.schemaVersion)) {
+    err(
+      'E_LOGIC_VERSION',
+      '/schemaVersion',
+      `logic.json ${doc.schemaVersion}: chỉ hiểu 1.0.x, 1.1.x`,
+    );
     return { errors, warnings };
   }
 

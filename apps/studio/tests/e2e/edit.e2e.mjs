@@ -41,7 +41,7 @@ async function press(page, combo) {
 
 async function openProject(page) {
   await page.waitForSelector('mat-start-page .start-hero');
-  await page.click('mat-start-page .start-hero .btn.primary');
+  await page.click('mat-start-page .start-hero [data-cmd="project.open"]');
   await page.waitForSelector('mat-tree [role="treeitem"]');
 }
 

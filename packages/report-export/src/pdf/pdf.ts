@@ -1,21 +1,40 @@
-// Xuất PDF từ ReportTable bằng pdfmake (tải lười, ADR-033): khổ và hướng theo mẫu, tiêu đề, kỳ, người xuất, giờ
-// xuất, bảng lặp hàng tiêu đề khi sang trang, chân trang có số trang. Phông Roboto của pdfmake có đủ chữ Việt.
-import { formatLocal, type ReportTable } from '@mat/history-math';
+// Xuất PDF từ ReportTable bằng pdfmake (tải lười, ADR-033). Mẫu feature 012 (FR-038, research R6): dải tiêu đề màu
+// nhấn của chủ đề (logo tùy chọn), thẻ số liệu tổng hợp, biểu đồ vector (ECharts SSR SVG, chart.ts), bảng kẻ xen kẽ
+// lặp hàng tiêu đề khi sang trang, chân trang có số trang; phông Inter nhúng (pdf-fonts.ts) đủ dấu tiếng Việt. Khổ và hướng
+// theo mẫu báo cáo; bảng quá rộng chia nhóm cột như trước (planLayout).
+import {
+  TILE_ORDER,
+  formatLocal,
+  formatNumber,
+  type ReportSection,
+  type ReportTable,
+  type ReportTile,
+} from '@mat/history-math';
 import { columnHeader, coverageText } from '../csv/csv.ts';
 import type { ExportLabels, ExportMeta } from '../types.ts';
+import { chartOf, chartSvg } from './chart.ts';
+import { TILE_HEX, reportPalette, type ReportPalette } from '../theme.ts';
 
 type Cell = { text: string; [k: string]: unknown };
+type Node = Record<string, unknown>;
 
+const FONT = 'Inter';
 const PAGE: Record<string, [number, number]> = { A4: [595, 842], A3: [842, 1191] };
 const MARGIN_X = 28;
 const CELL_PAD = 16; // pdfmake 0.3: đệm 8 pt mỗi bên (đo thật: bước cột = độ rộng + 16)
 const FONT_SIZES = [8, 7, 6];
+const MAX_CARDS = 4;
+const DATA_MAX = 150;
+/** Bảng hụt bề rộng trang không quá tỉ lệ này (sau trần DATA_MAX) thì trải cho đủ. */
+const FILL_GAP = 0.25;
 
-/** Độ rộng ước (đơn vị em) của Roboto: chữ số 0,57, dấu phân cách 0,27, ký tự khác 0,62 (dư để không thiếu). */
+/**
+ * Độ rộng ước (đơn vị em) theo Inter 4.1 (đo bằng fontkit trên tệp đã cắt, lấy số lớn hơn của Regular và SemiBold):
+ * chữ số ≤ 0,666, dấu . , : 0,319, khoảng trắng 0,281, chữ cái trung bình 0,615 (lấy 0,70, dư cho chữ hoa rộng).
+ */
 function em(s: string): number {
   let w = 0;
-  for (const ch of s)
-    w += /\d/.test(ch) ? 0.57 : /[.,:]/.test(ch) ? 0.27 : ch === ' ' ? 0.27 : 0.62;
+  for (const ch of s) w += /\d/.test(ch) ? 0.67 : /[.,:]/.test(ch) ? 0.32 : ch === ' ' ? 0.29 : 0.7;
   return w;
 }
 const longestWord = (s: string) => Math.max(...s.split(/\s+/).map(em), 0);
@@ -27,14 +46,18 @@ interface Layout {
   widths: { label: number; data: number[] };
 }
 
+const pageSize = (meta: ExportMeta): [number, number] => {
+  const paper = meta.paper ?? {};
+  const [pw, ph] = PAGE[paper.size ?? 'A4']!;
+  return paper.orientation === 'landscape' ? [ph, pw] : [pw, ph];
+};
+
 /**
- * Chia cột theo nội dung: ô số không ngắt dòng, độ rộng cột = số/tiêu đề dài nhất (ước theo Roboto). Thử cỡ chữ 8, 7, 6;
+ * Chia cột theo nội dung: ô số không ngắt dòng, độ rộng cột = số/tiêu đề dài nhất (ước theo Inter). Thử cỡ chữ 8, 7, 6;
  * nếu bảng vẫn rộng hơn khổ giấy thì chia các cột thành nhóm, mỗi nhóm một bảng (lặp cột nhãn) ở trang riêng.
  */
 export function planLayout(t: ReportTable, meta: ExportMeta, labels: ExportLabels): Layout {
-  const paper = meta.paper ?? {};
-  const [pw, ph] = PAGE[paper.size ?? 'A4']!;
-  const avail = (paper.orientation === 'landscape' ? ph : pw) - 2 * MARGIN_X;
+  const avail = pageSize(meta)[0] - 2 * MARGIN_X;
   const labelEm = Math.max(
     em(labels.rowHeader),
     em(labels.total),
@@ -53,8 +76,21 @@ export function planLayout(t: ReportTable, meta: ExportMeta, labels: ExportLabel
   });
   for (const size of FONT_SIZES) {
     const w = at(size);
-    if (w.label + w.data.reduce((a, b) => a + b, 0) <= avail)
-      return { fontSize: size, groups: [t.columns.map((_, k) => k)], widths: w };
+    const used = w.label + w.data.reduce((a, b) => a + b, 0);
+    if (used <= avail) {
+      // Vừa trang: chia phần dư cho các cột số (mỗi cột tối đa DATA_MAX pt) để bảng trải rộng, tiêu đề ít xuống dòng.
+      const extra = w.data.length ? Math.floor((avail - used) / w.data.length) : 0;
+      const data = w.data.map((d) => Math.max(d, Math.min(d + extra, DATA_MAX)));
+      // Phần còn thiếu nhỏ (≤ FILL_GAP bề rộng) thì chia nốt cho cột số, bỏ trần: bảng thẳng mép phải với dải tiêu đề và
+      // thẻ số liệu thay vì hụt một khúc (T054). Bảng ít cột vẫn gọn.
+      const gap = avail - w.label - data.reduce((a, b) => a + b, 0);
+      if (data.length && gap > 0 && gap <= avail * FILL_GAP) {
+        const each = Math.floor(gap / data.length);
+        data.forEach((_, k) => (data[k]! += each));
+        data[data.length - 1]! += gap - each * data.length;
+      }
+      return { fontSize: size, groups: [t.columns.map((_, k) => k)], widths: { ...w, data } };
+    }
   }
   const size = FONT_SIZES[FONT_SIZES.length - 1]!;
   const w = at(size);
@@ -74,22 +110,240 @@ export function planLayout(t: ReportTable, meta: ExportMeta, labels: ExportLabel
   return { fontSize: size, groups, widths: w };
 }
 
-/** Định nghĩa tài liệu pdfmake (hàm thuần, kiểm được không cần dựng PDF). */
-export function pdfDefinition(
+// ---- logo ----------------------------------------------------------------------------------------------------------
+
+const RASTER_LOGO = /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/=\s]+$/;
+const LOGO_MAX = 512 * 1024;
+/** SVG logo chỉ là hình vẽ tĩnh: không script, foreignObject, ảnh, sự kiện, tham chiếu ngoài (href khác `#id`). */
+const SVG_UNSAFE =
+  /<\s*(?:script|foreignObject|image|iframe|object|embed|style)\b|\bon[a-z]+\s*=|(?:xlink:)?href\s*=\s*["']?\s*(?!#)|url\(\s*["']?\s*(?!#)|<!ENTITY|<!DOCTYPE/i;
+
+/** Logo dùng được hay không (kiểu nút pdfmake). */
+export function safeLogo(logo: string | undefined): { svg: string } | { image: string } | null {
+  if (!logo || logo.length > LOGO_MAX) return null;
+  const s = logo.trim();
+  if (RASTER_LOGO.test(s)) return { image: s };
+  if (/^<svg[\s>]/i.test(s) && /<\/svg>$/i.test(s) && !SVG_UNSAFE.test(s)) return { svg: s };
+  return null;
+}
+
+// ---- các khối ------------------------------------------------------------------------------------------------------
+
+function headerBand(
   t: ReportTable,
   meta: ExportMeta,
   labels: ExportLabels,
-  footer = '',
-): Record<string, unknown> {
-  const layout = planLayout(t, meta, labels);
-  const tables = layout.groups.map((group, gi) => {
+  p: ReportPalette,
+): Node {
+  const ink = p.accentInk;
+  const info: Node = {
+    stack: [
+      ...(t.org
+        ? [{ text: t.org.toUpperCase(), color: ink, fontSize: 8, bold: true, margin: [0, 0, 0, 2] }]
+        : []),
+      { text: t.title, color: ink, fontSize: 15, bold: true, margin: [0, 0, 0, 3] },
+      { text: `${labels.period}: ${t.periodLabel}`, color: ink, fontSize: 9 },
+      {
+        text: [
+          { text: `${labels.exportedBy}: ${meta.exportedBy}`, color: ink },
+          { text: '    ', color: ink },
+          {
+            text: `${labels.exportedAt}: ${formatLocal(meta.exportedAt, meta.tz, 'sec')}`,
+            color: ink,
+          },
+        ],
+        fontSize: 8,
+      },
+    ],
+  };
+  const logo = safeLogo(meta.logo);
+  const cells: Node[] = [];
+  const widths: Array<number | string> = [];
+  if (logo) {
+    cells.push({
+      ...('svg' in logo ? { svg: logo.svg } : { image: logo.image }),
+      fit: [64, 36],
+      fillColor: p.accent,
+    });
+    widths.push(64);
+  }
+  cells.push({ ...info, fillColor: p.accent });
+  widths.push('*');
+  return {
+    table: { widths, body: [cells] },
+    layout: {
+      hLineWidth: () => 0,
+      vLineWidth: () => 0,
+      paddingLeft: (i: number) => (i === 0 ? 12 : 8),
+      paddingRight: () => 12,
+      paddingTop: () => 10,
+      paddingBottom: () => 10,
+    },
+    margin: [0, 0, 0, 10],
+  };
+}
+
+/** Thẻ của bảng 010 (không có `tiles`): dòng tổng của các cột đầu và độ đủ dữ liệu. */
+function derivedTiles(t: ReportTable, labels: ExportLabels): ReportTile[] {
+  const out: ReportTile[] = [];
+  if (t.totalsText)
+    t.columns.slice(0, MAX_CARDS).forEach((c, k) => {
+      const v = t.totalsText![k] ?? '';
+      if (v !== '')
+        out.push({
+          label: `${c.label} (${labels.fn[c.fn] ?? c.fn})`,
+          value: t.totals?.[k] ?? null,
+          text: v,
+          unit: c.unit,
+          color: TILE_ORDER[k % TILE_ORDER.length]!,
+        });
+    });
+  out.push({
+    label: labels.coverage,
+    value: t.coverage * 100,
+    text: formatNumber(t.coverage * 100, 1),
+    unit: '%',
+    color: 'slate',
+  });
+  return out;
+}
+
+/** Thẻ chỉ số màu đặc như `stat-tile` (feature 014/015): nhãn nhỏ, số lớn, chữ trắng. */
+function summaryCards(t: ReportTable, labels: ExportLabels): Node | null {
+  const tiles = t.tiles ?? derivedTiles(t, labels);
+  if (tiles.length === 0) return null;
+  const card = (x: ReportTile): Node => ({
+    table: {
+      widths: ['*'],
+      body: [
+        [
+          {
+            fillColor: TILE_HEX[x.color] ?? TILE_HEX.teal,
+            stack: [
+              { text: x.label, color: '#ffffff', fontSize: 7.5, margin: [0, 0, 0, 3] },
+              {
+                text: [
+                  { text: x.text, fontSize: 15, bold: true, color: '#ffffff' },
+                  ...(x.unit ? [{ text: ` ${x.unit}`, fontSize: 8, color: '#ffffff' }] : []),
+                ],
+              },
+            ],
+          },
+        ],
+      ],
+    },
+    layout: {
+      hLineWidth: () => 0,
+      vLineWidth: () => 0,
+      paddingLeft: () => 10,
+      paddingRight: () => 8,
+      paddingTop: () => 8,
+      paddingBottom: () => 8,
+    },
+  });
+  return { id: 'summary-cards', columns: tiles.map(card), columnGap: 8, margin: [0, 0, 0, 10] };
+}
+
+/** Khung có thanh tiêu đề (như `.frame .head` của trang): tiêu đề nền nhạt, thân `body`. */
+function framed(title: string, body: Node, p: ReportPalette, extra: Node = {}): Node {
+  return {
+    table: {
+      widths: ['*'],
+      body: [[{ text: title, bold: true, fontSize: 8.5, fillColor: p.zebra }], [body]],
+    },
+    layout: {
+      hLineWidth: (i: number, node: { table: { body: unknown[] } }) =>
+        i === 0 || i === 1 || i === node.table.body.length ? 0.5 : 0,
+      vLineWidth: () => 0.5,
+      hLineColor: () => p.border,
+      vLineColor: () => p.border,
+      paddingLeft: () => 8,
+      paddingRight: () => 8,
+      paddingTop: (i: number) => (i === 0 ? 5 : 6),
+      paddingBottom: (i: number) => (i === 0 ? 4 : 6),
+    },
+    margin: [0, 0, 0, 10],
+    ...extra,
+  };
+}
+
+/** Bảng phụ (thống kê, danh sách sự kiện): đầu bảng màu nhấn, sọc, ô số canh phải, chữ dài xuống dòng. */
+function sectionTable(s: ReportSection, p: ReportPalette): Node {
+  const head = s.columns.map((c) => ({
+    text: c.label,
+    bold: true,
+    color: p.accentInk,
+    alignment: c.numeric ? 'right' : 'left',
+  }));
+  const body: Cell[][] = [head];
+  for (const r of s.rows)
+    body.push(
+      r.map((v, k) =>
+        s.columns[k]?.numeric ? { text: v, alignment: 'right', noWrap: true } : { text: v },
+      ),
+    );
+  if (s.rows.length === 0) body.push([{ text: '–', colSpan: s.columns.length }]);
+  return {
+    stack: [
+      { text: s.title, bold: true, fontSize: 9.5, color: p.accent, margin: [0, 6, 0, 4] },
+      {
+        table: {
+          headerRows: 1,
+          dontBreakRows: true,
+          widths: s.columns.map((c, k) =>
+            c.numeric ? 'auto' : k === s.columns.length - 1 || k === 0 ? '*' : 'auto',
+          ),
+          body,
+        },
+        layout: {
+          fillColor: (row: number): string | null =>
+            row === 0 ? p.accent : row % 2 === 0 ? p.zebra : null,
+          hLineWidth: (i: number) => (i === body.length ? 0.75 : 0),
+          hLineColor: () => p.border,
+          vLineWidth: () => 0,
+          paddingLeft: () => 6,
+          paddingRight: () => 6,
+          paddingTop: () => 3,
+          paddingBottom: () => 3,
+        },
+      },
+    ],
+    margin: [0, 4, 0, 6],
+  };
+}
+
+function chartBlock(
+  t: ReportTable,
+  meta: ExportMeta,
+  labels: ExportLabels,
+  p: ReportPalette,
+): Node | null {
+  if (meta.chart === false) return null;
+  const c = chartOf(t, (k) => columnHeader(t.columns[k]!, labels));
+  if (!c) return null;
+  const [pw, ph] = pageSize(meta);
+  const width = pw - 2 * MARGIN_X - 17; // trong khung: đệm 8 + 8, viền 0,5 + 0,5
+  const height = Math.round(Math.min(190, Math.max(130, ph * 0.24)));
+  const svg = chartSvg(c, { width, height, palette: p, font: FONT });
+  return framed(c.title, { id: 'chart', svg, width, height, font: FONT }, p, {
+    unbreakable: true,
+  });
+}
+
+function dataTables(
+  t: ReportTable,
+  labels: ExportLabels,
+  layout: Layout,
+  p: ReportPalette,
+): Node[] {
+  return layout.groups.map((group, gi) => {
     const head: Cell[] = [
-      { text: labels.rowHeader, bold: true, fillColor: '#eeeeee', alignment: 'center' },
+      { text: t.rowHeader ?? labels.rowHeader, bold: true, color: p.accentInk, alignment: 'left' },
       ...group.map((k) => ({
         text: columnHeader(t.columns[k]!, labels),
         bold: true,
-        fillColor: '#eeeeee',
-        alignment: 'center',
+        color: p.accentInk,
+        alignment: 'right',
       })),
     ];
     const body: Cell[][] = [head];
@@ -98,6 +352,7 @@ export function pdfDefinition(
         { text: r.label, noWrap: true },
         ...group.map((k) => ({ text: r.text[k] ?? '', alignment: 'right', noWrap: true })),
       ]);
+    const totalRow = t.totalsText ? body.length : -1;
     if (t.totalsText)
       body.push([
         { text: labels.total, bold: true },
@@ -108,43 +363,92 @@ export function pdfDefinition(
           noWrap: true,
         })),
       ]);
+    const rows = body.length;
     return {
       table: {
         headerRows: 1,
+        keepWithHeaderRows: 1,
+        dontBreakRows: true,
         widths: [
           layout.widths.label - CELL_PAD,
           ...group.map((k) => layout.widths.data[k]! - CELL_PAD),
         ],
         body,
       },
-      layout: 'lightHorizontalLines',
+      layout: {
+        fillColor: (row: number): string | null =>
+          row === 0
+            ? p.accent
+            : row === totalRow
+              ? p.chartSoft[0]!
+              : row % 2 === 0
+                ? p.zebra
+                : null,
+        hLineWidth: (i: number) => (i === totalRow ? 1 : i === rows ? 0.75 : 0),
+        hLineColor: (i: number) => (i === totalRow ? p.accent : p.border),
+        vLineWidth: () => 0,
+        paddingLeft: () => 8,
+        paddingRight: () => 8,
+        paddingTop: () => 3,
+        paddingBottom: () => 3,
+      },
       ...(gi > 0 ? { pageBreak: 'before' } : {}),
     };
   });
+}
+
+/** Định nghĩa tài liệu pdfmake (hàm thuần, kiểm được không cần dựng PDF). */
+export function pdfDefinition(
+  t: ReportTable,
+  meta: ExportMeta,
+  labels: ExportLabels,
+  footer = '',
+): Record<string, unknown> {
+  const p = reportPalette(meta.theme);
+  const layout = planLayout(t, meta, labels);
+  const chart = chartBlock(t, meta, labels, p);
+  const cards = summaryCards(t, labels);
   const paper = meta.paper ?? {};
+  const lineEnd = pageSize(meta)[0] - 2 * MARGIN_X;
+  const note = (text: string) => ({
+    text,
+    margin: [0, 4, 0, 0],
+    italics: true,
+    color: p.muted,
+    fontSize: 7.5,
+  });
   return {
     pageSize: paper.size ?? 'A4',
     pageOrientation: paper.orientation ?? 'portrait',
-    pageMargins: [28, 36, 28, 44],
-    defaultStyle: { font: 'Roboto', fontSize: layout.fontSize },
+    pageMargins: [MARGIN_X, 28, MARGIN_X, 40],
+    defaultStyle: { font: FONT, fontSize: layout.fontSize, color: p.text },
     content: [
-      { text: t.title, fontSize: 14, bold: true, margin: [0, 0, 0, 4] },
-      { text: `${labels.period}: ${t.periodLabel}` },
-      { text: `${labels.exportedBy}: ${meta.exportedBy}` },
-      {
-        text: `${labels.exportedAt}: ${formatLocal(meta.exportedAt, meta.tz, 'sec')}`,
-        margin: [0, 0, 0, 8],
-      },
-      ...tables,
-      { text: coverageText(t, labels), margin: [0, 6, 0, 0], italics: true },
+      headerBand(t, meta, labels, p),
+      ...(cards ? [cards] : []),
+      ...(chart ? [chart] : []),
+      ...dataTables(t, labels, layout, p),
+      ...(t.showCoverage !== false ? [note(coverageText(t, labels))] : []),
+      ...(t.notes ?? []).map(note),
+      ...(t.sections ?? []).map((s) => sectionTable(s, p)),
     ],
     footer: (current: number, count: number) => ({
-      columns: [
-        { text: footer, alignment: 'left' },
-        { text: `${labels.page} ${current} ${labels.of} ${count}`, alignment: 'right' },
+      margin: [MARGIN_X, 10, MARGIN_X, 0],
+      stack: [
+        {
+          canvas: [
+            { type: 'line', x1: 0, y1: 0, x2: lineEnd, y2: 0, lineWidth: 0.5, lineColor: p.border },
+          ],
+          margin: [0, 0, 0, 4],
+        },
+        {
+          columns: [
+            { text: footer, alignment: 'left' },
+            { text: `${labels.page} ${current} ${labels.of} ${count}`, alignment: 'right' },
+          ],
+          fontSize: 7.5,
+          color: p.muted,
+        },
       ],
-      margin: [28, 12, 28, 0],
-      fontSize: 8,
     }),
     info: { title: t.title },
   };
@@ -152,10 +456,11 @@ export function pdfDefinition(
 
 interface PdfMake {
   addVirtualFileSystem(vfs: Record<string, unknown>): void;
+  setFonts(fonts: Record<string, unknown>): void;
   createPdf(def: Record<string, unknown>): { getBuffer(): Promise<Uint8Array> };
 }
 
-/** Dựng PDF. Nạp pdfmake và phông Roboto bằng `import()` ở lần gọi đầu (chunk riêng, không có ở tải khởi động). */
+/** Dựng PDF. Nạp pdfmake và phông Inter bằng `import()` ở lần gọi đầu (chunk riêng, không có ở tải khởi động). */
 export async function buildPdf(
   t: ReportTable,
   meta: ExportMeta,
@@ -164,13 +469,10 @@ export async function buildPdf(
 ): Promise<Uint8Array> {
   const [pm, fonts] = await Promise.all([
     import('pdfmake/build/pdfmake.min.js'),
-    import('pdfmake/build/vfs_fonts.js'),
+    import('./pdf-fonts.ts'),
   ]);
   const pdfMake = ((pm as { default?: PdfMake }).default ?? pm) as unknown as PdfMake;
-  const vfs = ((fonts as { default?: Record<string, unknown> }).default ?? fonts) as Record<
-    string,
-    unknown
-  >;
-  pdfMake.addVirtualFileSystem(vfs);
+  pdfMake.addVirtualFileSystem(fonts.INTER_VFS);
+  pdfMake.setFonts(fonts.INTER_FONTS);
   return pdfMake.createPdf(pdfDefinition(t, meta, labels, footer)).getBuffer();
 }

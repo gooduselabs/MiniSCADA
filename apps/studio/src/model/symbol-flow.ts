@@ -2,6 +2,7 @@
 // và ngữ cảnh, trả kế hoạch thay đổi cho `store.applyChange` (MỘT bước hoàn tác: item, file binding riêng rỗng, tệp SVG sao vào
 // `graphics/symbols/` nếu project chưa có; nhiều thể hiện dùng chung một tệp). Dính lưới, đường gióng và điểm gắn dùng `snap.ts`.
 import type { Item, ScreenModel, SvgItem } from '@mat/project-schema';
+import { placeInGrid } from './grid-ops.ts';
 import { LIMITS_03 } from '@mat/project-schema';
 import {
   SYMBOLS,
@@ -165,7 +166,8 @@ export function planSymbolDrop(
   };
   const change: StoreChange = {
     edits: [
-      { kind: 'screenUpsert', screen: { ...screen, items: [...screen.items, item] } },
+      // màn hình lưới (feature 012): item không tọa độ, vào ô trống đầu tiên
+      { kind: 'screenUpsert', screen: placeInGrid(screen, item) },
       {
         kind: 'svgBindings',
         file: bindingFile,

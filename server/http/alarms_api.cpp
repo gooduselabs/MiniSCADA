@@ -384,11 +384,25 @@ int sendResult(mg_connection* c, const AlarmApiResult& r, const std::string& ext
 }
 }  // namespace
 
-int getList(mg_connection* c, AlarmGlue& glue, bool full) {
-    return sendResult(c, {200, glue.listJson(full)});
+namespace {
+void keepAllowed(json& body, const char* list, const char* key, const AlarmFilter& allow) {
+    if (!allow || !body.contains(list) || !body[list].is_array()) return;
+    json kept = json::array();
+    for (auto& x : body[list])
+        if (x.is_object() && x.contains(key) && x[key].is_string() &&
+            allow(x[key].get<std::string>()))
+            kept.push_back(std::move(x));
+    body[list] = std::move(kept);
+}
+}  // namespace
+
+int getList(mg_connection* c, AlarmGlue& glue, bool full, const AlarmFilter& allow) {
+    json body = glue.listJson(full, allow);  // feature 013: the instances and counts of `allow`
+    return sendResult(c, {200, std::move(body)});
 }
 
-int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter, bool full) {
+int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter, bool full,
+               const AlarmFilter& allow) {
     const mg_request_info* ri = mg_get_request_info(c);
     const int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
                             std::chrono::system_clock::now().time_since_epoch())
@@ -417,6 +431,7 @@ int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter, bool f
         } leave{limiter, ip};
         result = glue.history(q, full);
     }
+    if (result.status == 200) keepAllowed(result.body, "items", "alarmId", allow);
     return sendResult(c, result);
 }
 

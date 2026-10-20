@@ -173,9 +173,11 @@ TEST(RulesLogic, LogicTagsAreDeclaredInternalReadOnlyWithTheirTypes) {
 }
 
 TEST(RulesLogic, Version) {
-    EXPECT_EQ(errs({{"schemaVersion", "1.1.0"}, {"rules", json::array({rule({{"id", "BAD"}})})}}),
+    // feature 012: the 1.x family is 1.0.x and 1.1.x; 1.2 is newer
+    EXPECT_EQ(errs({{"schemaVersion", "1.2.0"}, {"rules", json::array({rule({{"id", "BAD"}})})}}),
               Codes{"E_LOGIC_VERSION"});
     EXPECT_EQ(errs({{"schemaVersion", "1.0.7"}}), Codes{});
+    EXPECT_EQ(errs({{"schemaVersion", "1.1.0"}}), Codes{});
 }
 
 TEST(RulesLogic, Limits) {

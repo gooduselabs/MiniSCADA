@@ -32,6 +32,8 @@ const ALLOWED = new Set(
     'X11',
     'NCSA',
     'LicenseRef-Public-Domain',
+    // Phông chữ: SIL Open Font License cho phép nhúng và phân phối kèm phần mềm (không bán riêng phông).
+    'OFL-1.1',
   ].map((s) => s.toLowerCase()),
 );
 const CONDITIONAL = new Set(['MPL-2.0', 'MPL-1.1'].map((s) => s.toLowerCase()));

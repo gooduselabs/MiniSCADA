@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_RPT_KIND"],"runtimeVersion":"1.1.0","issues":[{"code":"E_RPT_KIND","file":"reports.json","path":"/reports/0/columns/0/tagId"},{"code":"E_RPT_KIND","file":"reports.json","path":"/reports/0/columns/1/functions/1"}]}

@@ -293,12 +293,13 @@ LogicCheck checkLogic(const json& doc, const LogicCheckOptions& opts) {
     const int scanMs = opts.scanMs;
     const int flushS = opts.flushS;
 
-    // 0. version
+    // 0. version (the 1.x family: 1.0 and 1.1 share the format of logic.json, feature 012)
     {
         const json* v = mem(doc, "schemaVersion");
-        static const std::regex kVersion("^1\\.0\\.\\d+$");
+        static const std::regex kVersion("^1\\.[01]\\.\\d+$");
         if (!v || !v->is_string() || !std::regex_match(v->get<std::string>(), kVersion)) {
-            err("E_LOGIC_VERSION", "/schemaVersion", "logic.json " + str(v) + ": chỉ hiểu 1.0.x");
+            err("E_LOGIC_VERSION", "/schemaVersion",
+                "logic.json " + str(v) + ": chỉ hiểu 1.0.x, 1.1.x");
             return out;
         }
     }

@@ -36,7 +36,14 @@ describe('tải lười', () => {
     const pdf = readFileSync(resolve(__dirname, 'pdf/pdf.ts'), 'utf8');
     expect(pdf).not.toMatch(/^\s*import\s+(?!\()[^;]*['"]pdfmake/m);
     expect(pdf).toMatch(/import\(\s*['"]pdfmake\/build\/pdfmake/);
-    expect(pdf).toMatch(/import\(\s*['"]pdfmake\/build\/vfs_fonts/);
+    // phông Inter (feature 012, T049) cũng chỉ nạp bằng import() khi xuất
+    expect(pdf).not.toMatch(/^\s*import\s+(?!\()[^;]*['"]\.\/pdf-fonts\.ts/m);
+    expect(pdf).toMatch(/import\(\s*['"]\.\/pdf-fonts\.ts['"]\s*\)/);
+  });
+  it('ECharts (biểu đồ PDF) chỉ vào chunk PDF: index.ts, types.ts không import pdf/ hay echarts', () => {
+    const types = readFileSync(resolve(__dirname, 'types.ts'), 'utf8');
+    for (const f of [src, types])
+      expect(f).not.toMatch(/^\s*import\s+(?!type\b)[^;]*['"](?:echarts|\.\/pdf\/)/m);
   });
   it('index.ts xuất CSV đồng bộ và XLSX, PDF bất đồng bộ', async () => {
     const mod = await import('./index.ts');

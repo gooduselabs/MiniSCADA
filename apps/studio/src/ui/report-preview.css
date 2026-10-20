@@ -108,3 +108,7 @@ mat-report-preview .rpt-sr {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+/* Feature 015: báo cáo dựng bằng <mat-report-view> (cùng thành phần với trang vận hành). */
+mat-report-preview .rp-view {
+  margin-top: 4px;
+}

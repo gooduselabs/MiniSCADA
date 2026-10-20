@@ -240,6 +240,14 @@ void LoginGuard::clearUser(const std::string& user) {
                  pairs_.end());
 }
 
+int64_t LoginGuard::lockedUntilMono(const std::string& user, int64_t nowMono) const {
+    int64_t until = 0;
+    for (const PairEntry& p : pairs_)
+        if (p.user == user && p.lockedUntilMono > nowMono)
+            until = std::max(until, p.lockedUntilMono);
+    return until;
+}
+
 void LoginGuard::clearAll() {
     pairs_.clear();
     sources_.clear();

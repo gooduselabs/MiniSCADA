@@ -274,7 +274,7 @@ double AlarmGlue::evalMaxMs() const {
 // ---------------------------------------------------------------------------------------------
 // JSON
 
-json AlarmGlue::countsJson(const Counts& c) const {
+json AlarmGlue::countsJson(const Counts& c) {
     json by = json::object();
     for (int p = 1; p <= 4; ++p)
         by[priorityName(static_cast<Priority>(p))] = {{"active", c.activeByPriority[p - 1]},
@@ -353,15 +353,43 @@ AlarmView AlarmGlue::currentView() const {
     return v ? *v : AlarmView{};
 }
 
-json AlarmGlue::listJson(bool full) {
+// The engine counts every instance (AlarmEngine publish()); an instance it counts is always in
+// `items` (not NORMAL, shelved or disabled), so the items give the same counts, with the class
+// priority of the item.
+Counts AlarmGlue::countsOf(const AlarmView& v, const AlarmIdFilter& allow) {
+    if (!allow) return v.counts;
+    Counts c;
+    for (const AlarmItem& it : v.items) {
+        if (!allow(it.id)) continue;
+        const size_t p = static_cast<size_t>(std::clamp(it.priority, 1, 4) - 1);
+        if (!it.shelve) {
+            if (it.state != AlarmState::Normal) {
+                ++c.active;
+                ++c.activeByPriority[p];
+            }
+            if (it.state == AlarmState::ActiveUnack || it.state == AlarmState::RtnUnack) {
+                ++c.unacked;
+                ++c.unackedByPriority[p];
+            }
+            if (it.state == AlarmState::RtnUnack) ++c.rtnUnack;
+        } else {
+            ++c.shelved;
+        }
+        if (it.disabled) ++c.disabled;
+    }
+    return c;
+}
+
+json AlarmGlue::listJson(bool full, const AlarmIdFilter& allow) {
     auto v = engine_.view();
     json items = json::array();
     int64_t rev = 0;
     Counts counts;
     if (v) {
-        for (const AlarmItem& it : v->items) items.push_back(itemJson(it, full));
+        for (const AlarmItem& it : v->items)
+            if (!allow || allow(it.id)) items.push_back(itemJson(it, full));
         rev = v->revision;
-        counts = v->counts;
+        counts = countsOf(*v, allow);
     }
     return {{"ts", opt_.epochMs()},     {"revision", rev},      {"instances", items},
             {"classes", classesJson()}, {"areas", areasJson()}, {"counts", countsJson(counts)}};
@@ -375,9 +403,16 @@ AlarmLiveSnapshot AlarmGlue::snapshot(bool full) {
     if (v) {
         s.revision = v->revision;
         counts = v->counts;
-        for (const AlarmItem& it : v->items) s.instances.push_back(itemJson(it, full).dump());
+        for (const AlarmItem& it : v->items) {
+            s.instances.push_back(itemJson(it, full).dump());
+            s.ids.push_back(it.id);  // feature 013: the hub keeps those a session may see
+        }
     }
     s.counts = countsJson(counts).dump();
+    if (v)  // feature 013: the counts of what a session may see, of this same view
+        s.countsFor = [v](const AlarmIdFilter& allow) {
+            return countsJson(countsOf(*v, allow)).dump();
+        };
     s.classes = classesJson().dump();
     s.areas = areasJson().dump();
     return s;
@@ -395,6 +430,9 @@ AlarmLiveBatch AlarmGlue::takeChanges() {
     if (!v) return b;
     b.revision = v->revision;
     b.counts = countsJson(v->counts).dump();
+    b.countsFor = [v](const AlarmIdFilter& allow) {
+        return countsJson(countsOf(*v, allow)).dump();
+    };
     for (const std::string& id : ids) {
         const AlarmItem* it = v->find(id);
         b.changes.push_back({id, it ? itemJson(*it, true).dump() : std::string(),
@@ -473,11 +511,11 @@ bool AlarmGlue::runCommands(std::vector<Command> cmds, std::vector<CommandResult
     return done;
 }
 
-json AlarmGlue::stateBody(const std::string& id) const {
+json AlarmGlue::stateBody(const std::string& id, const AlarmIdFilter& allow) const {
     auto v = engine_.view();
     json b = json::object();
     b["revision"] = v ? v->revision : 0;
-    b["counts"] = countsJson(v ? v->counts : Counts{});
+    b["counts"] = countsJson(v ? countsOf(*v, allow) : Counts{});
     const AlarmItem* it = v ? v->find(id) : nullptr;
     b["state"] = it ? stateName(it->state) : "NORMAL";
     b["occurrence"] = it ? it->occurrence : 0;
@@ -491,7 +529,33 @@ size_t AlarmGlue::reservations() const {
 
 // --- ack ---
 
+namespace {
+
+AlarmApiResult accessDenied(const std::function<void(const AuditEvent&)>& audit, AuditAction a,
+                            const AlarmActor& who, const std::string& id) {
+    if (audit) {
+        AuditEvent e(a, AuditResult::Denied, who.channel, who.source);
+        e.user = who.user;
+        e.role = who.role;
+        e.target = id.substr(0, 120);
+        e.code = "ACCESS_DENIED";
+        try {
+            audit(e);
+        } catch (const std::exception&) {
+        }
+    }
+    return {
+        403,
+        {{"error", "ACCESS_DENIED"}, {"id", id}, {"message", "Bạn không có quyền với alarm này."}}};
+}
+
+}  // namespace
+
 AlarmApiResult AlarmGlue::ack(const AckSpec& spec, const AlarmActor& who) {
+    if (who.allowed && !spec.all)
+        for (const auto& it : spec.items)
+            if (!who.allowed(it.id))
+                return accessDenied(opt_.audit, AuditAction::AlarmAck, who, it.id);
     auto v = engine_.view();
     const AlarmView empty;
     if (!v) v = std::make_shared<AlarmView>();
@@ -506,6 +570,7 @@ AlarmApiResult AlarmGlue::ack(const AckSpec& spec, const AlarmActor& who) {
         // shelved, waiting for acknowledgement, and not newer than the revision the page showed.
         const std::string qf = spec.q.empty() ? std::string() : foldText(spec.q);
         for (const AlarmItem& it : v->items) {
+            if (who.allowed && !who.allowed(it.id)) continue;  // feature 013
             if (it.shelve || it.disabled) continue;
             if (it.state != AlarmState::ActiveUnack && it.state != AlarmState::RtnUnack) continue;
             if (!spec.states.empty() && std::find(spec.states.begin(), spec.states.end(),
@@ -629,7 +694,7 @@ AlarmApiResult AlarmGlue::ack(const AckSpec& spec, const AlarmActor& who) {
                  {"acked", acked},
                  {"skippedNewer", skippedNewer},
                  {"revision", after ? after->revision : 0},
-                 {"counts", countsJson(after ? after->counts : Counts{})}};
+                 {"counts", countsJson(after ? countsOf(*after, who.allowed) : Counts{})}};
     return {200, body};
 }
 
@@ -637,6 +702,8 @@ AlarmApiResult AlarmGlue::ack(const AckSpec& spec, const AlarmActor& who) {
 
 AlarmApiResult AlarmGlue::shelve(const std::string& id, const std::string& reasonIn,
                                  int64_t durationS, const AlarmActor& who) {
+    if (who.allowed && !who.allowed(id))
+        return accessDenied(opt_.audit, AuditAction::AlarmShelve, who, id);
     if (!byId_.count(id)) return notFound(id);
     auto v = engine_.view();
     const AlarmItem* it = v ? v->find(id) : nullptr;
@@ -683,7 +750,7 @@ AlarmApiResult AlarmGlue::shelve(const std::string& id, const std::string& reaso
         writeOutcome(AuditAction::AlarmShelve, who, id, r.result);
         return notFound(id);
     }
-    json body = stateBody(id);
+    json body = stateBody(id, who.allowed);
     body["id"] = id;
     body["shelved"] = {{"until", r.untilEpochMs ? r.untilEpochMs : until},
                        {"durationS", durationS},
@@ -695,11 +762,13 @@ AlarmApiResult AlarmGlue::shelve(const std::string& id, const std::string& reaso
 }
 
 AlarmApiResult AlarmGlue::unshelve(const std::string& id, const AlarmActor& who) {
+    if (who.allowed && !who.allowed(id))
+        return accessDenied(opt_.audit, AuditAction::AlarmUnshelve, who, id);
     if (!byId_.count(id)) return notFound(id);
     auto v = engine_.view();
     const AlarmItem* it = v ? v->find(id) : nullptr;
     if (!it || !it->shelve) {
-        json body = stateBody(id);
+        json body = stateBody(id, who.allowed);
         body["id"] = id;
         body["shelved"] = nullptr;
         body["changed"] = false;
@@ -714,7 +783,7 @@ AlarmApiResult AlarmGlue::unshelve(const std::string& id, const AlarmActor& who)
     c.user = who.user;
     std::vector<CommandResult> got;
     if (!runCommands({c}, got)) return timeout();
-    json body = stateBody(id);
+    json body = stateBody(id, who.allowed);
     body["id"] = id;
     body["shelved"] = nullptr;
     body["changed"] = got.front().result == "OK";
@@ -729,7 +798,7 @@ AlarmApiResult AlarmGlue::disable(const std::string& id, const std::string& reas
     auto v = engine_.view();
     const AlarmItem* it = v ? v->find(id) : nullptr;
     if (it && it->disabled) {
-        json body = stateBody(id);
+        json body = stateBody(id, who.allowed);
         body["id"] = id;
         body["disabled"] = true;
         body["changed"] = false;
@@ -747,7 +816,7 @@ AlarmApiResult AlarmGlue::disable(const std::string& id, const std::string& reas
     c.reason = reason;
     std::vector<CommandResult> got;
     if (!runCommands({c}, got)) return timeout();
-    json body = stateBody(id);
+    json body = stateBody(id, who.allowed);
     body["id"] = id;
     body["disabled"] = true;
     body["changed"] = got.front().result == "OK";
@@ -761,7 +830,7 @@ AlarmApiResult AlarmGlue::enable(const std::string& id, const AlarmActor& who) {
     auto v = engine_.view();
     const AlarmItem* it = v ? v->find(id) : nullptr;
     if (!it || !it->disabled) {
-        json body = stateBody(id);
+        json body = stateBody(id, who.allowed);
         body["id"] = id;
         body["disabled"] = false;
         body["changed"] = false;
@@ -774,7 +843,7 @@ AlarmApiResult AlarmGlue::enable(const std::string& id, const AlarmActor& who) {
     c.user = who.user;
     std::vector<CommandResult> got;
     if (!runCommands({c}, got)) return timeout();
-    json body = stateBody(id);
+    json body = stateBody(id, who.allowed);
     body["id"] = id;
     body["disabled"] = false;
     body["changed"] = got.front().result == "OK";
@@ -846,11 +915,16 @@ AlarmApiResult AlarmGlue::history(const HistoryQuery& q, bool full) {
     return {200, body};
 }
 
-json AlarmGlue::infoJson() {
+json AlarmGlue::infoJson(const AlarmIdFilter& allow) {
     auto v = engine_.view();
-    const Counts c = v ? v->counts : Counts{};
+    const Counts c = v ? countsOf(*v, allow) : Counts{};
     const LogState st = service_ ? service_->logState() : LogState::Running;
-    json j = {{"instances", engine_.instanceCount()},
+    size_t instances = engine_.instanceCount();
+    if (allow) {
+        instances = 0;
+        for (const InstanceDef& i : defs_.instances) instances += allow(i.id) ? 1 : 0;
+    }
+    json j = {{"instances", instances},
               {"active", c.active},
               {"unacked", c.unacked},
               {"shelved", c.shelved},

@@ -136,7 +136,7 @@ async function scenario({ page, check, shot, axe }) {
     for (const u of ['kysu1', 'xem1', 'admin']) c.setPassword(u, `${p}-${u}`);
   }, pw);
   await setTheme(page, 'light');
-  await page.click('mat-start-page .start-hero .btn.primary');
+  await page.click('mat-start-page .start-hero [data-cmd="project.open"]');
   await page.waitForSelector('mat-tree [role="treeitem"]');
   await signIn(page, pw, 'admin');
 

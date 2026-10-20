@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.1.0",
+  "reports": [
+    {
+      "id": "dien-ngay",
+      "name": "Điện năng theo ngày",
+      "group": "dien",
+      "period": "day",
+      "rowMinutes": 60,
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        }
+      ],
+      "kind": "alarm"
+    }
+  ]
+}

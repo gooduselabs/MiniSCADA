@@ -879,7 +879,7 @@ export function cases10() {
   );
   bad(
     'v10-logic-version-newer',
-    (f) => (f[LG].schemaVersion = '1.1.0'),
+    (f) => (f[LG].schemaVersion = '1.2.0'),
     ['E_LOGIC_VERSION'],
     undefined,
     iss(at('E_LOGIC_VERSION', '/schemaVersion', LG)),

@@ -1,5 +1,6 @@
 // T027 (feature 005; data-model §4, research R8, contracts/device-config.md §4): users.json.
-// - Reading: schemaVersion 1.x, name pattern and uniqueness, roles, key types, at most 64
+// - Reading: schemaVersion 1.x, name pattern and uniqueness, roles, key types, at most 200 (feature
+// 013; 64 before)
 //   accounts, at most 256 KB; a broken file, a file others may read or write, or another MAJOR
 //   gives no account at all. A hash outside the bounds damages only its account.
 // - The runtime's view: re-read when inode, size or mtime (and mode, ctime) change, at most once
@@ -106,7 +107,7 @@ TEST(UsersFile, LaterMinorVersionsAndUnknownKeys) {
     nlohmann::json j = usersJsonOf(threeAccounts());
     j["schemaVersion"] = "1.4.2";
     j["comment"] = "added by a later 1.x";
-    j["users"][0]["lastLoginAt"] = "2026-10-21T00:00:00Z";
+    j["users"][0]["lastSeenBy"] = "2026-10-21T00:00:00Z";  // 1.1.0 has lastLoginAt (feature 013)
     const UsersRead r = parseUsers(j.dump());
     EXPECT_EQ(r.status, UsersStatus::Ok) << r.error;
     EXPECT_EQ(r.file.users.size(), 3u);
@@ -149,7 +150,7 @@ TEST(UsersFile, AnythingWrongGivesNoAccount) {
         {"updatedAt number", with([](auto& j) { j["users"][1]["updatedAt"] = 0; })},
     };
     nlohmann::json many = good;
-    for (int i = 0; i < 62; ++i)
+    for (int i = 0; i < 198; ++i)  // feature 013: at most 200 accounts (was 64)
         many["users"].push_back({{"name", "user" + std::to_string(i)},
                                  {"role", "viewer"},
                                  {"enabled", true},
@@ -158,8 +159,8 @@ TEST(UsersFile, AnythingWrongGivesNoAccount) {
                                  {"unlockSeq", 0},
                                  {"createdAt", "2026-10-20T03:00:00Z"},
                                  {"updatedAt", "2026-10-20T03:00:00Z"}});
-    ASSERT_EQ(many["users"].size(), 65u);
-    cases.emplace_back("65 accounts", many.dump());
+    ASSERT_EQ(many["users"].size(), 201u);
+    cases.emplace_back("201 accounts", many.dump());
     for (const auto& c : cases) {
         const UsersRead r = parseUsers(c.second);
         EXPECT_EQ(r.status, UsersStatus::Error) << c.first;
@@ -167,7 +168,7 @@ TEST(UsersFile, AnythingWrongGivesNoAccount) {
         EXPECT_FALSE(r.error.empty()) << c.first;
         EXPECT_EQ(r.error.find(mat::test::b64(kHash)), std::string::npos) << r.error;
     }
-    many["users"].erase(many["users"].size() - 1);  // 64 accounts: fine
+    many["users"].erase(many["users"].size() - 1);  // 200 accounts: fine
     EXPECT_EQ(parseUsers(many.dump()).status, UsersStatus::Ok);
 }
 
@@ -469,11 +470,11 @@ TEST(AccountEdits, Refusals) {
     EXPECT_EQ(unlockAccount(f, "nobody", now), AccountEditError::NotFound);
     EXPECT_EQ(removeAccount(f, "nobody"), AccountEditError::NotFound);
     EXPECT_EQ(setAccountPassword(f, "admin", "garbage", now), AccountEditError::BadHash);
-    for (int i = 1; i < 64; ++i)
+    for (int i = 1; i < 200; ++i)  // feature 013: 200 accounts (was 64)
         ASSERT_EQ(addAccount(f, "user" + std::to_string(i), Role::Viewer, phc(), now),
                   AccountEditError::None);
-    EXPECT_EQ(f.users.size(), 64u);
-    EXPECT_EQ(addAccount(f, "user64", Role::Viewer, phc(), now), AccountEditError::TooMany);
+    EXPECT_EQ(f.users.size(), 200u);
+    EXPECT_EQ(addAccount(f, "user200", Role::Viewer, phc(), now), AccountEditError::TooMany);
     for (auto e : {AccountEditError::InvalidName, AccountEditError::Exists,
                    AccountEditError::NotFound, AccountEditError::TooMany,
                    AccountEditError::LastAdministrator, AccountEditError::BadHash})

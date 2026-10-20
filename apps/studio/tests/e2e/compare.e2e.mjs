@@ -148,7 +148,7 @@ async function scenario({ page, check, shot, axe }) {
     localFiles(),
   );
   await setTheme(page, 'light');
-  await page.click('mat-start-page .start-hero .btn.primary');
+  await page.click('mat-start-page .start-hero [data-cmd="project.open"]');
   await page.waitForSelector('mat-tree [role="treeitem"]');
 
   // Online BL335-01 (Ctrl+K mở Thiết bị trong mạng), ghim, đăng nhập kysu1.

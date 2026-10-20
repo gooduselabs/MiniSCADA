@@ -44,6 +44,19 @@
       "type": "string",
       "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
     },
+    "layout": {
+      "$ref": "#/definitions/layout"
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Format 1.1 (feature 013): lowest role that sees the screen or popup when no access rule applies.",
+      "properties": {
+        "view": {
+          "$ref": "#/definitions/role"
+        }
+      }
+    },
     "items": {
       "type": "array",
       "items": {
@@ -73,18 +86,7 @@
     "svgItem": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "id",
-        "type",
-        "x",
-        "y",
-        "width",
-        "height",
-        "svgFile",
-        "bindingFile",
-        "viewBox",
-        "elements"
-      ],
+      "required": ["id", "type", "svgFile", "bindingFile", "viewBox", "elements"],
       "properties": {
         "id": {
           "type": "string",
@@ -117,6 +119,19 @@
         },
         "tpl": {
           "$ref": "#/definitions/tpl"
+        },
+        "security": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Format 1.1 (feature 013): as security of a widget item, without minRole (the events of the elements have their own).",
+          "properties": {
+            "view": {
+              "$ref": "#/definitions/role"
+            },
+            "operate": {
+              "$ref": "#/definitions/role"
+            }
+          }
         },
         "svgFile": {
           "type": "string",
@@ -181,7 +196,7 @@
     "widgetItem": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "widget", "x", "y", "width", "height"],
+      "required": ["id", "type", "widget"],
       "properties": {
         "id": {
           "type": "string",
@@ -255,9 +270,16 @@
         "security": {
           "type": "object",
           "additionalProperties": false,
+          "description": "minRole (0.3) is the old alias of operate. Format 1.1 (feature 013): view and operate are the lowest roles that see and operate the item when no access rule applies; rules E_SECURITY_LEVEL, E_SECURITY_ITEM.",
           "properties": {
             "minRole": {
               "type": "string"
+            },
+            "view": {
+              "$ref": "#/definitions/role"
+            },
+            "operate": {
+              "$ref": "#/definitions/role"
             }
           }
         }
@@ -321,6 +343,109 @@
     "extent": {
       "type": "integer",
       "maximum": 8192
+    },
+    "gridCell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "span"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "span": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 11
+        },
+        "align": {
+          "enum": ["start", "center", "end", "stretch"]
+        },
+        "minHeight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4000
+        },
+        "item": {
+          "type": "string",
+          "maxLength": 72
+        }
+      }
+    },
+    "gridRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "height", "cells"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "height": {
+          "oneOf": [
+            {
+              "const": "auto"
+            },
+            {
+              "type": "integer",
+              "minimum": 24,
+              "maximum": 4000
+            }
+          ]
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "cells": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/definitions/gridCell"
+          }
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "columns", "rows"],
+      "description": "Định dạng 1.1 (feature 012): bố cục lưới 12 cột, hàng -> ô, ô tham chiếu item theo id. Số cột, tổng span, tham chiếu và giới hạn là luật E_LAYOUT_* (rules-11), schema chỉ kiểm khung.",
+      "properties": {
+        "mode": {
+          "type": "string"
+        },
+        "columns": {
+          "type": "integer"
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "padding": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "rows": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/definitions/gridRow"
+          }
+        }
+      }
+    },
+    "role": {
+      "description": "Format 1.1 (feature 013): a role as the lowest one allowed (contracts/access-model.md §3).",
+      "enum": ["viewer", "operator", "engineer", "administrator"]
     }
   }
 }

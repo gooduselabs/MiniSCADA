@@ -16,11 +16,13 @@ export {
   migrate04to05,
   migrate05to06,
   migrate06to10,
+  migrate10to11,
   migrateTo03,
   migrateTo04,
   migrateTo05,
   migrateTo06,
   migrateTo10,
+  migrateTo11,
 } from './migrate.ts';
 export type { MigrateChange, MigrateError, MigrateResult } from './migrate.ts';
 export { canonicalTag, formatTagsFile, serialize as serialize02 } from './format-02.ts';
@@ -72,6 +74,10 @@ export { toScreenModel, legacyScreenTo03, SIZE_MIN, SIZE_MAX } from './to-screen
 export type { LegacyConversion } from './to-screen-model.ts';
 // feature 011 (định dạng 1.0): template, faceplate, logic.json
 export * from './types-10.ts';
+export * from './types-11.ts';
+// feature 013: vai trò tối thiểu, item thao tác được
+export { isOperableItem, SECURITY_ROLES } from './rules-11.ts';
+export * from './layout.ts';
 export * from './params.ts';
 export { runRules10 } from './rules-10.ts';
 export type { Rule10Input } from './rules-10.ts';

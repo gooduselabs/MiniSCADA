@@ -1,11 +1,18 @@
-/* global window, document, location */
+/* global window, document, location, HTMLAnchorElement, FileReader */
 // Ảnh chụp màn hình cho tài liệu người dùng (feature 011, T203; SC-038): chụp giao diện web của mAT Studio và trang vận hành
 // trên Chrome headless, dùng lại khung e2e có sẵn (lớp Tauri giả và thiết bị giả của Studio: apps/studio/tests/e2e; runtime
 // giả của trang vận hành: apps/runtime-web/tests/e2e). Dữ liệu tất định: project mẫu trong projects/ (dashboard-demo,
 // svg-demo) và project mẫu của e2e trang vận hành; không cần Docker, không cần thiết bị.
 //
-// Dùng:   node tools/docs-screenshots.mjs [lọc tên ảnh] [--build] [--headful]
+// Dùng:   node tools/docs-screenshots.mjs [lọc] [--build] [--headful] [--out=<thư mục>] [--theme=<chủ đề>]
+//   lọc       khớp một phần tên cảnh (ví dụ `web-quyen`): chỉ chạy các cảnh đó, chụp mọi ảnh của chúng; không khớp tên
+//             cảnh nào thì là lọc theo tên ảnh (mọi cảnh vẫn chạy, chỉ ghi ảnh có tên chứa chuỗi lọc).
 //   --build   dựng lại hai bản build e2e (apps/studio/dist-e2e, apps/runtime-web/dist-e2e) trước khi chụp; thiếu thì tự dựng.
+//   --out     thư mục ảnh (tương đối theo gốc repo), mặc định docs/user/img.
+//   --theme   ép chủ đề của mọi project mẫu (vivid | industrial | dark; feature 012): trang vận hành nhận `theme` của project,
+//             Studio mở project đã nâng lên định dạng 1.1 có `theme` (chỉ trong bộ nhớ). Dùng cho bảng trước/sau
+//             (docs/reports/012-ui-before-after.md). Cảnh studio-logic dừng ở hộp Nạp xuống khi ép chủ đề (project
+//             nâng 1.1 trong bộ nhớ); không ép thì chạy đủ.
 // Biến môi trường: CHROME_PATH (Chrome/Edge/chrome-headless-shell); không đặt thì tìm ~/.cache/mat-chrome rồi Chrome cài sẵn.
 // Kết quả: docs/user/img/<tên>.png, khung 1366 × 768, theme sáng, giao diện tiếng Việt. Ảnh là giao diện web trong Chrome;
 // Studio trên Windows (WebView2) có thể khác chút ở phông chữ và khung cửa sổ.
@@ -14,12 +21,18 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { createServer } from 'node:http';
 import { homedir } from 'node:os';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { deflateSync, inflateSync } from 'node:zlib';
 import puppeteer from 'puppeteer-core';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = join(ROOT, 'docs/user/img');
+const args = process.argv.slice(2);
+const optArg = (name) =>
+  args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3) || undefined;
+const OUT = resolve(ROOT, optArg('out') ?? 'docs/user/img');
+const THEME = optArg('theme');
+if (THEME && !['vivid', 'industrial', 'dark'].includes(THEME))
+  throw new Error(`--theme không hợp lệ: ${THEME}`);
 const STUDIO = join(ROOT, 'apps/studio');
 const WEB = join(ROOT, 'apps/runtime-web');
 const STUDIO_DIST = join(STUDIO, 'dist-e2e');
@@ -28,34 +41,57 @@ const VIEWPORT = { width: 1366, height: 768, deviceScaleFactor: 1 };
 /** Ngân sách mỗi ảnh (byte): vượt thì báo để chụp vùng nhỏ hơn. */
 const MAX_BYTES = 200 * 1024;
 
-const args = process.argv.slice(2);
 const filter = args.find((a) => !a.startsWith('--'));
 const headful = args.includes('--headful');
 
-const studioE2e = await import(join(STUDIO, 'tests/e2e/util.mjs'));
-const webE2e = await import(join(WEB, 'tests/e2e/util.mjs'));
-const { startFakeRuntime } = await import(join(WEB, 'tests/e2e/fake-runtime.mjs'));
-const { dashboard } = await import(join(WEB, 'tests/e2e/fixture-project.mjs'));
-const { historyProject } = await import(join(WEB, 'tests/e2e/history-fake.mjs'));
-const { reportsProject } = await import(join(WEB, 'tests/e2e/history-projects.mjs'));
+const studioE2e = await import(pathToFileURL(join(STUDIO, 'tests/e2e/util.mjs')).href);
+const webE2e = await import(pathToFileURL(join(WEB, 'tests/e2e/util.mjs')).href);
+const { startFakeRuntime } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/fake-runtime.mjs')).href
+);
+const { dashboard } = await import(pathToFileURL(join(WEB, 'tests/e2e/fixture-project.mjs')).href);
+const { historyProject } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/history-fake.mjs')).href
+);
+const { reportsProject, reportAlarmHistory, reportLogicEvents } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/history-projects.mjs')).href
+);
+const { gridDemoProject } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/grid-demo-fixture.mjs')).href
+);
+const { PASS, accessDemo, accessSeed, loginPage } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/access-fixture.mjs')).href
+);
 /** Đổi tên hiển thị của project mẫu e2e (bỏ chữ "e2e" trên thanh trên). */
 const renamed = (make, name) => () => {
   const p = make();
   p.active.project.projectName = name;
   return p;
 };
-const {
-  clickButton,
-  expandNode,
-  openAndWait,
-  readProject,
-  setTheme,
-  sleep,
-  treeItem,
-  treeNode,
-  waitFor,
-} = studioE2e;
+const { clickButton, expandNode, openAndWait, setTheme, sleep, treeItem, treeNode, waitFor } =
+  studioE2e;
 const { deepEval, until, waitDeep } = webE2e;
+
+/** Đọc project mẫu cho Studio; có --theme thì project.json lên định dạng 1.1 kèm `theme` (chỉ trong bộ nhớ). */
+function readProject(dir) {
+  const files = studioE2e.readProject(dir);
+  if (THEME) {
+    const project = JSON.parse(files['project.json']);
+    if (project.schemaVersion === '1.0.0') project.schemaVersion = '1.1.0';
+    project.theme = THEME;
+    files['project.json'] = JSON.stringify(project, null, 2) + '\n';
+  }
+  return files;
+}
+/** Project của runtime giả cho trang vận hành; có --theme thì ép `theme` của project. */
+const themedFixture = (make) =>
+  THEME && make
+    ? () => {
+        const p = make();
+        p.active.project = { ...p.active.project, theme: THEME };
+        return p;
+      }
+    : make;
 
 function chromePath() {
   const cache = join(homedir(), '.cache/mat-chrome/chrome-headless-shell');
@@ -92,17 +128,19 @@ function chromePath() {
 
 function buildIfNeeded() {
   const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  for (const [dir, dist] of [
-    [STUDIO, STUDIO_DIST],
-    [WEB, WEB_DIST],
+  // Trang vận hành: thêm lượt `e2e-login` (trang /login của feature 013, chạy sau `e2e`, như `npm run e2e`).
+  for (const [dir, dist, modes, files] of [
+    [STUDIO, STUDIO_DIST, ['e2e'], ['index.html']],
+    [WEB, WEB_DIST, ['e2e', 'e2e-login'], ['index.html', 'login.html']],
   ]) {
-    if (args.includes('--build') || !existsSync(join(dist, 'index.html'))) {
+    if (args.includes('--build') || files.some((f) => !existsSync(join(dist, f)))) {
       console.log(`dựng bản e2e: ${dir}`);
-      execFileSync(npx, ['vite', 'build', '--mode', 'e2e', '--logLevel', 'error'], {
-        cwd: dir,
-        stdio: 'inherit',
-        shell: process.platform === 'win32',
-      });
+      for (const mode of modes)
+        execFileSync(npx, ['vite', 'build', '--mode', mode, '--logLevel', 'error'], {
+          cwd: dir,
+          stdio: 'inherit',
+          shell: process.platform === 'win32',
+        });
     }
   }
 }
@@ -354,6 +392,8 @@ function toPalettePng(png) {
 
 const DASHBOARD_DEMO = join(ROOT, 'projects/dashboard-demo');
 const SVG_DEMO = join(ROOT, 'projects/svg-demo');
+const GRID_DEMO = join(ROOT, 'projects/grid-demo');
+const REPORT_DEMO = join(ROOT, 'projects/report-demo');
 const PW = 'mat-docs-screenshots';
 
 /** logic.json mẫu cho projects/dashboard-demo (chỉ trong bộ nhớ, không ghi vào project mẫu). */
@@ -490,10 +530,141 @@ async function online(page, user, shot) {
   );
 }
 
+// ---------------------------------------------------------------- PDF: bắt tệp tải về, vẽ trang đầu (feature 015)
+
+/** Chặn `a.click()` tải Blob của trang: lưu byte (base64) vào window.__dl để đọc lại. */
+async function hookDownloads(page) {
+  await page.evaluateOnNewDocument(() => {
+    window.__dl = [];
+    const blobs = new Map();
+    const create = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = (b) => {
+      const u = create(b);
+      blobs.set(u, b);
+      return u;
+    };
+    const click = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {
+      const b = this.download ? blobs.get(this.href) : null;
+      if (!b) return click.call(this);
+      const r = new FileReader();
+      r.onload = () => window.__dl.push({ name: this.download, data: String(r.result) });
+      r.readAsDataURL(b);
+    };
+  });
+}
+
+/** Bấm nút xuất PDF của trang báo cáo và trả byte của tệp. */
+async function downloadPdf(page) {
+  const n = await page.evaluate(() => window.__dl.length);
+  await page.click('.rpt-bar button.pdf');
+  await webE2e.until(
+    async () => (await page.evaluate(() => window.__dl.length)) > n,
+    'tải PDF',
+    60000,
+  );
+  const d = await page.evaluate((i) => window.__dl[i], n);
+  return Buffer.from(d.data.split(',')[1], 'base64');
+}
+
+/** Vẽ trang đầu của PDF bằng pdf.js (bản serverless của unpdf, không cần worker) trong một trang Chrome riêng. */
+async function shotPdfPage(bytes, name) {
+  const pdfjs = readFileSync(join(ROOT, 'node_modules/unpdf/dist/pdfjs.mjs'));
+  const html = `<!doctype html><meta charset="utf-8"><body style="margin:0;background:#8a9399">
+<canvas id="c" style="display:block;margin:16px auto;box-shadow:0 2px 12px rgba(0,0,0,.35)"></canvas>
+<script type="module">
+const pdfjs = await import('/pdfjs.mjs');
+const data = new Uint8Array(await (await fetch('/doc.pdf')).arrayBuffer());
+const doc = await pdfjs.getDocument({ data, isEvalSupported: false }).promise;
+const p = await doc.getPage(1);
+const v = p.getViewport({ scale: 1.6 });
+const c = document.getElementById('c');
+c.width = v.width; c.height = v.height;
+await p.render({ canvasContext: c.getContext('2d'), viewport: v }).promise;
+document.body.dataset.done = '1';
+</script>`;
+  const server = createServer((req, res) => {
+    if (req.url === '/pdfjs.mjs') {
+      res.writeHead(200, { 'content-type': 'text/javascript' });
+      return res.end(pdfjs);
+    }
+    if (req.url === '/doc.pdf') {
+      res.writeHead(200, { 'content-type': 'application/pdf' });
+      return res.end(bytes);
+    }
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.end(html);
+  });
+  await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
+  const { context, page } = await newPage();
+  try {
+    await page.setViewport({ width: 1400, height: 1000, deviceScaleFactor: 1 });
+    await page.goto(`http://127.0.0.1:${server.address().port}/`);
+    await page.waitForSelector('body[data-done="1"]', { timeout: 60000 });
+    const box = await page.$eval('#c', (c) => [c.width, c.height]);
+    await page.setViewport({ width: box[0] + 32, height: box[1] + 32, deviceScaleFactor: 1 });
+    await sleep(200);
+    await shooter(page)(name);
+  } finally {
+    await context.close();
+    server.close();
+  }
+}
+/** Sơ đồ khối Logic (feature 015): mức phóng `z`, khối `key` ở giữa vùng vẽ (lệch trái để thấy cổng phía trước nó). */
+async function diagramCenter(page, key, z, dy = 0) {
+  await page.evaluate(
+    (k, zoom, off) => {
+      const d = document.querySelector('mat-logic-diagram');
+      const n = d.graph().byKey.get(k);
+      const v = d.querySelector('.lgd-view');
+      d.setViewport({
+        z: zoom,
+        tx: v.clientWidth / 2 - (n.x + n.w / 2 - 44) * zoom,
+        ty: v.clientHeight / 2 - (n.y + n.h / 2 + off) * zoom,
+      });
+    },
+    key,
+    z,
+    dy,
+  );
+  await sleep(300);
+}
+
 // ---------------------------------------------------------------- Cảnh của Studio
 
 /** Mỗi cảnh: tên nhóm, hàm nhận { page, shot(name) }. Ảnh tên `<tiền tố>-<tên>.png`. */
 const studioScenes = [
+  {
+    // feature 015: trình thiết kế báo cáo (cấu trúc, xem trước trực tiếp, thuộc tính)
+    name: 'studio-bao-cao',
+    async run({ page, shot }) {
+      await openAndWait(page, readProject(REPORT_DEMO), 'D:\\Projects\\report-demo');
+      await closeTaskCard(page);
+      // khung dưới (Thuộc tính của project) thấp nhất: trình thiết kế có chỗ
+      await page.evaluate(() =>
+        window.__matApp.setLayout(
+          { inspectorHeight: 90 },
+          { leftColumnHeight: 700, centerHeight: 640 },
+        ),
+      );
+      await expandNode(page, 'reports');
+      await treeNode(page, 'report:nang-luong-ngay');
+      await page.waitForSelector('mat-templates-editor mat-report-view');
+      await sleep(1500);
+      // chọn cột Công suất ở Cấu trúc: Thuộc tính của cột ở bên phải, cột có viền chọn ở xem trước
+      await page.$eval('mat-templates-editor [data-node="col:1"]', (b) => b.click());
+      await sleep(1500);
+      await shot('eng-thiet-ke-bao-cao');
+      await treeNode(page, 'report:alarm-ngay');
+      await page.waitForSelector('mat-templates-editor mat-report-view');
+      await sleep(2000);
+      await shot('eng-thiet-ke-bao-cao-alarm');
+      await treeNode(page, 'reports');
+      await page.waitForSelector('mat-reports-list [data-preset]');
+      await sleep(500);
+      await shot('eng-thu-vien-mau-bao-cao');
+    },
+  },
   {
     name: 'studio-tong-quan',
     async run({ page, shot }) {
@@ -527,6 +698,40 @@ const studioScenes = [
       await page.waitForSelector('mat-template-instance-dialog [role="dialog"]');
       await sleep(300);
       await shot('eng-template-ban-sao');
+    },
+  },
+  {
+    // feature 012: trình soạn bố cục lưới (hàng, cột, ô) trên project 1.1 chủ đề vivid
+    name: 'studio-luoi',
+    async run({ page, shot }) {
+      await openAndWait(page, readProject(GRID_DEMO), 'D:\\Projects\\grid-demo');
+      await treeNode(page, 'screen:bang-dieu-khien');
+      await page.waitForSelector('mat-grid-editor .ge-cell');
+      await page.$eval('mat-grid-editor .ge-cell[data-cell="c5"]', (e) => e.click());
+      await sleep(900);
+      await shot('eng-bo-cuc-luoi');
+      // Xem trước Mô phỏng trên lưới (bảng trước/sau 012): widget có giá trị thay vì "?".
+      const preview = (label) =>
+        page.evaluate(
+          (l) =>
+            [...document.querySelectorAll('button')]
+              .find((b) => b.textContent.trim() === l && b.closest('mat-screen-editor'))
+              ?.click(),
+          label,
+        );
+      await preview('Mô phỏng');
+      await sleep(2500);
+      await shot('eng-luoi-mo-phong');
+      await preview('Tắt');
+      await sleep(300);
+      await page.$eval('mat-grid-editor [data-act="add-row"]', (b) => b.click());
+      await page.waitForSelector('mat-grid-editor [data-preset]');
+      await sleep(300);
+      await shot('eng-them-hang');
+      // feature 014: mẫu hàng có sẵn widget, thêm "4 thẻ chỉ số"
+      await page.$eval('mat-grid-editor [data-template="tiles4"]', (b) => b.click());
+      await sleep(900);
+      await shot('eng-mau-hang-the-chi-so');
     },
   },
   {
@@ -564,14 +769,62 @@ const studioScenes = [
     async run({ page, shot }) {
       await openAndWait(page, dashboardWithLogic(), 'D:\\Projects\\dashboard-demo');
       await treeNode(page, 'logic');
-      await page.waitForSelector('mat-logic-editor table.lg-grid');
+      // Feature 015: Sơ đồ là khung nhìn mặc định (khung cao hơn cho vùng vẽ).
+      await page.waitForSelector('mat-logic-diagram .lgd-view');
       await expandNode(page, 'logic');
       await page.evaluate(() => {
         const app = window.__matApp;
         if (!(app.workspace.taskCard === 'toolbox' && app.workspace.taskCardOpen))
           app.setTaskCard('toolbox');
       });
-      await page.waitForSelector('mat-taskcards .tc-logic [data-block="rule"]');
+      await page.waitForSelector('mat-taskcards .tc-logic [data-gate="and"]');
+      await page.setViewport({ ...VIEWPORT, height: 900 });
+      // cây project hẹp lại để vùng vẽ rộng hơn (sơ đồ ở 90 %, mức nhỏ nhất của Vừa khung)
+      await page.evaluate(() => window.__matApp.setLayout({ leftWidth: 200 }));
+      await sleep(400);
+      await page.$eval('mat-logic-diagram g[data-node="bom1_bat_muc_thap"]', (g) => g.focus());
+      await diagramCenter(page, 'bom1_bat_muc_thap', 0.9, -70);
+      await shot('eng-logic-so-do');
+      // Lỗi trên sơ đồ: Tag lạ và Tag số vào điều kiện BOOL (validator tô đỏ cổng, dây, khối).
+      await page.evaluate(() => {
+        const app = window.__matApp;
+        const doc = structuredClone(app.store.state.outline.logic);
+        doc.rules[1].when = 'TANK09.LEVEL < 20 && LOGIC.CA_NGAY.Q';
+        doc.rules[0].when = 'PUMP01.FLOW';
+        app.store.edit([{ kind: 'logicSet', doc }]);
+      });
+      await sleep(400);
+      await diagramCenter(page, 'bom1_bat_muc_thap', 0.9, -70);
+      await shot('eng-logic-so-do-loi');
+      await page.evaluate(() => window.__matApp.store.undo());
+      await sleep(200);
+      // Thử logic trên sơ đồ: mức 85 % → cổng "> 80" và dây xanh, luật bắn, Ghi PLC nhận false (mô phỏng).
+      await clickSel(page, 'mat-logic-dock [data-tab="test"]');
+      await page.waitForSelector('mat-logic-test [data-act="step"]');
+      await clickSel(page, 'mat-logic-test [data-act="step"]');
+      await clickSel(page, 'mat-logic-test [data-manual="TANK01.LEVEL"]');
+      await page.$eval('mat-logic-test [data-value="TANK01.LEVEL"]', (e) => {
+        e.value = '85';
+        e.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      await clickSel(page, 'mat-logic-test [data-speed="10"]');
+      await clickSel(page, 'mat-logic-test [data-act="play"]');
+      await waitFor(
+        page,
+        () =>
+          document.querySelector('mat-logic-diagram g[data-node="bom1_tat_muc_cao"].fire') !== null,
+        undefined,
+        8000,
+      );
+      await clickSel(page, 'mat-logic-test [data-act="play"]');
+      await diagramCenter(page, 'bom1_tat_muc_cao', 0.9, 70);
+      await shot('eng-logic-so-do-thu');
+      await clickSel(page, 'mat-logic-dock [data-tab="info"]');
+      await page.evaluate(() => window.__matApp.setLayout({ leftWidth: 264 }));
+      await page.setViewport(VIEWPORT);
+      // Bảng (khung nhìn của 011).
+      await clickSel(page, 'mat-logic-editor [data-view="table"]');
+      await page.waitForSelector('mat-logic-editor table.lg-grid');
       await page.click('mat-logic-editor tr[data-id="bom1_bat_muc_thap"] td.rn');
       await sleep(400);
       await shot('eng-logic');
@@ -718,8 +971,8 @@ const live = (page) =>
  * Project của trang vận hành: project mẫu e2e (apps/runtime-web/tests/e2e/fixture-project.mjs) bỏ các item chỉ để thử bảo
  * mật (chuỗi XSS, Tag lạ, màn hình hỏng), tên hiển thị gọn.
  */
-const tramBom = () => {
-  const p = dashboard();
+const tramBom = () => pruneDemo(dashboard());
+function pruneDemo(p) {
   p.active.project.projectName = 'Trạm bơm';
   const drop = { 'tong-quan': ['ghost', 'xss'], bom1: ['xssbtn'] };
   for (const [id, items] of Object.entries(drop)) {
@@ -738,6 +991,21 @@ const tramBom = () => {
   p.active.navigation = prune(p.active.navigation);
   p.active.project.navigation = prune(p.active.project.navigation);
   p.active.screens = p.active.screens.filter((x) => x.id !== 'hong');
+  return p;
+}
+
+/**
+ * Project của cảnh phân quyền (feature 013): project mẫu e2e của 013 (access-fixture.mjs) bỏ item thử bảo mật như trên;
+ * hàng nút đầu màn hình Bơm 1 cao hơn để thấy đủ dòng lý do khóa ("Cần quyền thao tác").
+ */
+const tramBomQuyen = () => {
+  const p = pruneDemo(accessDemo());
+  const f = p.files.get('screens/bom1.screen.json');
+  const tall = new Set(['run', 'start', 'auto', 'back']);
+  f.json = {
+    ...f.json,
+    items: f.json.items.map((i) => (tall.has(i.id) ? { ...i, height: 72 } : i)),
+  };
   return p;
 };
 
@@ -775,6 +1043,126 @@ const ALARMS = () => [
 ];
 
 const webScenes = [
+  {
+    // feature 012, 014: dashboard bố cục lưới của projects/grid-demo (thẻ chỉ số màu, biểu đồ có tiêu đề và ngưỡng)
+    name: 'web-luoi',
+    options: { fixture: () => gridDemoProject() },
+    async run({ page, rt, shot }) {
+      await page.goto(`${rt.httpUrl}/#/bang-dieu-khien`, { waitUntil: 'domcontentloaded' });
+      await live(page);
+      // Biểu đồ đường thời gian thực cần vài chục giây dữ liệu để không trống gần hết khung.
+      await sleep(30000);
+      await shot('op-bo-cuc-luoi');
+    },
+  },
+  {
+    // feature 014: cùng dashboard ở chủ đề Tối (mẫu "Dashboard tối" của Project mới)
+    name: 'web-dashboard-toi',
+    options: { fixture: () => gridDemoProject({ theme: 'dark' }) },
+    async run({ page, rt, shot }) {
+      await page.goto(`${rt.httpUrl}/#/bang-dieu-khien`, { waitUntil: 'domcontentloaded' });
+      await live(page);
+      await sleep(30000);
+      await shot('op-dashboard-toi');
+    },
+  },
+  {
+    // feature 013: đăng nhập bắt buộc, component khóa do quyền, trang Quản trị. Runtime giả phân quyền của e2e
+    // (apps/runtime-web/tests/e2e/access-fake.mjs), kho mẫu accessSeed: vh1 nhóm Ca A, nút Chạy bơm chỉ Quản đốc thao tác.
+    name: 'web-quyen',
+    options: {
+      fixture: tramBomQuyen,
+      access: accessSeed(),
+      config: { viewerLogin: 'required' },
+      drift: false,
+    },
+    async run({ page, rt, shot }) {
+      const path = () => page.evaluate(() => location.pathname).catch(() => '?');
+      const tab = async (id) => {
+        await page.evaluate((h) => (location.hash = h), `#/quan-tri/${id}`);
+        await page.waitForSelector(`#ad-tab-${id}[aria-selected="true"]`);
+        await sleep(300);
+      };
+      const inPreview = (host, id) =>
+        page.waitForFunction(
+          (h, i) =>
+            Boolean(
+              document
+                .querySelector(h + ' mat-screen')
+                ?.shadowRoot?.querySelector('.item[data-item-id="' + i + '"]'),
+            ),
+          { timeout: 10000 },
+          host,
+          id,
+        );
+      // Liên kết trực tiếp khi chưa đăng nhập → trang đăng nhập (sẽ mở lại /bom1).
+      await page.goto(`${rt.httpsUrl}/#/bom1`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.login-card form');
+      await until(
+        async () => (await page.evaluate(() => document.body.innerText)).includes('Trạm bơm'),
+        'tên project',
+        5000,
+      ).catch(() => undefined);
+      await page.type('input[autocomplete="username"]', 'vh1');
+      await page.type('input[autocomplete="current-password"]', PASS.vh1);
+      await sleep(300);
+      await shot('op-dang-nhap-trang');
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+        page.keyboard.press('Enter'),
+      ]);
+      await waitDeep(page, 'mat-w-setpoint', 1, 10000);
+      await live(page);
+      await until(
+        async () =>
+          (await deepEval(
+            page,
+            '.item[data-item-id="run"] > *',
+            'const l = els[0] && els[0].shadowRoot.querySelector("[data-lock]"); return l ? l.getAttribute("data-lock") : null;',
+          )) === 'NO_PERMISSION',
+        'nút Chạy bơm khóa vì quyền',
+      );
+      await sleep(800);
+      await shot('op-can-quyen');
+      // Quản trị viên: đăng xuất vh1, đăng nhập quantri.
+      await page.click('#app-logout-btn');
+      await until(async () => (await path()) === '/login', 'về trang đăng nhập', 8000);
+      await loginPage(page, 'quantri', PASS.quantri);
+      await page.evaluate(() => (location.hash = '#/quan-tri/nguoi-dung'));
+      await page.waitForSelector('[data-user="vh1"]');
+      await sleep(600);
+      await shot('adm-quan-tri-nguoi-dung');
+      // Các tab quyền dài: khung cao hơn (1366 × 1100) để thấy đủ ma trận, khung "Ai được xem / thao tác".
+      await page.setViewport({ ...VIEWPORT, height: 1100 });
+      await tab('quyen-trang');
+      await page.waitForSelector('tr[data-resource="screen:bon-nuoc"]');
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await sleep(300);
+      await shot('adm-quyen-theo-trang');
+      await tab('quyen-thanh-phan');
+      await page.waitForSelector('#ad-comp-screen');
+      await page.select('#ad-comp-screen', 'bom1');
+      await inPreview('.ad-comp', 'run');
+      await page.waitForSelector('.ad-pick[data-pick="run"]');
+      await page.$eval('.ad-pick[data-pick="run"]', (e) => e.click());
+      await page.waitForSelector('.ad-inspector [data-level="operate"]');
+      await page.waitForSelector('.ad-who [data-who="vh1"]');
+      await page.$eval('.ad-inspector', (e) => e.scrollIntoView({ block: 'start' }));
+      await sleep(600);
+      await shot('adm-quyen-component');
+      await tab('xem-voi-tu-cach');
+      await page.select('#ad-viewas-user', 'vh1');
+      await page.$eval('[data-viewas-start]', (e) => e.click());
+      await page.waitForSelector('[data-banner="view-as"]');
+      await page.waitForSelector('.ad-viewas-screens [data-screen="bom1"]');
+      await page.$eval('.ad-viewas-screens [data-screen="bom1"]', (e) => e.click());
+      await inPreview('.ad-viewas-main', 'run');
+      await page.$eval('[role="tablist"]', (e) => e.scrollIntoView({ block: 'start' }));
+      await sleep(800);
+      await shot('adm-xem-voi-tu-cach');
+      await page.setViewport(VIEWPORT);
+    },
+  },
   {
     name: 'web-man-hinh',
     options: { fixture: tramBom, config: { alarms: true }, drift: false },
@@ -837,10 +1225,16 @@ const webScenes = [
   },
   {
     name: 'web-bao-cao',
-    options: { fixture: renamed(reportsProject, 'Trạm điện'), history: {} },
+    options: {
+      fixture: renamed(reportsProject, 'Trạm điện'),
+      history: {},
+      alarmHistory: () => reportAlarmHistory(),
+      logicEvents: () => reportLogicEvents(),
+    },
     async run({ page, rt, shot }) {
       const d = new Date(Date.now() - 86_400_000);
       const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      await hookDownloads(page);
       await page.goto(`${rt.httpsUrl}/#/report/dien-ngay?d=${day}`, {
         waitUntil: 'domcontentloaded',
       });
@@ -851,14 +1245,55 @@ const webScenes = [
         async () =>
           page.evaluate(
             () =>
-              Boolean(document.querySelector('table.rpt')) &&
-              !document.querySelector('.rpt-out [role="status"]'),
+              Boolean(
+                document.querySelector('mat-report-view')?.shadowRoot?.querySelector('table.rpt'),
+              ) && !document.querySelector('.rpt-out [role="status"]'),
           ),
         'bảng báo cáo',
         30000,
       );
-      await sleep(500);
+      // feature 015: thẻ, biểu đồ (ECharts vẽ xong), bảng; trang cao hơn để thấy cả bố cục
+      const drawn = () =>
+        until(
+          async () =>
+            page.evaluate(
+              () =>
+                (document
+                  .querySelector('mat-report-view')
+                  ?.shadowRoot?.querySelectorAll('.chart .ec svg').length ?? 0) > 0,
+            ),
+          'biểu đồ báo cáo',
+          15000,
+        );
+      await drawn();
+      await sleep(800);
       await shot('op-bao-cao');
+      const open = async (hash, name, chart = true) => {
+        await page.evaluate((h) => (window.location.hash = h), hash);
+        await until(
+          async () =>
+            page.evaluate(
+              () =>
+                !!document
+                  .querySelector('mat-report-view')
+                  ?.shadowRoot?.querySelector('table.rpt') &&
+                !document.querySelector('.rpt-out [role="status"]'),
+            ),
+          name,
+          30000,
+        );
+        if (chart) await drawn();
+        await sleep(800);
+        if (name) await shot(name);
+      };
+      await open(`#/report/van-hanh-bom?d=${day}`, 'op-bao-cao-thiet-bi');
+      await open(`#/report/alarm-ngay?d=${day}`, 'op-bao-cao-alarm');
+      await open(`#/report/logic-ngay?d=${day}`, null);
+      await page.setViewport(VIEWPORT);
+      // trang đầu của PDF: báo cáo logic (cột chồng) và báo cáo điện ngày (thẻ, biểu đồ)
+      await shotPdfPage(await downloadPdf(page), 'op-bao-cao-pdf-logic');
+      await open(`#/report/dien-ngay?d=${day}`, 'op-bao-cao');
+      await shotPdfPage(await downloadPdf(page), 'op-bao-cao-pdf');
     },
   },
 ];
@@ -894,8 +1329,12 @@ async function newPage() {
   page.on('pageerror', (e) => console.warn(`  (lỗi trang) ${e}`));
   return { context, page };
 }
+/** Bộ lọc khớp tên cảnh: chỉ chạy cảnh đó và chụp mọi ảnh của nó. */
+const sceneFilter =
+  filter && [...studioScenes, ...webScenes].some((s) => s.name.includes(filter)) ? filter : null;
+const wanted = (scene) => !sceneFilter || scene.name.includes(sceneFilter);
 const shooter = (page) => async (name) => {
-  if (filter && !name.includes(filter)) return;
+  if (filter && !sceneFilter && !name.includes(filter)) return;
   const file = join(OUT, `${name}.png`);
   const raw = Buffer.from(await page.screenshot({ type: 'png' }));
   const small = toPalettePng(raw);
@@ -907,7 +1346,7 @@ const shooter = (page) => async (name) => {
 
 const server = await serveStudio();
 const studioUrl = `http://127.0.0.1:${server.address().port}/?gate=off`;
-for (const scene of studioScenes) {
+for (const scene of studioScenes.filter(wanted)) {
   console.log(`▶ ${scene.name}`);
   const { context, page } = await newPage();
   try {
@@ -922,9 +1361,13 @@ for (const scene of studioScenes) {
 }
 server.close();
 
-for (const scene of webScenes) {
+for (const scene of webScenes.filter(wanted)) {
   console.log(`▶ ${scene.name}`);
-  const rt = await startFakeRuntime({ staticDir: WEB_DIST, ...scene.options });
+  const rt = await startFakeRuntime({
+    staticDir: WEB_DIST,
+    ...scene.options,
+    fixture: themedFixture(scene.options.fixture),
+  });
   if (!rt.httpsUrl) {
     errors.push(`${scene.name}: cần openssl để sinh chứng chỉ thử`);
     await rt.close();

@@ -232,6 +232,31 @@ size_t SessionStore::removeUser(const std::string& user) {
     return before - sessions_.size();
 }
 
+size_t SessionStore::removeUserExcept(const std::string& user, std::string_view keepToken,
+                                      SessionKind keepKind, int64_t rev) {
+    const bool keepValid = formatOf(keepToken, keepKind);
+    const Sha256Digest keep = keepValid ? sha256(keepToken) : Sha256Digest{};
+    const size_t before = sessions_.size();
+    sessions_.erase(
+        std::remove_if(sessions_.begin(), sessions_.end(),
+                       [&](Session& s) {
+                           if (s.user != user) return false;
+                           if (keepValid && s.kind == keepKind && sameHash(s.tokenHash, keep)) {
+                               s.rev = rev;
+                               return false;
+                           }
+                           return true;
+                       }),
+        sessions_.end());
+    return before - sessions_.size();
+}
+
+size_t SessionStore::userCount(const std::string& user, int64_t nowMono) const {
+    return static_cast<size_t>(
+        std::count_if(sessions_.begin(), sessions_.end(),
+                      [&](const Session& s) { return s.user == user && !expiredAt(s, nowMono); }));
+}
+
 size_t SessionStore::activeCount(int64_t nowMono) const {
     return static_cast<size_t>(
         std::count_if(sessions_.begin(), sessions_.end(),

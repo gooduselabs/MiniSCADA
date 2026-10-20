@@ -61,8 +61,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
   const rows = contractRows();
 
   it('contract có đủ các mục (kiểm bộ đọc contract)', () => {
-    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005, cộng 10 lệnh của feature 006 (T084, T152, T189), cộng Hướng dẫn sử dụng (feature 011, T178).
-    expect(rows.length).toBe(49);
+    // 33 lệnh của 004, cộng Đăng nhập…, Đăng xuất (T083) Khôi phục bản trước… (T124) và Audit của thiết bị (T149) của feature 005, cộng 10 lệnh của feature 006 (T084, T152, T189), cộng Hướng dẫn sử dụng (feature 011, T178), cộng Project mới… (2026-10-20).
+    expect(rows.length).toBe(50);
     expect(rows.find((r) => r.id === 'online.download')).toEqual({
       id: 'online.download',
       label: 'Nạp xuống…',
@@ -118,6 +118,9 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'open.driverDiag',
       // feature 007: màn hình 0.3 (không có menu)
       'screen.add',
+      // feature 015: thư viện mẫu báo cáo (bảng lệnh và menu chuột phải của cây)
+      'report.add',
+      'screen.addFree',
       'screen.addPopup',
       'screen.setEntry',
       'screen.props',
@@ -161,6 +164,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'screen.explodeInstance',
       'screen.updateInstances',
       'screen.faceplate',
+      // feature 012 (FR-040): chuyển màn hình tự do sang lưới
+      'screen.convertToGrid',
       // feature 011: trình vẽ SVG (bảng lệnh, thanh công cụ và phím của trình vẽ, menu ngữ cảnh item svg)
       'svg.new',
       'svg.editInDrawing',
@@ -384,5 +389,24 @@ describe('điều kiện bật và lý do', () => {
     }
     expect(commandById('watch.write')!.shortcut).toBe('Ctrl+Shift+Enter');
     expect(t('reason.needOperator')).toContain('operator');
+  });
+
+  it('feature 012 (FR-040): Chuyển sang bố cục lưới cần editor Màn hình, project 1.1, màn hình tự do', () => {
+    const open = ctx({ version03: true, screenEditor: true, format11: true });
+    expect(enabled('screen.convertToGrid', open)).toBe(true);
+    expect(enabled('screen.convertToGrid', { ...open, screenIsGrid: true })).toBe(
+      'reason.alreadyGrid',
+    );
+    expect(enabled('screen.convertToGrid', { ...open, format11: false })).toBe(
+      'reason.needFormat11',
+    );
+    expect(enabled('screen.convertToGrid', { ...open, screenEditor: false })).toBe(
+      'reason.screenNotActive',
+    );
+    expect(enabled('screen.convertToGrid', { ...open, readOnly: true })).toBe('reason.readOnly');
+    expect(enabled('screen.convertToGrid', { ...open, screenPreview: 'sim' })).toBe(
+      'reason.screenPreviewLocked',
+    );
+    expect(commandById('screen.convertToGrid')!.menu).toBeNull();
   });
 });

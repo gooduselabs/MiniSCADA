@@ -16,6 +16,7 @@
       "width": 400,
       "height": 260,
       "props": {
+        "title": "",
         "orientation": "vertical",
         "decimals": 0,
         "showValues": false,

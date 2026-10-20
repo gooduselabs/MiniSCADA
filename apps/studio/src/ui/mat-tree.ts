@@ -40,7 +40,12 @@ const ALARM_MENU: readonly CommandId[] = ['alarm.quickCreate'];
 
 export class MatTree extends AppElement {
   private menuCommands(): readonly CommandId[] {
-    return this.app.commandContext().version05 ? [...MENU_COMMANDS, ...ALARM_MENU] : MENU_COMMANDS;
+    const base = this.app.commandContext().version05
+      ? [...MENU_COMMANDS, ...ALARM_MENU]
+      : MENU_COMMANDS;
+    // feature 015: Báo cáo và mẫu báo cáo có lệnh Thêm báo cáo (thư viện mẫu)
+    const sel = this.menu?.nodeId ?? this.app.ui.treeSel ?? '';
+    return sel === 'reports' || sel.startsWith('report:') ? ['report.add', ...base] : base;
   }
 
   static override properties = { menu: { state: true } };

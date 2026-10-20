@@ -129,4 +129,17 @@ describe('workspace', () => {
       showPhases: false,
     });
   });
+
+  it('feature 015: khung dưới gập/mở nhớ qua lần mở sau, chiều cao giữ nguyên khi gập', () => {
+    const st = new MemStorage();
+    const ws = { ...defaultWorkspace(1440), inspectorHeight: 300, inspectorCollapsed: true };
+    saveWorkspace(st, ws);
+    expect(loadWorkspace(st, 1440)).toMatchObject({
+      inspectorHeight: 300,
+      inspectorCollapsed: true,
+    });
+    expect(defaultWorkspace(1440).inspectorCollapsed).toBe(false);
+    st.setItem(WORKSPACE_KEY, JSON.stringify({ inspectorCollapsed: 'x' }));
+    expect(loadWorkspace(st, 1440).inspectorCollapsed).toBe(false);
+  });
 });

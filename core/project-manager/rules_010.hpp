@@ -26,9 +26,13 @@ bool isShiftCount(double n);
 // Rules of reports.json (`cfg` passed the schema). `logging`: logging.json when it loaded, null
 // when the project has none (`hasLoggingFile` false: groups cannot be resolved, E_RPT_REF_GROUP)
 // or when that file failed (`hasLoggingFile` true: the rules that need it are skipped).
-// `tagTypes`: id -> type, null when tags.json failed.
+// `tagTypes`: id -> type, null when tags.json failed. `format11`: the project is of format 1.1
+// (feature 015, specs/015-reports/plan.md: a key of 1.1 in an older project is E_RPT_KIND; the
+// kinds alarm and logic have no group and no columns; equipment takes BOOL Tags with onTime and
+// starts only). The same order as reportRules of rules-010.ts.
 void reportRules(const nlohmann::json& cfg, const nlohmann::json* logging, bool hasLoggingFile,
-                 const std::map<std::string, std::string>* tagTypes, const Rule010Add& add);
+                 const std::map<std::string, std::string>* tagTypes, const Rule010Add& add,
+                 bool format11 = false);
 
 struct HistoryCtx {
     const nlohmann::json* logging = nullptr;  // null: failed or absent

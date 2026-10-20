@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.1.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "dien",
+      "name": "Điện năng",
+      "mode": "onChange",
+      "minIntervalMs": 1000,
+      "retentionDays": 30,
+      "aggregates": {},
+      "tags": [
+        {
+          "tagId": "METER1.P"
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD"
+        },
+        {
+          "tagId": "PUMP01.FAULT"
+        },
+        {
+          "tagId": "PUMP01.NAME",
+          "maxLength": 16
+        }
+      ]
+    }
+  ]
+}

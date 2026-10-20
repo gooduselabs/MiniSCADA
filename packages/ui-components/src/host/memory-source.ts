@@ -15,6 +15,7 @@ import type {
   AlarmSnapshot,
   AlarmSource,
   AlarmSourceStatus,
+  ItemBlockCode,
   SessionInfo,
   TagInfo,
   TagSource,
@@ -135,6 +136,12 @@ export interface FakeHostOptions {
 export class FakeActionHost implements ActionHost {
   sessionInfo: SessionInfo | null;
   blocked: { code: WriteBlockCode; message: string } | null;
+  /** Feature 013: khóa riêng item (test); null thì không khóa. */
+  itemBlock:
+    | ((ctx: { screen: string; item: string }) => { code: ItemBlockCode; message: string } | null)
+    | null = null;
+  /** Feature 013: popup không được xem (test); null thì không khóa. */
+  popupBlock: ((popup: string) => { code: 'NO_PERMISSION'; message: string } | null) | null = null;
   readonly writes: WriteSpec[] = [];
   readonly calls: string[] = [];
   #pending: Array<{ onPhase: (o: WriteOutcome) => void; done: (o: WriteOutcome) => void }> = [];
@@ -150,6 +157,17 @@ export class FakeActionHost implements ActionHost {
 
   writeBlocked(): { code: WriteBlockCode; message: string } | null {
     return this.blocked;
+  }
+
+  popupBlocked(popup: string): { code: 'NO_PERMISSION'; message: string } | null {
+    return this.popupBlock ? this.popupBlock(popup) : null;
+  }
+
+  itemBlocked(ctx: { screen: string; item: string }): {
+    code: ItemBlockCode;
+    message: string;
+  } | null {
+    return this.itemBlock ? this.itemBlock(ctx) : null;
   }
 
   write(spec: WriteSpec, onPhase: (o: WriteOutcome) => void): Promise<WriteOutcome> {

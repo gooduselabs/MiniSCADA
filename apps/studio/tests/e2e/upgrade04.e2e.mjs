@@ -39,7 +39,7 @@ async function ctrl(page, key) {
 async function openWith(page, files, display) {
   await page.waitForSelector('mat-start-page .start-hero');
   await page.evaluate((f, d) => window.__matMock.useProject(f, d), files, display);
-  await page.$eval('mat-start-page .start-hero .btn.primary', (b) => b.click());
+  await page.$eval('mat-start-page .start-hero [data-cmd="project.open"]', (b) => b.click());
   await page.waitForSelector(`${UP} [role="dialog"]`);
   await waitFor(page, (tag) => document.querySelectorAll(`${tag} .ud-changes li`).length > 0, UP);
 }

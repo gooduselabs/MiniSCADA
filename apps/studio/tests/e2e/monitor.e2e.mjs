@@ -223,7 +223,7 @@ export default async function monitor(ctx) {
 async function scenario({ page, check, shot, axe }, rt) {
   await page.waitForSelector('mat-start-page .start-hero');
   await setTheme(page, 'light');
-  await page.click('mat-start-page .start-hero .btn.primary');
+  await page.click('mat-start-page .start-hero [data-cmd="project.open"]');
   await page.waitForSelector('mat-tree [role="treeitem"]');
 
   // 1. Xem trước Mô phỏng khi không có thiết bị (US3-1, bước 12)

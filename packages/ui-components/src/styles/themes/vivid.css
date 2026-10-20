@@ -1,0 +1,116 @@
+/* Chủ đề vivid (Sáng đa sắc): Radix Colors 3.0.0 (MIT), áp khi :root[data-mat-theme='vivid']. Khai đủ mọi token
+   để không lẫn với industrial tối theo chế độ tối của hệ điều hành.
+   SINH TỰ ĐỘNG bởi tools/gen-theme-tokens.mjs (feature 012, research R3): không sửa tay, sửa script rồi chạy lại. */
+
+:where(:root[data-mat-theme='vivid']) {
+  --mat-bg: #f9f9fb;
+  --mat-surface: #ffffff;
+  --mat-surface-2: #f0f0f3;
+  --mat-text: #1c2024;
+  --mat-text-muted: #60646c;
+  --mat-accent: #3e63dd;
+  --mat-accent-ink: #ffffff;
+  --mat-border: #d9d9e0;
+  --mat-border-strong: #b9bbc6;
+  --mat-good: #207c54;
+  --mat-good-soft: #e6f6eb;
+  --mat-warn: #a25f03;
+  --mat-warn-soft: #fff7c2;
+  --mat-bad: #ce2c31;
+  --mat-bad-soft: #feebec;
+  --mat-info: #0d74ce;
+  --mat-online: #ef5f00;
+  --mat-offline: #60646c;
+  --mat-scrim: rgba(17, 17, 19, 0.4);
+  --mat-shadow: 0 12px 32px rgba(16, 24, 40, 0.16), 0 2px 6px rgba(16, 24, 40, 0.08);
+  --mat-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.08);
+  --mat-radius: 6px;
+  --mat-radius-lg: 10px;
+  --mat-font:
+    'Inter Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --mat-font-mono: 'Cascadia Mono', 'Cascadia Code', Consolas, ui-monospace, Menlo, monospace;
+  --mat-motion: 200ms;
+  --mat-chart-1: #0090ff;
+  --mat-chart-1-soft: #e6f4fe;
+  --mat-chart-2: #12a594;
+  --mat-chart-2-soft: #e0f8f3;
+  --mat-chart-3: #30a46c;
+  --mat-chart-3-soft: #e6f6eb;
+  --mat-chart-4: #ab6400;
+  --mat-chart-4-soft: #fff7c2;
+  --mat-chart-5: #ef5f00;
+  --mat-chart-5-soft: #ffefd6;
+  --mat-chart-6: #e5484d;
+  --mat-chart-6-soft: #feebec;
+  --mat-chart-7: #e93d82;
+  --mat-chart-7-soft: #ffe9f0;
+  --mat-chart-8: #d6409f;
+  --mat-chart-8-soft: #fee9f5;
+  --mat-chart-9: #6e56cf;
+  --mat-chart-9-soft: #f4f0fe;
+  --mat-chart-10: #3e63dd;
+  --mat-chart-10-soft: #edf2fe;
+  --mat-chart-11: #00a2c7;
+  --mat-chart-11-soft: #def7f9;
+  --mat-chart-12: #5c7c2f;
+  --mat-chart-12-soft: #eef6d6;
+  --mat-seq-1: #e6f4fe;
+  --mat-seq-2: #d5efff;
+  --mat-seq-3: #c2e5ff;
+  --mat-seq-4: #acd8fc;
+  --mat-seq-5: #8ec8f6;
+  --mat-seq-6: #5eb1ef;
+  --mat-seq-7: #0090ff;
+  --mat-seq-8: #0588f0;
+  --mat-seq-9: #0d74ce;
+  --mat-div-1: #ce2c31;
+  --mat-div-2: #e5484d;
+  --mat-div-3: #f4a9aa;
+  --mat-div-4: #ffcdce;
+  --mat-div-5: #f0f0f3;
+  --mat-div-6: #c2e5ff;
+  --mat-div-7: #8ec8f6;
+  --mat-div-8: #0090ff;
+  --mat-div-9: #0d74ce;
+  --mat-alarm-red: #ce2c31;
+  --mat-alarm-red-soft: #feebec;
+  --mat-alarm-red-ink: #ffffff;
+  --mat-alarm-orange: #cc4e00;
+  --mat-alarm-orange-soft: #ffefd6;
+  --mat-alarm-orange-ink: #ffffff;
+  --mat-alarm-amber: #ab6400;
+  --mat-alarm-amber-soft: #fff7c2;
+  --mat-alarm-amber-ink: #ffffff;
+  --mat-alarm-blue: #0d74ce;
+  --mat-alarm-blue-soft: #e6f4fe;
+  --mat-alarm-blue-ink: #ffffff;
+  --mat-alarm-purple: #6e56cf;
+  --mat-alarm-purple-soft: #f4f0fe;
+  --mat-alarm-purple-ink: #ffffff;
+  --mat-alarm-teal: #008573;
+  --mat-alarm-teal-soft: #e0f8f3;
+  --mat-alarm-teal-ink: #ffffff;
+  --mat-alarm-gray: #8b8d98;
+  --mat-alarm-gray-soft: #f0f0f3;
+  --mat-alarm-gray-ink: #1c2024;
+  --mat-alarm-green: #218358;
+  --mat-alarm-green-soft: #e6f6eb;
+  --mat-alarm-green-ink: #ffffff;
+  --mat-tile-teal: #0f7f75;
+  --mat-tile-blue: #2563eb;
+  --mat-tile-rose: #e11d48;
+  --mat-tile-violet: #7c3aed;
+  --mat-tile-olive: #4d7c0f;
+  --mat-tile-indigo: #4f46e5;
+  --mat-tile-orange: #c2410c;
+  --mat-tile-cyan: #0e7490;
+  --mat-tile-green: #15803d;
+  --mat-tile-slate: #475569;
+  --mat-tile-ink: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(:root[data-mat-theme='vivid']) {
+    --mat-motion: 0ms;
+  }
+}

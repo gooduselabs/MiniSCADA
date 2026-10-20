@@ -5,7 +5,9 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <chrono>
 #include <cstring>
+#include <map>
 #include <mutex>
 #include <set>
 #include <utility>
@@ -22,7 +24,8 @@ namespace mat {
 namespace {
 
 constexpr int64_t kAuditErrorLogEveryMs = 60000;
-constexpr int64_t kBusyReportEveryMs = 60000;  // auth.busy: at most one record a minute (L4)
+constexpr int64_t kBusyReportEveryMs = 60000;   // auth.busy: at most one record a minute (L4)
+constexpr int64_t kLastLoginEveryMs = 3600000;  // feature 013: lastLoginAt once an hour
 
 // A typed name goes into the audit only when it could be an account name; anything else may be a
 // password typed in the wrong field (SC-005): no user, and "userInvalid" in the detail.
@@ -110,7 +113,8 @@ struct AuthService::Impl {
     bool unlockChecked = false;
     int64_t lastUnlockCheck = 0;
     bool unlockErrorLogged = false;
-    PasswordHasher hasher;  // last: its thread stops first
+    std::map<std::string, int64_t> lastLoginNoted;  // feature 013: wall ms of the last note
+    PasswordHasher hasher;                          // last: its thread stops first
 
     explicit Impl(AuthOptions options)
         : o(std::move(options)),
@@ -130,10 +134,17 @@ struct AuthService::Impl {
 
     // Under `mu`. Changes of users.json end sessions (audit rows queued in `pending`, written by
     // the caller after the lock) and clear lockouts.
-    void refreshLocked(int64_t now, std::vector<AuditEvent>& pending) {
+    void refreshLocked(int64_t now, std::vector<AuditEvent>& pending,
+                       const std::optional<KeepSession>& keep = std::nullopt,
+                       std::vector<std::pair<std::string, size_t>>* ended = nullptr) {
         const AccountChanges ch = accounts.refresh(now);
         for (const auto& name : ch.revoked) {
-            const size_t n = sessions.removeUser(name);
+            const Account* still = accounts.find(name);
+            const size_t n =
+                keep && keep->user == name && still && still->enabled
+                    ? sessions.removeUserExcept(name, keep->token, keep->kind, still->rev)
+                    : sessions.removeUser(name);
+            if (ended) ended->emplace_back(name, n);
             if (n == 0) continue;
             AuditEvent e(AuditAction::AuthSessionRevoked, AuditResult::Ok, AuditChannel::System,
                          "system");
@@ -450,6 +461,26 @@ LoginResult AuthService::loginKind(SessionKind kind, std::string_view user, std:
             s.log("account " + name + ": its password hash uses " + paramsText(target.params) +
                   "; set the password again (mat-runtime --user-passwd " + name + ") to move to " +
                   paramsText(kArgon2Default));
+        // Feature 013: lastLoginAt at most once an hour per account (eMMC budget).
+        if (s.o.noteLogin) {
+            const int64_t wall = s.o.wallMs
+                                     ? s.o.wallMs()
+                                     : std::chrono::duration_cast<std::chrono::milliseconds>(
+                                           std::chrono::system_clock::now().time_since_epoch())
+                                           .count();
+            bool due = false;
+            {
+                std::lock_guard<std::mutex> l(s.mu);
+                std::optional<int64_t> last;
+                if (const Account* acc = s.accounts.find(name)) last = acc->lastLoginAt;
+                const auto noted = s.lastLoginNoted.find(name);
+                if (noted != s.lastLoginNoted.end())
+                    last = last ? std::max(*last, noted->second) : noted->second;
+                due = !last || wall - *last >= kLastLoginEveryMs;
+                if (due) s.lastLoginNoted[name] = wall;
+            }
+            if (due) s.o.noteLogin(name, wall);
+        }
         res.status = LoginStatus::Ok;
         res.user = name;
         res.role = role;
@@ -515,6 +546,9 @@ Access AuthService::authorize(std::string_view token, const ClientAddress& from,
             a.status = AccessStatus::SessionInvalid;
         } else {
             a.role = acc->role;  // read from users.json at every request (research R10)
+            a.groups = acc->groups;
+            a.accountRev = acc->rev;
+            a.usersRev = s.accounts.fileRev();
             if (!roleAtLeast(acc->role, minRole)) {
                 a.status = AccessStatus::Forbidden;
             } else {
@@ -584,6 +618,9 @@ WebAccess AuthService::authorizeWeb(std::string_view token, const ClientAddress&
             a.status = AccessStatus::SessionInvalid;
         } else {
             a.role = acc->role;  // read from users.json at every request (research R10)
+            a.groups = acc->groups;
+            a.accountRev = acc->rev;
+            a.usersRev = s.accounts.fileRev();
             a.csrf = c.csrf;
             a.idleTimeoutS = c.idleLimitS;
             a.maxSessionS = c.maxLimitS;
@@ -640,6 +677,94 @@ AccessStatus AuthService::logoutWeb(std::string_view token, const ClientAddress&
         s.audit(e);
     }
     return status;
+}
+
+std::optional<SessionPrincipal> AuthService::principalOf(std::string_view token,
+                                                         const ClientAddress& from,
+                                                         SessionKind kind) {
+    Impl& s = *impl_;
+    std::vector<AuditEvent> pending;
+    std::optional<SessionPrincipal> out;
+    {
+        std::lock_guard<std::mutex> l(s.mu);
+        const int64_t now = s.mono();
+        s.refreshLocked(now, pending);
+        const std::string ip = kind == SessionKind::Web ? normalizedIp(from.ip) : from.ip;
+        const SessionCheck c = s.sessions.check(
+            token, ip, now, [&](const std::string& u) { return s.revOf(u); }, kind);
+        const Account* acc = c.status == SessionStatus::Ok ? s.accounts.find(c.user) : nullptr;
+        if (acc && acc->enabled) {
+            SessionPrincipal p;
+            p.user = acc->name;
+            p.role = acc->role;
+            p.groups = acc->groups;
+            p.accountRev = acc->rev;
+            p.usersRev = s.accounts.fileRev();
+            out = std::move(p);
+        }
+    }
+    s.auditAll(pending);
+    return out;
+}
+
+std::vector<std::pair<std::string, size_t>> AuthService::reloadAccounts(
+    const std::optional<KeepSession>& keep) {
+    Impl& s = *impl_;
+    std::vector<AuditEvent> pending;
+    std::vector<std::pair<std::string, size_t>> ended;
+    {
+        std::lock_guard<std::mutex> l(s.mu);
+        s.accounts.recheckNow();
+        s.refreshLocked(s.mono(), pending, keep, &ended);
+    }
+    s.auditAll(pending);
+    return ended;
+}
+
+std::vector<AccountSummary> AuthService::accountSummaries() {
+    Impl& s = *impl_;
+    std::vector<AuditEvent> pending;
+    std::vector<AccountSummary> out;
+    {
+        std::lock_guard<std::mutex> l(s.mu);
+        const int64_t now = s.mono();
+        s.refreshLocked(now, pending);
+        const int64_t wall = s.o.wallMs ? s.o.wallMs()
+                                        : std::chrono::duration_cast<std::chrono::milliseconds>(
+                                              std::chrono::system_clock::now().time_since_epoch())
+                                              .count();
+        for (const std::string& name : s.accounts.names()) {
+            const Account* a = s.accounts.find(name);
+            if (!a) continue;
+            AccountSummary sum;
+            sum.name = a->name;
+            sum.role = a->role;
+            sum.groups = a->groups;
+            sum.enabled = a->enabled;
+            sum.lastLoginAt = a->lastLoginAt;
+            sum.createdAt = a->createdAt;
+            sum.updatedAt = a->updatedAt;
+            sum.sessions = s.sessions.userCount(a->name, now);
+            const int64_t until = s.guard.lockedUntilMono(guardName(a->name), now);
+            if (until > now) sum.lockedUntilMs = wall + (until - now);
+            out.push_back(std::move(sum));
+        }
+    }
+    s.auditAll(pending);
+    return out;
+}
+
+int64_t AuthService::usersRev() {
+    Impl& s = *impl_;
+    std::vector<AuditEvent> pending;
+    int64_t rev = 0;
+    {
+        std::lock_guard<std::mutex> l(s.mu);
+        s.refreshLocked(s.mono(), pending);
+        rev = s.accounts.fileRev();
+    }
+    s.auditAll(pending);
+    return rev;
 }
 
 bool AuthService::setupRequired() {

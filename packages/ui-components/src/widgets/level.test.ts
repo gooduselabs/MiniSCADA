@@ -70,7 +70,7 @@ describe('mat-w-level (FR-027)', () => {
     expect(fill(el).style.background).toMatch(/#15703a|rgb\(21, 112, 58\)/);
   });
 
-  it('quality BAD: nhãn chữ, phần đầy mờ; UNKNOWN: "?" và không có aria-valuenow', async () => {
+  it('quality BAD: nhãn chữ, phần đầy mờ; UNKNOWN: "?", aria-valuenow = min (role=meter bắt buộc có)', async () => {
     const src = makeSource([tagInfo('t1')]);
     src.set('t1', { value: 50, quality: 'BAD' });
     const bad = await mount(level(), src);
@@ -78,7 +78,7 @@ describe('mat-w-level (FR-027)', () => {
     expect(fill(bad).classList.contains('dim')).toBe(true);
     const unk = await mount(level(undefined, 'lạ'), src);
     expect(textOf(unk, '.value')).toBe('?');
-    expect(unk.shadowRoot!.querySelector('.w')!.hasAttribute('aria-valuenow')).toBe(false);
+    expect(unk.shadowRoot!.querySelector('.w')!.getAttribute('aria-valuenow')).toBe('0');
     expect(fill(unk).style.height).toBe('0%');
   });
 

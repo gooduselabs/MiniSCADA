@@ -12,6 +12,8 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 
 #include "core/audit/audit_log.hpp"
 #include "core/auth/account_store.hpp"
@@ -72,6 +74,38 @@ struct Access {
     std::optional<Role> role;    // Ok, Forbidden
     int64_t idleRemainingS = 0;  // Ok
     int64_t lifetimeRemainingS = 0;
+    // Feature 013 (Ok, Forbidden): what the access model needs of the account, read with the role.
+    std::vector<std::string> groups;
+    int64_t accountRev = 0;  // rev of the account
+    int64_t usersRev = 0;    // rev of users.json
+};
+
+// Feature 013: the person behind a live session (contracts/access-model.md §4).
+struct SessionPrincipal {
+    std::string user;
+    Role role = Role::Viewer;
+    std::vector<std::string> groups;
+    int64_t accountRev = 0;
+    int64_t usersRev = 0;
+};
+
+// Feature 013 (GET /api/v1/admin/users): one account as the admin API lists it, never a hash.
+struct AccountSummary {
+    std::string name;
+    Role role = Role::Viewer;
+    std::vector<std::string> groups;
+    bool enabled = true;
+    std::optional<int64_t> lockedUntilMs;  // UTC ms of the end of a lock of the name, if any
+    std::optional<int64_t> lastLoginAt;
+    std::string createdAt, updatedAt;  // ISO 8601 as in users.json
+    size_t sessions = 0;
+};
+
+// Feature 013: the session that a change of its own account keeps (POST /web/password).
+struct KeepSession {
+    std::string user;
+    std::string token;
+    SessionKind kind = SessionKind::Web;
 };
 
 // The answer of authorizeWeb: Access plus what the page and the gate need of a web session.
@@ -108,6 +142,11 @@ struct AuthOptions {
     // else is removed unused, logged and audited (account.unlock denied, UNLOCK_REQUEST_REFUSED).
     // Tests give the user that runs them.
     uid_t requestFileOwner = 0;
+    // Feature 013 (users.json 1.1.0 lastLoginAt): called after a sign-in (not a reauth) when the
+    // account's last sign-in is an hour old or more (at most once an hour per account in this
+    // process too), on the calling thread, outside the lock. Empty: nothing written.
+    std::function<void(const std::string& user, int64_t wallMs)> noteLogin;
+    std::function<int64_t()> wallMs;  // UTC ms; empty: the system clock
 };
 
 constexpr const char* kUnlockRequestFileName = "auth-unlock.req";
@@ -156,6 +195,19 @@ class AuthService {
     // Audit auth.reauth ok / failed (and auth.lockout). `password` is wiped before return.
     LoginResult reauthenticate(std::string_view user, std::string& password,
                                const ClientAddress& from);
+
+    // Feature 013. The person of a live session (no idle restart); nullopt when it does not check
+    // out (or the account is disabled or gone).
+    std::optional<SessionPrincipal> principalOf(std::string_view token, const ClientAddress& from,
+                                                SessionKind kind);
+    // users.json was written in this process (admin API): read it now, end the sessions of every
+    // account whose rev changed or that is gone (audit auth.session-revoked), clear the lockouts of
+    // the accounts unlocked, keep `keep` (it gets the new rev). Returns the sessions ended for
+    // each account.
+    std::vector<std::pair<std::string, size_t>> reloadAccounts(
+        const std::optional<KeepSession>& keep = std::nullopt);
+    std::vector<AccountSummary> accountSummaries();
+    int64_t usersRev();
 
     bool setupRequired();  // users.json missing or without account (device identity)
     UsersStatus accountsStatus();

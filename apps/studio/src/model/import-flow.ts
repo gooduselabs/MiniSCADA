@@ -5,6 +5,7 @@
 // store hay giao diện; mọi thứ ngoài vào qua `ImportFlowDeps`. Kết quả chạy muộn của lượt trước bị bỏ (đổi Tối ưu liên
 // tiếp, Hủy khi đang nhập).
 import { LIMITS_03, LIMITS_04, type ScreenModel, type SvgItem } from '@mat/project-schema';
+import { placeInGrid } from './grid-ops.ts';
 import type { ImportResult } from '@mat/svg-import';
 import type { SvgOpenOutcome } from '../platform/types.ts';
 import { nextItemId } from './screen-edit/clipboard.ts';
@@ -133,7 +134,8 @@ export function planImport(
     bindingFile,
     change: {
       edits: [
-        { kind: 'screenUpsert', screen: { ...screen, items: [...screen.items, item] } },
+        // màn hình lưới (feature 012): item không tọa độ, vào ô trống đầu tiên
+        { kind: 'screenUpsert', screen: placeInGrid(screen, item) },
         {
           kind: 'svgBindings',
           file: bindingFile,

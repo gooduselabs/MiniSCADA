@@ -2,6 +2,13 @@
   "description": "Danh mục mã lỗi và cảnh báo duy nhất (feature 011, FR-006). Mỗi mã E_*, W_* và mã lỗi API mà server/, core/, drivers/, packages/*/src dùng phải có ở đây (tools/gen-error-codes.test.mjs). Sinh docs/user/error-codes.md bằng node tools/gen-error-codes.mjs.",
   "codes": [
     {
+      "code": "ACCESS_DENIED",
+      "http": 403,
+      "group": "auth",
+      "message": "Bạn không có quyền với trang hoặc component này.",
+      "usedIn": ["server", "server/http"]
+    },
+    {
       "code": "ALARM_DISABLED",
       "http": 409,
       "group": "alarm",
@@ -205,11 +212,25 @@
       "usedIn": ["core/expression"]
     },
     {
+      "code": "CONFLICT",
+      "http": 409,
+      "group": "auth",
+      "message": "Dữ liệu đã đổi bởi người khác, tải lại rồi thử lại.",
+      "usedIn": ["server/http"]
+    },
+    {
       "code": "CONNECTION_BAD",
       "http": null,
       "group": "write",
       "message": "Kết nối tới PLC đang mất.",
       "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "CONTAINS_NAME",
+      "http": 400,
+      "group": "auth",
+      "message": "Mật khẩu chứa tên tài khoản (lý do của WEAK_PASSWORD).",
+      "usedIn": ["server/http"]
     },
     {
       "code": "CSRF_FAILED",
@@ -343,6 +364,13 @@
       "group": "deploy",
       "message": "Không khởi động lại được runtime",
       "usedIn": ["core/project-store"]
+    },
+    {
+      "code": "EXISTS",
+      "http": 409,
+      "group": "auth",
+      "message": "Tên đã có, chọn tên khác.",
+      "usedIn": ["server/http"]
     },
     {
       "code": "EXPECT_NOT_BOOL",
@@ -860,6 +888,62 @@
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
+      "code": "E_LAYOUT_COLUMNS",
+      "http": null,
+      "group": "screens",
+      "message": "Bố cục lưới phải có đúng 12 cột (mode grid)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LAYOUT_ID",
+      "http": null,
+      "group": "screens",
+      "message": "Id hàng hoặc ô của bố cục lưới sai dạng hoặc bị trùng",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LAYOUT_ITEM_DUP",
+      "http": null,
+      "group": "screens",
+      "message": "Một component nằm ở nhiều ô của bố cục lưới",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LAYOUT_ITEM_POS",
+      "http": null,
+      "group": "screens",
+      "message": "Component của màn hình lưới có tọa độ, hoặc component của màn hình tự do thiếu tọa độ",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LAYOUT_ITEM_REF",
+      "http": null,
+      "group": "screens",
+      "message": "Ô của bố cục lưới trỏ tới component không có trên màn hình",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LAYOUT_LIMIT",
+      "http": null,
+      "group": "screens",
+      "message": "Bố cục lưới quá 100 hàng, hoặc một hàng không có ô hay có quá 12 ô",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LAYOUT_SPAN",
+      "http": null,
+      "group": "screens",
+      "message": "Độ rộng ô ngoài 1 đến 12 cột, khoảng trống trước ô ngoài 0 đến 11, hoặc tổng các ô của một hàng quá 12 cột",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_LAYOUT_VERSION",
+      "http": null,
+      "group": "screens",
+      "message": "Bố cục lưới và chủ đề cần project định dạng 1.1 và runtime 1.1.0 trở lên",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
       "code": "E_LIMIT",
       "http": null,
       "group": "format",
@@ -1357,6 +1441,13 @@
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
+      "code": "E_RPT_KIND",
+      "http": null,
+      "group": "history",
+      "message": "Khóa báo cáo của định dạng 1.1 (org, kind, week/range, tiles, chart, onTime/starts) ở project cũ, hoặc không hợp với loại báo cáo (alarm/logic có group/columns; equipment chỉ Tag BOOL và onTime/starts; starts ngoài equipment)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
       "code": "E_RPT_LIMIT",
       "http": null,
       "group": "history",
@@ -1465,6 +1556,20 @@
       "group": "screens",
       "message": "Một màn hình dùng hơn 1000 Tag khác nhau (giới hạn của một lần đăng ký dữ liệu sống)",
       "usedIn": ["core/common", "core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SECURITY_ITEM",
+      "http": null,
+      "group": "screens",
+      "message": "Mức thao tác (security.operate) đặt cho component không thao tác được: widget chỉ hiển thị, hoặc SVG không có sự kiện ghi",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_SECURITY_LEVEL",
+      "http": null,
+      "group": "screens",
+      "message": "Vai trò tối thiểu của màn hình hoặc component sai: mức thao tác là viewer, thấp hơn mức xem hay khác minRole, hoặc khai ở project định dạng 1.0 (cần 1.1)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
       "code": "E_SERIAL_NOT_ALLOWED",
@@ -1830,6 +1935,13 @@
       "usedIn": ["core/tag-engine", "drivers/modbus"]
     },
     {
+      "code": "IN_USE",
+      "http": 409,
+      "group": "auth",
+      "message": "Còn đang được dùng (thành viên hoặc quy tắc quyền), gỡ trước khi xóa.",
+      "usedIn": ["server/http"]
+    },
+    {
       "code": "KEYSET_KEY",
       "http": null,
       "group": "update",
@@ -1849,6 +1961,13 @@
       "group": "update",
       "message": "mat-update-verify không ghi được khóa của gói keyset",
       "usedIn": ["server/updater"]
+    },
+    {
+      "code": "LAST_ADMIN",
+      "http": 409,
+      "group": "auth",
+      "message": "Phải còn ít nhất một quản trị viên đang bật.",
+      "usedIn": ["server/http"]
     },
     {
       "code": "LENGTH_REQUIRED",
@@ -2087,6 +2206,13 @@
       "group": "history",
       "message": "Nhóm này không bật bảng tổng hợp.",
       "usedIn": ["core/historian", "server/http"]
+    },
+    {
+      "code": "NO_BACKUP",
+      "http": 404,
+      "group": "auth",
+      "message": "Không có bản sao trước để khôi phục.",
+      "usedIn": ["server/http"]
     },
     {
       "code": "NO_BASE_PROJECT",
@@ -2453,6 +2579,13 @@
       "usedIn": ["server/http"]
     },
     {
+      "code": "REAUTH_REQUIRED",
+      "http": 403,
+      "group": "auth",
+      "message": "Cần nhập lại đúng mật khẩu của bạn để xác nhận.",
+      "usedIn": ["server/http"]
+    },
+    {
       "code": "RECEIVE_ABORTED",
       "http": null,
       "group": "deploy",
@@ -2593,6 +2726,13 @@
       "usedIn": ["server"]
     },
     {
+      "code": "STORE_INVALID",
+      "http": 503,
+      "group": "auth",
+      "message": "Kho tài khoản hoặc quyền trên thiết bị bị hỏng; chỉ quản trị viên vào được, khôi phục bản trước.",
+      "usedIn": ["server/http"]
+    },
+    {
       "code": "STORE_IO",
       "http": 500,
       "group": "deploy",
@@ -2654,6 +2794,20 @@
       "group": "quality",
       "message": "Dữ liệu giữ qua mất điện quá lớn để ghi vào file lưu",
       "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "TOO_LONG",
+      "http": 400,
+      "group": "auth",
+      "message": "Mật khẩu dài quá 128 ký tự (lý do của WEAK_PASSWORD).",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "TOO_SHORT",
+      "http": 400,
+      "group": "auth",
+      "message": "Mật khẩu ngắn hơn 15 ký tự (lý do của WEAK_PASSWORD).",
+      "usedIn": ["server/http"]
     },
     {
       "code": "TRY_AGAIN_LATER",
@@ -2838,6 +2992,13 @@
       "usedIn": ["server", "server/http"]
     },
     {
+      "code": "WEAK_PASSWORD",
+      "http": 400,
+      "group": "auth",
+      "message": "Mật khẩu không đạt quy tắc (15 đến 128 ký tự, không chứa tên tài khoản).",
+      "usedIn": ["server/http"]
+    },
+    {
       "code": "WRITE_TIMEOUT",
       "http": null,
       "group": "write",
@@ -3003,6 +3164,13 @@
       "http": null,
       "group": "screens",
       "message": "Item nằm hoàn toàn ngoài màn hình",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_LAYOUT_ITEM_ORPHAN",
+      "http": null,
+      "group": "screens",
+      "message": "Component của màn hình lưới không nằm trong ô nào nên không hiển thị",
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {

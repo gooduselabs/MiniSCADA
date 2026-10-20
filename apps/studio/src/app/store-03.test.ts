@@ -147,7 +147,7 @@ describe('StudioStore: project 0.3', () => {
     await store.idle();
     const plan = store.state.upgradePlan;
     expect(plan && plan.ok && plan.changes.some((c) => c.kind === 'minRuntime')).toBe(true);
-    const r = await store.upgrade();
+    const r = await store.upgrade('1.0'); // đích 1.0 chọn rõ (mặc định là 1.1 từ feature 012)
     expect(r.ok).toBe(true);
     expect(store.state.pendingUpgrade).toBe(false);
     expect(platform.control.writes).toEqual([]);

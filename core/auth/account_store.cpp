@@ -63,14 +63,15 @@ FileText readSmallFile(const std::string& path, bool enforceMode) {
         return fail("its group may write it (mode " + modeText(st.st_mode) +
                     "), so it is not used; it must be 0640 root:matscada");
     }
-    if (enforceMode && st.st_uid != 0) {
+    // Feature 013: auth/users.json belongs to the service user, the seed in /etc to root.
+    if (enforceMode && st.st_uid != 0 && st.st_uid != ::geteuid()) {
         ::close(fd);
         return fail("its owner is uid " + std::to_string(st.st_uid) +
-                    ", not root, so it is not used; it must be 0640 root:matscada");
+                    ", neither root nor this process, so it is not used");
     }
     if (st.st_size > static_cast<off_t>(kUsersFileMaxBytes)) {
         ::close(fd);
-        return fail("larger than 256 KB");
+        return fail("larger than 512 KB");
     }
     char buf[4096];
     ssize_t n;
@@ -85,7 +86,7 @@ FileText readSmallFile(const std::string& path, bool enforceMode) {
     const int readErrno = errno;
     ::close(fd);
     if (n < 0) return fail(std::string("cannot read: ") + std::strerror(readErrno));
-    if (r.text.size() > kUsersFileMaxBytes) return fail("larger than 256 KB");
+    if (r.text.size() > kUsersFileMaxBytes) return fail("larger than 512 KB");
     return r;
 }
 
@@ -140,6 +141,15 @@ AccountEditError commitKeepingAnAdministrator(UsersFile& f, UsersFile changed) {
 
 }  // namespace
 
+// ^[a-z][a-z0-9-]{1,31}$ (validGroupId of access_model, kept here so that the accounts do not need
+// the access model).
+static bool validGroupIdText(const std::string& id) {
+    if (id.size() < 2 || id.size() > 32 || id[0] < 'a' || id[0] > 'z') return false;
+    for (const char c : id.substr(1))
+        if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-')) return false;
+    return true;
+}
+
 bool validAccountName(std::string_view name) {
     if (name.size() < 3 || name.size() > 32) return false;
     if (name[0] < 'a' || name[0] > 'z') return false;
@@ -179,7 +189,11 @@ UsersRead parseUsers(std::string_view text) {
     if (!majorOne(sv->get<std::string>())) return fail("schemaVersion is not 1.x.y");
     const nlohmann::json* users = member(doc, "users");
     if (!users || !users->is_array()) return fail("no users array");
-    if (users->size() > kMaxAccounts) return fail("more than 64 accounts");
+    if (users->size() > kMaxAccounts) return fail("more than 200 accounts");
+    // Feature 013 (1.1.0): the rev of the file; a 1.0.0 file has none.
+    if (const nlohmann::json* frev = member(doc, "rev")) {
+        if (!nonNegativeInt(*frev, r.file.rev)) return fail("rev is not an integer >= 0");
+    }
     std::set<std::string> names;
     for (size_t i = 0; i < users->size(); ++i) {
         const nlohmann::json& u = (*users)[i];
@@ -216,6 +230,25 @@ UsersRead parseUsers(std::string_view text) {
             return fail(who + ": createdAt or updatedAt is not text");
         a.createdAt = created->get<std::string>();
         a.updatedAt = updated->get<std::string>();
+        if (const nlohmann::json* groups = member(u, "groups")) {
+            if (!groups->is_array() || groups->size() > kMaxGroupsPerAccount)
+                return fail(who + ": groups is not an array of at most 16 group ids");
+            std::set<std::string> seen;
+            for (const auto& g : *groups) {
+                if (!g.is_string() || !validGroupIdText(g.get<std::string>()) ||
+                    !seen.insert(g.get<std::string>()).second)
+                    return fail(who + ": groups has a group id that is not valid or twice");
+                a.groups.push_back(g.get<std::string>());
+            }
+        }
+        if (const nlohmann::json* last = member(u, "lastLoginAt")) {
+            int64_t ms = 0;
+            if (!last->is_null()) {
+                if (!nonNegativeInt(*last, ms))
+                    return fail(who + ": lastLoginAt is not an integer >= 0");
+                a.lastLoginAt = ms;
+            }
+        }
         std::string why;
         a.hash = parsePhc(a.passwordHash, &why);
         if (!a.hash) r.damaged.push_back(a.name + ": " + why);
@@ -241,17 +274,23 @@ UsersRead readUsersFile(const std::string& path, bool enforceMode) {
 
 std::string usersJson(const UsersFile& f) {
     nlohmann::ordered_json users = nlohmann::ordered_json::array();
-    for (const auto& a : f.users)
-        users.push_back({{"name", a.name},
-                         {"role", roleName(a.role)},
-                         {"enabled", a.enabled},
-                         {"passwordHash", a.passwordHash},
-                         {"rev", a.rev},
-                         {"unlockSeq", a.unlockSeq},
-                         {"createdAt", a.createdAt},
-                         {"updatedAt", a.updatedAt}});
+    for (const auto& a : f.users) {
+        nlohmann::ordered_json u = {{"name", a.name},
+                                    {"role", roleName(a.role)},
+                                    {"enabled", a.enabled},
+                                    {"groups", a.groups},
+                                    {"passwordHash", a.passwordHash},
+                                    {"rev", a.rev},
+                                    {"unlockSeq", a.unlockSeq},
+                                    {"createdAt", a.createdAt},
+                                    {"updatedAt", a.updatedAt}};
+        if (a.lastLoginAt) u["lastLoginAt"] = *a.lastLoginAt;
+        users.push_back(std::move(u));
+    }
+    // The first write of a 1.0.0 file makes it 1.1.0 (feature 013).
     nlohmann::ordered_json doc;
-    doc["schemaVersion"] = f.schemaVersion;
+    doc["schemaVersion"] = kUsersSchemaVersion;
+    doc["rev"] = f.rev;
     doc["users"] = std::move(users);
     return doc.dump(2) + "\n";
 }
@@ -260,7 +299,7 @@ bool writeUsersFile(const std::string& path, const UsersFile& f, std::string& er
                     std::string* warning, const UsersWriteOptions& opts) {
     const std::string text = usersJson(f);
     if (text.size() > kUsersFileMaxBytes) {
-        err = "file tài khoản sẽ vượt 256 KB: không ghi gì";
+        err = "file tài khoản sẽ vượt 512 KB: không ghi gì";
         return false;
     }
     std::string tmp = path + ".tmp-XXXXXX";
@@ -329,7 +368,7 @@ const char* accountEditMessage(AccountEditError e) {
         case AccountEditError::NotFound:
             return "không có tài khoản này";
         case AccountEditError::TooMany:
-            return "đã đủ 64 tài khoản";
+            return "đã đủ 200 tài khoản";
         case AccountEditError::LastAdministrator:
             return "không được tắt, xóa hay hạ role tài khoản administrator cuối cùng còn bật";
         case AccountEditError::BadHash:
@@ -406,6 +445,18 @@ AccountEditError unlockAccount(UsersFile& f, const std::string& name, const std:
     Account* a = f.find(name);
     if (!a) return AccountEditError::NotFound;
     a->unlockSeq += 1;
+    a->updatedAt = nowIso;
+    return AccountEditError::None;
+}
+
+AccountEditError setAccountGroups(UsersFile& f, const std::string& name,
+                                  const std::vector<std::string>& groups,
+                                  const std::string& nowIso) {
+    Account* a = f.find(name);
+    if (!a) return AccountEditError::NotFound;
+    if (a->groups == groups) return AccountEditError::None;
+    a->groups = groups;
+    a->rev += 1;
     a->updatedAt = nowIso;
     return AccountEditError::None;
 }
@@ -525,7 +576,20 @@ size_t AccountStore::size() const {
     return impl_->status == UsersStatus::Ok ? impl_->file.users.size() : 0;
 }
 
+std::vector<std::string> AccountStore::names() const {
+    std::vector<std::string> out;
+    if (impl_->status == UsersStatus::Ok)
+        for (const auto& a : impl_->file.users) out.push_back(a.name);
+    return out;
+}
+
 int64_t AccountStore::loads() const { return impl_->loads; }
+
+int64_t AccountStore::fileRev() const {
+    return impl_->status == UsersStatus::Ok ? impl_->file.rev : 0;
+}
+
+void AccountStore::recheckNow() { impl_->checked = false; }
 
 const std::string& AccountStore::path() const { return impl_->path; }
 

@@ -104,7 +104,13 @@ func (c *tlsClient) httpClient() *http.Client {
 
 // forClient: the options of client idx (1-based). With -alternate odd clients go over wss.
 func (o options) forClient(idx int) options {
-	o.useTLS = o.alternate && o.tls != nil && idx%2 == 1
+	o.useTLS = o.tls != nil && (o.wss || (o.alternate && idx%2 == 1))
+	if c, ok := pick(o.cookies, idx); ok {
+		o.cookie = c
+	}
+	if t, ok := pick(o.clientTags, idx); ok {
+		o.ownTags = t
+	}
 	return o
 }
 

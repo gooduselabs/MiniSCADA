@@ -5,6 +5,8 @@ import type {
   AppInfo,
   AppSignature,
   BackupOutcome,
+  CreateOutcome,
+  NewTargetState,
   Platform,
   ReadOutcome,
   RecentEntry,
@@ -114,6 +116,15 @@ export interface MockControl {
   fileList(prefix?: string): string[];
   /** Bản sao mọi file của project giả (giả lập tắt đột ngột rồi mở lại: `useProject(snapshot())`). */
   snapshot(): Record<string, string>;
+  // ---- Project mới ----
+  /** Thư mục cha hiện tại của Project mới (mặc định `D:\Users\ky-su\Documents\mAT SCADA`). */
+  newParent: string;
+  /** Kết quả lần `newProjectParentPick` sau (`null`: người dùng hủy). */
+  newParentPick: string | null;
+  /** Thư mục đã có trên đĩa giả, theo đường dẫn hiển thị đầy đủ `<cha>\<mã>`. */
+  dirs: Record<string, NewTargetState>;
+  /** Các project đã tạo: mã và danh sách file. */
+  created: Array<{ id: string; display: string; files: string[] }>;
 }
 
 export type MockPlatform = Platform & { readonly control: MockControl };
@@ -152,6 +163,10 @@ export function createMockPlatform(): MockPlatform {
     fileText: (rel) => files.get(rel),
     fileList: (prefix = '') => [...files.keys()].filter((k) => k.startsWith(prefix)).sort(),
     snapshot: () => Object.fromEntries(files),
+    newParent: 'D:\\Users\\ky-su\\Documents\\mAT SCADA',
+    newParentPick: 'D:\\Projects',
+    dirs: {},
+    created: [],
   };
   const recent: RecentEntry[] = [
     {
@@ -204,6 +219,37 @@ export function createMockPlatform(): MockPlatform {
     forgetRecent: async (index) => {
       recent.splice(index, 1);
       recent.forEach((r, i) => (r.index = i));
+    },
+    newProjectParentDefault: async () => {
+      control.newParent = 'D:\\Users\\ky-su\\Documents\\mAT SCADA';
+      return { display: control.newParent };
+    },
+    newProjectParentPick: async () => {
+      if (control.newParentPick === null) return null;
+      control.newParent = control.newParentPick;
+      return { display: control.newParent };
+    },
+    newProjectCheck: async (id) => {
+      if (!/^[a-z0-9][a-z0-9-]{1,47}$/.test(id)) return { error: 'bad-id' };
+      return control.dirs[`${control.newParent}\\${id}`] ?? 'free';
+    },
+    createProject: async (id, next): Promise<CreateOutcome> => {
+      if (!/^[a-z0-9][a-z0-9-]{1,47}$/.test(id)) return { error: 'bad-id' };
+      const display = `${control.newParent}\\${id}`;
+      const state = control.dirs[display] ?? 'free';
+      if (state === 'exists-project' || state === 'not-empty') return { error: state };
+      if (!('project.json' in next)) return { error: 'bad-path' };
+      files.clear();
+      mtimes.clear();
+      for (const [k, v] of Object.entries(next)) put(k, v);
+      open = true;
+      control.dirs[display] = 'exists-project';
+      control.created.push({ id, display, files: Object.keys(next).sort() });
+      const name = (JSON.parse(next['project.json']) as { projectName?: string }).projectName ?? id;
+      recent.unshift({ index: 0, display, name, openedAt: new Date().toISOString(), exists: true });
+      recent.splice(10);
+      recent.forEach((r, i) => (r.index = i));
+      return { display };
     },
     read: async (rel): Promise<ReadOutcome> => {
       const text = open ? files.get(rel) : undefined;

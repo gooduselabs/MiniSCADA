@@ -195,3 +195,37 @@ describe('mat-settings-editor', () => {
     expect(el.querySelector('#set-projectName')).toBeNull();
   });
 });
+
+describe('Thiết lập project: chủ đề (feature 012, FR-029, FR-030)', () => {
+  it('project 1.1: chọn chủ đề Sáng đa sắc, Công nghiệp trầm, Tối; ghi theme vào project.json', async () => {
+    const { resolve } = await import('node:path');
+    const { readProjectDir } = await import('../../model/test-fixtures.ts');
+    const { createMockPlatform } = await import('../../platform/mock.ts');
+    const { StudioApp } = await import('../../app/app.ts');
+    const files = readProjectDir(
+      resolve(__dirname, '../../../../../tests/project-vectors/v11-valid-full'),
+    );
+    delete files['expected.json'];
+    const platform = createMockPlatform();
+    platform.control.useProject(files);
+    const app = new StudioApp({ platform, storage: null, windowWidth: 1400, versionGate: false });
+    await app.start();
+    await app.run('project.open');
+    await app.store.idle();
+    app.openEditor('settings');
+    const el = await mount<SettingsEditor>('mat-settings-editor', app);
+    await settled(el);
+    const sel = el.querySelector<HTMLSelectElement>('#set-theme')!;
+    expect([...sel.options].map((o) => o.value)).toEqual(['vivid', 'industrial', 'dark']);
+    expect(sel.value).toBe('vivid');
+    sel.value = 'dark';
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await settled(el);
+    expect((app.store.state.outline.project as unknown as { theme: string }).theme).toBe('dark');
+  });
+
+  it('project dưới 1.1: không có ô chủ đề', async () => {
+    const { el } = await openSettings();
+    expect(el.querySelector('#set-theme')).toBeNull();
+  });
+});

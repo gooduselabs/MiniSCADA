@@ -84,6 +84,8 @@ const std::vector<Expected> kContract14 = {
 // device-api of feature 011 (device-api-011 §4): logic
 const std::vector<Expected> kContract011 = {
     {"GET", "/api/v1/logic", true, Role::Viewer, false, false},
+    // feature 015: the writes of logic for the report page (cookie, viewer)
+    {"GET", "/api/v1/logic/events", true, Role::Viewer, false, false},
     {"POST", "/api/v1/logic/writes", true, Role::Administrator, true, true},
     {"POST", "/api/v1/logic/reset", true, Role::Engineer, true, true},
     // device-api-011 §3: OTA, administrator only, Bearer only (not in the cookie list below)
@@ -92,6 +94,28 @@ const std::vector<Expected> kContract011 = {
     {"POST", "/api/v1/system/update/apply", true, Role::Administrator, true, true},
     {"POST", "/api/v1/system/update/cancel", true, Role::Administrator, true, true},
     {"POST", "/api/v1/system/update/rollback", true, Role::Administrator, true, true},
+};
+
+// device-api 1.6.0 (feature 013, contracts/admin-api.md §1 to §5): the access of the page, the own
+// password and the admin API (administrator).
+const std::vector<Expected> kContract16 = {
+    {"GET", "/api/v1/web/access", false, Role::Viewer, false, false},
+    {"POST", "/api/v1/web/password", true, Role::Viewer, true, true},
+    {"GET", "/api/v1/admin/users", true, Role::Administrator, true, false},
+    {"POST", "/api/v1/admin/users", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/users/{name}", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/users/{name}/password", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/users/{name}/delete", true, Role::Administrator, true, true},
+    {"GET", "/api/v1/admin/groups", true, Role::Administrator, true, false},
+    {"POST", "/api/v1/admin/groups", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/groups/{id}", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/groups/{id}/delete", true, Role::Administrator, true, true},
+    {"GET", "/api/v1/admin/access", true, Role::Administrator, true, false},
+    {"POST", "/api/v1/admin/access", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/access/cleanup", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/access/restore", true, Role::Administrator, true, true},
+    {"GET", "/api/v1/admin/effective", true, Role::Administrator, true, false},
+    {"GET", "/api/v1/admin/audit", true, Role::Administrator, true, false},
 };
 
 const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};
@@ -147,9 +171,11 @@ TEST(Roles, TheTableIsTheContract) {
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     for (const auto& e : kContract011)
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
+    for (const auto& e : kContract16)
+        contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     EXPECT_EQ(endpointRules().size(), kContract.size() + kContract11.size() + kContract12.size() +
                                           kContract13.size() + kContract14.size() +
-                                          kContract011.size());
+                                          kContract011.size() + kContract16.size());
     EXPECT_EQ(table, contract);
 }
 
@@ -256,7 +282,7 @@ TEST(Roles, AllowedMethodsForA405) {
 // Feature 007 (device-api-1.2 §1.2, T061): the cookie column. A cookie reaches the endpoints of the
 // page and nothing else: every other row answers a cookie with SESSION_SCOPE.
 TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
-    const std::set<std::string> cookie = {
+    std::set<std::string> cookie = {
         "GET /api/v1/device/identity", "POST /api/v1/web/login", "POST /api/v1/web/logout",
         "GET /api/v1/web/session", "POST /api/v1/web/touch", "POST /api/v1/tags/write",
         "GET /api/v1/tags/write/{requestId}", "GET /api/v1/tags/write",
@@ -268,7 +294,11 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
         "GET /api/v1/history/aggregate", "GET /api/v1/history/rows",
         "GET /api/v1/history/export.csv",
         // feature 011: the state of logic (its two POST routes: no cookie)
-        "GET /api/v1/logic"};
+        "GET /api/v1/logic",
+        // feature 015: the writes of logic for the report page
+        "GET /api/v1/logic/events"};
+    // feature 013: the page's access, the own password and the whole admin API
+    for (const auto& e : kContract16) cookie.insert(e.method + " " + e.path);
     std::set<std::string> seen;
     for (const auto& r : endpointRules()) {
         const std::string key = std::string(r.method) + " " + r.path;
@@ -287,8 +317,12 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
     for (const auto& r : endpointRules()) {
         if (r.cookieAllowed && r.changesDevice)
             EXPECT_TRUE(std::string(r.path) == "/api/v1/tags/write" ||
-                        std::string(r.path).rfind("/api/v1/alarms/", 0) == 0)
-                << "only the tag write and the alarm acknowledgement change a device: " << r.path;
+                        std::string(r.path).rfind("/api/v1/alarms/", 0) == 0 ||
+                        std::string(r.path) == "/api/v1/web/password" ||
+                        std::string(r.path).rfind("/api/v1/admin/", 0) == 0)
+                << "only the tag write, the alarm acknowledgement and the accounts (013) change "
+                   "a device: "
+                << r.path;
     }
     const EndpointRule* login = findEndpointRule("POST", "/api/v1/web/login");
     const EndpointRule* logout = findEndpointRule("POST", "/api/v1/web/logout");
@@ -302,8 +336,10 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
     EXPECT_FALSE(findEndpointRule("GET", "/api/v1/web/session")->refreshesSession);
     EXPECT_EQ(allowedMethods("/api/v1/web/login"), "POST");
     EXPECT_EQ(allowedMethods("/api/v1/web/session"), "GET");
-    // there is no registration, no password change and no password reminder on the web (FR-048)
-    for (const char* p : {"/api/v1/web/register", "/api/v1/web/password", "/api/v1/web/reset",
-                          "/api/v1/web/signup", "/api/v1/web/forgot"})
+    // there is no registration and no password reminder on the web (FR-048); feature 013 adds the
+    // change of one's own password (POST /api/v1/web/password)
+    EXPECT_EQ(allowedMethods("/api/v1/web/password"), "POST");
+    for (const char* p :
+         {"/api/v1/web/register", "/api/v1/web/reset", "/api/v1/web/signup", "/api/v1/web/forgot"})
         EXPECT_EQ(allowedMethods(p), "") << p;
 }

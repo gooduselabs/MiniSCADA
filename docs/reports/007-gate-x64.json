@@ -9,15 +9,15 @@
     {
       "name": "trang /login tham chiếu bundle riêng assets/login-*",
       "pass": true,
-      "detail": "/assets/login-DYnlGhEs.js,/assets/login-B-xDrlsM.css"
+      "detail": "/assets/login-BvYTOQRf.js,/assets/login-ouzhNjC3.css"
     },
     {
-      "name": "/assets/login-DYnlGhEs.js từ mạng công cộng: 200",
+      "name": "/assets/login-BvYTOQRf.js từ mạng công cộng: 200",
       "pass": true,
       "detail": "200"
     },
     {
-      "name": "/assets/login-B-xDrlsM.css từ mạng công cộng: 200",
+      "name": "/assets/login-ouzhNjC3.css từ mạng công cộng: 200",
       "pass": true,
       "detail": "200"
     },
@@ -69,15 +69,15 @@
     {
       "name": "trang /login tham chiếu bundle riêng assets/login-*",
       "pass": true,
-      "detail": "/assets/login-DYnlGhEs.js,/assets/login-B-xDrlsM.css"
+      "detail": "/assets/login-BvYTOQRf.js,/assets/login-ouzhNjC3.css"
     },
     {
-      "name": "/assets/login-DYnlGhEs.js từ mạng công cộng: 200",
+      "name": "/assets/login-BvYTOQRf.js từ mạng công cộng: 200",
       "pass": true,
       "detail": "200"
     },
     {
-      "name": "/assets/login-B-xDrlsM.css từ mạng công cộng: 200",
+      "name": "/assets/login-ouzhNjC3.css từ mạng công cộng: 200",
       "pass": true,
       "detail": "200"
     },

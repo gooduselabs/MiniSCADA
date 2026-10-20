@@ -8,7 +8,7 @@
   "deltaPeriodMs": 250,
   "simLoad": true,
   "threads": 24,
-  "viewerLogin": "off",
+  "viewerLogin": "required",
   "webSessionIdleMin": 30,
   "webSessionMaxHours": 12,
   "webMaxSessions": 12,

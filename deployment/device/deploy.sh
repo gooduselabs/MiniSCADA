@@ -359,7 +359,15 @@ if [ "$HTTPS_PORT" != 0 ]; then
         log "    (CA của khách hàng). Hướng dẫn cài chứng chỉ cho Chrome: docs/deployment/mat-runtime.md"
     fi
 fi
-log "viewerLogin: mặc định off (xem không cần đăng nhập); đặt required trong /etc/mat-runtime/runtime.json nếu muốn"
+# Feature 013 (FR-001): a new install signs everyone in; a device that runs keeps its runtime.json.
+VL=$(sed -n 's/.*"viewerLogin"[[:space:]]*:[[:space:]]*"\([a-z]*\)".*/\1/p' /etc/mat-runtime/runtime.json 2>/dev/null | head -n 1)
+if [ "${VL:-off}" = required ]; then
+    log "viewerLogin: required (mọi người phải đăng nhập để xem)"
+else
+    log "viewerLogin: off: XEM KHÔNG CẦN ĐĂNG NHẬP. Đặt \"viewerLogin\": \"required\" trong /etc/mat-runtime/runtime.json"
+    log "    rồi systemctl restart mat-runtime để bắt đăng nhập (bản cài mới mặc định required)."
+fi
+log "Tài khoản và quyền: /var/lib/mat-runtime/auth (trang Quản trị trên web, hoặc mat-runtime --user-*)"
 # Feature 011 (FR-013): kiểm Host chống DNS rebinding. Mở bằng IP luôn được; mở bằng tên khác tên máy cần khai.
 log "--- Từ 1.0: kiểm tên trong tiêu đề Host ---"
 log "Mở bằng IP, localhost, $(hostname) hoặc $(hostname).local: không cần làm gì."

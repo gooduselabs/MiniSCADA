@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "tong-quan",
+  "name": "Tổng quan",
+  "size": {
+    "width": 1920,
+    "height": 1080
+  },
+  "layout": {
+    "mode": "grid",
+    "columns": 12,
+    "gap": 12,
+    "padding": 16,
+    "rows": [
+      {
+        "id": "r1",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "c1",
+            "span": 4,
+            "item": "luu_luong"
+          },
+          {
+            "id": "c2",
+            "span": 4,
+            "item": "dong_ho"
+          },
+          {
+            "id": "c3",
+            "span": 4,
+            "item": "den"
+          }
+        ]
+      },
+      {
+        "id": "r2",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "k0",
+            "span": 1,
+            "item": "xu_huong"
+          },
+          {
+            "id": "k1",
+            "span": 1
+          },
+          {
+            "id": "k2",
+            "span": 1
+          },
+          {
+            "id": "k3",
+            "span": 1
+          },
+          {
+            "id": "k4",
+            "span": 1
+          },
+          {
+            "id": "k5",
+            "span": 1
+          },
+          {
+            "id": "k6",
+            "span": 1
+          },
+          {
+            "id": "k7",
+            "span": 1
+          },
+          {
+            "id": "k8",
+            "span": 1
+          },
+          {
+            "id": "k9",
+            "span": 1
+          },
+          {
+            "id": "k10",
+            "span": 1
+          },
+          {
+            "id": "k11",
+            "span": 1
+          }
+        ]
+      },
+      {
+        "id": "r3",
+        "height": 320,
+        "cells": [
+          {
+            "id": "c6",
+            "span": 12,
+            "item": "khung"
+          }
+        ]
+      }
+    ]
+  },
+  "items": [
+    {
+      "id": "luu_luong",
+      "type": "widget",
+      "widget": "card",
+      "props": {
+        "label": "Lưu lượng bơm 7"
+      },
+      "tags": {
+        "value": "PUMP07.FLOW"
+      }
+    },
+    {
+      "id": "dong_ho",
+      "type": "widget",
+      "widget": "gauge",
+      "tags": {
+        "value": "PUMP08.FLOW"
+      }
+    },
+    {
+      "id": "den",
+      "type": "widget",
+      "widget": "lamp",
+      "tags": {
+        "state": "PUMP07.RUN"
+      }
+    },
+    {
+      "id": "xu_huong",
+      "type": "widget",
+      "widget": "line",
+      "tags": {
+        "series": [
+          "PUMP07.FLOW"
+        ]
+      }
+    },
+    {
+      "id": "khung",
+      "type": "widget",
+      "widget": "panel"
+    }
+  ]
+}

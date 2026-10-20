@@ -51,7 +51,8 @@ describe('tìm lệnh', () => {
     const save = r.find((e) => e.id === 'project.save');
     expect(save?.enabled).toBe('reason.noProject');
     expect(save?.reason).toBe('Chưa mở project');
-    const mo = search('mo', EMPTY_CONTEXT);
+    // Cùng mức khớp (nhãn bắt đầu bằng "Mở"); "Project mới…" khớp ở đầu từ thứ hai nên xếp sau cả nhóm này.
+    const mo = search('mo', EMPTY_CONTEXT).filter((e) => matchRank(e.label, 'mo') === 0);
     const firstDisabled = mo.findIndex((e) => e.enabled !== true);
     expect(firstDisabled).toBeGreaterThan(0);
     expect(mo.slice(firstDisabled).every((e) => e.enabled !== true)).toBe(true);

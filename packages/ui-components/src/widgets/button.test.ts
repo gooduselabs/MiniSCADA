@@ -322,3 +322,39 @@ describe('mat-w-button: chế độ edit', () => {
     expect(env.host.writes).toHaveLength(0);
   });
 });
+
+// Feature 013 (edge case "Popup"): nút mở popup mà người dùng không được xem popup đó → khóa NO_PERMISSION.
+describe('mat-w-button: popup không có quyền xem (013)', () => {
+  it('host.popupBlocked → nút tắt, lý do NO_PERMISSION, bấm không mở popup', async () => {
+    const env = makeEnv();
+    const asked: string[] = [];
+    env.host.popupBlock = (id) => {
+      asked.push(id);
+      return id === 'p-cam' ? { code: 'NO_PERMISSION', message: '' } : null;
+    };
+    const el = await mount<MatWButton>(env, 'button', {
+      noTarget: true,
+      events: { click: { action: 'popup', screen: 'p-cam' } },
+    });
+    expect(asked).toContain('p-cam');
+    expect(btn(el).disabled).toBe(true);
+    const lock = el.shadowRoot!.querySelector('[data-lock]')!;
+    expect(lock.getAttribute('data-lock')).toBe('NO_PERMISSION');
+    expect(lock.textContent).toContain('Cần quyền xem cửa sổ này');
+    expect(btn(el).getAttribute('aria-describedby')).toBe('lock');
+    btn(el).click();
+    await settle(el);
+    expect(env.host.calls).toHaveLength(0);
+  });
+
+  it('popup được xem (null): như cũ', async () => {
+    const env = makeEnv();
+    env.host.popupBlock = () => null;
+    const el = await mount<MatWButton>(env, 'button', {
+      noTarget: true,
+      events: { click: { action: 'popup', screen: 'p1' } },
+    });
+    expect(btn(el).disabled).toBe(false);
+    expect(el.shadowRoot!.querySelector('[data-lock]')).toBeNull();
+  });
+});

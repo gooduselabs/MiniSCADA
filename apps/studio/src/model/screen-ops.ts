@@ -1,7 +1,15 @@
 // Thao tác ở cấp project với màn hình 0.3 (feature 007, T109, FR-065, FR-066): sinh id và màn hình mới, nhân bản, liệt kê
 // chỗ trỏ tới một màn hình (hộp thoại Xóa), đặt màn hình đầu. Hàm thuần trên cấu trúc project đọc được (outlineOf);
 // trả danh sách sửa đổi để store áp thành MỘT bước hoàn tác.
-import type { Action, BindingSet04, ScreenKind, ScreenModel } from '@mat/project-schema';
+import {
+  removeItemRef,
+  type Action,
+  type BindingSet04,
+  type GridLayout,
+  type ScreenKind,
+  type ScreenModel,
+} from '@mat/project-schema';
+import { emptyGridLayout } from './grid-ops.ts';
 import type { ProjectEdit, ProjectOutline } from './project-doc.ts';
 
 export const DEFAULT_SCREEN_SIZE = { width: 1920, height: 1080 } as const;
@@ -24,10 +32,20 @@ export function newScreenId(taken: Iterable<string>, kind: ScreenKind): string {
   }
 }
 
-/** Màn hình rỗng; `name` do tầng giao diện dịch. */
-export function newScreen(kind: ScreenKind, id: string, name: string): ScreenModel {
+/** Bố cục của màn hình mới: `grid` (định dạng 1.1, feature 012: một hàng 12 cột trống) hoặc `free` (tọa độ tự do). */
+export type ScreenLayoutKind = 'grid' | 'free';
+
+/**
+ * Màn hình rỗng; `name` do tầng giao diện dịch. `schemaVersion` được store ghi theo project.json khi áp (`screenUpsert`).
+ */
+export function newScreen(
+  kind: ScreenKind,
+  id: string,
+  name: string,
+  layout: ScreenLayoutKind = 'free',
+): ScreenModel {
   const size = kind === 'popup' ? DEFAULT_POPUP_SIZE : DEFAULT_SCREEN_SIZE;
-  return {
+  const s: ScreenModel = {
     schemaVersion: '0.3.0',
     id,
     name,
@@ -36,6 +54,7 @@ export function newScreen(kind: ScreenKind, id: string, name: string): ScreenMod
     fitMode: 'contain',
     items: [],
   };
+  return layout === 'grid' ? ({ ...s, layout: emptyGridLayout() } as ScreenModel) : s;
 }
 
 const screensOf = (o: Pick<ProjectOutline, 'screens'>): ScreenModel[] =>
@@ -49,11 +68,15 @@ export function planAddScreen(
   o: Pick<ProjectOutline, 'screens'>,
   kind: ScreenKind,
   nameOf: (n: number) => string,
+  layout: ScreenLayoutKind = 'free',
 ): { id: string; edits: ProjectEdit[] } | null {
   if (o.screens.length >= MAX_SCREENS) return null;
   const id = newScreenId(screenIds(o), kind);
   const n = Number(id.slice(id.lastIndexOf('-') + 1));
-  return { id, edits: [{ kind: 'screenUpsert', screen: newScreen(kind, id, nameOf(n)) }] };
+  return {
+    id,
+    edits: [{ kind: 'screenUpsert', screen: newScreen(kind, id, nameOf(n), layout) }],
+  };
 }
 
 /**
@@ -78,6 +101,13 @@ export function planDuplicateScreen(
     name: copyName(src.name),
     items: JSON.parse(JSON.stringify(items)),
   };
+  // màn hình lưới (feature 012): ô trỏ tới item svg bị bỏ thành ô trống
+  const grid = (copy as ScreenModel & { layout?: GridLayout }).layout;
+  if (grid) {
+    let layout = grid;
+    for (const s of src.items) if (s.type === 'svg') layout = removeItemRef(layout, s.id);
+    (copy as ScreenModel & { layout?: GridLayout }).layout = layout;
+  }
   return {
     id: nid,
     edits: [{ kind: 'screenUpsert', screen: copy }],

@@ -157,6 +157,10 @@
         "type": "string",
         "pattern": "^templates/[a-z][a-z0-9-]{0,47}\\.template\\.json$"
       }
+    },
+    "theme": {
+      "enum": ["vivid", "industrial", "dark"],
+      "description": "Định dạng 1.1 (feature 012): chủ đề giao diện của trang vận hành; thiếu = industrial."
     }
   },
   "definitions": {

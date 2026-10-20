@@ -44,14 +44,14 @@ describe('Toolbox nhóm Lịch sử', () => {
     expect(tools.every((x) => x!.draggable)).toBe(true);
   });
 
-  it('project chưa ở định dạng 0.6: không có nhóm Lịch sử (17 widget cũ vẫn đủ)', async () => {
+  it('project chưa ở định dạng 0.6: không có nhóm Lịch sử (17 widget cũ và 7 widget dashboard của 014 vẫn đủ)', async () => {
     const files = historyDemoFiles();
     const p = JSON.parse(files['project.json']!);
     p.schemaVersion = '0.3.0';
     files['project.json'] = JSON.stringify(p);
     const { el } = await toolbox(files);
     expect(el.querySelector('.tool[data-widget="history-trend"]')).toBeNull();
-    expect(el.querySelectorAll('.tool[data-widget]').length).toBe(17);
+    expect(el.querySelectorAll('.tool[data-widget]').length).toBe(24);
   });
 });
 

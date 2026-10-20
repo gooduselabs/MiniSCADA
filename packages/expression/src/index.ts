@@ -5,7 +5,7 @@ import { MAX_CHARS, check, kindOfTag } from './checker.ts';
 import { compileNode } from './compiler.ts';
 import { messageOf } from './messages.ts';
 import { utf8Length } from './number.ts';
-import { parse } from './parser.ts';
+import { parse, type Node as ExprNodeT } from './parser.ts';
 import type { CompileEnv, CompileResult, ExprIssue } from './types.ts';
 
 export * from './types.ts';
@@ -35,6 +35,23 @@ const issue = (code: string, span: [number, number]): ExprIssue => ({
  * toán hạng); biểu thức thật còn xa mới tới ngưỡng này (giới hạn hợp lệ là 1.000 ký tự).
  */
 export const MAX_CHARS_PARSED = 8192;
+
+export type { Node as ExprNode } from './parser.ts';
+
+/**
+ * Cây cú pháp của một biểu thức (feature 015: sơ đồ khối của Studio vẽ cổng AND/OR/NOT/so sánh từ cây). Vị trí `s`, `e`
+ * là chỉ số code point. Chỉ parse, không kiểm tên hay kiểu; lỗi cú pháp như compile().
+ */
+export function parseExpression(
+  src: string,
+): { root: ExprNodeT } | { error: { code: string; span: [number, number] } } {
+  const cps = Array.from(src);
+  if (cps.length > MAX_CHARS_PARSED)
+    return { error: { code: 'E_EXPR_LIMIT', span: [MAX_CHARS, MAX_CHARS + 1] } };
+  const parsed = parse(cps);
+  if ('error' in parsed) return { error: { code: parsed.error.code, span: parsed.error.span } };
+  return { root: parsed.root };
+}
 
 /** Biên dịch một biểu thức; trả lỗi đầu tiên (cú pháp, tên, số tham số, kiểu, giới hạn). */
 export function compile(src: string, env: CompileEnv): CompileResult {

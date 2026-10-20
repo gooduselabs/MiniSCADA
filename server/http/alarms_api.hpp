@@ -63,7 +63,11 @@ class SourceLimiter {
 
 // GET handlers for HttpApi (they have passed the page's source filter already).
 // `full` false: a source without a sign-in sees no account names or free text (security review M1).
-int getList(mg_connection* c, AlarmGlue& glue, bool full);
-int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter, bool full);
+// Feature 013: `allow` (empty: every alarm) keeps the instances and the occurrences of the alarms
+// the person may see (by instance id).
+using AlarmFilter = std::function<bool(const std::string& id)>;
+int getList(mg_connection* c, AlarmGlue& glue, bool full, const AlarmFilter& allow = {});
+int getHistory(mg_connection* c, AlarmGlue& glue, SourceLimiter& limiter, bool full,
+               const AlarmFilter& allow = {});
 
 }  // namespace mat::alarmsapi

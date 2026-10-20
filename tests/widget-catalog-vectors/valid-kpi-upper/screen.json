@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "kpi1",
+      "type": "widget",
+      "widget": "kpi",
+      "x": 0,
+      "y": 0,
+      "width": 1200,
+      "height": 700,
+      "props": {
+        "label": "ằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằ",
+        "decimals": 6,
+        "unit": "ằằằằằằằằằằằằằằằằ",
+        "higherIsBetter": true
+      },
+      "tags": {
+        "value": "L.LEVEL",
+        "goal": "L.LEVEL"
+      }
+    }
+  ]
+}

@@ -82,10 +82,10 @@ describe('nền: v04-valid-full hợp lệ', () => {
   });
   it('hằng của 0.4', () => {
     expect(MIN_RUNTIME_04).toBe('0.7.0');
-    // 008: 0.7.0, 009: 0.8.0, 010: 0.9.0, 011: 1.0.0, T191: 1.0.0-rc.1 (so minRuntimeVersion bỏ hậu tố pre-release)
-    expect(RUNTIME_VERSION).toBe('1.0.0-rc.1');
-    expect(compareSemver('1.0.0', RUNTIME_VERSION)).toBe(0);
-    expect(compareSemver('1.0.1', RUNTIME_VERSION)).toBeGreaterThan(0);
+    // 008: 0.7.0, 009: 0.8.0, 010: 0.9.0, 011: 1.0.0, T191: 1.0.0-rc.1, 012: 1.1.0-alpha.1 (so minRuntimeVersion bỏ hậu tố pre-release)
+    expect(RUNTIME_VERSION).toBe('1.1.0-alpha.1'); // feature 012: định dạng 1.1
+    expect(compareSemver('1.1.0', RUNTIME_VERSION)).toBe(0);
+    expect(compareSemver('1.1.1', RUNTIME_VERSION)).toBeGreaterThan(0);
     expect(LIMITS_04.svgItems).toBe(64);
     expect(LIMITS_03.svgItems).toBe(8); // 0.3 giữ trần cũ
     expect(LIMITS_04.animations).toBe(256);

@@ -14,6 +14,7 @@ import {
   clickCell,
   dragAndDrop,
   designToPage,
+  expandNode,
   gridCell,
   gridText,
   openAndWait,
@@ -22,6 +23,7 @@ import {
   setTheme,
   sleep,
   treeItem,
+  treeNode,
   typeInCell,
   waitFor,
 } from './util.mjs';
@@ -83,9 +85,10 @@ async function addColumn(page, tag) {
   await sleep(120);
 }
 
+/** Chọn cột ở Cấu trúc của trình thiết kế (feature 015): Thuộc tính của cột hiện bên phải. */
 async function selectColumn(page, row) {
-  await page.waitForSelector(gridCell(`${TE} [data-grid="columns"]`, row, 'tag'));
-  await page.click(gridCell(`${TE} [data-grid="columns"]`, row, 'tag'));
+  await page.waitForSelector(`${TE} [data-node="col:${row}"]`);
+  await page.click(`${TE} [data-node="col:${row}"]`);
   await sleep(80);
 }
 
@@ -96,11 +99,21 @@ async function setFn(page, fn, on) {
   await sleep(60);
 }
 
+// Bảng xem trước nằm trong shadow root của <mat-report-view> (feature 015, cùng thành phần với trang vận hành).
 const rptRows = (page) =>
-  page.$$eval(`${TE} mat-report-preview table.rpt tbody tr`, (r) => r.length);
+  page.evaluate(
+    () =>
+      document
+        .querySelector('mat-templates-editor mat-report-view')
+        ?.shadowRoot?.querySelectorAll('table.rpt tbody tr').length ?? 0,
+  );
 const rptHeads = (page) =>
-  page.$$eval(`${TE} mat-report-preview thead th`, (h) =>
-    h.map((x) => x.textContent.replace(/\s+/g, ' ').trim()),
+  page.evaluate(() =>
+    [
+      ...(document
+        .querySelector('mat-templates-editor mat-report-view')
+        ?.shadowRoot?.querySelectorAll('table.rpt thead th') ?? []),
+    ].map((x) => x.textContent.replace(/\s+/g, ' ').trim()),
   );
 const savedReports = (page) =>
   page.evaluate(() =>
@@ -122,7 +135,7 @@ const widgetText = (page, id) =>
     return (w?.shadowRoot?.textContent ?? w?.textContent ?? '').replace(/\s+/g, ' ').trim();
   }, id);
 
-export default async function reports({ page, check, shot, axe }) {
+export default async function reports({ page, check, shot, axe, url }) {
   const metrics = {};
   await setTheme(page, 'light');
   await openAndWait(page, scratchProject(), 'D:\\Projects\\bao-cao-moi');
@@ -159,9 +172,9 @@ export default async function reports({ page, check, shot, axe }) {
     aggs.join(),
   );
 
-  // ---------- 2. Ba mẫu báo cáo ----------
+  // ---------- 2. Ba mẫu báo cáo (thư viện mẫu, trình thiết kế ba vùng: feature 015) ----------
   await treeItem(page, 'Báo cáo');
-  await page.waitForSelector('mat-reports-list [data-act="add-report"]');
+  await page.waitForSelector('mat-reports-list [data-preset="day"]');
   const TPL = [
     { name: 'Điện năng theo ngày', period: 'day', rows: (n) => n === 25 },
     { name: 'Điện năng theo ca', period: 'shift', rows: (n) => n === 4 },
@@ -170,8 +183,8 @@ export default async function reports({ page, check, shot, axe }) {
   for (let i = 0; i < TPL.length; i++) {
     const t = TPL[i];
     if (i > 0) await treeItem(page, 'Báo cáo');
-    await page.waitForSelector('mat-reports-list [data-act="add-report"]');
-    await page.click('mat-reports-list [data-act="add-report"]');
+    await page.waitForSelector('mat-reports-list [data-preset="day"]');
+    await page.click('mat-reports-list [data-preset="day"]');
     await page.waitForSelector(`${TE} [data-field="name"]`);
     await sleep(150);
     await page.$eval(`${TE} [data-field="name"]`, (e) => e.select());
@@ -180,8 +193,18 @@ export default async function reports({ page, check, shot, axe }) {
     await sleep(100);
     await page.select(`${TE} [data-field="group"]`, 'dien');
     await sleep(80);
-    if (t.period !== 'day') await page.select(`${TE} [data-field="period"]`, t.period);
+    if (t.period !== 'day') {
+      await page.click(`${TE} [data-node="period"]`);
+      await page.waitForSelector(`${TE} [data-field="period"]`);
+      await page.select(`${TE} [data-field="period"]`, t.period);
+    }
     await sleep(80);
+    // bỏ các cột mẫu có sẵn đã chọn, dựng lại cột bằng thao tác
+    while (await page.$(`${TE} [data-node="col:0"]`)) {
+      await selectColumn(page, 0);
+      await page.click(`${TE} [data-act="col-remove"]`);
+      await sleep(100);
+    }
     await addColumn(page, 'METER1.KWH');
     await addColumn(page, 'METER1.KW');
     await selectColumn(page, 0);
@@ -189,14 +212,24 @@ export default async function reports({ page, check, shot, axe }) {
     await setFn(page, 'avg', false);
     await selectColumn(page, 1);
     await setFn(page, 'max', true);
-    await page.waitForSelector(`${TE} mat-report-preview table.rpt`, { timeout: 5000 });
+    await waitFor(
+      page,
+      () =>
+        !!document
+          .querySelector('mat-templates-editor mat-report-view')
+          ?.shadowRoot?.querySelector('table.rpt'),
+      undefined,
+      5000,
+    );
     const t0 = Date.now();
     await selectColumn(page, 0);
     await setFn(page, 'max', true);
     await waitFor(
       page,
       () =>
-        document.querySelectorAll('mat-templates-editor mat-report-preview thead th').length === 5,
+        document
+          .querySelector('mat-templates-editor mat-report-view')
+          ?.shadowRoot?.querySelectorAll('table.rpt thead th').length === 5,
     );
     metrics[`previewUpdateMs_${t.period}`] = Date.now() - t0;
     const n = await rptRows(page);
@@ -209,13 +242,15 @@ export default async function reports({ page, check, shot, axe }) {
     check(
       `mẫu ${t.period}: cột theo (cột, hàm) đúng thứ tự`,
       heads.length === 5 &&
-        /Lớn nhất/.test(heads[1]) &&
-        /Chênh lệch/.test(heads[2]) &&
-        /Lớn nhất/.test(heads[3]) &&
-        /Trung bình/.test(heads[4]),
+        /lớn nhất/i.test(heads[1]) &&
+        /chênh lệch/i.test(heads[2]) &&
+        /lớn nhất/i.test(heads[3]) &&
+        /trung bình/i.test(heads[4]),
       heads.join(' | '),
     );
     if (t.period === 'shift') {
+      await page.click(`${TE} [data-node="period"]`);
+      await sleep(100);
       const labels = await page.$$eval(`${TE} [data-role="shift-labels"] li`, (l) =>
         l.map((x) => x.textContent.trim()),
       );
@@ -270,11 +305,11 @@ export default async function reports({ page, check, shot, axe }) {
   );
   check(
     'tên file theo <id>_<kỳ>.<đuôi>',
-    saved.every((s) => /^bao-cao-?\d*_\d{4}-\d{2}\.(csv|xlsx|pdf)$/.test(s.name)),
+    saved.every((s) => /^bao-cao-[a-z0-9-]+_\d{4}-\d{2}\.(csv|xlsx|pdf)$/.test(s.name)),
     saved.map((s) => s.name).join(','),
   );
   await shot('1-mau-bao-cao');
-  await axeBoth(page, axe, 'editor Mẫu báo cáo');
+  await axeBoth(page, axe, 'trình thiết kế báo cáo');
 
   // ---------- 4. Màn hình: bốn widget lịch sử ----------
   await treeItem(page, 'Lịch sử');
@@ -483,8 +518,70 @@ export default async function reports({ page, check, shot, axe }) {
   check('trang Báo cáo liệt kê ba mẫu', listed === 3, String(listed));
   await axeBoth(page, axe, 'trang danh sách mẫu báo cáo');
 
-  // ---------- Tóm tắt ----------
-  mkdirSync(dirname(SMOKE), { recursive: true });
+  // ---------- 9. Project 1.1 (feature 015): loại báo cáo, thẻ, biểu đồ, chọn phần ở xem trước ----------
+  // mở project khác: tải lại Studio (về trang Bắt đầu, lớp Tauri giả dựng lại)
+  await page.goto(`${url}?gate=off`, { waitUntil: 'networkidle0' });
+  await setTheme(page, 'light');
+  await openAndWait(
+    page,
+    readProject(join(REPO, 'projects/report-demo')),
+    'D:\\Projects\\report-demo',
+  );
+  await expandNode(page, 'reports');
+  await treeNode(page, 'report:nang-luong-ngay');
+  await page.waitForSelector(`${TE} mat-report-view`);
+  await waitFor(
+    page,
+    () =>
+      (document
+        .querySelector('mat-templates-editor mat-report-view')
+        ?.shadowRoot?.querySelectorAll('.tile').length ?? 0) > 0,
+  );
+  const tiles = await page.evaluate(
+    () =>
+      document
+        .querySelector('mat-templates-editor mat-report-view')
+        .shadowRoot.querySelectorAll('.tile').length,
+  );
+  check('1.1: xem trước có thẻ tổng hợp màu và khung biểu đồ', tiles >= 2, String(tiles));
+  // bấm tiêu đề cột ở xem trước: Thuộc tính của cột
+  await page.evaluate(() =>
+    document
+      .querySelector('mat-templates-editor mat-report-view')
+      .shadowRoot.querySelectorAll('table.rpt thead th.num')[1]
+      .click(),
+  );
+  await sleep(200);
+  const part = await page.$eval(`${TE} .rd-props`, (e) => e.dataset.part);
+  check('bấm tiêu đề cột ở xem trước chọn cột đó ở Thuộc tính', part === 'col:1', part);
+  await axeBoth(page, axe, 'trình thiết kế báo cáo (1.1)');
+  await page.click(`${TE} [data-node="general"]`);
+  await page.waitForSelector(`${TE} [data-field="kind"]`);
+  await page.select(`${TE} [data-field="kind"]`, 'alarm');
+  await waitFor(
+    page,
+    () =>
+      (document
+        .querySelector('mat-templates-editor mat-report-view')
+        ?.shadowRoot?.querySelectorAll('figure.section').length ?? 0) === 4,
+    undefined,
+    10000,
+  );
+  check('đổi loại sang Sự kiện alarm: xem trước sự kiện mô phỏng có 4 bảng phụ', true);
+  await press(page, 'Control+z');
+  await sleep(300);
+  const kind = await page.$eval(`${TE} [data-field="kind"]`, (e) => e.value);
+  check('hoàn tác (Ctrl+Z) trả lại loại Bảng tổng hợp', kind === 'table', kind);
+  await treeItem(page, 'Báo cáo');
+  await page.waitForSelector('mat-reports-list [data-preset]');
+  const cards = await page.$$eval(
+    'mat-reports-list [data-preset]',
+    (b) => b.filter((x) => x.getAttribute('aria-disabled') !== 'true').length,
+  );
+  check('1.1: cả 7 mẫu có sẵn dùng được', cards === 7, String(cards));
+  await axeBoth(page, axe, 'thư viện mẫu báo cáo');
+
+  // ---------- Tóm tắt ----------  mkdirSync(dirname(SMOKE), { recursive: true });
   writeFileSync(
     SMOKE,
     JSON.stringify(

@@ -7,6 +7,7 @@ import {
   MIN_RUNTIME_05,
   MIN_RUNTIME_06,
   MIN_RUNTIME_10,
+  MIN_RUNTIME_11,
   SUPPORTED_SCHEMA,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
@@ -14,6 +15,7 @@ import {
   SUPPORTED_SCHEMA_05,
   SUPPORTED_SCHEMA_06,
   SUPPORTED_SCHEMA_10,
+  SUPPORTED_SCHEMA_11,
 } from './codes.ts';
 import { formatTagsFile, serialize } from './format-02.ts';
 import { formatProject03, formatScreen03 } from './format-03.ts';
@@ -35,6 +37,8 @@ export type MigrateError =
   | { code: 'ALREADY_06' }
   /** Đã là 1.0 (`migrate06to10`, `migrateTo10`; feature 011). */
   | { code: 'ALREADY_10' }
+  /** Đã là 1.1 (`migrate10to11`, `migrateTo11`; feature 012). */
+  | { code: 'ALREADY_11' }
   /** `schemaVersion` mới hơn mức hiểu (0.3+, 1.x) hoặc không nhận ra: Studio cần bản mới hơn (FR-005). */
   | { code: 'UNSUPPORTED_VERSION'; version: string }
   /** File không đọc được: không đổi gì. */
@@ -455,6 +459,8 @@ const BUMP_MIN_RUNTIME_RE = /("minRuntimeVersion"\s*:\s*")([^"]*)(")/;
 interface BumpStep {
   /** Dạng của phiên bản nguồn và đích. */
   from: RegExp;
+  /** Số MAJOR của phiên bản nguồn; thiếu = `0` (mọi bước trước 1.0). */
+  fromMajor?: string;
   fromMinor: string;
   target: RegExp;
   to: string;
@@ -483,7 +489,9 @@ async function bumpFormat(files: Record<string, string>, step: BumpStep): Promis
     out[path] = text;
     rewritten.push(path);
   };
-  const versionRe = new RegExp(`("schemaVersion"\\s*:\\s*")0\\.${step.fromMinor}\\.\\d+(")`);
+  const versionRe = new RegExp(
+    `("schemaVersion"\\s*:\\s*")${step.fromMajor ?? '0'}\\.${step.fromMinor}\\.\\d+(")`,
+  );
   const bump = (text: string): string => text.replace(versionRe, `$1${step.to}$2`);
 
   const ids = Array.isArray(project.screens)
@@ -497,6 +505,9 @@ async function bumpFormat(files: Record<string, string>, step: BumpStep): Promis
     project.alarmFile,
     project.alarmClassFile,
     project.reportsFile,
+    // 1.0 trở lên (feature 011): logic.json và template cũng mang schemaVersion của project
+    project.logic,
+    ...(Array.isArray(project.templates) ? project.templates : []),
     ...(Array.isArray(project.valueTables) ? project.valueTables : []).map(
       (n) => `value-tables/${String(n)}.json`,
     ),
@@ -684,6 +695,56 @@ export async function migrateTo10(files: Record<string, string>): Promise<Migrat
   const first = await migrateTo06(files);
   if (!first.ok) return first;
   const second = await migrate06to10(first.files);
+  if (!second.ok) return second;
+  const hadOriginal = first.changes.some((c) => c.kind === 'originalErrors');
+  const backup = [...new Set([...first.backup, ...second.backup])].sort();
+  return {
+    ok: true,
+    files: second.files,
+    changes: [
+      ...first.changes.filter((c) => c.kind !== 'rewrite' && c.kind !== 'minRuntime'),
+      ...second.changes.filter(
+        (c) => c.kind !== 'rewrite' && !(c.kind === 'originalErrors' && hadOriginal),
+      ),
+      { kind: 'rewrite', files: backup },
+    ],
+    backup,
+  };
+}
+
+// ---------------- 1.0 -> 1.1.0 (feature 012, specs/012-screen-grid-layout/contracts/project-format-1.1.md §1) ----------
+// 1.1 so với 1.0 chỉ thêm trường tùy chọn (`layout` của màn hình, `theme` của project), nên `migrate10to11` chỉ đổi
+// `schemaVersion` mọi tệp (kể cả logic.json và template) và nâng `minRuntimeVersion` lên 1.1.0; không đổi bố cục màn
+// hình nào (màn hình tự do giữ nguyên, FR-011).
+
+const ONLY_SCHEMA_10 = /^1\.0\.\d+$/;
+
+/** 1.0 -> 1.1.0: chỉ đổi `schemaVersion` và nâng `minRuntimeVersion` lên 1.1.0; không tạo tệp nào. */
+export function migrate10to11(files: Record<string, string>): Promise<MigrateResult> {
+  return bumpFormat(files, {
+    from: ONLY_SCHEMA_10,
+    fromMajor: '1',
+    fromMinor: '0',
+    target: SUPPORTED_SCHEMA_11,
+    to: '1.1.0',
+    minRuntime: MIN_RUNTIME_11,
+    already: { code: 'ALREADY_11' },
+  });
+}
+
+/**
+ * Nâng cấp lên 1.1.0 trong một lần (một thư mục sao lưu): từ 0.1 đến 0.6 hoặc 1.0. Đã là 1.1: `ALREADY_11`; 1.2 trở lên
+ * hoặc không nhận ra: `UNSUPPORTED_VERSION`.
+ */
+export async function migrateTo11(files: Record<string, string>): Promise<MigrateResult> {
+  const project = parse(files['project.json']);
+  if (!project) return { ok: false, error: { code: 'UNREADABLE', file: 'project.json' } };
+  const version = String(project.schemaVersion ?? '');
+  if (SUPPORTED_SCHEMA_11.test(version)) return { ok: false, error: { code: 'ALREADY_11' } };
+  if (ONLY_SCHEMA_10.test(version)) return migrate10to11(files);
+  const first = await migrateTo10(files);
+  if (!first.ok) return first;
+  const second = await migrate10to11(first.files);
   if (!second.ok) return second;
   const hadOriginal = first.changes.some((c) => c.kind === 'originalErrors');
   const backup = [...new Set([...first.backup, ...second.backup])].sort();

@@ -1,7 +1,13 @@
 // Hộp thoại Thuộc tính màn hình (feature 007, T118, FR-066): tên, loại (màn hình hay popup), cỡ có mẫu 1920 × 1080,
 // 1366 × 768, 1280 × 720, chế độ co (`fitMode`), màu nền; cảnh báo khi chọn `stretch` mà màn hình có widget (méo chữ).
 // Áp bằng MỘT sửa đổi `screenUpsert` (một bước hoàn tác); Esc hoặc Hủy thì không đổi gì.
-import { SIZE_MAX, SIZE_MIN, type FitMode03, type ScreenKind } from '@mat/project-schema';
+import {
+  SIZE_MAX,
+  SIZE_MIN,
+  type FitMode03,
+  type Role03,
+  type ScreenKind,
+} from '@mat/project-schema';
 import { html, nothing } from 'lit';
 import { t, type MessageKey } from '../../i18n/index.ts';
 import { setScreenProps } from '../../model/screen-doc.ts';
@@ -17,6 +23,7 @@ const FIT_MODES: ReadonlyArray<readonly [FitMode03, MessageKey]> = [
   ['fit-width', 'spd.fit.fitWidth'],
   ['none', 'spd.fit.none'],
 ];
+const ROLES: readonly Role03[] = ['viewer', 'operator', 'engineer', 'administrator'];
 
 interface Draft {
   name: string;
@@ -25,6 +32,8 @@ interface Draft {
   height: string;
   fit: FitMode03;
   bg: string | null;
+  /** Định dạng 1.1 (feature 013): vai trò tối thiểu để xem. */
+  view: Role03;
 }
 
 export class MatScreenPropsDialog extends OnlineDialog {
@@ -39,7 +48,15 @@ export class MatScreenPropsDialog extends OnlineDialog {
 
   constructor() {
     super();
-    this.draft = { name: '', kind: 'screen', width: '', height: '', fit: 'contain', bg: null };
+    this.draft = {
+      name: '',
+      kind: 'screen',
+      width: '',
+      height: '',
+      fit: 'contain',
+      bg: null,
+      view: 'viewer',
+    };
     this.error = null;
   }
 
@@ -65,6 +82,7 @@ export class MatScreenPropsDialog extends OnlineDialog {
       height: String(m.size.height),
       fit: m.fitMode ?? 'contain',
       bg: m.background ?? null,
+      view: m.security?.view ?? 'viewer',
     };
     this.error = null;
   }
@@ -100,6 +118,7 @@ export class MatScreenPropsDialog extends OnlineDialog {
       size: { width: w, height: h },
       fitMode: d.fit === 'contain' ? null : d.fit,
       background: d.bg,
+      ...(this.format11() ? { view: d.view } : {}),
     });
     if (r.rejected) {
       this.error = 'spd.err.size';
@@ -107,6 +126,29 @@ export class MatScreenPropsDialog extends OnlineDialog {
     }
     if (r.doc !== m) this.app.store.edit([{ kind: 'screenUpsert', screen: r.doc }]);
     this.app.closeOnlineDialog();
+  }
+
+  private format11(): boolean {
+    return this.app.store.state.outline.format11;
+  }
+
+  /** Vai trò tối thiểu để xem màn hình (`security.view`, định dạng 1.1, feature 013). */
+  private viewField(view: Role03) {
+    return html`<div class="field">
+        <label for="spd-view">${t('spd.view')}</label>
+        <select
+          id="spd-view"
+          @change=${(e: Event) => this.patch({ view: (e.target as HTMLSelectElement).value as Role03 })}
+        >
+          ${ROLES.map(
+            (r) =>
+              html`<option value=${r} ?selected=${view === r}>
+                ${t(`wi.role.${r}` as MessageKey)}
+              </option>`,
+          )}
+        </select>
+      </div>
+      <p class="help">${t('spd.view.help')}</p>`;
   }
 
   protected override render() {
@@ -249,6 +291,7 @@ export class MatScreenPropsDialog extends OnlineDialog {
           </button>
         </div>
       </div>
+      ${this.format11() ? this.viewField(d.view) : nothing}
       ${this.error ? html`<p class="field-err" role="alert">${t(this.error)}</p>` : nothing}`;
     const foot = html`<span class="grow"></span
       ><button class="btn" type="button" data-role="cancel" @click=${() => this.close()}>

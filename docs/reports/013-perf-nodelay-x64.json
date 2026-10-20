@@ -1,0 +1,807 @@
+{
+  "generatedAt": "2026-10-19T23:39:54.180Z",
+  "machine": {
+    "host": "Intel(R) Core(TM) 5 210H (12 luồng logic), RAM 16 GiB, Windows",
+    "docker": "docker info: NCPU MemTotal OS Kernel = 12 8127717376 Docker Desktop 6.6.87.2-microsoft-standard-WSL2",
+    "runtimeCommit": "8bd715e1",
+    "note": "Linux x86_64 trong Docker Desktop (WSL2) trên máy dev, không phải BL335; CPU là % MỘT lõi của riêng mat-runtime"
+  },
+  "config": {
+    "tags": 500,
+    "clients": 10,
+    "holdS": 75,
+    "sampleS": 60,
+    "reps": 3,
+    "transport": "wss:// 8443, viewerLogin required, 10 phiên web (cookie) của 10 tài khoản"
+  },
+  "users": [
+    {
+      "name": "u01",
+      "role": "operator",
+      "groups": ["ca-a"],
+      "allowedTags": 410
+    },
+    {
+      "name": "u02",
+      "role": "operator",
+      "groups": ["ca-a"],
+      "allowedTags": 400
+    },
+    {
+      "name": "u03",
+      "role": "operator",
+      "groups": ["ca-a"],
+      "allowedTags": 400
+    },
+    {
+      "name": "u04",
+      "role": "operator",
+      "groups": ["ca-b"],
+      "allowedTags": 390
+    },
+    {
+      "name": "u05",
+      "role": "operator",
+      "groups": ["ca-b"],
+      "allowedTags": 390
+    },
+    {
+      "name": "u06",
+      "role": "operator",
+      "groups": ["ca-b"],
+      "allowedTags": 390
+    },
+    {
+      "name": "u07",
+      "role": "viewer",
+      "groups": ["bao-tri"],
+      "allowedTags": 410
+    },
+    {
+      "name": "u08",
+      "role": "viewer",
+      "groups": ["bao-tri"],
+      "allowedTags": 410
+    },
+    {
+      "name": "u09",
+      "role": "engineer",
+      "groups": ["quan-doc"],
+      "allowedTags": 490
+    },
+    {
+      "name": "u10",
+      "role": "viewer",
+      "groups": [],
+      "allowedTags": 350
+    }
+  ],
+  "rules": 52,
+  "runs": {
+    "none-all": [
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 555,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.2,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 2,
+          "cpuSeconds": 0.74,
+          "rssAvgMB": 20.1,
+          "rssMaxMB": 20.1,
+          "txBytesPerS": 481572
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 1,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 0,
+            "p95Ms": 1,
+            "maxMs": 4
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 4
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 485593,
+        "snapshotTags": [500, 500, 500, 500, 500, 500, 500, 500, 500, 500],
+        "denied": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      },
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 1619,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.3,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 2.5,
+          "cpuSeconds": 0.76,
+          "rssAvgMB": 19.6,
+          "rssMaxMB": 19.6,
+          "txBytesPerS": 481520
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 4
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 4
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 485558,
+        "snapshotTags": [500, 500, 500, 500, 500, 500, 500, 500, 500, 500],
+        "denied": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      },
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 2685,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.3,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 3,
+          "cpuSeconds": 0.78,
+          "rssAvgMB": 19.7,
+          "rssMaxMB": 19.8,
+          "txBytesPerS": 483614
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 4
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 4
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 485614,
+        "snapshotTags": [500, 500, 500, 500, 500, 500, 500, 500, 500, 500],
+        "denied": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      }
+    ],
+    "rules-all": [
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 821,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.3,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 2.5,
+          "cpuSeconds": 0.76,
+          "rssAvgMB": 19.6,
+          "rssMaxMB": 19.6,
+          "txBytesPerS": 391836
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 4
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 392256,
+        "snapshotTags": [410, 400, 400, 390, 390, 390, 410, 410, 490, 350],
+        "denied": [90, 100, 100, 110, 110, 110, 90, 90, 10, 150],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      },
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 1886,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.2,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 2,
+          "cpuSeconds": 0.73,
+          "rssAvgMB": 19.1,
+          "rssMaxMB": 19.1,
+          "txBytesPerS": 390224
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 392316,
+        "snapshotTags": [410, 400, 400, 390, 390, 390, 410, 410, 490, 350],
+        "denied": [90, 100, 100, 110, 110, 110, 90, 90, 10, 150],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      },
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 2951,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.2,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 2.4,
+          "cpuSeconds": 0.74,
+          "rssAvgMB": 19.2,
+          "rssMaxMB": 19.3,
+          "txBytesPerS": 391824
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 4
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 392225,
+        "snapshotTags": [410, 400, 400, 390, 390, 390, 410, 410, 490, 350],
+        "denied": [90, 100, 100, 110, 110, 110, 90, 90, 10, 150],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      }
+    ],
+    "none-subset": [
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 1087,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.2,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 2,
+          "cpuSeconds": 0.72,
+          "rssAvgMB": 20,
+          "rssMaxMB": 20,
+          "txBytesPerS": 390214
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 392142,
+        "snapshotTags": [410, 400, 400, 390, 390, 390, 410, 410, 490, 350],
+        "denied": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      },
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 2152,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.2,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 2,
+          "cpuSeconds": 0.72,
+          "rssAvgMB": 20.1,
+          "rssMaxMB": 20.2,
+          "txBytesPerS": 390193
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 392148,
+        "snapshotTags": [410, 400, 400, 390, 390, 390, 410, 410, 490, 350],
+        "denied": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      },
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 3218,
+          "samples": 61,
+          "wallSeconds": 60.1,
+          "cpuAvgPct": 1.2,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 2,
+          "cpuSeconds": 0.73,
+          "rssAvgMB": 19.7,
+          "rssMaxMB": 19.8,
+          "txBytesPerS": 391393
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 392054,
+        "snapshotTags": [410, 400, 400, 390, 390, 390, 410, 410, 490, 350],
+        "denied": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      }
+    ],
+    "rules-subset": [
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 1353,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.2,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 2,
+          "cpuSeconds": 0.74,
+          "rssAvgMB": 19.3,
+          "rssMaxMB": 19.3,
+          "txBytesPerS": 390233
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 392153,
+        "snapshotTags": [410, 400, 400, 390, 390, 390, 410, 410, 490, 350],
+        "denied": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      },
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 2419,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.2,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 3,
+          "cpuSeconds": 0.73,
+          "rssAvgMB": 19.3,
+          "rssMaxMB": 19.4,
+          "txBytesPerS": 390227
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 392160,
+        "snapshotTags": [410, 400, 400, 390, 390, 390, 410, 410, 490, 350],
+        "denied": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      },
+      {
+        "exit": 0,
+        "proc": {
+          "pid": 3485,
+          "samples": 61,
+          "wallSeconds": 60,
+          "cpuAvgPct": 1.2,
+          "cpuP95Pct": 2,
+          "cpuMaxPct": 2,
+          "cpuSeconds": 0.75,
+          "rssAvgMB": 19.4,
+          "rssMaxMB": 19.4,
+          "txBytesPerS": 391774
+        },
+        "accepted": 10,
+        "seqGaps": 0,
+        "latencyAbsP95Ms": 2,
+        "latencyRelP95Ms": 2,
+        "latency": {
+          "method": "delta ts (server) -> receive time (client); relative removes the clock offset and the minimum delay",
+          "clockShared": true,
+          "relative": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 3
+          },
+          "absolute": {
+            "count": 3000,
+            "p50Ms": 1,
+            "p95Ms": 2,
+            "maxMs": 4
+          }
+        },
+        "updates": 3000,
+        "payloadBytesPerS": 392084,
+        "snapshotTags": [410, 400, 400, 390, 390, 390, 410, 410, 490, 350],
+        "denied": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "accessChangedAtMs": [[], [], [], [], [], [], [], [], [], []],
+        "errors": []
+      }
+    ]
+  },
+  "summary": {
+    "none-all": {
+      "cpuAvgPct": {
+        "median": 1.3,
+        "min": 1.2,
+        "max": 1.3
+      },
+      "cpuP95Pct": {
+        "median": 2,
+        "min": 2,
+        "max": 2
+      },
+      "rssAvgMB": {
+        "median": 19.7,
+        "min": 19.6,
+        "max": 20.1
+      },
+      "rssMaxMB": {
+        "median": 19.8,
+        "min": 19.6,
+        "max": 20.1
+      },
+      "latencyAbsP95Ms": {
+        "median": 2,
+        "min": 2,
+        "max": 2
+      },
+      "txBytesPerS": {
+        "median": 481572,
+        "min": 481520,
+        "max": 483614
+      },
+      "payloadBytesPerS": {
+        "median": 485593,
+        "min": 485558,
+        "max": 485614
+      },
+      "seqGaps": [0, 0, 0],
+      "accepted": [10, 10, 10]
+    },
+    "rules-all": {
+      "cpuAvgPct": {
+        "median": 1.2,
+        "min": 1.2,
+        "max": 1.3
+      },
+      "cpuP95Pct": {
+        "median": 2,
+        "min": 2,
+        "max": 2
+      },
+      "rssAvgMB": {
+        "median": 19.2,
+        "min": 19.1,
+        "max": 19.6
+      },
+      "rssMaxMB": {
+        "median": 19.3,
+        "min": 19.1,
+        "max": 19.6
+      },
+      "latencyAbsP95Ms": {
+        "median": 2,
+        "min": 2,
+        "max": 2
+      },
+      "txBytesPerS": {
+        "median": 391824,
+        "min": 390224,
+        "max": 391836
+      },
+      "payloadBytesPerS": {
+        "median": 392256,
+        "min": 392225,
+        "max": 392316
+      },
+      "seqGaps": [0, 0, 0],
+      "accepted": [10, 10, 10]
+    },
+    "none-subset": {
+      "cpuAvgPct": {
+        "median": 1.2,
+        "min": 1.2,
+        "max": 1.2
+      },
+      "cpuP95Pct": {
+        "median": 2,
+        "min": 2,
+        "max": 2
+      },
+      "rssAvgMB": {
+        "median": 20,
+        "min": 19.7,
+        "max": 20.1
+      },
+      "rssMaxMB": {
+        "median": 20,
+        "min": 19.8,
+        "max": 20.2
+      },
+      "latencyAbsP95Ms": {
+        "median": 2,
+        "min": 2,
+        "max": 2
+      },
+      "txBytesPerS": {
+        "median": 390214,
+        "min": 390193,
+        "max": 391393
+      },
+      "payloadBytesPerS": {
+        "median": 392142,
+        "min": 392054,
+        "max": 392148
+      },
+      "seqGaps": [0, 0, 0],
+      "accepted": [10, 10, 10]
+    },
+    "rules-subset": {
+      "cpuAvgPct": {
+        "median": 1.2,
+        "min": 1.2,
+        "max": 1.2
+      },
+      "cpuP95Pct": {
+        "median": 2,
+        "min": 2,
+        "max": 2
+      },
+      "rssAvgMB": {
+        "median": 19.3,
+        "min": 19.3,
+        "max": 19.4
+      },
+      "rssMaxMB": {
+        "median": 19.4,
+        "min": 19.3,
+        "max": 19.4
+      },
+      "latencyAbsP95Ms": {
+        "median": 2,
+        "min": 2,
+        "max": 2
+      },
+      "txBytesPerS": {
+        "median": 390233,
+        "min": 390227,
+        "max": 391774
+      },
+      "payloadBytesPerS": {
+        "median": 392153,
+        "min": 392084,
+        "max": 392160
+      },
+      "seqGaps": [0, 0, 0],
+      "accepted": [10, 10, 10]
+    }
+  },
+  "modelCheck": [true, true, true],
+  "accessChanged": {
+    "changes": 10,
+    "postMs": {
+      "median": 8.5,
+      "min": 7,
+      "max": 10
+    },
+    "delaysMs": [
+      43, 23, 1000, 230, 208, 187, 230, 139, 118, 347, 43, 23, 1001, 230, 208, 187, 231, 140, 119,
+      347, 44, 23, 1001, 231, 209, 188, 232, 140, 119, 348
+    ],
+    "delayMs": {
+      "p50": 198,
+      "p95": 1001,
+      "max": 1001,
+      "missing": 0
+    },
+    "unaffectedClientsMessages": [0, 0, 0, 0, 0, 0, 0],
+    "seqGaps": 0
+  },
+  "cost": {
+    "rules": {
+      "/api/v1/web/session": {
+        "calls": 500,
+        "non200": 0,
+        "p50Ms": 0.27,
+        "p95Ms": 0.51,
+        "maxMs": 2.13,
+        "maxBodyBytes": 251,
+        "runtimeCpuMsPerCall": 0.08,
+        "wallS": 0.2
+      },
+      "/api/v1/web/access": {
+        "calls": 500,
+        "non200": 0,
+        "p50Ms": 0.26,
+        "p95Ms": 0.54,
+        "maxMs": 1.71,
+        "maxBodyBytes": 1361,
+        "runtimeCpuMsPerCall": 0.08,
+        "wallS": 0.2
+      }
+    },
+    "none": {
+      "/api/v1/web/session": {
+        "calls": 500,
+        "non200": 0,
+        "p50Ms": 0.27,
+        "p95Ms": 0.5,
+        "maxMs": 2,
+        "maxBodyBytes": 251,
+        "runtimeCpuMsPerCall": 0.06,
+        "wallS": 0.2
+      },
+      "/api/v1/web/access": {
+        "calls": 500,
+        "non200": 0,
+        "p50Ms": 0.24,
+        "p95Ms": 0.54,
+        "maxMs": 3.69,
+        "maxBodyBytes": 995,
+        "runtimeCpuMsPerCall": 0.08,
+        "wallS": 0.2
+      }
+    }
+  }
+}

@@ -8,14 +8,18 @@ import {
   autoYRange,
   FALLBACK_SERIES_COLORS,
   loadUPlot,
+  rangeWithLimits,
   SERIES_DASHES,
+  singleSeriesFill,
   type PlotAdapter,
   type PlotFactory,
+  type PlotLimit,
   type PlotOptions,
 } from '../chart/line-chart.ts';
 import { ChartWindow } from '../chart/window.ts';
 import { formatValue, numberOf } from '../format/format-value.ts';
 import { vi } from '../i18n/vi.ts';
+import { styleMap } from 'lit/directives/style-map.js';
 import { MatWidget } from './base.ts';
 
 const MAX_SERIES = 8;
@@ -110,8 +114,8 @@ export class MatLine extends MatWidget {
         padding: 0;
         display: flex;
         flex-wrap: wrap;
-        gap: 2px 14px;
-        font-size: 12px;
+        gap: 3px 6px;
+        font-size: 11.5px;
       }
       .legend li {
         display: inline-flex;
@@ -121,7 +125,7 @@ export class MatLine extends MatWidget {
       }
       .legend svg {
         flex: none;
-        width: 26px;
+        width: 18px;
         height: 8px;
       }
       .legend .val {
@@ -140,6 +144,33 @@ export class MatLine extends MatWidget {
       .u-wrap,
       .uplot {
         font-family: var(--mat-font);
+      }
+      /* Giao diện mới (feature 012): chú giải dạng thẻ nền nhạt theo màu đường, con trỏ dạng ô có chấm màu, đường
+         gióng nét đứt màu viền. */
+      .legend li {
+        padding: 1px 7px 1px 5px;
+        border-radius: 999px;
+        background: var(--soft, transparent);
+      }
+      .cursor {
+        align-self: flex-start;
+        padding: 2px 8px;
+        border-radius: var(--mat-radius, 4px);
+        background: var(--mat-surface-2);
+        color: var(--mat-text);
+        box-shadow: var(--mat-shadow-card, none);
+      }
+      .cursor .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        margin: 0 3px 0 6px;
+        background: var(--c);
+      }
+      .u-cursor-x,
+      .u-cursor-y {
+        border-color: var(--mat-border-strong) !important;
       }
     `,
   ];
@@ -192,6 +223,29 @@ export class MatLine extends MatWidget {
     return this.#labels()[i] || this.source.info(ids[i]!)?.description || ids[i] || '';
   }
 
+  /** Ngưỡng cao, thấp (feature 014): số hữu hạn ở props. */
+  #limits(): Array<Omit<PlotLimit, 'color'>> {
+    const out: Array<Omit<PlotLimit, 'color'>> = [];
+    for (const [kind, name] of [
+      ['high', 'highLimit'],
+      ['low', 'lowLimit'],
+    ] as const) {
+      const v = this.item?.props?.[name];
+      if (typeof v === 'number' && Number.isFinite(v)) out.push({ kind, value: v });
+    }
+    return out;
+  }
+
+  #limitColor(kind: PlotLimit['kind']): string {
+    return kind === 'high'
+      ? this.#cssColor('--mat-alarm-red', '#c42b2b')
+      : this.#cssColor('--mat-alarm-teal', '#0b6b73');
+  }
+
+  #axisText(name: 'xLabel' | 'yLabel'): string {
+    return this.prop(name, '');
+  }
+
   #yFixed(): { yMin?: number; yMax?: number } {
     const a = this.item?.props?.yMin;
     const b = this.item?.props?.yMax;
@@ -237,6 +291,9 @@ export class MatLine extends MatWidget {
       this.prop('grid', true),
       JSON.stringify(this.#yFixed()),
       JSON.stringify(this.#labels()),
+      JSON.stringify(this.#limits()),
+      this.#axisText('xLabel'),
+      this.#axisText('yLabel'),
     ].join('|');
     if (plotKey !== this.#plotKey) {
       this.#plotKey = plotKey;
@@ -291,19 +348,31 @@ export class MatLine extends MatWidget {
         if (!host) return;
         const ids = this.#ids();
         const fixed = this.#yFixed();
+        const series = ids.map((id, i) => ({
+          label: this.#labelOf(i),
+          color: this.#cssColor(`--mat-chart-${i + 1}`, FALLBACK_SERIES_COLORS[i]!),
+          dash: SERIES_DASHES[i]!,
+          width: 2,
+          show: this.source.info(id) !== undefined,
+        }));
+        const fills = singleSeriesFill(series);
+        const limits = this.#limits().map((l) => ({ ...l, color: this.#limitColor(l.kind) }));
+        const limitValues = limits.map((l) => l.value);
         const opts: PlotOptions = {
           width: host.clientWidth || this.item.width || 300,
           height: host.clientHeight || Math.max(60, (this.item.height || 200) - 60),
-          series: ids.map((id, i) => ({
-            label: this.#labelOf(i),
-            color: this.#cssColor(`--mat-chart-${i + 1}`, FALLBACK_SERIES_COLORS[i]!),
-            dash: SERIES_DASHES[i]!,
-            width: 2,
-            show: this.source.info(id) !== undefined,
-          })),
+          series: series.map((s, i) => (fills[i] ? { ...s, fill: fills[i] } : s)),
+          font: this.#cssColor('--mat-font', "'Segoe UI', system-ui, sans-serif"),
+          surfaceColor: this.#cssColor('--mat-surface', '#ffffff'),
           grid: this.prop('grid', true),
           xRange: () => [this.#nowSec - this.#windowSec(), this.#nowSec],
-          yRange: (min, max) => autoYRange(min, max, fixed.yMin, fixed.yMax),
+          yRange: (min, max) => {
+            const [a, b] = rangeWithLimits(min, max, limitValues);
+            return autoYRange(a, b, fixed.yMin, fixed.yMax);
+          },
+          limits,
+          xLabel: this.#axisText('xLabel'),
+          yLabel: this.#axisText('yLabel'),
           onCursor: (idx) => {
             this._cursor = idx;
           },
@@ -422,12 +491,26 @@ export class MatLine extends MatWidget {
                   : formatValue({ value: v, quality: 'GOOD' }, r.info, {
                       decimals: this.decimals(r.info),
                     }).text;
-              return html` · ${r.label} ${text}${r.fmt.unit ? ' ' + r.fmt.unit : ''}`;
+              return html`<span
+                  class="dot"
+                  style=${styleMap({ '--c': `var(--mat-chart-${r.i + 1})` })}
+                ></span
+                >${r.label} ${text}${r.fmt.unit ? ' ' + r.fmt.unit : ''}`;
             })}
           </div>`
         : nothing;
-    return html`<div class="w">
-      <div class="imgwrap" role="img" aria-label=${ariaLabel}>
+    const title = this.titleText();
+    const limits = this.#limits();
+    // Số của ngưỡng viết gọn (không thêm số lẻ thừa): 80, 5.5.
+    const limitText = (l: Omit<PlotLimit, 'color'>) =>
+      `${l.kind === 'high' ? vi.dash.highLimit : vi.dash.lowLimit} ${String(Number(l.value.toFixed(6)))}`;
+    return html`<div class="w ${title ? 'framed' : ''}">
+      ${this.head()}
+      <div
+        class="imgwrap ${title ? 'body' : ''}"
+        role="img"
+        aria-label=${[ariaLabel, ...limits.map(limitText)].join('; ')}
+      >
         <div class="plot">
           ${this._failed ? html`<div class="plot-error">${vi.chart.loadFailed}</div>` : nothing}
         </div>
@@ -437,7 +520,7 @@ export class MatLine extends MatWidget {
             ? html`<ul class="legend" aria-hidden="true">
                 ${rows.map(
                   (r) =>
-                    html`<li>
+                    html`<li style=${styleMap({ '--soft': `var(--mat-chart-${r.i + 1}-soft)` })}>
                       <svg viewBox="0 0 26 8" aria-hidden="true">
                         <line
                           x1="0"
@@ -467,6 +550,28 @@ export class MatLine extends MatWidget {
                                   : nothing
                               }`
                       }
+                    </li>`,
+                )}
+                ${limits.map(
+                  (l) =>
+                    html`<li
+                      class="limit"
+                      style=${styleMap({
+                        '--soft': `var(--mat-alarm-${l.kind === 'high' ? 'red' : 'teal'}-soft)`,
+                      })}
+                    >
+                      <svg viewBox="0 0 26 8" aria-hidden="true">
+                        <line
+                          x1="0"
+                          y1="4"
+                          x2="26"
+                          y2="4"
+                          stroke=${`var(--mat-alarm-${l.kind === 'high' ? 'red' : 'teal'})`}
+                          stroke-width="2"
+                          stroke-dasharray="6 4"
+                        />
+                      </svg>
+                      <span class="name">${limitText(l)}</span>
                     </li>`,
                 )}
               </ul>`

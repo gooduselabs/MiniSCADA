@@ -17,14 +17,14 @@
       "detail": "403 HTTPS_REQUIRED"
     },
     {
-      "name": "khóa Tag chỉ đọc: REJECTED READ_ONLY",
+      "name": "khóa Tag chỉ đọc: REJECTED ACCESS_DENIED (013)",
       "pass": true,
-      "detail": "READ_ONLY"
+      "detail": "ACCESS_DENIED"
     },
     {
       "name": "khóa mất kết nối thiết bị: CONNECTION_BAD",
       "pass": true,
-      "detail": "{\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"764676fc-8175-41d0-941b-cb9935e06fea\",\"status\":\"REJECTED\"}"
+      "detail": "{\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"786709e8-0127-4713-a3c6-efb4e91d86da\",\"status\":\"REJECTED\"}"
     },
     {
       "name": "mọi khóa: 0 lệnh ghi tới giả lập",
@@ -34,7 +34,7 @@
     {
       "name": "viewer: web/session trả role viewer để trang khóa nút",
       "pass": true,
-      "detail": "{\"csrfToken\":\"uGQiu5Bt2y1gZIv1OXBXLNxir1vQxN1vz3dMvoID2kU\",\"expiresAt\":\"2026-10-19T19:56:55Z\",\"idleExpiresAt\":\"2026-10-19T08:26:55Z\",\"idleTimeoutS\":1800,\"maxSessionS\":43200,\"role\":\"viewer\",\"user\":\"xem1\"}"
+      "detail": "{\"csrfToken\":\"5cpbY32oZ7hLWpDnxT1T_ID_JGEfcFs7vDLJGFygCLE\",\"expiresAt\":\"2026-10-20T05:15:53Z\",\"groups\":[],\"idleExpiresAt\":\"2026-10-19T17:45:53Z\",\"idleTimeoutS\":1800,\"maxSessionS\":43200,\"role\":\"viewer\",\"user\":\"xem1\",\"viewerLogin\":\"off\"}"
     },
     {
       "name": "system/info công khai có khối web (trang dựng dải chỉ xem)",

@@ -41,6 +41,10 @@ namespace mat {
 struct AlarmActor {
     std::string user, role, source;
     AuditChannel channel = AuditChannel::Https;
+    // Feature 013 (contracts/admin-api.md §6): the alarms this person may act on (by instance id);
+    // empty: every alarm. An instance outside it: 403 ACCESS_DENIED (audited denied); "all" acts
+    // on the allowed ones only.
+    AlarmIdFilter allowed;
 };
 
 // An answer ready for the HTTP layer: the status and the JSON body ({"error","message",…} on a
@@ -108,8 +112,9 @@ class AlarmGlue : public AlarmLiveSource {
 
     // ---- API ----
     // GET /api/v1/alarms. `full` false: a source without a sign-in (no account names, no free
-    // text; security review M1).
-    nlohmann::json listJson(bool full = true);
+    // text; security review M1). Feature 013: `allow` keeps the instances a person may see, and
+    // the counts are of those only (empty: every instance, the engine's counts).
+    nlohmann::json listJson(bool full = true, const AlarmIdFilter& allow = {});
     // GET /api/v1/alarms/history (the query is checked by the HTTP layer against the contract)
     // `full` false: a source without a sign-in; `ackUser` and `returnAckUser` are null.
     AlarmApiResult history(const alarm::HistoryQuery& q, bool full = true);
@@ -123,8 +128,9 @@ class AlarmGlue : public AlarmLiveSource {
     AlarmApiResult disable(const std::string& id, const std::string& reason, const AlarmActor& who);
     AlarmApiResult enable(const std::string& id, const AlarmActor& who);
 
-    // The block "alarms" of system/info (device-api-1.3 §4.1) and its warnings.
-    nlohmann::json infoJson();
+    // The block "alarms" of system/info (device-api-1.3 §4.1) and its warnings. Feature 013: the
+    // instances and the counts of the alarms `allow` keeps (empty: all).
+    nlohmann::json infoJson(const AlarmIdFilter& allow = {});
     std::vector<std::string> warnings();
     // For the CLI check and the tests.
     std::string dbPath() const;
@@ -136,7 +142,7 @@ class AlarmGlue : public AlarmLiveSource {
    private:
     struct Waiter;
     nlohmann::json itemJson(const alarm::AlarmItem& it, bool full) const;
-    nlohmann::json countsJson(const alarm::Counts& c) const;
+    static nlohmann::json countsJson(const alarm::Counts& c);
     nlohmann::json classesJson() const;
     nlohmann::json areasJson() const;
     // Gives `cmds` to the engine and waits for every result (nullopt on timeout).
@@ -151,7 +157,11 @@ class AlarmGlue : public AlarmLiveSource {
     AlarmApiResult auditDown() const;
     AlarmApiResult notFound(const std::string& id) const;
     AlarmApiResult timeout() const;
-    nlohmann::json stateBody(const std::string& id) const;  // revision, counts, state of `id`
+    // revision, counts (of the alarms `allow` keeps), state of `id`
+    nlohmann::json stateBody(const std::string& id, const AlarmIdFilter& allow = {}) const;
+    // The counts of `v` (as the engine counts them) over the instances `allow` keeps; empty: the
+    // engine's counts.
+    static alarm::Counts countsOf(const alarm::AlarmView& v, const AlarmIdFilter& allow);
     void afterEvents(const std::vector<alarm::AlarmEvent>& events);
 
     AlarmGlueOptions opt_;

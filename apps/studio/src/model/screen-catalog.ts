@@ -170,6 +170,9 @@ export interface FieldModel {
   fields?: PropSpec[];
   fromTag?: string;
   fallback?: number;
+  /** Danh mục 0.6.0 (feature 014): chuỗi phải khớp mẫu (`utcOffset`, `src`); chuỗi nhiều dòng (`text`). */
+  pattern?: string;
+  multiline?: boolean;
 }
 export interface SlotModel {
   name: string;
@@ -210,6 +213,8 @@ const COPY_KEYS = [
   'fields',
   'fromTag',
   'fallback',
+  'pattern',
+  'multiline',
 ] as const;
 
 function fieldOf(widget: string, p: PropSpec): FieldModel {

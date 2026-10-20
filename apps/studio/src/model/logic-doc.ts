@@ -73,6 +73,9 @@ const OUT_SUFFIX: Readonly<Partial<Record<LogicKind, Readonly<Record<string, str
   runhours: { hours: 'HOURS', starts: 'STARTS', due: 'DUE' },
   schedule: { out: 'Q' },
 };
+/** Trường đầu ra (Tag logic) của nhóm (feature 015: nhân bản khối đặt đầu ra theo id mới). */
+export const outputFields = (kind: LogicKind): string[] => Object.keys(OUT_SUFFIX[kind] ?? {});
+
 const EXPR_FIELDS: Readonly<Partial<Record<LogicKind, readonly string[]>>> = {
   rule: ['when'],
   timer: ['in'],

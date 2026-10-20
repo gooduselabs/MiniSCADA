@@ -47,6 +47,32 @@ describe('projectFiles()', () => {
     ]);
   });
 
+  // Feature 014: tệp SVG của widget image (props.src) thuộc project như SVG của item svg (gói, digest, runtime phục vụ).
+  it('widget image: tệp props.src (khác rỗng) thuộc project, không trùng', () => {
+    const p: ProjectFileRefs = {
+      project: { tagFile: 'tags.json', screens: ['main'] },
+      screens: {
+        main: {
+          screen: {
+            items: [
+              { type: 'widget', widget: 'image', props: { src: 'graphics/logo.svg' } },
+              { type: 'widget', widget: 'image', props: { src: 'graphics/logo.svg' } },
+              { type: 'widget', widget: 'image', props: { src: '' } },
+              { type: 'widget', widget: 'image' },
+              { type: 'widget', widget: 'label', props: { src: 'graphics/x.svg' } },
+            ],
+          },
+        },
+      },
+    };
+    expect(projectFiles(p)).toEqual([
+      'graphics/logo.svg',
+      'project.json',
+      'screens/main.screen.json',
+      'tags.json',
+    ]);
+  });
+
   it('không có loggingFile thì không có file lưu trữ', () => {
     const p: ProjectFileRefs = {
       project: { tagFile: 'tags.json', screens: ['main'] },

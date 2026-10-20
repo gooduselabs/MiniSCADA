@@ -244,6 +244,26 @@ describe('planImport: item, file SVG và file binding (D29)', () => {
     return r;
   };
 
+  it('màn hình lưới (feature 012): item svg không có tọa độ, đặt vào ô trống đầu tiên', () => {
+    const grid = {
+      ...screenOf(),
+      layout: {
+        mode: 'grid',
+        columns: 12,
+        rows: [{ id: 'r1', height: 'auto', cells: [{ id: 'c1', span: 12 }] }],
+      },
+    } as unknown as ScreenModel;
+    const p = planImport(ok(), 'Sơ đồ Bồn.svg', target(grid));
+    if (!p.ok) throw new Error(p.reason);
+    const up = p.change.edits![0] as unknown as {
+      screen: ScreenModel & { layout: { rows: Array<{ cells: Array<{ item?: string }> }> } };
+    };
+    const placed = up.screen.items.at(-1) as unknown as Record<string, unknown>;
+    expect(placed.x).toBeUndefined();
+    expect(placed.width).toBeUndefined();
+    expect(up.screen.layout.rows[0]!.cells[0]!.item).toBe('svg_1');
+  });
+
   it('item svg ở (0, 0), cỡ viewBox, file graphics/<slug>.svg, binding rỗng, một màn hình sửa', () => {
     const r = ok();
     const p = planImport(r, 'Sơ đồ Bồn.svg', target());

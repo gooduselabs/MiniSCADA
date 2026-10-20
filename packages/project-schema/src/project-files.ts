@@ -29,7 +29,26 @@ export interface ProjectFileRefs {
 /** Màn hình 0.1/0.2 (một SVG, một binding) hoặc 0.3 (mỗi item `svg` có SVG và binding riêng). */
 export type ScreenRefs =
   | Pick<Screen, 'bindingFile' | 'svgFile'>
-  | { items: ReadonlyArray<{ type: string; svgFile?: string; bindingFile?: string }> };
+  | {
+      items: ReadonlyArray<{
+        type: string;
+        svgFile?: string;
+        bindingFile?: string;
+        /** Feature 014: widget `image` trỏ tệp SVG của project ở `props.src`. */
+        widget?: string;
+        props?: Readonly<Record<string, unknown>>;
+      }>;
+    };
+
+/** Tệp SVG của widget `image` (feature 014): `props.src` khác rỗng, không thì undefined. */
+export function imageFileOf(item: {
+  type: string;
+  widget?: string;
+  props?: Readonly<Record<string, unknown>>;
+}): string | undefined {
+  const src = item.type === 'widget' && item.widget === 'image' ? item.props?.src : undefined;
+  return typeof src === 'string' && src !== '' ? src : undefined;
+}
 
 /**
  * `project.json`, `tagFile`, `loggingFile` (nếu có), và mỗi màn hình: `screens/<id>.screen.json`,
@@ -58,6 +77,8 @@ export function projectFiles(p: ProjectFileRefs): string[] {
     if ('items' in screen) {
       // Định dạng 0.3: file của từng item svg (contract project-format-0.3 §1)
       for (const item of screen.items) {
+        const image = imageFileOf(item);
+        if (image !== undefined) files.add(image);
         if (item.type !== 'svg') continue;
         if (item.svgFile !== undefined) files.add(item.svgFile);
         if (item.bindingFile !== undefined) files.add(item.bindingFile);

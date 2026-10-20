@@ -622,7 +622,8 @@ TEST(HttpsApi, EngineeringApiOverHttpIs403AndAudited) {
     // 19 of 005 and 006, 4 of feature 007 (web/*), 5 POST routes of feature 009 (the two GET reads
     // of the alarms belong to HttpApi and are left out above)
     // + 5 GET of the history (feature 010), + 3 routes of logic, + 5 routes of OTA (feature 011)
-    ASSERT_EQ(paths.size(), 41u);
+    // + web/access, web/password and 15 routes of the admin API (feature 013)
+    ASSERT_EQ(paths.size(), 58u);
     std::map<std::string, int64_t> counts;  // target → count
     for (const auto& rec : r.records("access.")) {
         EXPECT_EQ(rec.channel, "http");
@@ -635,7 +636,7 @@ TEST(HttpsApi, EngineeringApiOverHttpIs403AndAudited) {
     EXPECT_EQ(counts["/api/v1/auth/session"], 2);  // the target has no query string
     int64_t suppressed = 0;
     for (const auto& rec : r.records("audit.suppressed")) suppressed += rec.count;
-    EXPECT_EQ(suppressed, 31);
+    EXPECT_EQ(suppressed, 48);
 }
 
 // Constitution IV: one limit of 10 live sessions for both listeners. 6 ws + 4 wss fill it; the

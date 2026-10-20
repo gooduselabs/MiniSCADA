@@ -28,7 +28,7 @@ Giả lập mở cổng 1502 trên máy tính, có mức bồn (`HR100`) và lư
 Studio bố trí như một công cụ kỹ thuật: cây project bên trái, vùng editor theo tab ở giữa, Inspector bên phải, thanh trạng thái ở dưới.
 
 - Menu: **Project**, **Sửa**, **Xem**, **Online**, **Công cụ**, **Trợ giúp**.
-- Thanh công cụ: Lưu, hoàn tác, **Kiểm tra**, **Nạp xuống**, **Đọc lên**, **So sánh**, **Online**/**Offline**, **Thiết bị**, **Mô phỏng**, **Tìm lệnh…** (Ctrl+Shift+P).
+- Thanh công cụ: **Project mới**, **Mở project**, Lưu, hoàn tác, **Kiểm tra**, **Nạp xuống**, **Đọc lên**, **So sánh**, **Online**/**Offline**, **Thiết bị**, **Mô phỏng**, **Tìm lệnh…** (Ctrl+Shift+P).
 - Thanh trạng thái: trạng thái thiết bị ("Không kết nối", "Đang theo dõi", "Online"), tài khoản, số lỗi và cảnh báo, chip so sánh với thiết bị, nhãn "MÔ PHỎNG" khi đang mô phỏng.
 - Chế độ Online có viền cam quanh cửa sổ.
 - Task card bên phải đổi theo editor đang mở: **Toolbox** (widget, ký hiệu) ở editor Màn hình, **Khối / Tag** ở editor Logic, **Công cụ vẽ** (công cụ và bảng màu tô, màu viền) ở trình vẽ SVG.
@@ -41,9 +41,17 @@ Studio bố trí như một công cụ kỹ thuật: cây project bên trái, v�
 
 ## 3. Mở và tạo project
 
-Studio chưa có lệnh "tạo project trống". Có hai cách bắt đầu:
+**Project mới** (cách thường dùng): **Project** > **Project mới…** (Ctrl+N), hoặc nút lớn **Tạo project mới** ở tab **Bắt đầu** khi chưa mở project. Hộp thoại **Project mới** hỏi:
 
-- **Từ project mẫu:** chép `projects/training-demo/` thành thư mục mới, mở bằng **Project** > **Mở project…** (Ctrl+O). Đổi tên trong **Thiết lập project**.
+- **Tên project** (bắt buộc, tối đa 80 ký tự).
+- **Mã project**: tự sinh từ tên, bỏ dấu, chữ thường, gạch nối (`Trạm bơm Số 1` → `tram-bom-so-1`); sửa được, 2–48 ký tự. Mã là `projectId` và là tên thư mục project. Nút mũi tên vòng sinh lại mã từ tên.
+- **Thư mục chứa**: mặc định `Documents\mAT SCADA`; **Chọn…** để chọn thư mục khác, **Mặc định** để quay về. Studio tạo thư mục con theo mã project trong thư mục chứa; dòng **Project sẽ nằm ở** hiện đường dẫn đầy đủ và báo ngay nếu thư mục đó đã có project hoặc có tệp khác (khi đó không tạo được, đổi mã hoặc thư mục chứa).
+- **Mẫu**: **Trống** (một màn hình lưới **Tổng quan** với một hàng ba ô trống, chưa có Tag và kết nối), **Mẫu trạm bơm** (Tag mô phỏng, màn hình lưới **Bảng điều khiển** kiểu dashboard: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, đồng hồ, trạng thái bơm, bảng Tag, faceplate bơm; chạy được ngay ở chế độ **Mô phỏng**) hoặc **Dashboard tối** (chỉ màn hình dashboard đó cùng Tag của nó; chọn mẫu này thì chủ đề tự chuyển sang **Tối**, đổi lại được).
+- **Chủ đề giao diện** của trang vận hành: **Sáng đa sắc** (mặc định), **Công nghiệp trầm**, **Tối**; đổi lại được trong **Thiết lập project**.
+ **Tạo project**: Studio ghi project định dạng 1.1, mở nó (cây project đầy đủ) và mở sẵn màn hình đầu. Đang có thay đổi chưa lưu thì Studio hỏi Lưu, Không lưu hay Hủy trước khi mở hộp thoại, như khi mở project khác. Project vừa tạo lên đầu danh sách **Mở gần đây** (tab **Bắt đầu** và menu **Project**).
+ cách khác:
+
+- **Từ project mẫu có sẵn:** chép `projects/training-demo/` (bài thực hành của tài liệu này) thành thư mục mới, mở bằng **Project** > **Mở project…** (Ctrl+O). Đổi tên trong **Thiết lập project**.
 - **Từ thiết bị:** **Online** > **Thiết bị trong mạng…** > chọn thiết bị > **Đọc lên thành project mới** (mục 10).
 
 Lưu bằng Ctrl+S. Studio cho lưu cả khi còn lỗi ("Đã lưu … Còn n lỗi: thiết bị sẽ từ chối project này."), nhưng không cho nạp xuống.
@@ -100,8 +108,8 @@ Mở **Màn hình** trên cây. **Thêm màn hình** hoặc **Thêm popup**; **�
 
 Hộp công cụ có các nhóm widget:
 
-- Hiển thị: **Thẻ giá trị**, **Nhãn**, **Đèn báo**, **Đồng hồ kim**, **Mức chất lỏng**, **Khung nhóm**.
-- Biểu đồ: **Biểu đồ đường**, **Biểu đồ cột**, **Biểu đồ tròn**; bảng: **Bảng Tag sống**.
+- Hiển thị: **Thẻ giá trị**, **Nhãn**, **Đèn báo**, **Đồng hồ kim**, **Mức chất lỏng**, **Khung nhóm**, và các widget dashboard: **Thẻ chỉ số màu**, **Chỉ số KPI**, **Thanh tiến độ**, **Danh sách trạng thái**, **Đồng hồ ngày giờ**, **Ghi chú**, **Ảnh** (mục 6.1.1).
+- Biểu đồ: **Biểu đồ đường**, **Biểu đồ cột**, **Biểu đồ tròn**; bảng: **Bảng Tag sống**. Biểu đồ, đồng hồ kim và bảng có thuộc tính **Tiêu đề**: điền vào thì widget thành khung có thanh tiêu đề (như các khung "Biểu đồ nhiệt độ" của dashboard).
 - Điều khiển: **Nút bấm**, **Công tắc**, **Đặt giá trị**, **Thanh trượt**, **Chọn từ danh sách**.
 - Alarm: **Danh sách alarm**, **Đếm alarm**; lịch sử: **Lịch sử: biểu đồ đường**, **Lịch sử: bảng dòng**, **Lịch sử: biểu đồ cột**, **Lịch sử: biểu đồ tròn**.
 - **Ký hiệu SVG**: bơm, van, bồn… (ô tìm "Tìm bơm, van, bồn...").
@@ -110,11 +118,80 @@ Inspector có các tab **Chung**, **Hiển thị**, **Gắn Tag**, **Sự kiện
 
 **Gắn Tag:** kéo Tag từ Details thả vào ô của widget, hoặc **Chọn Tag…**. **Dùng đơn vị, bảng, giới hạn của Tag** điền sẵn đơn vị và giới hạn.
 
-**Sự kiện** "Khi bấm": **Ghi giá trị**, **Đảo giá trị**, **Ghi xung**, **Chuyển màn hình**, **Mở popup**, **Đóng popup**. **Hộp xác nhận** bắt buộc với mọi lệnh ghi giá trị số; chỉ nút hoặc công tắc BOOL mới được bỏ xác nhận. **Vai trò tối thiểu** mặc định là `operator`; đặt `engineer` cho chỉnh thông số (ví dụ "Ngưỡng mức cao" trong `training-demo`).
+**Sự kiện** "Khi bấm": **Ghi giá trị**, **Đảo giá trị**, **Ghi xung**, **Chuyển màn hình**, **Mở popup**, **Đóng popup**. **Hộp xác nhận** bắt buộc với mọi lệnh ghi giá trị số; chỉ nút hoặc công tắc BOOL mới được bỏ xác nhận. **Vai trò tối thiểu** mặc định là `operator`; đặt `engineer` cho chỉnh thông số (ví dụ "Ngưỡng mức cao" trong `training-demo`). Project định dạng 1.1 có hai mức riêng để xem và để thao tác (mục 6.3).
 
 **Nút xung:** runtime giữ nhịp bật rồi nhả. Chương trình PLC vẫn phải tự xóa bit lệnh xung sau một thời gian (ví dụ gấp đôi độ dài xung): runtime nhả lại xung dở khi khởi động lại, nhưng không thay được bảo vệ trong PLC.
 
 **Xem trước:** chế độ **Mô phỏng** (thanh công cụ) chạy Tag mô phỏng ngay trong Studio, không cần thiết bị. Chế độ **Thiết bị** hiện giá trị sống khi Online.
+
+### 6.1. Bố cục lưới (hàng và cột)
+
+Project định dạng 1.1 trở lên. Màn hình mới mặc định là **bố cục lưới**: trang gồm các **hàng**, mỗi hàng chia trên **12 cột**, mỗi **ô** chứa một component. Vị trí do ô quyết định, không nhập X, Y. (**Thêm màn hình (bố cục tự do)** vẫn có cho cách đặt theo tọa độ cũ; **Chuyển sang bố cục lưới** đổi một màn hình tự do sang lưới, có xem trước và hoàn tác.)
+
+![Trình soạn bố cục lưới: thanh Thêm hàng, thuộc tính ô (Rộng, Trống trước, Căn, Cao tối thiểu) và hàng (Tự động, Chiều cao, Khoảng cách); nút xem trước 1920, 1366, 600; trang dashboard gồm hai hàng thẻ chỉ số màu và hàng ba biểu đồ có tiêu đề, một ô đang chọn](img/eng-bo-cuc-luoi.png)
+
+1. **Thêm hàng** → chọn mẫu chia cột: `12`, `6+6`, `4+4+4`, `3+3+3+3`, `8+4`, `4+8`, `3+6+3`, hoặc **Tự nhập…** (ví dụ `2+8+2`, tổng không quá 12). Cột bên phải của menu là **Mẫu hàng có sẵn widget**: **4 thẻ chỉ số** (hàng cao 116 px, bốn thẻ màu khác nhau có biểu tượng), **3 biểu đồ** (cao 260 px: đường, cột, tròn có tiêu đề), **2 biểu đồ + 1** (cao 260 px: đường 5 cột, cột 4 cột, đồng hồ 3 cột), **1 biểu đồ rộng** (cao 300 px). Widget đã đặt sẵn tên, màu; chỉ việc kéo Tag thả vào từng ô. Hàng có chiều cao cố định nên mọi ô cùng hàng cao bằng nhau.
+
+![Menu Thêm hàng: bên trái mẫu chia cột, bên phải mẫu hàng có sẵn widget (4 thẻ chỉ số, 3 biểu đồ, 2 biểu đồ + 1, 1 biểu đồ rộng)](img/eng-them-hang.png)
+2. **Gắn component:** kéo widget từ Toolbox thả **vào ô** (ô sáng lên khi rê vào), hoặc chọn ô rồi nhấp đúp widget trong Toolbox. Ô đã có component thì Studio hỏi **Thay**.
+3. **Đổi độ rộng:** kéo đường chia giữa hai ô (bám theo 1/12), hoặc nhập **Rộng (cột)** ở thanh thuộc tính khi ô đang chọn; **Trống trước** để chừa cột trống bên trái ô; **Căn** (kéo giãn, đầu, giữa, cuối); **Cao tối thiểu**.
+4. **Hàng:** **Tự động** (cao theo nội dung) hoặc bỏ chọn để nhập chiều cao cố định; **Khoảng cách** giữa các ô; nút ↑ ↓ đổi thứ tự, 🗑 xóa hàng (xóa cả component trong hàng).
+5. **Xem trước** ở chiều rộng **1920**, **1366**, **600**: dưới 768 điểm ảnh các ô xếp chồng thành một cột (máy tính bảng dọc, điện thoại).
+
+Bàn phím khi ô có focus: ← → ↑ ↓ chuyển ô; **Alt+↑/↓** đổi thứ tự hàng; **Alt+←/→** đổi thứ tự ô; **Ctrl+←/→** thu, nới ô một cột; **Enter** chọn ô; **Delete** xóa component của ô. Mọi thao tác hoàn tác được bằng Ctrl+Z.
+
+Lỗi thường gặp: `E_LAYOUT_SPAN` (tổng các ô của hàng quá 12 cột), `E_LAYOUT_ITEM_POS` (component lưới có tọa độ, hoặc component màn hình tự do thiếu tọa độ), `E_LAYOUT_VERSION` (project chưa nâng lên 1.1); cảnh báo `W_LAYOUT_ITEM_ORPHAN` (component không nằm trong ô nào, không hiển thị). Bản sao template chưa chèn được vào màn hình lưới.
+
+#### 6.1.1. Widget dashboard
+
+| Widget | Dùng cho | Thuộc tính chính |
+|---|---|---|
+| **Thẻ chỉ số màu** (`stat-tile`) | Số đọc to trên nền màu đặc, biểu tượng lớn mờ ở góc phải, dòng "Trạng thái: Tốt / Không chắc / Lỗi / Mất dữ liệu" theo chất lượng của giá trị | **Nhãn**, **Đơn vị**, **Số chữ số thập phân**, **Màu thẻ** (10 màu: xanh ngọc, xanh dương, hồng đỏ, tím, xanh ô liu, chàm, cam, xanh lơ, xanh lá, xám đá; chữ trắng đọc rõ ở mọi chủ đề), **Biểu tượng** (21 hình: nhiệt độ, độ ẩm, dòng chảy, gió, ánh sáng, bóng đèn, khí CO₂, lửa, quạt, làm mát, bơm, van, điện, nguồn, áp suất, mức bồn, động cơ, bánh răng, đồng hồ, cảnh báo, ngôi sao), **Dòng trạng thái**, **Đường xu hướng nhỏ**, **Mũi tên tăng giảm**; khe **Tag cảnh báo** (BOOL) đổi dòng trạng thái thành "Cảnh báo" |
+| **Chỉ số KPI** (`kpi`) | Số đọc so với mục tiêu: "Mục tiêu: …", chênh lệch phần trăm có mũi tên, thanh mảnh | **Mục tiêu** (số) hoặc khe **Tag mục tiêu**, **Càng cao càng tốt** (đạt thì xanh, không đạt thì đỏ) |
+| **Thanh tiến độ** (`progress`) | Phần trăm của giá trị trong thang Nhỏ nhất–Lớn nhất (mặc định theo Tag) | **Hướng**: thanh ngang hoặc vòng tròn, **Màu thanh** |
+| **Danh sách trạng thái** (`status-list`) | Đèn trạng thái của tối đa 16 Tag (BOOL: Bật/Tắt; số: chữ của bảng giá trị) | **Tiêu đề**, **Tên từng mục**, **Chữ khi bật**, **Chữ khi tắt**, **Số cột** (1–4) |
+| **Đồng hồ ngày giờ** (`clock`) | Giờ của thiết bị | **Định dạng** (giờ và ngày, chỉ giờ, chỉ ngày), **Múi giờ** (mặc định +07:00), **Hiện giây** |
+| **Ghi chú** (`text`) | Chữ nhiều dòng (tối đa 300 ký tự), không định dạng HTML | **Tiêu đề**, **Nội dung ghi chú**, cỡ chữ, căn lề, màu |
+| **Ảnh** (`image`) | Ảnh SVG có trong project (tệp `graphics/….svg`, nhập bằng **Nhập SVG** hoặc vẽ bằng trình vẽ); không tải ảnh từ Internet | **Tệp ảnh SVG**, **Cách vừa khung**, **Mô tả ảnh** |
+
+**Biểu đồ đường** có thêm **Ngưỡng cao**, **Ngưỡng thấp** (vẽ đường nét đứt đỏ và xanh ngọc, có trong chú giải; trục giá trị tự nới để thấy ngưỡng) và **Nhãn trục thời gian**, **Nhãn trục giá trị**. **Đồng hồ kim** nay gọn trong khung (bán kính tối đa 150 px), số đọc ở dưới. **Khung nhóm** có **Kiểu khung** "Card có thanh tiêu đề".
+
+Lỗi thường gặp: `E_FILE_MISSING` ở `props/src` (tệp ảnh của widget **Ảnh** không có trong project), `E_WIDGET_PROP` (đường dẫn ảnh không nằm trong `graphics/` hoặc không phải `.svg`, múi giờ không đúng dạng `±HH:MM`).
+
+![Dashboard của Mẫu trạm bơm trên trang vận hành, chủ đề Sáng đa sắc: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, cột, đồng hồ, trạng thái bơm](img/op-bo-cuc-luoi.png)
+
+![Cùng dashboard ở chủ đề Tối (mẫu Dashboard tối): nền xám xanh, khung biểu đồ sáng hơn nền, thẻ chỉ số giữ màu](img/op-dashboard-toi.png)
+
+### 6.2. Chủ đề giao diện
+
+**Thiết lập project** → **Chủ đề giao diện**: **Sáng đa sắc** (mặc định của project mới), **Công nghiệp trầm** (giao diện cũ, mặc định của project nâng cấp), **Tối**. Trang vận hành và xem trước màn hình đổi theo; màu đặt riêng cho widget vẫn giữ.
+
+<a id="help-security"></a>
+
+### 6.3. Bảo mật: vai trò tối thiểu và phân quyền trên thiết bị
+
+Project định dạng 1.1. Kỹ sư chỉ đặt **mặc định theo vai trò** trong project; quyền theo từng người dùng và nhóm do quản trị viên đặt **trên thiết bị** (trang Quản trị của trang vận hành, [admin-guide.md](admin-guide.md#quan-tri-web)), **không** nằm trong project và không đi theo gói `.matscada`. Nạp xuống project mới không xóa quy tắc của quản trị viên.
+
+**Component:** chọn component, Inspector, tab **Bảo mật**:
+
+- **Vai trò tối thiểu để xem**: người có vai trò thấp hơn không thấy component (ô lưới để trống) và không nhận giá trị Tag của nó. Mặc định **Xem (viewer)**.
+- **Vai trò tối thiểu để thao tác**: chỉ có ở component điều khiển (nút bấm, công tắc, đặt giá trị, thanh trượt, chọn từ danh sách, SVG có sự kiện ghi); không thấp hơn mức xem, không thể là viewer. Mặc định **Vận hành (operator)**. Component chỉ hiển thị báo "Component chỉ hiển thị (không có điều khiển hay sự kiện ghi) nên không có mức thao tác.".
+- Dòng nhắc trong tab: "Đây là mức mặc định khi thiết bị chưa có quy tắc quyền. Quản trị viên phân quyền theo người dùng và nhóm trên trang Quản trị của thiết bị, nhưng không hạ được dưới mức này. Máy chủ kiểm quyền ở mọi lệnh ghi."
+
+**Màn hình và popup:** **Thuộc tính màn hình…** → **Vai trò tối thiểu để xem**: người có vai trò thấp hơn không thấy màn hình trong menu và không mở được. Popup đặt như màn hình; nút mở popup mà người dùng không xem được thì khóa ("Cần quyền xem cửa sổ này").
+
+Project định dạng 1.0 trở về trước giữ một mức **Vai trò tối thiểu** ở tab Bảo mật (chỉ khóa điều khiển trên giao diện). Ở project 1.1, `minRole` cũ vẫn được đọc như mức thao tác.
+
+**Định danh ổn định:** quy tắc của quản trị viên trỏ tới màn hình và component bằng **mã** (`id`): `screen:<mã màn hình>`, `item:<mã màn hình>/<mã component>`. Đổi mã một màn hình hay component rồi nạp xuống thì quy tắc cũ thành **mồ côi** (không có hiệu lực; trang Quản trị báo và cho dọn), component mang mã mới dùng mặc định của project cho tới khi quản trị viên đặt lại quyền. Đổi tên hiển thị, nhãn, vị trí, ô lưới không ảnh hưởng. Trước khi đổi mã của nút điều khiển đã được phân quyền: báo quản trị viên.
+
+**Lỗi kiểm tra:**
+
+| Mã | Nghĩa | Cách sửa |
+|---|---|---|
+| `E_SECURITY_LEVEL` | vai trò tối thiểu sai: mức thao tác là viewer, thấp hơn mức xem hay khác `minRole` cũ, hoặc đặt mức mới ở project định dạng 1.0 | chọn lại mức; nâng project lên 1.1 trước khi dùng mức xem |
+| `E_SECURITY_ITEM` | đặt mức thao tác cho component không thao tác được (widget chỉ hiển thị, SVG không có sự kiện ghi) | bỏ mức thao tác |
+
+Studio và runtime dùng cùng luật kiểm: project báo lỗi ở Studio thì thiết bị cũng từ chối khi nạp xuống.
 
 ## 7. Đồ họa SVG
 
@@ -233,7 +310,35 @@ Cần project định dạng 1.0.0 (mục 3); project cũ hơn thì các lệnh 
 
 Logic chạy trên runtime 1.0.0, theo chu kỳ quét (`logic.scanMs`, mặc định 100 ms). Mọi khối nằm trong `logic.json`, sửa ở nút **Logic** trên cây (các nhóm Luật, Timer, Counter, Cộng dồn, Giờ chạy, Lịch, Ghi PLC; tất cả mở chung tab "Logic"). Project chưa có logic: bấm **Tạo logic.json**. Project định dạng cũ hơn 1.0.0: editor báo "Logic cần project định dạng 1.0.0", nâng cấp project trước (mục 3).
 
-Thao tác trong tab: **Thêm khối** (Insert), **Xóa** (Delete), **Chuyển lên**/**Chuyển xuống**, F2 đổi id (Studio cập nhật mọi tham chiếu), ô "Tìm id, tên, Tag", ô "Chỉ dòng lỗi", **Kiểm tra** (F7). Dock dưới có **Inspector** (trường của khối đang chọn), **Thông tin** (lỗi và cảnh báo, nhấp đúp để nhảy tới ô; F8 / Shift+F8 tới lỗi kế / trước ở bất kỳ đâu trong editor) và **Thử logic**. Task card **Khối / Tag** bên phải: kéo một khối vào bảng (hoặc nhấp đúp) để thêm, kéo một Tag vào ô biểu thức. Giới hạn: 200 luật, 100 timer, 100 counter, 50 cộng dồn, 50 giờ chạy, 50 lịch, 100 mục ghi (`E_LOGIC_LIMIT`).
+Tab Logic có hai khung nhìn của cùng `logic.json`, chọn bằng nút **Sơ đồ** / **Bảng** đầu thanh công cụ (Studio nhớ lựa chọn trên máy): **Sơ đồ** (mặc định, mục 9.1) vẽ khối và dây nối kiểu FBD; **Bảng** liệt kê khối theo nhóm như trước (mục 9.2).
+
+### 9.1. Sơ đồ khối
+
+Mỗi khối là một nút: đầu khối có loại (Luật, TON/TOF/TP, Counter, Cộng dồn, Giờ chạy, Lịch, Ghi PLC) và id; bên trái là cổng vào (ô biểu thức: `when`, `in`, `up`, `down`, `reset`, `source`, `run`), bên phải là cổng ra (Tag logic `q`, `et`, `value`, `reached`, `total`…; luật có ↑ Khi lên và ↓ Khi xuống); dòng cuối tóm tắt tham số (giữ 5 s, PT 1 min, đặt trước 1000…). Biểu thức của cổng vào được vẽ thành cổng logic: `&&` là **AND**, `||` là **OR**, `!` là **NOT**, so sánh là ô "> 80", "< 20"…; phép tính khác (số học, hàm) là ô biểu thức. Tag đầu vào là hộp tên Tag gắn vào chân (đi theo khối). Đầu ra của khối dùng ở khối khác nối bằng dây liền; hành động của luật tới mục **Ghi PLC** hoặc Tag đích là dây đứt màu hổ phách. Chấm cổng xanh dương là BOOL, tím là số.
+
+Sơ đồ không đổi định dạng `logic.json`. Vị trí khối lưu riêng trong tệp `logic.layout.json` cạnh `logic.json` (chỉ Studio dùng, không nạp xuống thiết bị); thiếu tệp này thì Studio tự sắp xếp.
+
+- **Thêm khối**: kéo khối từ task card **Khối / Tag** vào sơ đồ (đặt ở chỗ thả), hoặc **Thêm khối** / Insert (đặt giữa vùng nhìn).
+- **Dời khối**: kéo khối (căn lưới 16 px, giữ Alt để dời tự do) hoặc phím mũi tên (16 px, Shift: 64 px). **Tự sắp xếp** xếp lại mọi khối từ trái sang phải theo phụ thuộc.
+- **Chọn nhiều khối**: Shift+bấm từng khối, hoặc kéo khung trên nền; Ctrl+A chọn hết, Esc bỏ chọn nhóm. Kéo, mũi tên, Delete, Ctrl+D áp cho cả nhóm, mỗi thao tác một bước hoàn tác.
+- **Nối dây**: kéo từ cổng ra (Tag hoặc đầu ra khối) tới cổng vào hoặc chân của cổng logic: Studio thay đúng phần biểu thức đó bằng tên Tag. Kéo ↑/↓ của luật tới mục Ghi PLC thêm hành động Ghi PLC (giá trị cho phép đầu tiên), tới Tag đích thêm Đặt Tag `true`. Kéo một Tag từ task card thả vào cổng vào cũng nối. Khi đang kéo, cổng khác kiểu mờ đi.
+- **Cổng logic**: kéo **AND**, **OR**, **NOT**, **So sánh** ở task card thả vào một cổng vào để bọc biểu thức hiện có (ví dụ `(x) && true`), rồi nối Tag vào chân còn trống.
+- **Xóa dây**: nhấp dây rồi Delete (bỏ toán hạng khỏi AND/OR, cổng vào của khối thành trống). **Xóa khối**: Delete; **Nhân bản**: Ctrl+D (đầu ra theo id mới). Mỗi thao tác hoàn tác được bằng một lần Ctrl+Z.
+- Nhấp một khối (hoặc Tab tới nó) để sửa ở **Inspector** như ở Bảng; Enter đưa con trỏ vào ô Id. Nhấp cổng logic hay hộp Tag đưa con trỏ vào đúng ô biểu thức.
+- **Zoom**: Ctrl + lăn chuột, nút − / + (phím − +), **Vừa khung** (phím 0; không thu dưới 90 % để chữ còn đọc được, sơ đồ lớn hơn thì cuộn), **100 %**; lăn chuột, giữ Space rồi kéo, hoặc kéo bằng nút giữa để dời. Bản đồ nhỏ ở góc phải dưới: nhấp để tới vùng đó.
+- **Khung dưới** (Inspector, Thông tin, Thử logic): kéo thanh chia để đổi chiều cao; nút ˅ ở góc phải hoặc Ctrl+J gập/mở (Studio nhớ chiều cao). Mở **Thử logic** ở Sơ đồ, khung dưới tự thấp lại để vùng vẽ còn ít nhất 55 % chiều cao.
+- **Lỗi** của bộ kiểm tra hiện ngay trên sơ đồ: khối có lỗi viền đỏ, cổng vào và dây của biểu thức lỗi màu đỏ, Tag không có trong project là hộp viền đứt đỏ; danh sách vẫn ở tab **Thông tin**, nhấp đúp một dòng để chọn khối trên sơ đồ.
+- **Thử logic** và **Online**: sơ đồ hiện giá trị sống. Dây và cổng BOOL đang TRUE màu xanh lá, giá trị số ghi cạnh cổng ra, khối vừa bắn sáng lên, timer đang đếm hiện "còn x s", mục Ghi PLC hiện giá trị Tag đích; mỗi khối có chip trạng thái (OK, SUSPENDED, THROTTLED, DISABLED; Online kèm số lần bắn).
+
+![Sơ đồ khối của tab Logic: Tag mức bồn vào cổng "> 80" và "< 20", cổng AND với đầu ra của lịch ca ngày, hai luật bơm nối dây đứt tới mục Ghi PLC; Inspector của luật đang chọn; task card Khối / Tag có thêm Cổng logic](img/eng-logic-so-do.png)
+
+![Sơ đồ khi Thử logic: mức bồn 85, cổng "> 80" và dây xanh lá, luật tắt bơm vừa bắn sáng lên, mục Ghi PLC hiện "= false"; chip "Thử logic · t = 6 s" trên thanh công cụ của sơ đồ](img/eng-logic-so-do-thu.png)
+
+![Sơ đồ có lỗi: Tag số PUMP01.FLOW nối vào điều kiện BOOL và Tag TANK09.LEVEL không có trong project: hộp Tag, dây, cổng và viền khối đỏ; tab Thông tin liệt kê E_LOGIC_TYPE và E_LOGIC_TAG_REF](img/eng-logic-so-do-loi.png)
+
+### 9.2. Bảng và các khối
+
+Thao tác ở Bảng: **Thêm khối** (Insert), **Xóa** (Delete), **Chuyển lên**/**Chuyển xuống**, F2 đổi id (Studio cập nhật mọi tham chiếu), ô "Tìm id, tên, Tag", ô "Chỉ dòng lỗi", **Kiểm tra** (F7). Dock dưới có **Inspector** (trường của khối đang chọn), **Thông tin** (lỗi và cảnh báo, nhấp đúp để nhảy tới ô; F8 / Shift+F8 tới lỗi kế / trước ở bất kỳ đâu trong editor) và **Thử logic**. Task card **Khối / Tag** bên phải: kéo một khối vào bảng (hoặc nhấp đúp) để thêm, kéo một Tag vào ô biểu thức. Giới hạn: 200 luật, 100 timer, 100 counter, 50 cộng dồn, 50 giờ chạy, 50 lịch, 100 mục ghi (`E_LOGIC_LIMIT`).
 
 | Khối | Dùng khi | Trường chính |
 |---|---|---|
@@ -330,7 +435,39 @@ Kỹ sư không cập nhật runtime: việc này cần tài khoản administrat
 
 - **Alarm** > **Danh sách alarm**: loại **Số** (bit), **Ngưỡng** (HH, H, L, LL, Deadband, Trễ bật, Trễ tắt), **Quality**. **Lớp alarm**: ưu tiên, màu, nhấp nháy, cần xác nhận, âm thanh. **Thử alarm** để xem trước.
 - **Lưu trữ**: nhóm theo **Chu kỳ**, **Thay đổi**, **Kết hợp** hoặc **Kích hoạt**; khung **Ước tính ghi** cho số MB/ngày. Vượt ngân sách ghi thì Studio hỏi trước khi nạp xuống. Ghi nhiều làm mòn bộ nhớ eMMC: chỉ lưu Tag cần.
-- **Báo cáo**: mẫu theo ngày, ca, tháng; **Xem trước báo cáo** với dữ liệu mô phỏng hoặc dữ liệu thiết bị.
+- **Báo cáo**: xem mục 12.1.
+
+### 12.1. Thiết kế báo cáo
+
+**Thêm báo cáo**: chuột phải **Báo cáo** trên cây > **Thêm báo cáo…** (hoặc bảng lệnh Ctrl+Shift+P > "Thêm báo cáo"). Trang Báo cáo có **thư viện mẫu**: **Báo cáo ca**, **Báo cáo ngày**, **Báo cáo tháng**, **Báo cáo năng lượng**, **Báo cáo alarm**, **Vận hành thiết bị**, **Ghi PLC của logic**. Chọn một mẫu: Studio dựng sẵn cột từ nhóm lưu trữ có **Tổng hợp** (Tag số cho báo cáo bảng, Tag BOOL cho vận hành thiết bị, Tag có đơn vị kWh, kW cho năng lượng) rồi mở trình thiết kế.
+
+![Thư viện mẫu báo cáo: bảy thẻ mẫu và bảng các báo cáo của project (tên, loại, nhóm lưu trữ, kỳ, số cột)](img/eng-thu-vien-mau-bao-cao.png)
+
+Trình thiết kế có ba vùng:
+
+- **Cấu trúc báo cáo** (trái): **Thông tin chung**, **Kỳ và nhóm hàng**, **Thẻ tổng hợp**, **Biểu đồ**, **Cột** (mỗi cột một mục), **Trang in**. Mục có lỗi có dấu đỏ.
+- **Xem trước trực tiếp** (giữa): báo cáo dựng bằng **đúng mã của trang vận hành** trên **Dữ liệu mô phỏng** (hoặc **Dữ liệu thiết bị** khi Online). Bấm vào dải tiêu đề, hàng thẻ, biểu đồ hay tiêu đề cột để chọn phần đó. Nút **CSV**, **CSV (Excel vi-VN)**, **XLSX**, **PDF** xuất thử.
+- **Thuộc tính** (phải): trường của phần đang chọn.
+
+![Trình thiết kế báo cáo Năng lượng theo ngày: Cấu trúc bên trái (cột Công suất đang chọn), xem trước có dải tiêu đề, thẻ màu, biểu đồ; Thuộc tính của cột bên phải: Tag, nhãn, đơn vị, số lẻ, hàm](img/eng-thiet-ke-bao-cao.png)
+
+Thao tác:
+
+1. **Thông tin chung**: tên, id, **Loại báo cáo** (Bảng tổng hợp, Vận hành thiết bị, Sự kiện alarm, Ghi PLC của logic), nhóm lưu trữ (chỉ nhóm có Tổng hợp), tiêu đề.
+2. **Kỳ và nhóm hàng**: **Ngày** (hàng 15, 30 hoặc 60 phút), **Ca** (2, 3, 4, 6, 8 hoặc 12 ca từ giờ bắt đầu; nhãn ca hiện ngay), **Tuần** và **Tháng** (hàng theo ngày), **Khoảng ngày** (người xem chọn từ ngày đến ngày, tối đa 31 ngày).
+3. **Thêm cột**: kéo Tag từ panel **Tag** thả vào vùng xem trước hoặc Cấu trúc, hoặc gõ tên ở ô **Thêm cột** (có gợi ý). Chỉ nhận Tag của nhóm lưu trữ; Vận hành thiết bị chỉ nhận Tag BOOL.
+4. **Cột**: Tag, nhãn, đơn vị (**Gợi ý đơn vị**: kW + Tổng ra kWh, Thời gian ON ra giờ), số lẻ, hàm: **Trung bình**, **Nhỏ nhất**, **Lớn nhất**, **Tổng (tích phân)**, **Đầu kỳ**, **Cuối kỳ**, **Chênh lệch**, **Số mẫu**, **Thời gian ON** (Tag BOOL). Vận hành thiết bị: **Thời gian ON**, **Số lần bật**. **Lên**, **Xuống** đổi thứ tự; **Bỏ cột**.
+5. **Thẻ tổng hợp**: bật, tắt hàng thẻ (giá trị cả kỳ của tối đa 4 cột đầu và Dữ liệu đủ).
+6. **Biểu đồ**: **Tự chọn** (các cột cùng đơn vị với cột đầu; hàm cộng dồn vẽ cột, còn lại vẽ đường), **Đường**, **Cột**, **Không vẽ**.
+7. **Trang in**: **Tên đơn vị** (chung cho mọi báo cáo; trống thì dùng tên project), khổ A4/A3, hướng, chân trang, dòng tổng.
+
+Mỗi thay đổi hoàn tác được (Ctrl+Z). Lỗi `E_RPT_*` hiện tại trường và ở tab **Thông tin** của dock dưới (nhấp đúp để tới đúng chỗ); vẫn lưu được khi còn lỗi.
+
+Báo cáo alarm và logic không có cột Tag: xem trước dùng sự kiện mô phỏng từ alarm và luật của project.
+
+![Trình thiết kế với báo cáo Alarm theo ngày: thẻ số lần xuất hiện, chưa xác nhận, thời gian trung bình tới xác nhận, đang còn; biểu đồ số lần xuất hiện theo giờ](img/eng-thiet-ke-bao-cao-alarm.png)
+
+**Định dạng 1.1**: loại báo cáo, kỳ Tuần và Khoảng ngày, thẻ, biểu đồ, Thời gian ON và Tên đơn vị cần project định dạng 1.1. Project cũ: các tùy chọn này bị khóa kèm lý do; mở lại project và đồng ý nâng cấp ở hộp **Mở project định dạng …**. Project mẫu: `projects/report-demo`.
 
 <a id="help-errors"></a>
 
@@ -355,6 +492,8 @@ Kỹ sư không cập nhật runtime: việc này cần tài khoản administrat
 | `E_LOGIC_WRITE_UNDECLARED` | hành động **Ghi PLC** trỏ mục chưa khai | thêm mục ở nhóm **Ghi PLC** (mục 9) |
 | Ghi bị REJECTED `OWNED_BY_LOGIC` | ghi tay vào Tag logic `LOGIC.…` | Tag logic chỉ đọc; đổi luật hoặc dùng Tag nội bộ khác |
 | Luật chạy nhưng PLC không đổi | thiết bị tắt ghi từ logic (chip "Ghi PLC: tắt", `LOGIC_WRITES_OFF`) | quản trị viên bật `logic.writes` sau khi duyệt danh sách ghi |
+| `E_SECURITY_LEVEL`, `E_SECURITY_ITEM` | vai trò tối thiểu sai, hoặc mức thao tác ở component chỉ hiển thị | mục 6.3 |
+| Operator báo nút khóa "Cần quyền thao tác" dù vai trò đủ | quản trị viên đã giới hạn thao tác component đó cho nhóm khác, hoặc quy tắc mồ côi sau khi đổi mã component | hỏi quản trị viên (trang Quản trị, **Xem với tư cách**); không đổi mã component đã phân quyền (mục 6.3) |
 | `E_TEMPLATE_TAG_REF`, `E_POPUP_ARGS` | tham số template hoặc `args` của popup cho Tag không có | sửa giá trị tham số hoặc thêm Tag |
 
 ## 14. Bảng tác vụ kiểm tra
@@ -369,7 +508,7 @@ Mỗi tác vụ dùng `projects/training-demo` và PLC giả lập (mục 1). Gi
 | K4 | Thêm Tag ngoài | thêm `BOM.LOI2` kiểu BOOL, địa chỉ `HR12.4` | Tag xuất hiện; không lỗi |
 | K5 | Thêm Tag tính toán | thêm `BON.PHAN_TRAM_TRONG` = `100 - BON.MUC` | **Xem trước** cho giá trị đúng |
 | K6 | Dựng màn hình | thêm màn hình "Bơm", một **Đèn báo** gắn `BOM.LOI`, một **Công tắc** gắn `BOM.LENH_CHAY` | thấy trong xem trước; mục menu mới khi thêm vào Điều hướng |
-| K7 | Bảo mật nút | đặt **Vai trò tối thiểu** `engineer` cho công tắc vừa thêm | trên trang vận hành, tài khoản operator thấy "Cần quyền engineer" |
+| K7 | Bảo mật nút | đặt **Vai trò tối thiểu** `engineer` cho công tắc vừa thêm (project 1.1: **Vai trò tối thiểu để thao tác**, mục 6.3) | trên trang vận hành, tài khoản operator thấy "Cần quyền engineer" |
 | K8 | Nhập SVG | nhập một SVG bồn đơn giản, gắn **Mức chất lỏng** với `BON.MUC` | **Thử giá trị** 50 cho thấy nửa bồn |
 | K9 | Ghim chứng chỉ, đăng nhập | **Thiết bị trong mạng…**, so fingerprint, **Ghim và tiếp tục**, **Đăng nhập…** | thanh trạng thái "Online", viền cam |
 | K10 | Nạp xuống | **Nạp xuống…**, đọc xem trước, xác nhận | kết quả thành công; trang vận hành tự tải lại project mới |

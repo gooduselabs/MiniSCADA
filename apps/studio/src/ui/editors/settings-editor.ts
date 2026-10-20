@@ -24,6 +24,7 @@ const FIELDS: Readonly<Record<FieldKey, { label: MessageKey; help: MessageKey }>
   projectVersion: { label: 'settings.projectVersion', help: 'settings.projectVersion.help' },
   entryScreen: { label: 'settings.entryScreen', help: 'settings.entryScreen.help' },
   maxClients: { label: 'settings.maxClients', help: 'settings.maxClients.help' },
+  theme: { label: 'settings.theme', help: 'settings.theme.help' },
   minRuntimeVersion: {
     label: 'settings.minRuntimeVersion',
     help: 'settings.minRuntimeVersion.help',
@@ -175,6 +176,32 @@ export class SettingsEditor extends AppElement {
     );
   }
 
+  /** Chủ đề giao diện của trang vận hành và xem trước (định dạng 1.1, feature 012); thiếu = Công nghiệp trầm. */
+  private themeField(value: string, issues: IssuesByField) {
+    const spec = FIELDS.theme;
+    const cur = value || 'industrial';
+    return this.field(
+      'theme',
+      spec.label,
+      spec.help,
+      issues.get('theme'),
+      (describedBy, bad) =>
+        html`<select
+          class="select ${bad ? 'bad' : ''}"
+          id="set-theme"
+          aria-describedby=${describedBy}
+          @change=${(e: Event) => this.edit('theme', (e.currentTarget as HTMLSelectElement).value)}
+        >
+          ${(['vivid', 'industrial', 'dark'] as const).map(
+            (v) =>
+              html`<option value=${v} .selected=${live(v === cur)}>
+                ${t(`settings.theme.${v}` as MessageKey)}
+              </option>`,
+          )}
+        </select>`,
+    );
+  }
+
   private clientsField(value: string, issues: IssuesByField) {
     const spec = FIELDS.maxClients;
     return this.field(
@@ -281,6 +308,7 @@ export class SettingsEditor extends AppElement {
           <legend>${t('settings.runtime')}</legend>
           ${this.entryField(asText(p.entryScreen), s.outline.screens, byField)}
           ${this.clientsField(asText(p.maxClients), byField)}
+          ${s.outline.format11 ? this.themeField(asText(p.theme), byField) : nothing}
           ${this.readonlyField('minRuntimeVersion', asText(p.minRuntimeVersion), byField)}
         </fieldset>
         ${

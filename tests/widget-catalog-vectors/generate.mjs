@@ -178,6 +178,10 @@ const propValue = (w, p, hi) => {
   const lo = !hi;
   switch (p.kind) {
     case 'string':
+      // Danh mục 0.6.0 (feature 014): chuỗi có `pattern` lấy giá trị biên đúng mẫu; `src` của image để trống (tệp
+      // ảnh có ca riêng ở test của hai bộ kiểm).
+      if (p.name === 'utcOffset') return lo ? '-14:00' : '+14:00';
+      if (p.name === 'src') return '';
       return lo ? '' : 'ằ'.repeat(p.maxLength ?? 1);
     case 'int':
     case 'number': {

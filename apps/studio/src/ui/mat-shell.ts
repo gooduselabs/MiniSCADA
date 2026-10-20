@@ -22,6 +22,7 @@ import './mat-dialog.ts';
 import './dialogs/upgrade-dialog.ts';
 import './dialogs/rename-dialog.ts';
 import './dialogs/screen-props-dialog.ts';
+import './dialogs/new-project-dialog.ts';
 import './dialogs/delete-screen-dialog.ts';
 import './dialogs/bulk-add-dialog.ts';
 import './dialogs/rename-tag-dialog.ts';
@@ -36,6 +37,7 @@ import './dialogs/template-create.ts';
 import './dialogs/template-instance.ts';
 import './dialogs/template-confirm.ts';
 import './dialogs/args-dialog.ts';
+import './dialogs/grid-convert-dialog.ts';
 import './logic/stop-dialog.ts';
 import './dialogs/update-wizard.ts';
 import './svg/svg-dialogs.ts';
@@ -341,7 +343,9 @@ export class MatShell extends AppElement {
     const vars = {
       '--left-w': `${ws.leftWidth}px`,
       '--details-h': `${ws.detailsHeight}px`,
-      '--insp-h': `${ws.inspectorHeight}px`,
+      '--insp-h': ws.inspectorCollapsed
+        ? 'var(--insp-collapsed-h, 32px)'
+        : `${ws.inspectorHeight}px`,
     };
     const online = app.online();
     const simulating = app.simulating() && !online;
@@ -416,6 +420,7 @@ export class MatShell extends AppElement {
       <mat-upgrade-dialog .app=${app}></mat-upgrade-dialog>
       <mat-rename-dialog .app=${app}></mat-rename-dialog>
       <mat-screen-props-dialog .app=${app}></mat-screen-props-dialog>
+      <mat-new-project-dialog .app=${app}></mat-new-project-dialog>
       <mat-delete-screen-dialog .app=${app}></mat-delete-screen-dialog>
       <mat-bulk-add-dialog .app=${app}></mat-bulk-add-dialog>
       <mat-rename-tag-dialog .app=${app}></mat-rename-tag-dialog>
@@ -435,6 +440,7 @@ export class MatShell extends AppElement {
       <mat-template-instance-dialog .app=${app}></mat-template-instance-dialog>
       <mat-template-confirm-dialog .app=${app}></mat-template-confirm-dialog>
       <mat-args-dialog .app=${app}></mat-args-dialog>
+      <mat-grid-convert-dialog .app=${app}></mat-grid-convert-dialog>
       <mat-logic-stop-dialog .app=${app}></mat-logic-stop-dialog>
       <mat-update-wizard .app=${app}></mat-update-wizard>
       <mat-toast .app=${app}></mat-toast>`;

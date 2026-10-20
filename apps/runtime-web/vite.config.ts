@@ -12,14 +12,16 @@ import { defineConfig } from 'vitest/config';
 // `npm run dev` proxy API/WebSocket tới mat-runtime chạy cục bộ (deployment/toolchain/run-x64.ps1).
 export default defineConfig(({ mode }) => {
   const device = mode === 'device';
-  const login = mode === 'login';
-  const e2e = mode === 'e2e';
+  // `e2e-login` (feature 013): trang /login vào dist-e2e/ (chạy SAU `--mode e2e`), cho e2e đăng nhập bắt buộc.
+  const e2eLogin = mode === 'e2e-login';
+  const login = mode === 'login' || e2eLogin;
+  const e2e = mode === 'e2e' || e2eLogin;
   const target = process.env.MAT_RUNTIME_URL ?? 'http://localhost:8080';
   const root = import.meta.dirname;
   return {
     base: './',
     build: {
-      outDir: device || login ? 'dist-device' : e2e ? 'dist-e2e' : 'dist',
+      outDir: e2e ? 'dist-e2e' : device || login ? 'dist-device' : 'dist',
       target: 'es2022',
       sourcemap: false,
       emptyOutDir: !login,
@@ -37,7 +39,21 @@ export default defineConfig(({ mode }) => {
                 assetFileNames: 'assets/login-[hash][extname]',
               },
             }
-          : {}),
+          : {
+              // Mọi mã ECharts/zrender (widget bar/pie/gauge và biểu đồ báo cáo PDF của @mat/report-export, feature 012
+              // T049) vào MỘT chunk tải lười `echarts-modules-*.js`: không có chunk chung tên khác, nên cổng nội dung
+              // của package-web.mjs (đúng 9 chỗ innerHTML đã xem, chỉ trong chunk này) giữ nguyên.
+              output: {
+                codeSplitting: {
+                  groups: [
+                    {
+                      name: 'echarts-modules',
+                      test: /[\\/]node_modules[\\/](?:echarts|zrender)[\\/]|[\\/]ui-components[\\/]src[\\/]chart[\\/]echarts-modules\.ts$/,
+                    },
+                  ],
+                },
+              },
+            }),
       },
     },
     server: {

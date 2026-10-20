@@ -1,0 +1,204 @@
+{
+  "schemaVersion": "1.2.0",
+  "tags": [
+    {
+      "id": "TANK01.LEVEL",
+      "kind": "external",
+      "type": "FLOAT32",
+      "description": "Mức nước bồn",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "deadband": 0.5,
+      "source": {
+        "device": "plc1",
+        "address": "HR100",
+        "rawType": "INT16"
+      },
+      "scaling": {
+        "rawMin": 0,
+        "rawMax": 27648,
+        "engMin": 0,
+        "engMax": 100,
+        "clamp": true
+      }
+    },
+    {
+      "id": "TANK01.SP",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 90
+      },
+      "source": {
+        "device": "plc1",
+        "address": "HR200",
+        "byteOrder": "CDAB"
+      }
+    },
+    {
+      "id": "PUMP01.RUN_CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C10",
+        "readback": false
+      }
+    },
+    {
+      "id": "PUMP01.STATE",
+      "kind": "external",
+      "type": "INT16",
+      "valueTable": "TrangThaiBom",
+      "source": {
+        "device": "plc1",
+        "address": "HR10"
+      }
+    },
+    {
+      "id": "METER1.P",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "kW",
+      "source": {
+        "device": "meter1",
+        "address": "30013"
+      }
+    },
+    {
+      "id": "PUMP01.FAULT",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "HR12.3"
+      }
+    },
+    {
+      "id": "PUMP01.NAME",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "plc1",
+        "address": "HR300",
+        "stringLength": 16
+      }
+    },
+    {
+      "id": "TANK01.SP_HI",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "initial": 85,
+      "retain": true
+    },
+    {
+      "id": "TANK01.VOLUME",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "unit": "m3",
+      "expression": "TANK01.LEVEL * 12.5"
+    },
+    {
+      "id": "TANK01.HIGH",
+      "kind": "calculated",
+      "type": "BOOL",
+      "expression": "TANK01.LEVEL > TANK01.SP_HI"
+    },
+    {
+      "id": "PUMP01.STATE_TEXT",
+      "kind": "calculated",
+      "type": "STRING",
+      "expression": "text(PUMP01.STATE, TrangThaiBom)"
+    },
+    {
+      "id": "DEMO.WAVE",
+      "kind": "simulation",
+      "type": "FLOAT64",
+      "sim": {
+        "kind": "sine",
+        "center": 50,
+        "amplitude": 25,
+        "periodMs": 20000
+      }
+    },
+    {
+      "id": "DEMO.SET",
+      "kind": "simulation",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -100,
+        "max": 100
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 0
+      }
+    },
+    {
+      "id": "PUMP02.CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C11"
+      }
+    },
+    {
+      "id": "NOTE.TEXT",
+      "kind": "internal",
+      "type": "STRING",
+      "access": "RW",
+      "limits": {
+        "maxLength": 8
+      },
+      "initial": ""
+    },
+    {
+      "id": "CNT.U16",
+      "kind": "internal",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 65535
+      },
+      "initial": 0
+    },
+    {
+      "id": "SEL.TAB",
+      "kind": "internal",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 5
+      },
+      "valueTable": "TrangThaiBom",
+      "initial": 0
+    },
+    {
+      "id": "NO.TABLE",
+      "kind": "internal",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 5
+      },
+      "initial": 0
+    }
+  ]
+}

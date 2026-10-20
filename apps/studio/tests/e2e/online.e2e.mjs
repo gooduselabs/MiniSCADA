@@ -174,7 +174,7 @@ async function scenario({ page, check, shot, axe }) {
     for (const u of ['kysu1', 'xem1', 'admin']) window.__matMock.device.setPassword(u, `${p}-${u}`);
   }, pw);
   await setTheme(page, 'light');
-  await page.click('mat-start-page .start-hero .btn.primary');
+  await page.click('mat-start-page .start-hero [data-cmd="project.open"]');
   await page.waitForSelector('mat-tree [role="treeitem"]');
 
   // 1. Thiết bị trong mạng: hai thiết bị trong ≤ 3 s (US1-1, quickstart §5 bước 1). Mở bằng Ctrl+K: project

@@ -34,7 +34,7 @@ export default async function shell({ page, url, check, shot, axe }) {
   await axe('tab Bắt đầu, chưa mở project');
 
   // 2. Mở project (lớp giả nạp projects/tank-demo) (US1-2)
-  await page.click('mat-start-page .start-hero .btn.primary');
+  await page.click('mat-start-page .start-hero [data-cmd="project.open"]');
   await page.waitForSelector('mat-tree [role="treeitem"]');
   const root = await text(page, 'mat-tree [role="treeitem"] .lbl');
   check('cây có tên project', root === 'Trạm bơm nước (demo Sprint 1)', root);
@@ -161,7 +161,7 @@ export default async function shell({ page, url, check, shot, axe }) {
   // 9. Cửa sổ nhỏ nhất 960 × 600: không vùng nào tràn ngang
   await page.setViewport({ width: 960, height: 600 });
   // < 1180 px: task card nổi đè lên vùng editor (mockup); nhấp nút qua DOM để không trúng task card.
-  await page.$eval('mat-start-page .start-hero .btn.primary', (b) => b.click());
+  await page.$eval('mat-start-page .start-hero [data-cmd="project.open"]', (b) => b.click());
   await page.waitForSelector('mat-tree [role="treeitem"]');
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > window.innerWidth + 1,

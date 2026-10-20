@@ -37,8 +37,15 @@ import {
   type ValueTableDoc,
   type WatchTableDoc,
 } from '@mat/project-schema';
+import { logicLayoutFile, readLayout, type LogicLayoutDoc } from './logic-layout.ts';
 
-export type ProjectField = 'projectName' | 'projectVersion' | 'entryScreen' | 'maxClients';
+export type ProjectField =
+  | 'projectName'
+  | 'projectVersion'
+  | 'entryScreen'
+  | 'maxClients'
+  // định dạng 1.1 (feature 012): chủ đề giao diện
+  | 'theme';
 
 /** Khóa của Tag 0.1 theo thứ tự file chuẩn (data-model của 004 §3.1); cũng là các cột của Bảng Tag 0.1. */
 export const TAG_KEY_ORDER = ['id', 'type', 'description', 'unit', 'min', 'max', 'source'] as const;
@@ -126,6 +133,8 @@ export type ProjectEdit =
   // ---- Feature 011 (định dạng 1.0): logic ----
   /** Thay cả logic.json; lần đầu tạo `logic.json` và thêm `logic` vào project.json (editor Logic: mỗi lần sửa một bước hoàn tác). */
   | { kind: 'logicSet'; doc: LogicDoc }
+  /** Feature 015: thay cả tệp phụ vị trí của sơ đồ Logic (`<logic>.layout.json`, chỉ của Studio, không vào gói nạp xuống). */
+  | { kind: 'logicLayoutSet'; doc: LogicLayoutDoc }
   | { kind: 'batch'; edits: readonly ProjectEdit[] };
 
 export interface EditableProject {
@@ -149,6 +158,8 @@ export interface EditableProject {
   templates?: Record<string, TemplateDoc>;
   /** Định dạng 1.0: logic.json (thiếu: project chưa có logic). */
   logic?: LogicDoc | null;
+  /** Feature 015: vị trí của sơ đồ Logic (thiếu: chưa có tệp phụ). */
+  logicLayout?: LogicLayoutDoc | null;
 }
 
 const clone = <T>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
@@ -184,6 +195,7 @@ export interface Touched {
   reports: boolean;
   templates: Set<string>;
   logic: boolean;
+  logicLayout: boolean;
 }
 
 const newTouched = (): Touched => ({
@@ -200,6 +212,7 @@ const newTouched = (): Touched => ({
   reports: false,
   templates: new Set(),
   logic: false,
+  logicLayout: false,
 });
 
 /** Áp các sửa đổi lên bản sao (không đụng bản gốc); giữ thứ tự khóa và trường không sửa. */
@@ -226,6 +239,7 @@ export function applyEdits(
     ...(base.reports !== undefined ? { reports: clone(base.reports) } : {}),
     ...(base.templates ? { templates: clone(base.templates) } : {}),
     ...(base.logic !== undefined ? { logic: clone(base.logic) } : {}),
+    ...(base.logicLayout !== undefined ? { logicLayout: clone(base.logicLayout) } : {}),
   };
   const touched = newTouched();
   run(state, edits, touched);
@@ -488,6 +502,11 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
         }
         s.logic = clone(e.doc);
         touched.logic = true;
+        break;
+      }
+      case 'logicLayoutSet': {
+        s.logicLayout = clone(e.doc);
+        touched.logicLayout = true;
         break;
       }
       case 'svgBindings': {
@@ -781,7 +800,7 @@ const stringList = (v: unknown): string[] =>
 export const isVersion02 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^(0\.[2-6]|1\.0)\.\d+$/.test(project.schemaVersion);
+  /^(0\.[2-6]|1\.[01])\.\d+$/.test(project.schemaVersion);
 
 /**
  * project.json khai schemaVersion 0.3.x trở lên (màn hình nhiều item, feature 007; 0.4 thêm binding động hóa và sự kiện của
@@ -791,13 +810,13 @@ export const isVersion02 = (project: unknown): boolean =>
 export const isVersion03 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^(0\.[3-6]|1\.0)\.\d+$/.test(project.schemaVersion);
+  /^(0\.[3-6]|1\.[01])\.\d+$/.test(project.schemaVersion);
 
 /** project.json khai schemaVersion 0.5.x trở lên (alarm, feature 009; 0.6 và 1.0 là tập con siêu của 0.5 nên cũng có alarm). */
 export const isVersion05 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^(0\.[56]|1\.0)\.\d+$/.test(project.schemaVersion);
+  /^(0\.[56]|1\.[01])\.\d+$/.test(project.schemaVersion);
 
 /**
  * project.json khai schemaVersion 0.6.x trở lên (lưu trữ nâng cao và báo cáo, feature 010; 1.0 là tập con siêu của 0.6);
@@ -806,13 +825,22 @@ export const isVersion05 = (project: unknown): boolean =>
 export const isVersion06 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^(0\.6|1\.0)\.\d+$/.test(project.schemaVersion);
+  /^(0\.6|1\.[01])\.\d+$/.test(project.schemaVersion);
 
-/** project.json khai schemaVersion 1.0.x (logic, template, faceplate, feature 011): định dạng hiện hành của Studio. */
+/**
+ * project.json khai schemaVersion họ 1.x mà Studio hiểu (1.0: logic, template, faceplate, feature 011; 1.1 thêm bố cục
+ * lưới và chủ đề, feature 012).
+ */
 export const isVersion10 = (project: unknown): boolean =>
   isObject(project) &&
   typeof project.schemaVersion === 'string' &&
-  /^1\.0\.\d+$/.test(project.schemaVersion);
+  /^1\.[01]\.\d+$/.test(project.schemaVersion);
+
+/** project.json khai schemaVersion 1.1.x (bố cục lưới, chủ đề, feature 012): định dạng hiện hành của Studio. */
+export const isVersion11 = (project: unknown): boolean =>
+  isObject(project) &&
+  typeof project.schemaVersion === 'string' &&
+  /^1\.1\.\d+$/.test(project.schemaVersion);
 
 /**
  * Đường dẫn các file sửa được theo đối tượng (data-model §13.1): project.json, file Tag; project 0.2 thêm file kết
@@ -845,7 +873,10 @@ export function editableRels(docs: ProjectDocs): Set<string> {
     for (const f of stringList((p as Record<string, unknown>).templates))
       if (TEMPLATE_REL.test(f)) out.add(f);
     const logic = (p as Record<string, unknown>).logic;
-    if (typeof logic === 'string') out.add(logic);
+    if (typeof logic === 'string') {
+      out.add(logic);
+      out.add(logicLayoutFile(logic));
+    }
   }
   for (const f of svgBindingFiles(docs)) out.add(f);
   return out;
@@ -982,6 +1013,8 @@ function editableOf(docs: ProjectDocs): EditableProject | null {
     const lf = (p as unknown as Record<string, unknown>).logic;
     const l = typeof lf === 'string' ? docs[lf] : undefined;
     state.logic = l && !l.removed && isObject(l.value) ? (l.value as unknown as LogicDoc) : null;
+    const ll = typeof lf === 'string' ? docs[logicLayoutFile(lf)] : undefined;
+    state.logicLayout = ll && !ll.removed && isObject(ll.value) ? readLayout(ll.value) : null;
   }
   return state;
 }
@@ -1050,6 +1083,11 @@ export function applyDocEdits(
   for (const id of touched.templates) syncTable(templateFile(id), state.templates?.[id]);
   if (touched.logic && state.logic)
     syncTable(typeof rec06.logic === 'string' ? rec06.logic : LOGIC_FILE, state.logic);
+  if (touched.logicLayout && state.logicLayout)
+    syncTable(
+      logicLayoutFile(typeof rec06.logic === 'string' ? rec06.logic : LOGIC_FILE),
+      state.logicLayout,
+    );
   return out;
 }
 
@@ -1214,12 +1252,16 @@ export interface ProjectOutline {
   /** null: project không có mẫu báo cáo. */
   reportsFile: string | null;
   reports: ReportsConfig | null;
-  /** Định dạng 1.0 (feature 011): định dạng hiện hành; project cũ hơn được đề nghị nâng cấp. */
+  /** Họ 1.x (feature 011): template, logic sửa được. */
   format10: boolean;
+  /** Định dạng 1.1 (feature 012): định dạng hiện hành (bố cục lưới, chủ đề); project cũ hơn được đề nghị nâng cấp. */
+  format11: boolean;
   /** `logic` của project.json 1.0 (null: không có). */
   logicFile: string | null;
   /** Nội dung logic.json đọc được (null: không có hoặc sai hình). */
   logic: LogicDoc | null;
+  /** Feature 015: vị trí của sơ đồ Logic (tệp phụ; thiếu hay hỏng là rỗng). */
+  logicLayout: LogicLayoutDoc;
   /** `templates` của project.json 1.0 (đường dẫn, theo thứ tự khai). */
   templateFiles: string[];
   /** Template đọc được (theo `templateFiles`, chỉ đường dẫn `templates/<id>.template.json`); `doc` null khi thiếu hay sai hình. */
@@ -1314,11 +1356,15 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
   const format10 = isVersion10(project);
   return {
     format10,
+    format11: isVersion11(project),
     logicFile: format10 && typeof rec.logic === 'string' ? rec.logic : null,
     logic: (() => {
       const v = format10 && typeof rec.logic === 'string' ? files[rec.logic] : undefined;
       return isObject(v) && typeof v.schemaVersion === 'string' ? (v as unknown as LogicDoc) : null;
     })(),
+    logicLayout: readLayout(
+      format10 && typeof rec.logic === 'string' ? files[logicLayoutFile(rec.logic)] : undefined,
+    ),
     templateFiles: format10 ? stringList(rec.templates) : [],
     templates: format10
       ? stringList(rec.templates).flatMap((file): TemplateOutline[] => {

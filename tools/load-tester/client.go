@@ -31,9 +31,12 @@ type msg struct {
 func dial(ctx context.Context, o options) (*websocket.Conn, error) {
 	dctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	opts := &websocket.DialOptions{}
+	opts := &websocket.DialOptions{HTTPHeader: http.Header{}}
 	if origin := o.originHeader(); origin != "" {
-		opts.HTTPHeader = http.Header{"Origin": []string{origin}}
+		opts.HTTPHeader.Set("Origin", origin)
+	}
+	if o.cookie != "" {
+		opts.HTTPHeader.Set("Cookie", o.cookie)
 	}
 	if o.useTLS {
 		opts.HTTPClient = o.tls.httpClient()
@@ -139,6 +142,7 @@ func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode
 			break
 		}
 		now := time.Now()
+		res.BytesReceived += int64(len(data))
 		var m msg
 		if json.Unmarshal(data, &m) != nil {
 			continue
@@ -147,6 +151,8 @@ func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode
 			offset.observe(monoMs(now), m.TS)
 		}
 		switch m.Type {
+		case "access-changed":
+			res.AccessChangedAtMs = append(res.AccessChangedAtMs, now.UnixMilli())
 		case "error":
 			res.Accepted = false
 			res.ErrorCode = m.Code
@@ -170,6 +176,9 @@ func runClient(ctx context.Context, o options, idx int, hold time.Duration, mode
 			gaps = gapCounter{} // resync: restart continuity tracking
 			gaps.observe(m.Sequence)
 			res.Snapshots++
+			if res.Snapshots == 1 {
+				res.SnapshotTags, res.Denied = parseSnapshotInfo(data)
+			}
 			if mode == modeSlow {
 				// Stop reading: data piles up in the kernel buffers, then in the server queue.
 				<-rctx.Done()

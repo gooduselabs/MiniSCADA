@@ -573,3 +573,59 @@ describe('WebActionHost.ackAlarms / shelveAlarm / unshelveAlarm', () => {
     expect(t.f.calls.at(-1)!.body).toEqual({ id: 'A' });
   });
 });
+
+// Feature 013 (US4 AC2, AC3): item trong lockedItems khóa "Cần quyền thao tác"; máy chủ trả ACCESS_DENIED.
+describe('quyền theo item (013)', () => {
+  it('itemBlocked theo AccessView: lockedItems → NO_PERMISSION; khác → null; đổi quyền thì báo onChange', async () => {
+    const { AccessView, parseAccess } = await import('./access.ts');
+    const { host, changes } = await setup();
+    expect(host.itemBlocked({ screen: 'bom1', item: 'run' })).toBeNull();
+    changes.mockClear();
+    host.setAccess(
+      new AccessView(
+        parseAccess({
+          role: 'operator',
+          screens: ['bom1'],
+          lockedItems: { bom1: ['run'] },
+          admin: false,
+        }),
+      ),
+    );
+    expect(changes).toHaveBeenCalled();
+    expect(host.itemBlocked({ screen: 'bom1', item: 'run' })).toMatchObject({
+      code: 'NO_PERMISSION',
+    });
+    expect(host.itemBlocked({ screen: 'bom1', item: 'auto' })).toBeNull();
+  });
+
+  it('403 ACCESS_DENIED của tags/write → REJECTED mã ACCESS_DENIED, không mở hộp đăng nhập', async () => {
+    const { host, requestLogin } = await setup({
+      [WRITE]: {
+        status: 403,
+        json: { error: 'ACCESS_DENIED', message: 'Thiếu quyền thao tác' },
+      },
+    });
+    const o = await run(host, spec());
+    expect(o).toMatchObject({ status: 'REJECTED', code: 'ACCESS_DENIED' });
+    expect(requestLogin).not.toHaveBeenCalled();
+  });
+});
+
+describe('popup không có quyền xem (013)', () => {
+  it('popupBlocked: popup ngoài screens → NO_PERMISSION; trong → null; không giới hạn → null', async () => {
+    const { AccessView, parseAccess } = await import('./access.ts');
+    const { host } = await setup();
+    expect(host.popupBlocked('pop-bom')).toBeNull();
+    host.setAccess(
+      new AccessView(
+        parseAccess({ role: 'operator', screens: ['tong-quan', 'pop-a'], admin: false }),
+      ),
+    );
+    expect(host.popupBlocked('pop-bom')).toMatchObject({ code: 'NO_PERMISSION' });
+    expect(host.popupBlocked('pop-a')).toBeNull();
+    host.setAccess(
+      new AccessView(parseAccess({ role: 'administrator', screens: [], admin: true })),
+    );
+    expect(host.popupBlocked('pop-bom')).toBeNull();
+  });
+});

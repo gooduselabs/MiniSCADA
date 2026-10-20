@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_LAYOUT_ITEM_REF"],"runtimeVersion":"1.1.0","issues":[{"code":"E_LAYOUT_ITEM_REF","file":"screens/tong-quan.screen.json","path":"/layout/rows/1/cells/1/item"}]}

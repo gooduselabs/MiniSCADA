@@ -8,6 +8,7 @@ import {
   migrateTo05,
   migrateTo06,
   migrateTo10,
+  migrateTo11,
   stripBom,
   validateProject,
   type Issue,
@@ -26,6 +27,7 @@ import type {
   RecentFailure,
   WriteFailure,
 } from '../platform/types.ts';
+import { logicLayoutFile } from '../model/logic-layout.ts';
 import { cleanSvgFiles, type UpgradeChange } from '../model/svg-upgrade.ts';
 import type { EditorId } from '../model/tree.ts';
 import {
@@ -185,9 +187,9 @@ function newerVersion(project: unknown): string | null {
       ? (project as { schemaVersion?: unknown }).schemaVersion
       : undefined;
   const m = typeof v === 'string' ? /^(\d+)\.(\d+)\./.exec(v) : null;
-  // hiểu 0.1 đến 0.6 và 1.0 (feature 011); 0.7+, 1.1+ chưa có (contracts/project-format-1.0.md §1)
+  // hiểu 0.1 đến 0.6, 1.0 (feature 011) và 1.1 (feature 012); 0.7+, 1.2+ chưa có (contracts/project-format-1.1.md §1)
   const [major, minor] = m ? [Number(m[1]), Number(m[2])] : [0, 0];
-  return m && (major > 1 || (major === 1 && minor > 0) || (major === 0 && minor > 6))
+  return m && (major > 1 || (major === 1 && minor > 1) || (major === 0 && minor > 6))
     ? (v as string)
     : null;
 }
@@ -303,7 +305,7 @@ export class StudioStore {
       return;
     }
     const outline = outlineOf(filesOf(docs));
-    const old = !outline.format10 && outline.project !== null;
+    const old = !outline.format11 && outline.project !== null;
     this.s = { ...initialState(), project: { display } };
     this.set({ docs, outline, pendingUpgrade: old });
     void this.runValidate();
@@ -336,6 +338,8 @@ export class StudioStore {
     await read(outline.alarmFile);
     await read(outline.alarmClassFile);
     await read(outline.logicFile);
+    // Feature 015: tệp phụ vị trí của sơ đồ Logic (không có thì sơ đồ tự sắp xếp).
+    if (outline.logicFile) await read(logicLayoutFile(outline.logicFile));
     for (const f of outline.templateFiles) await read(f);
     for (const v of outline.valueTables) await read(v.file);
     for (const w of outline.watchTables) await read(w.file);
@@ -372,7 +376,9 @@ export class StudioStore {
    * `migrateTo10` (hoặc `migrateTo06`, `migrateTo05`, `migrateTo04` khi `target` là 0.6, 0.5, 0.4) rồi làm sạch SVG theo allowlist 0.4 (giữ id và UID;
    * `svg-upgrade.ts`): file SVG đổi vào danh sách sao lưu, báo cáo vào `changes` trước dòng "Ghi lại".
    */
-  private async migrateClean(target: '0.4' | '0.5' | '0.6' | '1.0' = '1.0'): Promise<UpgradePlan> {
+  private async migrateClean(
+    target: '0.4' | '0.5' | '0.6' | '1.0' | '1.1' = '1.1',
+  ): Promise<UpgradePlan> {
     const step =
       target === '0.4'
         ? migrateTo04
@@ -380,7 +386,9 @@ export class StudioStore {
           ? migrateTo05
           : target === '0.6'
             ? migrateTo06
-            : migrateTo10;
+            : target === '1.0'
+              ? migrateTo10
+              : migrateTo11;
     const r = await step(this.textsOf());
     if (!r.ok) return r;
     const { files, change } = cleanSvgFiles(r.files);
@@ -420,7 +428,7 @@ export class StudioStore {
    * đã viết lại. Không hoàn tác được (lịch sử bắt đầu lại).
    */
   async upgrade(
-    target: '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '1.0' = '1.0',
+    target: '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '1.0' | '1.1' = '1.1',
   ): Promise<UpgradeOutcome> {
     if (!this.s.project) return { ok: false, error: { code: 'NO_PROJECT' } };
     const texts = this.textsOf();
@@ -775,7 +783,19 @@ export class StudioStore {
       hasTags: (this.s.outline.tags?.tags.length ?? 0) > 0,
       alarmCount: this.s.outline.alarms?.alarms.length ?? 0,
       format10: this.s.outline.format10,
+      format11: this.s.outline.format11,
+      screenIsGrid: open && this.activeScreenIsGrid(),
       ...ui,
     };
+  }
+
+  /** Màn hình của tab đang chọn có bố cục lưới (`layout`, định dạng 1.1). */
+  private activeScreenIsGrid(): boolean {
+    const a = this.s.active;
+    if (!a.startsWith('screen:')) return false;
+    const id = a.slice('screen:'.length);
+    const m = this.s.outline.screens.find((s) => s.id === id)?.model as
+      { layout?: unknown } | null | undefined;
+    return m?.layout !== undefined;
   }
 }

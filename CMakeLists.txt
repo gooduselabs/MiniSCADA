@@ -158,7 +158,11 @@ add_library(mat_auth STATIC
   core/auth/login_guard.cpp
   core/auth/roles.cpp
   core/auth/auth_state.cpp
-  core/auth/auth_service.cpp)
+  core/auth/auth_service.cpp
+  core/auth/access_model.cpp
+  core/auth/access_catalog.cpp
+  core/auth/access_store.cpp
+  core/auth/access_service.cpp)
 target_include_directories(mat_auth PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_auth PUBLIC mat_audit mat_crypto PRIVATE mat_argon2 mat_core
                       Threads::Threads)
@@ -314,6 +318,7 @@ add_library(mat_core STATIC
   core/project-manager/rules_04.cpp
   core/project-manager/rules_010.cpp
   core/project-manager/rules_10.cpp
+  core/project-manager/rules_11.cpp
   core/project-manager/widget_catalog.cpp
   core/project-manager/logging_estimate.cpp
   core/project-manager/rules_logic.cpp
@@ -416,14 +421,16 @@ target_include_directories(mat_startup PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_startup PUBLIC mat_tag_engine mat_core)
 target_compile_options(mat_startup PRIVATE ${MAT_WARN} -O2)
 # The source filter (feature 006 FR-055a): pure decisions and their use by the page handlers and the live upgrade.
-add_library(mat_viewer_gate STATIC server/http/source_filter.cpp server/http/viewer_gate.cpp server/http/cookie.cpp)
+add_library(mat_viewer_gate STATIC server/http/source_filter.cpp server/http/viewer_gate.cpp server/http/cookie.cpp
+            server/http/access_filter.cpp)
 target_include_directories(mat_viewer_gate PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json)
+target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json mat_auth)
 target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 # The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
 # member functions of EngineeringApi, in files of their own.
 add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/http/logic_api.cpp server/write_glue.cpp
-            server/write_subsystem.cpp server/http/update_api.cpp server/update_service.cpp)
+            server/write_subsystem.cpp server/http/update_api.cpp server/update_service.cpp
+            server/http/admin_api.cpp server/access_glue.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_api_ext PUBLIC mat_historian_query civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
                       mat_runtime_engine mat_update mat_project_store)
@@ -594,6 +601,8 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(vectors_04_test core/project-manager/tests/vectors_04_test.cpp)
   # Format 1.0 (feature 011 T018, T020): the shared vectors v10-* and the substitution of params.
   mat_test(vectors_10_test core/project-manager/tests/vectors_10_test.cpp)
+  # Format 1.1 (feature 012 T011): the shared vectors v11-* (grid layout, theme).
+  mat_test(vectors_11_test core/project-manager/tests/vectors_11_test.cpp)
   # Extra files of a project (feature 011 T022, T023): project-stage package vectors.
   mat_test(package_files_test core/project-manager/tests/package_files_test.cpp)
   target_link_libraries(package_files_test PRIVATE mat_package mat_crypto)
@@ -840,6 +849,11 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(roles_alarm_test PRIVATE mat_auth)
   mat_test(auth_service_test core/auth/tests/auth_service_test.cpp)
   target_link_libraries(auth_service_test PRIVATE mat_auth)
+  # Feature 013: the access model (pure), the shared vectors of tests/access-vectors.
+  foreach(t access_model_test access_vectors_test access_catalog_test access_store_test)
+    mat_test(${t} core/auth/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_auth)
+  endforeach()
   # Web sessions (feature 007 T052): the cookie session of the page, kinds, quota, execv.
   mat_test(web_session_test core/auth/tests/web_session_test.cpp)
   target_link_libraries(web_session_test PRIVATE mat_auth)
@@ -884,6 +898,10 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     # Connections at once per source IP (feature 011 T039): the two listeners as main opens them.
     mat_test(conn_limit_test server/tests/conn_limit_test.cpp server/http/web_contexts.cpp)
     target_link_libraries(conn_limit_test PRIVATE mat_tls_test_support mat_server_tls)
+    # Kept-alive HTTPS calls are not held ~40 ms by Nagle + delayed ACK (feature 013 T032 follow-up).
+    mat_test(web_contexts_latency_test server/tests/web_contexts_latency_test.cpp
+             server/http/web_contexts.cpp)
+    target_link_libraries(web_contexts_latency_test PRIVATE mat_tls_test_support mat_server_tls)
     # The sign-in of the runtime page (feature 007 T055): the real sign-in service, HttpApi and the gate.
     mat_test(web_api_test server/tests/web_api_test.cpp server/http/http_api.cpp
              server/http/auth_gate.cpp server/http/engineering_api.cpp
@@ -961,6 +979,16 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
       mat_test(${t} ${src} server/http/auth_gate.cpp server/http/engineering_api.cpp
                server/http/engineering_api_project.cpp server/http/web_contexts.cpp
                server/project_glue.cpp server/http/http_api.cpp)
+      target_link_libraries(${t} PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                            mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext
+                            mat_runtime_engine mat_viewer_gate mat_alarm_glue mat_alarm)
+    endforeach()
+    # Feature 013 (T014, T019, T024): the admin API over the real sign-in service, store and access
+    # model; the enforcement on the page's routes, the live hub and the tag writes.
+    foreach(t admin_api_test access_enforce_test)
+      mat_test(${t} server/tests/${t}.cpp server/http/auth_gate.cpp server/http/engineering_api.cpp
+               server/http/engineering_api_project.cpp server/http/web_contexts.cpp
+               server/project_glue.cpp server/http/http_api.cpp server/websocket/civet_transport.cpp)
       target_link_libraries(${t} PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
                             mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext
                             mat_runtime_engine mat_viewer_gate mat_alarm_glue mat_alarm)

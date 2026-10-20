@@ -164,3 +164,93 @@ describe('mat-w-card (FR-026)', () => {
     expect(el.getAttribute('mode')).toBe('edit');
   });
 });
+
+// Feature 012 (T046, FR-035): đường xu hướng nhỏ (60 điểm gần nhất từ giá trị sống) và mũi tên tăng/giảm, mặc định tắt;
+// bo góc và bóng theo token (--mat-radius-lg, --mat-shadow-card; industrial giữ 4px, không bóng).
+describe('mat-w-card: sparkline, trend (feature 012)', () => {
+  const feed = async (
+    el: Element & { updateComplete: Promise<boolean> },
+    src: ReturnType<typeof makeSource>,
+    vs: Array<number | null>,
+  ) => {
+    for (const v of vs) {
+      src.advance(1000);
+      src.set('t1', v === null ? { value: 0, quality: 'BAD' } : { value: v, quality: 'GOOD' });
+      await el.updateComplete;
+    }
+  };
+  const points = (el: Element) =>
+    [...el.shadowRoot!.querySelectorAll('.spark polyline')].map(
+      (p) => p.getAttribute('points')!.trim().split(/\s+/).length,
+    );
+
+  it('mặc định: không có sparkline, không có mũi tên (giao diện cũ)', async () => {
+    const src = makeSource([tagInfo('t1')]);
+    src.set('t1', { value: 1, quality: 'GOOD' });
+    const el = await mount(card(), src);
+    await feed(el, src, [2, 3]);
+    expect(el.shadowRoot!.querySelector('.spark')).toBeNull();
+    expect(el.shadowRoot!.querySelector('.trend')).toBeNull();
+  });
+
+  it('sparkline: một điểm mỗi lần giá trị đổi, giữ 60 điểm gần nhất', async () => {
+    const src = makeSource([tagInfo('t1')]);
+    src.set('t1', { value: 1, quality: 'GOOD' });
+    const el = await mount(card({ sparkline: true }), src);
+    await feed(el, src, [2, 3]);
+    expect(points(el)).toEqual([3]);
+    await feed(
+      el,
+      src,
+      Array.from({ length: 70 }, (_, i) => i),
+    );
+    expect(points(el)).toEqual([60]);
+    const svg = el.shadowRoot!.querySelector('.spark')!;
+    expect(svg.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('sparkline: giá trị BAD làm đứt đường (không nối qua lỗi)', async () => {
+    const src = makeSource([tagInfo('t1')]);
+    src.set('t1', { value: 1, quality: 'GOOD' });
+    const el = await mount(card({ sparkline: true }), src);
+    await feed(el, src, [2, null, 4, 5]);
+    expect(points(el)).toEqual([2, 2]);
+  });
+
+  it('sparkline: Tag chữ hoặc chưa đủ 2 điểm thì không vẽ', async () => {
+    const src = makeSource([tagInfo('t1', { type: 'STRING' })]);
+    src.set('t1', { value: 'a', quality: 'GOOD' });
+    const el = await mount(card({ sparkline: true }), src);
+    src.set('t1', { value: 'b', quality: 'GOOD' });
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('.spark polyline')).toBeNull();
+  });
+
+  it('trend: ▲ khi tăng, ▼ khi giảm, – khi không đổi; có chữ cho trình đọc màn hình', async () => {
+    const src = makeSource([tagInfo('t1')]);
+    src.set('t1', { value: 5, quality: 'GOOD' });
+    const el = await mount(card({ trend: true, label: 'Lưu lượng' }), src);
+    expect(el.shadowRoot!.querySelector('.trend')).toBeNull(); // một điểm: chưa có hướng
+    await feed(el, src, [7]);
+    expect(textOf(el, '.trend')).toBe('▲');
+    expect(el.shadowRoot!.querySelector('.w')!.getAttribute('aria-label')).toContain('tăng');
+    await feed(el, src, [6]);
+    expect(textOf(el, '.trend')).toBe('▼');
+    expect(el.shadowRoot!.querySelector('.trend')!.classList.contains('down')).toBe(true);
+    src.advance(1000);
+    src.set('t1', { value: 6, quality: 'GOOD', updatedAt: src.now() });
+    await el.updateComplete;
+    expect(textOf(el, '.trend')).toBe('–');
+    await feed(el, src, [null]);
+    expect(el.shadowRoot!.querySelector('.trend')).toBeNull();
+  });
+
+  it('bo góc và bóng theo token', () => {
+    const css = (customElements.get('mat-w-card') as unknown as { styles: unknown[] }).styles
+      .flat(Infinity)
+      .map((s) => String((s as { cssText?: string }).cssText ?? ''))
+      .join('\n');
+    expect(css).toContain('var(--mat-radius-lg');
+    expect(css).toContain('var(--mat-shadow-card');
+  });
+});

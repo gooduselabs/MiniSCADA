@@ -23,6 +23,7 @@ import { base04, cases04, large04 } from './v04.mjs';
 import { base05, cases05, RUNTIME_05 } from './v05.mjs';
 import { base06, cases01 as cases01_010, cases06 } from './v06.mjs';
 import { base10, cases10, RUNTIME_10 } from './v10.mjs';
+import { base11, cases11, RUNTIME_11 } from './v11.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -965,6 +966,21 @@ for (const [name, mutate, errors, warnings, extra] of CASES10) {
   write(join(here, name), files, expected);
 }
 
+// Định dạng 1.1 (feature 012, T008): ca `v11-*` (bố cục lưới, chủ đề), mô tả ở README-012.md.
+const CASES11 = cases11();
+for (const [name, mutate, errors, warnings, extra] of CASES11) {
+  const files = base11();
+  mutate(files);
+  const expected = {
+    valid: errors.length === 0,
+    errors,
+    runtimeVersion: extra?.runtimeVersion ?? RUNTIME_11,
+  };
+  if (warnings !== undefined) expected.warnings = warnings;
+  if (extra?.issues !== undefined) expected.issues = extra.issues;
+  write(join(here, name), files, expected);
+}
+
 console.log(
-  `${CASES.length + 1 + CASES02.length + CASES03.length + CASES04.length + CASES05.length + CASES06.length + CASES10.length} vector trong ${here}`,
+  `${CASES11.length + CASES.length + 1 + CASES02.length + CASES03.length + CASES04.length + CASES05.length + CASES06.length + CASES10.length} vector trong ${here}`,
 );

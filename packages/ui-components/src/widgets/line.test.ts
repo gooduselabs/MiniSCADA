@@ -146,6 +146,34 @@ describe('mat-w-line (FR-029, SC-018)', () => {
     expect(h.creates[0]!.data).toHaveLength(9);
   });
 
+  it('giao diện mới (feature 012): phông và bề mặt từ token; tô vùng nhạt chỉ khi một đường', async () => {
+    const one = await mount(line(['a']), makeSource([tagInfo('a')]));
+    await plotReady(one);
+    const o1 = h.creates[0]!.opts;
+    expect(o1.font).toBeTruthy();
+    expect(o1.surfaceColor).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(o1.series[0]!.fill).toMatch(/^rgba\(/);
+    const two = await mount(line(['a', 'b']), makeSource([tagInfo('a'), tagInfo('b')]));
+    await plotReady(two);
+    expect(h.creates[1]!.opts.series.every((s) => s.fill === undefined)).toBe(true);
+  });
+
+  it('chú giải dạng thẻ: nền nhạt theo màu đường (--mat-chart-N-soft); con trỏ có chấm màu từng đường', async () => {
+    const src = makeSource([tagInfo('a'), tagInfo('b')]);
+    src.set('a', { value: 1, quality: 'GOOD' });
+    src.set('b', { value: 2, quality: 'GOOD' });
+    const el = await mount(line(['a', 'b']), src);
+    await plotReady(el);
+    const li = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.legend li')];
+    expect(li[1]!.getAttribute('style')).toContain('--mat-chart-2-soft');
+    tick(el);
+    h.creates[0]!.opts.onCursor(0);
+    await el.updateComplete;
+    const dots = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.cursor .dot')];
+    expect(dots).toHaveLength(2);
+    expect(dots[0]!.getAttribute('style')).toContain('--mat-chart-1');
+  });
+
   it('chú giải: nhãn, giá trị hiện tại, đơn vị; labels ghi đè mô tả Tag', async () => {
     const src = makeSource([
       tagInfo('a', { unit: 'bar', description: 'Áp suất vào' }),
@@ -336,5 +364,51 @@ describe('mat-w-line (FR-029, SC-018)', () => {
     const mod = await import('../chart/line-chart.ts');
     const f = await mod.loadUPlot();
     expect(typeof f).toBe('function');
+  });
+});
+
+// Feature 014: khung có tiêu đề, đường ngưỡng cao/thấp (màu đỏ/xanh ngọc, có trong chú giải), nhãn trục.
+describe('mat-w-line: tiêu đề, ngưỡng, nhãn trục (feature 014)', () => {
+  it('title: thanh tiêu đề ở đầu khung; không đặt thì không có', async () => {
+    const src = makeSource([tagInfo('a')]);
+    const el = await mount(line(['a'], { title: 'Biểu đồ nhiệt độ' }), src);
+    expect(textOf(el, '.head')).toBe('Biểu đồ nhiệt độ');
+    expect(el.shadowRoot!.querySelector('.w')!.classList.contains('framed')).toBe(true);
+    const plain = await mount(line(['a']), src);
+    expect(plain.shadowRoot!.querySelector('.head')).toBeNull();
+  });
+
+  it('highLimit, lowLimit: truyền cho đồ thị kèm màu, có mục chú giải; trục Y gồm cả ngưỡng', async () => {
+    const src = makeSource([tagInfo('a', { unit: '°C' })]);
+    const el = await mount(line(['a'], { highLimit: 80, lowLimit: 20 }), src);
+    await plotReady(el);
+    const o = h.creates.at(-1)!.opts;
+    expect(o.limits?.map((l) => [l.kind, l.value])).toEqual([
+      ['high', 80],
+      ['low', 20],
+    ]);
+    expect(o.yRange(40, 50)[1]).toBeGreaterThanOrEqual(80);
+    expect(o.yRange(40, 50)[0]).toBeLessThanOrEqual(20);
+    const items = [...el.shadowRoot!.querySelectorAll('.legend li.limit')].map((x) =>
+      (x.textContent ?? '').replace(/\s+/g, ' ').trim(),
+    );
+    expect(items).toEqual(['Ngưỡng cao 80', 'Ngưỡng thấp 20']);
+  });
+
+  it('yMin, yMax cố định thắng ngưỡng; không có ngưỡng thì không có mục chú giải', async () => {
+    const src = makeSource([tagInfo('a')]);
+    const el = await mount(line(['a'], { highLimit: 80, yMin: 0, yMax: 50 }), src);
+    await plotReady(el);
+    expect(h.creates.at(-1)!.opts.yRange(10, 20)).toEqual([0, 50]);
+    const none = await mount(line(['a']), src);
+    expect(none.shadowRoot!.querySelector('.legend li.limit')).toBeNull();
+  });
+
+  it('xLabel, yLabel: truyền cho đồ thị', async () => {
+    const src = makeSource([tagInfo('a')]);
+    const el = await mount(line(['a'], { xLabel: 'Thời gian', yLabel: 'Giá trị' }), src);
+    await plotReady(el);
+    const o = h.creates.at(-1)!.opts;
+    expect([o.xLabel, o.yLabel]).toEqual(['Thời gian', 'Giá trị']);
   });
 });

@@ -563,7 +563,7 @@ mat-inspector > mat-logic-dock.lg-dock,
   height: 100%;
   min-height: 0;
   /* Bố cục theo bề ngang của chính panel (khung dưới hẹp hơn cửa sổ khi cây và task card mở), không theo cửa sổ. */
-  container-type: inline-size;
+  container-type: size;
 }
 .lg-test .ttools {
   display: flex;
@@ -851,6 +851,25 @@ table.wl {
   }
 }
 
+/* Feature 015: khung dưới thấp (Thử logic ở Sơ đồ, vùng vẽ ≥ 55 %): ba cột cạnh nhau thay vì xếp hàng dưới. */
+@container (max-height: 300px) {
+  .lg-test .tgrid {
+    grid-template-columns: minmax(170px, 210px) minmax(0, 1fr) minmax(200px, 250px);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .lg-test .tout {
+    grid-column: auto;
+    border-top: 0;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .lg-test .tout > .bst {
+    max-height: 50%;
+    border-left: 0;
+    border-top: 1px solid var(--border-2);
+  }
+}
 /* Nạp xuống: dòng ghi tự động của logic nổi bật (mockup cảnh 3) */
 mat-download-dialog tr.lg > td {
   background: var(--warn-soft);

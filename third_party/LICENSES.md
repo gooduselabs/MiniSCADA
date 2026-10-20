@@ -212,3 +212,7 @@ Phụ thuộc quản lý bằng lock (cùng ngày): `npm audit` và `npm audit -
 ## Feature 011: công cụ SAST (T055)
 
 - **Công cụ, không vào gói thiết bị hay bộ cài, không link:** `cppcheck` 1.90 (GPL-3.0-or-later) và `clang-tidy-10` 10.0.0 (Apache-2.0 WITH LLVM-exception), gói Ubuntu 20.04 trong ảnh `mat-armhf` (`deployment/toolchain/Dockerfile`); chỉ chạy như chương trình riêng trên mã nguồn (`tools/sast/run.ps1`), nên GPL của cppcheck không áp lên mã của dự án (research R11). Cấu hình của dự án: `tools/sast/`. Kết quả: `docs/reports/011-sast.md`.
+
+## Feature 012: phông Inter cho báo cáo PDF (T049)
+
+- **Inter 4.1** (OFL-1.1, `packages/report-export/src/pdf/fonts/LICENSE-Inter.txt`): ba tệp TTF tĩnh `Inter-Regular.ttf`, `Inter-SemiBold.ttf`, `Inter-Italic.ttf` ở `packages/report-export/src/pdf/fonts/`, nhúng vào chunk PDF tải lười (pdfmake cần TTF tĩnh đủ glyph trong một tệp; bản woff2 biến thiên chia ba tập con của `@fontsource-variable/inter` không dùng được). Nguồn: https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip, SHA-256 `9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e` (tự tính), tải ngày 2026-10-19, tệp `extras/ttf/`. Cắt bằng `tools/fonts/subset-inter-pdf.mjs` (subset-font 2.9.0, chỉ lúc làm, không phải phụ thuộc): Latin, Latin mở rộng, tiếng Việt, dấu câu, ký hiệu đơn vị; bỏ hinting. OFL cho phép sửa đổi và nhúng; Inter không có Reserved Font Name. Không nằm trong `third_party/` nên `license-report.mjs`, `sbom.mjs` chưa tự liệt kê.

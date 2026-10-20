@@ -21,6 +21,13 @@ import { MatHistoryTrend } from './history-trend.ts';
 import { MatHistoryTable } from './history-table.ts';
 import { MatHistoryBar } from './history-bar.ts';
 import { MatHistoryPie } from './history-pie.ts';
+import { MatStatTile } from './stat-tile.ts';
+import { MatKpi } from './kpi.ts';
+import { MatProgress } from './progress.ts';
+import { MatStatusList } from './status-list.ts';
+import { MatClock } from './clock.ts';
+import { MatText } from './text.ts';
+import { MatImage } from './image.ts';
 
 /** Loại widget (khóa `widget` của danh mục) → lớp phần tử. */
 export const WIDGET_ELEMENTS: Record<string, CustomElementConstructor> = {
@@ -46,6 +53,14 @@ export const WIDGET_ELEMENTS: Record<string, CustomElementConstructor> = {
   'history-table': MatHistoryTable,
   'history-bar': MatHistoryBar,
   'history-pie': MatHistoryPie,
+  // feature 014 (danh mục 0.6.0): widget dashboard
+  'stat-tile': MatStatTile,
+  kpi: MatKpi,
+  progress: MatProgress,
+  'status-list': MatStatusList,
+  clock: MatClock,
+  text: MatText,
+  image: MatImage,
 };
 
 export const tagNameOf = (widget: string): string => `mat-w-${widget}`;

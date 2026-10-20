@@ -841,8 +841,11 @@ TEST(ProjectApi, DeployIsAcceptedAfterTheWholeBodyAndRunsToTheRestart) {
     EXPECT_EQ(header(res, "Cache-Control"), "no-store");
 
     // The steps ran on a worker; the stand-in restart replaced the process at "activate".
-    const json op = r.waitOp(opId, [&](const json&) { return r.restarts.load() == 1; });
+    // The record is read again after the restart: the read that saw the counter change may have
+    // been fetched before the record said "activate running" (a slow machine).
+    r.waitOp(opId, [&](const json&) { return r.restarts.load() == 1; });
     ASSERT_EQ(r.restarts.load(), 1);
+    const json op = r.waitOp(opId, [](const json&) { return true; });
     ASSERT_FALSE(op.empty());
     EXPECT_EQ(op["opId"], opId);
     EXPECT_EQ(op["kind"], "deploy");
@@ -887,6 +890,12 @@ TEST(ProjectApi, ADeployWhoseRestartFailsEndsFailedAndFreesTheLock) {
         r.waitOp(bodyJson(res)["opId"], [](const json& j) { return j["result"] != "running"; });
     EXPECT_EQ(op["result"], "failed");
     EXPECT_EQ(op["error"]["code"], "EXEC_FAILED");
+    // The record says "failed" before the worker frees the lock and clears the pending state (a slow
+    // machine sees the gap): wait for both, bounded.
+    for (int i = 0; i < 250 && (r.pipeline->current().has_value() ||
+                                r.store->state().pending.has_value());
+         ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
     EXPECT_FALSE(r.pipeline->current().has_value());
     // The lock is free and the version that ran keeps running.
     EXPECT_EQ(r.store->state().active, 7);
@@ -1049,7 +1058,8 @@ TEST(ProjectApi, RestoreStartsAnOperationThatSkipsReceiveAndVerify) {
     const std::string opId = bodyJson(res).value("opId", "");
     EXPECT_TRUE(validOpId(opId));
     EXPECT_EQ(bodyJson(res).value("status", ""), "/api/v1/project/deployments/" + opId);
-    const json op = r.waitOp(opId, [&](const json&) { return r.restarts.load() == 1; });
+    r.waitOp(opId, [&](const json&) { return r.restarts.load() == 1; });
+    const json op = r.waitOp(opId, [](const json&) { return true; });  // read after the restart
     EXPECT_EQ(op["kind"], "restore");
     EXPECT_EQ(op["to"]["seq"], 6);
     std::map<std::string, std::string> steps;

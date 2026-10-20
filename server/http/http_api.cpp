@@ -3,15 +3,19 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include <algorithm>
 #include <cctype>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <functional>
+#include <optional>
 
 #include "civetweb.h"
 #include "core/common/json_text.hpp"
 #include "server/alarm_glue.hpp"
 #include "server/device_state.hpp"
+#include "server/http/access_filter.hpp"
 #include "server/http/alarms_api.hpp"
 #include "server/http/source_filter.hpp"
 #include "server/http/viewer_gate.hpp"
@@ -70,6 +74,24 @@ int notFound(mg_connection* c) {
               "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n%s\r\n%s",
               std::strlen(body), connectionClose(c), body);
     return 404;
+}
+
+// A project file of at most 16 MiB as text (feature 013: a screen filtered for one person).
+std::optional<std::string> readSmallText(const std::string& path) {
+    std::FILE* in = std::fopen(path.c_str(), "rb");
+    if (!in) return std::nullopt;
+    std::string out;
+    char buf[16384];
+    size_t n;
+    while ((n = std::fread(buf, 1, sizeof buf, in)) > 0) {
+        out.append(buf, n);
+        if (out.size() > (16u << 20)) {
+            std::fclose(in);
+            return std::nullopt;
+        }
+    }
+    std::fclose(in);
+    return out;
 }
 
 // Serves one regular file with ETag/304, optional pre-compressed .gz, and extra headers.
@@ -133,6 +155,11 @@ HttpApi::HttpApi(Options opt, InfoProvider info)
                 assets_.insert(name);
         }
         closedir(d);
+    }
+    if (!opt_.activeProjectJson.empty()) {
+        auto doc = std::make_shared<nlohmann::json>(
+            nlohmann::json::parse(opt_.activeProjectJson, nullptr, false));
+        if (!doc->is_discarded()) activeDoc_ = std::move(doc);
     }
 }
 
@@ -319,7 +346,16 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
             for (const std::string& w : api->opt_.device->deviceWarnings()) warnings.push_back(w);
         }
         if (api->opt_.alarms) {  // feature 009 (device-api-1.3 §4.1)
-            info["alarms"] = api->opt_.alarms->infoJson();
+            // Feature 013: the instances and counts of the alarms this caller may see (alarm(P)).
+            alarmsapi::AlarmFilter allow;
+            if (api->opt_.accessOf && api->opt_.gate) {
+                const SessionAccessPtr a = api->opt_.accessOf(api->opt_.gate->originOf(c));
+                if (!a)
+                    allow = [](const std::string&) { return false; };
+                else if (!a->all())
+                    allow = [a](const std::string& id) { return a->access.alarmAllowed(id); };
+            }
+            info["alarms"] = api->opt_.alarms->infoJson(allow);
             for (const std::string& w : api->opt_.alarms->warnings()) warnings.push_back(w);
         }
         // Feature 011 (device-api-011 §5): the 1.0 sources, then one detail per code, same order.
@@ -385,6 +421,34 @@ int HttpApi::onInfo(mg_connection* c, void* self) {
     return sendJson(c, 200, body, extra);
 }
 
+int HttpApi::denied(mg_connection* c, const SessionAccess& a, const std::string& what) const {
+    if (opt_.audit) {
+        const mg_request_info* ri = mg_get_request_info(c);
+        AuditEvent e(AuditAction::AccessDenied, AuditResult::Denied,
+                     ri->is_ssl ? AuditChannel::Web : AuditChannel::Http,
+                     std::string(ri->remote_addr) + ":" + std::to_string(ri->remote_port));
+        e.target = what;
+        e.code = "ACCESS_DENIED";
+        if (a.access.user) {
+            e.user = *a.access.user;
+            e.role = roleName(a.access.role);
+        }
+        try {
+            opt_.audit(e);
+        } catch (const std::exception&) {
+        }
+    }
+    const std::string body =
+        R"({"error":"ACCESS_DENIED","message":"Bạn không có quyền xem nội dung này."})";
+    mg_printf(c,
+              "HTTP/1.1 403 Forbidden\r\nContent-Type: application/json; charset=utf-8\r\n"
+              "Content-Length: %zu\r\nCache-Control: no-store\r\nX-Content-Type-Options: "
+              "nosniff\r\nReferrer-Policy: no-referrer\r\n%s\r\n",
+              body.size(), connectionClose(c));
+    if (!isHead(c)) mg_write(c, body.data(), body.size());
+    return 403;
+}
+
 int HttpApi::onActive(mg_connection* c, void* self) {
     auto* api = static_cast<HttpApi*>(self);
     if (!isGetOrHead(c)) return methodNotAllowed(c);
@@ -392,6 +456,26 @@ int HttpApi::onActive(mg_connection* c, void* self) {
     if (api->opt_.activeProjectJson.empty()) {
         nlohmann::json body = {{"error", "NO_VALID_PROJECT"}, {"errors", api->opt_.projectErrors}};
         return sendJson(c, 503, jsonText(body), "");
+    }
+    // Feature 013: only what the person views.
+    if (api->opt_.accessOf && api->opt_.gate && api->activeDoc_) {
+        const SessionAccessPtr a = api->opt_.accessOf(api->opt_.gate->originOf(c));
+        if (a && !a->all()) {
+            std::string body;
+            {
+                std::lock_guard<std::mutex> l(*api->activeMu_);
+                auto& cache = *api->activeByAccess_;
+                const auto it = cache.find(a->fingerprint);
+                if (it != cache.end()) {
+                    body = it->second;
+                } else {
+                    body = filteredActive(*api->activeDoc_, *a).dump();
+                    if (cache.size() >= 64) cache.clear();
+                    cache.emplace(a->fingerprint, body);
+                }
+            }
+            return sendJson(c, 200, body, "");
+        }
     }
     return sendJson(c, 200, api->opt_.activeProjectJson, "");
 }
@@ -410,7 +494,15 @@ int HttpApi::onAlarms(mg_connection* c, void* self) {
             const RequestOrigin o = api->opt_.gate->originOf(c);
             full = api->opt_.gate->validSession(o) || api->opt_.gate->validWebSession(o);
         }
-        return alarmsapi::getList(c, *api->opt_.alarms, full);
+        alarmsapi::AlarmFilter allow;
+        if (api->opt_.accessOf && api->opt_.gate) {  // feature 013
+            const SessionAccessPtr a = api->opt_.accessOf(api->opt_.gate->originOf(c));
+            if (a && !a->all()) {
+                if (!a->access.canViewPage("alarms")) return api->denied(c, *a, "/api/v1/alarms");
+                allow = [a](const std::string& id) { return a->access.alarmAllowed(id); };
+            }
+        }
+        return alarmsapi::getList(c, *api->opt_.alarms, full, allow);
     } catch (const std::exception&) {
         return sendJson(c, 503, R"({"error":"INTERNAL_ERROR"})", "");
     }
@@ -427,7 +519,16 @@ int HttpApi::onAlarmsHistory(mg_connection* c, void* self) {
             const RequestOrigin o = api->opt_.gate->originOf(c);
             full = api->opt_.gate->validSession(o) || api->opt_.gate->validWebSession(o);
         }
-        return alarmsapi::getHistory(c, *api->opt_.alarms, *api->historyLimiter_, full);
+        alarmsapi::AlarmFilter allow;
+        if (api->opt_.accessOf && api->opt_.gate) {  // feature 013
+            const SessionAccessPtr a = api->opt_.accessOf(api->opt_.gate->originOf(c));
+            if (a && !a->all()) {
+                if (!a->access.canViewPage("alarms"))
+                    return api->denied(c, *a, "/api/v1/alarms/history");
+                allow = [a](const std::string& id) { return a->access.alarmAllowed(id); };
+            }
+        }
+        return alarmsapi::getHistory(c, *api->opt_.alarms, *api->historyLimiter_, full, allow);
     } catch (const std::exception&) {
         return sendJson(c, 503, R"({"error":"INTERNAL_ERROR"})", "");
     }
@@ -478,6 +579,58 @@ int HttpApi::onProjectFile(mg_connection* c, void* self) {
     const std::string extra =
         std::string("Content-Security-Policy: ") + kCspProject + "\r\nCache-Control: no-cache\r\n";
     const bool json = rel.size() > 5 && rel.compare(rel.size() - 5, 5, ".json") == 0;
+    // Feature 013 (contracts/admin-api.md §6): what the person views, and nothing else.
+    if (api->opt_.accessOf && api->opt_.gate) {
+        const SessionAccessPtr a = api->opt_.accessOf(api->opt_.gate->originOf(c));
+        if (a && !a->all()) {
+            const std::string what = "/project/" + rel;
+            const std::string pre = "screens/", post = ".screen.json";
+            if (rel.size() > pre.size() + post.size() && rel.compare(0, pre.size(), pre) == 0 &&
+                rel.compare(rel.size() - post.size(), post.size(), post) == 0) {
+                const std::string id =
+                    rel.substr(pre.size(), rel.size() - pre.size() - post.size());
+                if (!a->access.canViewScreen(id)) return api->denied(c, *a, what);
+                const auto hidden = a->access.hiddenItems.find(id);
+                if (hidden != a->access.hiddenItems.end() && !hidden->second.empty()) {
+                    const auto text = readSmallText(api->opt_.projectDir + "/" + rel);
+                    const nlohmann::json doc =
+                        text ? nlohmann::json::parse(*text, nullptr, false) : nlohmann::json();
+                    if (doc.is_discarded() || !doc.is_object()) return notFound(c);
+                    const std::string body = filteredScreen(doc, hidden->second).dump();
+                    mg_printf(c,
+                              "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+                              "Content-Length: %zu\r\nCache-Control: no-store\r\n"
+                              "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n"
+                              "Content-Security-Policy: %s\r\n%s\r\n",
+                              body.size(), kCspProject, connectionClose(c));
+                    if (!isHead(c)) mg_write(c, body.data(), body.size());
+                    return 200;
+                }
+            } else if (const auto owners = api->opt_.itemFiles.find(rel);
+                       owners != api->opt_.itemFiles.end()) {
+                // the drawing and the bindings of an SVG item: one of its owners is viewed
+                const bool any = std::any_of(
+                    owners->second.begin(), owners->second.end(),
+                    [&](const auto& o) { return a->access.canViewItem(o.first, o.second); });
+                if (!any) return api->denied(c, *a, what);
+            } else if (!api->opt_.reportsFile.empty() && rel == api->opt_.reportsFile) {
+                if (!a->access.canViewPage("reports")) return api->denied(c, *a, what);
+                const auto text = readSmallText(api->opt_.projectDir + "/" + rel);
+                nlohmann::json doc =
+                    text ? nlohmann::json::parse(*text, nullptr, false) : nlohmann::json();
+                if (doc.is_discarded() || !doc.is_object()) return notFound(c);
+                const std::string body = filteredReports(doc, *a).dump();
+                mg_printf(c,
+                          "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+                          "Content-Length: %zu\r\nCache-Control: no-store\r\n"
+                          "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n"
+                          "Content-Security-Policy: %s\r\n%s\r\n",
+                          body.size(), kCspProject, connectionClose(c));
+                if (!isHead(c)) mg_write(c, body.data(), body.size());
+                return 200;
+            }
+        }
+    }
     return serveFile(c, api->opt_.projectDir + "/" + rel,
                      json ? "application/json" : "image/svg+xml", extra, false);
 }

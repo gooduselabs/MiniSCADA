@@ -5,6 +5,7 @@
 // hoàn tác mỗi cử chỉ, gõ liên tục gộp theo `mergeKey`.
 import {
   catalogWidget,
+  isOperableItem,
   type Action,
   type ActionNameCatalog,
   type Item,
@@ -28,6 +29,7 @@ import {
   setLocked,
   setProp,
   setRect,
+  setItemAccess,
   setSecurity,
   setTag,
 } from '../model/screen-doc.ts';
@@ -54,6 +56,8 @@ import { renderField } from './props-fields.ts';
 import { popupParamsOf } from '../model/template-doc.ts';
 import { registerProps } from './registry.ts';
 import './props-widget.css';
+
+const ROLES: readonly Role03[] = ['viewer', 'operator', 'engineer', 'administrator'];
 
 type TabId = 'general' | 'display' | 'tags' | 'events' | 'security' | 'graphics';
 
@@ -169,13 +173,16 @@ export class MatWidgetProps extends AppElement {
     const its = this.items();
     if (its.length === 0) return ['general'];
     const tabs: TabId[] = ['general'];
-    if (its.length === 1 && its[0]!.type === 'svg') return ['general', 'graphics'];
+    // định dạng 1.1 (feature 013): mọi item có tab Bảo mật (vai trò tối thiểu để xem, để thao tác)
+    const access = this.format11();
+    if (its.length === 1 && its[0]!.type === 'svg')
+      return access ? ['general', 'graphics', 'security'] : ['general', 'graphics'];
     const m = this.model();
-    if (!m) return tabs;
+    if (!m) return access ? [...tabs, 'security'] : tabs;
     if (m.groups.display.length) tabs.push('display');
     if (m.slots.length && its.length === 1) tabs.push('tags');
     if (its.length === 1 && (m.events.length || m.groups.security.length)) tabs.push('events');
-    if (m.minRoles) tabs.push('security');
+    if (m.minRoles || access) tabs.push('security');
     return tabs;
   }
 
@@ -443,7 +450,12 @@ export class MatWidgetProps extends AppElement {
               ${prow(t('wi.type'), one.type === 'svg' ? t('widget.svg') : t(`widget.${one.widget}` as MessageKey))}`
           : html`<p class="help pad" role="status">${t('wi.multi', { n: its.length })}</p>`
       }
-      ${rectFields.map(([k, key]) => this.numberRow(t(key), k, its, issues))}
+      ${
+        // màn hình lưới (feature 012, FR-020): ô quyết định vị trí và cỡ, không có X, Y, Rộng, Cao
+        (this.doc as (ScreenModel & { layout?: unknown }) | null)?.layout !== undefined
+          ? nothing
+          : rectFields.map(([k, key]) => this.numberRow(t(key), k, its, issues))
+      }
       ${this.checkRow(
         t('wi.locked'),
         'locked',
@@ -895,7 +907,98 @@ export class MatWidgetProps extends AppElement {
 
   // ---------- Bảo mật ----------
 
+  private format11(): boolean {
+    return this.app.store.state.outline.format11;
+  }
+
+  /** Item thao tác được (widget nhóm `control`, svg có sự kiện ghi trong tệp binding): có mức thao tác. */
+  private operable(it: Item): boolean {
+    if (it.type === 'widget') return isOperableItem(it);
+    const outline = this.app.store.state.outline.screens.find((s) => s.id === this.screenId);
+    return isOperableItem(it, outline?.itemBindings[it.id]);
+  }
+
+  /**
+   * Định dạng 1.1 (feature 013): "Vai trò tối thiểu để xem" cho mọi item, "để thao tác" khi mọi item chọn đều thao tác
+   * được. Đây là mặc định khi thiết bị chưa có quy tắc quyền; quy tắc trên trang Quản trị không hạ được dưới mức này.
+   */
+  private accessTab(its: Item[]): TemplateResult {
+    const secOf = (i: Item) =>
+      (i as { security?: { view?: Role03; operate?: Role03; minRole?: Role03 } }).security;
+    const views = its.map((i) => secOf(i)?.view ?? 'viewer');
+    const viewMixed = new Set(views).size > 1;
+    const view = views[0] ?? 'viewer';
+    const operable = its.every((i) => this.operable(i));
+    const rank = (r: string) => ROLES.indexOf(r as Role03);
+    // mức thao tác hiệu lực: mức khai (hoặc mặc định), không thấp hơn mức xem
+    const ops = its.map((i) => {
+      const sec = secOf(i);
+      const def = i.type === 'widget' ? catalogWidget(i.widget)?.security?.default : undefined;
+      const o = sec?.operate ?? sec?.minRole ?? def ?? 'operator';
+      const v = sec?.view ?? 'viewer';
+      return rank(o) < rank(v) ? v : o;
+    });
+    const opMixed = new Set(ops).size > 1;
+    const op = ops[0] ?? 'operator';
+    const issues = this.issuesOf();
+    const bad = its.length === 1 && severityOfField(issues.get(its[0]!.id), 'security');
+    const svgOk = (i: Item) => (i.type === 'svg' ? { svgOperable: this.operable(i) } : {});
+    const select = (
+      id: string,
+      label: MessageKey,
+      roles: readonly Role03[],
+      cur: string,
+      mixed: boolean,
+      apply: (r: Role03) => void,
+      disabled: (r: Role03) => boolean = () => false,
+    ) =>
+      html`<div class="pf-row ${bad ? 'bad' : ''}" data-field="security">
+        <label class="pf-l" for=${id}>${t(label)}</label>
+        <div class="pf-v">
+          <select
+            id=${id}
+            class="pf-in"
+            @change=${(e: Event) => apply((e.target as HTMLSelectElement).value as Role03)}
+          >
+            ${mixed ? html`<option value="" selected>${t('pf.mixed')}</option>` : nothing}
+            ${roles.map(
+              (r) =>
+                html`<option value=${r} ?selected=${!mixed && cur === r} ?disabled=${disabled(r)}>
+                  ${t(`wi.role.${r}` as MessageKey)}
+                </option>`,
+            )}
+          </select>
+        </div>
+      </div>`;
+    return html`${select('wi-view', 'wi.access.view', ROLES, view, viewMixed, (r) =>
+        this.applyEach(undefined, (d, id) =>
+          setItemAccess(d, id, { view: r }, svgOk(its.find((i) => i.id === id)!)),
+        ),
+      )}
+      ${
+        operable
+          ? select(
+              'wi-operate',
+              'wi.access.operate',
+              ROLES.slice(1),
+              op,
+              opMixed,
+              (r) =>
+                this.applyEach(undefined, (d, id) =>
+                  setItemAccess(d, id, { operate: r }, svgOk(its.find((i) => i.id === id)!)),
+                ),
+              (r) => !viewMixed && rank(r) < rank(view),
+            )
+          : html`<p class="help pad" data-note="display-only">${t('wi.access.displayOnly')}</p>`
+      }
+      <div class="banner info wi-note" role="note" data-note="access-default">
+        ${icon('shield')}
+        <div>${t('wi.access.note')}</div>
+      </div>`;
+  }
+
   private securityTab(its: Item[]): TemplateResult {
+    if (this.format11()) return this.accessTab(its);
     const m = this.model();
     if (!m?.minRoles) return html``;
     const roles = its.map((i) => (i as WidgetItem).security?.minRole ?? null);

@@ -1,4 +1,5 @@
 // Thao tác màn hình ở cấp project (feature 007, T109): id mới, màn hình mới, nhân bản, chỗ trỏ tới, đặt màn hình đầu.
+import type { ScreenModel } from '@mat/project-schema';
 import { describe, expect, it } from 'vitest';
 import {
   applyDocEdits,
@@ -53,6 +54,76 @@ describe('id và màn hình mới', () => {
     expect(o.screens.find((s) => s.id === plan.id)!.model!.name).toBe('Màn hình mới 1');
     const again = planAddScreen(o, 'screen', (n) => `Màn hình mới ${n}`)!;
     expect(again.id).toBe('man-hinh-2');
+  });
+
+  it('bố cục lưới (feature 012): màn hình mới có một hàng 12 cột trống, không item', () => {
+    const s = newScreen('screen', 'a', 'A', 'grid') as unknown as Record<string, unknown>;
+    expect(s.layout).toEqual({
+      mode: 'grid',
+      columns: 12,
+      gap: 12,
+      padding: 16,
+      rows: [{ id: 'r1', height: 'auto', cells: [{ id: 'c1', span: 12 }] }],
+    });
+    expect(s.items).toEqual([]);
+    expect('layout' in (newScreen('screen', 'b', 'B') as object)).toBe(false);
+    const d = docs();
+    const plan = planAddScreen(outline(d), 'screen', (n) => `Màn hình mới ${n}`, 'grid')!;
+    const model = outline(applyDocEdits(d, plan.edits)).screens.find((x) => x.id === plan.id)!
+      .model as unknown as Record<string, unknown>;
+    expect(model.layout).toBeDefined();
+  });
+});
+
+describe('nhân bản màn hình lưới (feature 012)', () => {
+  it('bản sao giữ bố cục; ô trỏ tới item svg bị bỏ thành ô trống', () => {
+    const src = {
+      schemaVersion: '1.1.0',
+      id: 'g',
+      name: 'G',
+      kind: 'screen',
+      size: { width: 1920, height: 1080 },
+      layout: {
+        mode: 'grid',
+        columns: 12,
+        rows: [
+          {
+            id: 'r1',
+            height: 'auto',
+            cells: [
+              { id: 'c1', span: 6, item: 'card_1' },
+              { id: 'c2', span: 6, item: 'svg_1' },
+            ],
+          },
+        ],
+      },
+      items: [
+        { id: 'card_1', type: 'widget', widget: 'card' },
+        {
+          id: 'svg_1',
+          type: 'svg',
+          svgFile: 'graphics/a.svg',
+          bindingFile: 'screens/g.svg_1.bindings.json',
+          viewBox: [0, 0, 10, 10],
+          elements: [],
+        },
+      ],
+    } as unknown as ScreenModel;
+    const plan = planDuplicateScreen(
+      { screens: [{ id: 'g', model: src }] } as never,
+      'g',
+      (n) => `${n} (bản sao)`,
+    )!;
+    const copy = (
+      plan.edits[0] as unknown as {
+        screen: ScreenModel & { layout: { rows: Array<{ cells: unknown[] }> } };
+      }
+    ).screen;
+    expect(copy.layout.rows[0]!.cells).toEqual([
+      { id: 'c1', span: 6, item: 'card_1' },
+      { id: 'c2', span: 6 },
+    ]);
+    expect(plan.skippedSvg).toBe(1);
   });
 });
 

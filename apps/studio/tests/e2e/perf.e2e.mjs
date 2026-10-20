@@ -33,7 +33,7 @@ export default async function perf({ page, check, shot }) {
   const files = readTree(fixture);
   await page.waitForSelector('mat-start-page .start-hero');
   await page.evaluate((f) => window.__matMock.useProject(f, 'D:\\Projects\\tags-500'), files);
-  await page.$eval('mat-start-page .start-hero .btn.primary', (b) => b.click());
+  await page.$eval('mat-start-page .start-hero [data-cmd="project.open"]', (b) => b.click());
   await page.waitForFunction(() =>
     document.querySelector('mat-tree [role="treeitem"] .lbl')?.textContent.includes('500 Tag'),
   );

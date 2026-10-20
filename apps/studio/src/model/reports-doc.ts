@@ -3,10 +3,13 @@
 // Chỉ nhóm có `aggregates` và Tag số hoặc BOOL có `aggregate ≠ false` được chọn; hàm mờ theo kiểu Tag; ca chỉ trong
 // {2, 3, 4, 6, 8, 12}. Giá trị sai luật (id trùng, ca sai khi gõ tay…) vẫn ghi để bộ kiểm tra báo lỗi theo ô (FR-054).
 import {
+  EQUIPMENT_FNS,
   SHIFT_COUNTS,
   type LoggingConfig,
+  type ReportChartKind,
   type ReportColumn,
   type ReportFn,
+  type ReportKind,
   type ReportPeriod,
   type ReportTemplate,
   type ReportsConfig,
@@ -18,6 +21,7 @@ import type { ProjectEdit } from './project-doc.ts';
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
+/** Hàm của mẫu bảng theo thứ tự chuẩn; onTime (giờ ON của BOOL) cần định dạng 1.1 (feature 015). */
 export const REPORT_FNS: readonly ReportFn[] = [
   'min',
   'max',
@@ -27,7 +31,16 @@ export const REPORT_FNS: readonly ReportFn[] = [
   'last',
   'delta',
   'count',
+  'onTime',
 ];
+/** Hàm theo loại mẫu: bảng (REPORT_FNS), thiết bị (giờ chạy, số lần bật), alarm/logic (không có cột). */
+export function fnsFor(kind: ReportKind | undefined): readonly ReportFn[] {
+  return kind === 'equipment'
+    ? EQUIPMENT_FNS
+    : kind === 'alarm' || kind === 'logic'
+      ? []
+      : REPORT_FNS;
+}
 export const MAX_REPORTS = 16;
 export const MAX_COLUMNS = 24;
 /** reports.json mới mang đúng phiên bản của project.json (mọi file phải cùng phiên bản, E_SCHEMA_VERSION): định dạng 0.6. */
@@ -60,9 +73,18 @@ export function eligibleTags(
     .map((x) => x.tagId);
 }
 
-/** Hàm tính được cho kiểu Tag (mờ khi không): BOOL không có `delta`; chuỗi không có hàm nào; kiểu chưa biết cho phép. */
-export function fnApplicable(type: TagDataType | undefined, fn: ReportFn): boolean {
+/**
+ * Hàm tính được cho kiểu Tag và loại mẫu (mờ khi không): BOOL không có `delta`; `onTime`, `starts` chỉ cho BOOL;
+ * `starts` chỉ ở mẫu thiết bị; chuỗi không có hàm nào; kiểu chưa biết cho phép (bộ kiểm tra báo lỗi nếu sai).
+ */
+export function fnApplicable(
+  type: TagDataType | undefined,
+  fn: ReportFn,
+  kind: ReportKind = 'table',
+): boolean {
+  if (!fnsFor(kind).includes(fn)) return false;
   if (type === 'STRING') return false;
+  if (fn === 'onTime' || fn === 'starts') return type === undefined || type === 'BOOL';
   if (type === 'BOOL') return fn !== 'delta';
   return true;
 }
@@ -75,18 +97,97 @@ function uniqueId(cfg: ReportsConfig, base: string): string {
   for (let n = 2; ; n++) if (!used.has(`${base}-${n}`)) return `${base}-${n}`;
 }
 
-/** Thêm mẫu trống; chưa có `reports.json` (`cfg` null) thì dựng cấu hình mới. Nhóm là nhóm đầu có tổng hợp. */
-export function addReport(cfg: ReportsConfig | null, logging: LoggingConfig | null): ReportsConfig {
-  const next: ReportsConfig = cfg ? clone(cfg) : { schemaVersion: SCHEMA_VERSION, reports: [] };
-  next.reports.push({
-    id: uniqueId(next, 'bao-cao'),
-    name: t('rpt.defaultName', { n: next.reports.length + 1 }),
+/**
+ * Thêm mẫu trống; chưa có `reports.json` (`cfg` null) thì dựng cấu hình mới mang `schemaVersion` của project (mọi file
+ * cùng phiên bản). Nhóm là nhóm đầu có tổng hợp.
+ */
+export function addReport(
+  cfg: ReportsConfig | null,
+  logging: LoggingConfig | null,
+  schemaVersion: string = SCHEMA_VERSION,
+): ReportsConfig {
+  return addTemplate(cfg, schemaVersion, {
+    id: 'bao-cao',
+    name: '',
     group: eligibleGroups(logging)[0]?.id ?? '',
     period: 'day',
     rowMinutes: 60,
     totals: true,
     columns: [],
   });
+}
+
+/** Thêm một mẫu dựng sẵn (mẫu có sẵn của trình thiết kế): id không trùng, tên mặc định khi trống. */
+export function addTemplate(
+  cfg: ReportsConfig | null,
+  schemaVersion: string,
+  tpl: ReportTemplate,
+): ReportsConfig {
+  const next: ReportsConfig = cfg ? clone(cfg) : { schemaVersion, reports: [] };
+  const r = clone(tpl);
+  r.id = uniqueId(next, tpl.id);
+  if (!r.name) r.name = t('rpt.defaultName', { n: next.reports.length + 1 });
+  next.reports.push(r);
+  return next;
+}
+
+/**
+ * Đổi loại mẫu (định dạng 1.1): alarm, logic bỏ nhóm và cột; thiết bị giữ cột Tag BOOL với giờ chạy và số lần bật; bảng
+ * bỏ hàm `starts`. `table` bỏ khóa (mặc định).
+ */
+export function setKind(
+  cfg: ReportsConfig,
+  index: number,
+  kind: ReportKind,
+  logging: LoggingConfig | null,
+  types: ReadonlyMap<string, TagDataType> | null,
+): ReportsConfig {
+  return mapReport(cfg, index, (r) => {
+    if (kind === 'table') delete r.kind;
+    else r.kind = kind;
+    if (kind === 'alarm' || kind === 'logic') {
+      delete r.group;
+      delete r.columns;
+      return;
+    }
+    r.group ??= eligibleGroups(logging)[0]?.id ?? '';
+    const cols = r.columns ?? [];
+    if (kind === 'equipment')
+      r.columns = cols
+        .filter((c) => types?.get(c.tagId) === 'BOOL')
+        .map((c) => ({ ...c, functions: ['onTime', 'starts'] as ReportFn[] }));
+    else
+      r.columns = cols
+        .map((c) => ({ ...c, functions: c.functions.filter((f) => f !== 'starts') }))
+        .filter((c) => c.functions.length > 0);
+  });
+}
+
+/** Hàng thẻ tổng hợp: bật là mặc định (bỏ khóa). */
+export function setTiles(cfg: ReportsConfig, index: number, on: boolean): ReportsConfig {
+  return mapReport(cfg, index, (r) => {
+    if (on) delete r.tiles;
+    else r.tiles = false;
+  });
+}
+
+/** Biểu đồ: `auto` (bỏ khóa, tự chọn theo cột), đường, cột, hoặc không có. */
+export function setChart(
+  cfg: ReportsConfig,
+  index: number,
+  chart: ReportChartKind | 'auto',
+): ReportsConfig {
+  return mapReport(cfg, index, (r) => {
+    if (chart === 'auto') delete r.chart;
+    else r.chart = chart;
+  });
+}
+
+/** Tên đơn vị trên dải tiêu đề (chung cho mọi mẫu); rỗng thì bỏ khóa (dùng tên project). */
+export function setOrg(cfg: ReportsConfig, org: string): ReportsConfig {
+  const next = clone(cfg);
+  if (org.trim() === '') delete next.org;
+  else next.org = org.trim();
   return next;
 }
 
@@ -212,11 +313,12 @@ export function shiftLabels(count: number, start: string): string[] {
 
 // ---- cột và hàm -----------------------------------------------------------------------------------------------------
 
-export type RejectReason = 'dup' | 'notInGroup' | 'noAgg' | 'limit';
+export type RejectReason = 'dup' | 'notInGroup' | 'noAgg' | 'limit' | 'notBool' | 'noColumns';
 
 /**
  * Thêm cột cho các Tag (kéo từ cây, gõ tên, dán): bỏ Tag trùng, Tag ngoài nhóm, Tag không tổng hợp, quá 24 cột. Hàm mặc định
- * là `avg` (BOOL: `sum`, tức giờ chạy).
+ * là `avg`; BOOL: `onTime` (giờ chạy) ở định dạng 1.1, `sum` ở định dạng cũ. Mẫu thiết bị chỉ nhận Tag BOOL (giờ chạy và
+ * số lần bật); mẫu alarm, logic không có cột.
  */
 export function addColumns(
   cfg: ReportsConfig,
@@ -224,28 +326,45 @@ export function addColumns(
   tagIds: readonly string[],
   logging: LoggingConfig | null,
   types: ReadonlyMap<string, TagDataType> | null,
+  format11 = false,
 ): { cfg: ReportsConfig; rejected: Array<{ tagId: string; reason: RejectReason }> } {
   const tpl = cfg.reports[index];
   if (!tpl) return { cfg, rejected: [] };
-  const ok = new Set(eligibleTags(logging, tpl.group, types));
+  const kind = tpl.kind ?? 'table';
+  if (kind === 'alarm' || kind === 'logic')
+    return { cfg, rejected: tagIds.map((tagId) => ({ tagId, reason: 'noColumns' as const })) };
+  const ok = new Set(eligibleTags(logging, tpl.group ?? '', types));
   const inGroup = new Set(
     logging?.groups.find((g) => g.id === tpl.group)?.tags.map((x) => x.tagId) ?? [],
   );
   const next = clone(cfg);
-  const cols = next.reports[index]!.columns;
+  const cols = (next.reports[index]!.columns ??= []);
+  const before = cols.length;
   const have = new Set(cols.map((c) => c.tagId));
   const rejected: Array<{ tagId: string; reason: RejectReason }> = [];
   for (const id of tagIds) {
+    const bool = types?.get(id) === 'BOOL';
     if (have.has(id)) rejected.push({ tagId: id, reason: 'dup' });
     else if (!inGroup.has(id)) rejected.push({ tagId: id, reason: 'notInGroup' });
     else if (!ok.has(id)) rejected.push({ tagId: id, reason: 'noAgg' });
+    else if (kind === 'equipment' && !bool) rejected.push({ tagId: id, reason: 'notBool' });
     else if (cols.length >= MAX_COLUMNS) rejected.push({ tagId: id, reason: 'limit' });
     else {
       have.add(id);
-      cols.push({ tagId: id, functions: [types?.get(id) === 'BOOL' ? 'sum' : 'avg'] });
+      const functions: ReportFn[] =
+        kind === 'equipment'
+          ? ['onTime', 'starts']
+          : bool
+            ? [format11 ? 'onTime' : 'sum']
+            : ['avg'];
+      cols.push(
+        bool
+          ? { tagId: id, unit: t('rpt.unit.hour'), decimals: 2, functions }
+          : { tagId: id, functions },
+      );
     }
   }
-  return { cfg: cols.length === tpl.columns.length ? cfg : next, rejected };
+  return { cfg: cols.length === before ? cfg : next, rejected };
 }
 
 export function removeColumns(
@@ -255,7 +374,7 @@ export function removeColumns(
 ): ReportsConfig {
   const drop = new Set(rows);
   return mapReport(cfg, index, (r) => {
-    r.columns = r.columns.filter((_, i) => !drop.has(i));
+    r.columns = (r.columns ?? []).filter((_, i) => !drop.has(i));
   });
 }
 
@@ -268,8 +387,9 @@ export function moveColumn(
   const cols = cfg.reports[index]?.columns;
   if (!cols || !cols[from] || to < 0 || to >= cols.length || from === to) return cfg;
   return mapReport(cfg, index, (r) => {
-    const [c] = r.columns.splice(from, 1);
-    r.columns.splice(to, 0, c!);
+    const list = r.columns!;
+    const [c] = list.splice(from, 1);
+    list.splice(to, 0, c!);
   });
 }
 
@@ -280,9 +400,9 @@ export function setColumnField(
   field: 'tagId' | 'label' | 'unit' | 'decimals',
   value: string | number | undefined,
 ): ReportsConfig {
-  if (!cfg.reports[index]?.columns[col]) return cfg;
+  if (!cfg.reports[index]?.columns?.[col]) return cfg;
   return mapReport(cfg, index, (r) => {
-    const c = r.columns[col]! as unknown as Record<string, unknown>;
+    const c = r.columns![col]! as unknown as Record<string, unknown>;
     if (value === undefined || value === '') delete c[field];
     else c[field] = value;
   });
@@ -294,9 +414,9 @@ export function setColumnFunctions(
   col: number,
   fns: readonly ReportFn[],
 ): ReportsConfig {
-  if (!cfg.reports[index]?.columns[col]) return cfg;
+  if (!cfg.reports[index]?.columns?.[col]) return cfg;
   return mapReport(cfg, index, (r) => {
-    r.columns[col]!.functions = [...fns];
+    r.columns![col]!.functions = [...fns];
   });
 }
 
@@ -307,7 +427,7 @@ export function toggleFunction(
   col: number,
   fn: ReportFn,
 ): ReportsConfig {
-  const cur = cfg.reports[index]?.columns[col]?.functions;
+  const cur = cfg.reports[index]?.columns?.[col]?.functions;
   if (!cur) return cfg;
   const set = new Set(cur);
   if (set.has(fn)) set.delete(fn);
@@ -317,13 +437,15 @@ export function toggleFunction(
     cfg,
     index,
     col,
-    REPORT_FNS.filter((f) => set.has(f)),
+    [...REPORT_FNS, 'starts' as const].filter((f) => set.has(f)),
   );
 }
 
 /** Gợi ý đơn vị theo hàm (không tự suy từ Tag): kW + tích phân → kWh; BOOL + tích phân → giờ; số lượng không đơn vị. */
 export function suggestUnit(fn: ReportFn, unit: string | undefined, type?: TagDataType): string {
   if (fn === 'count') return '';
+  if (fn === 'onTime') return t('rpt.unit.hour');
+  if (fn === 'starts') return t('rpt.unit.times');
   if (fn === 'sum') {
     if (type === 'BOOL') return t('rpt.unit.hour');
     const u = unit ?? '';
@@ -401,7 +523,7 @@ export function columnsAdapter(o: ColumnsAdapterOptions): GridAdapter {
     if (o.readOnly) return { edits: [], rejected: changes.map((c) => rej(c, 'rpt.err.readOnly')) };
     let cfg = o.cfg;
     const rejected: Rejected[] = [];
-    const allowed = new Set(tpl ? eligibleTags(o.logging, tpl.group, o.types) : []);
+    const allowed = new Set(tpl ? eligibleTags(o.logging, tpl.group ?? '', o.types) : []);
     for (const c of changes) {
       const row = c.row;
       if (row === null || !cols[row]) {

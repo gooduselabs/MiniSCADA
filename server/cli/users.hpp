@@ -8,7 +8,17 @@
 //   mat-runtime --logic-writes-reset   (feature 011: clear an administrator stop of logic writes)
 //   mat-runtime --pulse-ack <rid|all>  (feature 011, T202: close pulses reported PULSE_STUCK)
 //   mat-runtime --user-list
+//   feature 013 (contracts/admin-api.md §8):
+//   mat-runtime --user-groups <name> <g1,g2|->  --user-remove <name>
+//   mat-runtime --group-add <id> <name> | --group-remove <id> | --access-reset
 // each with [--users-file <file>] [--data-dir <dir>] [--config <runtime.json>].
+//
+// Feature 013: the accounts are <dataDir>/auth/users.json (0600, the service user's, in a 0700
+// directory of the service user), made once from the seed --users-file (/etc/mat-runtime/
+// users.json, audit account.migrate); groups and rules are <dataDir>/auth/access.json. Every
+// change runs under the flock of that directory (the runtime's admin API takes it too), keeps the
+// file before as .bak and bumps the file's rev. --group-remove also takes the group out of the
+// accounts and the rules (recovery); --access-reset removes every rule and keeps the groups.
 //
 // - A password never comes from an argument: from the terminal (asked twice, echo off) or one line
 //   of stdin with --password-stdin; 15–128 characters, not the account name, no combining mark

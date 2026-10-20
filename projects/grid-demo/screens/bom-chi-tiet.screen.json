@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "bom-chi-tiet",
+  "name": "Chi tiết bơm",
+  "kind": "popup",
+  "size": {"width":640,"height":420},
+  "params": [
+    {"name":"prefix","kind":"tagPrefix"},
+    {"name":"title","kind":"string","default":"Bơm"}
+  ],
+  "items": [
+    {"id":"panel_f","name":"Khung","type":"widget","widget":"panel","x":0,"y":0,"width":640,"height":420,"props":{"title":"{title}"}},
+    {"id":"run_l","name":"Đèn chạy","type":"widget","widget":"lamp","x":20,"y":60,"width":280,"height":40,"props":{"label":"Đang chạy","onColor":"#2E7D32"},"tags":{"state":"{prefix}.RUN"}},
+    {"id":"fault_l","name":"Đèn lỗi","type":"widget","widget":"lamp","x":20,"y":110,"width":280,"height":40,"props":{"label":"Lỗi","onColor":"#C62828"},"tags":{"state":"{prefix}.FAULT"}},
+    {"id":"flow_c","name":"Lưu lượng","type":"widget","widget":"card","x":320,"y":60,"width":300,"height":110,"props":{"label":"Lưu lượng {title}"},"tags":{"value":"{prefix}.FLOW"}},
+    {"id":"run_sw","name":"Công tắc","type":"widget","widget":"switch","x":20,"y":180,"width":280,"height":48,"props":{"label":"Chạy {title}"},"tags":{"target":"{prefix}.RUN_CMD"}},
+    {"id":"table_f","name":"Bảng Tag","type":"widget","widget":"tag-table","x":20,"y":250,"width":600,"height":90,"props":{"dense":true},"tags":{"rows":["{prefix}.RUN","{prefix}.FLOW","{prefix}.FAULT"]}},
+    {"id":"btn_close","name":"Đóng","type":"widget","widget":"button","x":440,"y":360,"width":180,"height":48,"props":{"label":"Đóng","variant":"neutral"},"events":{"click":{"action":"closePopup"}}}
+  ]
+}

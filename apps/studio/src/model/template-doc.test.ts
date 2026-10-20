@@ -318,6 +318,14 @@ describe('template-doc: bản sao', () => {
     });
   });
 
+  it('addInstance trên màn hình lưới (feature 012): từ chối grid-layout, không đổi màn hình', () => {
+    const docs = open(vector());
+    const main = screenOf(docs, 'main');
+    const grid = { ...main, items: [], layout: { mode: 'grid', columns: 12, rows: [] } } as never;
+    const r = addInstance(grid, tpl(), { params: { prefix: 'PUMP01' }, at: { x: 0, y: 0 } });
+    expect(r).toMatchObject({ ok: false, reason: 'grid-layout' });
+  });
+
   it('addInstance: id bản sao kế tiếp không trùng, từ chối id đã dùng', () => {
     const docs = open(vector());
     const main = screenOf(docs, 'main');

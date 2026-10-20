@@ -4,6 +4,9 @@ import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
   asBackupFailure,
+  asCreateFailure,
+  type CreateOutcome,
+  type NewTargetState,
   asReadFailure,
   asRemoveFailure,
   asWriteFailure,
@@ -43,6 +46,25 @@ export const tauriPlatform: Platform = {
   },
   async forgetRecent(index) {
     await invoke('project_forget_recent', { index });
+  },
+  newProjectParentDefault: () => invoke<PickResult>('project_parent_default'),
+  newProjectParentPick: () => invoke<PickResult | null>('project_parent_pick'),
+  async newProjectCheck(id) {
+    try {
+      return await invoke<NewTargetState>('project_new_check', { id });
+    } catch (e) {
+      return asCreateFailure(e);
+    }
+  },
+  async createProject(id, files): Promise<CreateOutcome> {
+    try {
+      return await invoke<PickResult>('project_create', {
+        id,
+        files: Object.entries(files).map(([rel, content]) => ({ rel, content })),
+      });
+    } catch (e) {
+      return asCreateFailure(e);
+    }
   },
   async read(rel): Promise<ReadOutcome> {
     try {

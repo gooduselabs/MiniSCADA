@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "0.3.0",
+  "name": "TrangThaiBom",
+  "entries": [
+    {
+      "value": 0,
+      "text": "Dừng",
+      "color": "#808080"
+    },
+    {
+      "value": 1,
+      "text": "Chạy",
+      "color": "#2E7D32"
+    }
+  ]
+}

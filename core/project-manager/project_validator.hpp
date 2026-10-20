@@ -18,8 +18,8 @@ namespace mat {
 // 0.6.0 was screens v1 and widgets, format 0.3 (feature 007). 0.1.x to 0.5.x projects still run
 // (research R3). 1.0.0-rc.N (T191): builds before the Go/No-Go carry a pre-release tag;
 // compareSemver compares the numbers only, so a project with minRuntimeVersion 1.0.0 runs
-// on 1.0.0-rc.1 (ADR 035).
-constexpr const char* kRuntimeVersion = "1.0.0-rc.1";
+// on 1.0.0-rc.1 (ADR 035). 1.1.0-alpha.1 (feature 012): format 1.1 (grid layout, theme).
+constexpr const char* kRuntimeVersion = "1.1.0-alpha.1";
 
 // The rule that only the runtime of a device can run (feature 006 T166): a project may use only the
 // serial ports of `serialPorts` in the device's configuration, the console of the system never.
@@ -104,6 +104,9 @@ struct ProjectValidation {
 };
 
 bool isSafeRelPath(const std::string& p);
+// The SVG file of an image widget (catalog 0.6.0, feature 014): props.src, "" when absent or empty.
+// It belongs to the project like the SVG of an svg item (files(), allowlist(), E_FILE_MISSING).
+std::string imageFileOf(const nlohmann::json& item);
 int compareSemver(const std::string& a, const std::string& b);
 // `schemasDir` holds the 1.0 schemas and, in its subdirectories 0.6/, 0.5/, 0.4/, 0.3/, 0.2/ and
 // 0.1/, the frozen older ones, and widgets.catalog.json; the set is chosen by the schemaVersion of

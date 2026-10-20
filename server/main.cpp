@@ -27,6 +27,9 @@
 #include <vector>
 
 #include "core/audit/audit_log.hpp"
+#include "core/auth/access_catalog.hpp"
+#include "core/auth/access_service.hpp"
+#include "core/auth/access_store.hpp"
 #include "core/auth/auth_service.hpp"
 #include "core/auth/auth_state.hpp"
 #include "core/common/thread_name.hpp"
@@ -41,11 +44,13 @@
 #include "core/package/project_digest.hpp"
 #include "core/project-manager/logging_estimate.hpp"
 #include "core/project-manager/project_validator.hpp"
+#include "core/project-manager/widget_catalog.hpp"
 #include "core/project-store/boot_decision.hpp"
 #include "core/project-store/deploy_pipeline.hpp"
 #include "core/project-store/health_check.hpp"
 #include "core/project-store/store.hpp"
 #include "core/tag-engine/tag_store.hpp"
+#include "server/access_glue.hpp"
 #include "server/alarm_glue.hpp"
 #include "server/cache_budget.hpp"
 #include "server/cli/alarm_db_check.hpp"
@@ -68,6 +73,7 @@
 #include "server/device_state.hpp"
 #include "server/discovery/discovery_server.hpp"
 #include "server/host_policy.hpp"
+#include "server/http/admin_api.hpp"
 #include "server/http/conn_limit.hpp"
 #include "server/http/engineering_api.hpp"
 #include "server/http/history_api.hpp"
@@ -669,8 +675,22 @@ int main(int argc, char** argv) {
 
     // Step 5: the sign-in service (its hash thread starts here, after the device commands above
     // have returned), with the sessions and lockouts carried across execv (read, then deleted).
+    // Feature 013 (ADR-042): the accounts and the access rules live in <dataDir>/auth (the runtime
+    // writes them for the admin page); users.json is copied there once from the seed in /etc.
+    const AuthLogFn stderrLog = [](const std::string& line) {
+        std::fprintf(stderr, "auth: %s\n", line.c_str());
+    };
+    AuthStoreOptions authStoreOptions;
+    authStoreOptions.dir = cfg.authDir;
+    authStoreOptions.seedUsersFile = cfg.usersFile;
+    AuthStore authStore(authStoreOptions);
+    const AuditFn auditAppend = [&audit](const AuditEvent& e) { audit.append(e); };
     AuthOptions authOptions;
-    authOptions.usersFile = cfg.usersFile;
+    authOptions.usersFile = prepareAuthStore(authStore, cfg.usersFile, auditAppend, stderrLog);
+    authOptions.noteLogin = [&authStore, stderrLog](const std::string& user, int64_t wall) {
+        noteLastLogin(authStore, user, wall, stderrLog);
+    };
+    authOptions.wallMs = epochMs;
     // Feature 007: the limits of the sessions of the runtime page (runtime.json).
     authOptions.webIdleLimitS = int64_t{cfg.webSessionIdleMin} * 60;
     authOptions.webMaxLifetimeS = int64_t{cfg.webSessionMaxHours} * 3600;
@@ -682,6 +702,21 @@ int main(int argc, char** argv) {
     AuthService auth(authOptions);
     auth.loadState(kAuthStateFile);
     parts.auth = &auth;
+    // Feature 013: the resources of the running project and the access of each session.
+    AccessServiceOptions accessOptions;
+    {
+        std::string widgetError;
+        const auto widgets = WidgetCatalog::loadFromDir(cfg.schemasDir, widgetError);
+        if (!widgets) std::fprintf(stderr, "access: widget catalog: %s\n", widgetError.c_str());
+        if (active.active && validation.project)
+            accessOptions.catalog = catalogFromProject(*validation.project, widgets.get());
+    }
+    accessOptions.accessFile = authStore.accessPath();
+    accessOptions.projectHash = active.digest.value_or("");
+    accessOptions.tagIndex = [&store](const std::string& t) { return store.indexOf(t); };
+    accessOptions.log = stderrLog;
+    accessOptions.audit = auditAppend;
+    AccessService accessService(accessOptions);
 
     // Step 6: device id and certificate. A missing certificate is made (cert.generate); a damaged
     // one is never replaced, since a new key would look like an impersonation: HTTPS stays off
@@ -791,6 +826,9 @@ int main(int argc, char** argv) {
     to.queueBytes = cfg.sendQueueBytes;
     to.heartbeatTimeoutMs = cfg.heartbeatTimeoutMs;
     to.allowedOrigins = cfg.allowedOrigins;
+    to.grantOf = [&auth, &accessService](const RequestOrigin& o) {  // feature 013 (live 1.4.0)
+        return liveGrantOf(auth, accessService, o);
+    };
     CivetLiveTransport transport(to, monoMs);
     parts.transport = &transport;
 
@@ -832,6 +870,16 @@ int main(int argc, char** argv) {
     hopt.device = &device;     // system/info: blocks "device" and "operation" (005)
     hopt.alarms = &alarmGlue;  // feature 009: GET alarms, alarms/history, system/info.alarms
     hopt.gate = &viewerGate;
+    // Feature 013 (admin-api §6): what each person views of the project, the menu, the alarms.
+    hopt.accessOf = [&auth, &accessService](const RequestOrigin& o) {
+        return accessOfOrigin(auth, accessService, o);
+    };
+    hopt.audit = auditAppend;
+    if (active.active && validation.project) {
+        hopt.itemFiles = projectItemFiles(*validation.project);
+        if (validation.project->project.contains("reportsFile"))
+            hopt.reportsFile = validation.project->project["reportsFile"].get<std::string>();
+    }
     // Feature 011 (device-api-011 §5): the warnings of the 1.0 sources (set by their tasks), and
     // the blocks `update` and `logic` the Studio reads to show or hide OTA and logic.
     hopt.systemWarnings = &systemWarnings;
@@ -899,10 +947,12 @@ int main(int argc, char** argv) {
         return historianInfoJson(historianInput,
                                  historian ? historian->status() : HistorianStatus{});
     };
+    // the project formats this runtime reads (1.1: feature 012, grid layout and theme)
+    const nlohmann::json schemaVersions = {"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "1.0", "1.1"};
     HttpApi api(hopt, [&] {
         return nlohmann::json{{"runtimeVersion", kRuntimeVersion},
                               {"protocolVersion", kLiveProtocolVersion},
-                              {"schemaVersions", {"0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "1.0"}},
+                              {"schemaVersions", schemaVersions},
                               {"clients", transport.active()},
                               {"maxClients", transport.maxClients()},
                               {"rejectedTotal", transport.rejectedTotal()},
@@ -923,8 +973,26 @@ int main(int argc, char** argv) {
 
     // The engineering API (device-api §3): on HTTPS; on HTTP its paths answer 403 HTTPS_REQUIRED.
     EngineeringApi::Options engOptions;
-    engOptions.hostPolicy = &hostPolicy;  // device/identity.acceptedHosts (011 §1)
+    engOptions.hostPolicy = &hostPolicy;       // device/identity.acceptedHosts (011 §1)
+    engOptions.viewerLogin = cfg.viewerLogin;  // web/session (013)
     EngineeringApi engineering(engOptions, device, auth, audit);
+    // Feature 013 (contracts/admin-api.md): the admin page and the page's access.
+    AdminBackend adminBackend;
+    adminBackend.auth = &auth;
+    adminBackend.store = &authStore;
+    adminBackend.access = &accessService;
+    adminBackend.audit = auditAppend;
+    adminBackend.viewerLogin = cfg.viewerLogin;
+    adminBackend.anonymousAllowed = [&viewerGate](const GateRequest& r) {
+        RequestOrigin o;
+        o.ip = r.from.ip;
+        o.port = r.from.port;
+        o.tls = r.tls;
+        return viewerGate.check(FilteredPath::ProjectsActive, o).allow;
+    };
+    AdminApi adminApi(adminBackend);
+    engineering.setAdmin(&adminApi);
+    engineering.setAccess(&accessService);
     if (startup.opened) engineering.setProject({&pstore, &pipeline});  // device-api §4
     // Diagnostics and audit (device-api §6, §7; T142, T144): CPU, memory, disk and uptime from
     // /proc sampled every 5 s by the tick loop below; the discovery counters once that server
@@ -1069,6 +1137,13 @@ int main(int argc, char** argv) {
         hq.state = [hp] { return std::string(historianStateName(hp->status().state)); };
         hq.audit = [&audit](const AuditEvent& e) { audit.append(e); };
         hq.nowUtc = epochMs;
+        // Feature 013: history(P) of the person of the request.
+        hq.tagFilter =
+            [&accessService](const GateDecision& d) -> std::function<bool(const std::string&)> {
+            const SessionAccessPtr a = accessService.forAccess(d.access, d.viaCookie);
+            if (a->all()) return {};
+            return [a](const std::string& tag) { return a->access.historyTag(tag); };
+        };
         historyApi = std::make_unique<HistoryApi>(std::move(hq));
         engineering.setHistory(historyApi.get());
     }

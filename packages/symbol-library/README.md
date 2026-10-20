@@ -6,13 +6,13 @@ Giấy phép **CC0-1.0**: toàn bộ SVG do dự án tự vẽ, không có logo 
 
 ## Cấu trúc
 
-| Đường dẫn | Việc |
-|---|---|
-| `manifest.json` | nguồn duy nhất: nhóm, ký hiệu, `viewBox`, cỡ mặc định, từ khóa, **bộ phận** (`parts`), **điểm gắn** (`ports`) |
-| `svg/*.svg` | hình của từng ký hiệu (đã qua allowlist, không script, không ảnh ngoài) |
-| `src/index.ts` | API: `SYMBOLS`, `SYMBOL_CATEGORIES`, `getSymbol`, `symbolsByCategory`, `getSymbolSvg`, `searchSymbols` |
-| `src/ports.ts` | hình học điểm gắn: vị trí tuyệt đối, tìm điểm gần nhất tương thích (dính trong 10 điểm ảnh màn hình) |
-| `src/symbols-data.ts` | **tệp sinh**, không sửa tay: `npm run gen -w @mat/symbols` |
+| Đường dẫn             | Việc                                                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `manifest.json`       | nguồn duy nhất: nhóm, ký hiệu, `viewBox`, cỡ mặc định, từ khóa, **bộ phận** (`parts`), **điểm gắn** (`ports`) |
+| `svg/*.svg`           | hình của từng ký hiệu (đã qua allowlist, không script, không ảnh ngoài)                                       |
+| `src/index.ts`        | API: `SYMBOLS`, `SYMBOL_CATEGORIES`, `getSymbol`, `symbolsByCategory`, `getSymbolSvg`, `searchSymbols`        |
+| `src/ports.ts`        | hình học điểm gắn: vị trí tuyệt đối, tìm điểm gần nhất tương thích (dính trong 10 điểm ảnh màn hình)          |
+| `src/symbols-data.ts` | **tệp sinh**, không sửa tay: `npm run gen -w @mat/symbols`                                                    |
 
 ## Bộ phận và UID cố định
 

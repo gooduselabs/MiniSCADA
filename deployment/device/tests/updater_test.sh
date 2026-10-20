@@ -70,7 +70,7 @@ export MAT_OPT_ROOT=$R MAT_SYSTEMCTL=$W/bin/systemctl MAT_VERIFY=$VERIFY_BIN MAT
     MAT_FETCH=$W/bin/fetch MAT_HEALTH_S=4 MAT_STABLE_S=1 MAT_SLEEP=true MAT_RATE_S=0
 # exported here: under dash, `VAR=x run` (a shell function) does not pass VAR to the mat-updater it
 # starts unless VAR is exported (second review T202: the kill points of section 10 never fired)
-export MAT_TEST_KILL="" MAT_READ_S=60 MAT_LOCK_WAIT_S=60
+export MAT_TEST_KILL="" MAT_READ_S=60 MAT_LOCK_WAIT_S=60 MAT_UPTIME_FILE=""
 
 # The installed tree 1.0.0 (releaseSeq 10), its project and scripts, the trusted key.
 reset() {
@@ -215,7 +215,30 @@ check "health: rolled back" '[ "$(result)" = rolled-back ]'
 check "health: old tree runs" '[ "$(version "$ROOT")" = 1.0.0 ] && [ -f "$SVC/active" ] && complete "$ROOT"'
 check "health: .failed kept" '[ "$(version "$ROOT.failed")" = 1.0.3 ]'
 check "health: within 90 s" '[ $((t1 - t0)) -le 90 ]'
+# the window is wall time on a monotonic clock, not a count of rounds: each round costs 1 s of sleep
+# plus the checks (curl, systemctl), so 60 rounds took ~85 s on x64 (update-it 90.7 s). A fake clock
+# (MAT_UPTIME_FILE) moves 5 s per sleep: MAT_HEALTH_S=60 ends after ~12 sleeps of the new version.
+reset
+request broken.matupdate apply upd_00000000000000a3
+echo '1000.00 0.00' > "$W/uptime"
+printf '#!/bin/sh\necho x >> "%s"\nu=$(cut -d. -f1 "%s")\necho "$((u + 5)).00 0.00" > "%s"\n' \
+    "$W/sleeps" "$W/uptime" "$W/uptime" > "$W/bin/sleep5"
+chmod +x "$W/bin/sleep5"
+rm -f "$W/sleeps"
+MAT_HEALTH_S=60 MAT_SLEEP=$W/bin/sleep5 MAT_UPTIME_FILE=$W/uptime run
+check "health clock: rolled back" '[ "$(result)" = rolled-back ]'
+# 12 sleeps for the new version, then the old one is healthy after STABLE_S (1): at most a few more
+check "health clock: by the clock, not 60 rounds ($(wc -l < "$W/sleeps") sleeps)" '[ "$(wc -l < "$W/sleeps")" -le 16 ]'
+# no clock (file unreadable): the count of rounds still ends the window
+reset
+request broken.matupdate apply upd_00000000000000a4
+MAT_UPTIME_FILE=$W/no-such-file run
+check "health no clock: rolled back by the count" '[ "$(result)" = rolled-back ]'
+rm -rf "$ROOT.failed"
 # a second broken update: still one .failed
+reset
+request broken.matupdate
+run
 request broken.matupdate apply upd_00000000000000a2
 run
 check ".failed: one copy" '[ "$(ls -d "$R"/opt/mat-runtime.failed* | wc -l)" = 1 ]'

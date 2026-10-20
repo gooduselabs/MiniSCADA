@@ -4,3 +4,9 @@ declare module '*?raw' {
   const content: string;
   export default content;
 }
+
+// `?url` của Vite (feature 012): tokens.ts của @mat/ui-components nhập URL tệp phông Inter.
+declare module '*?url' {
+  const url: string;
+  export default url;
+}

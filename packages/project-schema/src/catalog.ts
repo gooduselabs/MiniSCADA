@@ -23,8 +23,10 @@ export interface PropSpec {
   group?: 'general' | 'display' | 'security';
   default?: unknown;
   maxLength?: number;
-  /** Chuỗi phải khớp regex (danh mục 0.5.0: `shiftStart`). */
+  /** Chuỗi phải khớp regex (danh mục 0.5.0: `shiftStart`; 0.6.0: `utcOffset`, `src`). */
   pattern?: string;
+  /** Danh mục 0.6.0 (feature 014): chuỗi nhiều dòng (Studio sửa bằng ô nhiều dòng); không đổi luật kiểm. */
+  multiline?: boolean;
   min?: number;
   max?: number;
   exclusiveMin?: number;

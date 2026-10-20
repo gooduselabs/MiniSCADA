@@ -30,7 +30,7 @@ const matMock = (page, fn) => page.evaluate(fn);
 
 async function openDefault(page) {
   await page.waitForSelector('mat-start-page .start-hero');
-  await page.$eval('mat-start-page .start-hero .btn.primary', (b) => b.click());
+  await page.$eval('mat-start-page .start-hero [data-cmd="project.open"]', (b) => b.click());
 }
 
 export default async function upgrade({ page, url, check, shot, axe }) {
@@ -207,7 +207,7 @@ export default async function upgrade({ page, url, check, shot, axe }) {
   files['project.json'] = JSON.stringify(project, null, 2) + '\n';
   await page.waitForSelector('mat-start-page .start-hero');
   await page.evaluate((f) => window.__matMock.useProject(f, 'D:\\Projects\\moi-hon'), files);
-  await page.$eval('mat-start-page .start-hero .btn.primary', (b) => b.click());
+  await page.$eval('mat-start-page .start-hero [data-cmd="project.open"]', (b) => b.click());
   await page.waitForSelector(`${UP} [role="dialog"]`);
   const refused = await text(page, `${UP} .dlg-b`);
   check(
@@ -232,7 +232,7 @@ export default async function upgrade({ page, url, check, shot, axe }) {
     (f) => window.__matMock.useProject(f, 'D:\\Projects\\hai-chin'),
     readProject(FULL_02),
   );
-  await page.$eval('mat-start-page .start-hero .btn.primary', (b) => b.click());
+  await page.$eval('mat-start-page .start-hero [data-cmd="project.open"]', (b) => b.click());
   await page.waitForSelector(`${UP} [role="dialog"]`);
   await waitFor(page, (tag) => document.querySelectorAll(`${tag} .ud-changes li`).length > 0, UP);
   const body02 = await text(page, `${UP} .dlg-b`);

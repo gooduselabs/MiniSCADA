@@ -1,0 +1,1078 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "tong-quan",
+  "name": "Tổng quan",
+  "size": {
+    "width": 1920,
+    "height": 1080
+  },
+  "layout": {
+    "mode": "grid",
+    "columns": 12,
+    "gap": 12,
+    "padding": 16,
+    "rows": [
+      {
+        "id": "r1",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "c1",
+            "span": 4,
+            "item": "luu_luong"
+          },
+          {
+            "id": "c2",
+            "span": 4,
+            "item": "dong_ho"
+          },
+          {
+            "id": "c3",
+            "span": 4,
+            "item": "den"
+          }
+        ]
+      },
+      {
+        "id": "r2",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "c4",
+            "span": 8,
+            "item": "xu_huong"
+          },
+          {
+            "id": "c5",
+            "span": 4
+          }
+        ]
+      },
+      {
+        "id": "r3",
+        "height": 320,
+        "cells": [
+          {
+            "id": "c6",
+            "span": 12,
+            "item": "khung"
+          }
+        ]
+      },
+      {
+        "id": "x3",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y3",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x4",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y4",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x5",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y5",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x6",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y6",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x7",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y7",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x8",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y8",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x9",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y9",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x10",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y10",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x11",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y11",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x12",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y12",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x13",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y13",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x14",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y14",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x15",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y15",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x16",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y16",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x17",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y17",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x18",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y18",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x19",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y19",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x20",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y20",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x21",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y21",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x22",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y22",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x23",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y23",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x24",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y24",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x25",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y25",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x26",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y26",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x27",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y27",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x28",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y28",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x29",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y29",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x30",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y30",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x31",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y31",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x32",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y32",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x33",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y33",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x34",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y34",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x35",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y35",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x36",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y36",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x37",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y37",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x38",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y38",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x39",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y39",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x40",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y40",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x41",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y41",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x42",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y42",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x43",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y43",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x44",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y44",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x45",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y45",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x46",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y46",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x47",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y47",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x48",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y48",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x49",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y49",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x50",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y50",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x51",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y51",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x52",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y52",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x53",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y53",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x54",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y54",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x55",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y55",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x56",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y56",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x57",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y57",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x58",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y58",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x59",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y59",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x60",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y60",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x61",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y61",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x62",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y62",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x63",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y63",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x64",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y64",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x65",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y65",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x66",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y66",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x67",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y67",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x68",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y68",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x69",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y69",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x70",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y70",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x71",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y71",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x72",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y72",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x73",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y73",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x74",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y74",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x75",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y75",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x76",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y76",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x77",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y77",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x78",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y78",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x79",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y79",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x80",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y80",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x81",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y81",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x82",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y82",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x83",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y83",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x84",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y84",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x85",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y85",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x86",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y86",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x87",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y87",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x88",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y88",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x89",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y89",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x90",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y90",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x91",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y91",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x92",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y92",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x93",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y93",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x94",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y94",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x95",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y95",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x96",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y96",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x97",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y97",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x98",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y98",
+            "span": 12
+          }
+        ]
+      },
+      {
+        "id": "x99",
+        "height": "auto",
+        "cells": [
+          {
+            "id": "y99",
+            "span": 12
+          }
+        ]
+      }
+    ]
+  },
+  "items": [
+    {
+      "id": "luu_luong",
+      "type": "widget",
+      "widget": "card",
+      "props": {
+        "label": "Lưu lượng bơm 7"
+      },
+      "tags": {
+        "value": "PUMP07.FLOW"
+      }
+    },
+    {
+      "id": "dong_ho",
+      "type": "widget",
+      "widget": "gauge",
+      "tags": {
+        "value": "PUMP08.FLOW"
+      }
+    },
+    {
+      "id": "den",
+      "type": "widget",
+      "widget": "lamp",
+      "tags": {
+        "state": "PUMP07.RUN"
+      }
+    },
+    {
+      "id": "xu_huong",
+      "type": "widget",
+      "widget": "line",
+      "tags": {
+        "series": [
+          "PUMP07.FLOW"
+        ]
+      }
+    },
+    {
+      "id": "khung",
+      "type": "widget",
+      "widget": "panel"
+    }
+  ]
+}

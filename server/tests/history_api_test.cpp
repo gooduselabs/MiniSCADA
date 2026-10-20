@@ -131,7 +131,7 @@ const std::string kRange = "from=" + std::to_string(kT0) + "&to=" + std::to_stri
 TEST(HistoryApi, CatalogListsGroupsTagsAndRangesWithoutTablesOrPaths) {
     Rig r;
     const json b = r.get("/api/v1/history/catalog");
-    EXPECT_EQ(b["apiVersion"], "1.5.0");
+    EXPECT_EQ(b["apiVersion"], "1.6.0");
     EXPECT_TRUE(b["enabled"]);
     ASSERT_EQ(b["groups"].size(), 2u);
     const json& g = b["groups"][0];

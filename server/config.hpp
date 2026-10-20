@@ -40,7 +40,9 @@ struct RuntimeConfig {
     std::string deviceModel = "BL335";
     std::string projectStoreDir;  // set by loadConfig: <dataDir>/projects unless configured
     int projectBackups = 3;
+    // Feature 013: only the seed of <authDir>/users.json (copied there once, then not read again).
     std::string usersFile = "/etc/mat-runtime/users.json";
+    std::string authDir;  // set by loadConfig: <dataDir>/auth unless configured (feature 013)
     int auditRetentionDays = 365;
     int auditMaxMB = 64;
     // Feature 006 (specs/006-tags-modbus/contracts/device-config.md §1)

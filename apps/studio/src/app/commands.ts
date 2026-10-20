@@ -11,6 +11,7 @@ import { SVG_COMMANDS, SVG_KEYS, type SvgCommandId } from '../model/svg/keys.ts'
 export type MenuId = 'project' | 'edit' | 'view' | 'online' | 'tools' | 'help';
 
 export type CommandId =
+  | 'project.new'
   | 'project.open'
   | 'project.openRecent'
   | 'project.save'
@@ -92,6 +93,9 @@ export type CommandId =
   | 'open.driverDiag'
   // Feature 007: màn hình 0.3 (cây, trình bố trí). Không có menu: bảng lệnh, thanh công cụ editor, menu chuột phải.
   | 'screen.add'
+  | 'report.add'
+  /** Feature 012: thêm màn hình bố cục tự do (tọa độ) trên project 1.1; `screen.add` tạo màn hình lưới. */
+  | 'screen.addFree'
   | 'screen.addPopup'
   | 'screen.setEntry'
   | 'screen.props'
@@ -136,6 +140,8 @@ export type CommandId =
   | 'screen.explodeInstance'
   | 'screen.updateInstances'
   | 'screen.faceplate'
+  // Feature 012 (FR-040): chuyển màn hình tự do đang mở sang bố cục lưới (hộp thoại xem trước).
+  | 'screen.convertToGrid'
   // Feature 011 (FR-097, FR-115): trình vẽ SVG. Không có menu: bảng lệnh, thanh công cụ và phím của trình vẽ.
   | 'svg.new'
   | 'svg.editInDrawing'
@@ -201,6 +207,10 @@ export interface CommandContext {
   // ---- Feature 011 ----
   /** Project ở định dạng 1.0 (template, faceplate). */
   format10: boolean;
+  /** Project ở định dạng 1.1 (bố cục lưới, chủ đề; feature 012). */
+  format11: boolean;
+  /** Màn hình của tab đang chọn dùng bố cục lưới (có `layout`, feature 012). */
+  screenIsGrid: boolean;
   /** Vùng chọn của editor Màn hình có item của bản sao template. */
   screenTplSel: boolean;
   /** Vùng chọn của editor Màn hình là đúng một item `svg` (lệnh "Sửa trong trình vẽ"). */
@@ -243,6 +253,8 @@ export const EMPTY_CONTEXT: CommandContext = {
   hasTags: false,
   alarmCount: 0,
   format10: false,
+  format11: false,
+  screenIsGrid: false,
   screenTplSel: false,
   screenSvgItem: false,
   svgEditor: false,
@@ -315,6 +327,8 @@ const selected =
 
 /** Project 1.0 (template, faceplate, feature 011). */
 const format10: Check = (c) => c.format10 || 'reason.needFormat10';
+/** Project 1.1 (bố cục lưới, feature 012). */
+const format11: Check = (c) => c.format11 || 'reason.needFormat11';
 const tplSelected: Check = (c) => c.screenTplSel || 'reason.noInstanceSel';
 const popupOpen: Check = (c) => c.screenIsPopup || 'reason.notPopup';
 
@@ -425,6 +439,7 @@ const cmd = (
 
 /** Theo thứ tự của contract; lệnh chỉ có trong bảng lệnh ở cuối. */
 export const COMMANDS: readonly CommandSpec[] = [
+  cmd('project.new', 'project', always, { shortcut: 'Ctrl+N', icon: 'fnew' }),
   cmd('project.open', 'project', always, { shortcut: 'Ctrl+O', icon: 'project' }),
   cmd('project.openRecent', 'project', always),
   cmd(
@@ -633,6 +648,9 @@ export const COMMANDS: readonly CommandSpec[] = [
 
   // ---- Feature 007: màn hình 0.3 ----
   cmd('screen.add', null, all(needProject, editable, project03), { icon: 'plus' }),
+  // feature 015: thư viện mẫu báo cáo có sẵn (trang Báo cáo)
+  cmd('report.add', null, all(needProject, editable), { icon: 'report' }),
+  cmd('screen.addFree', null, all(needProject, editable, format11), { icon: 'plus' }),
   cmd('screen.addPopup', null, all(needProject, editable, project03), { icon: 'popup' }),
   cmd('screen.setEntry', null, all(needProject, editable, project03, screenOpen, notPopup), {
     icon: 'home',
@@ -709,6 +727,13 @@ export const COMMANDS: readonly CommandSpec[] = [
   cmd('screen.explodeInstance', null, all(screenEdit, format10, tplSelected), { icon: 'explode' }),
   cmd('screen.updateInstances', null, all(screenEdit, format10, tplSelected), { icon: 'refresh' }),
   cmd('screen.faceplate', null, all(screenEdit, format10, popupOpen), { icon: 'popup' }),
+  // ---- Feature 012: chuyển tự do → lưới (FR-040; không tự chạy, luôn qua hộp thoại xem trước) ----
+  cmd(
+    'screen.convertToGrid',
+    null,
+    all(screenEdit, format11, (c) => (c.screenIsGrid ? 'reason.alreadyGrid' : true)),
+    { icon: 'grid' },
+  ),
   // ---- Feature 011: trình vẽ SVG ----
   cmd('svg.new', null, all(needProject, editable, project03), { icon: 'fnew' }),
   cmd(
@@ -747,6 +772,7 @@ export const MENU_LABEL: Readonly<Record<MenuId, MessageKey>> = {
 /** Nội dung từng menu; `-` là vạch ngăn. `project.openRecent` là menu con (danh sách gần đây). */
 export const MENUS: Readonly<Record<MenuId, ReadonlyArray<CommandId | '-'>>> = {
   project: [
+    'project.new',
     'project.open',
     'project.openRecent',
     '-',

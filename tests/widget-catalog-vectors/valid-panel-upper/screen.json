@@ -19,7 +19,8 @@
         "title": "ằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằ",
         "showTitle": true,
         "background": "#FFFFFF",
-        "border": true
+        "border": true,
+        "variant": "card"
       }
     }
   ]

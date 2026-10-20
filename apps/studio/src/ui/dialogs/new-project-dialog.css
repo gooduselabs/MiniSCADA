@@ -1,0 +1,294 @@
+/* Hộp thoại Project mới (2026-10-20). Hai cột: bên trái tên, mã, thư mục và đích; bên phải thẻ mẫu và chủ đề. CSS có
+   phạm vi theo tên thẻ; chỉ dùng token của theme/tokens.css, trừ ô màu xem trước chủ đề của trang vận hành (màu của
+   chính chủ đề đó, không theo chủ đề của Studio). */
+mat-new-project-dialog .dlg {
+  width: min(860px, 100%);
+}
+mat-new-project-dialog .np {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+@media (max-width: 760px) {
+  mat-new-project-dialog .np {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+mat-new-project-dialog .np-main,
+mat-new-project-dialog .np-side {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+}
+mat-new-project-dialog .field > label,
+mat-new-project-dialog .np-label {
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--fg);
+}
+mat-new-project-dialog .input {
+  width: 100%;
+}
+mat-new-project-dialog .help.bad {
+  color: var(--err);
+}
+mat-new-project-dialog .np-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+mat-new-project-dialog .np-row .input {
+  flex: 1;
+}
+mat-new-project-dialog .np-path {
+  font-family: var(--mono);
+  font-size: var(--fs-s);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+mat-new-project-dialog .np-parent {
+  flex: 1;
+  height: 28px;
+  line-height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+/* Thư mục đích: khung nổi bật, đỏ khi không dùng được */
+mat-new-project-dialog .np-target {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-left-width: 3px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+}
+mat-new-project-dialog .np-target > .ic {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+mat-new-project-dialog .np-target.bad {
+  border-color: var(--err);
+  background: var(--err-soft);
+}
+mat-new-project-dialog .np-target.bad > .ic {
+  color: var(--err);
+}
+mat-new-project-dialog .np-target-b {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  min-width: 0;
+}
+mat-new-project-dialog .np-target .np-path {
+  max-width: 100%;
+  color: var(--fg);
+  font-weight: 600;
+}
+mat-new-project-dialog .np-k {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Thẻ chọn mẫu và chủ đề: radio thật nằm trong nhãn, ẩn bằng mắt nhưng vẫn Tab và mũi tên được */
+mat-new-project-dialog .np-set {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+mat-new-project-dialog .np-set > legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+mat-new-project-dialog .np-card,
+mat-new-project-dialog .np-theme {
+  position: relative;
+  display: grid;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  cursor: pointer;
+  transition:
+    border-color var(--motion),
+    background var(--motion);
+}
+mat-new-project-dialog .np-card {
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+}
+mat-new-project-dialog :is(.np-card, .np-theme):hover {
+  border-color: var(--border-2);
+  background: var(--hover);
+}
+mat-new-project-dialog :is(.np-card, .np-theme).on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+mat-new-project-dialog :is(.np-card, .np-theme) input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+}
+mat-new-project-dialog :is(.np-card, .np-theme):has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+mat-new-project-dialog .np-card-t {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+mat-new-project-dialog .np-card-t small {
+  color: var(--muted);
+  font-size: var(--fs-s);
+  line-height: 1.35;
+}
+
+/* Hình thu nhỏ của mẫu: lưới 12 cột vẽ bằng khối */
+mat-new-project-dialog .np-tpl-thumb {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 14px;
+  gap: 3px;
+  padding: 5px;
+  height: 52px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--canvas);
+  align-content: start;
+}
+mat-new-project-dialog .np-tpl-thumb i {
+  border-radius: 2px;
+  background: var(--panel);
+  border: 1px dashed var(--border-2);
+}
+mat-new-project-dialog .np-tpl-thumb.pump i {
+  border: 0;
+  background: var(--accent);
+  opacity: 0.55;
+}
+mat-new-project-dialog .np-tpl-thumb.pump i:nth-child(2) {
+  background: var(--ok);
+}
+mat-new-project-dialog .np-tpl-thumb.pump i:nth-child(3) {
+  background: var(--warn);
+}
+mat-new-project-dialog .np-tpl-thumb.pump i.wide {
+  grid-column: span 3;
+  background: var(--info);
+  opacity: 0.35;
+}
+
+/* Mẫu Dashboard tối (feature 014): nền tối, thẻ chỉ số màu đặc */
+mat-new-project-dialog .np-tpl-thumb.dashboard {
+  background: #1f2a33;
+  border-color: #3d4b57;
+}
+mat-new-project-dialog .np-tpl-thumb.dashboard i {
+  border: 0;
+  background: #0f7f75;
+}
+mat-new-project-dialog .np-tpl-thumb.dashboard i:nth-child(2) {
+  background: #2563eb;
+}
+mat-new-project-dialog .np-tpl-thumb.dashboard i:nth-child(3) {
+  background: #e11d48;
+}
+mat-new-project-dialog .np-tpl-thumb.dashboard i.wide {
+  grid-column: span 3;
+  background: #2b3640;
+}
+
+/* Chủ đề: ba thẻ ngang, ô màu là màu của chủ đề trang vận hành */
+mat-new-project-dialog .np-themes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+mat-new-project-dialog .np-theme {
+  gap: 6px;
+  padding: 8px;
+  justify-items: start;
+  font-size: var(--fs-s);
+}
+mat-new-project-dialog .np-swatch {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  width: 100%;
+  height: 30px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+mat-new-project-dialog .np-swatch.vivid {
+  background: #f4f7fb;
+}
+mat-new-project-dialog .np-swatch.vivid i:nth-child(1) {
+  background: #2563eb;
+}
+mat-new-project-dialog .np-swatch.vivid i:nth-child(2) {
+  background: #16a34a;
+}
+mat-new-project-dialog .np-swatch.vivid i:nth-child(3) {
+  background: #f59e0b;
+}
+mat-new-project-dialog .np-swatch.industrial i:nth-child(1) {
+  background: #c8cdd0;
+}
+mat-new-project-dialog .np-swatch.industrial i:nth-child(2) {
+  background: #8a949a;
+}
+mat-new-project-dialog .np-swatch.industrial i:nth-child(3) {
+  background: #3f6e8c;
+}
+mat-new-project-dialog .np-swatch.dark i:nth-child(1) {
+  background: #11181c;
+}
+mat-new-project-dialog .np-swatch.dark i:nth-child(2) {
+  background: #1f2a30;
+}
+mat-new-project-dialog .np-swatch.dark i:nth-child(3) {
+  background: #38bdf8;
+}
+
+mat-new-project-dialog .field-err {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--err-soft);
+  color: var(--err);
+  font-size: var(--fs-s);
+}
+mat-new-project-dialog .np-format {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+mat-new-project-dialog .dlg-f .grow {
+  flex: 1;
+}

@@ -17,6 +17,8 @@ export interface SvgActionContext {
   uid: string;
   /** Nhãn đọc cho trình đọc màn hình; hiện ở hộp xác nhận (`confirmText`). */
   label: string;
+  /** Feature 013: id item `svg` chứa phần tử (quyền `operate` theo item). */
+  item?: string;
 }
 
 export function svgActionController(
@@ -43,7 +45,12 @@ export function svgActionController(
     events: { click },
     security: { minRole: a.minRole ?? 'operator' },
   };
-  return new ControlController({ ...deps, item, context: { screen: ctx.screen, widget: ctx.uid } });
+  return new ControlController({
+    ...deps,
+    item,
+    context: { screen: ctx.screen, widget: ctx.uid },
+    ...(ctx.item ? { accessItem: ctx.item } : {}),
+  });
 }
 
 /** Đề nghị ghi theo hành động (mở hộp xác nhận hoặc gửi ngay khi `confirm: none` và Tag BOOL). */

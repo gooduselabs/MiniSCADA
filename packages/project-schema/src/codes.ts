@@ -134,6 +134,7 @@ export const ERROR_CODES = [
   'E_RPT_SHIFT',
   'E_RPT_FN',
   'E_RPT_LIMIT',
+  'E_RPT_KIND',
   'E_NAV_REPORT',
   'E_WIDGET_HISTORY_GROUP',
   'E_WIDGET_HISTORY_TAG',
@@ -167,6 +168,28 @@ export const ERROR_CODES = [
   'E_LOGIC_TOTALIZER',
   'E_LOGIC_SCHEDULE',
   'E_LOGIC_VERSION',
+  // feature 012: bố cục lưới, chủ đề (specs/012-screen-grid-layout/contracts/project-format-1.1.md §3; rules-11.ts)
+  /** `layout.columns` khác 12 hoặc `mode` khác `grid`. */
+  'E_LAYOUT_COLUMNS',
+  /** `span` ngoài 1..12, `offset` ngoài 0..11, hoặc tổng offset + span của hàng quá 12. */
+  'E_LAYOUT_SPAN',
+  /** Id hàng hoặc ô sai mẫu hoặc trùng trong màn hình. */
+  'E_LAYOUT_ID',
+  /** Ô trỏ tới item không có. */
+  'E_LAYOUT_ITEM_REF',
+  /** Một item nằm ở nhiều ô. */
+  'E_LAYOUT_ITEM_DUP',
+  /** Item của màn hình lưới có vị trí tuyệt đối, hoặc item của màn hình tự do thiếu vị trí. */
+  'E_LAYOUT_ITEM_POS',
+  /** Quá 100 hàng, hoặc hàng có 0 hay quá 12 ô. */
+  'E_LAYOUT_LIMIT',
+  /** `layout` hoặc `theme` ở project dưới 1.1, hoặc project 1.1 có runtime tối thiểu dưới 1.1.0. */
+  'E_LAYOUT_VERSION',
+  // feature 013: vai trò tối thiểu của màn hình và item (specs/013-access-control/spec.md FR-050; rules-11.ts)
+  /** `security.operate` là viewer, thấp hơn `view`, khác `minRole`; hoặc `security.view`/`operate` ở project 1.0. */
+  'E_SECURITY_LEVEL',
+  /** `security.operate` trên item không thao tác được (widget không thuộc nhóm control, SVG không có sự kiện ghi). */
+  'E_SECURITY_ITEM',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**
@@ -214,6 +237,8 @@ export type WarningCode =
   | 'W_LOG_WRITE_EXTREME'
   // feature 011 (contracts/project-format-1.0.md §4): item của bản sao không còn khớp template
   | 'W_TEMPLATE_DRIFT'
+  // feature 012 (contracts/project-format-1.1.md §3): item của màn hình lưới không nằm trong ô nào
+  | 'W_LAYOUT_ITEM_ORPHAN'
   // feature 011 (contracts/logic-engine.md §11): logic.json
   | 'W_LOGIC_PT_ROUNDED'
   | 'W_LOGIC_WRITE_CONFLICT'
@@ -235,7 +260,7 @@ export interface Issue {
  * Phiên bản runtime mà bộ kiểm tra này đại diện (so với `minRuntimeVersion`). `1.0.0-rc.N` (T191): `compareSemver` chỉ so
  * phần số nên project `minRuntimeVersion` 1.0.0 chạy được trên 1.0.0-rc.1 (ADR 035). Khớp `kRuntimeVersion` của C++.
  */
-export const RUNTIME_VERSION = '1.0.0-rc.1';
+export const RUNTIME_VERSION = '1.1.0-alpha.1';
 /** v0: chấp nhận đúng 0.1.x, không hậu tố pre-release (MAJOR = 0 nên MINOR cũng phải khớp, ADR-004). */
 export const SUPPORTED_SCHEMA = /^0\.1\.\d+$/;
 /** Định dạng 0.2: mọi file bằng đúng `project.json.schemaVersion`, khớp mẫu này. */
@@ -260,12 +285,17 @@ export const SUPPORTED_SCHEMA_06 = /^0\.6\.\d+$/;
 /** Runtime tối thiểu của project 0.6 (E_MIN_RUNTIME). */
 export const MIN_RUNTIME_06 = '0.9.0';
 /**
- * Định dạng 1.0.0 (feature 011: logic, template, faceplate): mọi file cùng phiên bản. Dòng 1.x chỉ thêm (MINOR) nhưng
- * validator này chỉ hiểu 1.0.x: 1.1 trở lên bị từ chối (contracts/project-format-1.0.md §1).
+ * Họ 1.x mà validator này hiểu: 1.0.x (feature 011: logic, template, faceplate) và 1.1.x (feature 012: bố cục lưới,
+ * chủ đề). Cùng một bộ schema ở thư mục gốc `schemas/` (dòng 1.x chỉ thêm, MINOR); phần chỉ có ở 1.1 do luật
+ * `E_LAYOUT_VERSION` kiểm. 1.2 trở lên bị từ chối. Mọi file cùng phiên bản.
  */
-export const SUPPORTED_SCHEMA_10 = /^1\.0\.\d+$/;
+export const SUPPORTED_SCHEMA_10 = /^1\.[01]\.\d+$/;
+/** Đúng 1.1.x (feature 012). */
+export const SUPPORTED_SCHEMA_11 = /^1\.1\.\d+$/;
 /** Runtime tối thiểu của project 1.0 (E_MIN_RUNTIME). */
 export const MIN_RUNTIME_10 = '1.0.0';
+/** Runtime tối thiểu của project 1.1 (E_LAYOUT_VERSION). */
+export const MIN_RUNTIME_11 = '1.1.0';
 /** Số Tag riêng biệt trên một màn hình (kèm popup nó mở) từ đó cảnh báo W_SCREEN_TAGS_MANY. */
 export const WARN_SCREEN_TAGS = 500;
 /** Trần file JSON của project. */

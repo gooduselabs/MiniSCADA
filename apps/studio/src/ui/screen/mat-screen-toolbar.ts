@@ -126,6 +126,24 @@ export class MatScreenToolbar extends AppElement {
     </button>`;
   }
 
+  /** Nút Chuyển sang lưới (feature 012, FR-040): chỉ project 1.1; thanh này chỉ có ở màn hình tự do. */
+  private convertButton(): TemplateResult {
+    const app = this.app;
+    const spec = app.enabled('screen.convertToGrid');
+    const label = t('lay.convert.toolbar');
+    const tip = spec !== true ? `${label}: ${t(spec)}` : t('cmd.screen.convertToGrid');
+    return html`<button
+      class="tbtn"
+      type="button"
+      data-cmd="screen.convertToGrid"
+      title=${tip}
+      ?disabled=${spec !== true}
+      @click=${() => void app.run('screen.convertToGrid')}
+    >
+      ${icon('grid')}${label}
+    </button>`;
+  }
+
   private previewButton(p: (typeof PREVIEW)[number]): TemplateResult {
     const app = this.app;
     const mode = app.screens.previewMode;
@@ -159,6 +177,11 @@ export class MatScreenToolbar extends AppElement {
       <span class="tsep"></span>
       ${this.importButton()}
       <span class="tsep"></span>
+      ${
+        app.store.state.outline.format11
+          ? html`${this.convertButton()}<span class="tsep"></span>`
+          : nothing
+      }
       ${
         app.store.state.outline.format10
           ? html`${TEMPLATE_BTNS.map((b) => this.button(b))}<span class="tsep"></span>`

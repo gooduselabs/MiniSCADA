@@ -31,6 +31,12 @@ type options struct {
 	tls                *tlsClient // -alternate: the 8443 side (tls.go)
 	alternate          bool       // odd clients over wss
 	useTLS             bool       // this client goes over wss (set by forClient)
+	wss                bool       // -wss: every client over wss (perf013.go)
+	cookies            []string   // -cookies-file: one Cookie value per client (perf013.go)
+	clientTags         [][]string // -client-tags-file: one Tag list per client (perf013.go)
+	cookie             string     // this client's Cookie (set by forClient)
+	ownTags            []string   // this client's Tags (set by forClient)
+	sharedClock        bool       // -shared-clock: absolute latency also off loopback (perf013.go)
 }
 
 func (o options) wsURL() string {
@@ -41,6 +47,9 @@ func (o options) wsURL() string {
 }
 
 func (o options) tagList() []string {
+	if o.ownTags != nil {
+		return o.ownTags
+	}
 	switch o.tags {
 	case "bench": // feature 010: the 200 Tags of tools/bench-project.mjs
 		t := make([]string, 0, 200)
@@ -111,9 +120,13 @@ func main() {
 	flag.StringVar(&o.tags, "tags", "sim", "tags to subscribe: 500 | 1000 (SIM.T0001.., tools/gen-bench-projects.mjs) | sim (500 SIM.*, older runs) | demo (5 tank/motor tags) | bench")
 	flag.StringVar(&o.origin, "origin", "", "send this Origin header (browser-like client); auto = the Origin of the client's own listener (default with -alternate)")
 	flag.BoolVar(&o.alternate, "alternate", false, "feature 011 L1: odd clients over wss://host:<tls-port>, even ones over ws://host:<port> (see tls.go)")
-	tlsPort := flag.Int("tls-port", 8443, "-alternate: port of the wss listener")
-	fingerprint := flag.String("fingerprint", "", "-alternate: SHA-256 of the device certificate to pin (64 hex, colons and 'SHA256 Fingerprint=' accepted)")
-	insecure := flag.Bool("insecure", false, "-alternate: do not verify the device certificate (written into the JSON); excludes -fingerprint")
+	flag.BoolVar(&o.wss, "wss", false, "feature 013: every client over wss://host:<tls-port> (see perf013.go)")
+	cookiesFile := flag.String("cookies-file", "", "feature 013: one Cookie header value per line, client i sends line (i-1) mod n (needs -wss)")
+	clientTagsFile := flag.String("client-tags-file", "", "feature 013: JSON array of Tag arrays, client i subscribes to entry (i-1) mod n instead of -tags")
+	flag.BoolVar(&o.sharedClock, "shared-clock", false, "-latency: this tool and the runtime read the same clock (e.g. a container beside the runtime on one Docker VM), so the absolute delay is measured off loopback too")
+	tlsPort := flag.Int("tls-port", 8443, "-alternate, -wss: port of the wss listener")
+	fingerprint := flag.String("fingerprint", "", "-alternate, -wss: SHA-256 of the device certificate to pin (64 hex, colons and 'SHA256 Fingerprint=' accepted)")
+	insecure := flag.Bool("insecure", false, "-alternate, -wss: do not verify the device certificate (written into the JSON); excludes -fingerprint")
 	clients := flag.Int("clients", 10, "regular clients")
 	extra := flag.Int("extra", 1, "extra clients connecting after the regular ones (should be rejected)")
 	slow := flag.Int("slow", 0, "additional slow clients that stop reading after the snapshot")
@@ -145,7 +158,11 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
-	if o.alternate {
+	if o.alternate && o.wss {
+		fmt.Fprintln(os.Stderr, "-alternate and -wss exclude each other")
+		os.Exit(2)
+	}
+	if o.alternate || o.wss {
 		tc, err := newTLSClient(*tlsPort, *fingerprint, *insecure)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -156,8 +173,28 @@ func main() {
 			o.origin = originAuto
 		}
 	} else if *fingerprint != "" || *insecure {
-		fmt.Fprintln(os.Stderr, "-fingerprint and -insecure need -alternate")
+		fmt.Fprintln(os.Stderr, "-fingerprint and -insecure need -alternate or -wss")
 		os.Exit(2)
+	}
+	if *cookiesFile != "" {
+		if !o.wss {
+			fmt.Fprintln(os.Stderr, "-cookies-file needs -wss (a __Host- cookie only goes over HTTPS)")
+			os.Exit(2)
+		}
+		c, err := readCookiesFile(*cookiesFile)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(2)
+		}
+		o.cookies = c
+	}
+	if *clientTagsFile != "" {
+		t, err := readClientTagsFile(*clientTagsFile)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(2)
+		}
+		o.clientTags = t
 	}
 	if *flapMode != "close" && *flapMode != "external" {
 		fmt.Fprintln(os.Stderr, "-flap-mode: close or external")

@@ -9,6 +9,8 @@ export interface Workspace {
   leftWidth: number;
   detailsHeight: number;
   inspectorHeight: number;
+  /** Feature 015: khung dưới gập (chỉ còn dải tab); `inspectorHeight` giữ chiều cao để mở lại. */
+  inspectorCollapsed: boolean;
   taskCard: TaskCard;
   taskCardOpen: boolean;
   theme: Theme;
@@ -36,6 +38,7 @@ export function defaultWorkspace(windowWidth: number): Workspace {
     leftWidth: 264,
     detailsHeight: 196,
     inspectorHeight: 218,
+    inspectorCollapsed: false,
     taskCard: 'toolbox',
     taskCardOpen: windowWidth >= TASK_CARD_MIN_WINDOW,
     theme: 'system',
@@ -69,6 +72,7 @@ export function loadWorkspace(storage: StorageLike | null, windowWidth: number):
   if (isNum(raw.leftWidth)) ws.leftWidth = raw.leftWidth;
   if (isNum(raw.detailsHeight)) ws.detailsHeight = raw.detailsHeight;
   if (isNum(raw.inspectorHeight)) ws.inspectorHeight = raw.inspectorHeight;
+  if (typeof raw.inspectorCollapsed === 'boolean') ws.inspectorCollapsed = raw.inspectorCollapsed;
   if (TASK_CARDS.includes(raw.taskCard as TaskCard)) ws.taskCard = raw.taskCard as TaskCard;
   if (typeof raw.taskCardOpen === 'boolean') ws.taskCardOpen = raw.taskCardOpen;
   if (THEMES.includes(raw.theme as Theme)) ws.theme = raw.theme as Theme;

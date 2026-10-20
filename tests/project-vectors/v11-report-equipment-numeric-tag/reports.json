@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.1.0",
+  "reports": [
+    {
+      "id": "dien-ngay",
+      "name": "Điện năng theo ngày",
+      "group": "dien",
+      "period": "day",
+      "rowMinutes": 60,
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "functions": [
+            "onTime"
+          ]
+        },
+        {
+          "tagId": "PUMP01.RUN_CMD",
+          "functions": [
+            "starts",
+            "avg"
+          ]
+        }
+      ],
+      "kind": "equipment"
+    }
+  ]
+}

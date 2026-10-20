@@ -49,7 +49,7 @@ export async function press(page, combo) {
 export async function openProject(page, files, display = 'D:\\Projects\\e2e') {
   await page.waitForSelector('mat-start-page .start-hero');
   await page.evaluate((f, d) => window.__matMock.useProject(f, d), files, display);
-  await page.$eval('mat-start-page .start-hero .btn.primary', (b) => b.click());
+  await page.$eval('mat-start-page .start-hero [data-cmd="project.open"]', (b) => b.click());
 }
 
 /** Mở project rồi chờ cây dựng xong. */

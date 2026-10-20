@@ -31,6 +31,8 @@ interface Expected {
   valid: boolean;
   errors: string[];
   warnings?: string[];
+  /** Phiên bản runtime mà vector giả định (v05-*, v10-*, v11-*); Studio kiểm theo runtime đi kèm (RUNTIME_VERSION). */
+  runtimeVersion?: string;
 }
 
 /** Platform chỉ đọc một thư mục trên đĩa; không ghi (test không lưu). */
@@ -51,6 +53,10 @@ function dirPlatform(root: string): Platform {
     recentProjects: async () => [],
     openRecent: async () => ({ error: 'missing' }),
     forgetRecent: async () => undefined,
+    newProjectParentDefault: async () => ({ display: root }),
+    newProjectParentPick: async () => null,
+    newProjectCheck: async () => ({ error: 'no-parent' }),
+    createProject: async () => ({ error: 'no-parent' }),
     read: async (rel): Promise<ReadOutcome> => {
       const r = await source.read(rel);
       if (!('text' in r)) return { error: r.error };
@@ -87,6 +93,8 @@ describe('tests/project-vectors mở trong Studio (SC-006)', () => {
   for (const c of cases) {
     it(c, async () => {
       const exp = JSON.parse(readFileSync(join(DIR, c, 'expected.json'), 'utf8')) as Expected;
+      // Ca "runtime quá cũ" chỉ đúng với runtime của vector; Studio kiểm theo runtime đi kèm nó (feature 012: 1.1.0).
+      if (exp.errors.includes('E_RUNTIME_TOO_OLD') && exp.runtimeVersion !== undefined) return;
       const store = new StudioStore({ platform: dirPlatform(join(DIR, c)) });
       expect(await store.openProject()).toBe(true);
       await store.idle();
@@ -97,7 +105,11 @@ describe('tests/project-vectors mở trong Studio (SC-006)', () => {
       );
       // Hợp lệ khi không còn lỗi; chỉ khi đó bộ kiểm tra trả project đã nạp (cây, xem trước dùng).
       expect(errors.length === 0).toBe(exp.valid);
-      const v06 = c.startsWith('v06-') || c.startsWith('v10-') || c === 'valid-history-demo';
+      const v06 =
+        c.startsWith('v06-') ||
+        c.startsWith('v10-') ||
+        c.startsWith('v11-') ||
+        c === 'valid-history-demo';
       expect((v06 ? store.state.loaded03 : store.state.loaded) !== null).toBe(exp.valid);
       if (exp.warnings) {
         const warnings = issues

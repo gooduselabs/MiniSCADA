@@ -25,6 +25,7 @@ export type ShortcutAction =
 
 const CTRL: Readonly<Record<string, CommandId>> = {
   s: 'project.save',
+  n: 'project.new',
   o: 'project.open',
   z: 'edit.undo',
   y: 'edit.redo',
@@ -49,7 +50,8 @@ function browserKey(e: KeyLike, k: string): boolean {
 export function resolveShortcut(e: KeyLike, ctx: KeyContext): ShortcutAction | null {
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   if (browserKey(e, k)) return BLOCK;
-  if (ctx.modal) return null;
+  // Ctrl+N là Project mới; khi đang có hộp thoại vẫn chặn để WebView2 không mở cửa sổ trình duyệt mới.
+  if (ctx.modal) return e.ctrlKey && !e.altKey && !e.shiftKey && k === 'n' ? BLOCK : null;
   if (e.metaKey) return null;
   if (!e.ctrlKey && !e.altKey) {
     // Hướng dẫn sử dụng (feature 011, T178) và lỗi kế / trước của editor Logic (T144): cả khi focus trong ô nhập.

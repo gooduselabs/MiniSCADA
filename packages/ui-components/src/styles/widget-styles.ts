@@ -36,6 +36,37 @@ export const widgetStyles = css`
     border-radius: var(--mat-radius, 4px);
     overflow: hidden;
   }
+  /* Khung có thanh tiêu đề (feature 014): biểu đồ, đồng hồ, panel kiểu card, ghi chú, danh sách trạng thái. */
+  .w.framed {
+    padding: 0;
+    gap: 0;
+    justify-content: flex-start;
+    border-radius: var(--mat-radius-lg, var(--mat-radius, 4px));
+    box-shadow: var(--mat-shadow-card, none);
+  }
+  .head {
+    flex: none;
+    display: block;
+    min-height: 36px;
+    padding: 9px 12px 8px;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+    color: var(--mat-text, #1a2225);
+    background: var(--mat-surface-2, #f5f7f8);
+    border-bottom: 1px solid var(--mat-border, #d2d9dc);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .framed > .body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 10px;
+  }
   .w.flat {
     background: transparent;
     border-color: transparent;

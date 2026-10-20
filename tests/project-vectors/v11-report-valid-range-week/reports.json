@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.1.0",
+  "reports": [
+    {
+      "id": "dien-ngay",
+      "name": "Điện năng theo ngày",
+      "group": "dien",
+      "period": "range",
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        }
+      ],
+      "kind": "table"
+    },
+    {
+      "id": "dien-tuan",
+      "name": "Điện năng theo ngày",
+      "group": "dien",
+      "period": "week",
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.P",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        }
+      ]
+    }
+  ]
+}

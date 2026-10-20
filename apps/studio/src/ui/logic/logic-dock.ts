@@ -15,6 +15,7 @@ import {
   logicUi,
   selectedId,
   setDockTab,
+  toggleDock,
   type LocatedIssue,
 } from './logic-state.ts';
 import './test-panel.ts';
@@ -42,9 +43,22 @@ const FIELD_LABEL: Readonly<Record<string, MessageKey>> = {
 };
 
 export class LogicDock extends AppElement {
+  private readonly onKey = (e: KeyboardEvent): void => {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'j' || e.key === 'J')) {
+      e.preventDefault();
+      toggleDock(this.app);
+    }
+  };
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.classList.add('lg-dock');
+    this.addEventListener('keydown', this.onKey);
+  }
+
+  override disconnectedCallback(): void {
+    this.removeEventListener('keydown', this.onKey);
+    super.disconnectedCallback();
   }
 
   /** Nhảy tới khối và ô của một lỗi. */
@@ -135,6 +149,7 @@ export class LogicDock extends AppElement {
     const errors = list.filter((x) => !x.issue.code.startsWith('W_')).length;
     const warnings = list.length - errors;
     const tab = ui.dockTab;
+    const collapsed = app.workspace.inspectorCollapsed;
     const setTab = (x: 'info' | 'test') => setDockTab(app, x);
     this.classList.toggle('test', tab === 'test');
     const tabKey = (e: KeyboardEvent) => {
@@ -171,6 +186,17 @@ export class LogicDock extends AppElement {
       </section>
       <div class="sash" aria-hidden="true"></div>
       <section class="dock lg-dock-r" aria-label=${t('logic.dock.info')}>
+        <button
+          type="button"
+          class="ibtn sm lg-dock-toggle ${collapsed ? 'closed' : ''}"
+          data-act="dock-toggle"
+          aria-expanded=${collapsed ? 'false' : 'true'}
+          aria-label=${t(collapsed ? 'lgd.dock.open' : 'lgd.dock.close')}
+          title=${t(collapsed ? 'lgd.dock.open' : 'lgd.dock.close')}
+          @click=${() => toggleDock(app)}
+        >
+          ${icon('chev-d', 'sm')}
+        </button>
         <div class="btabs" role="tablist" aria-label=${t('logic.dock.info')}>
           <button
             type="button"

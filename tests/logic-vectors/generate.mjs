@@ -2762,11 +2762,16 @@ function refTotalizer(p, sets, to, opt = {}) {
   );
   add(G, 'static-version-ok', 'schemaVersion 1.0.3', { doc: {}, expectErrors: [] });
   groups.get(G).at(-1).doc.schemaVersion = '1.0.3';
-  add(G, 'static-version-bad', 'schemaVersion 1.1.0: E_LOGIC_VERSION', {
+  add(G, 'static-version-1-1-ok', 'schemaVersion 1.1.0 (feature 012)', {
+    doc: {},
+    expectErrors: [],
+  });
+  groups.get(G).at(-1).doc.schemaVersion = '1.1.0';
+  add(G, 'static-version-bad', 'schemaVersion 1.2.0: E_LOGIC_VERSION (1.1 hợp lệ từ feature 012)', {
     doc: {},
     expectErrors: ['E_LOGIC_VERSION'],
   });
-  groups.get(G).at(-1).doc.schemaVersion = '1.1.0';
+  groups.get(G).at(-1).doc.schemaVersion = '1.2.0';
   // cảnh báo
   S('w-pt-rounded', 'pt 50 < scanMs: W_LOGIC_PT_ROUNDED', { timers: [T({ pt: 50 })] }, [], {
     expectWarnings: ['W_LOGIC_PT_ROUNDED'],

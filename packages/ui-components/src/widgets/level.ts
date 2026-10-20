@@ -4,6 +4,7 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { fraction, resolveRange, zoneColorAt, zoneSegments } from '../chart/geometry.ts';
 import { formatValue, numberOf } from '../format/format-value.ts';
 import { MatWidget } from './base.ts';
+import { vi } from '../i18n/vi.ts';
 
 export class MatLevel extends MatWidget {
   static override styles = [
@@ -129,10 +130,10 @@ export class MatLevel extends MatWidget {
     return html`<div
       class="w ${horizontal ? 'horizontal' : 'vertical'} ${qv.cls}"
       role="meter"
-      aria-label=${label || this.nameOf(id)}
+      aria-label=${label || this.nameOf(id) || vi.widget.level!}
       aria-valuemin=${min}
       aria-valuemax=${max}
-      aria-valuenow=${known ? n : nothing}
+      aria-valuenow=${known ? n : min}
       aria-valuetext=${[valueText, qv.aria].filter(Boolean).join(', ')}
     >
       ${label ? html`<div class="label ellipsis">${label}</div>` : nothing}

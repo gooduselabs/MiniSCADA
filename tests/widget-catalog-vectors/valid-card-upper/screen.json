@@ -21,6 +21,8 @@
         "unit": "ằằằằằằằằằằằằằằằằ",
         "fontSize": "xl",
         "showQuality": true,
+        "sparkline": true,
+        "trend": true,
         "valueColor": "#FFFFFF",
         "background": "#FFFFFF"
       },

@@ -182,7 +182,8 @@ describe('rules-logic: ca đúng', () => {
 describe('rules-logic: từng mã E_LOGIC_*', () => {
   it('E_LOGIC_VERSION', () => {
     expect(checkLogic({ schemaVersion: '1.0.7' }, opts()).errors).toEqual([]);
-    expect(checkLogic({ schemaVersion: '1.1.0' }, opts()).errors.map((e) => e.code)).toEqual([
+    expect(checkLogic({ schemaVersion: '1.1.0' }, opts()).errors).toEqual([]); // feature 012: họ 1.x
+    expect(checkLogic({ schemaVersion: '1.2.0' }, opts()).errors.map((e) => e.code)).toEqual([
       'E_LOGIC_VERSION',
     ]);
     expect(checkLogic({ schemaVersion: '2.0.0' }, opts()).errors.map((e) => e.code)).toEqual([

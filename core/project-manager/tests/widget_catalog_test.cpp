@@ -127,18 +127,19 @@ TEST(WidgetCatalogVectors, EnoughCases) { EXPECT_GE(listCases().size(), 100u); }
 
 // ---- the catalog itself ----
 
-TEST(WidgetCatalog, LoadsTheTwentyOneWidgetsOnce) {
+TEST(WidgetCatalog, LoadsTheTwentyEightWidgetsOnce) {
     std::string err;
     const auto cat = WidgetCatalog::loadFromDir(kSchemas, err);
     ASSERT_TRUE(cat) << err;
-    EXPECT_EQ(cat->version(), "0.5.0");
-    EXPECT_EQ(cat->widgets().size(), 21u);
+    EXPECT_EQ(cat->version(), "0.6.0");
+    EXPECT_EQ(cat->widgets().size(), 28u);
     for (const char* id :
-         {"card",       "gauge",       "lamp",          "bar",           "level",
-          "pie",        "line",        "tag-table",     "panel",         "label",
-          "button",     "switch",      "setpoint",      "slider",        "select",
-          "alarm-list", "alarm-count", "history-trend", "history-table", "history-bar",
-          "history-pie"})
+         {"card",        "gauge",       "lamp",          "bar",           "level",
+          "pie",         "line",        "tag-table",     "panel",         "label",
+          "button",      "switch",      "setpoint",      "slider",        "select",
+          "alarm-list",  "alarm-count", "history-trend", "history-table", "history-bar",
+          "history-pie", "stat-tile",   "kpi",           "progress",      "status-list",
+          "clock",       "text",        "image"})
         EXPECT_NE(cat->find(id), nullptr) << id;
     EXPECT_EQ(cat->find("Card"), nullptr) << "ids are case sensitive";
     EXPECT_EQ(cat->find("nope"), nullptr);

@@ -15,6 +15,14 @@ const IDS = [
   'gauge',
   'level',
   'panel',
+  // danh mục 0.6.0 (feature 014): widget dashboard
+  'stat-tile',
+  'kpi',
+  'progress',
+  'status-list',
+  'clock',
+  'text',
+  'image',
   'line',
   'bar',
   'pie',
@@ -34,9 +42,9 @@ const IDS = [
 ];
 
 describe('danh mục widget', () => {
-  it('có đúng 21 id theo contract (15 của 007, 2 của 009, 4 của 010)', () => {
+  it('có đúng 28 id theo contract (15 của 007, 2 của 009, 4 của 010, 7 của 014)', () => {
     expect(WIDGET_CATALOG.widgets.map((w) => w.id)).toEqual(IDS);
-    expect(WIDGET_CATALOG.catalogVersion).toBe('0.5.0');
+    expect(WIDGET_CATALOG.catalogVersion).toBe('0.6.0');
   });
 
   it('id đúng dạng, nhóm hợp lệ, minSize <= defaultSize', () => {
@@ -166,6 +174,65 @@ describe('danh mục widget', () => {
     expect(prop('button', 'confirm').default).toBe('always');
     expect(catalogWidget('setpoint')!.props.some((p) => p.name === 'confirm')).toBe(false);
     expect(prop('tag-table', 'columns').default).toEqual(['label', 'value', 'unit', 'quality']);
+  });
+
+  // Feature 014: widget dashboard và khung có tiêu đề.
+  it('widget dashboard (014): nhóm display, không sự kiện, cỡ tối thiểu, thuộc tính chính', () => {
+    const prop = (w: string, p: string) => catalogWidget(w)!.props.find((x) => x.name === p)!;
+    for (const id of ['stat-tile', 'kpi', 'progress', 'status-list', 'clock', 'text', 'image']) {
+      const w = catalogWidget(id)!;
+      expect(w.group, id).toBe('display');
+      expect(w.events, id).toEqual([]);
+    }
+    expect(catalogWidget('stat-tile')!.minSize).toEqual([160, 96]);
+    expect(prop('stat-tile', 'color').options).toEqual([
+      'teal',
+      'blue',
+      'rose',
+      'violet',
+      'olive',
+      'indigo',
+      'orange',
+      'cyan',
+      'green',
+      'slate',
+    ]);
+    const icons = prop('stat-tile', 'icon').options!;
+    expect(icons[0]).toBe('none');
+    expect(icons.length - 1).toBeGreaterThanOrEqual(16);
+    expect(catalogWidget('stat-tile')!.slots.map((s) => [s.name, s.required])).toEqual([
+      ['value', true],
+      ['alarm', false],
+    ]);
+    expect(catalogWidget('status-list')!.slots[0]).toMatchObject({ multi: true, max: 16 });
+    expect(catalogWidget('clock')!.slots).toEqual([]);
+    const off = prop('clock', 'utcOffset');
+    expect(checkPropValue(off, '+07:00')).toBeNull();
+    expect(checkPropValue(off, '-14:00')).toBeNull();
+    expect(checkPropValue(off, '+7:00')).not.toBeNull();
+    expect(checkPropValue(off, '+15:00')).not.toBeNull();
+    const src = prop('image', 'src');
+    expect(checkPropValue(src, '')).toBeNull();
+    expect(checkPropValue(src, 'graphics/logo.svg')).toBeNull();
+    expect(checkPropValue(src, 'graphics/symbols/bom-ly-tam.svg')).toBeNull();
+    for (const bad of [
+      'graphics/../project.json',
+      '/graphics/a.svg',
+      'https://x/a.svg',
+      'graphics/a.png',
+      'screens/a.svg',
+      'graphics/a b.svg',
+    ])
+      expect(checkPropValue(src, bad), bad).not.toBeNull();
+    expect(prop('text', 'text')).toMatchObject({ kind: 'string', maxLength: 300, multiline: true });
+    for (const id of ['line', 'bar', 'pie', 'gauge', 'tag-table'])
+      expect(prop(id, 'title'), id).toMatchObject({ kind: 'string', maxLength: 60, default: '' });
+    expect(prop('line', 'highLimit').kind).toBe('number');
+    expect(prop('line', 'lowLimit').kind).toBe('number');
+    expect(prop('panel', 'variant')).toMatchObject({
+      options: ['plain', 'card'],
+      default: 'plain',
+    });
   });
 });
 

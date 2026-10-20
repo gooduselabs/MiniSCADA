@@ -102,6 +102,8 @@ if (startupTotal > STARTUP_LIMIT)
 
 // Cổng kích thước xuất báo cáo (feature 010, T106; SC-018, SC-024): chunk XLSX ≤ 60 KB gzip, chunk PDF (pdf + pdfmake +
 // phông) ≤ 1,2 MB gzip, và không chunk nào của xuất file nằm trong tải khởi động (tải lười khi bấm xuất).
+// Feature 012 (T049): phông Inter ở `pdf-fonts-*.js` (khớp tiền tố `pdf-`), và biểu đồ PDF dùng chunk ECharts chung
+// `echarts-modules-*.js` nên chunk đó cũng tính vào PDF (trường hợp xấu nhất: trang chưa nạp ECharts trước khi xuất).
 const XLSX_LIMIT = 60 * 1000;
 const PDF_LIMIT = 1.2 * 1000 * 1000;
 const exportChunks = (re) =>
@@ -109,7 +111,7 @@ const exportChunks = (re) =>
     (f) => !f.endsWith('.gz') && re.test(f.replaceAll('\\', '/')),
   );
 const xlsxSize = exportChunks(/\/xlsx-[^/]+\.js$/).reduce((s, f) => s + gzSize(f), 0);
-const pdfSize = exportChunks(/\/(pdf|pdfmake\.min|vfs_fonts)-[^/]+\.js$/).reduce(
+const pdfSize = exportChunks(/\/(pdf|pdfmake\.min|vfs_fonts|echarts-modules)-[^/]+\.js$/).reduce(
   (s, f) => s + gzSize(f),
   0,
 );
@@ -136,17 +138,37 @@ const BANNED = [
   [/\.insertAdjacentHTML\b/, 'insertAdjacentHTML'],
   [/\bdocument\.write\s*\(/, 'document.write'],
 ];
+// Ngoại lệ thứ hai (feature 012, T047, research R2): chunk ECharts lite (tải lười, `echarts-modules-*.js`) có đúng
+// ECHARTS_INNERHTML chỗ `.innerHTML` của thư viện: xóa nội dung khi dispose/clear (gán chuỗi rỗng hoặc null), đọc SVG khi
+// `connect` nhóm biểu đồ (không dùng), mũi tên tĩnh và nội dung tooltip khi formatter trả CHUỖI. Widget của mAT không
+// bao giờ đưa chuỗi HTML vào ECharts: formatter tooltip trả phần tử DOM dựng bằng textContent (chart/echarts-lite.ts
+// tooltipContent), widget không có tooltip riêng thì tắt tooltip. Số chỗ đổi (nâng ECharts, thêm mô-đun) thì cổng báo
+// lỗi để xem lại từng chỗ rồi mới sửa hằng số. Mọi mẫu cấm khác vẫn cấm trong chunk này.
+const ECHARTS_CHUNK = /(^|[\\/])echarts-modules-[^\\/]+\.js$/;
+const ECHARTS_INNERHTML = 9;
 let litTemplates = 0;
+let echartsChunks = 0;
 for (const file of walk(device).filter((f) => f.endsWith('.js'))) {
   const raw = readFileSync(file, 'utf8');
+  const rel = relative(device, file).replaceAll('\\', '/');
   litTemplates += (raw.match(LIT_TEMPLATE) ?? []).length;
-  const text = raw.replace(LIT_TEMPLATE, '');
-  for (const [re, name] of BANNED)
-    if (re.test(text))
-      failures.push(`${relative(device, file).replaceAll('\\', '/')} chứa ${name} (SC-020)`);
+  let text = raw.replace(LIT_TEMPLATE, '');
+  if (ECHARTS_CHUNK.test(file)) {
+    echartsChunks++;
+    const n = (text.match(/\.innerHTML\b/g) ?? []).length;
+    if (n !== ECHARTS_INNERHTML)
+      failures.push(
+        `${rel}: ${n} chỗ innerHTML, cổng chỉ chấp nhận đúng ${ECHARTS_INNERHTML} chỗ đã xem của ECharts 6.1.0 (SC-020, T047)`,
+      );
+    text = text.replace(/\.innerHTML\b/g, '');
+  }
+  for (const [re, name] of BANNED) if (re.test(text)) failures.push(`${rel} chứa ${name} (SC-020)`);
 }
+if (indexRefs.some((r) => ECHARTS_CHUNK.test(r)))
+  failures.push('index.html tham chiếu chunk ECharts: phải tải lười (FR-042, SC-006)');
 console.log(
-  `Kiểm nội dung: không eval, new Function, innerHTML ngoài ${litTemplates} chỗ dựng <template> của Lit`,
+  `Kiểm nội dung: không eval, new Function, innerHTML ngoài ${litTemplates} chỗ dựng <template> của Lit` +
+    ` và ${ECHARTS_INNERHTML} chỗ đã xem trong ${echartsChunks} chunk ECharts (tải lười)`,
 );
 
 // @mat/svg-import (importer: chỉ Studio, CLI, test) KHÔNG được vào gói của trang (feature 008, SC-022, D17): trang chỉ

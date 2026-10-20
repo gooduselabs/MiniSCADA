@@ -12,20 +12,20 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 446 mã.
+Tổng cộng 470 mã.
 
 ## Mục lục
 
 - [Định dạng và phiên bản project](#format) (13)
 - [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (33)
 - [Biểu thức của Tag tính toán](#expression) (10)
-- [Màn hình, widget, binding và điều hướng](#screens) (38)
+- [Màn hình, widget, binding và điều hướng](#screens) (49)
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (32)
 - [Alarm](#alarm) (46)
-- [Lưu trữ, lịch sử và báo cáo](#history) (41)
+- [Lưu trữ, lịch sử và báo cáo](#history) (42)
 - [Gói project (.matscada)](#package) (16)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
-- [Đăng nhập, phiên và truy cập HTTP](#auth) (25)
+- [Đăng nhập, phiên và truy cập HTTP](#auth) (37)
 - [Ghi Tag](#write) (39)
 - [Lý do quality của Tag](#quality) (20)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
@@ -123,6 +123,14 @@ Tổng cộng 446 mã.
 | `E_DUP_UID` | — | `elementUid` trùng trong màn hình hoặc trong bindings | `core/project-manager`, `packages/project-schema` |
 | `E_ITEM_ID` | — | Id item sai dạng hoặc trùng | `core/project-manager`, `packages/project-schema` |
 | `E_ITEM_SIZE` | — | Cỡ nhỏ hơn `minSize` của loại, hoặc ≤ 0 | `core/project-manager`, `packages/project-schema` |
+| `E_LAYOUT_COLUMNS` | — | Bố cục lưới phải có đúng 12 cột (mode grid) | `core/project-manager`, `packages/project-schema` |
+| `E_LAYOUT_ID` | — | Id hàng hoặc ô của bố cục lưới sai dạng hoặc bị trùng | `core/project-manager`, `packages/project-schema` |
+| `E_LAYOUT_ITEM_DUP` | — | Một component nằm ở nhiều ô của bố cục lưới | `core/project-manager`, `packages/project-schema` |
+| `E_LAYOUT_ITEM_POS` | — | Component của màn hình lưới có tọa độ, hoặc component của màn hình tự do thiếu tọa độ | `core/project-manager`, `packages/project-schema` |
+| `E_LAYOUT_ITEM_REF` | — | Ô của bố cục lưới trỏ tới component không có trên màn hình | `core/project-manager`, `packages/project-schema` |
+| `E_LAYOUT_LIMIT` | — | Bố cục lưới quá 100 hàng, hoặc một hàng không có ô hay có quá 12 ô | `core/project-manager`, `packages/project-schema` |
+| `E_LAYOUT_SPAN` | — | Độ rộng ô ngoài 1 đến 12 cột, khoảng trống trước ô ngoài 0 đến 11, hoặc tổng các ô của một hàng quá 12 cột | `core/project-manager`, `packages/project-schema` |
+| `E_LAYOUT_VERSION` | — | Bố cục lưới và chủ đề cần project định dạng 1.1 và runtime 1.1.0 trở lên | `core/project-manager`, `packages/project-schema` |
 | `E_NAV` | — | Mục menu trỏ tới màn hình không có hoặc popup; nhóm lồng nhóm; nhóm rỗng | `core/project-manager`, `packages/project-schema` |
 | `E_POPUP_ARGS` | — | Tham số `args` của hành động mở popup thiếu, thừa, sai kiểu, hoặc popup được mở với quá 1.000 bộ tham số khác nhau | `core/project-manager`, `packages/project-schema` |
 | `E_REF_TAG` | — | Binding trỏ Tag không tồn tại | `core/project-manager`, `packages/project-schema` |
@@ -132,6 +140,8 @@ Tổng cộng 446 mã.
 | `E_SCREEN_KIND` | — | `kind` của màn hình sai, hoặc `entryScreen` là popup | `core/project-manager`, `packages/project-schema` |
 | `E_SCREEN_SIZE` | — | `size` của màn hình ngoài khoảng | `core/project-manager`, `packages/project-schema` |
 | `E_SCREEN_TAGS` | — | Một màn hình dùng hơn 1000 Tag khác nhau (giới hạn của một lần đăng ký dữ liệu sống) | `core/common`, `core/project-manager`, `packages/project-schema` |
+| `E_SECURITY_ITEM` | — | Mức thao tác (security.operate) đặt cho component không thao tác được: widget chỉ hiển thị, hoặc SVG không có sự kiện ghi | `core/project-manager`, `packages/project-schema` |
+| `E_SECURITY_LEVEL` | — | Vai trò tối thiểu của màn hình hoặc component sai: mức thao tác là viewer, thấp hơn mức xem hay khác minRole, hoặc khai ở project định dạng 1.0 (cần 1.1) | `core/project-manager`, `packages/project-schema` |
 | `E_TARGET_UNSUPPORTED` | — | Đích của binding có trong danh sách nhưng phiên bản này chưa hỗ trợ | `core/project-manager`, `packages/project-schema` |
 | `E_TEMPLATE_ID` | — | Template có id khác tên tệp, hoặc id item trong template sai dạng hay bị trùng | `core/project-manager`, `packages/project-schema` |
 | `E_TEMPLATE_PARAM` | — | Tham số template hoặc popup sai: tham số chưa khai, đặt ngoài chỗ cho phép, dấu ngoặc nhọn lạ, khai báo hay giá trị tham số không hợp lệ | `core/project-manager`, `packages/project-schema` |
@@ -150,6 +160,7 @@ Tổng cộng 446 mã.
 | `W_CONFIRM_NONE` | — | Widget điều khiển đặt `confirm: "none"`: ghi không cần xác nhận | `core/project-manager`, `packages/project-schema` |
 | `W_ITEM_COVERED` | — | Widget bị item phía trên che hoàn toàn | `core/project-manager`, `packages/project-schema` |
 | `W_ITEM_OUTSIDE` | — | Item nằm hoàn toàn ngoài màn hình | `core/project-manager`, `packages/project-schema` |
+| `W_LAYOUT_ITEM_ORPHAN` | — | Component của màn hình lưới không nằm trong ô nào nên không hiển thị | `core/project-manager`, `packages/project-schema` |
 | `W_PULSE_READBACK` | — | Hành động `pulse` trên Tag bật đọc lại | `core/project-manager`, `packages/project-schema` |
 | `W_SCREEN_EMPTY` | — | Màn hình không có item | `core/project-manager`, `packages/project-schema` |
 | `W_SCREEN_TAGS_MANY` | — | Màn hình > 500 Tag riêng biệt | `core/project-manager`, `packages/project-schema` |
@@ -274,6 +285,7 @@ Tổng cộng 446 mã.
 | `E_NAV_REPORT` | — | `navigation[].report` không có trong `reports.json` (hoặc không có `reportsFile`) | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_DUP_ID` | — | Trùng `id` mẫu báo cáo | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_FN` | — | Hàm tổng hợp lặp trong một cột của báo cáo | `core/project-manager`, `packages/project-schema` |
+| `E_RPT_KIND` | — | Khóa báo cáo của định dạng 1.1 (org, kind, week/range, tiles, chart, onTime/starts) ở project cũ, hoặc không hợp với loại báo cáo (alarm/logic có group/columns; equipment chỉ Tag BOOL và onTime/starts; starts ngoài equipment) | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_LIMIT` | — | Quá 24 cột (Tag × hàm) hoặc quá 24 Tag | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_NO_AGG` | — | Nhóm không có `aggregates`, hoặc Tag có `aggregate:false`, hoặc Tag kiểu chuỗi | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_PERIOD` | — | `shifts` với `day` hoặc `month`; thiếu `shifts` khi `shift`; `rowMinutes` với kỳ khác `day` | `core/project-manager`, `packages/project-schema` |
@@ -352,31 +364,43 @@ Tổng cộng 446 mã.
 
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
+| `ACCESS_DENIED` | 403 | Bạn không có quyền với trang hoặc component này. | `server`, `server/http` |
 | `AUDIT_UNAVAILABLE` | 503 | Thiết bị không ghi được nhật ký kiểm toán nên chưa thực hiện | `core/auth`, `core/project-store`, `core/tag-engine`, `server`, `server/http` |
 | `AUTH_FAILED` | 401 | Sai tên đăng nhập hoặc mật khẩu. | `core/auth`, `server/http` |
 | `AUTH_LOCKED` | 429 | Đăng nhập đang bị khóa tạm do sai nhiều lần. Hãy thử lại sau. | `core/auth`, `server/http` |
 | `AUTH_REQUIRED` | 401 | Cần đăng nhập. | `server/http` |
 | `BAD_REQUEST` | 400 | Yêu cầu không hợp lệ. | `drivers/modbus`, `server`, `server/http` |
 | `BODY_TOO_LARGE` | 413 | Nội dung yêu cầu quá lớn. | `server/http` |
+| `CONFLICT` | 409 | Dữ liệu đã đổi bởi người khác, tải lại rồi thử lại. | `server/http` |
+| `CONTAINS_NAME` | 400 | Mật khẩu chứa tên tài khoản (lý do của WEAK_PASSWORD). | `server/http` |
 | `CSRF_FAILED` | 403 | Yêu cầu không có mã chống giả mạo hợp lệ. Hãy tải lại trang. | `server/http` |
+| `EXISTS` | 409 | Tên đã có, chọn tên khác. | `server/http` |
 | `FETCH_SITE` | 403 | Yêu cầu từ trang khác nguồn bị từ chối. | `server/http` |
 | `FORBIDDEN` | 403 | Tài khoản không đủ quyền cho thao tác này. | `server/http` |
 | `HOST_NOT_ALLOWED` | 421 | Tên này chưa được phép. Quản trị viên: thêm vào allowedHosts của runtime.json. | `server` |
 | `HTTPS_REQUIRED` | 403 | Chức năng này chỉ dùng được qua HTTPS (cổng kỹ thuật). | `server/http` |
 | `INTERNAL_ERROR` | 500 | Lỗi nội bộ của thiết bị. | `core/auth`, `server/http` |
+| `IN_USE` | 409 | Còn đang được dùng (thành viên hoặc quy tắc quyền), gỡ trước khi xóa. | `server/http` |
+| `LAST_ADMIN` | 409 | Phải còn ít nhất một quản trị viên đang bật. | `server/http` |
 | `LENGTH_REQUIRED` | 411 | Yêu cầu cần có Content-Length. | `server/http` |
 | `LOGIN_BUSY` | 429 | Thiết bị đang bận kiểm tra các đăng nhập khác. Hãy thử lại sau giây lát. | `core/auth`, `server/http` |
 | `METHOD_NOT_ALLOWED` | 405 | Phương thức không được hỗ trợ cho đường dẫn này. | `server/http` |
 | `NOT_FOUND` | 404 | Không có chức năng này. | `core/alarm`, `server`, `server/http` |
 | `NOT_IMPLEMENTED` | 501 | Phiên bản runtime này chưa có chức năng này. | `server/http` |
+| `NO_BACKUP` | 404 | Không có bản sao trước để khôi phục. | `server/http` |
 | `ORIGIN_MISMATCH` | 403 | Yêu cầu không xuất phát từ trang của thiết bị này. | `server/http` |
+| `REAUTH_REQUIRED` | 403 | Cần nhập lại đúng mật khẩu của bạn để xác nhận. | `server/http` |
 | `SESSION_EXPIRED` | 401 | Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại. | `core/auth`, `server/http` |
 | `SESSION_INVALID` | 401 | Phiên đăng nhập không còn dùng được (đổi địa chỉ, tài khoản bị tắt hoặc đã đổi). | `core/auth`, `server/http` |
 | `SESSION_SCOPE` | 403 | Phiên đăng nhập của trang này không dùng được cho thao tác này. | `server/http` |
 | `SOURCE_NOT_ALLOWED` | 403 | Địa chỉ nguồn không được phép mở trang xem (viewerAccess = private) | `server/http` |
+| `STORE_INVALID` | 503 | Kho tài khoản hoặc quyền trên thiết bị bị hỏng; chỉ quản trị viên vào được, khôi phục bản trước. | `server/http` |
+| `TOO_LONG` | 400 | Mật khẩu dài quá 128 ký tự (lý do của WEAK_PASSWORD). | `server/http` |
+| `TOO_SHORT` | 400 | Mật khẩu ngắn hơn 15 ký tự (lý do của WEAK_PASSWORD). | `server/http` |
 | `UNLOCK_REQUEST_FAILED` | — | Không ghi được tệp yêu cầu mở mọi khóa đăng nhập | `server/cli` |
 | `UNLOCK_REQUEST_REFUSED` | — | Tệp yêu cầu mở mọi khóa đăng nhập không phải tệp thường của root quyền 0600: đã xóa, không dùng | `core/auth` |
 | `VIEWER_OFF` | 403 | Trang xem đã bị tắt trên thiết bị này (viewerAccess = off). | `server/http` |
+| `WEAK_PASSWORD` | 400 | Mật khẩu không đạt quy tắc (15 đến 128 ký tự, không chứa tên tài khoản). | `server/http` |
 
 <a id="write"></a>
 

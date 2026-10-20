@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "stattile1",
+      "type": "widget",
+      "widget": "stat-tile",
+      "x": 0,
+      "y": 0,
+      "width": 1200,
+      "height": 700,
+      "props": {
+        "label": "ằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằ",
+        "decimals": 6,
+        "unit": "ằằằằằằằằằằằằằằằằ",
+        "color": "slate",
+        "icon": "star",
+        "statusText": true,
+        "sparkline": true,
+        "trend": true
+      },
+      "tags": {
+        "value": "L.LEVEL",
+        "alarm": "L.FLAG"
+      }
+    }
+  ]
+}

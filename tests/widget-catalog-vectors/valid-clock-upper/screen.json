@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "clock1",
+      "type": "widget",
+      "widget": "clock",
+      "x": 0,
+      "y": 0,
+      "width": 1200,
+      "height": 700,
+      "props": {
+        "label": "ằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằ",
+        "format": "date",
+        "utcOffset": "+14:00",
+        "seconds": true
+      }
+    }
+  ]
+}

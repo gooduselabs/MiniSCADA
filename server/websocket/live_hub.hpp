@@ -9,9 +9,11 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "core/common/json_limits.hpp"
@@ -25,7 +27,10 @@ namespace mat {
 // 1.3.0 (feature 009, specs/009-alarms/contracts/live-protocol-1.3.md): hello.features,
 // subscribeAlarms / unsubscribeAlarms, alarmSnapshot (parts of at most 100 instances) and
 // alarmDelta, held back per instance while the send queue of a session is near full.
-constexpr const char* kLiveProtocolVersion = "1.3.0";
+// 1.4.0 (feature 013, contracts/admin-api.md §6): a Tag the session may not see is answered in the
+// `denied` list of the snapshot (no value), and {"type":"access-changed"} tells the page that its
+// access changed (the Tags it lost are no longer sent).
+constexpr const char* kLiveProtocolVersion = "1.4.0";
 
 class LiveTransport {
    public:
@@ -53,10 +58,16 @@ struct AlarmLiveChange {
     // The same without account names and free text, for a connection without a sign-in (M1).
     std::string publicJson;
 };
+// Feature 013 (contracts/access-model.md §4, alarm(P)): the alarms a session may see, by instance
+// id, and the counts (§3.3) over only those, of the same view as the message that carries it.
+using AlarmIdFilter = std::function<bool(const std::string& id)>;
+using AlarmCountsFn = std::function<std::string(const AlarmIdFilter& allow)>;
 struct AlarmLiveBatch {
     int64_t revision = 0;
     std::string counts = "{}";  // §3.3
     std::vector<AlarmLiveChange> changes;
+    // The counts for a session that may not see every alarm; empty: such a session gets zeros.
+    AlarmCountsFn countsFor;
 };
 struct AlarmLiveSnapshot {
     bool ready = true;  // false: the engine has not run its first tick (§7)
@@ -65,7 +76,25 @@ struct AlarmLiveSnapshot {
     std::string classes = "[]";
     std::string areas = "[]";
     std::vector<std::string> instances;  // one JSON object text each
+    std::vector<std::string> ids;        // feature 013: the id of each instance (same order)
+    AlarmCountsFn countsFor;             // feature 013: as AlarmLiveBatch::countsFor
 };
+
+// Feature 013 (live 1.4.0, contracts/admin-api.md §6): what one session may receive. `all`: every
+// Tag and alarm (an administrator, or no access control). The hub asks again about once a second;
+// a grant with another fingerprint unsubscribes the Tags lost and sends {"type":"access-changed"}.
+struct LiveGrant {
+    bool all = true;
+    std::unordered_set<size_t> tags;  // store indexes, when !all
+    AlarmIdFilter alarm;              // empty: every alarm
+    std::string fingerprint;
+    bool tag(size_t i) const { return all || tags.count(i) > 0; }
+    bool alarmOk(const std::string& id) const { return all || !alarm || alarm(id); }
+};
+using LiveGrantPtr = std::shared_ptr<const LiveGrant>;
+// Called under the lock of the hub; must not call the hub. nullptr: no access control.
+using LiveGrantFn = std::function<LiveGrantPtr()>;
+constexpr int64_t kLiveGrantCheckMs = 1000;
 class AlarmLiveSource {
    public:
     virtual ~AlarmLiveSource() = default;
@@ -106,7 +135,8 @@ class LiveHub {
 
     // `authenticated`: the connection carries a valid sign-in (token or cookie); only then the
     // alarm messages have account names and free text (M1).
-    void onOpen(uint64_t sid, bool authenticated = false);
+    // Feature 013: `grant` gives what the session may receive (asked now and every second).
+    void onOpen(uint64_t sid, bool authenticated = false, LiveGrantFn grant = {});
     void onMessage(uint64_t sid, const char* data, size_t len);
     void onClose(uint64_t sid);
     // Called every deltaPeriodMs: deltas for changed subscribed tags, heartbeat when due.
@@ -164,7 +194,16 @@ class LiveHub {
         bool holding = false;
         // Held changes: id -> instance JSON, "" for a removal (§5); at most one per instance.
         std::map<std::string, std::string> alarmPending;
+        // Feature 013: the access of the session, asked again every kLiveGrantCheckMs.
+        LiveGrantFn grantFn;
+        LiveGrantPtr grant;
+        int64_t nextGrantCheck = 0;
     };
+    void grantTickLocked(int64_t monoNow);
+    // Feature 013: `all` (the engine's counts) for a session that sees every alarm, else the
+    // counts `fn` gives for its grant (zeros without `fn`).
+    static std::string countsForLocked(const Session& s, const std::string& all,
+                                       const AlarmCountsFn& fn);
 
     void subscribeAlarmsLocked(uint64_t sid, Session& s, const std::string& requestId);
     void startSnapshotLocked(uint64_t sid, Session& s, AlarmLiveSnapshot snap);
@@ -192,6 +231,7 @@ class LiveHub {
     RejectedAckFn onRejectedAck_;
     int64_t alarmRevision_ = 0;  // of the last batch
     std::string alarmCounts_ = "{}";
+    AlarmCountsFn alarmCountsFor_;  // feature 013: of the last batch
     // Buffers of tick(), kept between ticks so that a tick allocates only the texts it enqueues:
     // the part of each changed Tag's entry that is the same for every session (formatted once per
     // tick), its end offsets, and the delta being built.

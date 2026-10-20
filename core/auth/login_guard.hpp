@@ -120,6 +120,9 @@ class LoginGuard {
                                                  const std::string& sourceIp, int64_t nowMono);
     void clearUser(const std::string& user);  // every pair of the name (--user-unlock)
     void clearAll();                          // every pair and address (--user-unlock-all)
+    // Feature 013 (GET /api/v1/admin/users): the end of the longest lock of a pair of the name
+    // still running at `nowMono`; 0 when none.
+    int64_t lockedUntilMono(const std::string& user, int64_t nowMono) const;
 
     GuardState state() const;
     void restore(GuardState state);  // keeps the last entries up to the table sizes
