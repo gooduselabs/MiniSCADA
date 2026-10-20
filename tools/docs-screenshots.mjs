@@ -393,7 +393,7 @@ function toPalettePng(png) {
 const DASHBOARD_DEMO = join(ROOT, 'projects/dashboard-demo');
 const SVG_DEMO = join(ROOT, 'projects/svg-demo');
 const GRID_DEMO = join(ROOT, 'projects/grid-demo');
-const HISTORY_DEMO = join(ROOT, 'projects/history-demo');
+const REPORT_DEMO = join(ROOT, 'projects/report-demo');
 const PW = 'mat-docs-screenshots';
 
 /** logic.json mẫu cho projects/dashboard-demo (chỉ trong bộ nhớ, không ghi vào project mẫu). */
@@ -618,13 +618,31 @@ const studioScenes = [
     // feature 015: trình thiết kế báo cáo (cấu trúc, xem trước trực tiếp, thuộc tính)
     name: 'studio-bao-cao',
     async run({ page, shot }) {
-      await openAndWait(page, readProject(HISTORY_DEMO), 'D:\\Projects\\history-demo');
+      await openAndWait(page, readProject(REPORT_DEMO), 'D:\\Projects\\report-demo');
       await closeTaskCard(page);
+      // khung dưới (Thuộc tính của project) thấp nhất: trình thiết kế có chỗ
+      await page.evaluate(() =>
+        window.__matApp.setLayout(
+          { inspectorHeight: 90 },
+          { leftColumnHeight: 700, centerHeight: 640 },
+        ),
+      );
       await expandNode(page, 'reports');
-      await treeNode(page, 'report:dien-ngay');
-      await page.waitForSelector('mat-templates-editor');
-      await sleep(2500);
+      await treeNode(page, 'report:nang-luong-ngay');
+      await page.waitForSelector('mat-templates-editor mat-report-view');
+      await sleep(1500);
+      // chọn cột Công suất ở Cấu trúc: Thuộc tính của cột ở bên phải, cột có viền chọn ở xem trước
+      await page.$eval('mat-templates-editor [data-node="col:1"]', (b) => b.click());
+      await sleep(1500);
       await shot('eng-thiet-ke-bao-cao');
+      await treeNode(page, 'report:alarm-ngay');
+      await page.waitForSelector('mat-templates-editor mat-report-view');
+      await sleep(2000);
+      await shot('eng-thiet-ke-bao-cao-alarm');
+      await treeNode(page, 'reports');
+      await page.waitForSelector('mat-reports-list [data-preset]');
+      await sleep(500);
+      await shot('eng-thu-vien-mau-bao-cao');
     },
   },
   {

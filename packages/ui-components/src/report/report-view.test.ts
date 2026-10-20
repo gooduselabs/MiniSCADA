@@ -156,7 +156,7 @@ describe('<mat-report-view> chọn phần (trình thiết kế)', () => {
     const r = el.shadowRoot!;
     (r.querySelector('table.rpt thead th.num') as HTMLElement).click();
     (r.querySelector('.band') as HTMLElement).click();
-    expect(got).toEqual(['col:E', 'general']);
+    expect(got).toEqual(['col:E.delta', 'general']);
     expect(r.querySelector('.tiles')!.classList.contains('sel')).toBe(true);
   });
 

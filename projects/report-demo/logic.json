@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.1.0",
+  "rules": [
+    {
+      "id": "bom1_tu_dong",
+      "name": "Bơm 1 tự động khi áp suất thấp",
+      "when": "PROC.PRESSURE < 3",
+      "hold": 2000,
+      "onRise": [
+        {
+          "do": "setTag",
+          "tag": "PUMP1.AUTO",
+          "value": true
+        }
+      ],
+      "onFall": [
+        {
+          "do": "setTag",
+          "tag": "PUMP1.AUTO",
+          "value": false
+        }
+      ]
+    }
+  ]
+}

@@ -323,10 +323,16 @@ export class TemplatesEditor extends AppElement {
   private onPreviewSelect = (e: Event): void => {
     const part = (e as CustomEvent<{ part: string }>).detail.part;
     if (part.startsWith('col:')) {
-      const tag = part.slice(4);
-      const k = (this.tpl()?.columns ?? []).findIndex((c) => c.tagId === tag);
+      // khóa cột ra là `<tagId>.<hàm>` (Tag có thể có dấu chấm: tách ở dấu chấm cuối)
+      const key = part.slice(4);
+      const dot = key.lastIndexOf('.');
+      const tag = key.slice(0, dot);
+      const fn = key.slice(dot + 1);
+      const k = (this.tpl()?.columns ?? []).findIndex(
+        (c) => c.tagId === tag && c.functions.includes(fn as ReportFn),
+      );
       if (k >= 0) this.select(`col:${k}`);
-    } else this.select(part === 'general' ? 'general' : part);
+    } else this.select(part);
   };
 
   private save = async (
@@ -1036,8 +1042,10 @@ export class TemplatesEditor extends AppElement {
     const kind = r.kind ?? 'table';
     const events = kind === 'alarm' || kind === 'logic';
     const sel = this.sel;
-    const previewSel = sel.startsWith('col:')
-      ? `col:${r.columns?.[Number(sel.slice(4))]?.tagId ?? ''}`
+    // cột đang chọn: mọi cột ra (Tag × hàm) của nó có viền chọn ở xem trước
+    const selCol = sel.startsWith('col:') ? r.columns?.[Number(sel.slice(4))] : undefined;
+    const previewSel = selCol
+      ? `cols:${selCol.functions.map((f) => `${selCol.tagId}.${f}`).join('|')}`
       : sel;
     return html`<div class="ed ed-fill te rd">
       <div class="ed-head">

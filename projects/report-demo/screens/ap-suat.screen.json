@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "ap-suat",
+  "name": "Áp suất lịch sử",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "trend",
+      "name": "Biểu đồ áp suất",
+      "type": "widget",
+      "widget": "history-trend",
+      "x": 20,
+      "y": 20,
+      "width": 1240,
+      "height": 400,
+      "tags": {
+        "series": [
+          "PROC.PRESSURE",
+          "PROC.TEMP"
+        ]
+      },
+      "props": {
+        "group": "ap-suat",
+        "range": "24h",
+        "follow": true,
+        "controls": true,
+        "legend": true,
+        "grid": true,
+        "showBand": true,
+        "step": "auto",
+        "labels": [
+          "Áp suất",
+          "Nhiệt độ"
+        ],
+        "axes": [
+          "left",
+          "right"
+        ]
+      }
+    },
+    {
+      "id": "table",
+      "name": "Bảng dữ liệu",
+      "type": "widget",
+      "widget": "history-table",
+      "x": 20,
+      "y": 430,
+      "width": 1240,
+      "height": 270,
+      "tags": {
+        "columns": [
+          "PROC.PRESSURE",
+          "PROC.TEMP"
+        ]
+      },
+      "props": {
+        "group": "ap-suat",
+        "range": "24h",
+        "pageSize": 50,
+        "order": "desc",
+        "controls": true,
+        "labels": [
+          "Áp suất",
+          "Nhiệt độ"
+        ]
+      }
+    }
+  ]
+}

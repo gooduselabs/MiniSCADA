@@ -1,0 +1,77 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "1.1.0",
+  "projectId": "report-demo",
+  "projectName": "Nhà máy nước Bình An",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "1.1.0",
+  "entryScreen": "tong-quan",
+  "screens": [
+    "tong-quan",
+    "ap-suat",
+    "dien-nang"
+  ],
+  "tagFile": "tags.json",
+  "loggingFile": "logging.json",
+  "navigation": {
+    "position": "left",
+    "items": [
+      {
+        "label": "Tổng quan",
+        "screen": "tong-quan",
+        "icon": "home"
+      },
+      {
+        "label": "Áp suất lịch sử",
+        "screen": "ap-suat",
+        "icon": "chart"
+      },
+      {
+        "label": "Điện năng",
+        "screen": "dien-nang",
+        "icon": "bolt"
+      },
+      {
+        "label": "Báo cáo ca",
+        "report": "bao-cao-ca",
+        "icon": "doc"
+      },
+      {
+        "label": "Báo cáo ngày",
+        "report": "bao-cao-ngay",
+        "icon": "doc"
+      },
+      {
+        "label": "Báo cáo tháng",
+        "report": "bao-cao-thang",
+        "icon": "doc"
+      },
+      {
+        "label": "Năng lượng",
+        "report": "nang-luong-ngay",
+        "icon": "doc"
+      },
+      {
+        "label": "Vận hành bơm",
+        "report": "van-hanh-bom",
+        "icon": "doc"
+      },
+      {
+        "label": "Báo cáo alarm",
+        "report": "alarm-ngay",
+        "icon": "doc"
+      },
+      {
+        "label": "Ghi PLC của logic",
+        "report": "logic-ngay",
+        "icon": "doc"
+      }
+    ]
+  },
+  "maxClients": 10,
+  "reportsFile": "reports.json",
+  "theme": "vivid",
+  "alarmFile": "alarms.json",
+  "alarmClassFile": "alarm-classes.json",
+  "logic": "logic.json"
+}

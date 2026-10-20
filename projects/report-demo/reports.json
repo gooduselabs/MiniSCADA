@@ -1,0 +1,195 @@
+{
+  "schemaVersion": "1.1.0",
+  "org": "Nhà máy nước Bình An",
+  "reports": [
+    {
+      "id": "bao-cao-ca",
+      "name": "Báo cáo ca",
+      "group": "ap-suat",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO VẬN HÀNH THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "PROC.PRESSURE",
+          "label": "Áp suất",
+          "unit": "bar",
+          "decimals": 2,
+          "functions": [
+            "avg",
+            "min",
+            "max"
+          ]
+        },
+        {
+          "tagId": "PROC.TEMP",
+          "label": "Nhiệt độ",
+          "unit": "°C",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bao-cao-ngay",
+      "name": "Báo cáo ngày",
+      "group": "ap-suat",
+      "period": "day",
+      "rowMinutes": 60,
+      "title": "BÁO CÁO VẬN HÀNH THEO NGÀY",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "chart": "line",
+      "columns": [
+        {
+          "tagId": "PROC.PRESSURE",
+          "label": "Áp suất",
+          "unit": "bar",
+          "decimals": 2,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        },
+        {
+          "tagId": "PROC.TEMP",
+          "label": "Nhiệt độ",
+          "unit": "°C",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bao-cao-thang",
+      "name": "Báo cáo tháng",
+      "group": "dien",
+      "period": "month",
+      "title": "BÁO CÁO ĐIỆN NĂNG THEO THÁNG",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "portrait"
+      },
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "METER1.KW",
+          "label": "Điện năng",
+          "unit": "kWh",
+          "decimals": 1,
+          "functions": [
+            "sum"
+          ]
+        },
+        {
+          "tagId": "METER1.KW",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nang-luong-ngay",
+      "name": "Năng lượng theo ngày",
+      "group": "dien",
+      "period": "day",
+      "rowMinutes": 60,
+      "title": "BÁO CÁO NĂNG LƯỢNG THEO NGÀY",
+      "footer": "Phòng Kỹ thuật",
+      "paper": {
+        "size": "A4",
+        "orientation": "landscape"
+      },
+      "totals": true,
+      "chart": "bar",
+      "columns": [
+        {
+          "tagId": "METER1.KW",
+          "label": "Điện năng",
+          "unit": "kWh",
+          "decimals": 1,
+          "functions": [
+            "sum"
+          ]
+        },
+        {
+          "tagId": "METER1.KW",
+          "label": "Công suất",
+          "unit": "kW",
+          "decimals": 1,
+          "functions": [
+            "avg",
+            "max"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "van-hanh-bom",
+      "name": "Vận hành bơm",
+      "kind": "equipment",
+      "group": "van-hanh",
+      "period": "shift",
+      "shifts": {
+        "count": 3,
+        "start": "06:00"
+      },
+      "title": "BÁO CÁO VẬN HÀNH BƠM THEO CA",
+      "footer": "Phòng Kỹ thuật",
+      "totals": true,
+      "columns": [
+        {
+          "tagId": "PUMP1.RUN",
+          "label": "Bơm 1",
+          "unit": "giờ",
+          "decimals": 2,
+          "functions": [
+            "onTime",
+            "starts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alarm-ngay",
+      "name": "Alarm theo ngày",
+      "kind": "alarm",
+      "period": "day",
+      "title": "BÁO CÁO ALARM THEO NGÀY",
+      "footer": "Phòng Kỹ thuật"
+    },
+    {
+      "id": "logic-ngay",
+      "name": "Ghi PLC của logic",
+      "kind": "logic",
+      "period": "day",
+      "title": "BÁO CÁO GHI PLC CỦA LOGIC",
+      "footer": "Phòng Kỹ thuật"
+    }
+  ]
+}

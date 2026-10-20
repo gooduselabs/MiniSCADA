@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.1.0",
+  "areas": [
+    {
+      "id": "duong-ong",
+      "name": "Đường ống"
+    },
+    {
+      "id": "tram-bom",
+      "name": "Trạm bơm"
+    }
+  ],
+  "alarms": [
+    {
+      "id": "AP_SUAT",
+      "type": "limit",
+      "name": "Áp suất đường ống",
+      "area": "duong-ong",
+      "tag": "PROC.PRESSURE",
+      "limits": {
+        "L": {
+          "value": 2.5,
+          "class": "minor"
+        },
+        "H": {
+          "value": 5.5,
+          "class": "major"
+        }
+      },
+      "deadband": 0.2
+    },
+    {
+      "id": "NHIET_DO",
+      "type": "limit",
+      "name": "Nhiệt độ nước",
+      "area": "duong-ong",
+      "tag": "PROC.TEMP",
+      "limits": {
+        "HH": {
+          "value": 62,
+          "class": "critical"
+        }
+      },
+      "deadband": 1
+    },
+    {
+      "id": "CONG_SUAT",
+      "type": "limit",
+      "name": "Công suất cao",
+      "area": "tram-bom",
+      "tag": "METER1.KW",
+      "limits": {
+        "H": {
+          "value": 52,
+          "class": "major"
+        }
+      },
+      "deadband": 1
+    }
+  ]
+}

@@ -15,8 +15,22 @@ import {
   type ChartInstance,
 } from '../chart/echarts-lite.ts';
 import { viReport, type ReportViewLabels } from '../i18n/report-vi.ts';
+import { installTokens } from '../styles/tokens.ts';
 
 const LOW_COVERAGE = 0.95;
+/** Màu thẻ (cùng giá trị `--mat-tile-*` của mọi chủ đề, feature 014): dự phòng khi trang chưa nạp token chủ đề. */
+const TILE_FALLBACK: Record<string, string> = {
+  teal: '#0f7f75',
+  blue: '#2563eb',
+  rose: '#e11d48',
+  violet: '#7c3aed',
+  olive: '#4d7c0f',
+  indigo: '#4f46e5',
+  orange: '#c2410c',
+  cyan: '#0e7490',
+  green: '#15803d',
+  slate: '#475569',
+};
 
 /** Tiêu đề cột: nhãn (đơn vị) · tên hàm; cột thường (sự kiện) không kèm hàm. */
 export function reportColumnHeader(c: ReportColumnOut, l: ReportViewLabels): string {
@@ -64,6 +78,14 @@ eport-select với
     this.dispatchEvent(
       new CustomEvent('report-select', { detail: { part }, bubbles: true, composed: true }),
     );
+  }
+
+  /** Cột đang chọn: selected là cols:<key>|<key>… (mọi cột ra của một cột mẫu) hoặc col:<key>. */
+  #selCol(key: string): string {
+    if (!this.selectable) return '';
+    const s = this.selected;
+    const on = s === `col:${key}` || (s.startsWith('cols:') && s.slice(5).split('|').includes(key));
+    return on ? ' sel' : '';
   }
 
   #sel(part: string): string {
@@ -190,8 +212,22 @@ eport-select với
     :host([compact]) .ec {
       height: 220px;
     }
+    :host([compact]) .tiles {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
     :host([compact]) .tile {
-      min-height: 76px;
+      min-height: 72px;
+      padding: 10px 12px;
+    }
+    :host([compact]) .tile .value {
+      font-size: 24px;
+    }
+    :host([compact]) .band {
+      padding: 12px 14px;
+    }
+    :host([compact]) .title {
+      font-size: 17px;
     }
     .scroll {
       max-height: min(72vh, 760px);
@@ -293,6 +329,12 @@ eport-select với
     }
   `;
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // token --mat-* (chủ đề, màu thẻ, phông Inter) khi nơi chứa chưa nạp (Studio), như widget và màn hình
+    installTokens(this.ownerDocument);
+  }
+
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.#ro?.disconnect();
@@ -374,7 +416,7 @@ eport-select với
             class="tile"
             role="group"
             aria-label=${`${x.label}: ${x.text}${x.unit ? ' ' + x.unit : ''}`}
-            style=${`--c: var(--mat-tile-${x.color}, #0f7f75)`}
+            style=${`--c: var(--mat-tile-${x.color}, ${TILE_FALLBACK[x.color] ?? '#0f7f75'})`}
           >
             <div class="label">${x.label}</div>
             <div class="main">
@@ -420,9 +462,9 @@ eport-select với
                 (c) =>
                   html`<th
                     scope="col"
-                    class="num${this.#sel(`col:${c.tagId}`)}"
-                    data-part=${`col:${c.tagId}`}
-                    @click=${() => this.#pick(`col:${c.tagId}`)}
+                    class="num${this.#selCol(c.key)}"
+                    data-part=${`col:${c.key}`}
+                    @click=${() => this.#pick(`col:${c.key}`)}
                   >
                     ${reportColumnHeader(c, l)}
                   </th>`,
