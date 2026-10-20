@@ -150,6 +150,23 @@ describe('sửa trên sơ đồ', () => {
     expect(layoutOf(app).c_starts_2).toBeDefined();
   });
 
+  it('đổi id ở Inspector: vị trí trên sơ đồ đi theo id mới (cùng một bước hoàn tác)', async () => {
+    const { app } = await newLogicApp(pumpLogic(), 'diagram');
+    const { insp, node, key, again } = await open(app);
+    await key(node('t_start')!, 'ArrowDown');
+    const p = layoutOf(app).t_start!;
+    const id = insp.querySelector<HTMLInputElement>('[data-field="id"]')!;
+    expect(id.value).toBe('t_start');
+    id.value = 't_main';
+    id.dispatchEvent(new Event('change', { bubbles: true }));
+    await again();
+    expect(logicOf(app).timers?.[0]?.id).toBe('t_main');
+    expect(layoutOf(app).t_main).toEqual(p);
+    expect(layoutOf(app).t_start).toBeUndefined();
+    app.store.undo();
+    expect(layoutOf(app).t_start).toEqual(p);
+  });
+
   it('thả khối từ task card: thêm ở chỗ thả (căn lưới), chọn khối mới; một bước hoàn tác', async () => {
     const { app } = await newLogicApp(pumpLogic(), 'diagram');
     const { dia, again } = await open(app);
