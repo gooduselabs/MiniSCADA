@@ -404,6 +404,7 @@ try {
     }),
     [422],
   );
+  // Feature 013: id ngoài alarm(P) (kể cả id không tồn tại) là 403 ACCESS_DENIED với operator, không lộ id nào có thật
   expect(
     'A15e shelve id không tồn tại',
     await twreq('POST', '/api/v1/alarms/shelve', op, {
@@ -411,7 +412,7 @@ try {
       reason: 'x',
       durationS: 60,
     }),
-    [404],
+    [403],
   );
   expect(
     'A15f ack all thiếu upToRevision',

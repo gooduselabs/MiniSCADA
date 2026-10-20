@@ -4,6 +4,9 @@
   "name": "Tổng quan",
   "size": {"width":1280,"height":720},
   "items": [
-    {"id":"card_1","type":"widget","widget":"card","x":40,"y":40,"width":280,"height":120,"props":{"label":"Mức bồn 1"},"tags":{"value":"IT.LEVEL"}}
+    {"id":"card_1","type":"widget","widget":"card","x":40,"y":40,"width":280,"height":120,"props":{"label":"Mức bồn 1"},"tags":{"value":"IT.LEVEL"}},
+    {"id":"card_2","type":"widget","widget":"card","x":360,"y":40,"width":280,"height":120,"props":{"label":"Lỗi bơm 1"},"tags":{"value":"IT.FAULT"}},
+    {"id":"card_3","type":"widget","widget":"card","x":680,"y":40,"width":280,"height":120,"props":{"label":"Lỗi bơm 2"},"tags":{"value":"IT.FAULT2"}},
+    {"id":"card_4","type":"widget","widget":"card","x":40,"y":200,"width":280,"height":120,"props":{"label":"Nhiệt độ"},"tags":{"value":"IT.TEMP"}}
   ]
 }
