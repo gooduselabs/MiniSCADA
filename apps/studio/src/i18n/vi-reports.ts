@@ -99,4 +99,6 @@ export const viReports = {
   'rpt.pv.tableTitle': 'Bảng số liệu',
   'rpt.pv.chartHint': 'Số liệu chi tiết ở bảng bên dưới.',
   'rpt.pv.noRows': 'Không có dòng nào trong kỳ.',
+  'rpt.sim.alarmHigh': 'Mức cao',
+  'rpt.sim.alarmFault': 'Thiết bị lỗi',
 } as const;

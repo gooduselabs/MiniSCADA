@@ -4,6 +4,7 @@
 import type { AlarmClassesFile, AlarmsFile, LogicDoc } from '@mat/project-schema';
 import type { AlarmOccurrence, LogicEvent } from '@mat/history-math';
 import type { ReportEventSource } from '@mat/ui-components';
+import { t } from '../i18n/index.ts';
 
 const HOUR = 3_600_000;
 const MIN = 60_000;
@@ -45,13 +46,19 @@ function alarmsOf(alarms: AlarmsFile | null, classes: AlarmClassesFile | null): 
   return list.length
     ? list
     : [
-        { alarmId: 'muc_cao', name: 'Mức cao', priority: 'critical', area: null, text: 'Mức cao' },
+        {
+          alarmId: 'muc_cao',
+          name: t('rpt.sim.alarmHigh'),
+          priority: 'critical',
+          area: null,
+          text: t('rpt.sim.alarmHigh'),
+        },
         {
           alarmId: 'loi',
-          name: 'Thiết bị lỗi',
+          name: t('rpt.sim.alarmFault'),
           priority: 'major',
           area: null,
-          text: 'Thiết bị lỗi',
+          text: t('rpt.sim.alarmFault'),
         },
       ];
 }
