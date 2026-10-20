@@ -898,6 +898,10 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     # Connections at once per source IP (feature 011 T039): the two listeners as main opens them.
     mat_test(conn_limit_test server/tests/conn_limit_test.cpp server/http/web_contexts.cpp)
     target_link_libraries(conn_limit_test PRIVATE mat_tls_test_support mat_server_tls)
+    # Kept-alive HTTPS calls are not held ~40 ms by Nagle + delayed ACK (feature 013 T032 follow-up).
+    mat_test(web_contexts_latency_test server/tests/web_contexts_latency_test.cpp
+             server/http/web_contexts.cpp)
+    target_link_libraries(web_contexts_latency_test PRIVATE mat_tls_test_support mat_server_tls)
     # The sign-in of the runtime page (feature 007 T055): the real sign-in service, HttpApi and the gate.
     mat_test(web_api_test server/tests/web_api_test.cpp server/http/http_api.cpp
              server/http/auth_gate.cpp server/http/engineering_api.cpp

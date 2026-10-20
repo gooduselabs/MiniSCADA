@@ -65,8 +65,64 @@ Trong cấu hình `rules-subset` có tải đầy đủ, admin đổi quy tắc 
 
 Phần tính `EffectiveAccess` tốn khoảng 0,04 ms CPU mỗi lần (độ phân giải ±0,02 ms), có quy tắc hay không như nhau.
 
+**Đính chính (xem §6):** số "CPU mỗi lần" ở bảng trên còn gồm CPU nền của runtime trong 22 s đo. 22 s đó dài chủ yếu vì mỗi lời gọi chờ khoảng 44 ms. Sau khi sửa `TCP_NODELAY`, 500 lời gọi xong trong 0,2 s. Khi đó mỗi lời gọi tốn 0,06–0,08 ms CPU cho `web/session` và 0,08 ms cho `web/access`; hai số khác nhau không quá độ phân giải (0,02 ms).
+
 ## 5. Kết luận và điểm cần xem
 
 - SC-006: **Đạt.** CPU tăng −4 % theo chữ của SC-006 và 0 % khi cùng dữ liệu, ngưỡng là ≤ +10 %. RSS không tăng (−0,5 MB). `access-changed` ≤ 571 ms (ngưỡng 2 s). Chi phí `web/access` ≈ 0,04 ms CPU.
 - "Vẫn trong ngân sách BL335": không đo lại trên BL335. Theo số x64, phân quyền không thêm CPU hay RAM đo được. Số BL335 L1 (28,9 % một lõi) ở [011-load.md](011-load.md) vẫn là tham chiếu, nhưng bàn đo đó dùng ws:// ẩn danh. Lượt L1 trên BL335 qua wss có đăng nhập (10 phiên TLS) chưa chạy, nên phần chi phí TLS so với ws:// trên Cortex-A7 chưa có số.
-- **Nghi ngờ không thuộc 013 (có từ trước): mọi lời gọi HTTPS mất khoảng 44 ms.** Thời gian này không đổi theo endpoint, và cả `GET /api/v1/system/info` không phiên cũng vậy. Cùng lời gọi qua HTTP 8080 chỉ mất 0,8 ms. Thử lại trên kết nối giữ sống và kết nối mới đều cho kết quả này (44 / 48 ms). Dạng này khớp với Nagle cộng delayed ACK: phản hồi TLS được ghi thành nhiều bản ghi nhỏ trên socket không đặt `TCP_NODELAY`. Trong `server/` không có tùy chọn `tcp_nodelay` của civetweb. Ảnh hưởng: mỗi lời gọi API của trang (đổi màn hình, tải lại quyền sau `access-changed`, lịch sử) chậm thêm khoảng 40 ms, CPU không đổi. Không sửa ở đây. Đề xuất đo lại với `tcp_nodelay=1` trên x64 và BL335.
+- **Nghi ngờ không thuộc 013 (có từ trước): mọi lời gọi HTTPS mất khoảng 44 ms.** Thời gian này không đổi theo endpoint, và cả `GET /api/v1/system/info` không phiên cũng vậy. Cùng lời gọi qua HTTP 8080 chỉ mất 0,8 ms. Thử lại trên kết nối giữ sống và kết nối mới đều cho kết quả này (44 / 48 ms). Dạng này khớp với Nagle cộng delayed ACK: phản hồi TLS được ghi thành nhiều bản ghi nhỏ trên socket không đặt `TCP_NODELAY`. Trong `server/` không có tùy chọn `tcp_nodelay` của civetweb. Ảnh hưởng: mỗi lời gọi API của trang (đổi màn hình, tải lại quyền sau `access-changed`, lịch sử) chậm thêm khoảng 40 ms, CPU không đổi. **Đã sửa ở §6.**
+
+## 6. Sửa `TCP_NODELAY` cho HTTPS và HTTP (2026-10-20)
+
+**Thay đổi.** `server/http/web_contexts.cpp` đặt tùy chọn CivetWeb `"tcp_nodelay", "1"` cho cả hai ngữ cảnh:
+
+- HTTPS: cho các lời gọi API giữ sống và cho wss.
+- HTTP: cho ws:// 8080. HTTP không giữ sống nên lời gọi thường không bị ảnh hưởng; đặt cho đồng nhất.
+
+**Kiểm trong `third_party/civetweb`.** Tùy chọn `tcp_nodelay` có thật (`CONFIG_TCP_NODELAY`, mặc định `"0"`). `accept_new_connection` gọi `set_tcp_nodelay` trên socket vừa accept, trước khi socket vào hàng đợi worker. Đường Mbed TLS (`mod_mbedtls.inl`, `mbedtls_ssl_set_bio`) dùng chính socket đó, nên mọi bản ghi TLS cũng được gửi không qua Nagle.
+
+**Test trước khi sửa.** `server/tests/web_contexts_latency_test.cpp` mở hai ngữ cảnh qua `WebContexts` như `main`. Handler ghi header rồi body bằng hai lần ghi, như các API. Test gọi 20 lần trên cùng một kết nối HTTPS giữ sống (libcurl) và đòi trung vị < 15 ms.
+
+- Trước khi sửa: **đỏ, trung vị 44,0 ms**.
+- Sau khi sửa: **xanh, trung vị 0,05 ms** (3 lần chạy: 0,050 / 0,049 / 0,054 ms).
+
+**Các test liên quan, đều xanh** (chạy từng tệp thực thi trong image `mat-armhf`, build Release):
+
+| Test                   | Số ca |
+| ---------------------- | ----- |
+| `conn_limit_test`      | 9     |
+| `https_handshake_test` | 10    |
+| `https_api_test`       | 25    |
+| `host_policy_test`     | 25    |
+| `web_api_test`         | 26    |
+| `web_gate_test`        | 30    |
+| `live_hub_test`        | 23    |
+| `origin_test`          | 4     |
+| `access_enforce_test`  | 9     |
+| `viewer_access_test`   | 9     |
+| `web_session_test`     | 23    |
+
+`clang-format --dry-run --Werror` sạch.
+
+**Đo lại bằng bàn đo §1–§4** (runtime có sửa, 3 lượt × 60 s mỗi cấu hình). Số liệu thô: [013-perf-nodelay-x64.json](013-perf-nodelay-x64.json).
+
+| Chỉ số                                                  | Trước              | Sau                    |
+| ------------------------------------------------------- | ------------------ | ---------------------- |
+| HTTPS giữ sống, `GET web/session` p50 / p95             | 43,9 / 44,1 ms     | **0,27 / 0,50 ms**     |
+| HTTPS giữ sống, `GET web/access` p50 / p95 (52 quy tắc) | 43,9 / 44,1 ms     | **0,26 / 0,54 ms**     |
+| CPU 500 Tag, 10 client wss, giây CPU / 60 s: none-all   | 0,75               | 0,76                   |
+| … rules-all                                             | 0,72               | 0,74                   |
+| … none-subset                                           | 0,73               | 0,72                   |
+| … rules-subset                                          | 0,73               | 0,74                   |
+| RSS tối đa                                              | 19,2–19,9 MB       | 19,1–20,2 MB           |
+| Byte gửi/giây của rt (none-all / rules-all)             | 483,6 / 390,2 KB   | 481,6 / 391,8 KB       |
+| Mất sequence                                            | 0                  | 0                      |
+| `access-changed` p50 / p95 / tối đa                     | 457 / 570 / 571 ms | 198 / 1.001 / 1.001 ms |
+
+Nhận xét:
+
+- CPU, RSS và byte gửi không đổi, trong dao động giữa các lượt (±0,02 giây CPU).
+- `access-changed` vẫn nằm trong 0–1 s như trước, vì phụ thuộc thời điểm của nhịp hỏi lại quyền khoảng mỗi giây. Thời gian này không phụ thuộc Nagle. Vẫn ≤ 2 s.
+- Sau sửa, tiêu chí SC-006 vẫn **Đạt**: rules-all so none-all −3 %, rules-subset so none-subset +3 %.
+- Chưa đo trên BL335.
