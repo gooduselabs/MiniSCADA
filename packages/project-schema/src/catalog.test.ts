@@ -225,7 +225,7 @@ describe('danh mục widget', () => {
     ])
       expect(checkPropValue(src, bad), bad).not.toBeNull();
     expect(prop('text', 'text')).toMatchObject({ kind: 'string', maxLength: 300, multiline: true });
-    for (const id of ['line', 'bar', 'pie', 'gauge'])
+    for (const id of ['line', 'bar', 'pie', 'gauge', 'tag-table'])
       expect(prop(id, 'title'), id).toMatchObject({ kind: 'string', maxLength: 60, default: '' });
     expect(prop('line', 'highLimit').kind).toBe('number');
     expect(prop('line', 'lowLimit').kind).toBe('number');

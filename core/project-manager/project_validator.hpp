@@ -104,6 +104,9 @@ struct ProjectValidation {
 };
 
 bool isSafeRelPath(const std::string& p);
+// The SVG file of an image widget (catalog 0.6.0, feature 014): props.src, "" when absent or empty.
+// It belongs to the project like the SVG of an svg item (files(), allowlist(), E_FILE_MISSING).
+std::string imageFileOf(const nlohmann::json& item);
 int compareSemver(const std::string& a, const std::string& b);
 // `schemasDir` holds the 1.0 schemas and, in its subdirectories 0.6/, 0.5/, 0.4/, 0.3/, 0.2/ and
 // 0.1/, the frozen older ones, and widgets.catalog.json; the set is chosen by the schemaVersion of

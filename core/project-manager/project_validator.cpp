@@ -655,6 +655,16 @@ bool isSafeRelPath(const std::string& p) {
     return true;
 }
 
+std::string imageFileOf(const nlohmann::json& item) {
+    if (!item.is_object() || item.value("type", "") != "widget" ||
+        item.value("widget", "") != "image")
+        return "";
+    const auto props = item.find("props");
+    if (props == item.end() || !props->is_object()) return "";
+    const auto src = props->find("src");
+    return src != props->end() && src->is_string() ? src->get<std::string>() : "";
+}
+
 int compareSemver(const std::string& a, const std::string& b) {
     // Major, minor, patch as decimal numbers of any length (the schema allows 64 characters, more
     // than an int holds: SAST T055). The digits of each, without leading zeros ("" is 0). Reading
@@ -1037,6 +1047,13 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
             const json& items = sd.screen["items"];
             for (size_t i = 0; i < items.size(); ++i) {
                 const json& item = items[i];
+                // Catalog 0.6.0 (feature 014): the SVG file of an image widget must exist (the
+                // pattern of props.src keeps it under graphics/; a path outside it is a property
+                // error of the catalog rules). Like an svg item, only the presence is checked here.
+                if (const std::string image = imageFileOf(item);
+                    !image.empty() && isSafeRelPath(image) && !c.exists(image))
+                    c.add("E_FILE_MISSING", sd.file, "/items/" + std::to_string(i) + "/props/src",
+                          "Không tìm thấy '" + image + "'");
                 if (item["type"] != "svg") continue;
                 Rules03Input::SvgData data;
                 const std::string bfile = item["bindingFile"];
@@ -1216,11 +1233,14 @@ std::set<std::string> LoadedProject::allowlist() const {
         for (const auto& id : project.at("screens"))
             out.insert("screens/" + id.get<std::string>() + ".screen.json");
         for (const auto& s : screens)
-            for (const auto& item : s.screen["items"])
+            for (const auto& item : s.screen["items"]) {
                 if (item["type"] == "svg") {
                     out.insert(item["svgFile"].get<std::string>());
                     out.insert(item["bindingFile"].get<std::string>());
                 }
+                // the SVG of an image widget (feature 014)
+                if (const std::string image = imageFileOf(item); !image.empty()) out.insert(image);
+            }
         // report templates (feature 010): the report page loads them like the screen files
         if (project.contains("reportsFile"))
             out.insert(project.at("reportsFile").get<std::string>());
@@ -1258,11 +1278,14 @@ std::vector<std::string> LoadedProject::files() const {
         out.insert("screens/" + id.get<std::string>() + ".screen.json");
     if (is03()) {
         for (const auto& s : screens)
-            for (const auto& item : s.screen["items"])
+            for (const auto& item : s.screen["items"]) {
                 if (item["type"] == "svg") {
                     out.insert(item["bindingFile"].get<std::string>());
                     out.insert(item["svgFile"].get<std::string>());
                 }
+                // the SVG of an image widget (feature 014)
+                if (const std::string image = imageFileOf(item); !image.empty()) out.insert(image);
+            }
         return {out.begin(), out.end()};
     }
     for (const auto& s : screens) {

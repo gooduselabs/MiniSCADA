@@ -83,6 +83,7 @@ import { runRules11 } from './rules-11.ts';
 import type { LoadedProject10, LogicDoc, Project10, TemplateDoc } from './types-10.ts';
 import { runRules04 } from './rules-04.ts';
 import { svgContentRules, svgTooLargeIssue } from './rules-04-svg.ts';
+import { imageFileOf } from './project-files.ts';
 import type { SerialPolicy } from './serial-allow.ts';
 import { isSafeRelPath, stripBom, type ProjectSource } from './source.ts';
 import type {
@@ -537,6 +538,8 @@ async function validateProject03(
   const valueTables: Rule02Input['valueTables'] = {};
   const watchTables: Rule02Input['watchTables'] = {};
   const screens: Record<string, Rule03Screen> = idMap();
+  /** Feature 014: nội dung SVG của widget image theo tệp (đọc một lần). */
+  const imageSvgs = new Map<string, string>();
   let alarmsDoc: unknown;
   let alarmClassesDoc: unknown;
   let logic: { file: string; doc: LogicDoc; bytes?: number } | undefined;
@@ -638,6 +641,16 @@ async function validateProject03(
       const svg: Rule03Screen['svg'] = [];
       for (let i = 0; i < screen.items.length; i++) {
         const item = screen.items[i]!;
+        // Feature 014: tệp SVG của widget image phải có (mẫu của props.src giữ đường dẫn trong graphics/, an toàn); nội
+        // dung kiểm như SVG của item svg ở dưới (giới hạn, allowlist). Bản C++ chỉ kiểm có tệp, như với item svg.
+        const image = imageFileOf(item as Parameters<typeof imageFileOf>[0]);
+        if (image !== undefined && isSafeRelPath(image) && !imageSvgs.has(image)) {
+          const r = await src.read(image);
+          if ('text' in r) imageSvgs.set(image, stripBom(r.text));
+          else if (r.error === 'too-large') out.errors.push(svgTooLargeIssue(image));
+          else
+            out.add('E_FILE_MISSING', file, `/items/${i}/props/src`, `Không tìm thấy '${image}'`);
+        }
         if (item.type !== 'svg') continue;
         let bindings: BindingSet03 | undefined;
         if (!isSafeRelPath(item.bindingFile))
@@ -717,6 +730,12 @@ async function validateProject03(
     out.warnings.push(...r.warnings);
     // 0.4: luật theo nội dung SVG (chỉ bản TS; rules-04-svg.ts, T060)
     if (set !== '0.3' && checkSvg) {
+      // feature 014: SVG của widget image
+      for (const [image, svgText] of imageSvgs) {
+        const sr = svgContentRules({ svgFile: image, svgText, bindingFile: '' });
+        out.errors.push(...sr.errors);
+        out.warnings.push(...sr.warnings);
+      }
       for (const s of Object.values(screens)) {
         s.screen.items.forEach((item, i) => {
           const d = s.svg[i];

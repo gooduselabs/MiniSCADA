@@ -345,6 +345,59 @@ TEST(ProjectValidator06, ReportsFileIsPartOfTheFilesAndTheAllowlist) {
     EXPECT_EQ(p.allowlist().count("reports.json"), 1u);
 }
 
+// Catalog 0.6.0 (feature 014): the SVG of an image widget belongs to the project like the SVG of an
+// svg item (files() of packages/project-schema projectFiles(), allowlist(), E_FILE_MISSING).
+TEST(ProjectValidator014, ImageFileIsPartOfTheFilesAndTheAllowlist) {
+    LoadedProject p;
+    p.project = {{"schemaVersion", "1.1.0"}, {"tagFile", "tags.json"}, {"screens", {"main"}}};
+    LoadedProject::Screen s;
+    s.id = "main";
+    s.screen = nlohmann::json::parse(R"({"items":[
+        {"id":"a","type":"widget","widget":"image","props":{"src":"graphics/logo.svg"}},
+        {"id":"b","type":"widget","widget":"image","props":{"src":"graphics/logo.svg"}},
+        {"id":"c","type":"widget","widget":"image","props":{"src":""}},
+        {"id":"d","type":"widget","widget":"image"},
+        {"id":"e","type":"widget","widget":"label","props":{"src":"graphics/x.svg"}}]})");
+    p.screens.push_back(s);
+    EXPECT_EQ(p.files(), (std::vector<std::string>{"graphics/logo.svg", "project.json",
+                                                   "screens/main.screen.json", "tags.json"}));
+    EXPECT_EQ(p.allowlist().count("graphics/logo.svg"), 1u);
+    EXPECT_EQ(p.allowlist().count("graphics/x.svg"), 0u);
+    EXPECT_EQ(imageFileOf(s.screen["items"][0]), "graphics/logo.svg");
+    EXPECT_EQ(imageFileOf(s.screen["items"][3]), "");
+}
+
+TEST(ProjectValidator014, TheSvgOfAnImageWidgetMustExist) {
+    namespace fs = std::filesystem;
+    const fs::path dir = fs::temp_directory_path() / "mat-validator-image-widget";
+    fs::remove_all(dir);
+    fs::copy(std::string(MAT_SOURCE_DIR) + "/projects/grid-demo", dir, fs::copy_options::recursive);
+    const fs::path screenFile = dir / "screens/bang-dieu-khien.screen.json";
+    nlohmann::json screen = readJson(screenFile.string());
+    screen["layout"]["rows"].push_back(nlohmann::json::parse(
+        R"({"id":"r99","height":200,"cells":[{"id":"c99","span":12,"item":"anh"}]})"));
+    screen["items"].push_back(nlohmann::json::parse(
+        R"({"id":"anh","type":"widget","widget":"image","props":{"src":"graphics/logo.svg"}})"));
+    const size_t index = screen["items"].size() - 1;
+    std::ofstream(screenFile, std::ios::trunc) << screen.dump(2);
+    auto r = validateProject(dir.string(), kSchemas, "1.1.0");
+    ASSERT_FALSE(r.valid);
+    bool found = false;
+    for (const auto& e : r.errors)
+        if (e.code == "E_FILE_MISSING" &&
+            e.path == "/items/" + std::to_string(index) + "/props/src")
+            found = true;
+    EXPECT_TRUE(found) << resultJson(r);
+    fs::create_directories(dir / "graphics");
+    std::ofstream(dir / "graphics/logo.svg", std::ios::trunc)
+        << "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 4 2\"/>";
+    r = validateProject(dir.string(), kSchemas, "1.1.0");
+    EXPECT_TRUE(r.valid) << resultJson(r);
+    ASSERT_TRUE(r.project);
+    EXPECT_EQ(r.project->allowlist().count("graphics/logo.svg"), 1u);
+    fs::remove_all(dir);
+}
+
 TEST(ProjectValidator06, HistoryDemoIsValidWithoutWarnings) {
     const auto r =
         validateProject(std::string(MAT_SOURCE_DIR) + "/projects/history-demo", kSchemas);
