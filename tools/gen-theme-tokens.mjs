@@ -59,10 +59,10 @@ function textOn(name, backs, dark) {
   throw new Error(`${name}: không đạt 4,5:1`);
 }
 /** Nền màu (≥ 3:1 trên bề mặt) + chữ trên nó (≥ 4,5:1): bậc 9, 10, 11 lần lượt, chữ trắng hoặc bậc tối. */
-function solid(name, dark, darkInk, surface) {
+function solid(name, dark, darkInk, surface, minOnSurface = 3) {
   for (const s of [9, 10, 11]) {
     const bg = rx(name, s, dark);
-    if (surface && contrast(bg, surface) < 3) continue;
+    if (surface && contrast(bg, surface) < minOnSurface) continue;
     const inks = ['#ffffff', darkInk ?? rx(name, 12, false)];
     const best = inks
       .map((ink) => [ink, contrast(ink, bg)])
@@ -144,6 +144,25 @@ const INDUSTRIAL_CHART_DARK = [
   ...['indigo', 'brown', 'plum', 'lime'].map((n) => rx(n, 11, true)),
 ];
 const ALARMS = ['red', 'orange', 'amber', 'blue', 'purple', 'teal', 'gray', 'green'];
+// Bảng màu thẻ chỉ số `stat-tile` (feature 014): nền đặc, chữ trắng ≥ 4,5:1, cùng giá trị ở mọi chủ đề (thẻ là điểm nhấn
+// màu cả trên nền sáng lẫn nền tối). Tên là giá trị `color` của widget trong danh mục.
+export const TILE_COLORS = {
+  teal: '#0f7f75',
+  blue: '#2563eb',
+  rose: '#e11d48',
+  violet: '#7c3aed',
+  olive: '#4d7c0f',
+  indigo: '#4f46e5',
+  orange: '#c2410c',
+  cyan: '#0e7490',
+  green: '#15803d',
+  slate: '#475569',
+};
+const tiles = (t) => {
+  for (const [k, v] of Object.entries(TILE_COLORS)) t[`tile-${k}`] = v;
+  t['tile-ink'] = '#ffffff';
+  return t;
+};
 const INDUSTRIAL_ALARM_LIGHT = {
   red: ['#b3261e', '#fbe1e1', '#ffffff'],
   orange: ['#a63f00', '#fde6d3', '#ffffff'],
@@ -194,7 +213,7 @@ function industrial(dark) {
   }
   // Card industrial không có bóng (giữ giao diện cũ).
   t['shadow-card'] = 'none';
-  return t;
+  return tiles(t);
 }
 
 function scales(t, seqHue, dark, mid) {
@@ -239,20 +258,34 @@ const ALARM_HUES = {
   green: 'green',
 };
 
+// Nền của chủ đề dark (feature 014, phản hồi 2026-10-20): xám xanh như dashboard tham khảo thay cho slate gần đen của
+// Radix; khung (surface) sáng hơn nền trang, thanh tiêu đề khung (surface-2) sáng hơn khung một bậc, chữ phụ xám.
+const DARK_BASE = {
+  bg: '#1f2a33',
+  surface: '#2b3640',
+  'surface-2': '#33414d',
+  text: '#e8eef3',
+  'text-muted': '#a7b4be',
+  border: '#3d4b57',
+  'border-strong': '#5b6b78',
+};
+
 function radixTheme(dark) {
   const g = (s) => rx('slate', s, dark);
-  const surface = dark ? g(2) : '#ffffff';
-  const t = {
-    bg: dark ? g(1) : g(2),
-    surface,
-    'surface-2': dark ? g(3) : g(3),
-    text: g(12),
-    'text-muted': g(11),
-    border: g(6),
-    'border-strong': g(8),
-  };
+  const surface = dark ? DARK_BASE.surface : '#ffffff';
+  const t = dark
+    ? { ...DARK_BASE }
+    : {
+        bg: g(2),
+        surface,
+        'surface-2': g(3),
+        text: g(12),
+        'text-muted': g(11),
+        border: g(6),
+        'border-strong': g(8),
+      };
   const accent = dark
-    ? solid('blue', true, g(1), surface)
+    ? solid('blue', true, DARK_BASE.bg, surface, 4.5)
     : solid('indigo', false, undefined, surface);
   t.accent = accent.bg;
   t['accent-ink'] = accent.ink;
@@ -273,7 +306,7 @@ function radixTheme(dark) {
   });
   scales(t, 'blue', dark, t['surface-2']);
   for (const [c, hue] of Object.entries(ALARM_HUES)) {
-    const s = solid(hue, dark, dark ? g(1) : undefined, surface);
+    const s = solid(hue, dark, dark ? DARK_BASE.bg : undefined, surface);
     t[`alarm-${c}`] = s.bg;
     t[`alarm-${c}-soft`] = rx(hue, 3, dark);
     t[`alarm-${c}-ink`] = s.ink;
@@ -290,7 +323,7 @@ function radixTheme(dark) {
   t.font = `'Inter Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif`;
   t['font-mono'] = FONT_MONO;
   t.motion = '200ms';
-  return t;
+  return tiles(t);
 }
 
 // ---- xuất CSS ----

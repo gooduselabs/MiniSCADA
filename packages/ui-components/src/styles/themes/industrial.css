@@ -97,6 +97,17 @@
   --mat-alarm-green: #15703a;
   --mat-alarm-green-soft: #dcf1e3;
   --mat-alarm-green-ink: #ffffff;
+  --mat-tile-teal: #0f7f75;
+  --mat-tile-blue: #2563eb;
+  --mat-tile-rose: #e11d48;
+  --mat-tile-violet: #7c3aed;
+  --mat-tile-olive: #4d7c0f;
+  --mat-tile-indigo: #4f46e5;
+  --mat-tile-orange: #c2410c;
+  --mat-tile-cyan: #0e7490;
+  --mat-tile-green: #15803d;
+  --mat-tile-slate: #475569;
+  --mat-tile-ink: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -188,6 +199,17 @@
     --mat-alarm-green: #52c672;
     --mat-alarm-green-soft: #15321e;
     --mat-alarm-green-ink: #052010;
+    --mat-tile-teal: #0f7f75;
+    --mat-tile-blue: #2563eb;
+    --mat-tile-rose: #e11d48;
+    --mat-tile-violet: #7c3aed;
+    --mat-tile-olive: #4d7c0f;
+    --mat-tile-indigo: #4f46e5;
+    --mat-tile-orange: #c2410c;
+    --mat-tile-cyan: #0e7490;
+    --mat-tile-green: #15803d;
+    --mat-tile-slate: #475569;
+    --mat-tile-ink: #ffffff;
   }
 }
 
@@ -279,6 +301,17 @@
   --mat-alarm-green: #52c672;
   --mat-alarm-green-soft: #15321e;
   --mat-alarm-green-ink: #052010;
+  --mat-tile-teal: #0f7f75;
+  --mat-tile-blue: #2563eb;
+  --mat-tile-rose: #e11d48;
+  --mat-tile-violet: #7c3aed;
+  --mat-tile-olive: #4d7c0f;
+  --mat-tile-indigo: #4f46e5;
+  --mat-tile-orange: #c2410c;
+  --mat-tile-cyan: #0e7490;
+  --mat-tile-green: #15803d;
+  --mat-tile-slate: #475569;
+  --mat-tile-ink: #ffffff;
 }
 
 @media (prefers-reduced-motion: reduce) {

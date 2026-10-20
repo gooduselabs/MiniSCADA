@@ -50,6 +50,19 @@ function contrast(a: string, b: string): number {
 const N12 = Array.from({ length: 12 }, (_, i) => i + 1);
 const N9 = Array.from({ length: 9 }, (_, i) => i + 1);
 const ALARMS = ['red', 'orange', 'amber', 'blue', 'purple', 'teal', 'gray', 'green'];
+/** Màu thẻ chỉ số (feature 014): đúng tập `options` của thuộc tính `color` của stat-tile trong danh mục. */
+const TILE_NAMES = [
+  'teal',
+  'blue',
+  'rose',
+  'violet',
+  'olive',
+  'indigo',
+  'orange',
+  'cyan',
+  'green',
+  'slate',
+];
 
 /** Token màu (giá trị #rrggbb) mọi chủ đề, cả biến thể tối của industrial, phải khai. */
 const COLOR_TOKENS = [
@@ -159,6 +172,29 @@ describe('chủ đề: đủ token và tương phản (FR-032, SC-007)', () => {
       });
     });
   }
+
+  // Feature 014: bảng màu của thẻ chỉ số (stat-tile), khai ở mọi chủ đề, chữ trắng đạt 4,5:1.
+  it('thẻ chỉ số: đủ 10 màu ở mọi chủ đề, chữ trắng ≥ 4,5:1, khác nhau từng đôi', () => {
+    for (const [name, t] of VARIANTS) {
+      const colors = TILE_NAMES.map((c) => t[`--mat-tile-${c}`] ?? '');
+      expect(
+        colors.filter((c) => !/^#[0-9a-f]{6}$/i.test(c)),
+        name,
+      ).toEqual([]);
+      expect(t['--mat-tile-ink'], name).toBe('#ffffff');
+      const weak = TILE_NAMES.filter((c) => contrast('#ffffff', t[`--mat-tile-${c}`]!) < 4.5);
+      expect(weak, name).toEqual([]);
+      expect(new Set(colors).size, name).toBe(TILE_NAMES.length);
+    }
+  });
+
+  it('dark: nền xám xanh như dashboard tham khảo (feature 014), khung sáng hơn nền, tiêu đề khung sáng hơn khung', () => {
+    const t = VARIANTS[3]![1];
+    expect(t['--mat-bg']).toBe('#1f2a33');
+    expect(t['--mat-surface']).toBe('#2b3640');
+    expect(lum(t['--mat-surface-2']!)).toBeGreaterThan(lum(t['--mat-surface']!));
+    expect(lum(t['--mat-surface']!)).toBeGreaterThan(lum(t['--mat-bg']!));
+  });
 
   it('vivid: bo góc card 10px, phông Inter trước, dự phòng Segoe UI và system-ui', () => {
     const t = VARIANTS[2]![1];
