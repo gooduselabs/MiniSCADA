@@ -20,6 +20,7 @@ Mở rộng token `--mat-*` hiện có ([tokens.css](../../../packages/ui-compon
 | `--mat-shadow-card` | bóng card |
 | `--mat-motion` | thời lượng hoạt ảnh (0ms khi `prefers-reduced-motion: reduce`) |
 | `--mat-font` | `'Inter Variable', 'Segoe UI', system-ui, …` ở vivid |
+| `--mat-tile-<tên>`, `--mat-tile-ink` | (feature 014, ADR-043) nền của thẻ chỉ số `stat-tile`: 10 màu có tên (teal, blue, rose, violet, olive, indigo, orange, cyan, green, slate), chữ `--mat-tile-ink` (trắng) ≥ 4,5:1, cùng giá trị ở mọi chủ đề |
 
 Kiểm tự động: mọi cặp chữ/nền khai trong bảng cặp của test đạt ≥ 4,5:1 ở cả ba chủ đề.
 

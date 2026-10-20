@@ -56,7 +56,9 @@ const { historyProject } = await import(
 const { reportsProject } = await import(
   pathToFileURL(join(WEB, 'tests/e2e/history-projects.mjs')).href
 );
-const { gridDemo } = await import(pathToFileURL(join(WEB, 'tests/e2e/grid-fixture.mjs')).href);
+const { gridDemoProject } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/grid-demo-fixture.mjs')).href
+);
 const { PASS, accessDemo, accessSeed, loginPage } = await import(
   pathToFileURL(join(WEB, 'tests/e2e/access-fixture.mjs')).href
 );
@@ -594,6 +596,10 @@ const studioScenes = [
       await page.waitForSelector('mat-grid-editor [data-preset]');
       await sleep(300);
       await shot('eng-them-hang');
+      // feature 014: mẫu hàng có sẵn widget, thêm "4 thẻ chỉ số"
+      await page.$eval('mat-grid-editor [data-template="tiles4"]', (b) => b.click());
+      await sleep(900);
+      await shot('eng-mau-hang-the-chi-so');
     },
   },
   {
@@ -858,15 +864,26 @@ const ALARMS = () => [
 
 const webScenes = [
   {
-    // feature 012: màn hình bố cục lưới trên trang vận hành, rộng và hẹp
+    // feature 012, 014: dashboard bố cục lưới của projects/grid-demo (thẻ chỉ số màu, biểu đồ có tiêu đề và ngưỡng)
     name: 'web-luoi',
-    options: { fixture: gridDemo },
+    options: { fixture: () => gridDemoProject() },
     async run({ page, rt, shot }) {
-      await page.goto(`${rt.httpUrl}/#/luoi`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${rt.httpUrl}/#/bang-dieu-khien`, { waitUntil: 'domcontentloaded' });
       await live(page);
       // Biểu đồ đường thời gian thực cần vài chục giây dữ liệu để không trống gần hết khung.
-      await sleep(20000);
+      await sleep(30000);
       await shot('op-bo-cuc-luoi');
+    },
+  },
+  {
+    // feature 014: cùng dashboard ở chủ đề Tối (mẫu "Dashboard tối" của Project mới)
+    name: 'web-dashboard-toi',
+    options: { fixture: () => gridDemoProject({ theme: 'dark' }) },
+    async run({ page, rt, shot }) {
+      await page.goto(`${rt.httpUrl}/#/bang-dieu-khien`, { waitUntil: 'domcontentloaded' });
+      await live(page);
+      await sleep(30000);
+      await shot('op-dashboard-toi');
     },
   },
   {

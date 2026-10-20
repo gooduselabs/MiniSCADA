@@ -46,7 +46,7 @@ Studio bố trí như một công cụ kỹ thuật: cây project bên trái, v�
 - **Tên project** (bắt buộc, tối đa 80 ký tự).
 - **Mã project**: tự sinh từ tên, bỏ dấu, chữ thường, gạch nối (`Trạm bơm Số 1` → `tram-bom-so-1`); sửa được, 2–48 ký tự. Mã là `projectId` và là tên thư mục project. Nút mũi tên vòng sinh lại mã từ tên.
 - **Thư mục chứa**: mặc định `Documents\mAT SCADA`; **Chọn…** để chọn thư mục khác, **Mặc định** để quay về. Studio tạo thư mục con theo mã project trong thư mục chứa; dòng **Project sẽ nằm ở** hiện đường dẫn đầy đủ và báo ngay nếu thư mục đó đã có project hoặc có tệp khác (khi đó không tạo được, đổi mã hoặc thư mục chứa).
-- **Mẫu**: **Trống** (một màn hình lưới **Tổng quan** với một hàng ba ô trống, chưa có Tag và kết nối) hoặc **Mẫu trạm bơm** (Tag mô phỏng, màn hình lưới **Bảng điều khiển** có biểu đồ xu hướng, đồng hồ, bảng Tag, faceplate bơm; chạy được ngay ở chế độ **Mô phỏng**).
+- **Mẫu**: **Trống** (một màn hình lưới **Tổng quan** với một hàng ba ô trống, chưa có Tag và kết nối), **Mẫu trạm bơm** (Tag mô phỏng, màn hình lưới **Bảng điều khiển** kiểu dashboard: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, đồng hồ, trạng thái bơm, bảng Tag, faceplate bơm; chạy được ngay ở chế độ **Mô phỏng**) hoặc **Dashboard tối** (chỉ màn hình dashboard đó cùng Tag của nó; chọn mẫu này thì chủ đề tự chuyển sang **Tối**, đổi lại được).
 - **Chủ đề giao diện** của trang vận hành: **Sáng đa sắc** (mặc định), **Công nghiệp trầm**, **Tối**; đổi lại được trong **Thiết lập project**.
  **Tạo project**: Studio ghi project định dạng 1.1, mở nó (cây project đầy đủ) và mở sẵn màn hình đầu. Đang có thay đổi chưa lưu thì Studio hỏi Lưu, Không lưu hay Hủy trước khi mở hộp thoại, như khi mở project khác. Project vừa tạo lên đầu danh sách **Mở gần đây** (tab **Bắt đầu** và menu **Project**).
  cách khác:
@@ -108,8 +108,8 @@ Mở **Màn hình** trên cây. **Thêm màn hình** hoặc **Thêm popup**; **�
 
 Hộp công cụ có các nhóm widget:
 
-- Hiển thị: **Thẻ giá trị**, **Nhãn**, **Đèn báo**, **Đồng hồ kim**, **Mức chất lỏng**, **Khung nhóm**.
-- Biểu đồ: **Biểu đồ đường**, **Biểu đồ cột**, **Biểu đồ tròn**; bảng: **Bảng Tag sống**.
+- Hiển thị: **Thẻ giá trị**, **Nhãn**, **Đèn báo**, **Đồng hồ kim**, **Mức chất lỏng**, **Khung nhóm**, và các widget dashboard: **Thẻ chỉ số màu**, **Chỉ số KPI**, **Thanh tiến độ**, **Danh sách trạng thái**, **Đồng hồ ngày giờ**, **Ghi chú**, **Ảnh** (mục 6.1.1).
+- Biểu đồ: **Biểu đồ đường**, **Biểu đồ cột**, **Biểu đồ tròn**; bảng: **Bảng Tag sống**. Biểu đồ, đồng hồ kim và bảng có thuộc tính **Tiêu đề**: điền vào thì widget thành khung có thanh tiêu đề (như các khung "Biểu đồ nhiệt độ" của dashboard).
 - Điều khiển: **Nút bấm**, **Công tắc**, **Đặt giá trị**, **Thanh trượt**, **Chọn từ danh sách**.
 - Alarm: **Danh sách alarm**, **Đếm alarm**; lịch sử: **Lịch sử: biểu đồ đường**, **Lịch sử: bảng dòng**, **Lịch sử: biểu đồ cột**, **Lịch sử: biểu đồ tròn**.
 - **Ký hiệu SVG**: bơm, van, bồn… (ô tìm "Tìm bơm, van, bồn...").
@@ -130,7 +130,9 @@ Project định dạng 1.1 trở lên. Màn hình mới mặc định là **bố
 
 ![Trình soạn bố cục lưới: thanh Thêm hàng, thuộc tính ô (Rộng, Trống trước, Căn, Cao tối thiểu) và hàng (Tự động, Chiều cao, Khoảng cách); nút xem trước 1920, 1366, 600; trang gồm hàng 4 thẻ giá trị, hàng biểu đồ đường 8 cột và đồng hồ kim 4 cột, ô biểu đồ đang chọn](img/eng-bo-cuc-luoi.png)
 
-1. **Thêm hàng** → chọn mẫu chia cột: `12`, `6+6`, `4+4+4`, `3+3+3+3`, `8+4`, `4+8`, `3+6+3`, hoặc **Tự nhập…** (ví dụ `2+8+2`, tổng không quá 12).
+1. **Thêm hàng** → chọn mẫu chia cột: `12`, `6+6`, `4+4+4`, `3+3+3+3`, `8+4`, `4+8`, `3+6+3`, hoặc **Tự nhập…** (ví dụ `2+8+2`, tổng không quá 12). Cột bên phải của menu là **Mẫu hàng có sẵn widget**: **4 thẻ chỉ số** (hàng cao 116 px, bốn thẻ màu khác nhau có biểu tượng), **3 biểu đồ** (cao 260 px: đường, cột, tròn có tiêu đề), **2 biểu đồ + 1** (cao 260 px: đường 5 cột, cột 4 cột, đồng hồ 3 cột), **1 biểu đồ rộng** (cao 300 px). Widget đã đặt sẵn tên, màu; chỉ việc kéo Tag thả vào từng ô. Hàng có chiều cao cố định nên mọi ô cùng hàng cao bằng nhau.
+
+![Menu Thêm hàng: bên trái mẫu chia cột, bên phải mẫu hàng có sẵn widget (4 thẻ chỉ số, 3 biểu đồ, 2 biểu đồ + 1, 1 biểu đồ rộng)](img/eng-them-hang.png)
 2. **Gắn component:** kéo widget từ Toolbox thả **vào ô** (ô sáng lên khi rê vào), hoặc chọn ô rồi nhấp đúp widget trong Toolbox. Ô đã có component thì Studio hỏi **Thay**.
 3. **Đổi độ rộng:** kéo đường chia giữa hai ô (bám theo 1/12), hoặc nhập **Rộng (cột)** ở thanh thuộc tính khi ô đang chọn; **Trống trước** để chừa cột trống bên trái ô; **Căn** (kéo giãn, đầu, giữa, cuối); **Cao tối thiểu**.
 4. **Hàng:** **Tự động** (cao theo nội dung) hoặc bỏ chọn để nhập chiều cao cố định; **Khoảng cách** giữa các ô; nút ↑ ↓ đổi thứ tự, 🗑 xóa hàng (xóa cả component trong hàng).
@@ -139,6 +141,24 @@ Project định dạng 1.1 trở lên. Màn hình mới mặc định là **bố
 Bàn phím khi ô có focus: ← → ↑ ↓ chuyển ô; **Alt+↑/↓** đổi thứ tự hàng; **Alt+←/→** đổi thứ tự ô; **Ctrl+←/→** thu, nới ô một cột; **Enter** chọn ô; **Delete** xóa component của ô. Mọi thao tác hoàn tác được bằng Ctrl+Z.
 
 Lỗi thường gặp: `E_LAYOUT_SPAN` (tổng các ô của hàng quá 12 cột), `E_LAYOUT_ITEM_POS` (component lưới có tọa độ, hoặc component màn hình tự do thiếu tọa độ), `E_LAYOUT_VERSION` (project chưa nâng lên 1.1); cảnh báo `W_LAYOUT_ITEM_ORPHAN` (component không nằm trong ô nào, không hiển thị). Bản sao template chưa chèn được vào màn hình lưới.
+
+#### 6.1.1. Widget dashboard
+
+| Widget | Dùng cho | Thuộc tính chính |
+|---|---|---|
+| **Thẻ chỉ số màu** (`stat-tile`) | Số đọc to trên nền màu đặc, biểu tượng lớn mờ ở góc phải, dòng "Trạng thái: Tốt / Không chắc / Lỗi / Mất dữ liệu" theo chất lượng của giá trị | **Nhãn**, **Đơn vị**, **Số chữ số thập phân**, **Màu thẻ** (10 màu: xanh ngọc, xanh dương, hồng đỏ, tím, xanh ô liu, chàm, cam, xanh lơ, xanh lá, xám đá; chữ trắng đọc rõ ở mọi chủ đề), **Biểu tượng** (21 hình: nhiệt độ, độ ẩm, dòng chảy, gió, ánh sáng, bóng đèn, khí CO₂, lửa, quạt, làm mát, bơm, van, điện, nguồn, áp suất, mức bồn, động cơ, bánh răng, đồng hồ, cảnh báo, ngôi sao), **Dòng trạng thái**, **Đường xu hướng nhỏ**, **Mũi tên tăng giảm**; khe **Tag cảnh báo** (BOOL) đổi dòng trạng thái thành "Cảnh báo" |
+| **Chỉ số KPI** (`kpi`) | Số đọc so với mục tiêu: "Mục tiêu: …", chênh lệch phần trăm có mũi tên, thanh mảnh | **Mục tiêu** (số) hoặc khe **Tag mục tiêu**, **Càng cao càng tốt** (đạt thì xanh, không đạt thì đỏ) |
+| **Thanh tiến độ** (`progress`) | Phần trăm của giá trị trong thang Nhỏ nhất–Lớn nhất (mặc định theo Tag) | **Hướng**: thanh ngang hoặc vòng tròn, **Màu thanh** |
+| **Danh sách trạng thái** (`status-list`) | Đèn trạng thái của tối đa 16 Tag (BOOL: Bật/Tắt; số: chữ của bảng giá trị) | **Tiêu đề**, **Tên từng mục**, **Chữ khi bật**, **Chữ khi tắt**, **Số cột** (1–4) |
+| **Đồng hồ ngày giờ** (`clock`) | Giờ của thiết bị | **Định dạng** (giờ và ngày, chỉ giờ, chỉ ngày), **Múi giờ** (mặc định +07:00), **Hiện giây** |
+| **Ghi chú** (`text`) | Chữ nhiều dòng (tối đa 300 ký tự), không định dạng HTML | **Tiêu đề**, **Nội dung ghi chú**, cỡ chữ, căn lề, màu |
+| **Ảnh** (`image`) | Ảnh SVG có trong project (tệp `graphics/….svg`, nhập bằng **Nhập SVG** hoặc vẽ bằng trình vẽ); không tải ảnh từ Internet | **Tệp ảnh SVG**, **Cách vừa khung**, **Mô tả ảnh** |
+
+**Biểu đồ đường** có thêm **Ngưỡng cao**, **Ngưỡng thấp** (vẽ đường nét đứt đỏ và xanh ngọc, có trong chú giải; trục giá trị tự nới để thấy ngưỡng) và **Nhãn trục thời gian**, **Nhãn trục giá trị**. **Đồng hồ kim** nay gọn trong khung (bán kính tối đa 150 px), số đọc ở dưới. **Khung nhóm** có **Kiểu khung** "Card có thanh tiêu đề".
+
+Lỗi thường gặp: `E_FILE_MISSING` ở `props/src` (tệp ảnh của widget **Ảnh** không có trong project), `E_WIDGET_PROP` (đường dẫn ảnh không nằm trong `graphics/` hoặc không phải `.svg`, múi giờ không đúng dạng `±HH:MM`).
+
+![Dashboard của Mẫu trạm bơm trên trang vận hành, chủ đề Sáng đa sắc: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, cột, đồng hồ, trạng thái bơm](img/op-bo-cuc-luoi.png)
 
 ### 6.2. Chủ đề giao diện
 
