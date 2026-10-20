@@ -1,6 +1,6 @@
 // Gói ECharts tối thiểu (feature 012, research R2, spike T037): chỉ nạp qua import() trong echarts-lite.ts nên Vite tách
 // thành chunk riêng, trang không có biểu đồ không tải. Thêm mô-đun ở đây làm chunk lớn lên: đo lại (T047, SC-006).
-import { BarChart, GaugeChart, HeatmapChart, PieChart } from 'echarts/charts';
+import { BarChart, GaugeChart, HeatmapChart, LineChart, PieChart } from 'echarts/charts';
 import {
   GridComponent,
   LegendComponent,
@@ -13,6 +13,7 @@ import type { ChartInstance, EChartsLite } from './echarts-lite.ts';
 
 echarts.use([
   BarChart,
+  LineChart, // feature 015: biểu đồ đường của báo cáo
   PieChart,
   GaugeChart,
   HeatmapChart,

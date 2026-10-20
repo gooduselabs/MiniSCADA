@@ -328,6 +328,20 @@ export interface BuildReportInput {
   org?: string;
 }
 
+/** Tên hàm tiếng Việt mặc định (nhãn thẻ, tên chuỗi biểu đồ). */
+export const REPORT_FN_VI: Record<ReportFn, string> = {
+  min: 'nhỏ nhất',
+  max: 'lớn nhất',
+  avg: 'trung bình',
+  sum: 'tổng',
+  first: 'đầu kỳ',
+  last: 'cuối kỳ',
+  delta: 'chênh lệch',
+  count: 'số mẫu',
+  onTime: 'thời gian ON',
+  starts: 'số lần bật',
+};
+
 const MAX_TILES = 4;
 const BAR_FNS: ReadonlySet<ReportFn> = new Set(['sum', 'delta', 'count', 'onTime', 'starts']);
 const MAX_SERIES = 4;
@@ -418,7 +432,7 @@ export function buildReport(input: BuildReportInput): ReportTable {
   const totals = tpl.totals === false ? null : totalsAll;
   const coverage =
     arrived === 0 || tagIds.length === 0 ? 0 : wmsTotal / (tagIds.length * arrived * req.bucketMs);
-  const fnName = (fn: ReportFn) => input.fnNames?.[fn] ?? fn;
+  const fnName = (fn: ReportFn) => input.fnNames?.[fn] ?? REPORT_FN_VI[fn];
   const seriesName = (c: ReportColumnOut) => `${c.label} · ${fnName(c.fn)}`;
 
   const table: ReportTable = {
