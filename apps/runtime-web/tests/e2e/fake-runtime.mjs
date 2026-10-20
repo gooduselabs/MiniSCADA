@@ -167,6 +167,8 @@ export async function startFakeRuntime(opts = {}) {
     ['VALVE1.CMD', false],
     ['TANK02.SP', 10],
     ['TANK03.SP', 20],
+    // Feature 014: giá trị đầu riêng của fixture (vd. projects/grid-demo), thêm hoặc đè.
+    ...Object.entries(proj.values ?? {}),
   ]);
   const quality = new Map([['TANK01.TEMP', { q: 'BAD', reason: 'TIMEOUT' }]]);
   const tagInfo = new Map(TAGS.map((t) => [t.id, t]));
@@ -1074,6 +1076,8 @@ export async function startFakeRuntime(opts = {}) {
     // Mức bồn dao động chậm để thấy giá trị sống; chỉ đổi khi test không ghi đè (TANK01.LEVEL không ghi được).
     if (opts.drift !== false)
       values.set('TANK01.LEVEL', Math.round((62.5 + 10 * Math.sin(tick / 8)) * 10) / 10);
+    // Feature 014: fixture tự mô phỏng thêm Tag của mình (mỗi 250 ms).
+    proj.simulate?.(values, tick);
     for (const c of sockets) {
       if (!c.sub || c.ws.readyState !== 1) continue;
       const changed = [];

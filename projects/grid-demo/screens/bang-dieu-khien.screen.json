@@ -9,21 +9,34 @@
     "gap": 12,
     "padding": 16,
     "rows": [
-      {"id":"r1","height":"auto","cells":[{"id":"c1","span":3,"item":"nhiet_do"},{"id":"c2","span":3,"item":"ap_suat"},{"id":"c3","span":3,"item":"luu_luong"},{"id":"c4","span":3,"item":"canh_bao"}]},
-      {"id":"r2","height":320,"cells":[{"id":"c5","span":8,"item":"xu_huong"},{"id":"c6","span":4,"item":"dong_ho"}]},
-      {"id":"r3","height":300,"cells":[{"id":"c7","span":6,"item":"cot_bom"},{"id":"c8","span":6,"item":"tron_bom"}]},
-      {"id":"r4","height":"auto","cells":[{"id":"c9","span":12,"item":"bang_tag"}]}
+      {"id":"r1","height":116,"cells":[{"id":"c1","span":3,"item":"nhiet_do"},{"id":"c2","span":3,"item":"ap_suat"},{"id":"c3","span":3,"item":"luu_luong"},{"id":"c4","span":3,"item":"muc_bon"}]},
+      {"id":"r2","height":116,"cells":[{"id":"c5","span":3,"item":"cong_suat"},{"id":"c6","span":3,"item":"the_tich"},{"id":"c7","span":3,"item":"luu_luong_dat"},{"id":"c8","span":3,"item":"tai_dong_co"}]},
+      {"id":"r3","height":260,"cells":[{"id":"c9","span":4,"item":"bd_nhiet_do"},{"id":"c10","span":4,"item":"bd_ap_suat"},{"id":"c11","span":4,"item":"bd_luu_luong"}]},
+      {"id":"r4","height":260,"cells":[{"id":"c12","span":5,"item":"cot_bom"},{"id":"c13","span":3,"item":"dong_ho"},{"id":"c14","span":4,"item":"trang_thai_bom"}]},
+      {"id":"r5","height":260,"cells":[{"id":"c15","span":8,"item":"bang_tag"},{"id":"c16","span":4,"item":"tron_bom"}]},
+      {"id":"r6","height":128,"cells":[{"id":"c17","span":3,"item":"kpi_luu_luong"},{"id":"c18","span":3,"item":"tien_do_bon"},{"id":"c19","span":3,"item":"gio_thiet_bi"},{"id":"c20","span":3,"item":"ghi_chu"}]}
     ]
   },
   "items": [
-    {"id":"nhiet_do","type":"widget","widget":"card","props":{"label":"Nhiệt độ"},"tags":{"value":"SIM.TEMP"}},
-    {"id":"ap_suat","type":"widget","widget":"card","props":{"label":"Áp suất"},"tags":{"value":"SIM.PRESS"}},
-    {"id":"luu_luong","type":"widget","widget":"card","props":{"label":"Lưu lượng"},"tags":{"value":"SIM.FLOW"}},
-    {"id":"canh_bao","type":"widget","widget":"lamp","props":{"label":"Cảnh báo"},"tags":{"state":"SIM.ALARM"}},
-    {"id":"xu_huong","type":"widget","widget":"line","tags":{"series":["SIM.TEMP","SIM.PRESS","SIM.FLOW"]}},
-    {"id":"dong_ho","type":"widget","widget":"gauge","tags":{"value":"PUMP01.FLOW"}},
-    {"id":"cot_bom","type":"widget","widget":"bar","tags":{"series":["PUMP01.FLOW","PUMP02.FLOW","PUMP03.FLOW","PUMP04.FLOW","PUMP05.FLOW"]}},
-    {"id":"tron_bom","type":"widget","widget":"pie","tags":{"series":["PUMP01.FLOW","PUMP02.FLOW","PUMP03.FLOW"]}},
-    {"id":"bang_tag","type":"widget","widget":"tag-table","tags":{"rows":["SIM.TEMP","SIM.PRESS","SIM.FLOW","SIM.MODE","PUMP01.FLOW"]}}
+    {"id":"nhiet_do","type":"widget","widget":"stat-tile","props":{"label":"Nhiệt độ nước","color":"teal","icon":"thermometer","trend":true},"tags":{"value":"SIM.TEMP"}},
+    {"id":"ap_suat","type":"widget","widget":"stat-tile","props":{"label":"Áp suất đường ống","decimals":2,"color":"blue","icon":"pressure","trend":true},"tags":{"value":"SIM.PRESS"}},
+    {"id":"luu_luong","type":"widget","widget":"stat-tile","props":{"label":"Lưu lượng","color":"rose","icon":"wave","trend":true},"tags":{"value":"SIM.FLOW"}},
+    {"id":"muc_bon","type":"widget","widget":"stat-tile","props":{"label":"Mức bồn","color":"violet","icon":"tank"},"tags":{"value":"TANK01.LEVEL","alarm":"TANK01.HIGH"}},
+    {"id":"cong_suat","type":"widget","widget":"stat-tile","props":{"label":"Công suất điện","color":"olive","icon":"bolt"},"tags":{"value":"METER1.P"}},
+    {"id":"the_tich","type":"widget","widget":"stat-tile","props":{"label":"Thể tích bồn","color":"indigo","icon":"droplet"},"tags":{"value":"TANK01.VOLUME"}},
+    {"id":"luu_luong_dat","type":"widget","widget":"stat-tile","props":{"label":"Lưu lượng đặt","color":"orange","icon":"valve"},"tags":{"value":"SIM.SP_FLOW"}},
+    {"id":"tai_dong_co","type":"widget","widget":"stat-tile","props":{"label":"Tải động cơ","unit":"%","color":"cyan","icon":"motor","trend":true},"tags":{"value":"DEMO.WAVE"}},
+    {"id":"bd_nhiet_do","type":"widget","widget":"line","props":{"title":"Biểu đồ nhiệt độ","windowSec":60,"labels":["Nhiệt độ hiện tại"],"highLimit":60,"lowLimit":30,"xLabel":"Thời gian","yLabel":"°C"},"tags":{"series":["SIM.TEMP"]}},
+    {"id":"bd_ap_suat","type":"widget","widget":"line","props":{"title":"Biểu đồ áp suất","windowSec":60,"labels":["Áp suất hiện tại"],"highLimit":5.5,"lowLimit":2.5,"xLabel":"Thời gian","yLabel":"bar"},"tags":{"series":["SIM.PRESS"]}},
+    {"id":"bd_luu_luong","type":"widget","widget":"line","props":{"title":"Biểu đồ lưu lượng","windowSec":60,"labels":["Lưu lượng","Lưu lượng đặt"],"highLimit":90,"lowLimit":20,"xLabel":"Thời gian","yLabel":"m3/h"},"tags":{"series":["SIM.FLOW","SIM.SP_FLOW"]}},
+    {"id":"cot_bom","type":"widget","widget":"bar","props":{"title":"Lưu lượng các bơm","labels":["Bơm 1","Bơm 2","Bơm 3","Bơm 4","Bơm 5","Bơm 6"]},"tags":{"series":["PUMP01.FLOW","PUMP02.FLOW","PUMP03.FLOW","PUMP04.FLOW","PUMP05.FLOW","PUMP06.FLOW"]}},
+    {"id":"dong_ho","type":"widget","widget":"gauge","props":{"title":"Áp suất","min":0,"max":10,"decimals":2,"zones":[{"from":0,"to":2.5,"color":"#0E7490"},{"from":2.5,"to":5.5,"color":"#15803D"},{"from":5.5,"to":10,"color":"#E11D48"}]},"tags":{"value":"SIM.PRESS"}},
+    {"id":"trang_thai_bom","type":"widget","widget":"status-list","props":{"title":"Trạng thái bơm","labels":["Bơm 1","Bơm 2","Bơm 3","Bơm 4","Bơm 5","Bơm 6","Quạt làm mát","Cảnh báo"],"onText":"Chạy","offText":"Dừng","columns":2},"tags":{"items":["PUMP01.RUN","PUMP02.RUN","PUMP03.RUN","PUMP04.RUN","PUMP05.RUN","PUMP06.RUN","SIM.FAN_ON","SIM.ALARM"]}},
+    {"id":"bang_tag","type":"widget","widget":"tag-table","props":{"title":"Giá trị sống"},"tags":{"rows":["SIM.TEMP","SIM.PRESS","SIM.FLOW","SIM.SP_FLOW","SIM.MODE","TANK01.LEVEL","METER1.P"]}},
+    {"id":"tron_bom","type":"widget","widget":"pie","props":{"title":"Tỷ lệ lưu lượng","labels":["Bơm 1","Bơm 2","Bơm 3","Bơm 4"]},"tags":{"series":["PUMP01.FLOW","PUMP02.FLOW","PUMP03.FLOW","PUMP04.FLOW"]}},
+    {"id":"kpi_luu_luong","type":"widget","widget":"kpi","props":{"label":"Lưu lượng so với đặt"},"tags":{"value":"SIM.FLOW","goal":"SIM.SP_FLOW"}},
+    {"id":"tien_do_bon","type":"widget","widget":"progress","props":{"label":"Mức bồn","shape":"ring","color":"#7C3AED"},"tags":{"value":"TANK01.LEVEL"}},
+    {"id":"gio_thiet_bi","type":"widget","widget":"clock","props":{"label":"Giờ thiết bị"}},
+    {"id":"ghi_chu","type":"widget","widget":"text","props":{"title":"Ghi chú ca","text":"Kiểm tra van xả bồn 1 trước 15:00.\nBơm 3 đang bảo trì định kỳ.","fontSize":"s"}}
   ]
 }
