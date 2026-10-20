@@ -687,7 +687,7 @@ int EngineeringApi::logicEvents(mg_connection* c, const GateRequest& r, const Ga
     (void)r;
     // Feature 013: a restricted person reads the writes of logic through the report page only.
     if (access_) {
-        const SessionAccessPtr a = access_->forAccess(d.access);
+        const SessionAccessPtr a = access_->forAccess(d.access, d.viaCookie);
         if (a && !a->all() && !a->access.canViewPage("reports"))
             return sendError(c, 403, "ACCESS_DENIED", close, "",
                              {{"message", "Bạn không có quyền xem báo cáo."}});
