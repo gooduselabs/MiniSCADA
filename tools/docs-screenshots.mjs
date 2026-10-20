@@ -4,8 +4,13 @@
 // giả của trang vận hành: apps/runtime-web/tests/e2e). Dữ liệu tất định: project mẫu trong projects/ (dashboard-demo,
 // svg-demo) và project mẫu của e2e trang vận hành; không cần Docker, không cần thiết bị.
 //
-// Dùng:   node tools/docs-screenshots.mjs [lọc tên ảnh] [--build] [--headful]
+// Dùng:   node tools/docs-screenshots.mjs [lọc tên ảnh] [--build] [--headful] [--out=<thư mục>] [--theme=<chủ đề>]
 //   --build   dựng lại hai bản build e2e (apps/studio/dist-e2e, apps/runtime-web/dist-e2e) trước khi chụp; thiếu thì tự dựng.
+//   --out     thư mục ảnh (tương đối theo gốc repo), mặc định docs/user/img.
+//   --theme   ép chủ đề của mọi project mẫu (vivid | industrial | dark; feature 012): trang vận hành nhận `theme` của project,
+//             Studio mở project đã nâng lên định dạng 1.1 có `theme` (chỉ trong bộ nhớ). Dùng cho bảng trước/sau
+//             (docs/reports/012-ui-before-after.md). Cảnh studio-logic dừng ở hộp Nạp xuống khi ép chủ đề (project
+//             nâng 1.1 trong bộ nhớ); không ép thì chạy đủ.
 // Biến môi trường: CHROME_PATH (Chrome/Edge/chrome-headless-shell); không đặt thì tìm ~/.cache/mat-chrome rồi Chrome cài sẵn.
 // Kết quả: docs/user/img/<tên>.png, khung 1366 × 768, theme sáng, giao diện tiếng Việt. Ảnh là giao diện web trong Chrome;
 // Studio trên Windows (WebView2) có thể khác chút ở phông chữ và khung cửa sổ.
@@ -19,7 +24,13 @@ import { deflateSync, inflateSync } from 'node:zlib';
 import puppeteer from 'puppeteer-core';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = join(ROOT, 'docs/user/img');
+const args = process.argv.slice(2);
+const optArg = (name) =>
+  args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3) || undefined;
+const OUT = resolve(ROOT, optArg('out') ?? 'docs/user/img');
+const THEME = optArg('theme');
+if (THEME && !['vivid', 'industrial', 'dark'].includes(THEME))
+  throw new Error(`--theme không hợp lệ: ${THEME}`);
 const STUDIO = join(ROOT, 'apps/studio');
 const WEB = join(ROOT, 'apps/runtime-web');
 const STUDIO_DIST = join(STUDIO, 'dist-e2e');
@@ -28,7 +39,6 @@ const VIEWPORT = { width: 1366, height: 768, deviceScaleFactor: 1 };
 /** Ngân sách mỗi ảnh (byte): vượt thì báo để chụp vùng nhỏ hơn. */
 const MAX_BYTES = 200 * 1024;
 
-const args = process.argv.slice(2);
 const filter = args.find((a) => !a.startsWith('--'));
 const headful = args.includes('--headful');
 
@@ -51,18 +61,30 @@ const renamed = (make, name) => () => {
   p.active.project.projectName = name;
   return p;
 };
-const {
-  clickButton,
-  expandNode,
-  openAndWait,
-  readProject,
-  setTheme,
-  sleep,
-  treeItem,
-  treeNode,
-  waitFor,
-} = studioE2e;
+const { clickButton, expandNode, openAndWait, setTheme, sleep, treeItem, treeNode, waitFor } =
+  studioE2e;
 const { deepEval, until, waitDeep } = webE2e;
+
+/** Đọc project mẫu cho Studio; có --theme thì project.json lên định dạng 1.1 kèm `theme` (chỉ trong bộ nhớ). */
+function readProject(dir) {
+  const files = studioE2e.readProject(dir);
+  if (THEME) {
+    const project = JSON.parse(files['project.json']);
+    if (project.schemaVersion === '1.0.0') project.schemaVersion = '1.1.0';
+    project.theme = THEME;
+    files['project.json'] = JSON.stringify(project, null, 2) + '\n';
+  }
+  return files;
+}
+/** Project của runtime giả cho trang vận hành; có --theme thì ép `theme` của project. */
+const themedFixture = (make) =>
+  THEME && make
+    ? () => {
+        const p = make();
+        p.active.project = { ...p.active.project, theme: THEME };
+        return p;
+      }
+    : make;
 
 function chromePath() {
   const cache = join(homedir(), '.cache/mat-chrome/chrome-headless-shell');
@@ -547,6 +569,20 @@ const studioScenes = [
       await page.$eval('mat-grid-editor .ge-cell[data-cell="c5"]', (e) => e.click());
       await sleep(900);
       await shot('eng-bo-cuc-luoi');
+      // Xem trước Mô phỏng trên lưới (bảng trước/sau 012): widget có giá trị thay vì "?".
+      const preview = (label) =>
+        page.evaluate(
+          (l) =>
+            [...document.querySelectorAll('button')]
+              .find((b) => b.textContent.trim() === l && b.closest('mat-screen-editor'))
+              ?.click(),
+          label,
+        );
+      await preview('Mô phỏng');
+      await sleep(2500);
+      await shot('eng-luoi-mo-phong');
+      await preview('Tắt');
+      await sleep(300);
       await page.$eval('mat-grid-editor [data-act="add-row"]', (b) => b.click());
       await page.waitForSelector('mat-grid-editor [data-preset]');
       await sleep(300);
@@ -806,7 +842,8 @@ const webScenes = [
     async run({ page, rt, shot }) {
       await page.goto(`${rt.httpUrl}/#/luoi`, { waitUntil: 'domcontentloaded' });
       await live(page);
-      await sleep(4000);
+      // Biểu đồ đường thời gian thực cần vài chục giây dữ liệu để không trống gần hết khung.
+      await sleep(20000);
       await shot('op-bo-cuc-luoi');
     },
   },
@@ -959,7 +996,11 @@ server.close();
 
 for (const scene of webScenes) {
   console.log(`▶ ${scene.name}`);
-  const rt = await startFakeRuntime({ staticDir: WEB_DIST, ...scene.options });
+  const rt = await startFakeRuntime({
+    staticDir: WEB_DIST,
+    ...scene.options,
+    fixture: themedFixture(scene.options.fixture),
+  });
   if (!rt.httpsUrl) {
     errors.push(`${scene.name}: cần openssl để sinh chứng chỉ thử`);
     await rt.close();

@@ -156,7 +156,8 @@
 
 - [x] T053 [P] Tài liệu: `docs/user/engineer-guide.md` (mục màn hình lưới, chủ đề), `docs/user/operator-guide.md`, `docs/architecture/studio-ux.md`; ADR `docs/adr/040-grid-layout-and-theme.md`
   - Ghi chú khi làm (2026-10-19, nhánh 012-screen-grid-layout): ADR-040, engineer-guide 6.1 và 6.2, operator-guide mục 4.
-- [ ] T054 [P] Ảnh chụp mới bằng `tools/docs-screenshots.mjs` cho 6 màn hình chuẩn ở chủ đề vivid; bảng trước/sau trong `docs/reports/012-ui-before-after.md` (SC-008)
+- [x] T054 [P] Ảnh chụp mới bằng `tools/docs-screenshots.mjs` cho 6 màn hình chuẩn ở chủ đề vivid; bảng trước/sau trong `docs/reports/012-ui-before-after.md` (SC-008)
+  - Ghi chú khi làm (2026-10-20, nhánh 012-screen-grid-layout): 6 màn hình (Tổng quan, lưới, Alarm, Lịch sử, Báo cáo, Studio soạn màn hình) và trang 1 PDF; ảnh trước từ `docs/user/img` ở `04a09219`, ảnh sau bằng cờ mới `--theme=vivid --out=`; ảnh ở `docs/reports/img/012/`. Sửa khi xem ảnh: số đọc đồng hồ kim bị núm kim đè, nhãn trục thời gian biểu đồ đường kiểu Mỹ, bảng PDF hụt mép phải. **SC-008 chờ người dùng duyệt**; chưa thử WebView2/BL335.
 - [ ] T055 Đo hiệu năng `tools/load-tester` 500 Tag, 10 client với `grid-demo` so `dashboard-demo` (SC-005), ghi `docs/reports/012-perf.md`
 - [x] T056 Fuzz 10.000 bố cục hỏng qua hai bộ kiểm và `mat-grid-screen` (SC-004)
   - Ghi chú khi làm (2026-10-19, nhánh 012-screen-grid-layout): TS: `layout-fuzz.test.ts` (10.000 qua rules-11, 300 qua validateProject); C++: `project_fuzz_test` xanh (nhánh 012-cpp). Fuzz trình hiển thị không làm riêng: trang vận hành chỉ dựng project đã qua bộ kiểm.
