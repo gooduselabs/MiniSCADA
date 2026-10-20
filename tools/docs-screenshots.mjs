@@ -53,7 +53,7 @@ const { dashboard } = await import(pathToFileURL(join(WEB, 'tests/e2e/fixture-pr
 const { historyProject } = await import(
   pathToFileURL(join(WEB, 'tests/e2e/history-fake.mjs')).href
 );
-const { reportsProject } = await import(
+const { reportsProject, reportAlarmHistory, reportLogicEvents } = await import(
   pathToFileURL(join(WEB, 'tests/e2e/history-projects.mjs')).href
 );
 const { gridDemoProject } = await import(
@@ -1059,7 +1059,12 @@ const webScenes = [
   },
   {
     name: 'web-bao-cao',
-    options: { fixture: renamed(reportsProject, 'Trạm điện'), history: {} },
+    options: {
+      fixture: renamed(reportsProject, 'Trạm điện'),
+      history: {},
+      alarmHistory: () => reportAlarmHistory(),
+      logicEvents: () => reportLogicEvents(),
+    },
     async run({ page, rt, shot }) {
       const d = new Date(Date.now() - 86_400_000);
       const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -1073,14 +1078,54 @@ const webScenes = [
         async () =>
           page.evaluate(
             () =>
-              Boolean(document.querySelector('table.rpt')) &&
-              !document.querySelector('.rpt-out [role="status"]'),
+              Boolean(
+                document.querySelector('mat-report-view')?.shadowRoot?.querySelector('table.rpt'),
+              ) && !document.querySelector('.rpt-out [role="status"]'),
           ),
         'bảng báo cáo',
         30000,
       );
-      await sleep(500);
+      // feature 015: thẻ, biểu đồ (ECharts vẽ xong), bảng; trang cao hơn để thấy cả bố cục
+      const drawn = () =>
+        until(
+          async () =>
+            page.evaluate(
+              () =>
+                (document
+                  .querySelector('mat-report-view')
+                  ?.shadowRoot?.querySelectorAll('.chart .ec svg').length ?? 0) > 0,
+            ),
+          'biểu đồ báo cáo',
+          15000,
+        );
+      await drawn();
+      await sleep(800);
       await shot('op-bao-cao');
+      await page.setViewport({ ...VIEWPORT, height: 1500 });
+      await sleep(400);
+      await shot('op-bao-cao-day-du');
+      const open = async (hash, name, chart = true) => {
+        await page.evaluate((h) => (window.location.hash = h), hash);
+        await until(
+          async () =>
+            page.evaluate(
+              () =>
+                !!document
+                  .querySelector('mat-report-view')
+                  ?.shadowRoot?.querySelector('table.rpt') &&
+                !document.querySelector('.rpt-out [role="status"]'),
+            ),
+          name,
+          30000,
+        );
+        if (chart) await drawn();
+        await sleep(800);
+        await shot(name);
+      };
+      await open(`#/report/van-hanh-bom?d=${day}`, 'op-bao-cao-thiet-bi');
+      await open(`#/report/alarm-ngay?d=${day}`, 'op-bao-cao-alarm');
+      await open(`#/report/logic-ngay?d=${day}`, 'op-bao-cao-logic');
+      await page.setViewport(VIEWPORT);
     },
   },
 ];

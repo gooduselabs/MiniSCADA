@@ -258,7 +258,8 @@ export async function startFakeRuntime(opts = {}) {
   const alarm = {
     inst: new Map(),
     rev: 100,
-    history: [],
+    // feature 015: lịch sử ban đầu cho báo cáo alarm (mới nhất trước)
+    history: opts.alarmHistory ? opts.alarmHistory() : [],
     acks: [],
     shelveCalls: [],
     historyCalls: [],
@@ -750,6 +751,26 @@ export async function startFakeRuntime(opts = {}) {
       return hist.handle(req, res, path, url);
     }
     if (path === '/api/v1/alarms/history' && m === 'GET') return alarmHistory(res, url);
+    // feature 015: nhật ký ghi PLC của logic cho báo cáo (cookie, viewer); không có opts.logicEvents: 404 như runtime cũ
+    if (path === '/api/v1/logic/events' && m === 'GET') {
+      if (!opts.logicEvents) return err(res, 404, 'NOT_FOUND');
+      if (!sessionOf(req)) return err(res, 401, 'AUTH_REQUIRED');
+      const p = url.searchParams;
+      const from = Number(p.get('from'));
+      const to = Number(p.get('to'));
+      const limit = Math.min(200, Math.max(1, Number(p.get('limit') ?? 100)));
+      const before = p.has('before') ? Number(p.get('before')) : Infinity;
+      const all = opts
+        .logicEvents()
+        .filter((e) => e.ts >= from && e.ts < to && e.id < before)
+        .sort((a, b) => b.id - a.id);
+      const events = all.slice(0, limit);
+      return json(res, 200, {
+        enabled: true,
+        events,
+        next: all.length > limit ? events[events.length - 1].id : null,
+      });
+    }
     if (path === '/api/v1/alarms' && m === 'GET')
       return json(res, 200, {
         ts: Date.now(),

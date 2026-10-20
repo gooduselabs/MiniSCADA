@@ -202,3 +202,15 @@ describe('onTime, thẻ tổng hợp, biểu đồ', () => {
     expect(half.chart!.series[0]!.values[20]).toBeNull();
   });
 });
+
+describe('shortLabels', () => {
+  it('bỏ ngày chung ở đầu nhãn giờ; nhãn khác giữ nguyên', async () => {
+    const { shortLabels } = await import('./report.ts');
+    expect(shortLabels(['19/10 00:00–01:00', '19/10 01:00–02:00'])).toEqual([
+      '00:00–01:00',
+      '01:00–02:00',
+    ]);
+    expect(shortLabels(['T2 19/10', 'T3 20/10'])).toEqual(['T2 19/10', 'T3 20/10']);
+    expect(shortLabels(['19/10 00:00', '20/10 00:00'])).toEqual(['19/10 00:00', '20/10 00:00']);
+  });
+});

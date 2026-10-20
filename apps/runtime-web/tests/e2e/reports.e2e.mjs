@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
 import { extractText, getDocumentProxy } from 'unpdf';
-import { demoReports } from './history-projects.mjs';
+import { demoReports, reportAlarmHistory, reportLogicEvents } from './history-projects.mjs';
 import {
   lastMonth31,
   lastShiftDay,
@@ -21,7 +21,12 @@ import {
 } from './report-ref.mjs';
 import { axeBoth, sleep, until, waitDeep } from './util.mjs';
 
-export const options = { project: 'reports', history: {} };
+export const options = {
+  project: 'reports',
+  history: {},
+  alarmHistory: () => reportAlarmHistory(),
+  logicEvents: () => reportLogicEvents(),
+};
 
 const norm = (s) => s.replace(/\s+/g, ' ').trim();
 const unxml = (s) =>
@@ -71,21 +76,31 @@ async function takeDownload(page, before) {
   return { name: d.name, type: d.type, bytes: Buffer.from(d.data.split(',')[1], 'base64') };
 }
 
+// Feature 015: bảng nằm trong shadow root của <mat-report-view> (cùng thành phần với xem trước Studio).
 const readTable = (page) =>
-  page.$eval('table.rpt', (t) => ({
-    head: [...t.tHead.rows[0].cells].map((c) => c.textContent),
-    rows: [...t.tBodies[0].rows].map((r) => ({
-      total: r.classList.contains('total'),
-      label: r.cells[0].textContent,
-      cells: [...r.cells].slice(1).map((c) => c.textContent),
-    })),
-    coverage: document.querySelector('.coverage')?.textContent ?? '',
-  }));
+  page.evaluate(() => {
+    const v = document.querySelector('mat-report-view').shadowRoot;
+    const t = v.querySelector('table.rpt');
+    const txt = (c) => c.textContent.trim();
+    return {
+      head: [...t.tHead.rows[0].cells].map(txt),
+      rows: [...t.tBodies[0].rows].map((r) => ({
+        total: r.classList.contains('total'),
+        label: txt(r.cells[0]),
+        cells: [...r.cells].slice(1).map(txt),
+      })),
+      coverage: v.querySelector('.coverage')?.textContent ?? '',
+      tiles: v.querySelectorAll('.tile').length,
+      chartTitle: v.querySelector('.chart .head')?.textContent ?? '',
+      chartSvg: v.querySelectorAll('.chart .ec svg').length,
+      sections: [...v.querySelectorAll('figure.section .head')].map(txt),
+    };
+  });
 
 const reportBusy = (page) =>
   page.evaluate(
     () =>
-      !document.querySelector('table.rpt') ||
+      !document.querySelector('mat-report-view')?.shadowRoot?.querySelector('table.rpt') ||
       document.querySelector('.rpt-out [role="status"]') !== null,
   );
 
@@ -232,9 +247,10 @@ export default async function run(ctx) {
     const bodyRows = screen.rows;
     // CSV chuẩn
     const csv = files.csv.bytes.toString('utf8').replace(/^FEFF/, '').split('\r\n');
+    const csvHead = csv.findIndex((l) => l.startsWith('Thời gian'));
     let csvBad = 0;
     bodyRows.forEach((r, i) => {
-      const cols = csv[3 + i].split(',');
+      const cols = csv[csvHead + 1 + i].split(',');
       if (cols[0] !== (r.total ? 'Tổng' : r.label)) csvBad++;
       r.cells.forEach((c, k) => {
         if (Number(cols[k + 1]) !== viNumber(c)) csvBad++;
@@ -243,9 +259,10 @@ export default async function run(ctx) {
     ctx.check(`${id}: CSV chuẩn khớp từng ô của bảng`, csvBad === 0, `${csvBad} ô lệch`);
     // CSV Excel vi-VN
     const csvVi = files.csvVi.bytes.toString('utf8').replace(/^FEFF/, '').split('\r\n');
+    const viHead = csvVi.findIndex((l) => l.startsWith('Thời gian'));
     let viBad = 0;
     bodyRows.forEach((r, i) => {
-      const cols = csvVi[3 + i].split(';');
+      const cols = csvVi[viHead + 1 + i].split(';');
       r.cells.forEach((c, k) => {
         if (cols[k + 1] !== c.replace(/\./g, '')) viBad++;
       });
@@ -310,7 +327,7 @@ export default async function run(ctx) {
 
   // ---- Bàn phím (T106): kỳ -> Xem -> bốn nút xuất, Enter kích hoạt ----
   await openReport(ctx, 'dien-ngay', day, false);
-  await page.focus('#rpt-period');
+  await page.focus('#rpt-d');
   const order = [];
   // ô ngày/tháng của trình duyệt có nhiều đoạn con: Tab tới khi vào nút Xem, rồi ghi bốn nút xuất và vùng bảng
   for (let i = 0; i < 12 && !order.length; i++) {
@@ -329,7 +346,9 @@ export default async function run(ctx) {
   );
   ctx.check(
     'bàn phím: sau nút PDF tới vùng cuộn của bảng (tabindex 0)',
-    (await page.evaluate(() => document.activeElement?.getAttribute('role') ?? '')) === 'region',
+    (await page.evaluate(
+      () => document.activeElement?.shadowRoot?.activeElement?.getAttribute('role') ?? '',
+    )) === 'region',
     order[5],
   );
   const n = await downloads(page);
@@ -343,7 +362,9 @@ export default async function run(ctx) {
   await openReport(ctx, 'doc-hai', day, false);
   const safe = await page.evaluate(() => ({
     h2: document.querySelector('.page-pane h2')?.textContent,
-    th: [...document.querySelectorAll('table.rpt th')].map((t) => t.textContent).join('|'),
+    th: [...document.querySelector('mat-report-view').shadowRoot.querySelectorAll('table.rpt th')]
+      .map((t) => t.textContent)
+      .join('|'),
     pwn: window.__pwn ?? null,
     img: document.querySelectorAll('img[src="x"], .page-pane script').length,
     nav: [...document.querySelectorAll('#app-nav button')].map((b) => b.textContent).join('|'),
@@ -368,6 +389,88 @@ export default async function run(ctx) {
   );
   await axeBoth(ctx, 'trang báo cáo tên độc hại');
 
+  // ---- feature 015: bố cục mới (thẻ, khung biểu đồ, hàng tổng), tuần, thiết bị, alarm, logic ----
+  const shot = await (async () => {
+    await openReport(ctx, 'dien-ngay', day, false);
+    return readTable(page);
+  })();
+  ctx.check(
+    '015: báo cáo ngày có thẻ tổng hợp, khung biểu đồ có tiêu đề và hình SVG',
+    shot.tiles >= 2 && shot.chartTitle.length > 0,
+    JSON.stringify({ tiles: shot.tiles, chart: shot.chartTitle }),
+  );
+  await until(
+    async () =>
+      page.evaluate(
+        () =>
+          document.querySelector('mat-report-view').shadowRoot.querySelectorAll('.chart .ec svg')
+            .length > 0,
+      ),
+    'ECharts vẽ biểu đồ',
+    15000,
+  );
+  ctx.check('015: biểu đồ ECharts (SVG) đã vẽ', true);
+
+  const openSel = async (id, query) => {
+    await page.evaluate((h) => (window.location.hash = h), `#/report/${id}?${query}`);
+    await waitDeep(page, 'h2', 1).catch(() => undefined);
+    await until(async () => !(await reportBusy(page)), `bảng ${id}`, 30000);
+    return readTable(page);
+  };
+  const week = await page.evaluate(() => {
+    const d = new Date(Date.now() - 7 * 86400000);
+    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const day = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - day);
+    const y = t.getUTCFullYear();
+    const n = Math.ceil(((t - Date.UTC(y, 0, 1)) / 86400000 + 1) / 7);
+    return `${y}-W${String(n).padStart(2, '0')}`;
+  });
+  const wk = await openSel('dien-tuan', `w=${week}`);
+  ctx.check(
+    `015: báo cáo tuần ${week}: 7 hàng (T2…CN) và dòng tổng`,
+    wk.rows.filter((r) => !r.total).length === 7 &&
+      wk.rows[0].label.startsWith('T2') &&
+      wk.rows.some((r) => r.total),
+    JSON.stringify(wk.rows.map((r) => r.label)),
+  );
+  const eq = await openSel('van-hanh-bom', `d=${shiftDay}`);
+  ctx.check(
+    '015: báo cáo vận hành bơm: 3 ca, cột giờ chạy và số lần bật có số',
+    eq.rows.filter((r) => !r.total).length === 3 &&
+      eq.head.some((h) => h.includes('thời gian ON')) &&
+      eq.head.some((h) => h.includes('số lần bật')) &&
+      eq.rows.every((r) => r.cells.every((c) => /^[\d.,]+$/.test(c))),
+    JSON.stringify(eq),
+  );
+  const al = await openSel('alarm-ngay', `d=${day}`);
+  ctx.check(
+    '015: báo cáo alarm: 24 hàng, 4 bảng phụ (mức, khu, top 10, danh sách), không có "Dữ liệu đủ"',
+    al.rows.filter((r) => !r.total).length === 24 &&
+      al.sections.length === 4 &&
+      !al.coverage &&
+      Number(al.rows.find((r) => r.total).cells[0]) > 0,
+    JSON.stringify({ sections: al.sections, total: al.rows.at(-1) }),
+  );
+  await axeBoth(ctx, 'báo cáo alarm');
+  const n3 = await downloads(page);
+  await page.click('.rpt-bar button.pdf');
+  const alPdf = await pdfText((await takeDownload(page, n3)).bytes);
+  ctx.check(
+    '015: PDF báo cáo alarm có tên đơn vị, bảng phụ và danh sách sự kiện',
+    alPdf.includes('NHÀ MÁY NƯỚC BÌNH AN') &&
+      alPdf.includes('Top 10 alarm') &&
+      alPdf.includes('Mức bồn B1 cao'),
+    alPdf.slice(0, 300),
+  );
+  const lg = await openSel('logic-ngay', `d=${day}`);
+  ctx.check(
+    '015: báo cáo logic: 24 lệnh ghi hôm qua, theo luật, danh sách',
+    lg.rows.find((r) => r.total)?.cells.reduce((a, c) => a + Number(c), 0) === 24 &&
+      lg.sections.length === 2,
+    JSON.stringify(lg.rows.at(-1)),
+  );
+  await axeBoth(ctx, 'báo cáo logic');
   mkdirSync(join(dirname(fileURLToPath(import.meta.url)), '../../../../docs/reports'), {
     recursive: true,
   });

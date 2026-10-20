@@ -172,7 +172,7 @@ export class MatReportView extends LitElement {
       min-height: 76px;
     }
     .scroll {
-      max-height: 560px;
+      max-height: min(72vh, 760px);
       overflow: auto;
     }
     .scroll:focus-visible {
@@ -463,7 +463,7 @@ export class MatReportView extends LitElement {
       legend: many
         ? {
             top: 6,
-            left: 12,
+            right: 12,
             icon: 'roundRect',
             itemWidth: 12,
             itemHeight: 8,

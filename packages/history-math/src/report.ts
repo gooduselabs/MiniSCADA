@@ -325,6 +325,8 @@ export interface BuildReportInput {
   fnNames?: Partial<Record<ReportFn, string>>;
   /** Nhãn thẻ độ đủ dữ liệu. */
   coverageLabel?: string;
+  /** Đơn vị của số lần bật (mặc định "lần"). */
+  timesWord?: string;
   org?: string;
 }
 
@@ -381,8 +383,9 @@ export function buildReport(input: BuildReportInput): ReportTable {
         tagId: c.tagId,
         fn,
         label: c.label ?? info?.description ?? c.tagId,
-        unit: c.unit ?? info?.unit ?? '',
-        decimals: c.decimals ?? (fn === 'starts' ? 0 : 2),
+        // số lần bật: đếm, luôn 0 số lẻ, đơn vị "lần" (đơn vị của cột là của giờ chạy)
+        unit: fn === 'starts' ? (input.timesWord ?? 'lần') : (c.unit ?? info?.unit ?? ''),
+        decimals: fn === 'starts' ? 0 : (c.decimals ?? 2),
       });
     }
 
@@ -498,7 +501,7 @@ export function reportChart(
     title: first.unit ? `${labels} (${first.unit})` : labels,
     unit: first.unit,
     decimals: Math.max(0, ...picked.map(({ c }) => c.decimals)),
-    categories: t.rows.map((r) => r.label),
+    categories: shortLabels(t.rows.map((r) => r.label)),
     series: picked.map(({ c, k }) => ({
       name: name(c),
       values: t.rows.map((r) => (r.pending ? null : (r.cells[k] ?? null))),
@@ -522,4 +525,12 @@ export function workDayOffsetMs(tpl: {
   const min = Number(m[2]);
   if (h > 23 || min > 59) return 0;
   return (h * 60 + min) * 60_000;
+}
+
+/** Nhãn hạng mục của biểu đồ: bỏ ngày `dd/MM ` đứng đầu khi mọi hàng cùng một ngày (kỳ ngày: chỉ còn giờ). */
+export function shortLabels(labels: readonly string[]): string[] {
+  const m = labels.map((l) => /^(\d{2}\/\d{2}) (.+)$/.exec(l));
+  if (labels.length < 2 || m.some((x) => !x) || new Set(m.map((x) => x![1])).size !== 1)
+    return [...labels];
+  return m.map((x) => x![2]!);
 }
