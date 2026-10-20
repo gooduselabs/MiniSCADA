@@ -503,6 +503,8 @@ export class MatReportView extends LitElement {
         type: 'value',
         name: c.unit,
         scale: c.kind === 'line',
+        // số đếm (0 số lẻ): vạch chia nguyên
+        ...(c.decimals === 0 ? { minInterval: 1 } : {}),
         nameTextStyle: { color: th.muted, fontSize: 11, align: 'left' },
         axisLabel: { color: th.muted, fontSize: 11, formatter: fmt },
         splitLine: { lineStyle: { color: th.border, type: [3, 3] } },
@@ -512,6 +514,7 @@ export class MatReportView extends LitElement {
           ? {
               type: 'bar',
               name: s.name,
+              ...(c.stacked ? { stack: 'total' } : {}),
               data: s.values.map((v) => v ?? '-'),
               barMaxWidth: 28,
               barGap: '12%',

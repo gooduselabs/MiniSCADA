@@ -530,6 +530,86 @@ async function online(page, user, shot) {
   );
 }
 
+// ---------------------------------------------------------------- PDF: bắt tệp tải về, vẽ trang đầu (feature 015)
+
+/** Chặn `a.click()` tải Blob của trang: lưu byte (base64) vào window.__dl để đọc lại. */
+async function hookDownloads(page) {
+  await page.evaluateOnNewDocument(() => {
+    window.__dl = [];
+    const blobs = new Map();
+    const create = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = (b) => {
+      const u = create(b);
+      blobs.set(u, b);
+      return u;
+    };
+    const click = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {
+      const b = this.download ? blobs.get(this.href) : null;
+      if (!b) return click.call(this);
+      const r = new FileReader();
+      r.onload = () => window.__dl.push({ name: this.download, data: String(r.result) });
+      r.readAsDataURL(b);
+    };
+  });
+}
+
+/** Bấm nút xuất PDF của trang báo cáo và trả byte của tệp. */
+async function downloadPdf(page) {
+  const n = await page.evaluate(() => window.__dl.length);
+  await page.click('.rpt-bar button.pdf');
+  await webE2e.until(
+    async () => (await page.evaluate(() => window.__dl.length)) > n,
+    'tải PDF',
+    60000,
+  );
+  const d = await page.evaluate((i) => window.__dl[i], n);
+  return Buffer.from(d.data.split(',')[1], 'base64');
+}
+
+/** Vẽ trang đầu của PDF bằng pdf.js (bản serverless của unpdf, không cần worker) trong một trang Chrome riêng. */
+async function shotPdfPage(bytes, name) {
+  const pdfjs = readFileSync(join(ROOT, 'node_modules/unpdf/dist/pdfjs.mjs'));
+  const html = `<!doctype html><meta charset="utf-8"><body style="margin:0;background:#8a9399">
+<canvas id="c" style="display:block;margin:16px auto;box-shadow:0 2px 12px rgba(0,0,0,.35)"></canvas>
+<script type="module">
+const pdfjs = await import('/pdfjs.mjs');
+const data = new Uint8Array(await (await fetch('/doc.pdf')).arrayBuffer());
+const doc = await pdfjs.getDocument({ data, isEvalSupported: false }).promise;
+const p = await doc.getPage(1);
+const v = p.getViewport({ scale: 1.6 });
+const c = document.getElementById('c');
+c.width = v.width; c.height = v.height;
+await p.render({ canvasContext: c.getContext('2d'), viewport: v }).promise;
+document.body.dataset.done = '1';
+</script>`;
+  const server = createServer((req, res) => {
+    if (req.url === '/pdfjs.mjs') {
+      res.writeHead(200, { 'content-type': 'text/javascript' });
+      return res.end(pdfjs);
+    }
+    if (req.url === '/doc.pdf') {
+      res.writeHead(200, { 'content-type': 'application/pdf' });
+      return res.end(bytes);
+    }
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.end(html);
+  });
+  await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
+  const { context, page } = await newPage();
+  try {
+    await page.setViewport({ width: 1400, height: 1000, deviceScaleFactor: 1 });
+    await page.goto(`http://127.0.0.1:${server.address().port}/`);
+    await page.waitForSelector('body[data-done="1"]', { timeout: 60000 });
+    const box = await page.$eval('#c', (c) => [c.width, c.height]);
+    await page.setViewport({ width: box[0] + 32, height: box[1] + 32, deviceScaleFactor: 1 });
+    await sleep(200);
+    await shooter(page)(name);
+  } finally {
+    await context.close();
+    server.close();
+  }
+}
 // ---------------------------------------------------------------- Cảnh của Studio
 
 /** Mỗi cảnh: tên nhóm, hàm nhận { page, shot(name) }. Ảnh tên `<tiền tố>-<tên>.png`. */
@@ -1068,6 +1148,7 @@ const webScenes = [
     async run({ page, rt, shot }) {
       const d = new Date(Date.now() - 86_400_000);
       const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      await hookDownloads(page);
       await page.goto(`${rt.httpsUrl}/#/report/dien-ngay?d=${day}`, {
         waitUntil: 'domcontentloaded',
       });
@@ -1126,6 +1207,10 @@ const webScenes = [
       await open(`#/report/alarm-ngay?d=${day}`, 'op-bao-cao-alarm');
       await open(`#/report/logic-ngay?d=${day}`, 'op-bao-cao-logic');
       await page.setViewport(VIEWPORT);
+      // trang đầu của PDF: báo cáo logic (cột chồng) và báo cáo điện ngày (thẻ, biểu đồ)
+      await shotPdfPage(await downloadPdf(page), 'op-bao-cao-pdf-logic');
+      await open(`#/report/dien-ngay?d=${day}`, 'op-bao-cao');
+      await shotPdfPage(await downloadPdf(page), 'op-bao-cao-pdf');
     },
   },
 ];

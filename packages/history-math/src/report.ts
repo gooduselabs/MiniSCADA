@@ -122,6 +122,8 @@ export interface ReportTile {
 
 export interface ReportChart {
   kind: 'line' | 'bar';
+  /** Cột chồng (các chuỗi là phần của một tổng: kết quả lệnh ghi). */
+  stacked?: boolean;
   title: string;
   unit: string;
   decimals: number;

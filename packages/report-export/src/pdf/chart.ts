@@ -68,6 +68,8 @@ export function chartSvg(c: ReportChart, o: ChartRender): string {
         type: 'value',
         name: c.unit,
         scale: c.kind === 'line',
+        // số đếm (0 số lẻ): vạch chia nguyên
+        ...(c.decimals === 0 ? { minInterval: 1 } : {}),
         nameTextStyle: { color: p.muted, fontFamily: o.font, fontSize: 7, align: 'left' },
         axisLabel: {
           color: p.muted,
@@ -83,6 +85,7 @@ export function chartSvg(c: ReportChart, o: ChartRender): string {
           ? {
               type: 'bar',
               name: s.name,
+              ...(c.stacked ? { stack: 'total' } : {}),
               data,
               barMaxWidth: 24,
               itemStyle: { borderRadius: [2, 2, 0, 0] },

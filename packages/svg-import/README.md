@@ -36,11 +36,11 @@ npm run svg:inspect -- --import <file.svg|thư mục>... [--optimize] [--report-
 
 ## Công cụ nghiệm thu (`tools/svg-import/`)
 
-| Lệnh | Việc |
-|---|---|
-| `node tools/svg-import/compare-images.mjs` | So ảnh 10 fixture (Chrome headless), ghi `docs/reports/008-fixtures.json` |
-| `node tools/svg-import/malicious-harness.mjs` | Bộ độc hại + canary, ghi `docs/reports/008-malicious-x64.json` |
-| `node tools/svg-import/fuzz.mjs [--cases N] [--seed S]` | Fuzz tất định, ghi `docs/reports/008-fuzz-x64.json` |
+| Lệnh                                                    | Việc                                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `node tools/svg-import/compare-images.mjs`              | So ảnh 10 fixture (Chrome headless), ghi `docs/reports/008-fixtures.json` |
+| `node tools/svg-import/malicious-harness.mjs`           | Bộ độc hại + canary, ghi `docs/reports/008-malicious-x64.json`            |
+| `node tools/svg-import/fuzz.mjs [--cases N] [--seed S]` | Fuzz tất định, ghi `docs/reports/008-fuzz-x64.json`                       |
 
 Chrome lấy từ `CHROME_PATH` hoặc đường dẫn cài mặc định.
 

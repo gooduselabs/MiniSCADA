@@ -5,6 +5,7 @@
 import { formatLocal, formatNumber, parseUtcOffset } from './format.ts';
 import {
   reportRequest,
+  shortLabels,
   type ReportColumnOut,
   type ReportRequest,
   type ReportRowOut,
@@ -176,6 +177,7 @@ function barChart(
   t: ReportTable,
   title: string,
   series: Array<{ name: string; col: number }>,
+  stacked = false,
 ): ReportTable['chart'] {
   if (b.template.chart === 'none' || t.rows.length < 2) return null;
   return {
@@ -183,7 +185,8 @@ function barChart(
     title,
     unit: '',
     decimals: 0,
-    categories: t.rows.map((r) => r.label),
+    ...(stacked ? { stacked } : {}),
+    categories: shortLabels(t.rows.map((r) => r.label)),
     series: series.map((s) => ({
       name: s.name,
       values: t.rows.map((r) => (r.pending ? null : (r.cells[s.col] ?? null))),
@@ -442,11 +445,17 @@ export function logicReport(input: LogicReportInput): ReportTable {
     { label: w.failed, value: n[1]!, text: int(n[1]!), unit: w.times, color: 'rose' },
     { label: w.blocked, value: n[2]!, text: int(n[2]!), unit: w.times, color: 'orange' },
   ]);
-  t.chart = barChart(input, t, w.chartLogic, [
-    { name: w.ok, col: 0 },
-    { name: w.failed, col: 1 },
-    { name: w.blocked, col: 2 },
-  ]);
+  t.chart = barChart(
+    input,
+    t,
+    w.chartLogic,
+    [
+      { name: w.ok, col: 0 },
+      { name: w.failed, col: 1 },
+      { name: w.blocked, col: 2 },
+    ],
+    true,
+  );
   const byRule = new Map<string, { n: number[]; last: number }>();
   for (const e of evs) {
     const r = byRule.get(e.rule) ?? { n: [0, 0, 0], last: 0 };
