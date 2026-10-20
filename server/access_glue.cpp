@@ -41,7 +41,7 @@ std::optional<Carried> carriedOf(const RequestOrigin& o) {
 SessionAccessPtr accessOfOrigin(AuthService& auth, AccessService& access, const RequestOrigin& o) {
     if (const auto c = carriedOf(o))
         if (const auto p = auth.principalOf(c->token, c->from, c->kind))
-            return access.forSession(*p);
+            return access.forSession(*p, c->kind);
     return access.anonymous();
 }
 
@@ -81,7 +81,7 @@ LiveGrantFn liveGrantOf(AuthService& auth, AccessService& access, const RequestO
             a = access.anonymous();
         } else if (const auto p =
                        auth.principalOf(st->carried->token, st->carried->from, st->carried->kind)) {
-            a = access.forSession(*p);
+            a = access.forSession(*p, st->carried->kind);
         }
         std::lock_guard<std::mutex> l(st->mu);
         if (st->grant && a == st->last) return st->grant;

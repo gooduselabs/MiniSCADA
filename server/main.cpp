@@ -1140,7 +1140,7 @@ int main(int argc, char** argv) {
         // Feature 013: history(P) of the person of the request.
         hq.tagFilter =
             [&accessService](const GateDecision& d) -> std::function<bool(const std::string&)> {
-            const SessionAccessPtr a = accessService.forAccess(d.access);
+            const SessionAccessPtr a = accessService.forAccess(d.access, d.viaCookie);
             if (a->all()) return {};
             return [a](const std::string& tag) { return a->access.historyTag(tag); };
         };

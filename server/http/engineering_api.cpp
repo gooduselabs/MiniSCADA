@@ -738,7 +738,7 @@ int EngineeringApi::alarmsPost(mg_connection* c, const GateRequest& r, const Gat
     who.channel = d.viaCookie ? AuditChannel::Web : AuditChannel::Https;
     // Feature 013: only the alarms whose source Tag this person sees (D21).
     if (access_) {
-        const SessionAccessPtr a = access_->forAccess(d.access);
+        const SessionAccessPtr a = access_->forAccess(d.access, d.viaCookie);
         if (!a->all())
             who.allowed = [a](const std::string& id) { return a->access.alarmAllowed(id); };
     }

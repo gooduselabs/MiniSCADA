@@ -256,7 +256,7 @@ int EngineeringApi::tagsWrite(mg_connection* c, const GateRequest& r, const Gate
     // audited; the others of the batch go on. Bearer (the engineer's tools): as before.
     std::vector<std::optional<json>> denied(reqs.size());
     if (d.viaCookie && access_) {
-        const SessionAccessPtr a = access_->forAccess(d.access);
+        const SessionAccessPtr a = access_->forAccess(d.access, d.viaCookie);
         for (size_t i = 0; i < reqs.size(); ++i) {
             const WriteRequest& w = reqs[i];
             const std::string why =

@@ -23,12 +23,15 @@ namespace mat {
 
 struct SessionAccess {
     EffectiveAccess access;
-    std::unordered_set<size_t> liveIdx;  // store indexes of access.liveTags (unless admin)
+    std::unordered_set<size_t> liveIdx;  // store indexes of access.liveTags (unless all())
+    // The engineer's tools (§4): a Bearer session of an engineer or above sees everything, as
+    // it can read the whole package anyway; the page (a cookie session) follows the rules.
+    bool tool = false;
     // Of what the person may see (§5 without the revisions, and the Tag sets): equal means the
     // live hub has nothing to tell the page.
     std::string fingerprint;
 
-    bool all() const { return access.admin; }
+    bool all() const { return access.admin || tool; }
     bool liveIndex(size_t i) const { return all() || liveIdx.count(i) > 0; }
 };
 using SessionAccessPtr = std::shared_ptr<const SessionAccess>;
@@ -49,10 +52,13 @@ class AccessService {
     AccessService(const AccessService&) = delete;
     AccessService& operator=(const AccessService&) = delete;
 
-    SessionAccessPtr forPrincipal(const Principal& p, int64_t accountRev, int64_t usersRev);
-    // The account of a request the gate let through (Access Ok or Forbidden with a role).
-    SessionAccessPtr forAccess(const Access& a);
-    SessionAccessPtr forSession(const SessionPrincipal& p);
+    // `bearer`: the session is a Bearer token (the engineer's tools), not the cookie of the page.
+    SessionAccessPtr forPrincipal(const Principal& p, int64_t accountRev, int64_t usersRev,
+                                  bool bearer = false);
+    // The account of a request the gate let through (Access Ok or Forbidden with a role);
+    // `viaCookie` as GateDecision::viaCookie.
+    SessionAccessPtr forAccess(const Access& a, bool viaCookie);
+    SessionAccessPtr forSession(const SessionPrincipal& p, SessionKind kind);
     SessionAccessPtr anonymous();  // viewerLogin off, no sign-in
 
     // access.json was written in this process: read it at the next call.
@@ -65,7 +71,7 @@ class AccessService {
 
    private:
     void refreshLocked();
-    SessionAccessPtr computeLocked(const Principal& p, int64_t usersRev);
+    SessionAccessPtr computeLocked(const Principal& p, int64_t usersRev, bool tool);
 
     AccessServiceOptions o_;
     AuthLogFn log_;

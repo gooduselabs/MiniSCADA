@@ -305,6 +305,137 @@ export async function packageDigest(bytes) {
   return manifestOf(bytes).digest;
 }
 
+// ------------------------------------------------------------------- live channel (feature 013)
+
+/**
+ * /api/v1/live over a pinned TLS connection with `Authorization: Bearer <token>` (the WebSocket of
+ * Node sets neither the header nor the pin). Feature 013: an anonymous live session only gets the
+ * Tags of the items it views, the engineer's tools (Bearer, engineer or above) get every Tag.
+ * Resolves after the 101 with { send(text), close(), onmessage, onclose } — `onmessage` receives
+ * { data } for every text message, as the WebSocket of the browser; rejects on another status.
+ * For the tests only: no compression, the client sends unfragmented masked frames.
+ */
+export async function pinnedWebSocket(base, pin, token, path = '/api/v1/live') {
+  const conn = await pinnedConnect(base, pin, { timeoutMs: 10000 });
+  const socket = conn.socket;
+  const key = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64');
+  const lines = [
+    `GET ${path} HTTP/1.1`,
+    `Host: ${new URL(base).host}`,
+    'Upgrade: websocket',
+    'Connection: Upgrade',
+    `Sec-WebSocket-Key: ${key}`,
+    'Sec-WebSocket-Version: 13',
+  ];
+  if (token) lines.push(`Authorization: Bearer ${token}`);
+  const ws = { onmessage: null, onclose: null, closeCode: null };
+  const sendFrame = (opcode, payload) => {
+    const data = Buffer.from(payload);
+    const mask = Buffer.from(crypto.getRandomValues(new Uint8Array(4)));
+    let head;
+    if (data.length < 126) head = Buffer.from([0x80 | opcode, 0x80 | data.length]);
+    else if (data.length < 65536) {
+      head = Buffer.alloc(4);
+      head[0] = 0x80 | opcode;
+      head[1] = 0x80 | 126;
+      head.writeUInt16BE(data.length, 2);
+    } else {
+      head = Buffer.alloc(10);
+      head[0] = 0x80 | opcode;
+      head[1] = 0x80 | 127;
+      head.writeBigUInt64BE(BigInt(data.length), 2);
+    }
+    const masked = Buffer.alloc(data.length);
+    for (let i = 0; i < data.length; i++) masked[i] = data[i] ^ mask[i % 4];
+    if (!socket.destroyed) socket.write(Buffer.concat([head, mask, masked]));
+  };
+  let buf = Buffer.alloc(0);
+  let parts = []; // a fragmented text message
+  const parse = () => {
+    for (;;) {
+      if (buf.length < 2) return;
+      const fin = (buf[0] & 0x80) !== 0;
+      const opcode = buf[0] & 0x0f;
+      let len = buf[1] & 0x7f;
+      let off = 2;
+      if (len === 126) {
+        if (buf.length < 4) return;
+        len = buf.readUInt16BE(2);
+        off = 4;
+      } else if (len === 127) {
+        if (buf.length < 10) return;
+        len = Number(buf.readBigUInt64BE(2));
+        off = 10;
+      }
+      if (buf.length < off + len) return;
+      const payload = Buffer.from(buf.subarray(off, off + len));
+      buf = buf.subarray(off + len);
+      if (opcode === 1 || opcode === 0) {
+        parts.push(payload);
+        if (fin) {
+          const text = Buffer.concat(parts).toString('utf8');
+          parts = [];
+          ws.onmessage?.({ data: text });
+        }
+      } else if (opcode === 8) {
+        ws.closeCode = payload.length >= 2 ? payload.readUInt16BE(0) : 1005;
+        socket.destroy();
+      } else if (opcode === 9) {
+        sendFrame(10, payload);
+      }
+    }
+  };
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      socket.destroy();
+      reject(new Error('websocket: no answer to the upgrade'));
+    }, 10000);
+    let upgraded = false;
+    socket.on('data', (d) => {
+      buf = Buffer.concat([buf, d]);
+      if (!upgraded) {
+        const end = buf.indexOf('\r\n\r\n');
+        if (end < 0) return;
+        const head = buf.subarray(0, end).toString('latin1');
+        const status = Number(/^HTTP\/1\.[01] (\d{3})/.exec(head)?.[1] ?? 0);
+        clearTimeout(timer);
+        if (status !== 101) {
+          socket.destroy();
+          reject(new Error(`websocket: HTTP ${status}`));
+          return;
+        }
+        buf = buf.subarray(end + 4);
+        upgraded = true;
+        resolve();
+      }
+      parse();
+    });
+    socket.on('close', () => {
+      clearTimeout(timer);
+      if (!upgraded) reject(new Error('websocket: closed before the upgrade'));
+      ws.onclose?.({ code: ws.closeCode ?? 1006 });
+    });
+    socket.on('error', () => {
+      // 'close' follows
+    });
+    socket.write(lines.join('\r\n') + '\r\n\r\n');
+  });
+  ws.send = (text) => {
+    if (socket.destroyed) throw new Error('websocket: closed');
+    sendFrame(1, text);
+  };
+  ws.close = () => {
+    try {
+      sendFrame(8, Buffer.from([0x03, 0xe8]));
+    } catch {
+      // closed already
+    }
+    socket.end();
+    setTimeout(() => socket.destroy(), 200).unref();
+  };
+  return ws;
+}
+
 // ------------------------------------------------------------------------------- command line
 
 async function readStdinLine() {

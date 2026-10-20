@@ -434,5 +434,75 @@ TEST(AccessService, KeepsAnswersAndFollowsTheStore) {
     EXPECT_TRUE(svc.anonymous()->access.anonymous);
 }
 
+// The engineer's tools (a Bearer session of an engineer or above: Studio Online, watch tables,
+// diagnostics) see every Tag, alarm and project file, as they can read the whole package anyway;
+// the page (a cookie session) and a Bearer session below engineer follow the rules (§4).
+TEST(AccessService, BearerSessionsOfEngineersAreNotFiltered) {
+    Rig r;
+    AuthStore s(r.options());
+    std::string err;
+    ASSERT_TRUE(s.prepare(err)) << err;
+    ASSERT_EQ(s.transact(
+                  [](AuthTxn& t) {
+                      t.access.rules.push_back({"screen:bao-tri", AccessLevel::View, {}});
+                      t.accessChanged = true;
+                      return true;
+                  },
+                  err),
+              TxnStatus::Ok);
+    ResourceCatalog c;
+    CatalogScreen bt;
+    bt.id = "bao-tri";
+    CatalogItem m;
+    m.id = "may";
+    m.tags = {"M1"};
+    bt.items = {m};
+    c.screens = {bt};
+    c.alarms = {{"M1_FAULT", "M1"}};
+    AccessServiceOptions o;
+    o.catalog = c;
+    o.accessFile = s.accessPath();
+    o.tagIndex = [](const std::string& t) -> std::optional<size_t> {
+        if (t == "M1") return 4;
+        return std::nullopt;
+    };
+    o.log = [](const std::string&) {};
+    AccessService svc(o);
+    SessionPrincipal eng;
+    eng.user = "ks1";
+    eng.role = Role::Engineer;
+    eng.accountRev = 2;
+    eng.usersRev = 1;
+    const SessionAccessPtr tool = svc.forSession(eng, SessionKind::Bearer);
+    EXPECT_TRUE(tool->all());
+    EXPECT_TRUE(tool->liveIndex(9)) << "a Tag on no screen";
+    EXPECT_TRUE(tool->liveIndex(4)) << "a Tag of a screen the rules hide";
+    const SessionAccessPtr page = svc.forSession(eng, SessionKind::Web);
+    EXPECT_FALSE(page->all());
+    EXPECT_FALSE(page->liveIndex(9));
+    EXPECT_FALSE(page->liveIndex(4));
+    EXPECT_FALSE(page->access.alarmAllowed("M1_FAULT"));
+    EXPECT_NE(page->fingerprint, tool->fingerprint);
+    SessionPrincipal op = eng;
+    op.user = "vh1";
+    op.role = Role::Operator;
+    const SessionAccessPtr opTool = svc.forSession(op, SessionKind::Bearer);
+    EXPECT_FALSE(opTool->all());
+    EXPECT_FALSE(opTool->liveIndex(9));
+    EXPECT_FALSE(opTool->liveIndex(4));
+    // the gate's account of a request: Bearer unless it came from the cookie
+    Access a;
+    a.status = AccessStatus::Ok;
+    a.user = "ks1";
+    a.role = Role::Engineer;
+    a.accountRev = 2;
+    a.usersRev = 1;
+    EXPECT_TRUE(svc.forAccess(a, false)->all());
+    EXPECT_FALSE(svc.forAccess(a, true)->all());
+    a.role = Role::Operator;
+    EXPECT_FALSE(svc.forAccess(a, false)->all());
+    EXPECT_FALSE(svc.anonymous()->all());
+}
+
 }  // namespace
 }  // namespace mat
