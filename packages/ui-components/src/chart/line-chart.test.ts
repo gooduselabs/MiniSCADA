@@ -6,6 +6,7 @@ import { readChartTheme } from './echarts-lite.ts';
 import {
   areaFill,
   axisStyle,
+  clockLabels,
   cursorPoints,
   FALLBACK_SERIES_COLORS,
   SERIES_DASHES,
@@ -57,5 +58,33 @@ describe('kiểu trục, lưới, con trỏ', () => {
     expect(singleSeriesFill([s(true)])).toEqual(['rgba(11, 114, 133, 0.12)']);
     expect(singleSeriesFill([s(true), s(false)])).toEqual(['rgba(11, 114, 133, 0.12)', undefined]);
     expect(singleSeriesFill([s(true), s(true)])).toEqual([undefined, undefined]);
+  });
+});
+
+// Trục thời gian của biểu đồ đường thời gian thực theo kiểu Việt Nam 24 giờ (T054: trước đó là mặc định của uPlot
+// "10/20/26 7:04am", ":25", ":30" trên giao diện tiếng Việt).
+describe('nhãn trục thời gian (clockLabels)', () => {
+  const sec = (y: number, mo: number, d: number, h: number, mi: number, s = 0): number =>
+    new Date(y, mo - 1, d, h, mi, s).getTime() / 1000;
+  it('vạch lẻ giây: HH:mm:ss', () => {
+    expect(clockLabels([sec(2026, 10, 20, 7, 4, 25), sec(2026, 10, 20, 7, 4, 30)])).toEqual([
+      '07:04:25',
+      '07:04:30',
+    ]);
+  });
+  it('vạch tròn phút: HH:mm', () => {
+    expect(clockLabels([sec(2026, 10, 20, 7, 0), sec(2026, 10, 20, 7, 5)])).toEqual([
+      '07:00',
+      '07:05',
+    ]);
+  });
+  it('sang ngày khác: vạch đầu và vạch đổi ngày kèm dd/MM', () => {
+    expect(
+      clockLabels([sec(2026, 10, 19, 22, 0), sec(2026, 10, 20, 0, 0), sec(2026, 10, 20, 2, 0)]),
+    ).toEqual(['19/10 22:00', '20/10 00:00', '02:00']);
+  });
+  it('rỗng và giá trị không hữu hạn', () => {
+    expect(clockLabels([])).toEqual([]);
+    expect(clockLabels([Number.NaN])).toEqual(['']);
   });
 });

@@ -156,12 +156,14 @@
 
 - [x] T053 [P] Tài liệu: `docs/user/engineer-guide.md` (mục màn hình lưới, chủ đề), `docs/user/operator-guide.md`, `docs/architecture/studio-ux.md`; ADR `docs/adr/040-grid-layout-and-theme.md`
   - Ghi chú khi làm (2026-10-19, nhánh 012-screen-grid-layout): ADR-040, engineer-guide 6.1 và 6.2, operator-guide mục 4.
-- [ ] T054 [P] Ảnh chụp mới bằng `tools/docs-screenshots.mjs` cho 6 màn hình chuẩn ở chủ đề vivid; bảng trước/sau trong `docs/reports/012-ui-before-after.md` (SC-008)
+- [x] T054 [P] Ảnh chụp mới bằng `tools/docs-screenshots.mjs` cho 6 màn hình chuẩn ở chủ đề vivid; bảng trước/sau trong `docs/reports/012-ui-before-after.md` (SC-008)
+  - Ghi chú khi làm (2026-10-20, nhánh 012-screen-grid-layout): 6 màn hình (Tổng quan, lưới, Alarm, Lịch sử, Báo cáo, Studio soạn màn hình) và trang 1 PDF; ảnh trước từ `docs/user/img` ở `04a09219`, ảnh sau bằng cờ mới `--theme=vivid --out=`; ảnh ở `docs/reports/img/012/`. Sửa khi xem ảnh: số đọc đồng hồ kim bị núm kim đè, nhãn trục thời gian biểu đồ đường kiểu Mỹ, bảng PDF hụt mép phải. **SC-008 chờ người dùng duyệt**; chưa thử WebView2/BL335.
 - [x] T055 Đo hiệu năng `tools/load-tester` 500 Tag, 10 client với `grid-demo` so `dashboard-demo` (SC-005), ghi `docs/reports/012-perf.md`
   - Ghi chú khi làm (2026-10-20, nhánh 013-access-control, x64 Docker trên máy dev, không phải BL335): hai project là `grid-demo` và `dashboard-demo`, mỗi project thêm cùng 500 Tag mô phỏng và cùng 10 màn hình × 50 card (`tools/load/gen-perf-projects.mjs`). Chạy 5 lượt × 60 s. CPU 1,0 % một lõi ở cả hai (0,61 so 0,61 giây CPU, chênh 0 %), p95 cửa sổ 1 s là 2 %, RSS 16,9 so 16,7 MB, trễ live p95 2 ms, 480 so 482 KB/s gửi, 0 mất sequence. CPU trình duyệt chưa đo.
 - [x] T056 Fuzz 10.000 bố cục hỏng qua hai bộ kiểm và `mat-grid-screen` (SC-004)
   - Ghi chú khi làm (2026-10-19, nhánh 012-screen-grid-layout): TS: `layout-fuzz.test.ts` (10.000 qua rules-11, 300 qua validateProject); C++: `project_fuzz_test` xanh (nhánh 012-cpp). Fuzz trình hiển thị không làm riêng: trang vận hành chỉ dựng project đã qua bộ kiểm.
-- [ ] T057 `tools/ci-local.ps1` đầy đủ xanh; `node tools/docs-check.mjs` 0 lỗi
+- [x] T057 `tools/ci-local.ps1` đầy đủ xanh; `node tools/docs-check.mjs` 0 lỗi
+  - Ghi chú khi làm (2026-10-20, `-BuildName ci012`, chạy theo đoạn bằng `-StartAt` sau mỗi bản sửa): mọi bước đạt (logic-it bỏ qua: chưa có công cụ; ASan/sast clang-tidy/audit chỉ với `-Sanitize`/`-Full`/mạng). ctest x64 6089/6089 sau khi sửa đua ở `project_api_test` (đọc bản ghi trước khi kiểm điều kiện); armhf qemu xanh; web-it: compat cần `gw_priority` cho mạng lan của rig (Docker có lúc chuyển cổng loopback qua mạng pub → 403) và bỏ vùng widget biểu đồ 012 khi so ảnh, đồng hồ kim sửa cho lấy hết khung; update-it: vector `from-version` lên `minFromVersion 99.0.0` (runtime 1.1.0-alpha.1 vượt ngưỡng cũ), `mat-updater` kiểm sức khỏe theo đồng hồ đơn điệu, health 89,2 s ≤ 90 s; build-docs bỏ ca symlink khi Windows trả EPERM. docs-check 0 lỗi. `updater_test` ca `keyset: modes` hỏng cả trước 012 khi chạy trên ổ Windows gắn vào container (quyền tệp), không thuộc ci-local.
 
 ## Dependencies & Execution Order
 

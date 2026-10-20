@@ -26,7 +26,7 @@ export class MatGauge extends MatEChartWidget {
         justify-content: center;
         align-items: baseline;
         gap: 4px;
-        margin-top: -6px;
+        margin-top: 0;
       }
       .value {
         font-size: 20px;
@@ -97,7 +97,8 @@ export class MatGauge extends MatEChartWidget {
     // Nửa vòng: bán kính bị chặn bởi nửa bề rộng và bởi chiều cao (tâm sát đáy), tính bằng px; '92%' của ECharts tính
     // theo nửa cạnh ngắn nên khung rộng thấp chỉ dùng nửa chiều cao.
     const { width: w, height: h } = this.chartSize();
-    const cy = h - 8;
+    // Tâm cách đáy 10 px: núm kim (đường kính 10) không đè số đọc bên dưới.
+    const cy = h - 10;
     const radius = Math.max(10, Math.min(w / 2 - 6, cy - 6));
     return {
       // Không tooltip: số đọc đã hiện dưới đồng hồ; tooltip mặc định của ECharts dựng HTML từ chuỗi (cổng SC-020).

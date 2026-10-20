@@ -2,7 +2,7 @@
 // T048 (feature 012): mẫu mới: dải tiêu đề, logo, thẻ số liệu, bảng xen kẽ, số trang, Inter, biểu đồ vector.
 import { extractText, getDocumentProxy } from 'unpdf';
 import { describe, expect, it } from 'vitest';
-import { buildPdf, pdfDefinition } from './pdf.ts';
+import { buildPdf, pdfDefinition, planLayout } from './pdf.ts';
 import { REPORT_PALETTES, reportPalette } from '../theme.ts';
 import type { ReportTable } from '@mat/history-math';
 import { LABELS, META, tableFromVector } from '../testing.ts';
@@ -139,6 +139,25 @@ const LOGO_SVG =
 describe('PDF mẫu mới: định nghĩa tài liệu (T048)', () => {
   const t = tableFromVector('report-shift-3-0600');
   const vivid = REPORT_PALETTES.vivid;
+
+  // T054 (ảnh trước/sau 012): bảng gần đủ rộng thì trải hết bề rộng trang, thẳng mép phải với dải tiêu đề và thẻ số liệu;
+  // bảng ít cột vẫn gọn (không kéo cột số quá rộng).
+  it('bảng gần đủ rộng trải hết bề rộng trang; bảng ít cột vẫn gọn', () => {
+    const avail = 842 - 2 * 28;
+    const sum = (l: ReturnType<typeof planLayout>) =>
+      l.widths.label + l.widths.data.reduce((a, b) => a + b, 0);
+    const landscape = { ...META, paper: { size: 'A4', orientation: 'landscape' } as const };
+    const day = tableFromVector('report-day-60min');
+    expect(day.columns.length).toBeGreaterThanOrEqual(4);
+    expect(sum(planLayout(day, landscape, LABELS))).toBe(avail);
+    const one = {
+      ...day,
+      columns: day.columns.slice(0, 1),
+      rows: day.rows.map((r) => ({ ...r, text: r.text.slice(0, 1), cells: r.cells.slice(0, 1) })),
+      totalsText: day.totalsText?.slice(0, 1) ?? null,
+    };
+    expect(sum(planLayout(one, landscape, LABELS))).toBeLessThan(avail / 2);
+  });
 
   it('phông mặc định là Inter (không còn Roboto)', () => {
     const def = pdfDefinition(t, META, LABELS);

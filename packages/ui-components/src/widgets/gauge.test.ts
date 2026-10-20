@@ -188,14 +188,20 @@ describe('mat-w-gauge (FR-027)', () => {
 
   // Bán kính theo cả rộng và cao của khung (px), không theo nửa cạnh ngắn ('92%'): khung rộng thấp không còn đồng hồ
   // nhỏ hẳn bản SVG trước 012 (compat-008 dashboard-demo).
-  it('bán kính lấy hết khung: min(rộng/2, cao) trừ lề, tâm sát đáy', async () => {
+  // Tâm cách đáy 10 px (núm kim đường kính 10): núm không đè số đọc bên dưới (T054, ảnh trước/sau 012).
+  it('bán kính lấy hết khung: min(rộng/2, cao) trừ lề, tâm cách đáy đủ cho núm kim', async () => {
     const src = makeSource([tagInfo('t1')]);
     src.set('t1', { value: 5, quality: 'GOOD' });
     const wide = { ...gauge(), width: 300, height: 100 };
     await mount(wide, src);
-    const s = gs() as GaugeSeries & { radius: number; center: [string, number] };
-    expect(s.radius).toBe(100 - 8 - 6);
-    expect(s.center).toEqual(['50%', 100 - 8]);
+    const s = gs() as GaugeSeries & {
+      radius: number;
+      center: [string, number];
+      anchor: { size: number };
+    };
+    expect(s.radius).toBe(100 - 10 - 6);
+    expect(s.center).toEqual(['50%', 100 - 10]);
+    expect(s.center[1] + s.anchor.size / 2).toBeLessThanOrEqual(100 - 4);
     const tall = { ...gauge(), width: 120, height: 300 };
     await mount(tall, src);
     expect((gs() as GaugeSeries & { radius: number }).radius).toBe(120 / 2 - 6);
