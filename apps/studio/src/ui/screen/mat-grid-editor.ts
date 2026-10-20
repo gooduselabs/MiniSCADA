@@ -175,7 +175,11 @@ export class MatGridEditor extends AppElement {
     if (r && !r.rejected) {
       const rows = (r.doc as GridDoc).layout.rows;
       const row = rows[at ? at.r + 1 : rows.length - 1];
-      if (row?.cells[0]) this.select(row.cells[0].id);
+      if (row?.cells[0]) {
+        this.select(row.cells[0].id);
+        // đưa hàng mới vào tầm nhìn (focus cuộn vùng làm việc tới ô)
+        this.focusCell(row.cells[0].id);
+      }
       this.app.toast(t('lay.tpl.added', { name: t(`lay.tpl.${id}` as MessageKey) }));
     }
   }
@@ -448,7 +452,7 @@ export class MatGridEditor extends AppElement {
                           ${ROW_TEMPLATES[id].cells.map(
                             (c, i) =>
                               html`<i
-                                class=${c.widget === 'stat-tile' ? `tile tile-${i}` : 'chart'}
+                                class=${c.widget === 'stat-tile' ? `pv-tile pv-tile-${i}` : 'pv-chart'}
                                 style=${`flex:${c.span}`}
                               ></i>`,
                           )}

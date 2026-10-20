@@ -100,20 +100,20 @@ mat-grid-editor .ge-tpl-t small {
   white-space: normal;
   max-width: 220px;
 }
-mat-grid-editor .ge-tpl-pv i.chart {
+mat-grid-editor .ge-tpl-pv i.pv-chart {
   background: linear-gradient(to bottom, var(--border-2) 0 6px, var(--panel-2) 6px);
   border: 1px solid var(--border-2);
 }
-mat-grid-editor .ge-tpl-pv i.tile-0 {
+mat-grid-editor .ge-tpl-pv i.pv-tile-0 {
   background: #0f7f75;
 }
-mat-grid-editor .ge-tpl-pv i.tile-1 {
+mat-grid-editor .ge-tpl-pv i.pv-tile-1 {
   background: #2563eb;
 }
-mat-grid-editor .ge-tpl-pv i.tile-2 {
+mat-grid-editor .ge-tpl-pv i.pv-tile-2 {
   background: #e11d48;
 }
-mat-grid-editor .ge-tpl-pv i.tile-3 {
+mat-grid-editor .ge-tpl-pv i.pv-tile-3 {
   background: #7c3aed;
 }
 mat-grid-editor .ge-tpl-t {
