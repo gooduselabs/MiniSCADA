@@ -128,7 +128,7 @@ Inspector có các tab **Chung**, **Hiển thị**, **Gắn Tag**, **Sự kiện
 
 Project định dạng 1.1 trở lên. Màn hình mới mặc định là **bố cục lưới**: trang gồm các **hàng**, mỗi hàng chia trên **12 cột**, mỗi **ô** chứa một component. Vị trí do ô quyết định, không nhập X, Y. (**Thêm màn hình (bố cục tự do)** vẫn có cho cách đặt theo tọa độ cũ; **Chuyển sang bố cục lưới** đổi một màn hình tự do sang lưới, có xem trước và hoàn tác.)
 
-![Trình soạn bố cục lưới: thanh Thêm hàng, thuộc tính ô (Rộng, Trống trước, Căn, Cao tối thiểu) và hàng (Tự động, Chiều cao, Khoảng cách); nút xem trước 1920, 1366, 600; trang gồm hàng 4 thẻ giá trị, hàng biểu đồ đường 8 cột và đồng hồ kim 4 cột, ô biểu đồ đang chọn](img/eng-bo-cuc-luoi.png)
+![Trình soạn bố cục lưới: thanh Thêm hàng, thuộc tính ô (Rộng, Trống trước, Căn, Cao tối thiểu) và hàng (Tự động, Chiều cao, Khoảng cách); nút xem trước 1920, 1366, 600; trang dashboard gồm hai hàng thẻ chỉ số màu và hàng ba biểu đồ có tiêu đề, một ô đang chọn](img/eng-bo-cuc-luoi.png)
 
 1. **Thêm hàng** → chọn mẫu chia cột: `12`, `6+6`, `4+4+4`, `3+3+3+3`, `8+4`, `4+8`, `3+6+3`, hoặc **Tự nhập…** (ví dụ `2+8+2`, tổng không quá 12). Cột bên phải của menu là **Mẫu hàng có sẵn widget**: **4 thẻ chỉ số** (hàng cao 116 px, bốn thẻ màu khác nhau có biểu tượng), **3 biểu đồ** (cao 260 px: đường, cột, tròn có tiêu đề), **2 biểu đồ + 1** (cao 260 px: đường 5 cột, cột 4 cột, đồng hồ 3 cột), **1 biểu đồ rộng** (cao 300 px). Widget đã đặt sẵn tên, màu; chỉ việc kéo Tag thả vào từng ô. Hàng có chiều cao cố định nên mọi ô cùng hàng cao bằng nhau.
 
@@ -159,6 +159,8 @@ Lỗi thường gặp: `E_LAYOUT_SPAN` (tổng các ô của hàng quá 12 cột
 Lỗi thường gặp: `E_FILE_MISSING` ở `props/src` (tệp ảnh của widget **Ảnh** không có trong project), `E_WIDGET_PROP` (đường dẫn ảnh không nằm trong `graphics/` hoặc không phải `.svg`, múi giờ không đúng dạng `±HH:MM`).
 
 ![Dashboard của Mẫu trạm bơm trên trang vận hành, chủ đề Sáng đa sắc: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, cột, đồng hồ, trạng thái bơm](img/op-bo-cuc-luoi.png)
+
+![Cùng dashboard ở chủ đề Tối (mẫu Dashboard tối): nền xám xanh, khung biểu đồ sáng hơn nền, thẻ chỉ số giữ màu](img/op-dashboard-toi.png)
 
 ### 6.2. Chủ đề giao diện
 
