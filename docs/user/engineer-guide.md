@@ -310,7 +310,33 @@ Cần project định dạng 1.0.0 (mục 3); project cũ hơn thì các lệnh 
 
 Logic chạy trên runtime 1.0.0, theo chu kỳ quét (`logic.scanMs`, mặc định 100 ms). Mọi khối nằm trong `logic.json`, sửa ở nút **Logic** trên cây (các nhóm Luật, Timer, Counter, Cộng dồn, Giờ chạy, Lịch, Ghi PLC; tất cả mở chung tab "Logic"). Project chưa có logic: bấm **Tạo logic.json**. Project định dạng cũ hơn 1.0.0: editor báo "Logic cần project định dạng 1.0.0", nâng cấp project trước (mục 3).
 
-Thao tác trong tab: **Thêm khối** (Insert), **Xóa** (Delete), **Chuyển lên**/**Chuyển xuống**, F2 đổi id (Studio cập nhật mọi tham chiếu), ô "Tìm id, tên, Tag", ô "Chỉ dòng lỗi", **Kiểm tra** (F7). Dock dưới có **Inspector** (trường của khối đang chọn), **Thông tin** (lỗi và cảnh báo, nhấp đúp để nhảy tới ô; F8 / Shift+F8 tới lỗi kế / trước ở bất kỳ đâu trong editor) và **Thử logic**. Task card **Khối / Tag** bên phải: kéo một khối vào bảng (hoặc nhấp đúp) để thêm, kéo một Tag vào ô biểu thức. Giới hạn: 200 luật, 100 timer, 100 counter, 50 cộng dồn, 50 giờ chạy, 50 lịch, 100 mục ghi (`E_LOGIC_LIMIT`).
+Tab Logic có hai khung nhìn của cùng `logic.json`, chọn bằng nút **Sơ đồ** / **Bảng** đầu thanh công cụ (Studio nhớ lựa chọn trên máy): **Sơ đồ** (mặc định, mục 9.1) vẽ khối và dây nối kiểu FBD; **Bảng** liệt kê khối theo nhóm như trước (mục 9.2).
+
+### 9.1. Sơ đồ khối
+
+Mỗi khối là một nút: đầu khối có loại (Luật, TON/TOF/TP, Counter, Cộng dồn, Giờ chạy, Lịch, Ghi PLC) và id; bên trái là cổng vào (ô biểu thức: `when`, `in`, `up`, `down`, `reset`, `source`, `run`), bên phải là cổng ra (Tag logic `q`, `et`, `value`, `reached`, `total`…; luật có ↑ Khi lên và ↓ Khi xuống); dòng cuối tóm tắt tham số (giữ 5 s, PT 1 min, đặt trước 1000…). Biểu thức của cổng vào được vẽ thành cổng logic: `&&` là **AND**, `||` là **OR**, `!` là **NOT**, so sánh là ô "> 80", "< 20"…; phép tính khác (số học, hàm) là ô biểu thức. Tag đầu vào là hộp tên Tag gắn vào chân (đi theo khối). Đầu ra của khối dùng ở khối khác nối bằng dây liền; hành động của luật tới mục **Ghi PLC** hoặc Tag đích là dây đứt màu hổ phách. Chấm cổng xanh dương là BOOL, tím là số.
+
+Sơ đồ không đổi định dạng `logic.json`. Vị trí khối lưu riêng trong tệp `logic.layout.json` cạnh `logic.json` (chỉ Studio dùng, không nạp xuống thiết bị); thiếu tệp này thì Studio tự sắp xếp.
+
+- **Thêm khối**: kéo khối từ task card **Khối / Tag** vào sơ đồ (đặt ở chỗ thả), hoặc **Thêm khối** / Insert (đặt giữa vùng nhìn).
+- **Dời khối**: kéo khối (căn lưới 16 px, giữ Alt để dời tự do) hoặc phím mũi tên (16 px, Shift: 64 px). **Tự sắp xếp** xếp lại mọi khối từ trái sang phải theo phụ thuộc.
+- **Nối dây**: kéo từ cổng ra (Tag hoặc đầu ra khối) tới cổng vào hoặc chân của cổng logic: Studio thay đúng phần biểu thức đó bằng tên Tag. Kéo ↑/↓ của luật tới mục Ghi PLC thêm hành động Ghi PLC (giá trị cho phép đầu tiên), tới Tag đích thêm Đặt Tag `true`. Kéo một Tag từ task card thả vào cổng vào cũng nối. Khi đang kéo, cổng khác kiểu mờ đi.
+- **Cổng logic**: kéo **AND**, **OR**, **NOT**, **So sánh** ở task card thả vào một cổng vào để bọc biểu thức hiện có (ví dụ `(x) && true`), rồi nối Tag vào chân còn trống.
+- **Xóa dây**: nhấp dây rồi Delete (bỏ toán hạng khỏi AND/OR, cổng vào của khối thành trống). **Xóa khối**: Delete; **Nhân bản**: Ctrl+D (đầu ra theo id mới). Mỗi thao tác hoàn tác được bằng một lần Ctrl+Z.
+- Nhấp một khối (hoặc Tab tới nó) để sửa ở **Inspector** như ở Bảng; Enter đưa con trỏ vào ô Id. Nhấp cổng logic hay hộp Tag đưa con trỏ vào đúng ô biểu thức.
+- **Zoom**: Ctrl + lăn chuột, nút − / + (phím − +), **Vừa khung** (phím 0), **100 %**; kéo nền hoặc lăn chuột để dời. Bản đồ nhỏ ở góc phải dưới: nhấp để tới vùng đó.
+- **Lỗi** của bộ kiểm tra hiện ngay trên sơ đồ: khối có lỗi viền đỏ, cổng vào và dây của biểu thức lỗi màu đỏ, Tag không có trong project là hộp viền đứt đỏ; danh sách vẫn ở tab **Thông tin**, nhấp đúp một dòng để chọn khối trên sơ đồ.
+- **Thử logic** và **Online**: sơ đồ hiện giá trị sống. Dây và cổng BOOL đang TRUE màu xanh lá, giá trị số ghi cạnh cổng ra, khối vừa bắn sáng lên, timer đang đếm hiện "còn x s", mục Ghi PLC hiện giá trị Tag đích; mỗi khối có chip trạng thái (OK, SUSPENDED, THROTTLED, DISABLED; Online kèm số lần bắn).
+
+![Sơ đồ khối của tab Logic: Tag mức bồn vào cổng "> 80" và "< 20", cổng AND với đầu ra của lịch ca ngày, hai luật bơm nối dây đứt tới mục Ghi PLC; Inspector của luật đang chọn; task card Khối / Tag có thêm Cổng logic](img/eng-logic-so-do.png)
+
+![Sơ đồ khi Thử logic: mức bồn 85, cổng "> 80" và dây xanh lá, luật tắt bơm vừa bắn sáng lên, mục Ghi PLC hiện "= false"; chip "Thử logic · t = 6 s" trên thanh công cụ của sơ đồ](img/eng-logic-so-do-thu.png)
+
+![Sơ đồ có lỗi: Tag số PUMP01.FLOW nối vào điều kiện BOOL và Tag TANK09.LEVEL không có trong project: hộp Tag, dây, cổng và viền khối đỏ; tab Thông tin liệt kê E_LOGIC_TYPE và E_LOGIC_TAG_REF](img/eng-logic-so-do-loi.png)
+
+### 9.2. Bảng và các khối
+
+Thao tác ở Bảng: **Thêm khối** (Insert), **Xóa** (Delete), **Chuyển lên**/**Chuyển xuống**, F2 đổi id (Studio cập nhật mọi tham chiếu), ô "Tìm id, tên, Tag", ô "Chỉ dòng lỗi", **Kiểm tra** (F7). Dock dưới có **Inspector** (trường của khối đang chọn), **Thông tin** (lỗi và cảnh báo, nhấp đúp để nhảy tới ô; F8 / Shift+F8 tới lỗi kế / trước ở bất kỳ đâu trong editor) và **Thử logic**. Task card **Khối / Tag** bên phải: kéo một khối vào bảng (hoặc nhấp đúp) để thêm, kéo một Tag vào ô biểu thức. Giới hạn: 200 luật, 100 timer, 100 counter, 50 cộng dồn, 50 giờ chạy, 50 lịch, 100 mục ghi (`E_LOGIC_LIMIT`).
 
 | Khối | Dùng khi | Trường chính |
 |---|---|---|

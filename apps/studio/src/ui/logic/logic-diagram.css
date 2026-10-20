@@ -486,7 +486,7 @@
   cursor: default;
   opacity: 0.6;
 }
-@container lgd (max-height: 280px) {
+@container lgd (max-height: 330px) {
   .lgd-mini {
     display: none;
   }

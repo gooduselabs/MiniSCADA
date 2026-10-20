@@ -124,8 +124,6 @@ function project() {
   return files;
 }
 
-export const projectForScratch = () => project();
-
 const logicOf = (page) => page.evaluate(() => window.__matApp.store.state.outline.logic);
 const layoutOf = (page) =>
   page.evaluate(() => window.__matApp.store.state.outline.logicLayout.nodes);

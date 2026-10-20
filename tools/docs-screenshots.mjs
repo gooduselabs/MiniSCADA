@@ -529,6 +529,25 @@ async function online(page, user, shot) {
   );
 }
 
+/** Sơ đồ khối Logic (feature 015): mức phóng `z`, khối `key` ở giữa vùng vẽ (lệch trái để thấy cổng phía trước nó). */
+async function diagramCenter(page, key, z) {
+  await page.evaluate(
+    (k, zoom) => {
+      const d = document.querySelector('mat-logic-diagram');
+      const n = d.graph().byKey.get(k);
+      const v = d.querySelector('.lgd-view');
+      d.setViewport({
+        z: zoom,
+        tx: v.clientWidth / 2 - (n.x + n.w / 2 - 100) * zoom,
+        ty: v.clientHeight / 2 - (n.y + n.h / 2) * zoom,
+      });
+    },
+    key,
+    z,
+  );
+  await sleep(300);
+}
+
 // ---------------------------------------------------------------- Cảnh của Studio
 
 /** Mỗi cảnh: tên nhóm, hàm nhận { page, shot(name) }. Ảnh tên `<tiền tố>-<tên>.png`. */
@@ -637,14 +656,59 @@ const studioScenes = [
     async run({ page, shot }) {
       await openAndWait(page, dashboardWithLogic(), 'D:\\Projects\\dashboard-demo');
       await treeNode(page, 'logic');
-      await page.waitForSelector('mat-logic-editor table.lg-grid');
+      // Feature 015: Sơ đồ là khung nhìn mặc định (khung cao hơn cho vùng vẽ).
+      await page.waitForSelector('mat-logic-diagram .lgd-view');
       await expandNode(page, 'logic');
       await page.evaluate(() => {
         const app = window.__matApp;
         if (!(app.workspace.taskCard === 'toolbox' && app.workspace.taskCardOpen))
           app.setTaskCard('toolbox');
       });
-      await page.waitForSelector('mat-taskcards .tc-logic [data-block="rule"]');
+      await page.waitForSelector('mat-taskcards .tc-logic [data-gate="and"]');
+      await page.setViewport({ ...VIEWPORT, height: 900 });
+      await sleep(400);
+      await page.$eval('mat-logic-diagram g[data-node="bom1_bat_muc_thap"]', (g) => g.focus());
+      await diagramCenter(page, 'bom1_bat_muc_thap', 0.78);
+      await shot('eng-logic-so-do');
+      // Lỗi trên sơ đồ: Tag lạ và Tag số vào điều kiện BOOL (validator tô đỏ cổng, dây, khối).
+      await page.evaluate(() => {
+        const app = window.__matApp;
+        const doc = structuredClone(app.store.state.outline.logic);
+        doc.rules[1].when = 'TANK09.LEVEL < 20 && LOGIC.CA_NGAY.Q';
+        doc.rules[0].when = 'PUMP01.FLOW';
+        app.store.edit([{ kind: 'logicSet', doc }]);
+      });
+      await sleep(400);
+      await diagramCenter(page, 'bom1_bat_muc_thap', 0.78);
+      await shot('eng-logic-so-do-loi');
+      await page.evaluate(() => window.__matApp.store.undo());
+      await sleep(200);
+      // Thử logic trên sơ đồ: mức 85 % → cổng "> 80" và dây xanh, luật bắn, Ghi PLC nhận false (mô phỏng).
+      await clickSel(page, 'mat-logic-dock [data-tab="test"]');
+      await page.waitForSelector('mat-logic-test [data-act="step"]');
+      await clickSel(page, 'mat-logic-test [data-act="step"]');
+      await clickSel(page, 'mat-logic-test [data-manual="TANK01.LEVEL"]');
+      await page.$eval('mat-logic-test [data-value="TANK01.LEVEL"]', (e) => {
+        e.value = '85';
+        e.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      await clickSel(page, 'mat-logic-test [data-speed="10"]');
+      await clickSel(page, 'mat-logic-test [data-act="play"]');
+      await waitFor(
+        page,
+        () =>
+          document.querySelector('mat-logic-diagram g[data-node="bom1_tat_muc_cao"].fire') !== null,
+        undefined,
+        8000,
+      );
+      await clickSel(page, 'mat-logic-test [data-act="play"]');
+      await diagramCenter(page, 'bom1_tat_muc_cao', 0.78);
+      await shot('eng-logic-so-do-thu');
+      await clickSel(page, 'mat-logic-dock [data-tab="info"]');
+      await page.setViewport(VIEWPORT);
+      // Bảng (khung nhìn của 011).
+      await clickSel(page, 'mat-logic-editor [data-view="table"]');
+      await page.waitForSelector('mat-logic-editor table.lg-grid');
       await page.click('mat-logic-editor tr[data-id="bom1_bat_muc_thap"] td.rn');
       await sleep(400);
       await shot('eng-logic');
