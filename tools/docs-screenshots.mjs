@@ -1,4 +1,4 @@
-/* global window, document, location */
+/* global window, document, location, HTMLAnchorElement, FileReader */
 // Ảnh chụp màn hình cho tài liệu người dùng (feature 011, T203; SC-038): chụp giao diện web của mAT Studio và trang vận hành
 // trên Chrome headless, dùng lại khung e2e có sẵn (lớp Tauri giả và thiết bị giả của Studio: apps/studio/tests/e2e; runtime
 // giả của trang vận hành: apps/runtime-web/tests/e2e). Dữ liệu tất định: project mẫu trong projects/ (dashboard-demo,
