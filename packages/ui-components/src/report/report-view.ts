@@ -29,12 +29,21 @@ export class MatReportView extends LitElement {
     table: { attribute: false },
     labels: { attribute: false },
     compact: { type: Boolean, reflect: true },
+    selectable: { type: Boolean, reflect: true },
+    selected: { type: String },
   };
 
   declare table: ReportTable | null;
   declare labels: ReportViewLabels;
   /** Khung hẹp (xem trước Studio): thẻ nhỏ hơn, biểu đồ thấp hơn. */
   declare compact: boolean;
+  /**
+   * Trình thiết kế (Studio): bấm vào dải tiêu đề, hàng thẻ, khung biểu đồ hay tiêu đề cột phát 
+eport-select với
+   * part (general, 	iles, chart, col:<tagId>); phần đang chọn (selected) có viền nhấn.
+   */
+  declare selectable: boolean;
+  declare selected: string;
 
   #chart: ChartInstance | null = null;
   #chartBox: HTMLElement | null = null;
@@ -46,6 +55,19 @@ export class MatReportView extends LitElement {
     this.table = null;
     this.labels = viReport;
     this.compact = false;
+    this.selectable = false;
+    this.selected = '';
+  }
+
+  #pick(part: string): void {
+    if (!this.selectable) return;
+    this.dispatchEvent(
+      new CustomEvent('report-select', { detail: { part }, bubbles: true, composed: true }),
+    );
+  }
+
+  #sel(part: string): string {
+    return this.selectable && this.selected === part ? ' sel' : '';
   }
 
   static override styles = css`
@@ -245,6 +267,22 @@ export class MatReportView extends LitElement {
       padding: 14px;
       color: var(--mat-text-muted, #56646a);
     }
+    :host([selectable]) [data-part] {
+      cursor: pointer;
+    }
+    :host([selectable]) [data-part]:hover {
+      outline: 1px dashed var(--mat-accent, #0b7285);
+      outline-offset: 2px;
+    }
+    .sel,
+    :host([selectable]) .sel:hover {
+      outline: 2px solid var(--mat-focus, var(--mat-accent, #0b7285));
+      outline-offset: 2px;
+    }
+    thead th.sel {
+      outline-offset: -3px;
+      outline-color: var(--mat-accent-ink, #fff);
+    }
     .sr-only {
       position: absolute;
       width: 1px;
@@ -269,7 +307,11 @@ export class MatReportView extends LitElement {
     if (!t) return nothing;
     const l = this.labels;
     return html`<article class="doc" aria-label=${`${t.title} ${t.periodLabel}`}>
-      <header class="band">
+      <header
+        class="band${this.#sel('general')}"
+        data-part="general"
+        @click=${() => this.#pick('general')}
+      >
         <div>
           ${t.org ? html`<div class="org">${t.org}</div>` : nothing}
           <h2 class="title">${t.title}</h2>
@@ -321,7 +363,11 @@ export class MatReportView extends LitElement {
   #tiles(t: ReportTable): TemplateResult | typeof nothing {
     const tiles = t.tiles ?? [];
     if (tiles.length === 0) return nothing;
-    return html`<div class="tiles">
+    return html`<div
+      class="tiles${this.#sel('tiles')}"
+      data-part="tiles"
+      @click=${() => this.#pick('tiles')}
+    >
       ${tiles.map(
         (x) =>
           html`<div
@@ -342,7 +388,11 @@ export class MatReportView extends LitElement {
 
   #chartFrame(c: ReportChart | null): TemplateResult | typeof nothing {
     if (!c) return nothing;
-    return html`<figure class="frame chart">
+    return html`<figure
+      class="frame chart${this.#sel('chart')}"
+      data-part="chart"
+      @click=${() => this.#pick('chart')}
+    >
       <figcaption class="head">${c.title}</figcaption>
       <div class="ec" role="img" aria-label=${`${c.title}. ${this.labels.chartHint}`}></div>
     </figure>`;
@@ -367,7 +417,15 @@ export class MatReportView extends LitElement {
             <tr>
               <th scope="col">${t.rowHeader ?? l.rowHeader}</th>
               ${t.columns.map(
-                (c) => html`<th scope="col" class="num">${reportColumnHeader(c, l)}</th>`,
+                (c) =>
+                  html`<th
+                    scope="col"
+                    class="num${this.#sel(`col:${c.tagId}`)}"
+                    data-part=${`col:${c.tagId}`}
+                    @click=${() => this.#pick(`col:${c.tagId}`)}
+                  >
+                    ${reportColumnHeader(c, l)}
+                  </th>`,
               )}
             </tr>
           </thead>

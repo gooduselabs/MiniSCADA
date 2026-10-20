@@ -9,17 +9,31 @@ import {
 } from '@mat/history-math';
 import { exportCsv, exportXlsx, type ExportMeta } from '@mat/report-export';
 import type { ReportTemplate } from '@mat/history-math';
-import { HistoryError, FakeHistorySource, type HistorySource } from '@mat/ui-components';
+import {
+  HistoryError,
+  FakeHistorySource,
+  setEChartsLoader,
+  type HistorySource,
+} from '@mat/ui-components';
 import { SimHistorySource } from '@mat/tag-sim';
 import type { ReportsConfig } from '@mat/project-schema';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { simHistoryGroups } from '../model/sim-history-groups.ts';
 import { loggingOf, newHistoryApp, reportsOf } from './history-test-helpers.ts';
 import './report-preview.ts';
 import { projectTheme, type ReportPreview } from './report-preview.ts';
 import { cleanup } from './test-helpers.ts';
 
-afterEach(cleanup);
+// ECharts thật nạp chậm trong jsdom: bộ nạp giả (biểu đồ không phải đối tượng của test này).
+beforeEach(() =>
+  setEChartsLoader(async () => ({
+    init: () => ({ setOption() {}, resize() {}, dispose() {} }),
+  })),
+);
+afterEach(() => {
+  setEChartsLoader(null);
+  cleanup();
+});
 
 const NOW = Date.UTC(2026, 9, 14, 10, 0, 0);
 const DAY = { d: '2026-10-12' };
@@ -61,9 +75,12 @@ async function setup(over: Partial<ReportPreview> = {}) {
   return { el, source, reports, app, tags, logging };
 }
 
-const rows = (el: Element) => [...el.querySelectorAll('table.rpt tbody tr')];
+/** Bảng nằm trong shadow root của <mat-report-view> (feature 015, cùng thành phần với trang vận hành). */
+const view = (el: Element): ParentNode =>
+  el.querySelector('mat-report-view')?.shadowRoot ?? document.createDocumentFragment();
+const rows = (el: Element) => [...view(el).querySelectorAll('table.rpt tbody tr')];
 const heads = (el: Element) =>
-  [...el.querySelectorAll('table.rpt thead th')].map((th) => norm(th.textContent));
+  [...view(el).querySelectorAll('table.rpt thead th')].map((th) => norm(th.textContent));
 
 describe('mat-report-preview', () => {
   it('dựng bảng từ nguồn mô phỏng: 24 hàng giờ, cột theo (cột mẫu, hàm), dòng tổng, độ phủ; khớp buildReport', async () => {
@@ -71,12 +88,12 @@ describe('mat-report-preview', () => {
     expect(rows(el)).toHaveLength(25); // 24 giờ + dòng tổng
     expect(heads(el)[0]).toBe('Thời gian');
     expect(heads(el).slice(1)).toEqual([
-      'Điện năng (kWh) · Chênh lệch',
-      'Điện năng (kWh) · Lớn nhất',
-      'Công suất (kW) · Trung bình',
-      'Công suất (kW) · Lớn nhất',
+      'Điện năng (kWh) · chênh lệch',
+      'Điện năng (kWh) · lớn nhất',
+      'Công suất (kW) · trung bình',
+      'Công suất (kW) · lớn nhất',
     ]);
-    expect(norm(el.querySelector('.rpt-cov')?.textContent)).toContain('Dữ liệu đủ');
+    expect(norm(view(el).querySelector('.coverage')?.textContent)).toContain('Dữ liệu đủ');
     // So với việc dựng trực tiếp bằng history-math trên cùng nguồn: cùng từng ô.
     const tpl = reports.reports[0]!;
     const req = reportRequest(tpl as never, DAY, 7 * 3_600_000);
@@ -84,7 +101,7 @@ describe('mat-report-preview', () => {
       req.batches.map((b) =>
         source.aggregate(
           {
-            group: tpl.group,
+            group: tpl.group!,
             tags: b,
             from: req.from,
             to: req.to,
@@ -113,18 +130,18 @@ describe('mat-report-preview', () => {
     const { el, reports } = await setup();
     const t0 = performance.now();
     const tpl = structuredClone(reports.reports[0]!);
-    tpl.columns[0]!.functions = ['min', 'avg'];
+    tpl.columns![0]!.functions = ['min', 'avg'];
     el.template = tpl;
     await el.whenIdle();
     expect(performance.now() - t0).toBeLessThan(300);
-    expect(heads(el)[1]).toBe('Điện năng (kWh) · Nhỏ nhất');
+    expect(heads(el)[1]).toBe('Điện năng (kWh) · nhỏ nhất');
     const t1 = performance.now();
     const swapped = structuredClone(tpl);
-    swapped.columns.reverse();
+    swapped.columns!.reverse();
     el.template = swapped;
     await el.whenIdle();
     expect(performance.now() - t1).toBeLessThan(300);
-    expect(heads(el)[1]).toBe('Công suất (kW) · Trung bình');
+    expect(heads(el)[1]).toBe('Công suất (kW) · trung bình');
   });
 
   it('đổi kỳ: ngày khác đổi nhãn hàng; ca và tháng đúng số hàng', async () => {
@@ -166,7 +183,7 @@ describe('mat-report-preview', () => {
     el.template = empty;
     await el.whenIdle();
     expect(norm(el.querySelector('.rp-msg')?.textContent)).toContain('cột');
-    expect(el.querySelector('table.rpt')).toBeNull();
+    expect(view(el).querySelector('table.rpt')).toBeNull();
     el.template = { ...empty, group: '' };
     await el.whenIdle();
     expect(el.querySelector('.rp-msg')).not.toBeNull();
@@ -256,16 +273,17 @@ describe('mat-report-preview', () => {
   it('nhãn, tiêu đề và tên là văn bản thuần: không dựng HTML từ dữ liệu', async () => {
     const { el, reports } = await setup();
     const evil = structuredClone(reports.reports[0]!);
-    evil.columns[0]!.label = '<img src=x onerror=alert(1)>';
+    evil.columns![0]!.label = '<img src=x onerror=alert(1)>';
     el.template = evil;
     await el.whenIdle();
     expect(el.querySelector('img')).toBeNull();
+    expect(view(el).querySelector('img')).toBeNull();
     expect(heads(el)[1]).toContain('<img src=x onerror=alert(1)>');
   });
 
   it('chỉ đọc kiểu `ReportTemplate`: mẫu của project dùng được trực tiếp', async () => {
     const { reports } = await setup();
     const t: ReportTemplate = reports.reports[0] as unknown as ReportTemplate;
-    expect(t.columns.length).toBeGreaterThan(0);
+    expect(t.columns!.length).toBeGreaterThan(0);
   });
 });

@@ -1188,6 +1188,9 @@ export class StudioApp {
         return this.openReimport();
       case 'screen.add':
         return screenAdd(this, 'screen');
+      case 'report.add':
+        this.openEditor('reports');
+        return;
       case 'screen.addFree':
         return screenAdd(this, 'screen', 'free');
       case 'screen.addPopup':

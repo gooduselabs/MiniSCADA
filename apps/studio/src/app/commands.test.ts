@@ -118,6 +118,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'open.driverDiag',
       // feature 007: màn hình 0.3 (không có menu)
       'screen.add',
+      // feature 015: thư viện mẫu báo cáo (bảng lệnh và menu chuột phải của cây)
+      'report.add',
       'screen.addFree',
       'screen.addPopup',
       'screen.setEntry',

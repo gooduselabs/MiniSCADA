@@ -167,7 +167,7 @@ describe('cột và hàm', () => {
       reports: [{ id: 'a', name: 'A', group: 'dien', period: 'day', columns: [] }],
     };
     const r = addColumns(base, 0, ['METER1.KW', 'METER1.KW', 'PROC.PRESSURE', 'NOPE'], l, types());
-    expect(r.cfg.reports[0]!.columns.map((c) => [c.tagId, c.functions])).toEqual([
+    expect(r.cfg.reports[0]!.columns!.map((c) => [c.tagId, c.functions])).toEqual([
       ['METER1.KW', ['avg']],
     ]);
     expect(r.rejected.map((x) => [x.tagId, x.reason])).toEqual([
@@ -178,7 +178,7 @@ describe('cột và hàm', () => {
     const bool = structuredClone(l);
     bool.groups[2]!.tags.push({ tagId: 'PUMP1.RUN' });
     const b = addColumns(base, 0, ['PUMP1.RUN'], bool, types());
-    expect(b.cfg.reports[0]!.columns[0]!.functions).toEqual(['sum']);
+    expect(b.cfg.reports[0]!.columns![0]!.functions).toEqual(['sum']);
   });
 
   it('giới hạn 24 cột: cột thừa bị bỏ kèm lý do limit', () => {
@@ -213,15 +213,14 @@ describe('cột và hàm', () => {
   it('toggleFunction giữ thứ tự chuẩn, không bỏ hàm cuối; setColumnFunctions; sửa nhãn, đơn vị, số lẻ; xóa, di chuyển cột', () => {
     const c = reports0();
     const t1 = toggleFunction(c, 0, 0, 'avg'); // cột 0 đang [delta, max]
-    expect(t1.reports[0]!.columns[0]!.functions).toEqual(['max', 'avg', 'delta']);
+    expect(t1.reports[0]!.columns![0]!.functions).toEqual(['max', 'avg', 'delta']);
     expect(
-      toggleFunction(toggleFunction(c, 0, 0, 'delta'), 0, 0, 'max').reports[0]!.columns[0]!
+      toggleFunction(toggleFunction(c, 0, 0, 'delta'), 0, 0, 'max').reports[0]!.columns![0]!
         .functions,
     ).toEqual(['max']); // không bỏ hàm cuối
-    expect(setColumnFunctions(c, 0, 1, ['min', 'last']).reports[0]!.columns[1]!.functions).toEqual([
-      'min',
-      'last',
-    ]);
+    expect(setColumnFunctions(c, 0, 1, ['min', 'last']).reports[0]!.columns![1]!.functions).toEqual(
+      ['min', 'last'],
+    );
     const f = setColumnField(
       setColumnField(setColumnField(c, 0, 0, 'label', 'Điện'), 0, 0, 'unit', ''),
       0,
@@ -229,10 +228,12 @@ describe('cột và hàm', () => {
       'decimals',
       3,
     );
-    expect(f.reports[0]!.columns[0]).toMatchObject({ label: 'Điện', decimals: 3 });
-    expect(f.reports[0]!.columns[0]!.unit).toBeUndefined();
-    expect(removeColumns(c, 0, [0]).reports[0]!.columns.map((x) => x.tagId)).toEqual(['METER1.KW']);
-    expect(moveColumn(c, 0, 0, 1).reports[0]!.columns.map((x) => x.tagId)).toEqual([
+    expect(f.reports[0]!.columns![0]).toMatchObject({ label: 'Điện', decimals: 3 });
+    expect(f.reports[0]!.columns![0]!.unit).toBeUndefined();
+    expect(removeColumns(c, 0, [0]).reports[0]!.columns!.map((x) => x.tagId)).toEqual([
+      'METER1.KW',
+    ]);
+    expect(moveColumn(c, 0, 0, 1).reports[0]!.columns!.map((x) => x.tagId)).toEqual([
       'METER1.KW',
       'METER1.KWH',
     ]);
@@ -260,8 +261,8 @@ describe('lỗi theo ô và tài liệu', () => {
     const c = reports0();
     c.reports[1]!.id = c.reports[0]!.id; // E_RPT_DUP_ID
     c.reports[2]!.group = 'khong-co'; // E_RPT_REF_GROUP
-    c.reports[0]!.columns[0]!.tagId = 'PROC.PRESSURE'; // E_RPT_REF_TAG (không thuộc nhóm dien)
-    c.reports[0]!.columns[1]!.functions = ['avg', 'avg']; // E_RPT_FN
+    c.reports[0]!.columns![0]!.tagId = 'PROC.PRESSURE'; // E_RPT_REF_TAG (không thuộc nhóm dien)
+    c.reports[0]!.columns![1]!.functions = ['avg', 'avg']; // E_RPT_FN
     const issues = await run({ ...demo(), 'reports.json': JSON.stringify(c) });
     const b = bucketReportIssues(issues, 'reports.json');
     expect(b.hasErrors).toBe(true);
@@ -330,7 +331,7 @@ describe('lưới cột (adapter của mat-grid)', () => {
 
   it('cột và chữ ô: Tag, nhãn, đơn vị, số lẻ, hàm (tên tiếng Việt), ghi chú theo kiểu Tag', () => {
     const a = columnsAdapter(ctx());
-    expect(a.columns.map((c) => c.key)).toEqual([
+    expect(a.columns!.map((c) => c.key)).toEqual([
       'tag',
       'label',
       'unit',
@@ -352,11 +353,11 @@ describe('lưới cột (adapter của mat-grid)', () => {
     const ok = a.apply([{ row: 0, col: 'fns', text: 'avg, Nhỏ nhất ; sum' }]);
     expect(ok.rejected).toEqual([]);
     expect(
-      (ok.edits[0] as { value: ReportsConfig }).value.reports[0]!.columns[0]!.functions,
+      (ok.edits[0] as { value: ReportsConfig }).value.reports[0]!.columns![0]!.functions,
     ).toEqual(['avg', 'min', 'sum']);
     expect(a.apply([{ row: 0, col: 'fns', text: 'trung vị' }]).rejected).toHaveLength(1);
     const c = ctx();
-    c.cfg.reports[0]!.columns[0]!.tagId = 'PUMP1.RUN'; // BOOL
+    c.cfg.reports[0]!.columns![0]!.tagId = 'PUMP1.RUN'; // BOOL
     c.logging.groups[2]!.tags.push({ tagId: 'PUMP1.RUN' });
     const b = columnsAdapter(c);
     expect(b.apply([{ row: 0, col: 'fns', text: 'delta' }]).rejected).toHaveLength(1);
@@ -372,7 +373,7 @@ describe('lưới cột (adapter của mat-grid)', () => {
     ]);
     expect(two.edits).toHaveLength(1);
     const v = (two.edits[0] as { value: ReportsConfig }).value.reports[0]!.columns;
-    expect(v.map((c) => c.decimals)).toEqual([3, 3]);
+    expect(v!.map((c) => c.decimals)).toEqual([3, 3]);
     const ro = columnsAdapter({ ...ctx(), readOnly: true });
     expect(ro.apply([{ row: 0, col: 'label', text: 'x' }]).rejected).toHaveLength(1);
     expect(ro.editable(0, 'label')).toBe(false);

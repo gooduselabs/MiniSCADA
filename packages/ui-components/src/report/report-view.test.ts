@@ -143,3 +143,29 @@ describe('<mat-report-view>', () => {
     expect(el.shadowRoot!.querySelector('article')).toBeNull();
   });
 });
+
+describe('<mat-report-view> chọn phần (trình thiết kế)', () => {
+  it('selectable: bấm tiêu đề cột phát report-select col:<tag>, phần đang chọn có lớp sel', async () => {
+    fakeECharts();
+    const el = await mount(table());
+    el.selectable = true;
+    el.selected = 'tiles';
+    await el.updateComplete;
+    const got: string[] = [];
+    el.addEventListener('report-select', (e) => got.push((e as CustomEvent).detail.part));
+    const r = el.shadowRoot!;
+    (r.querySelector('table.rpt thead th.num') as HTMLElement).click();
+    (r.querySelector('.band') as HTMLElement).click();
+    expect(got).toEqual(['col:E', 'general']);
+    expect(r.querySelector('.tiles')!.classList.contains('sel')).toBe(true);
+  });
+
+  it('không selectable: không phát sự kiện', async () => {
+    fakeECharts();
+    const el = await mount(table());
+    let n = 0;
+    el.addEventListener('report-select', () => n++);
+    (el.shadowRoot!.querySelector('.band') as HTMLElement).click();
+    expect(n).toBe(0);
+  });
+});

@@ -240,3 +240,324 @@ mat-reports-list .te-sr {
     border-top: 1px solid var(--border);
   }
 }
+
+/* ---- Trình thiết kế báo cáo (feature 015): ba vùng Cấu trúc | Xem trước trực tiếp | Thuộc tính ---- */
+mat-templates-editor .rd-banner {
+  margin: 6px 12px 0;
+}
+mat-templates-editor .rd-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 300px;
+}
+mat-templates-editor .rd-pane-h {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+mat-templates-editor .rd-outline,
+mat-templates-editor .rd-props {
+  min-height: 0;
+  overflow: auto;
+  background: var(--panel);
+  padding: 10px 8px 16px;
+}
+mat-templates-editor .rd-outline {
+  border-right: 1px solid var(--border);
+}
+mat-templates-editor .rd-props {
+  border-left: 1px solid var(--border);
+  padding: 10px 12px 16px;
+}
+mat-templates-editor .rd-outline > .rd-pane-h {
+  padding: 0 6px 6px;
+}
+mat-templates-editor .rd-tree,
+mat-templates-editor .rd-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+mat-templates-editor .rd-node {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+mat-templates-editor .rd-node.sub {
+  padding-left: 22px;
+}
+mat-templates-editor .rd-node:hover {
+  background: var(--hover, var(--sel));
+}
+mat-templates-editor .rd-node.cur {
+  background: var(--sel);
+  box-shadow: inset 2px 0 0 var(--accent);
+  font-weight: 600;
+}
+mat-templates-editor .rd-node:focus-visible,
+mat-templates-editor .rd-card:focus-visible,
+mat-templates-editor .rd-paper:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+mat-templates-editor .rd-node .lbl {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-templates-editor .rd-meta {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-templates-editor .rd-pill {
+  font-size: 10.5px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-2);
+  color: var(--muted);
+}
+mat-templates-editor .rd-pill.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+mat-templates-editor .rd-bad {
+  color: var(--err);
+  display: inline-flex;
+}
+mat-templates-editor .rd-group {
+  margin: 6px 0;
+}
+mat-templates-editor .rd-group-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 6px;
+  font-weight: 600;
+}
+mat-templates-editor .rd-group-h span:nth-child(2) {
+  flex: 1;
+}
+mat-templates-editor .rd-add {
+  margin: 4px 6px 0 22px;
+  min-width: 0;
+}
+mat-templates-editor .rd-canvas {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas, var(--panel-2, var(--bg)));
+}
+mat-templates-editor .rd-canvas.drop {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+mat-templates-editor .rd-canvas-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+mat-templates-editor .rd-canvas-bar .grow {
+  flex: 1;
+}
+mat-templates-editor .rd-canvas-bar label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+mat-templates-editor .rd-canvas-bar select {
+  height: 26px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+}
+mat-templates-editor .rd-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px 0;
+}
+mat-templates-editor .rd-paper {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 14px 20px;
+}
+mat-templates-editor .rd-paper mat-report-preview {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+mat-templates-editor .rd-props-t {
+  margin: 6px 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+mat-templates-editor .rd-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+mat-templates-editor .rd-f {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+mat-templates-editor .rd-f > label:not(.te-chk),
+mat-templates-editor .rd-k {
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--muted);
+}
+mat-templates-editor .rd-f :is(input[type='text'], select) {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+  min-width: 0;
+}
+mat-templates-editor .rd-f :is(input, select):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+mat-templates-editor .rd-f [aria-invalid='true'] {
+  border-color: var(--err);
+}
+mat-templates-editor .rd-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+mat-templates-editor .rd-radios {
+  margin: 0;
+  padding: 6px 10px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+mat-templates-editor .rd-radios legend {
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+mat-templates-editor .rd-props .te-fns {
+  margin: 0;
+}
+mat-templates-editor .rd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+mat-templates-editor .rd-actions .grow {
+  flex: 1;
+}
+mat-templates-editor .te-sr,
+mat-reports-list .te-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+@media (max-width: 1200px) {
+  mat-templates-editor .rd-body {
+    grid-template-columns: 200px minmax(0, 1fr) 260px;
+  }
+}
+
+/* ---- Thư viện mẫu có sẵn (trang Báo cáo) ---- */
+mat-reports-list .rd-gallery {
+  margin-bottom: 16px;
+}
+mat-reports-list .rd-gallery h3 {
+  margin: 4px 0 2px;
+  font-size: 14px;
+}
+mat-reports-list .te-help {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+mat-reports-list .rd-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+}
+mat-reports-list .rd-card {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  grid-template-rows: auto auto auto;
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: start;
+  padding: 12px;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+mat-reports-list .rd-card:hover:not([aria-disabled='true']) {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+mat-reports-list .rd-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+mat-reports-list .rd-card[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+mat-reports-list .rd-card-i {
+  grid-row: 1 / 4;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--sel);
+  color: var(--accent);
+}
+mat-reports-list .rd-card-t {
+  font-weight: 600;
+}
+mat-reports-list .rd-card-d,
+mat-reports-list .rd-card-why {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+mat-reports-list .rd-card-why {
+  color: var(--warn);
+}

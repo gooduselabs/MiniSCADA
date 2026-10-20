@@ -1,16 +1,18 @@
-// Khung Xem trước báo cáo của editor Mẫu báo cáo (feature 010, US8, T133; contracts/studio-010.md §2). Dựng bảng bằng `reportRequest`
-// và `buildReport` của history-math (một ReportTable cho màn hình và cả bốn định dạng xuất) từ MỘT nguồn lịch sử chọn được:
-// mô phỏng (`SimHistorySource`) hoặc thiết bị (`DeviceHistorySource`). Đổi mẫu, hàm, thứ tự cột hay kỳ thì dựng lại ngay (hủy lần
-// dựng cũ). Nút xuất thử CSV, CSV vi-VN, XLSX, PDF dùng đúng mã của trang runtime (`report-export`, XLSX và PDF tải lười) rồi
-// giao byte cho `save` (lệnh lưu của Tauri qua hộp thoại; không ghi tự động). Mọi chữ qua binding của Lit: nhãn, tiêu đề là văn
-// bản thuần.
+// Khung Xem trước trực tiếp của trình thiết kế báo cáo (feature 010 US8; feature 015 FR-004, FR-007). Dựng bảng bằng
+// `runReport` của ui-components, CÙNG mã với trang Báo cáo của runtime-web (một ReportTable cho màn hình và bốn định dạng
+// xuất), từ MỘT nguồn lịch sử chọn được: mô phỏng (`SimHistorySource`) hoặc thiết bị (`DeviceHistorySource`); mẫu alarm và
+// logic dùng nguồn sự kiện (mô phỏng của Studio). Hiện bằng `<mat-report-view>` (dải tiêu đề, thẻ, biểu đồ, bảng, bảng phụ);
+// bấm vào phần của báo cáo chọn phần đó ở trình thiết kế (`report-select`). Đổi mẫu, hàm, thứ tự cột hay kỳ thì dựng lại ngay
+// (hủy lần dựng cũ). Nút xuất thử CSV, CSV vi-VN, XLSX, PDF dùng đúng mã của trang runtime (`report-export`, XLSX và PDF tải
+// lười) rồi giao byte cho `save` (hộp thoại lưu của Tauri). Mọi chữ qua binding của Lit: nhãn, tiêu đề là văn bản thuần.
 import {
-  buildReport,
+  isoWeekOf,
   localParts,
   parseUtcOffset,
-  reportRequest,
+  validSelection,
   workDayOffsetMs,
-  type AggregateResult as MathAggregate,
+  type ReportFn,
+  type ReportSelection,
   type ReportTable,
 } from '@mat/history-math';
 import {
@@ -25,7 +27,13 @@ import {
   type ReportTheme,
 } from '@mat/report-export';
 import type { ReportTemplate as SchemaTemplate } from '@mat/project-schema';
-import type { HistoryCatalogGroup, HistorySource } from '@mat/ui-components';
+import {
+  runReport,
+  viReport,
+  type HistorySource,
+  type ReportEventSource,
+  type ReportViewLabels,
+} from '@mat/ui-components';
 import { html, LitElement, nothing, type PropertyValues } from 'lit';
 import { t } from '../i18n/index.ts';
 import { fnLabel } from '../model/reports-doc.ts';
@@ -41,10 +49,7 @@ export const defaultExporter: ReportExporter = { csv: exportCsv, xlsx: exportXls
 
 export type SaveResult = 'saved' | 'cancelled' | 'error';
 export type ExportKind = 'csv' | 'csv-excel' | 'xlsx' | 'pdf';
-export interface ReportPeriodSel {
-  d?: string;
-  m?: string;
-}
+export type ReportPeriodSel = ReportSelection;
 
 /**
  * Chủ đề báo cáo từ `project.json` (cùng quy ước với trang vận hành: không đặt hoặc lạ là industrial, contracts/ui-theme.md §1).
@@ -54,10 +59,21 @@ export function projectTheme(project: unknown): ReportTheme {
   return theme === 'vivid' || theme === 'dark' ? theme : 'industrial';
 }
 
-const LOW_COVERAGE = 0.95;
-const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-const MONTH_RE = /^\d{4}-\d{2}$/;
 const p2 = (n: number) => String(n).padStart(2, '0');
+const FNS: readonly ReportFn[] = [
+  'min',
+  'max',
+  'avg',
+  'sum',
+  'first',
+  'last',
+  'delta',
+  'count',
+  'onTime',
+  'starts',
+];
+const fnNames = (): Record<ReportFn, string> =>
+  Object.fromEntries(FNS.map((f) => [f, fnLabel(f).toLowerCase()])) as Record<ReportFn, string>;
 
 /** Nhãn của `report-export` lấy từ i18n của Studio (gói đó không chứa chuỗi giao diện). */
 export function exportLabels(): ExportLabels {
@@ -70,16 +86,24 @@ export function exportLabels(): ExportLabels {
     of: '/',
     rowHeader: t('rpt.pv.time'),
     coverage: t('rpt.x.coverage'),
-    fn: {
-      min: fnLabel('min').toLowerCase(),
-      max: fnLabel('max').toLowerCase(),
-      avg: fnLabel('avg').toLowerCase(),
-      sum: fnLabel('sum').toLowerCase(),
-      first: fnLabel('first').toLowerCase(),
-      last: fnLabel('last').toLowerCase(),
-      delta: fnLabel('delta').toLowerCase(),
-      count: fnLabel('count').toLowerCase(),
-    },
+    fn: fnNames(),
+  };
+}
+
+/** Chữ của `<mat-report-view>` theo i18n của Studio. */
+export function viewLabels(): ReportViewLabels {
+  return {
+    ...viReport,
+    period: t('rpt.x.period'),
+    rowHeader: t('rpt.pv.time'),
+    total: t('rpt.pv.total'),
+    pending: t('rpt.pv.pending'),
+    missingCell: t('rpt.pv.missingCell'),
+    tableTitle: t('rpt.pv.tableTitle'),
+    noRows: t('rpt.pv.noRows'),
+    chartHint: t('rpt.pv.chartHint'),
+    coverage: (pct) => t('rpt.pv.coverage', { pct }),
+    fn: fnNames(),
   };
 }
 
@@ -87,10 +111,18 @@ type Msg =
   | { kind: 'info' | 'busy' | 'error' | 'narrow' | 'disabled'; text: string; retry?: boolean }
   | { kind: 'login'; text: string };
 
+/** Độ lệch giờ của máy (`±HH:MM`): múi giờ của báo cáo alarm/logic khi không có nhóm lưu trữ. */
+function localTz(now: number): string {
+  const off = -new Date(now).getTimezoneOffset();
+  const a = Math.abs(off);
+  return `${off < 0 ? '-' : '+'}${p2(Math.floor(a / 60))}:${p2(a % 60)}`;
+}
+
 export class ReportPreview extends LitElement {
   static override properties = {
     template: { attribute: false },
     source: { attribute: false },
+    events: { attribute: false },
     period: { attribute: false },
     now: { attribute: false },
     userName: { attribute: false },
@@ -98,6 +130,8 @@ export class ReportPreview extends LitElement {
     save: { attribute: false },
     exporter: { attribute: false },
     theme: { attribute: false },
+    org: { attribute: false },
+    selected: { attribute: false },
     table: { state: true },
     msg: { state: true },
     loading: { state: true },
@@ -107,6 +141,8 @@ export class ReportPreview extends LitElement {
 
   declare template: SchemaTemplate | undefined;
   declare source: HistorySource | undefined;
+  /** Nguồn sự kiện của mẫu alarm/logic (mô phỏng); thiếu thì báo chỉ xem được bằng mô phỏng. */
+  declare events: ReportEventSource | undefined;
   declare period: ReportPeriodSel | undefined;
   declare now: () => number;
   declare userName: string;
@@ -118,6 +154,10 @@ export class ReportPreview extends LitElement {
   declare exporter: ReportExporter | undefined;
   /** Chủ đề của project (project.json `theme`, feature 012): màu của PDF/XLSX xuất thử. */
   declare theme: ReportTheme | undefined;
+  /** Tên đơn vị trên dải tiêu đề (reports.json `org` hoặc tên project). */
+  declare org: string;
+  /** Phần đang chọn ở trình thiết kế (viền nhấn trong xem trước). */
+  declare selected: string;
   declare table: ReportTable | null;
   declare msg: Msg | null;
   declare loading: boolean;
@@ -127,15 +167,18 @@ export class ReportPreview extends LitElement {
   #seq = 0;
   #pending: Promise<void> = Promise.resolve();
   #exporting: Promise<void> = Promise.resolve();
-  #group: HistoryCatalogGroup | null = null;
-  #sel: ReportPeriodSel = {};
+  #tz = '+07:00';
+  #sel: ReportSelection = {};
   #unsub: (() => void) | null = null;
   #sourceOf: HistorySource | undefined;
+  #ac: AbortController | null = null;
 
   constructor() {
     super();
     this.now = () => Date.now();
     this.userName = '';
+    this.org = '';
+    this.selected = '';
     this.table = null;
     this.msg = null;
     this.loading = false;
@@ -151,6 +194,7 @@ export class ReportPreview extends LitElement {
     this.#unsub?.();
     this.#unsub = null;
     this.#sourceOf = undefined;
+    this.#ac?.abort();
     super.disconnectedCallback();
   }
 
@@ -167,12 +211,20 @@ export class ReportPreview extends LitElement {
   }
 
   protected override updated(changed: PropertyValues): void {
-    if (changed.has('template') || changed.has('source') || changed.has('period')) this.refresh();
+    if (
+      changed.has('template') ||
+      changed.has('source') ||
+      changed.has('period') ||
+      changed.has('events') ||
+      changed.has('org')
+    )
+      this.refresh();
   }
 
   /** Dựng lại bảng (hủy lần dựng đang chạy). */
   refresh(): void {
     const seq = ++this.#seq;
+    this.#ac?.abort();
     this.#pending = this.#run(seq);
   }
 
@@ -184,25 +236,30 @@ export class ReportPreview extends LitElement {
       const x = this.#exporting;
       await Promise.all([p, x]);
       await this.updateComplete;
+      await this.querySelector('mat-report-view')?.updateComplete;
       if (p === this.#pending && x === this.#exporting) return;
     }
   }
 
   // ---- dựng bảng ---------------------------------------------------------------------------------------------
 
-  // Kỳ mặc định: ngày (tháng) đang chạy. Mẫu theo ca: ngày làm việc bắt đầu lúc ca 1 (`shifts.start`), nên
-  // trước giờ đó (ví dụ 01:07 với ca 06:00) ngày làm việc đang chạy là của hôm trước, không phải ngày lịch.
-  #defaultSel(tpl: SchemaTemplate, tz: string): ReportPeriodSel {
-    const period = tpl.period;
-    const p = localParts(this.now() - workDayOffsetMs(tpl), parseUtcOffset(tz));
-    return period === 'month' ? { m: `${p.y}-${p2(p.m)}` } : { d: `${p.y}-${p2(p.m)}-${p2(p.d)}` };
-  }
-
-  #validSel(tpl: SchemaTemplate, tz: string): ReportPeriodSel {
-    const month = tpl.period === 'month';
-    const want = this.period && (month ? this.period.m : this.period.d);
-    if (want && (month ? MONTH_RE : DAY_RE).test(want)) return month ? { m: want } : { d: want };
-    return this.#defaultSel(tpl, tz);
+  // Kỳ mặc định: ngày (tuần, tháng) đang chạy. Mẫu theo ca: ngày làm việc bắt đầu lúc ca 1 (`shifts.start`), nên trước giờ
+  // đó (ví dụ 01:07 với ca 06:00) ngày làm việc đang chạy là của hôm trước. Khoảng: 7 ngày tới hôm nay.
+  #defaultSel(tpl: SchemaTemplate, tz: string): ReportSelection {
+    const tzMs = parseUtcOffset(tz);
+    const now = this.now();
+    const p = localParts(now - workDayOffsetMs(tpl), tzMs);
+    const day = (q: { y: number; m: number; d: number }) => `${q.y}-${p2(q.m)}-${p2(q.d)}`;
+    switch (tpl.period) {
+      case 'month':
+        return { m: `${p.y}-${p2(p.m)}` };
+      case 'week':
+        return { w: isoWeekOf(p.y, p.m, p.d) };
+      case 'range':
+        return { from: day(localParts(now - 6 * 86_400_000, tzMs)), to: day(p) };
+      default:
+        return { d: day(p) };
+    }
   }
 
   async #run(seq: number): Promise<void> {
@@ -212,53 +269,57 @@ export class ReportPreview extends LitElement {
       this.#show(seq, null, null);
       return;
     }
-    if (!tpl.group) return this.#show(seq, null, { kind: 'info', text: t('rpt.pv.noGroup') });
-    if (tpl.columns.length === 0)
+    const kind = tpl.kind ?? 'table';
+    const events = kind === 'alarm' || kind === 'logic';
+    if (events && !this.events)
+      return this.#show(seq, null, { kind: 'info', text: t('rpt.pv.noEvents') });
+    if (!events && !tpl.group)
+      return this.#show(seq, null, { kind: 'info', text: t('rpt.pv.noGroup') });
+    if (!events && (tpl.columns ?? []).length === 0)
       return this.#show(seq, null, { kind: 'info', text: t('rpt.pv.noColumns') });
     this.loading = true;
+    const ac = new AbortController();
+    this.#ac = ac;
     try {
-      const cat = await src.catalog();
-      if (seq !== this.#seq) return;
-      if (!cat.enabled)
-        return this.#show(seq, null, { kind: 'disabled', text: t('rpt.pv.noHistory') });
-      const g = cat.groups.find((x) => x.id === tpl.group);
-      if (!g) return this.#show(seq, null, { kind: 'info', text: t('rpt.pv.noGroup') });
-      this.#group = g;
-      const sel = (this.#sel = this.#validSel(tpl, g.timeZone));
-      const req = reportRequest(tpl, sel, parseUtcOffset(g.timeZone), t('rpt.shiftWord'));
-      const ac = new AbortController();
-      const aggs = (await Promise.all(
-        req.batches.map((tags) =>
-          src.aggregate(
-            {
-              group: g.id,
-              tags,
-              from: req.from,
-              to: req.to,
-              bucketMs: req.bucketMs,
-              offsetMs: req.offsetMs,
-              priority: 'user',
-            },
-            ac.signal,
-          ),
-        ),
-      )) as unknown as MathAggregate[];
-      if (seq !== this.#seq) return;
-      const tagInfo: Record<string, { description?: string; unit?: string }> = {};
-      for (const c of tpl.columns) {
-        const i = this.tagInfo?.(c.tagId);
-        if (i) tagInfo[c.tagId] = i;
+      if (events) {
+        let tz = localTz(this.now());
+        try {
+          const cat = await src.catalog();
+          if (cat.enabled && cat.groups[0]) tz = cat.groups[0].timeZone;
+        } catch {
+          /* alarm, logic không cần lưu trữ */
+        }
+        this.#tz = tz;
+      } else {
+        const cat = await src.catalog();
+        if (seq !== this.#seq) return;
+        if (!cat.enabled)
+          return this.#show(seq, null, { kind: 'disabled', text: t('rpt.pv.noHistory') });
+        const g = cat.groups.find((x) => x.id === tpl.group);
+        if (!g) return this.#show(seq, null, { kind: 'info', text: t('rpt.pv.noGroup') });
+        this.#tz = g.timeZone;
       }
-      const table = buildReport({
+      if (seq !== this.#seq) return;
+      const want = this.period ?? {};
+      const sel = (this.#sel = validSelection(tpl, want) ? want : this.#defaultSel(tpl, this.#tz));
+      const table = await runReport({
         template: tpl,
         select: sel,
-        tz: g.timeZone,
+        tz: this.#tz,
         now: this.now(),
+        signal: ac.signal,
+        history: src,
+        ...(this.events ? { events: this.events } : {}),
         shiftWord: t('rpt.shiftWord'),
-        tagInfo,
-        aggregates: aggs,
+        fnNames: fnNames(),
+        coverageLabel: t('rpt.x.coverage'),
+        ...(this.org ? { org: this.org } : {}),
+        ...(this.tagInfo ? { tagInfo: this.tagInfo } : {}),
+        notes: { startsCapped: t('rpt.pv.startsCapped'), noLogic: t('rpt.pv.noLogic') },
       });
-      const hasData = table.rows.some((r) => !r.pending && r.cells.some((c) => c !== null));
+      if (seq !== this.#seq) return;
+      const hasData =
+        events || table.rows.some((r) => !r.pending && r.cells.some((c) => c !== null));
       this.#show(
         seq,
         hasData ? table : null,
@@ -285,6 +346,8 @@ export class ReportPreview extends LitElement {
         return { kind: 'disabled', text: t('rpt.pv.noHistory') };
       case 'NO_DEVICE':
         return { kind: 'info', text: t('rpt.pv.noDevice') };
+      case 'NOT_SUPPORTED':
+        return { kind: 'info', text: t('rpt.pv.noEvents') };
       case 'ABORTED':
         return { kind: 'info', text: '' };
       default:
@@ -304,13 +367,12 @@ export class ReportPreview extends LitElement {
   async #export(kind: ExportKind): Promise<void> {
     const tbl = this.table;
     const tpl = this.template;
-    const g = this.#group;
-    if (!tbl || !tpl || !g || !this.save) return;
+    if (!tbl || !tpl || !this.save) return;
     const labels = exportLabels();
     const meta: ExportMeta = {
       exportedBy: this.userName,
       exportedAt: this.now(),
-      tz: g.timeZone,
+      tz: this.#tz,
       sheetName: tpl.name,
       ...(tpl.paper ? { paper: tpl.paper } : {}),
       ...(this.theme ? { theme: this.theme } : {}),
@@ -325,7 +387,8 @@ export class ReportPreview extends LitElement {
       else if (kind === 'xlsx') bytes = await exp.xlsx(tbl, meta, labels);
       else bytes = await exp.pdf(tbl, meta, labels, tpl.footer ?? '');
       const f = EXPORT_FORMATS[kind];
-      const key = this.#sel.m ?? this.#sel.d ?? '';
+      const s = this.#sel;
+      const key = s.m ?? s.w ?? s.d ?? (s.from ? `${s.from}_${s.to}` : '');
       const name = exportFileName(tpl.id, key, f.ext);
       const r = await this.save(name, bytes, f.ext as 'csv' | 'xlsx' | 'pdf');
       this.notice =
@@ -345,69 +408,36 @@ export class ReportPreview extends LitElement {
 
   // ---- vẽ ----------------------------------------------------------------------------------------------------
 
-  #renderTable(tb: ReportTable) {
-    const nCols = tb.columns.length;
-    return html`<div
-        class="rpt-scroll"
-        tabindex="0"
-        role="region"
-        aria-label=${`${tb.title} ${tb.periodLabel}`}
-      >
-        <table class="rpt">
-          <caption class="rpt-sr">
-            ${tb.title} ${tb.periodLabel}
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">${t('rpt.pv.time')}</th>
-              ${tb.columns.map(
-                (c) =>
-                  html`<th scope="col">
-                    ${c.label}${c.unit ? ` (${c.unit})` : ''} · ${fnLabel(c.fn)}
-                  </th>`,
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            ${tb.rows.map((r) =>
-              r.pending
-                ? html`<tr>
-                    <th scope="row">${r.label}</th>
-                    <td class="pending" colspan=${nCols}>${t('rpt.pv.pending')}</td>
-                  </tr>`
-                : html`<tr>
-                    <th scope="row">${r.label}</th>
-                    ${r.text.map(
-                      (s) =>
-                        html`<td
-                          class="num ${r.coverage < LOW_COVERAGE ? 'miss' : ''}"
-                          title=${r.coverage < LOW_COVERAGE ? t('rpt.pv.missingCell') : nothing}
-                        >
-                          ${s}
-                        </td>`,
-                    )}
-                  </tr>`,
-            )}
-            ${
-              tb.totalsText
-                ? html`<tr class="total">
-                    <th scope="row">${t('rpt.pv.total')}</th>
-                    ${tb.totalsText.map((s) => html`<td class="num">${s}</td>`)}
-                  </tr>`
-                : nothing
-            }
-          </tbody>
-        </table>
-      </div>
-      <p class="rpt-cov">
-        ${t('rpt.pv.coverage', { pct: `${(tb.coverage * 100).toFixed(1).replace('.', ',')} %` })}
-      </p>`;
+  #periodInputs(tpl: SchemaTemplate | undefined) {
+    const set = (patch: ReportSelection) => {
+      this.period = { ...this.#sel, ...patch };
+    };
+    const input = (key: keyof ReportSelection, type: string, label: string) =>
+      html`<label class="rp-period">
+        <span>${label}</span>
+        <input
+          type=${type}
+          data-role=${key === 'to' ? 'period-to' : 'period'}
+          .value=${this.#sel[key] ?? ''}
+          ?disabled=${!tpl}
+          @change=${(e: Event) => set({ [key]: (e.target as HTMLInputElement).value })}
+        />
+      </label>`;
+    switch (tpl?.period) {
+      case 'month':
+        return input('m', 'month', t('rpt.pv.month'));
+      case 'week':
+        return input('w', 'week', t('rpt.pv.week'));
+      case 'range':
+        return html`${input('from', 'date', t('rpt.pv.from'))}
+        ${input('to', 'date', t('rpt.pv.to'))}`;
+      default:
+        return input('d', 'date', tpl?.period === 'shift' ? t('rpt.pv.workDay') : t('rpt.pv.day'));
+    }
   }
 
   protected override render() {
     const tpl = this.template;
-    const month = tpl?.period === 'month';
-    const value = month ? (this.#sel.m ?? '') : (this.#sel.d ?? '');
     const msg = this.msg;
     return html`<section
       class="rp"
@@ -415,21 +445,7 @@ export class ReportPreview extends LitElement {
       aria-busy=${this.loading ? 'true' : 'false'}
     >
       <div class="rp-bar">
-        <label class="rp-period">
-          <span
-            >${tpl?.period === 'shift' ? t('rpt.pv.workDay') : month ? t('rpt.pv.month') : t('rpt.pv.day')}</span
-          >
-          <input
-            type=${month ? 'month' : 'date'}
-            data-role="period"
-            .value=${value}
-            ?disabled=${!tpl}
-            @change=${(e: Event) => {
-              const v = (e.target as HTMLInputElement).value;
-              this.period = month ? { m: v } : { d: v };
-            }}
-          />
-        </label>
+        ${this.#periodInputs(tpl)}
         <span class="rp-grow"></span>
         ${(
           [
@@ -488,7 +504,18 @@ export class ReportPreview extends LitElement {
               }`
           : nothing
       }
-      ${this.table ? this.#renderTable(this.table) : nothing}
+      ${
+        this.table
+          ? html`<mat-report-view
+              class="rp-view"
+              compact
+              selectable
+              .selected=${this.selected}
+              .labels=${viewLabels()}
+              .table=${this.table}
+            ></mat-report-view>`
+          : nothing
+      }
       <p class="rp-saved" role="status">${this.notice}</p>
     </section>`;
   }

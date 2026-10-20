@@ -93,6 +93,7 @@ export type CommandId =
   | 'open.driverDiag'
   // Feature 007: màn hình 0.3 (cây, trình bố trí). Không có menu: bảng lệnh, thanh công cụ editor, menu chuột phải.
   | 'screen.add'
+  | 'report.add'
   /** Feature 012: thêm màn hình bố cục tự do (tọa độ) trên project 1.1; `screen.add` tạo màn hình lưới. */
   | 'screen.addFree'
   | 'screen.addPopup'
@@ -647,6 +648,8 @@ export const COMMANDS: readonly CommandSpec[] = [
 
   // ---- Feature 007: màn hình 0.3 ----
   cmd('screen.add', null, all(needProject, editable, project03), { icon: 'plus' }),
+  // feature 015: thư viện mẫu báo cáo có sẵn (trang Báo cáo)
+  cmd('report.add', null, all(needProject, editable), { icon: 'report' }),
   cmd('screen.addFree', null, all(needProject, editable, format11), { icon: 'plus' }),
   cmd('screen.addPopup', null, all(needProject, editable, project03), { icon: 'popup' }),
   cmd('screen.setEntry', null, all(needProject, editable, project03, screenOpen, notPopup), {

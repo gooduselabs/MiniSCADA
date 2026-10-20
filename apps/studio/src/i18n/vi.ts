@@ -24,6 +24,7 @@ import { viTags2 } from './vi-tags2.ts';
 import { viExpr } from './vi-expr.ts';
 import { viAlarm } from './vi-alarm.ts';
 import { viHistory } from './vi-history.ts';
+import { viReports } from './vi-reports.ts';
 import { viTemplate } from './vi-template.ts';
 import { viLogic } from './vi-logic.ts';
 import { viSvgDraw } from './vi-svgdraw.ts';
@@ -477,6 +478,7 @@ export const viMessages = {
   ...viSymbols,
   ...viImport,
   ...viHistory,
+  ...viReports,
   ...viTemplate,
   ...viLogic,
   ...viSvgDraw,
