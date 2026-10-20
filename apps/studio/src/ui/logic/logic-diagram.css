@@ -84,53 +84,80 @@
 .lgd-svg .blk .nd-bg {
   filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.12));
 }
+/* Màu theo nhóm khối (cùng màu ở task card Khối / Tag): dải bên trái, biểu tượng, nền đầu khối nhạt. */
+.lgd-svg .k-rule,
+.tc-logic [data-block='rule'] {
+  --k: var(--accent);
+  --k-soft: var(--accent-soft);
+}
+.lgd-svg .k-timer,
+.tc-logic [data-block='timer'] {
+  --k: var(--info);
+  --k-soft: var(--info-soft);
+}
+.lgd-svg .k-counter,
+.tc-logic [data-block='counter'] {
+  --k: var(--tplc);
+  --k-soft: var(--tpl-soft);
+}
+.lgd-svg .k-totalizer,
+.tc-logic [data-block='totalizer'] {
+  --k: var(--sim);
+  --k-soft: var(--sim-soft);
+}
+.lgd-svg .k-runhours,
+.tc-logic [data-block='runhours'] {
+  --k: var(--online);
+  --k-soft: var(--online-soft);
+}
+.lgd-svg .k-schedule,
+.tc-logic [data-block='schedule'] {
+  --k: var(--ok);
+  --k-soft: var(--ok-soft);
+}
+.lgd-svg .k-writes,
+.tc-logic [data-block='writes'] {
+  --k: var(--warn);
+  --k-soft: var(--warn-soft);
+}
+.tc-logic .blk[data-block] {
+  border-left: 4px solid var(--k);
+}
+.tc-logic .blk[data-block] > .ic:not(:first-child) {
+  color: var(--k);
+}
 .lgd-svg .nd-head {
-  fill: var(--panel-2);
+  fill: var(--k-soft, var(--panel-2));
 }
-.lgd-svg .k-rule .nd-head {
-  fill: var(--accent-soft);
-}
-.lgd-svg .k-timer .nd-head {
-  fill: var(--info-soft);
-}
-.lgd-svg .k-counter .nd-head {
-  fill: var(--tpl-soft);
-}
-.lgd-svg .k-totalizer .nd-head {
-  fill: var(--sim-soft);
-}
-.lgd-svg .k-runhours .nd-head {
-  fill: var(--online-soft);
-}
-.lgd-svg .k-schedule .nd-head {
-  fill: var(--ok-soft);
-}
-.lgd-svg .k-writes .nd-head {
-  fill: var(--warn-soft);
+.lgd-svg .nd-stripe {
+  fill: var(--k, var(--border-2));
 }
 .lgd-svg .nd-ic {
   color: var(--fg);
 }
+.lgd-svg .blk .nd-ic {
+  color: var(--k, var(--fg));
+}
 .lgd-svg .nd-kind {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   fill: var(--fg);
 }
 .lgd-svg .nd-id {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   fill: var(--fg);
 }
 .lgd-svg .nd-sep {
   stroke: var(--border);
 }
 .lgd-svg .nd-detail {
-  font-size: 11px;
+  font-size: 12px;
   fill: var(--muted);
 }
 .lgd-svg .nd-extra {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   fill: var(--accent);
 }
@@ -176,16 +203,16 @@
 /* Tag đầu vào (bo tròn) và Tag đích */
 .lgd-svg .nd-tag {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 12px;
   fill: var(--fg);
 }
 .lgd-svg .nd-type {
-  font-size: 10px;
+  font-size: 11px;
   fill: var(--muted);
 }
 .lgd-svg .nd-val {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   fill: var(--accent);
 }
@@ -214,7 +241,7 @@
   stroke: var(--border-2);
 }
 .lgd-svg .opn .nd-tag {
-  font-size: 11px;
+  font-size: 12px;
 }
 .lgd-svg .opn.own > .nd-bg {
   stroke: var(--accent);
@@ -240,7 +267,7 @@
 }
 .lgd-svg .gt-title {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   fill: var(--fg);
 }
@@ -268,7 +295,7 @@
 .lgd-svg .pt-dot {
   fill: var(--panel);
   stroke: var(--muted);
-  stroke-width: 1.6;
+  stroke-width: 2;
 }
 .lgd-svg .pt.ty-bool .pt-dot {
   stroke: var(--info);
@@ -301,15 +328,15 @@
 }
 .lgd-svg .pt-lab {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 12px;
   fill: var(--muted);
 }
 .lgd-svg .pt-lab.sm {
-  font-size: 9.5px;
+  font-size: 11px;
 }
 .lgd-svg .pt-text {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   fill: var(--fg);
 }
 .lgd-svg .pt-text.unset {
@@ -322,7 +349,7 @@
 }
 .lgd-svg .pv {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   fill: var(--accent);
   paint-order: stroke;
@@ -337,7 +364,7 @@
   stroke: var(--border-2);
 }
 .lgd-svg .chip-tx {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   fill: var(--fg);
 }
@@ -358,7 +385,7 @@
 .lgd-svg .wr-line {
   fill: none;
   stroke: var(--muted);
-  stroke-width: 1.6;
+  stroke-width: 2;
 }
 .lgd-svg .wr-hit {
   fill: none;
@@ -490,4 +517,29 @@
   .lgd-mini {
     display: none;
   }
+}
+
+/* Khung chọn (kéo trên nền) */
+.lgd-svg .lgd-box {
+  fill: var(--accent);
+  fill-opacity: 0.08;
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+/* Gập/mở khung dưới (feature 015) */
+.lg-dock .lg-dock-r {
+  position: relative;
+}
+.lg-dock .lg-dock-toggle {
+  position: absolute;
+  top: 3px;
+  right: 6px;
+  z-index: 2;
+}
+.lg-dock .lg-dock-toggle.closed .ic {
+  transform: rotate(180deg);
 }

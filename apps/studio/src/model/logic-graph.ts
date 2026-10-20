@@ -11,20 +11,20 @@ import { LAYOUT_GRID, type LogicLayoutDoc, type NodePos } from './logic-layout.t
 
 // ---------- Kích thước (px, hệ tọa độ của sơ đồ) ----------
 export const GEOM = {
-  blockW: 208,
-  head: 30,
-  row: 24,
-  foot: 24,
-  tagW: 184,
-  tagH: 32,
-  /** Toán hạng Tag gắn vào chân (hộp tên Tag). */
-  opH: 22,
-  gateHead: 18,
-  gateRow: 22,
-  gapX: 32,
-  gapY: 8,
-  colGap: 64,
-  rowGap: 24,
+  blockW: 248,
+  head: 36,
+  row: 30,
+  foot: 30,
+  tagW: 200,
+  tagH: 36,
+  /** Toán hạng Tag gắn vào chân (hộp tên Tag, chữ mono 12 px). */
+  opH: 26,
+  gateHead: 24,
+  gateRow: 28,
+  gapX: 36,
+  gapY: 10,
+  colGap: 68,
+  rowGap: 28,
   margin: 32,
 } as const;
 /** Tỉ lệ rộng : cao mà sắp xếp tự động nhắm tới (gập cột cao thành cột phụ). */
@@ -319,16 +319,16 @@ function gateOf(x: ExprNode, cps: readonly string[], depth: number): GateSpec {
 const gateWidth = (g: GateSpec, text: string): number =>
   g.gate === 'expr'
     ? Math.max(
-        120,
+        150,
         Math.min(
-          220,
-          24 + Math.max(text.length, ...g.pins.map((p) => (p.k === 'tag' ? p.id.length : 0))) * 6.6,
+          280,
+          28 + Math.max(text.length, ...g.pins.map((p) => (p.k === 'tag' ? p.id.length : 0))) * 7.4,
         ),
       )
-    : Math.max(64, 28 + g.title.length * 7.4);
-/** Bề rộng hộp toán hạng theo độ dài id Tag (chữ mono 11 px). */
-const opWidth = (tag: string): number => Math.max(64, Math.min(220, 30 + tag.length * 6.7));
-const gateHeight = (n: number) => Math.max(34, GEOM.gateHead + n * GEOM.gateRow + 6);
+    : Math.max(76, 34 + g.title.length * 8.4);
+/** Bề rộng hộp toán hạng theo độ dài id Tag (chữ mono 12 px). */
+const opWidth = (tag: string): number => Math.max(76, Math.min(260, 40 + tag.length * 7.4));
+const gateHeight = (n: number) => Math.max(40, GEOM.gateHead + n * GEOM.gateRow + 6);
 
 export function blockRows(kind: LogicKind): number {
   return Math.max(1, IN_FIELDS[kind].length, kind === 'rule' ? 2 : OUT_FIELDS[kind].length);

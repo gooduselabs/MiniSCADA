@@ -19,12 +19,15 @@ export const viLogicDiagram = {
   'lgd.arrangeTip': 'Xếp lại mọi khối từ trái sang phải theo phụ thuộc (một bước hoàn tác)',
   'lgd.snap': 'Căn lưới 16 px',
   'lgd.minimap': 'Bản đồ nhỏ',
-  'lgd.keys': 'Kéo cổng ra tới cổng vào để nối · Delete xóa · Ctrl+D nhân bản · mũi tên dịch',
+  'lgd.keys':
+    'Kéo cổng ra tới cổng vào để nối · kéo nền: khung chọn · Space hoặc nút giữa + kéo: dời · Shift+bấm: chọn thêm',
+  'lgd.dock.close': 'Thu gọn khung dưới (Ctrl+J)',
+  'lgd.dock.open': 'Mở khung dưới (Ctrl+J)',
 
   // ---- Vùng vẽ và nút ----
   'lgd.label': 'Sơ đồ khối logic',
   'lgd.desc':
-    'Tab chuyển khối; mũi tên dịch khối 16 px (Shift: 64 px); Delete xóa khối hoặc dây đang chọn; Ctrl+D nhân bản; Enter sửa thuộc tính; + − 0 đổi mức phóng. Kéo cổng ra tới cổng vào để nối dây.',
+    'Tab chuyển khối; Shift+bấm hoặc kéo khung trên nền để chọn nhiều khối, Ctrl+A chọn hết, Esc bỏ chọn nhóm; mũi tên dịch khối đang chọn 16 px (Shift: 64 px); Delete xóa khối hoặc dây đang chọn; Ctrl+D nhân bản; Enter sửa thuộc tính; + − 0 đổi mức phóng; Space + kéo để dời khung nhìn; Ctrl+J gập hoặc mở khung dưới. Kéo cổng ra tới cổng vào để nối dây.',
   'lgd.empty':
     'Chưa có khối. Kéo một khối từ task card "Khối / Tag" vào đây, hoặc bấm Thêm khối (Insert).',
   'lgd.node.block': '{kind} {id}',

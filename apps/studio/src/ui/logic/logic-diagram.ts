@@ -15,7 +15,13 @@ import {
 import { t, type MessageKey } from '../../i18n/index.ts';
 import { iconHref } from '../../icons/icons.ts';
 import { PRIORITY } from '../../model/live-subscriptions.ts';
-import { blocksOf, findBlock, outputTagsOf, type Block } from '../../model/logic-doc.ts';
+import {
+  blocksOf,
+  findBlock,
+  outputTagsOf,
+  removeBlock,
+  type Block,
+} from '../../model/logic-doc.ts';
 import {
   GEOM,
   buildLogicGraph,
@@ -41,6 +47,7 @@ import {
   type LogicLayoutDoc,
   type NodePos,
 } from '../../model/logic-layout.ts';
+import { actionRoute, roundedPath } from '../../model/logic-route.ts';
 import { AppElement, icon } from '../base.ts';
 import { LOGIC_BLOCK_MIME, LOGIC_GATE_MIME, dropLogicBlock } from './logic-card.ts';
 import { KIND_ICON, kindLabel, num } from './logic-parts.ts';
@@ -69,6 +76,8 @@ import './logic-diagram.css';
 const Z_MIN = 0.25;
 const Z_MAX = 2;
 const FIRE_MS = 900;
+/** `Vừa khung` không thu nhỏ hơn mức này (chữ trong khối ≥ 11 px); sơ đồ lớn hơn thì cuộn. */
+export const FIT_MIN = 0.9;
 const MINI_W = 168;
 const MINI_H = 104;
 
@@ -81,7 +90,9 @@ interface View {
 type Drag =
   | {
       mode: 'node';
-      key: string;
+      /** Khối kéo theo (cả nhóm đang chọn). */
+      keys: string[];
+      origin: Record<string, NodePos>;
       pid: number;
       sx: number;
       sy: number;
@@ -103,7 +114,16 @@ type Drag =
       type: string;
       action: boolean;
     }
-  | { mode: 'mini'; pid: number };
+  | { mode: 'mini'; pid: number }
+  | {
+      mode: 'box';
+      pid: number;
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      additive: boolean;
+    };
 
 /** Giá trị sống của một Tag hoặc một cổng (null: không có nguồn). */
 interface LiveVal {
@@ -134,6 +154,8 @@ const isTrue = (v: LiveVal | null) => !!v && v.quality === 'GOOD' && v.value ===
 
 export class LogicDiagram extends AppElement {
   private drag: Drag | null = null;
+  /** Space đang giữ: kéo nền là dời khung nhìn (không khung chọn). */
+  private spaceDown = false;
   private selWire: string | null = null;
   private hoverPort: string | null = null;
   private graphMemo: {
@@ -222,7 +244,7 @@ export class LogicDiagram extends AppElement {
     return this.querySelector<HTMLElement>('.lgd-view');
   }
 
-  /** Vừa khung: cả sơ đồ trong vùng nhìn (tối đa 100 %). */
+  /** Vừa khung: cả sơ đồ trong vùng nhìn (tối đa 100 %, tối thiểu FIT_MIN rồi cuộn). */
   fit(maxZ = 1): void {
     const g = this.graph();
     const el = this.viewEl();
@@ -234,8 +256,23 @@ export class LogicDiagram extends AppElement {
       this.setViewport({ z: 1, tx: GEOM.margin, ty: GEOM.margin });
       return;
     }
-    const z = Math.max(Z_MIN, Math.min(maxZ, (w - 48) / b.w, (h - 48) / b.h));
-    this.setViewport({ z, tx: (w - b.w * z) / 2 - b.x * z, ty: (h - b.h * z) / 2 - b.y * z });
+    const want = Math.min(maxZ, (w - 48) / b.w, (h - 48) / b.h);
+    if (want >= FIT_MIN) {
+      this.setViewport({
+        z: want,
+        tx: (w - b.w * want) / 2 - b.x * want,
+        ty: (h - b.h * want) / 2 - b.y * want,
+      });
+      return;
+    }
+    // Sơ đồ lớn: không thu dưới FIT_MIN (chữ còn đọc được), cuộn để xem phần còn lại; khối đang chọn ở giữa, không có
+    // thì góc trên trái.
+    const z = FIT_MIN;
+    const key = this.selKey();
+    const n = key ? g.byKey.get(key) : undefined;
+    if (n)
+      this.setViewport({ z, tx: w / 2 - (n.x + n.w / 2) * z, ty: h / 2 - (n.y + n.h / 2) * z });
+    else this.setViewport({ z, tx: 24 - b.x * z, ty: 24 - b.y * z });
   }
 
   zoomBy(f: number, cx?: number, cy?: number): void {
@@ -292,9 +329,26 @@ export class LogicDiagram extends AppElement {
     return selectedId(this.app, kindOf(this.app));
   }
 
-  private selectNode(n: GNode, focusField?: string): void {
+  /** Nút đang chọn (khối, Tag đích): nhóm chọn bằng Shift+bấm hoặc khung chọn, không thì khối chính (ở Inspector). */
+  private selectedKeys(g: LogicGraph): string[] {
+    const multi = logicUi(this.app).dmulti.filter((k) => g.byKey.get(k)?.movable);
+    if (multi.length) return multi;
+    const k = this.selKey();
+    return k && g.byKey.get(k)?.movable ? [k] : [];
+  }
+
+  private isSel(key: string, sel: string | null): boolean {
+    const multi = logicUi(this.app).dmulti;
+    return multi.length ? multi.includes(key) : key === sel;
+  }
+
+  /** `additive` (Shift+bấm): thêm/bỏ nút khỏi nhóm chọn; khối vừa bấm thành khối chính. */
+  private selectNode(n: GNode, focusField?: string, additive = false): void {
     const app = this.app;
     const ui = logicUi(app);
+    const g = this.graph();
+    const prev = g ? this.selectedKeys(g) : [];
+    const target = n.owner ?? n.key;
     this.selWire = null;
     if (n.type === 'block' || n.owner) {
       const kind = n.kind!;
@@ -307,6 +361,11 @@ export class LogicDiagram extends AppElement {
       ui.dsel = n.key;
       app.requestRender();
     }
+    ui.dmulti = additive
+      ? prev.includes(target)
+        ? prev.filter((k) => k !== target)
+        : [...prev, target]
+      : [];
     this.requestUpdate();
   }
 
@@ -361,6 +420,21 @@ export class LogicDiagram extends AppElement {
       if (w) editLogic(app, removeWire(doc, g, w));
       return;
     }
+    const keys = this.selectedKeys(g);
+    if (keys.length > 1) {
+      // nhóm: xóa mọi khối đã chọn và vị trí của chúng, một bước hoàn tác
+      let next = doc;
+      const gone: Record<string, null> = {};
+      for (const k of keys) {
+        const b = g.byKey.get(k);
+        if (b?.type !== 'block') continue;
+        next = removeBlock(next, b.kind!, b.id!);
+        gone[k] = null;
+      }
+      logicUi(app).dmulti = [];
+      editLogic(app, next, undefined, placeNodes(this.layoutWithAll(), gone));
+      return;
+    }
     const key = this.selKey();
     const n = key ? g.byKey.get(key) : undefined;
     if (!n) return;
@@ -380,9 +454,29 @@ export class LogicDiagram extends AppElement {
     const app = this.app;
     const doc = logicDoc(app);
     const g = this.graph();
+    if (!doc || !g || this.ro) return;
+    const blocks = this.selectedKeys(g)
+      .map((k) => g.byKey.get(k))
+      .filter((b): b is GNode => b?.type === 'block');
+    if (blocks.length > 1) {
+      // nhóm: nhân bản mọi khối đã chọn, lệch 32 px, nhóm mới được chọn; một bước hoàn tác
+      let next = doc;
+      const pos: Record<string, NodePos> = {};
+      const ids: string[] = [];
+      for (const b of blocks) {
+        const r = duplicateBlock(next, b.kind!, b.id!);
+        next = r.doc;
+        pos[r.id] = { x: b.x + 32, y: b.y + 32 };
+        ids.push(r.id);
+      }
+      editLogic(app, next, undefined, placeNodes(this.layoutWithAll(), pos));
+      select(app, blocks[0]!.kind!, ids[0]!);
+      logicUi(app).dmulti = ids;
+      return;
+    }
     const key = this.selKey();
-    const n = key ? g?.byKey.get(key) : undefined;
-    if (!doc || !n || n.type !== 'block' || this.ro) return;
+    const n = key ? g.byKey.get(key) : undefined;
+    if (!n || n.type !== 'block') return;
     const r = duplicateBlock(doc, n.kind!, n.id!);
     const layout = placeNodes(this.layoutWithAll(), { [r.id]: { x: n.x + 32, y: n.y + 32 } });
     editLogic(app, r.doc, undefined, layout);
@@ -481,12 +575,24 @@ export class LogicDiagram extends AppElement {
     if (g && nodeEl && e.button === 0) {
       const n = g.byKey.get(nodeEl.dataset.node!);
       if (!n) return;
-      this.selectNode(n);
       const owner = n.owner ? g.byKey.get(n.owner) : n;
-      if (owner?.movable && !this.ro) {
+      const group = this.selectedKeys(g);
+      if (!e.shiftKey && owner && group.length > 1 && group.includes(owner.key)) {
+        // bấm vào một khối của nhóm: giữ nhóm (để kéo cả nhóm), khối này thành khối chính
+        this.selectNode(n);
+        logicUi(this.app).dmulti = group;
+      } else this.selectNode(n, undefined, e.shiftKey);
+      const keys = this.selectedKeys(g);
+      if (owner?.movable && !this.ro && keys.includes(owner.key)) {
+        const origin: Record<string, NodePos> = {};
+        for (const k of keys) {
+          const m = g.byKey.get(k);
+          if (m) origin[k] = { x: m.x, y: m.y };
+        }
         this.drag = {
           mode: 'node',
-          key: owner.key,
+          keys,
+          origin,
           pid: e.pointerId,
           sx: e.clientX,
           sy: e.clientY,
@@ -500,8 +606,24 @@ export class LogicDiagram extends AppElement {
       }
       return;
     }
-    // nền: dời khung nhìn
     this.selWire = null;
+    if (e.button === 0 && !this.spaceDown) {
+      // nền: khung chọn (Shift: thêm vào nhóm)
+      const p = this.toDiagram(e.clientX, e.clientY);
+      this.drag = {
+        mode: 'box',
+        pid: e.pointerId,
+        x1: p.x,
+        y1: p.y,
+        x2: p.x,
+        y2: p.y,
+        additive: e.shiftKey,
+      };
+      view.setPointerCapture(e.pointerId);
+      view.focus();
+      return;
+    }
+    // nút giữa hoặc Space + kéo: dời khung nhìn
     this.drag = {
       mode: 'pan',
       pid: e.pointerId,
@@ -529,6 +651,13 @@ export class LogicDiagram extends AppElement {
       this.setViewport({ ...this.view, tx: d.tx + dx, ty: d.ty + dy });
       return;
     }
+    if (d.mode === 'box') {
+      const p = this.toDiagram(e.clientX, e.clientY);
+      d.x2 = p.x;
+      d.y2 = p.y;
+      this.requestUpdate();
+      return;
+    }
     if (d.mode === 'node') {
       const z = this.view.z;
       const dx = (e.clientX - d.sx) / z;
@@ -554,14 +683,48 @@ export class LogicDiagram extends AppElement {
     this.drag = null;
     this.hoverPort = null;
     this.viewEl()?.releasePointerCapture(e.pointerId);
-    if (d.mode === 'node' && d.moved && (d.dx || d.dy))
-      this.moveNodes({ [d.key]: { x: d.ox + d.dx, y: d.oy + d.dy } });
+    if (d.mode === 'node' && d.moved && (d.dx || d.dy)) {
+      const moved: Record<string, NodePos> = {};
+      for (const [k, o] of Object.entries(d.origin)) moved[k] = { x: o.x + d.dx, y: o.y + d.dy };
+      this.moveNodes(moved);
+    } else if (d.mode === 'box') this.boxSelect(d);
     else if (d.mode === 'wire')
       this.connect(d.from, document.elementFromPoint(e.clientX, e.clientY));
     else if (d.mode === 'pan' && !d.moved) {
       this.selWire = null;
     }
     this.requestUpdate();
+  }
+
+  /** Khung chọn: chọn mọi khối và Tag đích chạm khung; khung quá nhỏ là bấm nền (bỏ chọn nhóm). */
+  private boxSelect(d: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    additive: boolean;
+  }): void {
+    const g = this.graph();
+    if (!g) return;
+    const ui = logicUi(this.app);
+    const x0 = Math.min(d.x1, d.x2);
+    const x1 = Math.max(d.x1, d.x2);
+    const y0 = Math.min(d.y1, d.y2);
+    const y1 = Math.max(d.y1, d.y2);
+    if ((x1 - x0) * this.view.z < 4 && (y1 - y0) * this.view.z < 4) {
+      if (!d.additive) ui.dmulti = [];
+      return;
+    }
+    const hit = g.nodes
+      .filter((n) => n.movable && n.x < x1 && n.x + n.w > x0 && n.y < y1 && n.y + n.h > y0)
+      .map((n) => n.key);
+    const keys = d.additive ? [...new Set([...this.selectedKeys(g), ...hit])] : hit;
+    const first = keys.map((k) => g.byKey.get(k)).find((n) => n?.type === 'block');
+    if (first) {
+      if (kindOf(this.app) !== first.kind) setKind(this.app, first.kind!);
+      select(this.app, first.kind!, first.id!);
+    }
+    ui.dmulti = keys;
   }
 
   private onWheel(e: WheelEvent): void {
@@ -655,9 +818,28 @@ export class LogicDiagram extends AppElement {
       this.fit();
       return;
     }
-    // phím trên một khối: thao tác trên chính khối đó (chọn nó trước nếu chưa chọn)
+    if (e.key === ' ' && !nodeEl) {
+      e.preventDefault();
+      this.spaceDown = true;
+      return;
+    }
+    if (e.key === 'Escape' && logicUi(this.app).dmulti.length) {
+      e.preventDefault();
+      logicUi(this.app).dmulti = [];
+      this.requestUpdate();
+      return;
+    }
+    if (mod && (e.key === 'a' || e.key === 'A') && g) {
+      e.preventDefault();
+      e.stopPropagation();
+      logicUi(this.app).dmulti = g.nodes.filter((m) => m.movable).map((m) => m.key);
+      this.requestUpdate();
+      return;
+    }
+    // phím trên một khối: thao tác trên khối đó (chọn nó trước nếu chưa chọn, giữ nhóm nếu nó thuộc nhóm)
     const focused = nodeEl && g ? g.byKey.get(nodeEl.dataset.node!) : undefined;
-    if (focused && this.selKey() !== focused.key && focused.movable) this.selectNode(focused);
+    if (focused && focused.movable && g && !this.selectedKeys(g).includes(focused.key))
+      this.selectNode(focused);
     if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault();
       e.stopPropagation();
@@ -689,10 +871,13 @@ export class LogicDiagram extends AppElement {
       e.preventDefault();
       e.stopPropagation();
       const step = e.shiftKey ? LAYOUT_GRID * 4 : LAYOUT_GRID;
-      this.moveNodes(
-        { [n.key]: { x: n.x + a[0] * step, y: n.y + a[1] * step } },
-        `lgd-move:${n.key}`,
-      );
+      const keys = this.selectedKeys(g);
+      const moved: Record<string, NodePos> = {};
+      for (const k of keys.includes(n.key) ? keys : [n.key]) {
+        const m = g.byKey.get(k);
+        if (m) moved[k] = { x: m.x + a[0] * step, y: m.y + a[1] * step };
+      }
+      this.moveNodes(moved, `lgd-move:${Object.keys(moved).sort().join(',')}`);
       this.focusNode(n.key);
     }
   }
@@ -849,7 +1034,7 @@ export class LogicDiagram extends AppElement {
 
   private pos(n: GNode): { x: number; y: number } {
     const d = this.drag;
-    if (d?.mode === 'node' && (n.key === d.key || n.owner === d.key))
+    if (d?.mode === 'node' && (d.keys.includes(n.key) || (n.owner && d.keys.includes(n.owner))))
       return { x: n.x + d.dx, y: n.y + d.dy };
     return { x: n.x, y: n.y };
   }
@@ -868,18 +1053,32 @@ export class LogicDiagram extends AppElement {
     return `M${x1} ${y1}C${x1 + dx} ${y1} ${x2 - dx} ${y2} ${x2} ${y2}`;
   }
 
+  /** Khối cản và làn của dây hành động trong một lần vẽ (dây vòng mỗi dây một làn). */
+  private route: { rects: Array<GNode & { rx: number; ry: number }>; lane: number } | null = null;
+
   /**
-   * Dây hành động (luật → Ghi PLC / Tag đích): đường gấp khúc đi dọc trong khe ngay trước nút đích (khe giữa cột luật và cột
-   * Ghi PLC trống), góc bo 6 px; ngược chiều thì như dây thường.
+   * Dây hành động (luật → Ghi PLC / Tag đích): gấp khúc trong khe ngay trước nút đích; vướng khối (cột luật gập) thì vòng qua
+   * kênh ngoài mọi khối (model/logic-route.ts); ngược chiều thì như dây thường.
    */
-  private stepPath(x1: number, y1: number, x2: number, y2: number): string {
-    if (x2 < x1 + 40) return this.wirePath(x1, y1, x2, y2);
-    const xm = x2 - 22;
-    const dy = y2 - y1;
-    if (Math.abs(dy) < 1) return `M${x1} ${y1}H${x2}`;
-    const r = Math.min(6, Math.abs(dy) / 2);
-    const s = dy > 0 ? 1 : -1;
-    return `M${x1} ${y1}H${xm - r}Q${xm} ${y1} ${xm} ${y1 + s * r}V${y2 - s * r}Q${xm} ${y2} ${xm + r} ${y2}H${x2}`;
+  private actionPath(g: LogicGraph, w: Wire, a: [number, number], b: [number, number]): string {
+    const r = this.route;
+    const obstacles = (r?.rects ?? [])
+      .filter((n) => n.key !== w.from.node && n.key !== w.to.node)
+      .map((n) => ({ x: n.rx, y: n.ry, w: n.w, h: n.h }));
+    const route = actionRoute(a[0], a[1], b[0], b[1], obstacles, g.bounds, r?.lane ?? 0);
+    if (!route) return this.wirePath(a[0], a[1], b[0], b[1]);
+    if (route.detour && r) r.lane++;
+    return roundedPath(route.points);
+  }
+  private prepareRoute(g: LogicGraph): typeof nothing {
+    this.route = {
+      rects: g.nodes.map((n) => {
+        const p = this.pos(n);
+        return { ...n, rx: p.x, ry: p.y };
+      }),
+      lane: 0,
+    };
+    return nothing;
   }
 
   private renderWire(g: LogicGraph, w: Wire, mode: 'test' | 'online' | null, sel: string | null) {
@@ -896,9 +1095,7 @@ export class LogicDiagram extends AppElement {
           : null;
     const on = isTrue(v);
     const d =
-      w.kind === 'action'
-        ? this.stepPath(a[0], a[1], b[0], b[1])
-        : this.wirePath(a[0], a[1], b[0], b[1]);
+      w.kind === 'action' ? this.actionPath(g, w, a, b) : this.wirePath(a[0], a[1], b[0], b[1]);
     const cls = [
       'wr',
       w.kind === 'action' ? 'act' : `ty-${w.type}`,
@@ -928,7 +1125,7 @@ export class LogicDiagram extends AppElement {
     ]
       .filter(Boolean)
       .join(' ');
-    const r = n.type === 'gate' ? 3.5 : 4.5;
+    const r = n.type === 'block' ? 6 : 5;
     const wd = this.drag?.mode === 'wire' ? this.drag : null;
     const dragType = wd && !wd.action ? wd.type : null;
     const dim =
@@ -939,19 +1136,19 @@ export class LogicDiagram extends AppElement {
       return svg`<g class=${cls} data-outport=${p.key} data-node=${n.key}>
         <circle class="pt-hit" cx=${p.dx} cy=${p.dy} r="10"></circle>
         <circle class="pt-dot ${isTrue(v) ? 'on' : ''}" cx=${p.dx} cy=${p.dy} r=${r}></circle>
-        ${p.label && n.type === 'block' ? svg`<text class="pt-lab" x=${p.dx - 9} y=${p.dy + 4} text-anchor="end">${p.label}</text>` : nothing}
-        ${showNum ? svg`<text class="pv" x=${p.dx + 9} y=${p.dy - 6}>${fmtVal(v)}</text>` : nothing}
+        ${p.label && n.type === 'block' ? svg`<text class="pt-lab" x=${p.dx - 12} y=${p.dy + 4.5} text-anchor="end">${p.label}</text>` : nothing}
+        ${showNum ? svg`<text class="pv" x=${p.dx + 10} y=${p.dy - 8}>${fmtVal(v)}</text>` : nothing}
       </g>`;
     }
     const text = p.text;
     return svg`<g class="${cls} ${dim ? 'dim' : ''}" data-pin=${p.key} data-node=${n.key}>
       <circle class="pt-hit" cx=${p.dx} cy=${p.dy} r="10"></circle>
       <circle class="pt-dot" cx=${p.dx} cy=${p.dy} r=${r}></circle>
-      ${p.label && n.type === 'block' ? svg`<text class="pt-lab" x=${p.dx + 9} y=${p.dy + 4}>${p.label}</text>` : nothing}
-      ${p.label && n.type === 'gate' ? svg`<text class="pt-lab sm" x=${p.dx + 7} y=${p.dy + 3.5}>${p.label}</text>` : nothing}
+      ${p.label && n.type === 'block' ? svg`<text class="pt-lab" x=${p.dx + 12} y=${p.dy + 4.5}>${p.label}</text>` : nothing}
+      ${p.label && n.type === 'gate' ? svg`<text class="pt-lab sm" x=${p.dx + 9} y=${p.dy + 4}>${p.label}</text>` : nothing}
       ${
         text !== undefined
-          ? svg`<text class="pt-text ${p.broken ? 'broken' : ''} ${text === '' && !p.optional ? 'unset' : ''}" x=${p.dx - 8} y=${p.dy + 4} text-anchor="end">${
+          ? svg`<text class="pt-text ${p.broken ? 'broken' : ''} ${text === '' && !p.optional ? 'unset' : ''}" x=${p.dx - 10} y=${p.dy + 4.5} text-anchor="end">${
               text === '' ? t('lgd.unset') : text.length > 28 ? `${text.slice(0, 27)}…` : text
             }</text>`
           : nothing
@@ -1069,21 +1266,22 @@ export class LogicDiagram extends AppElement {
     return svg`<g class=${cls} transform="translate(${o.x} ${o.y})" data-node=${n.key} data-kind=${n.kind!}
         tabindex="0" role="button" aria-label=${this.ariaOf(n, sel, b)}
         @focus=${() => {
-          if (this.selKey() !== n.key) this.selectNode(n);
+          if (!this.isSel(n.key, this.selKey())) this.selectNode(n);
         }}>
       <rect class="nd-bg" width=${W} height=${H} rx="6"></rect>
+      <rect class="nd-stripe" x="0" y="0" width="5" height=${H} rx="2"></rect>
       <path class="nd-head" d=${`M0 6a6 6 0 0 1 6 -6h${W - 12}a6 6 0 0 1 6 6v${GEOM.head - 6}h${-W}z`}></path>
-      <use class="nd-ic" href=${iconHref(KIND_ICON[n.kind!])} x="8" y="7" width="16" height="16"></use>
-      <text class="nd-kind" x="30" y="19">${this.blockTitle(n, b)}</text>
-      <text class="nd-id" x=${W - 8} y="19" text-anchor="end">${n.id!.length > 18 ? `${n.id!.slice(0, 17)}…` : n.id}</text>
+      <use class="nd-ic" href=${iconHref(KIND_ICON[n.kind!])} x="12" y="9" width="18" height="18"></use>
+      <text class="nd-kind" x="36" y="23">${this.blockTitle(n, b)}</text>
+      <text class="nd-id" x=${W - 10} y="23" text-anchor="end">${n.id!.length > 20 ? `${n.id!.slice(0, 19)}…` : n.id}</text>
       <line class="nd-sep" x1="0" y1=${H - GEOM.foot} x2=${W} y2=${H - GEOM.foot}></line>
-      <text class="nd-detail" x="8" y=${H - 8}>${detail.length > 30 ? `${detail.slice(0, 29)}…` : detail}</text>
+      <text class="nd-detail" x="12" y=${H - 10}>${detail.length > 30 ? `${detail.slice(0, 29)}…` : detail}</text>
       ${
         live
-          ? svg`<g class="nd-live"><rect class="chip-bg" x=${W - 8 - this.chipW(live, extra)} y=${H - GEOM.foot + 4} width=${this.chipW(live, extra)} height="16" rx="8"></rect>
-              <text class="chip-tx" x=${W - 8 - this.chipW(live, extra) / 2} y=${H - 8} text-anchor="middle">${this.chipText(live, extra)}</text></g>`
+          ? svg`<g class="nd-live"><rect class="chip-bg" x=${W - 8 - this.chipW(live, extra)} y=${H - GEOM.foot + 5} width=${this.chipW(live, extra)} height="20" rx="10"></rect>
+              <text class="chip-tx" x=${W - 8 - this.chipW(live, extra) / 2} y=${H - 11} text-anchor="middle">${this.chipText(live, extra)}</text></g>`
           : extra
-            ? svg`<text class="nd-extra" x=${W - 8} y=${H - 8} text-anchor="end">${extra}</text>`
+            ? svg`<text class="nd-extra" x=${W - 10} y=${H - 10} text-anchor="end">${extra}</text>`
             : nothing
       }
       ${n.ports.map((p) => this.portEl(n, p, mode))}
@@ -1095,7 +1293,7 @@ export class LogicDiagram extends AppElement {
   }
 
   private chipW(l: BlockLive, extra: string): number {
-    return Math.min(GEOM.blockW - 90, 14 + this.chipText(l, extra).length * 6.2);
+    return Math.min(GEOM.blockW - 100, 18 + this.chipText(l, extra).length * 6.8);
   }
 
   private armFire(): void {
@@ -1122,16 +1320,16 @@ export class LogicDiagram extends AppElement {
     return svg`<g class=${cls} transform="translate(${o.x} ${o.y})" data-node=${n.key} tabindex="0" role="button"
         aria-label=${this.ariaOf(n, sel, null)}
         @focus=${() => {
-          if (this.selKey() !== n.key) this.selectNode(n);
+          if (!this.isSel(n.key, this.selKey())) this.selectNode(n);
         }}>
       <rect class="nd-bg" width=${n.w} height=${n.h} rx=${n.type === 'tag' ? 16 : 4}></rect>
-      <use class="nd-ic" href=${iconHref(n.type === 'tag' ? 'tag' : 'set-tag')} x=${n.type === 'tag' ? 10 : 14} y="8" width="16" height="16"></use>
-      <text class="nd-tag" x=${n.type === 'tag' ? 30 : 34} y="20">${id}</text>
+      <use class="nd-ic" href=${iconHref(n.type === 'tag' ? 'tag' : 'set-tag')} x=${n.type === 'tag' ? 10 : 14} y="9" width="18" height="18"></use>
+      <text class="nd-tag" x=${n.type === 'tag' ? 32 : 38} y="23">${id}</text>
       ${
         v && mode
-          ? svg`<text class="nd-val" x=${n.w - 14} y="20" text-anchor="end">${fmtVal(v)}</text>`
+          ? svg`<text class="nd-val" x=${n.w - 14} y="23" text-anchor="end">${fmtVal(v)}</text>`
           : n.tagType
-            ? svg`<text class="nd-type" x=${n.w - 14} y="20" text-anchor="end">${n.tagType}</text>`
+            ? svg`<text class="nd-type" x=${n.w - 14} y="23" text-anchor="end">${n.tagType}</text>`
             : nothing
       }
       ${n.ports.map((p) => this.portEl(n, p, mode))}
@@ -1155,8 +1353,8 @@ export class LogicDiagram extends AppElement {
     return svg`<g class=${cls} transform="translate(${o.x} ${o.y})" data-node=${n.key} data-tag=${n.id!}>
       <title>${n.tagType ? `${n.id} (${n.tagType})` : n.id}</title>
       <rect class="nd-bg" width=${n.w} height=${n.h} rx=${n.h / 2}></rect>
-      <use class="nd-ic" href=${iconHref('tag')} x="7" y="5" width="12" height="12"></use>
-      <text class="nd-tag" x="22" y="15">${n.id}</text>
+      <use class="nd-ic" href=${iconHref('tag')} x="9" y="6" width="14" height="14"></use>
+      <text class="nd-tag" x="27" y="17.5">${n.id}</text>
       ${n.ports.map((p) => this.portEl(n, p, mode))}
     </g>`;
   }
@@ -1179,7 +1377,7 @@ export class LogicDiagram extends AppElement {
     return svg`<g class=${cls} transform="translate(${o.x} ${o.y})" data-node=${n.key}>
       <title>${n.text}</title>
       <rect class="nd-bg" width=${n.w} height=${n.h} rx="4"></rect>
-      <text class="gt-title" x=${n.gate === 'expr' ? 8 : n.w / 2} y="13" text-anchor=${n.gate === 'expr' ? 'start' : 'middle'}>${title}</text>
+      <text class="gt-title" x=${n.gate === 'expr' ? 10 : n.w / 2} y="17" text-anchor=${n.gate === 'expr' ? 'start' : 'middle'}>${title}</text>
       ${v && v.value !== null && typeof v.value !== 'boolean' ? svg`<text class="pv" x=${n.w + 9} y=${n.h / 2 - 6}>${fmtVal(v)}</text>` : nothing}
       ${n.ports.map((p) => this.portEl(n, p, mode))}
     </g>`;
@@ -1338,6 +1536,9 @@ export class LogicDiagram extends AppElement {
         @pointercancel=${(e: PointerEvent) => this.onPointerUp(e)}
         @wheel=${(e: WheelEvent) => this.onWheel(e)}
         @keydown=${(e: KeyboardEvent) => this.onKey(e)}
+        @keyup=${(e: KeyboardEvent) => {
+          if (e.key === ' ') this.spaceDown = false;
+        }}
         @dragover=${(e: DragEvent) => this.onDragOver(e)}
         @drop=${(e: DragEvent) => this.onDrop(e)}
       >
@@ -1365,12 +1566,19 @@ export class LogicDiagram extends AppElement {
               ${ops.map((n) => this.renderOperand(n, mode, n.owner === selOwner))}
             </g>
             <g class="nodes">
-              ${blocks.map((n) => this.renderBlock(n, mode, n.key === sel, now))}
-              ${tags.map((n) => this.renderTag(n, mode, n.key === sel))}
+              ${blocks.map((n) => this.renderBlock(n, mode, this.isSel(n.key, sel), now))}
+              ${tags.map((n) => this.renderTag(n, mode, this.isSel(n.key, sel)))}
             </g>
             <g class="acts">
-              ${g.wires.filter((w) => w.kind === 'action').map((w) => this.renderWire(g, w, mode, sel))}
+              ${this.prepareRoute(g)}${g.wires
+                .filter((w) => w.kind === 'action')
+                .map((w) => this.renderWire(g, w, mode, sel))}
             </g>
+            ${
+              d?.mode === 'box'
+                ? svg`<rect class="lgd-box" x=${Math.min(d.x1, d.x2)} y=${Math.min(d.y1, d.y2)} width=${Math.abs(d.x2 - d.x1)} height=${Math.abs(d.y2 - d.y1)}></rect>`
+                : nothing
+            }
             ${
               d?.mode === 'wire'
                 ? svg`<path class="wr-drag ${d.action ? 'act' : ''}" d=${this.wirePath(d.x1, d.y1, d.x2, d.y2)}></path>`

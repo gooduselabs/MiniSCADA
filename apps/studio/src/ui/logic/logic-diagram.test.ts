@@ -220,6 +220,125 @@ describe('sửa trên sơ đồ', () => {
   });
 });
 
+function ptr(
+  type: string,
+  init: { x?: number; y?: number; shift?: boolean; button?: number } = {},
+) {
+  const e = new MouseEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    button: init.button ?? 0,
+    shiftKey: init.shift ?? false,
+    clientX: init.x ?? 0,
+    clientY: init.y ?? 0,
+  });
+  Object.defineProperty(e, 'pointerId', { value: 1 });
+  return e;
+}
+
+describe('chọn nhiều khối', () => {
+  async function setup() {
+    const { app } = await newLogicApp(pumpLogic(), 'diagram');
+    const o = await open(app);
+    const view = o.dia.querySelector<HTMLElement>('.lgd-view')!;
+    view.setPointerCapture = () => undefined;
+    view.releasePointerCapture = () => undefined;
+    const click = async (key: string, shift = false) => {
+      const g = o.node(key)!.querySelector('.nd-kind')!;
+      g.dispatchEvent(ptr('pointerdown', { shift }));
+      view.dispatchEvent(ptr('pointerup', { shift }));
+      await o.again();
+    };
+    return { app, view, click, ...o };
+  }
+
+  it('Shift+bấm thêm khối vào nhóm; mũi tên dịch cả nhóm, một bước hoàn tác', async () => {
+    const { app, node, key, click } = await setup();
+    await click('t_start');
+    await click('c_starts', true);
+    expect(node('t_start')!.classList.contains('sel')).toBe(true);
+    expect(node('c_starts')!.classList.contains('sel')).toBe(true);
+    expect(node('pump_high_level')!.classList.contains('sel')).toBe(false);
+    const past = app.store.state.history.past.length;
+    const xy = (k: string) =>
+      /translate\(([-\d.]+) ([-\d.]+)\)/
+        .exec(node(k)!.getAttribute('transform')!)!
+        .slice(1)
+        .map(Number);
+    const [tx, ty] = xy('t_start');
+    const [cx, cy] = xy('c_starts');
+    await key(node('t_start')!, 'ArrowDown');
+    expect(layoutOf(app).t_start).toEqual({ x: tx, y: ty! + 16 });
+    expect(layoutOf(app).c_starts).toEqual({ x: cx, y: cy! + 16 });
+    expect(app.store.state.history.past.length).toBe(past + 1);
+    // Shift+bấm lại: bỏ khỏi nhóm
+    await click('c_starts', true);
+    expect(node('c_starts')!.classList.contains('sel')).toBe(false);
+  });
+
+  it('Ctrl+D nhân bản cả nhóm, Delete xóa cả nhóm (mỗi việc một bước); Esc bỏ chọn nhóm', async () => {
+    const { app, node, key, click } = await setup();
+    await click('t_start');
+    await click('c_starts', true);
+    await key(node('t_start')!, 'd', { ctrlKey: true });
+    expect(logicOf(app).timers?.map((t) => t.id)).toEqual(['t_start', 't_start_2']);
+    expect(logicOf(app).counters?.map((c) => c.id)).toEqual(['c_starts', 'c_starts_2']);
+    expect(node('t_start_2')!.classList.contains('sel')).toBe(true);
+    expect(node('c_starts_2')!.classList.contains('sel')).toBe(true);
+    const past = app.store.state.history.past.length;
+    await key(node('t_start_2')!, 'Delete');
+    expect(logicOf(app).timers?.map((t) => t.id)).toEqual(['t_start']);
+    expect(logicOf(app).counters?.map((c) => c.id)).toEqual(['c_starts']);
+    expect(app.store.state.history.past.length).toBe(past + 1);
+    app.store.undo();
+    expect(logicOf(app).timers).toHaveLength(2);
+    await click('t_start');
+    await click('h_pump', true);
+    await key(node('h_pump')!, 'Escape');
+    expect(node('t_start')!.classList.contains('sel')).toBe(false);
+  });
+
+  it('kéo khung trên nền chọn mọi khối chạm khung; Ctrl+A chọn hết', async () => {
+    const { app, dia, view, again } = await setup();
+    view.dispatchEvent(ptr('pointerdown', { x: -5000, y: -5000 }));
+    view.dispatchEvent(ptr('pointermove', { x: 9000, y: 9000 }));
+    view.dispatchEvent(ptr('pointerup', { x: 9000, y: 9000 }));
+    await again();
+    expect(dia.querySelectorAll('g.blk.sel')).toHaveLength(8);
+    expect(logicUi(app).dmulti).toHaveLength(8);
+    // bấm nền (không kéo): bỏ chọn nhóm
+    view.dispatchEvent(ptr('pointerdown', { x: 3, y: 3 }));
+    view.dispatchEvent(ptr('pointerup', { x: 3, y: 3 }));
+    await again();
+    expect(logicUi(app).dmulti).toHaveLength(0);
+    view.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
+    await again();
+    expect(dia.querySelectorAll('g.blk.sel')).toHaveLength(8);
+  });
+});
+
+describe('khung dưới gập/mở', () => {
+  it('nút trên dải tab và Ctrl+J gập/mở khung dưới, chiều cao giữ nguyên; mở Thử logic thì khung mở lại', async () => {
+    const { app } = await newLogicApp(pumpLogic(), 'diagram');
+    const { insp, host, again } = await open(app);
+    const h = app.workspace.inspectorHeight;
+    const btn = () => insp.querySelector<HTMLButtonElement>('[data-act="dock-toggle"]')!;
+    expect(btn().getAttribute('aria-expanded')).toBe('true');
+    btn().click();
+    await again();
+    expect(app.workspace.inspectorCollapsed).toBe(true);
+    expect(btn().getAttribute('aria-expanded')).toBe('false');
+    expect(app.workspace.inspectorHeight).toBe(h);
+    host
+      .querySelector('.lg-ed')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'j', ctrlKey: true, bubbles: true }));
+    await again();
+    expect(app.workspace.inspectorCollapsed).toBe(false);
+    btn().click();
+    setDockTab(app, 'test');
+    expect(app.workspace.inspectorCollapsed).toBe(false);
+  });
+});
 describe('giá trị sống và lỗi', () => {
   it('Thử logic: Tag mức 85 → cổng "> 80" xanh, dây ra xanh, chip trạng thái trên khối, Ghi PLC hiện giá trị', async () => {
     const { app } = await newLogicApp(pumpLogic(), 'diagram');

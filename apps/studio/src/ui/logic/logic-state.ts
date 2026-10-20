@@ -50,6 +50,8 @@ export interface LogicUi {
   view: LogicView;
   /** Nút Tag/Tag đích đang chọn trên sơ đồ (khối chọn theo `sel`). */
   dsel: string | null;
+  /** Nhóm nút chọn trên sơ đồ (Shift+bấm, khung chọn); rỗng: chỉ khối chính. */
+  dmulti: string[];
   /** Phóng và dời của sơ đồ (null: vừa khung ở lần vẽ đầu). */
   dview: { z: number; tx: number; ty: number } | null;
   /** Bộ chạy Thử logic dùng chung giữa bảng Thử logic và sơ đồ (tạo lại khi logic.json đổi). */
@@ -92,6 +94,7 @@ export function logicUi(app: StudioApp): LogicUi {
       issueCursor: -1,
       view: readView(),
       dsel: null,
+      dmulti: [],
       dview: null,
       sim: null,
       simDoc: null,
@@ -118,11 +121,26 @@ export function setKind(app: StudioApp, kind: LogicKind): void {
 }
 
 /** Chiều cao khung dưới cần cho Inspector (mockup: 288 px) và cho Thử logic (đường thời gian). */
-export const DOCK_HEIGHT = { info: 300, test: 460, testDiagram: 380 } as const;
+export const DOCK_HEIGHT = { info: 300, test: 460, testDiagram: 380, testMin: 200 } as const;
+/** Phần vùng giữa dành cho vùng vẽ của sơ đồ khi Thử logic (feature 015: ≥ 55 %). */
+export const DIAGRAM_SHARE = 0.55;
 
-/** Chiều cao khung dưới cho Thử logic: thấp hơn ở Sơ đồ (sơ đồ đã hiện giá trị, cần chỗ vẽ; feature 015). */
-export const testDockHeight = (app: StudioApp): number =>
-  logicUi(app).view === 'diagram' ? DOCK_HEIGHT.testDiagram : DOCK_HEIGHT.test;
+/**
+ * Chiều cao khung dưới cho Thử logic. Bảng: 460 px. Sơ đồ (feature 015): sao cho vùng vẽ còn ≥ DIAGRAM_SHARE chiều cao vùng
+ * giữa (đo phần khung của editor: thanh tab, thanh công cụ, dòng đếm), không thấp hơn `testMin`, không cao hơn 380 px.
+ */
+export function testDockHeight(app: StudioApp): number {
+  if (logicUi(app).view !== 'diagram') return DOCK_HEIGHT.test;
+  const center = dims().centerHeight;
+  if (center <= 0) return DOCK_HEIGHT.testDiagram;
+  const view = document
+    .querySelector('mat-logic-diagram .lgd-view')
+    ?.getBoundingClientRect().height;
+  const dock = app.workspace.inspectorCollapsed ? 32 : app.workspace.inspectorHeight;
+  const chrome = view !== undefined ? center - view - dock : 140;
+  const fit = Math.floor(center * (1 - DIAGRAM_SHARE) - chrome) - 8; // 8 px dư cho làm tròn
+  return Math.max(DOCK_HEIGHT.testMin, Math.min(DOCK_HEIGHT.testDiagram, fit));
+}
 
 function dims(): { leftColumnHeight: number; centerHeight: number } {
   if (typeof document === 'undefined') return { leftColumnHeight: 0, centerHeight: 0 };
@@ -136,7 +154,8 @@ function dims(): { leftColumnHeight: number; centerHeight: number } {
 export function ensureDockHeight(app: StudioApp, h: number): void {
   const ui = logicUi(app);
   const cur = app.workspace.inspectorHeight;
-  if (cur >= h) return;
+  // khung đang gập theo ý người dùng: không tự mở (feature 015)
+  if (cur >= h || app.workspace.inspectorCollapsed) return;
   if (ui.savedHeight === null) ui.savedHeight = cur;
   app.setLayout({ inspectorHeight: h }, dims());
 }
@@ -153,8 +172,18 @@ export function restoreDockHeight(app: StudioApp, keepAtLeast = 0): void {
 export function setDockTab(app: StudioApp, tab: 'info' | 'test'): void {
   const ui = logicUi(app);
   ui.dockTab = tab;
-  if (tab === 'test') ensureDockHeight(app, testDockHeight(app));
-  else restoreDockHeight(app, DOCK_HEIGHT.info);
+  if (tab === 'test') {
+    app.setInspectorCollapsed(false);
+    const h = testDockHeight(app);
+    if (ui.view === 'diagram') {
+      // Sơ đồ: đặt đúng chiều cao để vùng vẽ còn ≥ 55 % (có thể thấp hơn hiện tại)
+      const cur = app.workspace.inspectorHeight;
+      if (cur !== h) {
+        if (ui.savedHeight === null) ui.savedHeight = cur;
+        app.setLayout({ inspectorHeight: h }, dims());
+      }
+    } else ensureDockHeight(app, h);
+  } else restoreDockHeight(app, DOCK_HEIGHT.info);
   app.requestRender();
 }
 
@@ -267,6 +296,7 @@ export function select(app: StudioApp, kind: LogicKind, id: string | null): void
   else ui.sel[kind] = id;
   ui.idMsg = null;
   ui.dsel = null;
+  ui.dmulti = [];
   app.requestRender();
 }
 
@@ -418,4 +448,9 @@ export function stopLive(app: StudioApp): void {
 /** Hỏi lại ngay (sau khi dừng ghi, đặt lại khối). */
 export function refreshLive(app: StudioApp): void {
   void pollLive(app);
+}
+
+/** Gập/mở khung dưới (nút trên dải tab của khung, Ctrl+J trong tab Logic); chiều cao được nhớ (feature 015). */
+export function toggleDock(app: StudioApp): void {
+  app.setInspectorCollapsed(!app.workspace.inspectorCollapsed);
 }
