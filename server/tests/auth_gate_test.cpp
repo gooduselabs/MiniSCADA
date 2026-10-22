@@ -358,6 +358,8 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"GET /api/v1/logic", false},
         {"POST /api/v1/logic/writes", true},
         {"POST /api/v1/logic/reset", true},
+        // feature 015: the writes of logic for the report page, a read
+        {"GET /api/v1/logic/events", false},
         // feature 011 (OTA): the state is polled during an update; the other four are a person's
         {"GET /api/v1/system/update", false},
         {"POST /api/v1/system/update", true},
