@@ -272,7 +272,8 @@ export interface DeviceLink {
   session(id: string): Promise<SessionInfo | null>;
   get(id: string, path: string, query?: Record<string, string>): Promise<ApiResult | DeviceError>;
   /**
-   * `device_post` (feature 006, tauri-commands-006 §3): chỉ `/api/v1/tags/write`, `/api/v1/drivers/test`; thân JSON ≤ 16 KiB.
+   * `device_post` (feature 006, tauri-commands-006 §3): chỉ `/api/v1/tags/write`, `/api/v1/drivers/test` và
+   * `/api/v1/drivers/opcua/browse` (feature 019); thân JSON ≤ 16 KiB.
    * Trả `{ status, body }` kể cả 400 (kèm `issues`), 401/403 (kèm `results`), 409, 429, 503. Không tự gửi lại khi lỗi mạng
    * (`unreachable`, `timeout`): lệnh ghi có thể đã được nhận, giao diện hỏi lại kết quả theo mã yêu cầu.
    */

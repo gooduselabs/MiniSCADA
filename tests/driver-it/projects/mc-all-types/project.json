@@ -1,0 +1,15 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "1.1.0",
+  "projectId": "driver-it-mc-read",
+  "projectName": "Kiểm thử driver MC: mc-all-types",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "1.1.0",
+  "entryScreen": "main",
+  "screens": [
+    "main"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "maxClients": 10
+}

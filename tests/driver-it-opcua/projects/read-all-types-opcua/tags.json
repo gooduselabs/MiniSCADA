@@ -1,0 +1,239 @@
+{
+  "schemaVersion": "1.1.0",
+  "tags": [
+    {
+      "id": "UA.BOOL",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=Boolean"
+      }
+    },
+    {
+      "id": "UA.SBYTE",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=SByte"
+      }
+    },
+    {
+      "id": "UA.BYTE",
+      "kind": "external",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 255
+      },
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=Byte"
+      }
+    },
+    {
+      "id": "UA.INT16",
+      "kind": "external",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -30000,
+        "max": 30000
+      },
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=Int16"
+      }
+    },
+    {
+      "id": "UA.UINT16",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=UInt16"
+      }
+    },
+    {
+      "id": "UA.INT32",
+      "kind": "external",
+      "type": "INT32",
+      "access": "RW",
+      "limits": {
+        "min": -1000000,
+        "max": 1000000
+      },
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=Int32"
+      }
+    },
+    {
+      "id": "UA.UINT32",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=UInt32"
+      }
+    },
+    {
+      "id": "UA.INT64",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=Int64"
+      }
+    },
+    {
+      "id": "UA.UINT64",
+      "kind": "external",
+      "type": "UINT64",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=UInt64"
+      }
+    },
+    {
+      "id": "UA.FLOAT",
+      "kind": "external",
+      "type": "FLOAT32",
+      "access": "RW",
+      "limits": {
+        "min": -1000,
+        "max": 1000
+      },
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=Float"
+      }
+    },
+    {
+      "id": "UA.DOUBLE",
+      "kind": "external",
+      "type": "FLOAT64",
+      "access": "RW",
+      "limits": {
+        "min": -1000000,
+        "max": 1000000
+      },
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=Double"
+      }
+    },
+    {
+      "id": "UA.STRING",
+      "kind": "external",
+      "type": "STRING",
+      "access": "RW",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=String",
+        "stringLength": 32
+      }
+    },
+    {
+      "id": "UA.DATETIME_MS",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=DateTime"
+      }
+    },
+    {
+      "id": "UA.DATETIME",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=DateTime",
+        "stringLength": 24
+      }
+    },
+    {
+      "id": "UA.N_INT16",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;i=1004"
+      }
+    },
+    {
+      "id": "UA.N_DOUBLE",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;i=1011"
+      }
+    },
+    {
+      "id": "UA.COUNTER",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=Counter",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "UA.CURRENT_TIME",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "srv1",
+        "address": "i=2258",
+        "scanGroup": "slow"
+      }
+    },
+    {
+      "id": "UA.READONLY",
+      "kind": "external",
+      "type": "FLOAT64",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=ReadOnly"
+      }
+    },
+    {
+      "id": "UA.NO_NODE",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=NoSuchNode"
+      }
+    },
+    {
+      "id": "UA.ARRAY",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=Array"
+      }
+    },
+    {
+      "id": "UA.TOO_BIG",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "srv1",
+        "address": "ns=2;s=Int32"
+      }
+    }
+  ]
+}

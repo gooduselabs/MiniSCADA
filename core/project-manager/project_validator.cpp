@@ -25,6 +25,8 @@
 #include "core/project-manager/rules_03.hpp"
 #include "core/project-manager/rules_10.hpp"
 #include "core/project-manager/rules_11.hpp"
+#include "core/project-manager/rules_bacnet.hpp"
+#include "core/project-manager/rules_fins.hpp"
 #include "valijson/adapters/nlohmann_json_adapter.hpp"
 #include "valijson/schema.hpp"
 #include "valijson/schema_parser.hpp"
@@ -1146,6 +1148,11 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
             for (auto& e : errs10) errs.push_back(std::move(e));
             // the 1.x family: grid layout, theme (feature 012, rules_11)
             runRules11(project, in.screens, catalog.get(), errs, warns);
+            // Omron FINS channels and source.bcd only from 1.1 (feature 018, rules_fins)
+            finsVersionRules(project, connectionsOk ? &connections : nullptr,
+                             tagsOk ? &tags : nullptr, errs);
+            // BACnet/IP channels only from 1.1 (feature 020, rules_bacnet)
+            bacnetVersionRules(project, connectionsOk ? &connections : nullptr, errs);
         }
         for (auto& e : errs) c.errors.push_back(std::move(e));
         for (auto& w : warns) c.warnings.push_back(std::move(w));

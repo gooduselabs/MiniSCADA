@@ -9,6 +9,7 @@
 #include "core/common/json_limits.hpp"
 #include "core/common/json_text.hpp"
 #include "core/common/serial_match.hpp"
+#include "drivers/fins/end_codes.hpp"
 #include "drivers/modbus/address.hpp"
 #include "drivers/modbus/exceptions.hpp"
 #include "drivers/sdk/serial_port.hpp"
@@ -63,6 +64,13 @@ const char* messageOf(const std::string& code) {
     if (code == "PORT_NOT_ALLOWED")
         return "Cổng không nằm trong danh sách serialPorts của thiết bị";
     if (code == "PORT_ERROR") return "Không mở được cổng serial";
+    if (code == "END_CODE") return "PLC trả lời bằng mã kết thúc lỗi (FINS end code)";
+    if (code == "DISCONNECTED") return "Kết nối bị đóng giữa chừng";
+    if (code == "BACNET_ERROR") return "Thiết bị BACnet trả lời bằng lỗi (Error)";
+    if (code == "BACNET_REJECT") return "Thiết bị BACnet từ chối yêu cầu (Reject)";
+    if (code == "BACNET_ABORT") return "Thiết bị BACnet hủy giao dịch (Abort)";
+    if (code == "BACNET_SEGMENTATION")
+        return "Câu trả lời quá lớn, cần segmentation (driver không hỗ trợ)";
     return "";
 }
 
@@ -196,7 +204,202 @@ void parseRtu(const json& ch, const json& dev, const json& body, ProbeSpec& spec
     }
 }
 
+// Omron FINS (feature 018): channel.fins {host, port, transport, sourceNetwork, sourceNode,
+// localPort, connectTimeoutMs}, device {network, node, unit, timeoutMs}, read {address, count 1-4}.
+void parseFins(const json& ch, const json& dev, const json& body, ProbeSpec& spec,
+               std::vector<ProbeIssue>& issues) {
+    drv::FinsProbeRequest& f = spec.finsReq;
+    const json fj = ch.contains("fins") && ch["fins"].is_object() ? ch["fins"] : json::object();
+    if (!fj.contains("host")) {
+        issue(issues, "E_FIELD_MISSING", "channel.fins.host", "Thiếu địa chỉ PLC (host).");
+    } else if (!fj["host"].is_string() || fj["host"].get<std::string>().empty() ||
+               fj["host"].get<std::string>().size() > 253 ||
+               fj["host"].get<std::string>().find_first_of(" \t\r\n/\\") != std::string::npos) {
+        issue(issues, "E_FIELD_VALUE", "channel.fins.host",
+              "Địa chỉ PLC phải là IPv4 hoặc tên máy, tối đa 253 ký tự.");
+    } else {
+        f.host = fj["host"].get<std::string>();
+    }
+    intField(fj, "port", "channel.fins", 1, 65535, 9600, f.port, issues);
+    intField(fj, "connectTimeoutMs", "channel.fins", 500, 30000, 3000, f.connectTimeoutMs, issues);
+    intField(fj, "localPort", "channel.fins", 0, 65535, 0, f.localPort, issues);
+    if (fj.contains("transport")) {
+        const std::string t = fj["transport"].is_string() ? fj["transport"].get<std::string>() : "";
+        if (t != "udp" && t != "tcp")
+            issue(issues, "E_FIELD_VALUE", "channel.fins.transport", "Phải là udp hoặc tcp.");
+        f.tcp = t == "tcp";
+    }
+    int v = 0;
+    if (intField(fj, "sourceNetwork", "channel.fins", 0, 127, 0, v, issues))
+        f.src.network = static_cast<uint8_t>(v);
+    if (intField(fj, "sourceNode", "channel.fins", 0, 254, 0, v, issues))
+        f.src.node = static_cast<uint8_t>(v);
+    if (intField(dev, "network", "device", 0, 127, 0, v, issues))
+        f.dst.network = static_cast<uint8_t>(v);
+    if (intField(dev, "node", "device", 0, 254, 0, v, issues)) f.dst.node = static_cast<uint8_t>(v);
+    if (intField(dev, "unit", "device", 0, 255, 0, v, issues)) f.dst.unit = static_cast<uint8_t>(v);
+    intField(dev, "timeoutMs", "device", 100, 10000, 1000, f.timeoutMs, issues);
+    if (body.contains("read")) {
+        const json& rd = body["read"];
+        if (!rd.is_object() || !rd.contains("address") || !rd["address"].is_string()) {
+            issue(issues, "E_FIELD_MISSING", "read.address", "Thiếu địa chỉ cần đọc.");
+        } else {
+            int count = 1;
+            intField(rd, "count", "read", -1000000, 1000000, 1, count, issues);
+            const std::string a = rd["address"].get<std::string>();
+            fins::AddressOptions o;
+            o.rawType = TagType::UINT16;
+            fins::Address addr = fins::parseAddress(a, o);
+            if (!addr.ok && addr.error == "E_ADDR_AREA") {  // a bit or a flag
+                o.rawType = TagType::BOOL;
+                addr = fins::parseAddress(a, o);
+            }
+            if (!addr.ok) {
+                issue(issues, addr.error.c_str(), "read.address",
+                      "Địa chỉ không hợp lệ: " + addr.error + ".");
+            } else if (count < 1 || count > 4) {
+                issue(issues, "E_PROBE_COUNT", "read.count", "Số lượng phải từ 1 đến 4.");
+            } else if (addr.offset + count - 1 > fins::areaMax(addr.area)) {
+                issue(issues, "E_ADDR_RANGE", "read.address", "Địa chỉ vượt cuối vùng nhớ.");
+            } else {
+                f.read = true;
+                f.addr = addr;
+                f.count = count;
+            }
+        }
+    }
+    if (issues.empty()) {
+        f.timeoutMs = std::max(100, std::min(f.timeoutMs, static_cast<int>(kProbeHardCapMs) - 2000 -
+                                                              f.connectTimeoutMs));
+        spec.target = f.host + ":" + std::to_string(f.port);
+    }
+}
+
+// BACnet/IP (feature 020): channel.bacnet {localPort, bindAddress, broadcast, bbmd {host, port}},
+// device {deviceInstance, host, port, network, mac, timeoutMs}, action read | whois | objects,
+// read {address}, whois {low, high, waitMs}.
+bool hostOk(const json& v) {
+    return v.is_string() && !v.get<std::string>().empty() && v.get<std::string>().size() <= 253 &&
+           v.get<std::string>().find_first_of(" \t\r\n/\\") == std::string::npos;
+}
+
+void parseBacnet(const json& ch, const json& dev, const json& body, ProbeSpec& spec,
+                 std::vector<ProbeIssue>& issues) {
+    drv::BacnetProbeRequest& b = spec.bacnetReq;
+    const json bj =
+        ch.contains("bacnet") && ch["bacnet"].is_object() ? ch["bacnet"] : json::object();
+    std::string action = "read";
+    if (body.contains("action")) {
+        action = body["action"].is_string() ? body["action"].get<std::string>() : "";
+        if (action != "read" && action != "whois" && action != "objects")
+            issue(issues, "E_FIELD_VALUE", "action", "Phải là read, whois hoặc objects.");
+    }
+    b.action = action == "whois" ? drv::BacnetProbeRequest::Action::WhoIs
+                                 : action == "objects" ? drv::BacnetProbeRequest::Action::Objects
+                                                       : drv::BacnetProbeRequest::Action::Read;
+    int localPort = 47808;
+    intField(bj, "localPort", "channel.bacnet", 0, 65535, 47808, localPort, issues);
+    // Who-Is listens on the channel's port (the I-Am are broadcast to it); the other actions take
+    // a port of the system's choice (the answers come back to it)
+    b.localPort = b.action == drv::BacnetProbeRequest::Action::WhoIs ? localPort : 0;
+    b.broadcastPort = localPort == 0 ? 47808 : localPort;
+    if (bj.contains("bindAddress")) {
+        if (!hostOk(bj["bindAddress"]))
+            issue(issues, "E_FIELD_VALUE", "channel.bacnet.bindAddress", "Phải là địa chỉ IPv4.");
+        else
+            b.bindAddress = bj["bindAddress"].get<std::string>();
+    }
+    if (bj.contains("broadcast")) {
+        if (!hostOk(bj["broadcast"]))
+            issue(issues, "E_FIELD_VALUE", "channel.bacnet.broadcast", "Phải là địa chỉ IPv4.");
+        else
+            b.broadcast = bj["broadcast"].get<std::string>();
+    }
+    if (bj.contains("bbmd") && bj["bbmd"].is_object()) {
+        const json& m = bj["bbmd"];
+        if (!m.contains("host") || !hostOk(m["host"]))
+            issue(issues, "E_FIELD_VALUE", "channel.bacnet.bbmd.host",
+                  "Địa chỉ BBMD phải là IPv4 hoặc tên máy.");
+        else
+            b.bbmdHost = m["host"].get<std::string>();
+        intField(m, "port", "channel.bacnet.bbmd", 1, 65535, 47808, b.bbmdPort, issues);
+    }
+    intField(dev, "timeoutMs", "device", 100, 10000, 3000, b.timeoutMs, issues);
+    if (b.action == drv::BacnetProbeRequest::Action::WhoIs) {
+        const json w =
+            body.contains("whois") && body["whois"].is_object() ? body["whois"] : json::object();
+        int lo = -1, hi = -1;
+        intField(w, "low", "whois", 0, 4194303, -1, lo, issues);
+        intField(w, "high", "whois", 0, 4194303, -1, hi, issues);
+        if ((lo < 0) != (hi < 0) || (lo >= 0 && lo > hi))
+            issue(issues, "E_FIELD_VALUE", "whois", "Cần cả low và high, low không lớn hơn high.");
+        b.low = lo;
+        b.high = hi;
+        intField(w, "waitMs", "whois", 500, 10000, 3000, b.waitMs, issues);
+        spec.target = b.bbmdHost.empty() ? b.broadcast : b.bbmdHost;
+        return;
+    }
+    if (!dev.contains("host")) {
+        issue(issues, "E_FIELD_MISSING", "device.host", "Thiếu địa chỉ IP của thiết bị BACnet.");
+    } else if (!hostOk(dev["host"])) {
+        issue(issues, "E_FIELD_VALUE", "device.host",
+              "Phải là IPv4 hoặc tên máy, tối đa 253 ký tự.");
+    } else {
+        b.host = dev["host"].get<std::string>();
+    }
+    intField(dev, "port", "device", 1, 65535, 47808, b.port, issues);
+    int instance = 0;
+    if (!dev.contains("deviceInstance"))
+        issue(issues, "E_FIELD_MISSING", "device.deviceInstance", "Thiếu device instance.");
+    else if (intField(dev, "deviceInstance", "device", 0, 4194302, 0, instance, issues))
+        b.deviceInstance = static_cast<uint32_t>(instance);
+    intField(dev, "network", "device", 0, 65534, 0, b.network, issues);
+    if (dev.contains("mac")) {
+        const std::string mac = dev["mac"].is_string() ? dev["mac"].get<std::string>() : "#";
+        const bool hex = !mac.empty() && mac.size() <= 12 && mac.size() % 2 == 0 &&
+                         mac.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos;
+        if (!hex)
+            issue(issues, "E_FIELD_VALUE", "device.mac",
+                  "MAC phải là 1 đến 6 byte hex (ví dụ 07).");
+        else
+            b.mac = bacnet::fromHex(mac);
+    }
+    if (b.action == drv::BacnetProbeRequest::Action::Read && body.contains("read")) {
+        const json& rd = body["read"];
+        if (!rd.is_object() || !rd.contains("address") || !rd["address"].is_string()) {
+            issue(issues, "E_FIELD_MISSING", "read.address", "Thiếu địa chỉ cần đọc.");
+        } else {
+            const std::string a = rd["address"].get<std::string>();
+            bacnet::Address addr;
+            // the type does not matter for a read: the first one the address accepts
+            for (TagType t : {TagType::FLOAT64, TagType::BOOL, TagType::UINT32, TagType::STRING}) {
+                bacnet::AddressOptions o;
+                o.rawType = t;
+                addr = bacnet::parseAddress(a, o);
+                if (addr.ok || addr.error != "E_ADDR_AREA") break;
+            }
+            if (!addr.ok) {
+                issue(issues, addr.error.c_str(), "read.address",
+                      "Địa chỉ không hợp lệ: " + addr.error + ".");
+            } else {
+                b.hasAddress = true;
+                b.addr = addr;
+            }
+        }
+    }
+    if (issues.empty()) {
+        b.timeoutMs = std::max(100, std::min(b.timeoutMs, static_cast<int>(kProbeHardCapMs) / 4));
+        spec.target = b.host + ":" + std::to_string(b.port);
+    }
+}
+
 }  // namespace
+
+std::string bacnetExceptionKey(int code) {
+    if (code >= 2000) return "abort:" + std::to_string(code - 2000);
+    if (code >= 1000) return "reject:" + std::to_string(code - 1000);
+    return "error:" + std::to_string(code);
+}
 
 bool parseProbeRequest(const json& body, ProbeSpec& spec, std::vector<ProbeIssue>& issues) {
     spec = ProbeSpec{};
@@ -212,13 +415,23 @@ bool parseProbeRequest(const json& body, ProbeSpec& spec, std::vector<ProbeIssue
     const json& ch = body["channel"];
     const std::string kind =
         ch.contains("kind") && ch["kind"].is_string() ? ch["kind"].get<std::string>() : "";
-    if (kind != "modbus-tcp" && kind != "modbus-rtu") {
+    if (kind != "modbus-tcp" && kind != "modbus-rtu" && kind != "fins" && kind != "bacnet") {
         issue(issues, "E_FIELD_VALUE", "channel.kind",
-              "Loại kênh phải là modbus-tcp hoặc modbus-rtu.");
+              "Loại kênh phải là modbus-tcp, modbus-rtu, fins hoặc bacnet.");
         return false;
     }
     const json dev =
         body.contains("device") && body["device"].is_object() ? body["device"] : json::object();
+    if (kind == "fins") {  // feature 018
+        spec.fins = true;
+        parseFins(ch, dev, body, spec, issues);
+        return issues.empty();
+    }
+    if (kind == "bacnet") {  // feature 020
+        spec.bacnet = true;
+        parseBacnet(ch, dev, body, spec, issues);
+        return issues.empty();
+    }
     if (kind == "modbus-rtu") {
         spec.rtu = true;
         parseRtu(ch, dev, body, spec, issues);
@@ -282,10 +495,90 @@ json probeAnswerJson(const drv::TestOutcome& o, bool hadRead) {
         j["read"] = rd;
     }
     if (o.code == "EXCEPTION") {
-        j["exception"] = {{"code", modbus::exceptionHex(o.exception)},
-                          {"meaning", modbus::exceptionMeaning(o.exception)}};
+        j["exception"] = exceptionJson(o.exception);
         if (o.responseMs > 0 || hadRead) j["responseMs"] = o.responseMs;
     }
+    return j;
+}
+
+json finsProbeAnswerJson(const drv::FinsProbeOutcome& out, const drv::FinsProbeRequest& req) {
+    const drv::TestOutcome& o = out.base;
+    json j = {{"ok", o.code == "OK"}, {"code", o.code}, {"connectMs", o.connectMs}};
+    const char* msg = messageOf(o.code);
+    if (*msg) j["message"] = msg;
+    if (!o.responseFrame.empty()) j["responseMs"] = o.responseMs;
+    if (!out.model.empty()) j["model"] = out.model;
+    if (out.clientNode >= 0) j["nodes"] = {{"client", out.clientNode}, {"server", out.serverNode}};
+    if (o.code == "OK" && req.read) {
+        json rd = {{"address", req.addr.normalized}, {"count", req.count}};
+        if (!o.registers.empty()) {
+            json words = json::array();
+            for (uint16_t r : o.registers) words.push_back(hex16(r));
+            rd["words"] = words;
+        } else {
+            json bits = json::array();
+            for (uint8_t b : o.bits) bits.push_back(b != 0);
+            rd["bits"] = bits;
+        }
+        j["read"] = rd;
+    }
+    if (o.code == "END_CODE")
+        j["endCode"] = {{"code", fins::endCodeHex(out.endCode)},
+                        {"reason", fins::endCodeReason(out.endCode)},
+                        {"meaning", fins::endCodeMeaning(out.endCode)}};
+    return j;
+}
+
+json bacnetProbeAnswerJson(const drv::BacnetProbeOutcome& out, const drv::BacnetProbeRequest& req) {
+    const drv::TestOutcome& o = out.base;
+    const char* action =
+        req.action == drv::BacnetProbeRequest::Action::WhoIs
+            ? "whois"
+            : req.action == drv::BacnetProbeRequest::Action::Objects ? "objects" : "read";
+    json j = {
+        {"ok", o.code == "OK"}, {"code", o.code}, {"action", action}, {"connectMs", o.connectMs}};
+    const char* msg = messageOf(o.code);
+    if (*msg) j["message"] = msg;
+    if (!o.responseFrame.empty()) j["responseMs"] = o.responseMs;
+    if (req.action == drv::BacnetProbeRequest::Action::Read && o.code == "OK")
+        j["read"] = {{"address", req.hasAddress ? req.addr.normalized
+                                                : "DEV:" + std::to_string(req.deviceInstance) +
+                                                      ":object-name"},
+                     {"value", out.valueText},
+                     {"kind", out.valueKind}};
+    if (req.action == drv::BacnetProbeRequest::Action::WhoIs) {
+        json devs = json::array();
+        for (const auto& d : out.devices)
+            devs.push_back({{"instance", d.instance},
+                            {"host", d.host},
+                            {"port", d.port},
+                            {"network", d.network},
+                            {"mac", bacnet::hexOf(d.mac)},
+                            {"maxApdu", d.maxApdu},
+                            {"segmentation", d.segmentation},
+                            {"vendorId", d.vendorId}});
+        j["devices"] = devs;
+        j["truncated"] = out.truncated;
+    }
+    if (req.action == drv::BacnetProbeRequest::Action::Objects) {
+        json objs = json::array();
+        for (size_t i = 0; i < out.objects.size(); ++i) {
+            const bacnet::ObjectId& id = out.objects[i];
+            const char* t = bacnet::typeName(id.type);
+            json x = {{"type", id.type}, {"instance", id.instance}};
+            if (*t) x["address"] = std::string(t) + ":" + std::to_string(id.instance);
+            if (i < out.objectNames.size() && !out.objectNames[i].empty())
+                x["name"] = out.objectNames[i];
+            objs.push_back(x);
+        }
+        j["objects"] = objs;
+        j["truncated"] = out.truncated;
+    }
+    if (o.code == "BACNET_ERROR")
+        j["error"] = {{"class", out.errorClass},
+                      {"code", out.errorCode},
+                      {"reason", bacnet::errorReason(out.errorCode)}};
+    if (out.reason >= 0 && o.code != "OK" && o.code != "BACNET_ERROR") j["reason"] = out.reason;
     return j;
 }
 
@@ -305,6 +598,14 @@ int EngineeringApi::driversTest(mg_connection* c, const GateRequest& r, const Ga
     const json j = json::parse(body, nullptr, false);
     if (j.is_discarded()) return sendError(c, 400, "BAD_REQUEST", close);
 
+    // Feature 019 (contracts/opcua.md §4): an OPC UA channel is tested by the browse route.
+    if (j.is_object() && j.contains("channel") && j["channel"].is_object() &&
+        j["channel"].value("kind", "") == "opcua")
+        return send(c, 200,
+                    jsonText({{"ok", false},
+                              {"code", "NOT_SUPPORTED"},
+                              {"message", "Kênh OPC UA: dùng Lấy chứng chỉ / Duyệt node."}}),
+                    close);
     ProbeSpec spec;
     std::vector<ProbeIssue> issues;
     if (!parseProbeRequest(j, spec, issues)) {
@@ -317,6 +618,14 @@ int EngineeringApi::driversTest(mg_connection* c, const GateRequest& r, const Ga
         return sendError(
             c, 501, "NOT_IMPLEMENTED", close, "",
             {{"message", "Thử kết nối Modbus RTU chưa có trong phiên bản runtime này."}});
+    if (spec.fins && !drivers_.probeFins)
+        return sendError(
+            c, 501, "NOT_IMPLEMENTED", close, "",
+            {{"message", "Thử kết nối Omron FINS chưa có trong phiên bản runtime này."}});
+    if (spec.bacnet && !drivers_.probeBacnet)
+        return sendError(
+            c, 501, "NOT_IMPLEMENTED", close, "",
+            {{"message", "Thử kết nối BACnet/IP chưa có trong phiên bản runtime này."}});
 
     // Ten a minute and one at a time (contract §4): refused before anything is tried.
     const int64_t now =
@@ -343,11 +652,23 @@ int EngineeringApi::driversTest(mg_connection* c, const GateRequest& r, const Ga
         testTimes_.push_back(now);
     }
     drv::TestOutcome outcome;
+    drv::FinsProbeOutcome finsOutcome;
+    drv::BacnetProbeOutcome bacnetOutcome;
     try {
-        outcome =
-            spec.rtu ? drivers_.probeRtu(spec.rtuPort, spec.rtuReq) : drivers_.probeTcp(spec.tcp);
+        if (spec.fins) {
+            finsOutcome = drivers_.probeFins(spec.finsReq);
+            outcome = finsOutcome.base;
+        } else if (spec.bacnet) {
+            bacnetOutcome = drivers_.probeBacnet(spec.bacnetReq);
+            outcome = bacnetOutcome.base;
+        } else {
+            outcome = spec.rtu ? drivers_.probeRtu(spec.rtuPort, spec.rtuReq)
+                               : drivers_.probeTcp(spec.tcp);
+        }
     } catch (const std::exception&) {
         outcome.code = "UNREACHABLE";
+        finsOutcome.base = outcome;
+        bacnetOutcome.base = outcome;
     }
     {
         std::lock_guard<std::mutex> l(testMu_);
@@ -368,6 +689,10 @@ int EngineeringApi::driversTest(mg_connection* c, const GateRequest& r, const Ga
     } catch (const std::exception&) {
         return sendError(c, 503, "AUDIT_UNAVAILABLE", close);
     }
+    if (spec.fins)
+        return send(c, 200, jsonText(finsProbeAnswerJson(finsOutcome, spec.finsReq)), close);
+    if (spec.bacnet)
+        return send(c, 200, jsonText(bacnetProbeAnswerJson(bacnetOutcome, spec.bacnetReq)), close);
     return send(c, 200,
                 jsonText(probeAnswerJson(outcome, spec.rtu ? spec.rtuReq.read : spec.tcp.read)),
                 close);
@@ -440,9 +765,15 @@ json groupJson(const drv::GroupDiag& g) {
             {"overloaded", g.overloaded}};
 }
 
-json deviceJson(const drv::DeviceDiag& d, const std::string& name) {
+// `kind`: the channel kind; the exceptions of a FINS channel are end codes (feature 018), four hex
+// digits, those of a BACnet/IP channel error codes, rejects and aborts (feature 020).
+json deviceJson(const drv::DeviceDiag& d, const std::string& name, const std::string& kind) {
     json ex = json::object();
-    for (const auto& [code, n] : d.exceptions) ex[modbus::exceptionHex(code)] = n;
+    // FINS: end code; BACnet: error:31, reject:9, abort:4. Otherwise exceptionKey: two hex digits
+    // (Modbus exception, S7 item code), four for an S7 header error (8104) or an MC end code (C056)
+    for (const auto& [code, n] : d.exceptions)
+        ex[kind == "fins" ? fins::endCodeHex(static_cast<uint16_t>(code))
+                          : kind == "bacnet" ? bacnetExceptionKey(code) : exceptionKey(code)] = n;
     json groups = json::array();
     for (const auto& g : d.groups) groups.push_back(groupJson(g));
     return {{"id", d.id},
@@ -497,18 +828,24 @@ json driversDiagnosticsJson(const DriversDiagInput& in) {
                 // a channel that is off has no traffic whatever its field devices say
                 if (dd.state.empty() || d.channel.state.empty() || d.channel.state == "disabled")
                     dd.state = "disabled";
-                devices.push_back(deviceJson(dd, dm.name));
+                devices.push_back(deviceJson(dd, dm.name, ch.kind));
             }
             json warnings = json::array();
             for (const auto& w : d.channel.warnings) warnings.push_back(w);
             channels.push_back({{"id", ch.id},
                                 {"name", ch.name},
-                                {"kind", ch.rtu ? "modbus-rtu" : "modbus-tcp"},
+                                {"kind", ch.rtu ? std::string("modbus-rtu") : ch.kind},
                                 {"state", d.channel.state.empty() ? "disabled" : d.channel.state},
                                 {"lastError", lastError},
                                 {"reconnects", d.channel.reconnects},
                                 {"warnings", warnings},
                                 {"devices", devices}});
+            // feature 016: facts of the connection of a driver that has some (S7: PDU size, TSAPs)
+            if (!d.channel.details.empty()) {
+                json details = json::object();
+                for (const auto& [k, v] : d.channel.details) details[k] = v;
+                channels.back()["details"] = details;
+            }
         }
     }
     out["channels"] = channels;

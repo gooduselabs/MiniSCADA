@@ -1,0 +1,66 @@
+{
+  "scenario": "write",
+  "checks": [
+    {
+      "name": "before writes: 100 % of the Tags as the simulator says",
+      "pass": true,
+      "detail": "19/19"
+    },
+    {
+      "name": "write AHU.AV5 = 21.5: CONFIRMED, priority 8 of the simulator",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:59:29.006Z\",\"readback\":21.5,\"receivedAt\":\"2026-10-24T15:59:28.767Z\",\"requestId\":\"3f6fc20e-68bb-4707-89f6-dbf1c98563f8\",\"status\":\"CONFIRMED\",\"tag\":\"AHU.AV5\",\"value\":21.5} {\"object\":\"AV:5\",\"presentValue\":21.5,\"value\":23,\"flags\":0,\"priority\":[null,null,null,null,null,null,null,21.5,null,null,null,null,null,null,null,null]}"
+    },
+    {
+      "name": "write AHU.BO2 = true: CONFIRMED, priority 16 of the simulator",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:59:29.256Z\",\"readback\":true,\"receivedAt\":\"2026-10-24T15:59:29.190Z\",\"requestId\":\"f251920f-df88-423f-8eb0-f4ab7b7a6483\",\"status\":\"CONFIRMED\",\"tag\":\"AHU.BO2\",\"value\":true} {\"object\":\"BO:2\",\"presentValue\":true,\"value\":false,\"flags\":0,\"priority\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,true]}"
+    },
+    {
+      "name": "write AHU.MSV3 = 2: CONFIRMED, priority 16 of the simulator",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:59:29.506Z\",\"readback\":2,\"receivedAt\":\"2026-10-24T15:59:29.406Z\",\"requestId\":\"ae8324f9-0ca7-47c7-8d5f-b7374432dae9\",\"status\":\"CONFIRMED\",\"tag\":\"AHU.MSV3\",\"value\":2} {\"object\":\"MSV:3\",\"presentValue\":2,\"value\":3,\"flags\":0,\"priority\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,2]}"
+    },
+    {
+      "name": "write AHU.AO1 = 55: CONFIRMED, priority 16 of the simulator",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:59:29.756Z\",\"readback\":55,\"receivedAt\":\"2026-10-24T15:59:29.619Z\",\"requestId\":\"133a53a1-1f13-4cfd-8ddb-d643b49affd5\",\"status\":\"CONFIRMED\",\"tag\":\"AHU.AO1\",\"value\":55} {\"object\":\"AO:1\",\"presentValue\":55,\"value\":0,\"flags\":0,\"priority\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,55]}"
+    },
+    {
+      "name": "AV:5 priority 8 set: relinquish Tag reads false",
+      "pass": true,
+      "detail": "{\"value\":false,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "relinquish priority 8: CONFIRMED, slot NULL, present-value back to 23",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:59:30.006Z\",\"readback\":true,\"receivedAt\":\"2026-10-24T15:59:29.830Z\",\"requestId\":\"75d98ce5-fc62-4831-865f-3f49f5bfd590\",\"status\":\"CONFIRMED\",\"tag\":\"AHU.REL8\",\"value\":true} {\"object\":\"AV:5\",\"presentValue\":23,\"value\":23,\"flags\":0,\"priority\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}"
+    },
+    {
+      "name": "AHU.AV5 reads 23 again",
+      "pass": true
+    },
+    {
+      "name": "write through the router (VAV.AO1 = 66)",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:59:31.006Z\",\"readback\":66,\"receivedAt\":\"2026-10-24T15:59:30.767Z\",\"requestId\":\"6b9054ac-6e24-4ace-876d-cb70ad0d9bff\",\"status\":\"CONFIRMED\",\"tag\":\"VAV.AO1\",\"value\":66} {\"object\":\"AO:1\",\"presentValue\":66,\"value\":40,\"flags\":0,\"priority\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,66]}"
+    },
+    {
+      "name": "write-access-denied: FAILED DEVICE_EXCEPTION 40",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"28\",\"meaning\":\"mã lạ\"},\"finishedAt\":\"2026-10-24T15:59:31.256Z\",\"receivedAt\":\"2026-10-24T15:59:31.189Z\",\"requestId\":\"c7fe8dd0-36ce-4dff-8518-a72443f045c2\",\"status\":\"FAILED\",\"tag\":\"AHU.AO1\",\"value\":10}"
+    },
+    {
+      "name": "a read-only Tag is refused before the driver",
+      "pass": true,
+      "detail": "{\"message\":\"Tag này không ghi được (chỉ đọc hoặc Tag tính toán).\",\"reason\":\"READ_ONLY\",\"requestId\":\"018f0452-f949-4785-868b-7e7b23925fa3\",\"status\":\"REJECTED\"}"
+    },
+    {
+      "name": "the writes are in the audit log",
+      "pass": true,
+      "detail": "200"
+    }
+  ],
+  "measures": {},
+  "pass": true
+}

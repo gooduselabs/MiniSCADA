@@ -1,0 +1,97 @@
+{
+  "scenario": "unplug",
+  "checks": [
+    {
+      "name": "every Tag GOOD at the start",
+      "pass": true
+    },
+    {
+      "name": "round 1 (refuse): every Tag BAD with a reason within 2 cycles + timeout",
+      "pass": true,
+      "detail": "1625 ms (from 1792857462543), reasons REFUSED,TIMEOUT"
+    },
+    {
+      "name": "round 1: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "1743 ms"
+    },
+    {
+      "name": "round 2 (silent): every Tag BAD with a reason within 2 cycles + timeout",
+      "pass": true,
+      "detail": "1502 ms (from 1792857467419), reasons TIMEOUT,DISCONNECTED"
+    },
+    {
+      "name": "round 2: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "1986 ms"
+    },
+    {
+      "name": "round 3 (refuse): every Tag BAD with a reason within 2 cycles + timeout",
+      "pass": true,
+      "detail": "1256 ms (from 1792857472411), reasons REFUSED,TIMEOUT"
+    },
+    {
+      "name": "round 3: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "1739 ms"
+    },
+    {
+      "name": "round 4 (silent): every Tag BAD with a reason within 2 cycles + timeout",
+      "pass": true,
+      "detail": "1496 ms (from 1792857476909), reasons TIMEOUT,DISCONNECTED"
+    },
+    {
+      "name": "round 4: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "1757 ms"
+    },
+    {
+      "name": "round 5 (refuse): every Tag BAD with a reason within 2 cycles + timeout",
+      "pass": true,
+      "detail": "1498 ms (from 1792857481668), reasons REFUSED,TIMEOUT"
+    },
+    {
+      "name": "round 5: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "1502 ms"
+    },
+    {
+      "name": "round 6 (silent): every Tag BAD with a reason within 2 cycles + timeout",
+      "pass": true,
+      "detail": "1564 ms (from 1792857486173), reasons TIMEOUT,DISCONNECTED"
+    },
+    {
+      "name": "round 6: GOOD again within 12 s without restarting the runtime",
+      "pass": true,
+      "detail": "1994 ms"
+    },
+    {
+      "name": "the runtime process is the same one at the end",
+      "pass": true,
+      "detail": "9 -> 9"
+    }
+  ],
+  "measures": {
+    "rounds": 6,
+    "tags": 593,
+    "badMs": [
+      1625,
+      1502,
+      1256,
+      1496,
+      1498,
+      1564
+    ],
+    "goodMs": [
+      1743,
+      1986,
+      1739,
+      1757,
+      1502,
+      1994
+    ],
+    "badMaxMs": 1625,
+    "goodMaxMs": 1994
+  },
+  "pass": true
+}

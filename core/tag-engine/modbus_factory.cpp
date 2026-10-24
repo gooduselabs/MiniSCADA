@@ -87,6 +87,10 @@ std::vector<ModbusChannelDriver> makeModbusTcpDrivers(const ProjectModel& model,
                                                       const drv::DriverEnv& env) {
     std::vector<ModbusChannelDriver> out;
     for (size_t ch = 0; ch < model.channels.size(); ++ch) {
+        // other drivers have their own factory: s7 (016), fins (018), mc (017), opcua (019), bacnet
+        // (020)
+        if (model.channels[ch].kind != "modbus-tcp" && model.channels[ch].kind != "modbus-rtu")
+            continue;
         ModbusChannelDriver d;
         d.channel = ch;
         drv::DriverEnv e = env;

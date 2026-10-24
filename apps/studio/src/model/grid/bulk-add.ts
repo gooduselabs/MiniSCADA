@@ -1,6 +1,7 @@
 // Thêm hàng loạt Tag ngoài (feature 006, T124, FR-045, US1-11): tạo N Tag với tên tăng số và địa chỉ tăng theo bước (mặc
 // định bằng số thanh ghi của kiểu). Kết quả là MỘT sửa đổi `batch` để hoàn tác một lần. Hàm thuần.
-import { parseAddress, type TagDataType } from '@mat/tag-codec';
+import { parseAddress, parseMcAddress, type TagDataType } from '@mat/tag-codec';
+import { mcDefaultStep, mcStepAddress } from '../mc.ts';
 import type { ScanGroupName, TagV1 } from '@mat/project-schema';
 import type { MessageKey } from '../../i18n/index.ts';
 import { defaultStep, stepAddress, MAX_TAG_ROWS, type DeviceInfo } from '../tag-table.ts';
@@ -68,17 +69,25 @@ export function planBulkAdd(p: BulkAddParams, ctx: BulkAddContext): BulkAddPlan 
     fail({ field: 'stringLength', reason: 'tt.bulk.stringLength' });
   const start = p.address.trim().toUpperCase();
   const dev = ctx.devices.find((d) => d.id === p.device);
-  const first = parseAddress(start, {
-    addressBase: dev?.addressBase ?? 0,
-    rawType: p.type,
-    stringLength: p.stringLength,
-  });
+  // feature 017: thiết bị của kênh Mitsubishi MC đọc địa chỉ theo ngữ pháp MC (D100, X1F…)
+  const mc = dev?.channelKind === 'mc';
+  const first = mc
+    ? parseMcAddress(start, {
+        rawType: p.type,
+        stringLength: p.stringLength,
+        xyNotation: dev?.xyNotation,
+      })
+    : parseAddress(start, {
+        addressBase: dev?.addressBase ?? 0,
+        rawType: p.type,
+        stringLength: p.stringLength,
+      });
   if (!first.ok) fail({ field: 'address', reason: 'tt.bulk.address' });
   if (p.step !== null && (!Number.isInteger(p.step) || p.step < 1))
     fail({ field: 'step', reason: 'tt.bulk.step' });
   if (errors.length) return empty();
 
-  const per = p.step ?? defaultStep(start, p.type, p.stringLength);
+  const per = p.step ?? (mc ? mcDefaultStep : defaultStep)(start, p.type, p.stringLength);
   const taken = new Set(ctx.existing);
   const tags: TagV1[] = [];
   const preview: BulkAddPlan['preview'] = [];
@@ -89,14 +98,25 @@ export function planBulkAdd(p: BulkAddParams, ctx: BulkAddContext): BulkAddPlan 
       fail({ field: 'namePattern', reason: 'tt.bulk.nameTaken', params: { id } });
       return empty();
     }
-    const address = i === 0 ? start : stepAddress(start, per, i);
-    const check = address
-      ? parseAddress(address, {
-          addressBase: dev?.addressBase ?? 0,
-          rawType: p.type,
-          stringLength: p.stringLength,
-        })
-      : null;
+    const address =
+      i === 0
+        ? start
+        : mc
+          ? mcStepAddress(start, per, i, dev?.xyNotation)
+          : stepAddress(start, per, i);
+    const check = !address
+      ? null
+      : mc
+        ? parseMcAddress(address, {
+            rawType: p.type,
+            stringLength: p.stringLength,
+            xyNotation: dev?.xyNotation,
+          })
+        : parseAddress(address, {
+            addressBase: dev?.addressBase ?? 0,
+            rawType: p.type,
+            stringLength: p.stringLength,
+          });
     if (!address || !check?.ok) {
       fail({ field: 'address', reason: 'tt.bulk.addressRange', params: { id } });
       return empty();

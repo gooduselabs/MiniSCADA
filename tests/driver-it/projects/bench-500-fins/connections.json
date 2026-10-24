@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.1.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "udp1",
+      "name": "Giả lập Omron FINS/UDP",
+      "kind": "fins",
+      "fins": {
+        "host": "fins-sim",
+        "port": 9600,
+        "transport": "udp",
+        "connectTimeoutMs": 1000,
+        "reconnectMaxS": 4
+      },
+      "devices": [
+        {
+          "id": "cj2",
+          "name": "CJ2M giả lập",
+          "node": 20
+        }
+      ]
+    }
+  ]
+}

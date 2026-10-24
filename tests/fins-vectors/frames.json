@@ -1,0 +1,79 @@
+{
+"description": "Khung Omron FINS (feature 018). Bố cục theo FINS Commands Reference Manual W342 §3-2 (đầu 10 byte ICF RSV GCT DNA DA1 DA2 SNA SA1 SA2 SID), §5-3-2..§5-3-4 (0101, 0102, 0104), §5-3-6 (0501) và W421 §6-5 (FINS/TCP: \"FINS\", độ dài, lệnh, mã lỗi). Dùng ở drivers/fins/tests/frame_test.cpp và tools/fins-sim. hex: byte cách nhau bởi dấu cách.",
+"commands": [
+  {"name":"read-d100-10-words","dst":[0,10,0],"src":[0,5,0],"sid":1,"command":"0101","params":{"kind":"read","areaCode":"82","address":100,"bit":0,"count":10},
+   "hex":"80 00 02 00 0A 00 00 05 00 01 01 01 82 00 64 00 00 0A"},
+  {"name":"read-cio10-bit3-1-bit","dst":[0,10,0],"src":[0,5,0],"sid":2,"command":"0101","params":{"kind":"read","areaCode":"30","address":10,"bit":3,"count":1},
+   "hex":"80 00 02 00 0A 00 00 05 00 02 01 01 30 00 0A 03 00 01"},
+  {"name":"read-counter-flag-c12","dst":[0,10,0],"src":[0,5,0],"sid":3,"command":"0101","params":{"kind":"read","areaCode":"09","address":32780,"bit":0,"count":1},
+   "hex":"80 00 02 00 0A 00 00 05 00 03 01 01 09 80 0C 00 00 01"},
+  {"name":"read-em-bank0-routed","dst":[1,20,0],"src":[2,5,0],"sid":255,"command":"0101","params":{"kind":"read","areaCode":"A0","address":100,"bit":0,"count":2},
+   "hex":"80 00 02 01 14 00 02 05 00 FF 01 01 A0 00 64 00 00 02"},
+  {"name":"write-d200-two-words","dst":[0,10,0],"src":[0,5,0],"sid":4,"command":"0102","params":{"kind":"write","areaCode":"82","address":200,"bit":0,"count":2,"data":"5C 29 41 C6"},
+   "hex":"80 00 02 00 0A 00 00 05 00 04 01 02 82 00 C8 00 00 02 5C 29 41 C6"},
+  {"name":"write-w5-bit0-on","dst":[0,10,0],"src":[0,5,0],"sid":5,"command":"0102","params":{"kind":"write","areaCode":"31","address":5,"bit":0,"count":1,"data":"01"},
+   "hex":"80 00 02 00 0A 00 00 05 00 05 01 02 31 00 05 00 00 01 01"},
+  {"name":"multiple-read-d100-cio10.03-t5","dst":[0,10,0],"src":[0,5,0],"sid":6,"command":"0104","params":{"kind":"multi","items":[["82",100,0],["30",10,3],["89",5,0]]},
+   "hex":"80 00 02 00 0A 00 00 05 00 06 01 04 82 00 64 00 30 00 0A 03 89 00 05 00"},
+  {"name":"controller-data-read","dst":[0,10,0],"src":[0,5,0],"sid":7,"command":"0501","params":{"kind":"raw","hex":""},
+   "hex":"80 00 02 00 0A 00 00 05 00 07 05 01"}
+],
+"responses": [
+  {"name":"read-ok-3-words","hex":"C0 00 02 00 05 00 00 0A 00 01 01 01 00 00 00 01 FF FF 12 34",
+   "expect":{"dst":[0,5,0],"src":[0,10,0],"sid":1,"command":"0101","endCode":"0000","relayError":false,"plcFatal":false,"plcNonFatal":false,"data":"00 01 FF FF 12 34","words":["0001","FFFF","1234"]}},
+  {"name":"read-ok-icf-c1","hex":"C1 00 02 00 05 00 00 0A 00 01 01 01 00 00 00 2A",
+   "expect":{"dst":[0,5,0],"src":[0,10,0],"sid":1,"command":"0101","endCode":"0000","relayError":false,"plcFatal":false,"plcNonFatal":false,"data":"00 2A","words":["002A"]}},
+  {"name":"read-bits","hex":"C0 00 02 00 05 00 00 0A 00 02 01 01 00 00 01 00 01",
+   "expect":{"dst":[0,5,0],"src":[0,10,0],"sid":2,"command":"0101","endCode":"0000","relayError":false,"plcFatal":false,"plcNonFatal":false,"data":"01 00 01","bits":[1,0,1]}},
+  {"name":"address-range-1103","hex":"C0 00 02 00 05 00 00 0A 00 01 01 01 11 03",
+   "expect":{"dst":[0,5,0],"src":[0,10,0],"sid":1,"command":"0101","endCode":"1103","reason":"FINS_ADDRESS","relayError":false,"plcFatal":false,"plcNonFatal":false,"data":""}},
+  {"name":"relay-error-and-plc-nonfatal-masked","hex":"C0 00 02 00 05 00 00 0A 00 09 01 01 81 41",
+   "expect":{"dst":[0,5,0],"src":[0,10,0],"sid":9,"command":"0101","endCode":"0101","reason":"FINS_ROUTING","relayError":true,"plcFatal":false,"plcNonFatal":true,"data":""}},
+  {"name":"ok-with-plc-fatal-flag","hex":"C0 00 02 00 05 00 00 0A 00 0A 01 01 00 80 00 07",
+   "expect":{"dst":[0,5,0],"src":[0,10,0],"sid":10,"command":"0101","endCode":"0000","relayError":false,"plcFatal":true,"plcNonFatal":false,"data":"00 07","words":["0007"]}},
+  {"name":"write-protected-2101","hex":"C0 00 02 00 05 00 00 0A 00 04 01 02 21 01",
+   "expect":{"dst":[0,5,0],"src":[0,10,0],"sid":4,"command":"0102","endCode":"2101","reason":"FINS_WRITE_DENIED","relayError":false,"plcFatal":false,"plcNonFatal":false,"data":""}},
+  {"name":"program-mode-2203","hex":"C0 00 02 00 05 00 00 0A 00 04 01 02 22 03",
+   "expect":{"dst":[0,5,0],"src":[0,10,0],"sid":4,"command":"0102","endCode":"2203","reason":"FINS_MODE","relayError":false,"plcFatal":false,"plcNonFatal":false,"data":""}},
+  {"name":"multiple-read-ok","hex":"C0 00 02 00 05 00 00 0A 00 06 01 04 00 00 82 00 2A 30 01 89 01 F4",
+   "expect":{"dst":[0,5,0],"src":[0,10,0],"sid":6,"command":"0104","endCode":"0000","relayError":false,"plcFatal":false,"plcNonFatal":false,"data":"82 00 2A 30 01 89 01 F4","multi":{"items":[["82",100,0],["30",10,3],["89",5,0]],"values":["002A","0001","01F4"]}}},
+  {"name":"controller-model","hex":"C0 00 02 00 05 00 00 0A 00 07 05 01 00 00 43 4A 32 4D 2D 43 50 55 33 31 20 20 20 20 20 20 20 20 20 20 20 20",
+   "expect":{"dst":[0,5,0],"src":[0,10,0],"sid":7,"command":"0501","endCode":"0000","relayError":false,"plcFatal":false,"plcNonFatal":false,"data":"43 4A 32 4D 2D 43 50 55 33 31 20 20 20 20 20 20 20 20 20 20","model":"CJ2M-CPU31"}}
+],
+"badResponses": [
+  {"name":"too-short","hex":"C0 00 02 00 05 00 00 0A 00 01 01 01 00","issue":"Short"},
+  {"name":"command-not-response","hex":"80 00 02 00 05 00 00 0A 00 01 01 01 00 00","issue":"NotResponse"}
+],
+"checks": [
+  {"name":"matches","hex":"C0 00 02 00 05 00 00 0A 00 01 01 01 00 00","peer":[0,10,0],"us":[0,5,0],"sid":1,"command":"0101","issue":"None"},
+  {"name":"other-sid-is-late","hex":"C0 00 02 00 05 00 00 0A 00 02 01 01 00 00","peer":[0,10,0],"us":[0,5,0],"sid":1,"command":"0101","issue":"Sid"},
+  {"name":"other-node","hex":"C0 00 02 00 05 00 00 0B 00 01 01 01 00 00","peer":[0,10,0],"us":[0,5,0],"sid":1,"command":"0101","issue":"Route"},
+  {"name":"other-unit","hex":"C0 00 02 00 05 00 00 0A 10 01 01 01 00 00","peer":[0,10,0],"us":[0,5,0],"sid":1,"command":"0101","issue":"Route"},
+  {"name":"local-network-answered-with-number","hex":"C0 00 02 01 05 00 01 0A 00 01 01 01 00 00","peer":[0,10,0],"us":[0,5,0],"sid":1,"command":"0101","issue":"None"},
+  {"name":"named-network-must-match","hex":"C0 00 02 02 05 00 03 0A 00 01 01 01 00 00","peer":[1,10,0],"us":[2,5,0],"sid":1,"command":"0101","issue":"Route"},
+  {"name":"other-command","hex":"C0 00 02 00 05 00 00 0A 00 01 01 02 00 00","peer":[0,10,0],"us":[0,5,0],"sid":1,"command":"0101","issue":"Command"}
+],
+"tcp": [
+  {"name":"node-request-auto","build":"nodeRequest","clientNode":0,"hex":"46 49 4E 53 00 00 00 0C 00 00 00 00 00 00 00 00 00 00 00 00"},
+  {"name":"node-request-5","build":"nodeRequest","clientNode":5,"hex":"46 49 4E 53 00 00 00 0C 00 00 00 00 00 00 00 00 00 00 00 05"},
+  {"name":"wrap-read","build":"wrap","frame":"80 00 02 00 0A 00 00 05 00 01 01 01 82 00 64 00 00 0A","hex":"46 49 4E 53 00 00 00 1A 00 00 00 02 00 00 00 00 80 00 02 00 0A 00 00 05 00 01 01 01 82 00 64 00 00 0A"},
+  {"name":"node-response","split":"Message","command":1,"error":0,"clientNode":5,"serverNode":10,"hex":"46 49 4E 53 00 00 00 10 00 00 00 01 00 00 00 00 00 00 00 05 00 00 00 0A"},
+  {"name":"error-all-connections-in-use","split":"Message","command":1,"error":32,"hex":"46 49 4E 53 00 00 00 08 00 00 00 01 00 00 00 20"},
+  {"name":"half-message","split":"NeedMore","hex":"46 49 4E 53 00 00 00 10 00 00 00 01"},
+  {"name":"half-magic","split":"NeedMore","hex":"46 49"},
+  {"name":"not-fins","split":"Bad","hex":"47 49 4E 53 00 00 00 08 00 00 00 02 00 00 00 00"},
+  {"name":"length-too-short","split":"Bad","hex":"46 49 4E 53 00 00 00 07 00 00 00 02"},
+  {"name":"length-too-long","split":"Bad","hex":"46 49 4E 53 00 00 07 E5 00 00 00 02"}
+],
+"endCodes": [
+  ["0000",""],["0001","FINS_CANCELED"],["0101","FINS_ROUTING"],["0205","FINS_ROUTING"],["0302","FINS_ROUTING"],["0502","FINS_ROUTING"],
+  ["0401","FINS_UNSUPPORTED"],["1001","FINS_FORMAT"],["1101","FINS_ADDRESS"],["1103","FINS_ADDRESS"],["2002","FINS_READ_DENIED"],
+  ["2101","FINS_WRITE_DENIED"],["2203","FINS_MODE"],["2301","FINS_UNIT_ERROR"],["2401","FINS_UNIT_ERROR"],["2503","FINS_UNIT_ERROR"],
+  ["2602","FINS_ACCESS"],["3001","FINS_ACCESS"],["4001","FINS_ACCESS"],["0601","FINS_OTHER"],["7F3F","FINS_OTHER"]
+],
+"bcd": [
+  {"words":["1234"],"value":1234},{"words":["9999"],"value":9999},{"words":["0000"],"value":0},
+  {"words":["5678","1234"],"value":12345678},{"words":["9999","9999"],"value":99999999},
+  {"words":["12A4"],"invalid":true},{"words":["0000","F000"],"invalid":true}
+]
+}

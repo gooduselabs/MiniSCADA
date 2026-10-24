@@ -9,6 +9,7 @@ import { live } from 'lit/directives/live.js';
 import { t, type MessageKey } from '../../i18n/index.ts';
 import { cellText } from '../../model/grid-model.ts';
 import {
+  addressInfoText,
   propertyGroups,
   tableInputs,
   tagTable,
@@ -226,7 +227,10 @@ export class MatTagProps extends AppElement {
     const id = typeof tag.id === 'string' ? tag.id : '';
     const refs = id ? whereUsed(s.outline, id) : [];
     const info = adapter.addressInfo(row);
-    return html`${propertyGroups(tag).map(
+    return html`${propertyGroups(tag, {
+        s7: adapter.isS7Row(row),
+        opcua: adapter.isOpcUaRow(row),
+      }).map(
         (g) =>
           html`<div class="psec">${t(`tt.grp.${g.key}` as MessageKey)}</div>
             <div class="tp-group" role="group" aria-label=${t(`tt.grp.${g.key}` as MessageKey)}>
@@ -234,15 +238,7 @@ export class MatTagProps extends AppElement {
               ${
                 g.key === 'source' && info
                   ? html`<p class="${info.ok ? 'help' : 'field-err'}" data-role="addr-info">
-                      ${
-                        info.ok
-                          ? t('tt.hint.address', {
-                              fc: info.fc ?? '',
-                              offset: info.offset ?? 0,
-                              regs: info.regs ?? 0,
-                            })
-                          : t(info.error!)
-                      }
+                      ${info.ok ? addressInfoText(info) : t(info.error!)}
                     </p>`
                   : nothing
               }

@@ -1,0 +1,45 @@
+{
+  "scenario": "reconnect",
+  "checks": [
+    {
+      "name": "before: every Tag GOOD",
+      "pass": true,
+      "detail": "0 ms"
+    },
+    {
+      "name": "server stopped: every Tag BAD DISCONNECTED",
+      "pass": true,
+      "detail": "[\"DISCONNECTED\"]"
+    },
+    {
+      "name": "a write while down is not sent",
+      "pass": true,
+      "detail": "{\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"9663292c-9161-4a41-8c6b-8ba6dce5bcc9\",\"status\":\"REJECTED\"}"
+    },
+    {
+      "name": "server back: every Tag GOOD within 20 s (backoff, subscriptions made again)",
+      "pass": true,
+      "detail": "805 ms"
+    },
+    {
+      "name": "the subscription delivers again",
+      "pass": true
+    },
+    {
+      "name": "the runtime did not restart",
+      "pass": true,
+      "detail": "9 -> 9"
+    },
+    {
+      "name": "diagnostics count the reconnection",
+      "pass": true,
+      "detail": "1"
+    }
+  ],
+  "measures": {
+    "badMs": 0,
+    "goodMs": 805,
+    "reconnects": 1
+  },
+  "pass": true
+}

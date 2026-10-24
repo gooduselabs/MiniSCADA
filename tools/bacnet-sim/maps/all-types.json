@@ -1,0 +1,41 @@
+{
+  "description": "Thiết bị BACnet giả cho driver-it và Studio (feature 020): AHU 1001 trực tiếp và VAV 7 sau router (mạng 5, MAC 07).",
+  "devices": [
+    {
+      "instance": 1001,
+      "name": "AHU-1",
+      "objects": [
+        { "type": "AI", "instance": 1, "name": "Nhiệt độ gió hồi", "value": 24.5, "units": 62 },
+        { "type": "AI", "instance": 2, "name": "Độ ẩm", "value": 55.25, "units": 98 },
+        { "type": "AI", "instance": 3, "name": "Áp suất lỗi", "value": 0, "flags": 2 },
+        {
+          "type": "AI",
+          "instance": 4,
+          "name": "Cảm biến bảo trì",
+          "value": 12,
+          "outOfService": true
+        },
+        { "type": "AO", "instance": 1, "name": "Van nước lạnh", "value": 0 },
+        { "type": "AV", "instance": 5, "name": "Điểm đặt", "value": 23 },
+        { "type": "BI", "instance": 1, "name": "Báo lọc bẩn", "value": true },
+        { "type": "BO", "instance": 2, "name": "Lệnh chạy quạt", "value": false },
+        { "type": "BV", "instance": 3, "name": "Chế độ tự động", "value": true },
+        { "type": "MSI", "instance": 1, "name": "Trạng thái", "value": 2 },
+        { "type": "MSO", "instance": 1, "name": "Tốc độ quạt", "value": 1 },
+        { "type": "MSV", "instance": 3, "name": "Chế độ vận hành", "value": 3 }
+      ]
+    },
+    {
+      "instance": 7,
+      "name": "VAV-7",
+      "network": 5,
+      "mac": "07",
+      "noRpm": true,
+      "maxApdu": 480,
+      "objects": [
+        { "type": "AI", "instance": 1, "name": "Lưu lượng gió", "value": 310.5 },
+        { "type": "AO", "instance": 1, "name": "Cửa gió", "value": 40 }
+      ]
+    }
+  ]
+}

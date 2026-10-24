@@ -342,6 +342,8 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"GET /api/v1/tags/write", false},
         {"GET /api/v1/drivers/diagnostics", false},
         {"GET /api/v1/serial/ports", false},
+        // feature 019: browsing an OPC UA server is a person's request
+        {"POST /api/v1/drivers/opcua/browse", true},
         // feature 009: the alarm commands are a person's requests (the two reads need no session)
         {"POST /api/v1/alarms/ack", true},
         {"POST /api/v1/alarms/shelve", true},

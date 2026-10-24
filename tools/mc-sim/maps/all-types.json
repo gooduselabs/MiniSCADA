@@ -1,0 +1,52 @@
+{
+  "comment": "Every device and every type of contracts/mc-protocol.md; X/Y/B/W numbers are hex strings, the others decimal.",
+  "xyNotation": "hex",
+  "routes": [{ "network": 0, "station": 255 }],
+  "devices": {
+    "D": {
+      "size": 12288,
+      "values": [
+        { "at": 100, "type": "INT16", "value": -12345 },
+        { "at": 101, "type": "UINT16", "value": 54321 },
+        { "at": 102, "type": "INT32", "value": -123456789 },
+        { "at": 104, "type": "UINT32", "value": 3456789012 },
+        { "at": 106, "type": "FLOAT32", "value": -273.15 },
+        { "at": 108, "type": "FLOAT64", "value": 3.141592653589793 },
+        { "at": 112, "type": "INT64", "value": "-9007199254740993" },
+        { "at": 116, "type": "UINT64", "value": "18000000000000000000" },
+        { "at": 120, "type": "STRING", "value": "MITSU-01", "length": 8 },
+        { "at": 130, "words": [4660, 2, 7663] }
+      ],
+      "bits": [
+        { "at": 200, "bit": 0, "value": true },
+        { "at": 200, "bit": 5, "value": true },
+        { "at": 200, "bit": 15, "value": true }
+      ]
+    },
+    "W": {
+      "size": 8192,
+      "values": [
+        { "at": "1A0", "type": "UINT16", "value": 48879 },
+        { "at": "1A1", "type": "INT32", "value": -2 }
+      ],
+      "bits": [{ "at": "1B0", "bit": 10, "value": true }]
+    },
+    "R": { "size": 32768, "values": [{ "at": 500, "type": "INT32", "value": 70000 }] },
+    "ZR": {
+      "size": 131072,
+      "values": [
+        { "at": 70000, "type": "UINT16", "value": 65535 },
+        { "at": 100000, "type": "FLOAT32", "value": 0.125 }
+      ]
+    },
+    "SD": { "size": 12000, "values": [{ "at": 210, "type": "UINT16", "value": 2026 }] },
+    "TN": { "size": 1024, "values": [{ "at": 0, "type": "INT16", "value": 30 }] },
+    "CN": { "size": 1024, "values": [{ "at": 5, "type": "INT16", "value": 1234 }] },
+    "M": { "size": 8192, "on": [10, 11, 100, 103] },
+    "X": { "size": 1024, "on": ["1A0", "1A2", "1A3"] },
+    "Y": { "size": 1024, "on": ["20", "22"] },
+    "B": { "size": 8192, "on": ["1F"] },
+    "L": { "size": 8192, "on": [7] },
+    "SM": { "size": 10000, "on": [400, 412] }
+  }
+}

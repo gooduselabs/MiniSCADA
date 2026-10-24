@@ -1,0 +1,19 @@
+{
+  "comment": "500-Tag benchmark: D0..D999 change every second, M0..M999 too, D1100..D1199 hold FLOAT32 values that change every second; a few fixed values above.",
+  "routes": [{ "network": 0, "station": 255 }],
+  "devices": {
+    "D": {
+      "size": 12288,
+      "values": [
+        { "at": 1000, "type": "INT32", "value": 123456 },
+        { "at": 1002, "type": "FLOAT32", "value": 12.5 }
+      ]
+    },
+    "M": { "size": 8192, "on": [1000, 1001] }
+  },
+  "scripts": [
+    { "device": "D", "from": 0, "to": 999, "kind": "everySecond" },
+    { "device": "M", "from": 0, "to": 999, "kind": "everySecond" },
+    { "device": "D", "from": 1100, "to": 1199, "kind": "everySecond", "type": "FLOAT32" }
+  ]
+}

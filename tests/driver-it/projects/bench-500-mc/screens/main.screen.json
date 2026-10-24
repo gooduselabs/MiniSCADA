@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "main",
+  "name": "Main",
+  "kind": "screen",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "fitMode": "contain",
+  "items": [
+    {
+      "id": "card_wave",
+      "type": "widget",
+      "widget": "card",
+      "x": 20,
+      "y": 20,
+      "width": 220,
+      "height": 110,
+      "props": {
+        "label": "Sóng"
+      },
+      "tags": {
+        "value": "A.WAVE"
+      }
+    }
+  ]
+}

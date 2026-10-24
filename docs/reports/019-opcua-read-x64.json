@@ -1,0 +1,30 @@
+{
+  "scenario": "read",
+  "checks": [
+    {
+      "name": "read: 100 % of the Tags match the server",
+      "pass": true,
+      "detail": "17/17"
+    },
+    {
+      "name": "the counter changes by subscription",
+      "pass": true,
+      "detail": "{\"value\":4,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "diagnostics: kind opcua, connected, subscription",
+      "pass": true,
+      "detail": "{\"state\":\"connected\",\"details\":{\"endpointUrl\":\"opc.tcp://sim:4840\",\"lastStatus\":\"BadNodeIdUnknown\",\"publishingMs\":\"250/1000/5000\",\"readMode\":\"subscription\",\"securityMode\":\"None\",\"securityPolicy\":\"None\",\"session\":\"active\"}}"
+    },
+    {
+      "name": "diagnostics: publishing intervals 250/1000/5000",
+      "pass": true,
+      "detail": "250/1000/5000"
+    }
+  ],
+  "measures": {
+    "tagsMatching": 17,
+    "firstGoodMs": 0
+  },
+  "pass": true
+}

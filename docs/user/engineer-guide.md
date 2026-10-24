@@ -77,6 +77,156 @@ Với `training-demo`, kênh "PLC giả lập (huấn luyện)" trỏ `127.0.0.1
 
 ![Editor Kết nối: kênh Modbus TCP và RTU với thiết bị trường, nút Thêm kênh Modbus TCP, Thêm kênh Modbus RTU, Thêm thiết bị trường; chu kỳ của nhóm quét Nhanh, Thường, Chậm](img/eng-ket-noi.png)
 
+<a id="help-s7"></a>
+
+### 4.1. Kết nối Siemens S7 (S7-1200, S7-1500, S7-300, S7-400)
+
+Runtime đọc/ghi PLC Siemens bằng giao thức S7 (ISO-on-TCP, cổng 102), kiểu truy cập tuyệt đối "PUT/GET". Cần project định dạng 1.1 (project 1.0 có kênh S7 bị `E_DRIVER_VERSION`). Driver mới, **chưa thử với PLC thật** (chỉ thử với giả lập `tools/s7-sim`): hãy kiểm kỹ ở công trình đầu tiên.
+
+**Chuẩn bị PLC trong TIA Portal** (S7-1200/1500; S7-300/400 không cần bước này):
+
+1. Thiết bị > **Properties** > **Protection & Security** > **Connection mechanisms**: đánh dấu **Permit access with PUT/GET communication from remote partner**. Thiếu bước này mọi Tag BAD `S7_FUNCTION_NOT_AVAILABLE`.
+2. Mỗi DB cần đọc: chuột phải DB > **Properties** > **Attributes**: bỏ chọn **Optimized block access**, rồi biên dịch và nạp xuống. DB còn "optimized" làm Tag BAD `S7_ACCESS_DENIED`. Cột **Offset** của DB (sau khi biên dịch) cho số byte dùng trong địa chỉ.
+3. Mức bảo vệ của CPU không được chặn đọc/ghi từ HMI (Full access, hoặc mật khẩu chỉ cho mức cao hơn).
+
+**Thêm kênh**: **Kết nối** > **Thêm kênh Siemens S7**: **Địa chỉ máy** (IP của PLC), **Cổng TCP** 102, **Rack**/**Slot** (S7-1200/1500: 0/1; S7-300: 0/2; S7-400: theo cấu hình phần cứng) hoặc **TSAP** đích và nguồn (4 chữ số hex, khi đi qua CP hoặc PLC cần kiểu kết nối khác; nhập TSAP thì bỏ rack/slot, nếu không Studio báo `E_S7_TSAP`), **PDU** (240–960, mặc định 480: S7-1200 thường chỉ nhận 240, runtime tự dùng số nhỏ hơn mà PLC trả lời). Mỗi kênh S7 có đúng một CPU với **Chờ trả lời**, **Số lần thử lại**, **Khe gộp tối đa (byte)**. **Thử kết nối** chưa hỗ trợ kênh S7: nạp xuống rồi xem **Chẩn đoán driver** (PDU đã thương lượng, TSAP, mã lỗi S7).
+
+**Địa chỉ Tag S7** (không phân biệt hoa thường; viết kiểu Đức `E`/`A` cũng được, Studio đổi thành `I`/`Q`):
+
+| Địa chỉ | Vùng | Kiểu Tag (thô) | Kiểu S7 |
+|---|---|---|---|
+| `DB1.DBX0.0`, `M0.1`, `I0.1` (`E0.1`), `Q0.0` (`A0.0`) | bit | BOOL | BOOL |
+| `DB1.DBB4`, `MB10`, `IB0`, `QB1` | byte | UINT16 | BYTE |
+| `DB1.DBB26` | byte | STRING, **Độ dài chuỗi** n | CHAR (n = 1) hoặc mảng n CHAR |
+| `DB1.DBW2`, `MW10`, `IW2`, `QW4` | word | INT16 / UINT16 | INT / WORD |
+| `DB1.DBD4`, `MD20`, `ID4`, `QD8` | dword | INT32 / UINT32 / FLOAT32 | DINT / DWORD / REAL |
+| `DB1.LREAL8` | 8 byte | FLOAT64 | LREAL |
+| `DB1.STRING32` | n + 2 byte | STRING, **Độ dài chuỗi** n (≤ 250) | STRING[n] |
+
+- DB 1–65535, byte 0–65535, bit 0–7. Sai cú pháp `E_ADDR_SYNTAX`; ngoài khoảng `E_ADDR_RANGE`; kiểu Tag không hợp với cỡ địa chỉ, hoặc ghi vùng `I`: `E_ADDR_AREA`. Tag S7 không có **Thứ tự byte** (S7 luôn big-endian).
+- Tag lớn hơn một lần đọc của PDU: `E_ADDR_READ_LIMIT` (PDU − 18 byte); Tag ghi được lớn hơn một lần ghi: `E_ADDR_WRITE_LIMIT` (PDU − 28 byte).
+- CHAR và STRING dùng bảng mã Latin-1: ghi chuỗi có chữ Việt có dấu bị từ chối (`NOT_SENT_UNSUPPORTED`). Ghi STRING giữ nguyên byte độ dài tối đa của PLC.
+- Runtime gộp Tag cùng nhóm quét, cùng vùng/DB và gần nhau thành một khoảng, nhiều khoảng (tối đa 20) vào một yêu cầu, không vượt PDU. Tag lỗi riêng (DB không có `S7_OBJECT_NOT_FOUND`, ngoài cỡ DB `S7_ADDRESS_OUT_OF_RANGE`) không làm hỏng Tag khác.
+- Không hỗ trợ: truy cập symbolic (DB "optimized"), LINT/ULINT/LWORD, DATE/TIME, WSTRING, vùng bộ đếm/timer (C, T).
+
+<a id="help-fins"></a>
+
+### 4.2. Kết nối Omron FINS (CP1, CJ1, CJ2, CS1)
+
+Cần project định dạng 1.1 (project cũ hơn: **Nâng cấp** trước; nút bị khóa kèm lý do). PLC phải có cổng Ethernet nói FINS: CJ1W-ETN21 hoặc CS1W-ETN21, cổng có sẵn của CJ2, CP1L-EM/EL, hoặc CP1W-CIF41 trên CP1. Dòng NJ/NX dùng EtherNet/IP hoặc OPC UA, không dùng kênh này. **Chưa thử với PLC thật**: driver được kiểm trên giả lập theo tài liệu FINS công khai của Omron (W342, W421); hãy thử kết nối và đối chiếu vài giá trị trước khi đưa vào vận hành.
+
+1. **Thêm kênh Omron FINS**: điền **Địa chỉ PLC** (IP của bộ Ethernet), **Giao thức** `udp` (mặc định) hoặc `tcp`, **Cổng FINS** (mặc định 9600).
+   - FINS/UDP: mỗi lệnh một gói; mất gói thì gửi lại với SID mới (**Số lần gửi lại**, mặc định 1). **Nút nguồn** để 0: BL335 dùng byte cuối IP của nó (ví dụ BL335 `192.168.250.5` là nút 5); không được trùng nút của PLC hay máy khác trong mạng FINS.
+   - FINS/TCP: giữ kết nối; khi bắt tay, PLC cấp nút cho BL335 và cho biết nút của nó, không cần đặt nút. Mỗi bộ Ethernet nhận số kết nối FINS/TCP có hạn (thường 16): hết chỗ thì runtime báo `FINS_TCP_REFUSED`.
+2. **Thêm thiết bị trường**: **Nút đích** (để 0: UDP lấy byte cuối IP của PLC, TCP lấy nút khi bắt tay), **Mạng đích** (0 nếu cùng mạng), **Unit đích** (0 là CPU). **Thứ tự word** mặc định `CDAB`: word thấp ở địa chỉ thấp như PLC Omron lưu DINT, REAL, LREAL. **Chờ trả lời** mặc định 500 ms.
+3. Gom đọc: Tag liền nhau đọc chung một lệnh 0101 (tối đa **Tối đa word mỗi lần đọc**, 999); Tag lẻ (khối không quá 8 word) gom vào lệnh 0104 (**Đọc nhiều vùng**, tối đa 64 phần tử). Tắt **Đọc nhiều vùng** nếu PLC cũ không hỗ trợ lệnh 0104.
+4. **Thử kết nối** của thiết bị FINS: để trống địa chỉ thì đọc **Model CPU** (lệnh 0501); có địa chỉ (`D100`, `CIO10.03`, `T5`) thì đọc 1–4 word hoặc bit. Lỗi của PLC hiện kèm **Mã kết thúc** và nghĩa (ví dụ `1103`: địa chỉ ngoài vùng nhớ).
+
+**Địa chỉ Tag FINS** (bảng Tag gợi ý cú pháp khi ô địa chỉ sai):
+
+| Vùng | Ví dụ | Ghi chú |
+|---|---|---|
+| DM | `D100`, `D100.05` | D0–D32767; bit 0–15 chỉ với BOOL |
+| CIO | `CIO10.03`, `CIO0` | CIO0–CIO6143 |
+| Work, Holding | `W5`, `W5.00`, `H2` | W0–W511, H0–H1535 |
+| Auxiliary | `A448` | A0–A1471; A0–A447 chỉ đọc |
+| EM | `E0_100`, `EC_5` | bank 0–C (hex), mỗi bank 0–32767 |
+| Timer, Counter | `T5`, `C12` | kiểu INT16/UINT16: giá trị hiện tại; kiểu BOOL: cờ hoàn thành (chỉ đọc) |
+
+- Kiểu: INT = INT16, UINT = UINT16, DINT = INT32, UDINT = UINT32, REAL = FLOAT32, LREAL = FLOAT64, STRING (ký tự đầu ở byte cao, như PLC lưu).
+- **BCD**: đánh dấu `bcd` ở nguồn của Tag (INT16/UINT16 4 chữ số, INT32/UINT32 8 chữ số), ví dụ giá trị hiện tại của timer khi PLC đặt chế độ BCD. Ghi số quá số chữ số bị từ chối `NOT_SENT_UNSUPPORTED`.
+- Chép địa chỉ từ CX-Programmer được, kể cả số 0 đứng đầu (`D00100`).
+
+**Cấu hình trên PLC bằng CX-Programmer** (hoặc CX-Integrator):
+
+1. **Địa chỉ IP và nút FINS**: trong Unit Setup của bộ Ethernet (CJ2: Built-in EtherNet/IP Port Settings), đặt IP, mặt nạ mạng. Nút FINS của PLC thường bằng byte cuối IP (bảng xoay node number trên CJ1W-ETN21 phải khớp).
+2. **Chuyển đổi địa chỉ FINS/UDP**: chọn **Automatic generation (dynamic)** để PLC trả lời về đúng IP và cổng của BL335. Nếu chọn bảng IP (IP address table) thì thêm dòng nút của BL335 → IP của BL335.
+3. **Cổng FINS/UDP**: mặc định 9600. Bộ Ethernet đời cũ (ETN11) chỉ trả lời về cổng 9600: đặt **Cổng UDP nguồn** của kênh là 9600.
+4. **FINS/TCP**: bật FINS/TCP server và số kết nối trong tab FINS/TCP; nếu bật **IP address protection**, thêm IP của BL335.
+5. **Bảng định tuyến** (Routing table, CX-Integrator): chỉ cần khi đi qua nhiều mạng FINS (Controller Link, cầu nối). Khi đó đặt **Mạng nguồn** của kênh và **Mạng đích**, **Nút đích** của thiết bị đúng số trong bảng. Cùng mạng thì để mạng 0.
+6. Nạp Unit Setup xuống rồi khởi động lại bộ Ethernet (hoặc tắt bật PLC) để cấu hình có hiệu lực.
+
+Lý do quality của Tag FINS lấy từ mã kết thúc: `FINS_ADDRESS` (11xx, địa chỉ ngoài vùng), `FINS_MODE` (22xx, ví dụ PLC ở PROGRAM), `FINS_WRITE_DENIED` (21xx), `FINS_ROUTING` (01xx, 02xx, 05xx: sai nút, mạng, bảng định tuyến). Chẩn đoán đếm theo mã kết thúc bốn chữ số. Danh sách đủ ở [Mã lỗi](error-codes.md).
+
+<a id="help-mc"></a>
+
+### 4.3. Kết nối PLC Mitsubishi (MC protocol / SLMP)
+
+Runtime nói thẳng MC protocol (SLMP) với CPU có cổng Ethernet hoặc module Ethernet của iQ-R, iQ-F (FX5U, FX5UC), Q, L; không cần gateway Modbus. Cần project định dạng 1.1 (project cũ: nâng cấp ở **Cài đặt project**).
+
+**Trong GX Works3 (iQ-R, FX5)**; GX Works2 cho Q, L tương tự ở mục *Built-in Ethernet Port Setting*:
+
+1. **Parameter → Module Parameter → Ethernet Port → Basic Settings → Own Node Settings**: đặt IP của PLC; **Communication Data Code** chọn **Binary** (khớp **Mã truyền** = binary của kênh; chọn ASCII thì kênh cũng phải ascii).
+2. **Object Device Connection Configuration Setting**: kéo **SLMP Connection Module** vào, đặt **Protocol** TCP (hoặc UDP, khớp **Giao thức** của kênh) và **Port No.** (ví dụ 5007; khớp **Cổng** của kênh).
+3. Cho phép ghi khi PLC đang RUN: Q/L bật *Enable online change (FTP, MC Protocol)* ở Built-in Ethernet Port Setting; iQ-R, FX5 cho phép ghi lúc RUN trong thiết lập Ethernet/bảo mật của module. Không bật thì mọi lệnh ghi trả `DEVICE_EXCEPTION` (end code của PLC hiện ở chi tiết kết quả ghi).
+4. Ghi tham số xuống PLC, tắt nguồn bật lại (hoặc reset) để tham số Ethernet có hiệu lực.
+
+**Trong Studio:**
+
+1. **Kết nối → Thêm kênh Mitsubishi MC**: **Địa chỉ máy** (IP của PLC), **Cổng** (mặc định 5007), **Khung** 3E (mặc định) hoặc 4E, **Mã truyền** binary/ascii, **Giao thức** tcp/udp.
+2. **Thêm thiết bị trường**: PLC nối trực tiếp giữ **Mạng** 0, **Trạm** 255, **Module I/O đích** 03FF, **Trạm module đích** 0. Qua mạng CC-Link IE/MELSECNET tới PLC khác: số mạng, số trạm của PLC đích. **Cách viết X, Y**: hex cho Q, L, iQ-R; **octal** cho FX5/iQ-F (GX Works3 viết X0–X7, X10…).
+3. Nhiều PLC sau một CPU gateway: chọn khung **4E** (có số thứ tự, trả lời muộn bị bỏ đúng); với 3E, một lần hết thời gian chờ làm runtime đóng và mở lại kết nối.
+
+**Địa chỉ Tag** viết như GX Works: `D100` (INT16), `D200` với kiểu FLOAT32 (REAL, chiếm D200–D201), `D300` INT32 (DINT), `D100.5` (bit 5 của D100, BOOL; bit viết một chữ số hex 0–F), `M10`, `X1F`, `Y20`, `B1F`, `L5`, `SM400` (BOOL), `W1A`, `R10`, `ZR1000`, `SD210`, `TN0` (giá trị hiện tại timer), `CN3` (giá trị hiện tại counter). X, Y, B, W là số hex; còn lại thập phân. Kiểu dữ liệu: INT16 = INT, UINT16 = WORD, INT32 = DINT, UINT32 = UDINT, FLOAT32 = REAL, FLOAT64 = LREAL, STRING theo word (độ dài ký tự). Thứ tự byte mặc định là của Mitsubishi (word thấp trước, ký tự đầu ở byte thấp); chỉ đổi **Thứ tự byte** của Tag khi chương trình PLC tự sắp khác.
+
+- Bit trong word (`D100.5`) chỉ ghi được khi thiết bị đặt **Ghi bit trong word** = rmw (đọc word, đổi bit, ghi lại; cảnh báo `W_BIT_RMW` vì có thể đè thay đổi của chương trình PLC giữa hai bước). Nên dùng bit M cho lệnh điều khiển.
+- Runtime gom Tag liền nhau thành một lệnh đọc khối (tối đa 960 word); các Tag lẻ ở nhiều vùng gom vào một lệnh đọc rải (Random Read, tối đa 192 điểm). PLC không hỗ trợ đọc rải: tắt **Đọc rải**.
+- PLC báo lỗi (end code) thì Tag BAD với lý do `MC_END_RANGE` (địa chỉ ngoài vùng của PLC: khối được chia để chỉ Tag sai bị BAD), `MC_END_DEVICE`, `MC_END_COMMAND` (thường do mã truyền binary/ascii không khớp PLC) hoặc `MC_END_OTHER`; **Chẩn đoán driver** hiện mã cụ thể dạng hex (ví dụ `C056`).
+
+**Chưa thử với PLC thật**: driver đã kiểm trên giả lập (`tools/mc-sim`) theo cấu trúc khung của tài liệu công khai của Mitsubishi; thử với PLC thật trước khi dùng cho sản xuất. Chưa có nút **Thử kết nối** cho kênh MC: xem trạng thái ở **Chẩn đoán driver** sau khi nạp xuống.
+
+### 4.4. Kết nối BACnet/IP (bộ điều khiển tòa nhà)
+
+Cần project định dạng 1.1 (project cũ hơn: **Nâng cấp** trước; nút bị khóa kèm lý do). Kênh BACnet/IP đọc và ghi đối tượng Analog, Binary, Multi-state (Input, Output, Value) của bộ điều khiển BMS qua UDP 47808: AHU, chiller, VAV, đồng hồ điện. **Chưa thử với thiết bị thật**: driver được kiểm trên giả lập theo chuẩn ASHRAE 135 (ví dụ mã hóa Annex F); hãy Thử kết nối và đối chiếu vài giá trị trước khi đưa vào vận hành.
+
+1. **Thêm kênh BACnet/IP**: **Cổng UDP cục bộ** (mặc định 47808) và **Địa chỉ broadcast** của mạng (ví dụ `192.168.1.255`, dùng cho Tìm thiết bị). Thiết bị ở subnet khác: điền **BBMD** (BL335 đăng ký foreign device).
+2. **Tìm thiết bị** (cần Online, tài khoản engineer): BL335 gửi Who-Is và liệt kê các thiết bị trả lời I-Am (instance, IP, mạng/MAC nếu sau router, APDU tối đa). Bấm **Thêm** để tạo thiết bị với các thông số đó. Trong vài giây chờ, kênh đang chạy có thể báo timeout rồi tự đọc lại.
+3. Thiết bị: **Device instance**, **Địa chỉ IP** (thiết bị sau router MS/TP: IP của router, cộng **Mạng đích** và **MAC đích**), **Priority ghi mặc định** (16). Nâng cao: **APDU tối đa**, **Chờ trả lời** (500 ms; thiết bị MS/TP 1000–3000), **Số lần gửi lại**, **Dùng ReadPropertyMultiple**.
+4. **Thử kết nối**: để trống địa chỉ thì đọc tên thiết bị; có địa chỉ (`AI:1`, `MSV:3:units`) thì đọc thuộc tính đó. Lỗi hiện kèm lớp và mã BACnet (ví dụ `unknown-object`).
+5. **Duyệt đối tượng**: đọc object-list và tên đối tượng; chọn đối tượng rồi **Thêm Tag** để tạo Tag present-value (Analog: FLOAT32, Binary: BOOL, Multi-state: UINT16; Output và Value có quyền ghi).
+
+**Địa chỉ Tag BACnet**: `loại:instance[:thuộc tính][@priority]`.
+
+| Ví dụ | Ý nghĩa | Kiểu |
+| --- | --- | --- |
+| `AI:1` | present-value của Analog Input 1 | FLOAT32, FLOAT64, số nguyên |
+| `AV:5@8` | Analog Value 5, ghi ở priority 8 | như trên |
+| `BO:2` | Binary Output 2 (active = true) | BOOL, UINT16 |
+| `MSV:3` | Multi-state Value 3 (trạng thái 1, 2, 3…) | UINT16, UINT32, INT16, INT32 |
+| `AI:1:units` | đơn vị (BACnetEngineeringUnits, ví dụ 62 = °C) | UINT16, UINT32 |
+| `AI:1:status-flags` | bit 0 in-alarm, 1 fault, 2 overridden, 3 out-of-service | UINT16 |
+| `DEV:1001:object-name` | tên thiết bị | STRING |
+| `AO:1:relinquish@8` | ghi bất kỳ giá trị: nhả priority 8 (NULL); đọc true khi priority 8 đang trống | BOOL |
+
+Loại: `AI`, `AO`, `AV`, `BI`, `BO`, `BV`, `MSI`, `MSO`, `MSV`, `DEV`. Thuộc tính khác: `out-of-service`, `description`, `reliability`, `event-state` hoặc số (chỉ đọc). Chỉ present-value của Output và Value ghi được; priority 6 dành cho minimum on/off, không dùng được.
+
+**Quality**: Tag present-value theo status-flags của đối tượng: fault là BAD (`BACNET_FAULT`), out-of-service hoặc overridden là UNCERTAIN (giữ giá trị). Lỗi theo từng Tag: `BACNET_UNKNOWN_OBJECT`, `BACNET_UNKNOWN_PROPERTY`; ghi bị từ chối: `DEVICE_EXCEPTION` kèm mã (40 = write-access-denied). Driver không dùng segmentation: mỗi yêu cầu vừa **APDU tối đa**; thiết bị không có ReadPropertyMultiple thì driver tự đọc từng thuộc tính.
+
+### 4.5. Kết nối OPC UA
+
+Dùng cho server OPC UA của PLC (S7-1500, Omron NJ/NX, Beckhoff…), Kepware hoặc SCADA khác. Cần project định dạng 1.1.
+
+1. **Thêm kênh OPC UA**: điền **Endpoint** (`opc.tcp://192.168.0.20:4840`), **Chế độ bảo mật** và **Security policy** (None/None, hoặc Sign hay SignAndEncrypt với Basic256Sha256; khuyến nghị SignAndEncrypt), **Xác thực** (anonymous hoặc username).
+2. Với username: điền **Tên đăng nhập** và **Mã bí mật (secretId)**, ví dụ `opcua-ua-1`. Mật khẩu không nằm trong project: đặt trên thiết bị bằng `sudo mat-runtime --set-secret opcua-ua-1` (gõ mật khẩu ở dòng tiếp theo). Thiếu mật khẩu thì Tag BAD `OPCUA_SECRET_MISSING`.
+3. **Chứng chỉ server** (khi có mã hóa, cần Online): bấm **Lấy chứng chỉ**. Thiết bị hỏi server và hiện SHA-256, chủ thể, hạn. Đối chiếu SHA-256 với màn hình của server rồi bấm **Tin chứng chỉ này**. Runtime chỉ kết nối với server có đúng chứng chỉ này; server đổi chứng chỉ thì Tag BAD `OPCUA_CERT_UNTRUSTED` và **Chẩn đoán driver** hiện SHA-256 mới để tin lại.
+4. Cho server tin chứng chỉ của thiết bị: thiết bị tự sinh chứng chỉ client ở lần kết nối mã hóa đầu (SHA-256 ở **Chẩn đoán driver**, mục `clientCertSha256`). Trên server, chuyển chứng chỉ này từ "Rejected" sang "Trusted" (TIA Portal, Kepware OPC UA Configuration…). Chưa làm thì Tag BAD `OPCUA_SECURITY_REJECTED`.
+5. **Duyệt node** (cần Online): mở cây từ Objects, chọn một biến để **Thêm Tag** với NodeId và kiểu gợi ý. Không Online thì gõ NodeId vào cột **Địa chỉ** của Bảng Tag: `ns=2;s=Tank.Level`, `ns=3;i=1001`, `i=2258` (không có `ns=` là namespace 0). Dạng `nsu=` chưa hỗ trợ.
+6. **Cách đọc**: subscription (mặc định, server gửi khi giá trị đổi, chu kỳ theo nhóm quét) hoặc poll (đọc định kỳ). Server từ chối subscription thì driver tự chuyển nhóm đó sang đọc định kỳ, **Chẩn đoán driver** có cảnh báo `OPCUA_SUBSCRIPTION_FALLBACK`.
+
+Kiểu: Boolean, (S)Byte, (U)Int16/32/64, Float, Double, String, DateTime (vào Tag INT64 là ms Unix UTC, vào STRING là ISO 8601). Giá trị ngoài khoảng của kiểu Tag, mảng và kiểu cấu trúc: Tag BAD `OPCUA_TYPE_MISMATCH`. **Thử kết nối** không dùng cho kênh OPC UA: **Lấy chứng chỉ** là phép thử. Driver mới thử với server giả lập open62541, chưa thử với server thật (S7-1500, Kepware…).
+
+### 4.6. OPC DA qua cầu nối
+
+OPC DA (Kepware, Matrikon, RSLinx…) chỉ chạy trên Windows nên BL335 không đọc trực tiếp được. Dùng **mAT OPC DA Bridge** (ADR-049) cài trên chính máy có OPC DA server: cầu nối đọc/ghi OPC DA cục bộ và mở một Modbus TCP server cho BL335.
+
+1. Trên máy OPC: giải nén `mat-opcda-bridge-<phiên bản>-windows-x64.zip`, tìm ItemID bằng `mat-opcda-bridge browse --prog-id <ProgID> [--path Kênh.Thiết bị]` (`+` là nhánh).
+2. Khai báo `config.json` (mẫu `config.example.json`): `opc.progId`, `opc.updateRateMs`, `modbus.allow` (IP của BL335) và `items`: mỗi item có `id` (tên Tag mAT), `item` (ItemID OPC), `type` (`BOOL`, `INT16`, `UINT16`, `INT32`, `UINT32`, `FLOAT32`), `access` (`R` hoặc `RW`). Kiểm bằng `mat-opcda-bridge check --config config.json`.
+3. Xuất bảng ánh xạ: `mat-opcda-bridge export-csv --config config.json --out opcda-map.csv`.
+4. Trong Studio, **Kết nối** › **Thêm kênh Modbus TCP**: **Địa chỉ máy** = IP máy cầu nối, cổng 502; thêm một thiết bị trường Unit ID 1, thứ tự byte ABCD, địa chỉ cơ sở 1.
+5. Chọn thiết bị đó, mục **OPC DA qua cầu nối** › **Nhập ánh xạ OPC DA…**, chọn `opcda-map.csv`. Mỗi item thành một Tag external (BOOL ở coil `C`, số ở `HR`); **Thêm Tag quality** tạo thêm `<tên>_Q` đọc thanh ghi `IR` (0 tốt, 1 không chắc, 2 xấu, 3 chưa có dữ liệu). Tag `BRIDGE_OK` = 1 khi cầu nối đang nối OPC server. Tag trùng tên được cập nhật, không Tag nào bị xóa; dòng lỗi được liệt kê.
+
+Khi OPC server dừng, cầu nối trả ngoại lệ Modbus 0x0B nên các Tag dữ liệu thành quality xấu; cầu nối tự nối lại khi server chạy lại. Ghi vào item chỉ đọc bị từ chối (0x02), OPC từ chối ghi thì 0x04. Modbus không mang timestamp của OPC: thời điểm của Tag là lúc runtime đọc. Mỗi lần đổi danh sách item, xuất và nhập lại CSV (địa chỉ cấp liên tiếp theo thứ tự item). Cài dịch vụ và tường lửa: xem hướng dẫn quản trị.
+
 <a id="help-tags"></a>
 
 ## 5. Tag

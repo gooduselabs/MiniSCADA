@@ -7,9 +7,28 @@ import type { Channel, FieldDevice, TagV1 } from '@mat/project-schema';
 import { t, type MessageKey } from '../i18n/index.ts';
 import { FALSE_WORDS, TRUE_WORDS } from '../i18n/bool-words.ts';
 import { isDeviceError, type ApiResult, type DeviceError } from '../platform/device-types.ts';
+import {
+  BACNET_CHANNEL,
+  BACNET_DEVICE,
+  bacnetReadBody,
+  parseFound,
+  parseObjects,
+  type BacnetFound,
+  type BacnetObjectRow,
+} from './connections-bacnet.ts';
 
-export type ChannelKind = 'modbus-tcp' | 'modbus-rtu';
-export type FieldGroup = 'basic' | 'advanced';
+export type ChannelKind = 'modbus-tcp' | 'modbus-rtu' | 's7' | 'fins' | 'mc' | 'bacnet' | 'opcua';
+/** Nhóm của form; Modbus chỉ dùng `basic`, `advanced`. Kênh MC (feature 017) thêm Khung, Định tuyến, Gom yêu cầu, Ghi. */
+export type FieldGroup = 'basic' | 'advanced' | 'frame' | 'routing' | 'batch' | 'write';
+/** Thứ tự các nhóm trên form. */
+export const FIELD_GROUPS: readonly FieldGroup[] = [
+  'basic',
+  'frame',
+  'routing',
+  'batch',
+  'write',
+  'advanced',
+];
 export type Obj = Record<string, unknown>;
 
 export interface FieldSpec {
@@ -33,6 +52,15 @@ export interface FieldSpec {
   maxLen?: number;
   mono?: boolean;
   unit?: string;
+  /** Mẫu của trường chữ (TSAP của S7: 4 chữ số hex) và lỗi tại ô khi không khớp. */
+  pattern?: RegExp;
+  patternError?: MessageKey;
+  /** Ghi chữ hoa (TSAP). */
+  upper?: boolean;
+  /** Số viết hex 4 chữ số (moduleIo của MC: 03FF). */
+  hex?: boolean;
+  /** Ghi chữ thường (SHA-256 của chứng chỉ OPC UA). */
+  lower?: boolean;
 }
 
 const f = (
@@ -140,6 +168,80 @@ const RTU_CHANNEL: FieldSpec[] = [
   }),
 ];
 
+// Kênh Omron FINS (feature 018, định dạng 1.1): một điểm cuối IP (bộ Ethernet của PLC), UDP hoặc TCP cổng 9600.
+const FINS_CHANNEL: FieldSpec[] = [
+  ...COMMON_CHANNEL,
+  ch('finsHost', ['fins', 'host'], 'basic', 'text', { required: true, mono: true, maxLen: 253 }),
+  ch('transport', ['fins', 'transport'], 'basic', 'select', {
+    options: ['udp', 'tcp'],
+    default: 'udp',
+    mono: true,
+  }),
+  ch('finsPort', ['fins', 'port'], 'basic', 'number', {
+    min: 1,
+    max: 65535,
+    default: 9600,
+    mono: true,
+  }),
+  ch('sourceNetwork', ['fins', 'sourceNetwork'], 'advanced', 'number', {
+    min: 0,
+    max: 127,
+    default: 0,
+  }),
+  ch('sourceNode', ['fins', 'sourceNode'], 'advanced', 'number', { min: 0, max: 254, default: 0 }),
+  ch('localPort', ['fins', 'localPort'], 'advanced', 'number', { min: 0, max: 65535, default: 0 }),
+  ch('connectTimeoutMs', ['fins', 'connectTimeoutMs'], 'advanced', 'number', {
+    min: 500,
+    max: 30000,
+    default: 3000,
+    unit: 'ms',
+  }),
+  ch('reconnectMaxS', ['fins', 'reconnectMaxS'], 'advanced', 'number', {
+    min: 1,
+    max: 60,
+    default: 10,
+    unit: 's',
+  }),
+  ch('requestGapMs', ['requestGapMs'], 'advanced', 'number', {
+    min: 0,
+    max: 1000,
+    default: 0,
+    unit: 'ms',
+  }),
+];
+
+/** Thiết bị FINS: địa chỉ FINS đích (mạng, nút, unit) sau điểm cuối của kênh, chờ và gom. */
+const FINS_DEVICE: FieldSpec[] = [
+  dv('id', ['id'], 'basic', 'text', { required: true, mono: true, maxLen: 32 }),
+  dv('name', ['name'], 'basic', 'text', { required: true, maxLen: 64 }),
+  dv('enabled', ['enabled'], 'basic', 'bool', { default: true }),
+  dv('node', ['node'], 'basic', 'number', { min: 0, max: 254, default: 0 }),
+  dv('network', ['network'], 'basic', 'number', { min: 0, max: 127, default: 0 }),
+  dv('unit', ['unit'], 'basic', 'number', { min: 0, max: 255, default: 0 }),
+  dv('finsByteOrder', ['byteOrder'], 'basic', 'select', {
+    options: ['CDAB', 'ABCD', 'BADC', 'DCBA'],
+    default: 'CDAB',
+    mono: true,
+  }),
+  dv('finsTimeoutMs', ['timeoutMs'], 'advanced', 'number', {
+    min: 100,
+    max: 10000,
+    default: 500,
+    unit: 'ms',
+  }),
+  dv('finsRetries', ['retries'], 'advanced', 'number', { min: 0, max: 5 }),
+  dv('maxReadWords', ['maxReadWords'], 'advanced', 'number', { min: 1, max: 999, default: 999 }),
+  dv('maxGapWords', ['maxGapWords'], 'advanced', 'number', { min: 0, max: 999, default: 10 }),
+  dv('multiRead', ['multiRead'], 'advanced', 'bool', { default: true }),
+  dv('maxMultiItems', ['maxMultiItems'], 'advanced', 'number', { min: 1, max: 128, default: 64 }),
+  dv('writeDeadlineMs', ['writeDeadlineMs'], 'advanced', 'number', {
+    min: 1000,
+    max: 60000,
+    default: 5000,
+    unit: 'ms',
+  }),
+];
+
 const deviceCommon = (kind: ChannelKind): FieldSpec[] => [
   dv('id', ['id'], 'basic', 'text', { required: true, mono: true, maxLen: 32 }),
   dv('name', ['name'], 'basic', 'text', { required: true, maxLen: 64 }),
@@ -203,13 +305,322 @@ const deviceCommon = (kind: ChannelKind): FieldSpec[] => [
   }),
 ];
 
+// ---------- Kênh Siemens S7 (feature 016, contracts/s7-driver.md §1) ----------
+
+const TSAP_RE = /^[0-9A-Fa-f]{4}$/;
+const tsap = { mono: true, pattern: TSAP_RE, patternError: 'cn.err.tsap', upper: true } as const;
+
+const S7_CHANNEL: FieldSpec[] = [
+  ...COMMON_CHANNEL,
+  ch('host', ['tcp', 'host'], 'basic', 'text', {
+    required: true,
+    mono: true,
+    maxLen: 253,
+    help: 'cn.h.s7Host',
+  }),
+  ch('port', ['tcp', 'port'], 'basic', 'number', {
+    min: 1,
+    max: 65535,
+    default: 102,
+    mono: true,
+    help: 'cn.h.s7Port',
+  }),
+  ch('rack', ['s7', 'rack'], 'basic', 'number', { min: 0, max: 7, default: 0 }),
+  ch('slot', ['s7', 'slot'], 'basic', 'number', { min: 0, max: 31, default: 1 }),
+  ch('pduSize', ['s7', 'pduSize'], 'advanced', 'number', {
+    min: 240,
+    max: 960,
+    default: 480,
+    unit: 'byte',
+  }),
+  ch('localTsap', ['s7', 'localTsap'], 'advanced', 'text', tsap),
+  ch('remoteTsap', ['s7', 'remoteTsap'], 'advanced', 'text', tsap),
+  ...TCP_CHANNEL.filter((s) =>
+    ['connectTimeoutMs', 'reconnectMaxS', 'requestGapMs'].includes(s.key),
+  ),
+];
+
+const S7_DEVICE: FieldSpec[] = [
+  dv('id', ['id'], 'basic', 'text', { required: true, mono: true, maxLen: 32 }),
+  dv('name', ['name'], 'basic', 'text', { required: true, maxLen: 64 }),
+  dv('enabled', ['enabled'], 'basic', 'bool', { default: true }),
+  dv('timeoutMs', ['timeoutMs'], 'advanced', 'number', {
+    min: 100,
+    max: 10000,
+    default: 1000,
+    unit: 'ms',
+  }),
+  dv('retries', ['retries'], 'advanced', 'number', {
+    min: 0,
+    max: 5,
+    default: 0,
+    help: 'cn.h.s7Retries',
+  }),
+  dv('writeDeadlineMs', ['writeDeadlineMs'], 'advanced', 'number', {
+    min: 1000,
+    max: 60000,
+    default: 5000,
+    unit: 'ms',
+  }),
+  dv('maxGapBytes', ['maxGapBytes'], 'advanced', 'number', {
+    min: 0,
+    max: 256,
+    default: 16,
+    unit: 'byte',
+  }),
+];
+
+// ---------- Kênh Mitsubishi MC (feature 017, specs/017-driver-mc/plan.md "Hợp đồng định dạng") ----------
+
+const MC_CHANNEL: FieldSpec[] = [
+  ...COMMON_CHANNEL,
+  ch('mcHost', ['tcp', 'host'], 'basic', 'text', { required: true, mono: true, maxLen: 253 }),
+  ch('mcPort', ['tcp', 'port'], 'basic', 'number', {
+    min: 1,
+    max: 65535,
+    default: 5007,
+    mono: true,
+  }),
+  ch('mcFrame', ['mc', 'frame'], 'frame', 'select', {
+    options: ['3E', '4E'],
+    default: '3E',
+    mono: true,
+  }),
+  ch('mcCode', ['mc', 'code'], 'frame', 'select', {
+    options: ['binary', 'ascii'],
+    default: 'binary',
+  }),
+  ch('mcTransport', ['mc', 'transport'], 'frame', 'select', {
+    options: ['tcp', 'udp'],
+    default: 'tcp',
+  }),
+  ...TCP_CHANNEL.filter((s) =>
+    ['connectTimeoutMs', 'reconnectMaxS', 'requestGapMs'].includes(s.key),
+  ),
+];
+
+const MC_DEVICE: FieldSpec[] = [
+  dv('id', ['id'], 'basic', 'text', { required: true, mono: true, maxLen: 32 }),
+  dv('name', ['name'], 'basic', 'text', { required: true, maxLen: 64 }),
+  dv('enabled', ['enabled'], 'basic', 'bool', { default: true }),
+  dv('xyNotation', ['xyNotation'], 'basic', 'select', {
+    options: ['hex', 'octal'],
+    default: 'hex',
+    mono: true,
+  }),
+  dv('timeoutMs', ['timeoutMs'], 'basic', 'number', {
+    min: 100,
+    max: 10000,
+    default: 1000,
+    unit: 'ms',
+  }),
+  dv('retries', ['retries'], 'basic', 'number', { min: 0, max: 5, default: 0 }),
+  dv('network', ['network'], 'routing', 'number', { min: 0, max: 239, default: 0, mono: true }),
+  dv('station', ['station'], 'routing', 'number', { min: 0, max: 255, default: 255, mono: true }),
+  dv('moduleIo', ['moduleIo'], 'routing', 'number', {
+    min: 0,
+    max: 65535,
+    default: 1023,
+    hex: true,
+    mono: true,
+    unit: 'hex',
+  }),
+  dv('moduleStation', ['moduleStation'], 'routing', 'number', {
+    min: 0,
+    max: 255,
+    default: 0,
+    mono: true,
+  }),
+  dv('maxBatchWords', ['maxBatchWords'], 'batch', 'number', { min: 1, max: 960, default: 960 }),
+  dv('maxGapWords', ['maxGapWords'], 'batch', 'number', { min: 0, max: 960, default: 16 }),
+  dv('randomRead', ['randomRead'], 'batch', 'bool', { default: true }),
+  dv('maxRandomPoints', ['maxRandomPoints'], 'batch', 'number', {
+    min: 1,
+    max: 192,
+    default: 192,
+  }),
+  dv('writeDeadlineMs', ['writeDeadlineMs'], 'write', 'number', {
+    min: 1000,
+    max: 60000,
+    default: 5000,
+    unit: 'ms',
+  }),
+  dv('mcRegisterBit', ['write', 'registerBit'], 'write', 'select', {
+    options: ['none', 'rmw'],
+    default: 'none',
+    mono: true,
+  }),
+];
+
+// ---------- Kênh OPC UA (feature 019, specs/019-driver-opcua/contracts/opcua.md §1) ----------
+
+/** Như `connections.schema.json`. */
+export const OPCUA_ENDPOINT_RE = /^opc\.tcp:\/\/[^\s/:]+(:[0-9]{1,5})?(\/\S*)?$/;
+export const SHA256_RE = /^[0-9a-fA-F]{64}$/;
+const SECRET_ID_RE = /^[a-z0-9][a-z0-9-]{0,47}$/;
+
+const OPCUA_CHANNEL: FieldSpec[] = [
+  ...COMMON_CHANNEL,
+  ch('endpointUrl', ['opcua', 'endpointUrl'], 'basic', 'text', {
+    required: true,
+    mono: true,
+    maxLen: 256,
+    pattern: OPCUA_ENDPOINT_RE,
+    patternError: 'cn.err.endpoint',
+  }),
+  ch('securityMode', ['opcua', 'securityMode'], 'basic', 'select', {
+    options: ['None', 'Sign', 'SignAndEncrypt'],
+    default: 'None',
+  }),
+  ch('securityPolicy', ['opcua', 'securityPolicy'], 'basic', 'select', {
+    options: ['None', 'Basic256Sha256'],
+    default: 'None',
+  }),
+  ch('authMode', ['opcua', 'auth', 'mode'], 'basic', 'select', {
+    options: ['anonymous', 'username'],
+    default: 'anonymous',
+  }),
+  ch('username', ['opcua', 'auth', 'username'], 'basic', 'text', { maxLen: 128 }),
+  ch('secretId', ['opcua', 'auth', 'secretId'], 'basic', 'text', {
+    mono: true,
+    maxLen: 48,
+    pattern: SECRET_ID_RE,
+    patternError: 'cn.err.secretId',
+  }),
+  ch('serverCertSha256', ['opcua', 'serverCertSha256'], 'advanced', 'text', {
+    mono: true,
+    pattern: SHA256_RE,
+    patternError: 'cn.err.sha256',
+    lower: true,
+  }),
+  ch('readMode', ['opcua', 'readMode'], 'advanced', 'select', {
+    options: ['subscription', 'poll'],
+    default: 'subscription',
+  }),
+  ch('sessionTimeoutMs', ['opcua', 'sessionTimeoutMs'], 'advanced', 'number', {
+    min: 10000,
+    max: 3600000,
+    default: 60000,
+    unit: 'ms',
+  }),
+  ch('connectTimeoutMs', ['opcua', 'connectTimeoutMs'], 'advanced', 'number', {
+    min: 500,
+    max: 30000,
+    default: 5000,
+    unit: 'ms',
+    help: 'cn.h.opcuaConnectTimeoutMs',
+  }),
+  ch('reconnectMaxS', ['opcua', 'reconnectMaxS'], 'advanced', 'number', {
+    min: 1,
+    max: 60,
+    default: 10,
+    unit: 's',
+  }),
+];
+
+const OPCUA_DEVICE: FieldSpec[] = [
+  dv('id', ['id'], 'basic', 'text', { required: true, mono: true, maxLen: 32 }),
+  dv('name', ['name'], 'basic', 'text', { required: true, maxLen: 64 }),
+  dv('enabled', ['enabled'], 'basic', 'bool', { default: true }),
+  dv('timeoutMs', ['timeoutMs'], 'advanced', 'number', {
+    min: 100,
+    max: 10000,
+    default: 2000,
+    unit: 'ms',
+    help: 'cn.h.opcuaTimeoutMs',
+  }),
+  dv('writeDeadlineMs', ['writeDeadlineMs'], 'advanced', 'number', {
+    min: 1000,
+    max: 60000,
+    default: 5000,
+    unit: 'ms',
+  }),
+];
+
 export const channelFields = (kind: ChannelKind): readonly FieldSpec[] =>
-  kind === 'modbus-tcp' ? TCP_CHANNEL : RTU_CHANNEL;
-export const deviceFields = (kind: ChannelKind): readonly FieldSpec[] => deviceCommon(kind);
+  kind === 'modbus-tcp'
+    ? TCP_CHANNEL
+    : kind === 's7'
+      ? S7_CHANNEL
+      : kind === 'fins'
+        ? FINS_CHANNEL
+        : kind === 'mc'
+          ? MC_CHANNEL
+          : kind === 'bacnet'
+            ? BACNET_CHANNEL
+            : kind === 'opcua'
+              ? OPCUA_CHANNEL
+              : RTU_CHANNEL;
+export const deviceFields = (kind: ChannelKind): readonly FieldSpec[] =>
+  kind === 's7'
+    ? S7_DEVICE
+    : kind === 'fins'
+      ? FINS_DEVICE
+      : kind === 'mc'
+        ? MC_DEVICE
+        : kind === 'bacnet'
+          ? BACNET_DEVICE
+          : kind === 'opcua'
+            ? OPCUA_DEVICE
+            : deviceCommon(kind);
+
+/** Số 16 bit viết hex 4 chữ số hoa: 1023 → `03FF`. */
+export const hexText = (n: number): string => n.toString(16).toUpperCase().padStart(4, '0');
+
+/** Kênh S7 đặt `remoteTsap` cùng rack hay slot (luật E_S7_TSAP): báo ngay tại ô, không chặn. */
+export function s7TsapConflict(channel: Channel): boolean {
+  const s = channel.s7;
+  return !!s && s.remoteTsap !== undefined && (s.rack !== undefined || s.slot !== undefined);
+}
+
+/** Trường của kênh đang hiện: kênh OPC UA anonymous ẩn username/secretId. */
+export function visibleChannelFields(channel: Channel): readonly FieldSpec[] {
+  const all = channelFields(channel.kind as ChannelKind);
+  if (channel.kind !== 'opcua' || channel.opcua?.auth?.mode === 'username') return all;
+  return all.filter((s) => s.key !== 'username' && s.key !== 'secretId');
+}
+
+/** Mode/policy hiệu lực không khớp (luật E_OPCUA_SECURITY): báo tại ô, không chặn. */
+export function opcuaSecurityConflict(channel: Channel): boolean {
+  if (channel.kind !== 'opcua') return false;
+  const mode = channel.opcua?.securityMode ?? 'None';
+  const policy = channel.opcua?.securityPolicy ?? 'None';
+  return (mode === 'None') !== (policy === 'None');
+}
+
+/** Kênh có mã hóa mà chưa tin chứng chỉ server (W_OPCUA_CERT_NOT_PINNED). */
+export function opcuaNeedsPin(channel: Channel): boolean {
+  return (
+    channel.kind === 'opcua' &&
+    (channel.opcua?.securityMode ?? 'None') !== 'None' &&
+    channel.opcua?.serverCertSha256 === undefined
+  );
+}
+
+/** Kênh chỉ có một thiết bị trường (schema `maxItems: 1`): S7 một CPU, OPC UA một server. */
+const singleDevice = (kind: string): boolean => kind === 's7' || kind === 'opcua';
+
+/** Kênh còn nhận thêm thiết bị trường không. */
+export const canAddDevice = (channel: Channel): boolean =>
+  !singleDevice(channel.kind) || (channel.devices?.length ?? 0) === 0;
+
+/** Lý do không thêm được thiết bị trường vào kênh một thiết bị. */
+export const oneDeviceReason = (channel: Pick<Channel, 'kind'>): MessageKey =>
+  channel.kind === 'opcua' ? 'cn.opcua.oneDevice' : 'cn.s7.oneDevice';
+
+/**
+ * `POST /api/v1/drivers/test` chưa hỗ trợ kênh S7 (feature 016, D8); không dùng cho kênh OPC UA (Lấy chứng chỉ thay nó,
+ * feature 019 D12).
+ */
+export const probeSupported = (kind: string): boolean => kind !== 's7' && kind !== 'opcua';
 
 /** Chữ mặc định (để hiện ở ô trống). */
 export const fieldDefault = (spec: FieldSpec): string =>
-  spec.default === undefined ? '' : String(spec.default);
+  spec.default === undefined
+    ? ''
+    : spec.hex && typeof spec.default === 'number'
+      ? hexText(spec.default)
+      : String(spec.default);
 
 function read(obj: unknown, path: readonly string[]): unknown {
   let cur: unknown = obj;
@@ -223,6 +634,7 @@ function read(obj: unknown, path: readonly string[]): unknown {
 /** Chữ của trường trong đối tượng; vắng khóa thì rỗng. */
 export function fieldText(obj: unknown, spec: FieldSpec): string {
   const v = read(obj, spec.path);
+  if (spec.hex && typeof v === 'number') return hexText(v);
   return v === undefined || v === null ? '' : String(v);
 }
 
@@ -264,12 +676,22 @@ export function setField<T extends object>(
     value = undefined;
   } else if (spec.kind === 'text') {
     if (spec.maxLen !== undefined && text.length > spec.maxLen) return { error: 'cn.err.maxLen' };
+    if (spec.pattern && !spec.pattern.test(text))
+      return { error: spec.patternError ?? 'cn.err.option' };
     if (spec.key === 'id') {
       if (!ID_RE.test(text)) return { error: 'cn.err.idSyntax' };
       const set = spec.target === 'channel' ? taken.channels : taken.devices;
       if (text !== own.id && set.has(text)) return { error: 'cn.err.idDup' };
     }
-    value = text;
+    value = spec.upper ? text.toUpperCase() : spec.lower ? text.toLowerCase() : text;
+  } else if (spec.kind === 'number' && spec.hex) {
+    // Hex như GX Works: 03FF, 3ff, 0x03FF, H3FF, 03FFh
+    const m = /^(?:0X|H)?([0-9A-F]{1,4})H?$/.exec(text.toUpperCase());
+    if (!m) return { error: 'cn.err.hex' };
+    const n = parseInt(m[1], 16);
+    if ((spec.min !== undefined && n < spec.min) || (spec.max !== undefined && n > spec.max))
+      return { error: 'cn.err.range' };
+    value = n;
   } else if (spec.kind === 'number') {
     if (!/^[+-]?\d+(\.\d+)?$/.test(text) || (!spec.real && !/^[+-]?\d+$/.test(text)))
       return { error: spec.real ? 'cn.err.number' : 'cn.err.integer' };
@@ -292,35 +714,166 @@ export function setField<T extends object>(
   // Bằng mặc định thì không ghi khóa (file gọn, như Tag).
   if (value !== undefined && spec.default !== undefined && value === spec.default)
     value = undefined;
-  return { value: write(own, spec.path, value) as T };
+  const next = write(own, spec.path, value);
+  if (spec.path[0] === 'opcua' && spec.path[1] === 'auth')
+    return { value: fixAuth(next, spec) as T };
+  return { value: next as T };
+}
+
+/**
+ * Khối `opcua.auth` sau khi sửa một trường của nó: anonymous (mặc định) bỏ cả khối, kể cả username/secretId (luật
+ * E_OPCUA_AUTH); đặt username hay secretId thì `mode` là username (schema cần `mode`).
+ */
+function fixAuth(channel: Obj, spec: FieldSpec): Obj {
+  const opcua = { ...((channel.opcua as Obj | undefined) ?? {}) };
+  const auth = (opcua.auth as Obj | undefined) ?? {};
+  if (spec.key === 'authMode' && auth.mode === undefined) delete opcua.auth;
+  else if (Object.keys(auth).some((k) => k !== 'mode')) opcua.auth = { ...auth, mode: 'username' };
+  else if (auth.mode === 'username') opcua.auth = { mode: 'username' };
+  else delete opcua.auth;
+  return { ...channel, opcua };
 }
 
 function freeId(prefix: string, taken: ReadonlySet<string>): { id: string; n: number } {
   for (let n = 1; ; n++) if (!taken.has(`${prefix}${n}`)) return { id: `${prefix}${n}`, n };
 }
 
-/** Kênh mới: id `plc1`/`rtu1`… chưa dùng (cả với id thiết bị trường), chưa có thiết bị trường nào. */
+/**
+ * Kênh mới: id `plc1`/`rtu1`/`s7-1`… chưa dùng (cả với id thiết bị trường). Kênh Modbus chưa có thiết bị trường nào; kênh S7
+ * có sẵn một CPU (`cpu1`…), vì mỗi kênh S7 là đúng một CPU.
+ */
 export function newChannel(
   channelIds: readonly string[],
   kind: ChannelKind,
   deviceIds: readonly string[],
 ): Channel {
   const taken = new Set([...channelIds, ...deviceIds]);
-  const { id, n } = freeId(kind === 'modbus-tcp' ? 'plc' : 'rtu', taken);
+  const prefix =
+    kind === 'modbus-tcp'
+      ? 'plc'
+      : kind === 's7'
+        ? 's7-'
+        : kind === 'fins'
+          ? 'omron'
+          : kind === 'mc'
+            ? 'mc'
+            : kind === 'bacnet'
+              ? 'bms'
+              : kind === 'opcua'
+                ? 'ua-'
+                : 'rtu';
+  const { id, n } = freeId(prefix, taken);
   const base = { id, name: t('cn.newChannel', { n }), kind, devices: [] as FieldDevice[] };
+  if (kind === 's7') {
+    taken.add(id);
+    const cpu = freeId('cpu', taken);
+    return {
+      ...base,
+      kind,
+      tcp: { host: '192.168.0.1' },
+      devices: [{ id: cpu.id, name: t('cn.newCpu', { n: cpu.n }) }],
+    };
+  }
+  if (kind === 'fins') return { ...base, kind, fins: { host: '192.168.250.1' } };
+  // Kênh MC: frame 3E, binary, TCP, cổng 5007 là mặc định nên không ghi khóa (file gọn)
+  if (kind === 'mc') return { ...base, kind, tcp: { host: '192.168.3.39' } };
+  // feature 020: kênh BACnet/IP dùng cổng 47808 mặc định, không bắt buộc khối `bacnet`
+  if (kind === 'bacnet') return { ...base, kind };
+  if (kind === 'opcua') {
+    // Mỗi kênh OPC UA là đúng một server: có sẵn thiết bị trường; timeoutMs 1000 để không vượt nhóm normal.
+    taken.add(id);
+    const srv = freeId('srv', taken);
+    return {
+      ...base,
+      kind,
+      opcua: { endpointUrl: 'opc.tcp://192.168.1.20:4840' },
+      devices: [{ id: srv.id, name: t('cn.newServer', { n: srv.n }), timeoutMs: 1000 }],
+    };
+  }
   return kind === 'modbus-tcp'
     ? { ...base, kind, tcp: { host: '192.168.1.10' } }
     : { ...base, kind, serial: { port: '' } };
 }
 
-/** Thiết bị trường mới của kênh: id duy nhất trong cả project, `unitId` hay `slave` bằng 1. */
+/** Thiết bị trường mới của kênh: id duy nhất trong cả project, `unitId` hay `slave` bằng 1; CPU của kênh S7 không có số trạm. */
 export function newDevice(channel: Channel, deviceIds: readonly string[]): FieldDevice {
   const taken = new Set(deviceIds);
+  if (channel.kind === 's7') {
+    const cpu = freeId('cpu', taken);
+    return { id: cpu.id, name: t('cn.newCpu', { n: cpu.n }) };
+  }
+  if (channel.kind === 'opcua') {
+    const srv = freeId('srv', taken);
+    return { id: srv.id, name: t('cn.newServer', { n: srv.n }), timeoutMs: 1000 };
+  }
   const prefix = `${channel.id.slice(0, 26)}-d`;
   const { id, n } = freeId(prefix, taken);
+  // FINS: nút đích 0 = tự lấy (UDP: byte cuối IPv4 của PLC; TCP: nút của bộ Ethernet khi bắt tay).
+  // MC: mạng 0, trạm FF, module 03FF là mặc định của định dạng (không ghi khóa).
+  if (channel.kind === 'fins' || channel.kind === 'mc')
+    return { id, name: t('cn.newDevice', { n }) };
+  // BACnet (feature 020): instance và IP phải sửa lại, hoặc lấy từ Tìm thiết bị
+  if (channel.kind === 'bacnet')
+    return { id, name: t('cn.newDevice', { n }), deviceInstance: 1, host: '192.168.1.50' };
   return channel.kind === 'modbus-tcp'
     ? { id, name: t('cn.newDevice', { n }), unitId: 1 }
     : { id, name: t('cn.newDevice', { n }), slave: 1 };
+}
+
+/** Chữ phụ của kênh trên cây và danh sách: TCP, RTU, S7, FINS/UDP, FINS/TCP, `MC 3E`, `MC 4E UDP`. */
+export function channelSub(ch: Pick<Channel, 'kind' | 'mc' | 'fins'>): string {
+  switch (ch.kind) {
+    case 'mc':
+      return [
+        `MC ${ch.mc?.frame ?? '3E'}`,
+        ch.mc?.transport === 'udp' ? 'UDP' : '',
+        ch.mc?.code === 'ascii' ? 'ASCII' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+    case 'fins':
+      return t('cn.fins.sub', { transport: (ch.fins?.transport ?? 'udp').toUpperCase() });
+    case 's7':
+      return 'S7';
+    case 'bacnet':
+      return 'BACnet/IP';
+    case 'opcua':
+      return 'OPC UA';
+    case 'modbus-rtu':
+      return 'RTU';
+    default:
+      return 'TCP';
+  }
+}
+
+/**
+ * Chữ phụ của thiết bị trường: `unit 1` (TCP), `slave 1` (RTU), rack/slot hoặc TSAP đích (S7), nút FINS,
+ * MC `mạng 0 · trạm FF`.
+ */
+export function deviceSub(ch: Pick<Channel, 'kind' | 's7' | 'opcua'>, d: FieldDevice): string {
+  switch (ch.kind) {
+    case 'opcua': // host:cổng của endpoint
+      return (ch.opcua?.endpointUrl ?? '').replace(/^opc\.tcp:\/\//, '');
+    case 'mc':
+      return t('cn.sub.mcDevice', {
+        network: d.network ?? 0,
+        station: (d.station ?? 255).toString(16).toUpperCase().padStart(2, '0'),
+      });
+    case 'bacnet': // feature 020: device instance
+      return `#${d.deviceInstance ?? 0}`;
+    case 'fins':
+      return d.node ? t('cn.fins.node', { node: d.node }) : t('cn.fins.nodeAuto');
+    case 's7': {
+      const s = ch.s7 ?? {};
+      return s.remoteTsap !== undefined
+        ? `TSAP ${s.remoteTsap}`
+        : `rack ${s.rack ?? 0} · slot ${s.slot ?? 1}`;
+    }
+    case 'modbus-rtu':
+      return `slave ${d.slave ?? 1}`;
+    default:
+      return `unit ${d.unitId ?? 1}`;
+  }
 }
 
 /** Số Tag ngoài của từng thiết bị trường. */
@@ -349,6 +902,27 @@ const pick = (src: unknown, keys: readonly string[]): Obj => {
 
 /** Thân của `POST /api/v1/drivers/test`: cấu hình đang sửa, chỉ gồm trường đã đặt. */
 export function probeBody(channel: Channel, device: FieldDevice, read: ProbeRead | null): object {
+  if (channel.kind === 'fins') {
+    // feature 018: kênh và thiết bị Omron FINS (device-api, kind fins)
+    const ch: Obj = {
+      kind: 'fins',
+      fins: pick(channel.fins, [
+        'host',
+        'port',
+        'transport',
+        'sourceNetwork',
+        'sourceNode',
+        'localPort',
+        'connectTimeoutMs',
+      ]),
+    };
+    return {
+      channel: ch,
+      device: pick(device, ['network', 'node', 'unit', 'timeoutMs']),
+      ...(read ? { read: { address: read.address, count: read.count } } : {}),
+    };
+  }
+  if (channel.kind === 'bacnet') return bacnetReadBody(channel, device, read?.address ?? '');
   const tcp = channel.kind === 'modbus-tcp';
   const ch: Obj = { kind: channel.kind };
   if (tcp) ch.tcp = pick(channel.tcp, ['host', 'port', 'connectTimeoutMs']);
@@ -393,12 +967,26 @@ export interface ProbeResult {
   responseMs?: number;
   message?: string;
   exception?: { code: string; meaning: string };
+  /** Omron FINS (feature 018): mã kết thúc lỗi, model CPU (0501), nút của bắt tay TCP, địa chỉ đã đọc. */
+  endCode?: { code: string; reason: string; meaning: string };
+  model?: string;
+  nodes?: { client: number; server: number };
+  address?: string;
   read?: { fc: number; offset: number; count: number };
   /** Thanh ghi dạng hex (4 ký tự mỗi thanh ghi). */
   hex?: string[];
   bits?: boolean[];
   /** Bảng cách hiểu: các kiểu và thứ tự byte (rỗng với bit hoặc khi không đọc thanh ghi). */
   interpret: InterpretRow[];
+  /** BACnet (feature 020): lần thử nào, giá trị đọc được, thiết bị tìm thấy, đối tượng, lỗi BACnet. */
+  action?: 'read' | 'whois' | 'objects';
+  value?: string;
+  valueKind?: string;
+  devices?: BacnetFound[];
+  objects?: BacnetObjectRow[];
+  truncated?: boolean;
+  bacnetError?: { class: number; code: number; reason: string };
+  reason?: number;
   /** Có khi lần thử không tới được kết quả của thiết bị trường (yêu cầu bị từ chối hoặc lỗi mạng). */
   failure?: ProbeFailure;
   retryAfterS?: number;
@@ -453,7 +1041,44 @@ function resultOf(res: ApiResult | DeviceError): ProbeResult {
       code: String(body.exception.code ?? ''),
       meaning: String(body.exception.meaning ?? ''),
     };
-  if (isObj(body.read)) {
+  if (body.action === 'read' || body.action === 'whois' || body.action === 'objects') {
+    // BACnet (feature 020)
+    out.action = body.action;
+    if (isObj(body.read)) {
+      out.address = String(body.read.address ?? '');
+      out.value = String(body.read.value ?? '');
+      out.valueKind = String(body.read.kind ?? '');
+    }
+    if (Array.isArray(body.devices)) out.devices = parseFound(body.devices);
+    if (Array.isArray(body.objects)) out.objects = parseObjects(body.objects);
+    if (typeof body.truncated === 'boolean') out.truncated = body.truncated;
+    if (isObj(body.error))
+      out.bacnetError = {
+        class: Number(body.error.class),
+        code: Number(body.error.code),
+        reason: String(body.error.reason ?? ''),
+      };
+    if (typeof body.reason === 'number') out.reason = body.reason;
+    return out;
+  }
+  if (isObj(body.endCode))
+    out.endCode = {
+      code: String(body.endCode.code ?? ''),
+      reason: String(body.endCode.reason ?? ''),
+      meaning: String(body.endCode.meaning ?? ''),
+    };
+  if (typeof body.model === 'string') out.model = body.model;
+  if (isObj(body.nodes))
+    out.nodes = { client: Number(body.nodes.client), server: Number(body.nodes.server) };
+  if (isObj(body.read) && Array.isArray(body.read.words)) {
+    // FINS: word big-endian, Tag nhiều word theo CDAB (word thấp trước)
+    out.address = String(body.read.address ?? '');
+    out.hex = body.read.words.map((x) => String(x).toUpperCase().padStart(4, '0'));
+    out.interpret = interpretRegisters(out.hex.map((h) => parseInt(h, 16)));
+  } else if (isObj(body.read) && body.read.fc === undefined) {
+    out.address = String(body.read.address ?? '');
+    if (Array.isArray(body.read.bits)) out.bits = body.read.bits.map((b) => b === true);
+  } else if (isObj(body.read)) {
     const r = body.read;
     out.read = { fc: Number(r.fc), offset: Number(r.offset), count: Number(r.count) };
     if (Array.isArray(r.registers)) {
@@ -492,6 +1117,11 @@ export class ConnectionProbe {
   }
 
   async run(channel: Channel, device: FieldDevice, read: ProbeRead | null): Promise<void> {
+    await this.runBody(probeBody(channel, device, read));
+  }
+
+  /** Một lần thử với thân đã dựng sẵn (BACnet: Tìm thiết bị, Duyệt đối tượng; feature 020). */
+  async runBody(body: object): Promise<void> {
     if (this.state.running) return;
     const locked = this.deps.gate();
     if (locked) {
@@ -501,9 +1131,7 @@ export class ConnectionProbe {
     this.set({ running: true, locked: null, result: null });
     let result: ProbeResult;
     try {
-      result = resultOf(
-        await this.deps.post('/api/v1/drivers/test', probeBody(channel, device, read)),
-      );
+      result = resultOf(await this.deps.post('/api/v1/drivers/test', body));
     } catch {
       result = {
         ok: false,

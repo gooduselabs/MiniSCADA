@@ -10,6 +10,7 @@ import {
   counterRows,
   groupRows,
   parseDriverDiag,
+  s7ExceptionText,
   type DriverDiag,
 } from './driver-diag.ts';
 
@@ -345,5 +346,42 @@ describe('DriverDiagFeed: hỏi mỗi 2 s khi trang mở, giữ bản đầu', (
     release!();
     await vi.advanceTimersByTimeAsync(1);
     expect(feed.state.data).toBeNull();
+  });
+});
+
+describe('kênh Siemens S7 (feature 016)', () => {
+  const s7 = {
+    at: 1,
+    channels: [
+      {
+        id: 's7-1',
+        name: 'PLC S7-1200',
+        kind: 's7',
+        state: 'connected',
+        details: { pduSize: '480', localTsap: '0100', remoteTsap: '0101', bad: 5 },
+        devices: [{ id: 'cpu1', name: 'CPU', exceptions: { '03': 2, '0A': 1, '8104': 4 } }],
+      },
+      { id: 'plc1', name: 'PLC', kind: 'modbus-tcp', devices: [] },
+    ],
+  };
+
+  it('đọc details của kênh S7 (chỉ giá trị chữ); kênh khác không có details', () => {
+    const d = parseDriverDiag(s7)!;
+    expect(d.channels[0]!.kind).toBe('s7');
+    expect(d.channels[0]!.details).toEqual({
+      pduSize: '480',
+      localTsap: '0100',
+      remoteTsap: '0101',
+    });
+    expect(d.channels[1]!.details).toBeNull();
+  });
+
+  it('mã lỗi PLC theo tên S7: mã item 2 chữ số hex, lỗi đầu khung 4 chữ số hex', () => {
+    expect(s7ExceptionText('03')).toBe('03 truy cập bị từ chối');
+    expect(s7ExceptionText('0A')).toBe('0A DB không có');
+    expect(s7ExceptionText('8104')).toBe('8104 chưa bật PUT/GET');
+    expect(s7ExceptionText('05')).toBe('05 địa chỉ ngoài vùng');
+    expect(s7ExceptionText('FF')).toBe('FF lỗi khác của PLC');
+    expect(s7ExceptionText('xyz')).toBe('xyz lỗi khác của PLC');
   });
 });

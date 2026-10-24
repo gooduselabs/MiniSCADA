@@ -1,0 +1,34 @@
+{
+  "scenario": "security",
+  "checks": [
+    {
+      "name": "SignAndEncrypt + user: 100 % of the Tags match the server",
+      "pass": true,
+      "detail": "17/17"
+    },
+    {
+      "name": "diagnostics: Basic256Sha256 SignAndEncrypt, pinned certificate, client certificate",
+      "pass": true,
+      "detail": "{\"clientCertSha256\":\"7191cec09daac6e3bdaa3f57636a1fa2e19d34e90beddec0b0295cc33da7dff4\",\"endpointUrl\":\"opc.tcp://sim:4840\",\"publishingMs\":\"250/1000/5000\",\"readMode\":\"subscription\",\"securityMode\":\"SignAndEncrypt\",\"securityPolicy\":\"Basic256Sha256\",\"serverCertSha256\":\"701f42acd25bc446d8a342ea83190cc72a83299aa86ebca95c52a3fae3ab8ca2\",\"session\":\"active\"}"
+    },
+    {
+      "name": "write over the encrypted channel: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:01:19.973Z\",\"readback\":77.25,\"receivedAt\":\"2026-10-24T16:01:19.769Z\",\"requestId\":\"a50209fa-56a0-4042-81c4-85087505ef21\",\"status\":\"CONFIRMED\",\"tag\":\"UA.DOUBLE\",\"value\":77.25}"
+    },
+    {
+      "name": "browse over the encrypted channel lists the nodes",
+      "pass": true,
+      "detail": "200 OK 17"
+    },
+    {
+      "name": "a wrong pin: OPCUA_CERT_UNTRUSTED with the certificate seen",
+      "pass": true,
+      "detail": "{\"applicationUri\":\"\",\"certNotAfter\":null,\"certSha256\":\"701f42acd25bc446d8a342ea83190cc72a83299aa86ebca95c52a3fae3ab8ca2\",\"certSubject\":null}"
+    }
+  ],
+  "measures": {
+    "tagsMatching": 17
+  },
+  "pass": true
+}

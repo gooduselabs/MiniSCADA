@@ -1,0 +1,31 @@
+{
+  "scenario": "errors",
+  "checks": [
+    {
+      "name": "UA.NO_NODE BAD OPCUA_NODE_UNKNOWN",
+      "pass": true,
+      "detail": "{\"value\":null,\"quality\":\"BAD\",\"reason\":\"OPCUA_NODE_UNKNOWN\"}"
+    },
+    {
+      "name": "UA.ARRAY BAD OPCUA_TYPE_MISMATCH",
+      "pass": true,
+      "detail": "{\"value\":null,\"quality\":\"BAD\",\"reason\":\"OPCUA_TYPE_MISMATCH\"}"
+    },
+    {
+      "name": "UA.TOO_BIG BAD OPCUA_TYPE_MISMATCH",
+      "pass": true,
+      "detail": "{\"value\":null,\"quality\":\"BAD\",\"reason\":\"OPCUA_TYPE_MISMATCH\"}"
+    },
+    {
+      "name": "the other Tags stay GOOD",
+      "pass": true
+    },
+    {
+      "name": "diagnostics: lastStatus is a Bad name",
+      "pass": true,
+      "detail": "BadNotWritable"
+    }
+  ],
+  "measures": {},
+  "pass": true
+}

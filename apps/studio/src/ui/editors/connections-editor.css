@@ -179,3 +179,38 @@ mat-connections-editor .btn[aria-disabled='true'] {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* Kênh OPC UA (feature 019): chứng chỉ server, endpoint, cây Duyệt node */
+mat-connections-editor .cn-ua-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 8px 0;
+}
+mat-connections-editor .cn-ua-facts dt {
+  color: var(--muted);
+}
+mat-connections-editor .cn-ua-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+mat-connections-editor .cn-ua-endpoints,
+mat-connections-editor .cn-ua-tree {
+  margin-top: 8px;
+}
+mat-connections-editor .cn-ua-tree td {
+  vertical-align: middle;
+}
+mat-connections-editor .cn-ua-tree .ua-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+mat-connections-editor .cn-ua-tree .ua-leaf {
+  display: inline-block;
+  width: 24px;
+}
+mat-connections-editor .cn-ua-tree td.mono {
+  overflow-wrap: anywhere;
+}

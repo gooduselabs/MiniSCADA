@@ -1,0 +1,15 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "1.1.0",
+  "projectId": "s7-it-bench-500-s7",
+  "projectName": "Kiểm thử driver S7: bench-500-s7",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "1.1.0",
+  "entryScreen": "main",
+  "screens": [
+    "main"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "maxClients": 10
+}

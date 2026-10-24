@@ -16,6 +16,7 @@
 #include "core/tag-engine/write_coordinator.hpp"
 #include "drivers/modbus/exceptions.hpp"
 #include "server/http/access_filter.hpp"
+#include "server/http/drivers_api.hpp"
 #include "server/http/engineering_api.hpp"
 #include "server/http/engineering_api_internal.hpp"
 
@@ -114,9 +115,7 @@ json viewJson(const WriteView& v) {
         if (v.pulseEnded) j["pulse"] = {{"valueMs", v.pulseMs}, {"released", v.pulseReleased}};
         if (!v.message.empty()) j["message"] = v.message;
         if (v.hasReadback) j["readback"] = scalarJson(v.readback);
-        if (v.exception >= 0)
-            j["exception"] = {{"code", modbus::exceptionHex(v.exception)},
-                              {"meaning", modbus::exceptionMeaning(v.exception)}};
+        if (v.exception >= 0) j["exception"] = exceptionJson(v.exception);
         if (v.receivedAtMs > 0) j["receivedAt"] = isoUtcMs(v.receivedAtMs);
         if (v.finishedAtMs > 0) {
             j["finishedAt"] = isoUtcMs(v.finishedAtMs);

@@ -1,0 +1,5371 @@
+{
+  "schemaVersion": "1.1.0",
+  "tags": [
+    {
+      "id": "A.WAVE",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "sim": {
+        "kind": "ramp",
+        "from": 0,
+        "to": 100,
+        "periodMs": 10000
+      }
+    },
+    {
+      "id": "A.D100",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D100"
+      }
+    },
+    {
+      "id": "A.D101",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qa",
+        "address": "D101"
+      }
+    },
+    {
+      "id": "A.D102",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "qa",
+        "address": "D102"
+      }
+    },
+    {
+      "id": "A.D104",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "qa",
+        "address": "D104"
+      }
+    },
+    {
+      "id": "A.D106",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "qa",
+        "address": "D106"
+      }
+    },
+    {
+      "id": "A.D108",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "qa",
+        "address": "D108"
+      }
+    },
+    {
+      "id": "A.D112",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "qa",
+        "address": "D112"
+      }
+    },
+    {
+      "id": "A.D116",
+      "kind": "external",
+      "type": "UINT64",
+      "source": {
+        "device": "qa",
+        "address": "D116"
+      }
+    },
+    {
+      "id": "A.D120",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "qa",
+        "address": "D120",
+        "stringLength": 8
+      }
+    },
+    {
+      "id": "A.D100_5",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "D100.5"
+      }
+    },
+    {
+      "id": "A.D200_0",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "D200.0"
+      }
+    },
+    {
+      "id": "A.D200_5",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "D200.5"
+      }
+    },
+    {
+      "id": "A.D200_6",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "D200.6"
+      }
+    },
+    {
+      "id": "A.D200_F",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "D200.F"
+      }
+    },
+    {
+      "id": "A.W1A0",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qa",
+        "address": "W1A0"
+      }
+    },
+    {
+      "id": "A.W1A1",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "qa",
+        "address": "W1A1"
+      }
+    },
+    {
+      "id": "A.W1B0_A",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "W1B0.A"
+      }
+    },
+    {
+      "id": "A.R500",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "qa",
+        "address": "R500"
+      }
+    },
+    {
+      "id": "A.ZR70000",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qa",
+        "address": "ZR70000"
+      }
+    },
+    {
+      "id": "A.ZR100000",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "qa",
+        "address": "ZR100000"
+      }
+    },
+    {
+      "id": "A.SD210",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qa",
+        "address": "SD210"
+      }
+    },
+    {
+      "id": "A.TN0",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "TN0"
+      }
+    },
+    {
+      "id": "A.CN5",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "CN5"
+      }
+    },
+    {
+      "id": "A.M10",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "M10"
+      }
+    },
+    {
+      "id": "A.M11",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "M11"
+      }
+    },
+    {
+      "id": "A.M12",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "M12"
+      }
+    },
+    {
+      "id": "A.M100",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "M100"
+      }
+    },
+    {
+      "id": "A.M103",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "M103"
+      }
+    },
+    {
+      "id": "A.X1A0",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "X1A0"
+      }
+    },
+    {
+      "id": "A.X1A1",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "X1A1"
+      }
+    },
+    {
+      "id": "A.X1A2",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "X1A2"
+      }
+    },
+    {
+      "id": "A.Y20",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "Y20"
+      }
+    },
+    {
+      "id": "A.Y21",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "Y21"
+      }
+    },
+    {
+      "id": "A.B1F",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "B1F"
+      }
+    },
+    {
+      "id": "A.L7",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "L7"
+      }
+    },
+    {
+      "id": "A.SM400",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "SM400"
+      }
+    },
+    {
+      "id": "A.SM401",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "SM401"
+      }
+    },
+    {
+      "id": "A.R0",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R0"
+      }
+    },
+    {
+      "id": "A.R15",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R15"
+      }
+    },
+    {
+      "id": "A.R30",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R30"
+      }
+    },
+    {
+      "id": "A.R45",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R45"
+      }
+    },
+    {
+      "id": "A.R60",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R60"
+      }
+    },
+    {
+      "id": "A.R75",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R75"
+      }
+    },
+    {
+      "id": "A.R90",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R90"
+      }
+    },
+    {
+      "id": "A.R105",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R105"
+      }
+    },
+    {
+      "id": "A.R120",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R120"
+      }
+    },
+    {
+      "id": "A.R135",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R135"
+      }
+    },
+    {
+      "id": "A.R150",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R150"
+      }
+    },
+    {
+      "id": "A.R165",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R165"
+      }
+    },
+    {
+      "id": "A.R180",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R180"
+      }
+    },
+    {
+      "id": "A.R195",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R195"
+      }
+    },
+    {
+      "id": "A.R210",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R210"
+      }
+    },
+    {
+      "id": "A.R225",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R225"
+      }
+    },
+    {
+      "id": "A.R240",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R240"
+      }
+    },
+    {
+      "id": "A.R255",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R255"
+      }
+    },
+    {
+      "id": "A.R270",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R270"
+      }
+    },
+    {
+      "id": "A.R285",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R285"
+      }
+    },
+    {
+      "id": "A.R300",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R300"
+      }
+    },
+    {
+      "id": "A.R315",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R315"
+      }
+    },
+    {
+      "id": "A.R330",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R330"
+      }
+    },
+    {
+      "id": "A.R345",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R345"
+      }
+    },
+    {
+      "id": "A.R360",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R360"
+      }
+    },
+    {
+      "id": "A.R375",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R375"
+      }
+    },
+    {
+      "id": "A.R390",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R390"
+      }
+    },
+    {
+      "id": "A.R405",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R405"
+      }
+    },
+    {
+      "id": "A.R420",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R420"
+      }
+    },
+    {
+      "id": "A.R435",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R435"
+      }
+    },
+    {
+      "id": "A.R450",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R450"
+      }
+    },
+    {
+      "id": "A.R465",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R465"
+      }
+    },
+    {
+      "id": "A.R480",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R480"
+      }
+    },
+    {
+      "id": "A.R495",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R495"
+      }
+    },
+    {
+      "id": "A.R510",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R510"
+      }
+    },
+    {
+      "id": "A.R525",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R525"
+      }
+    },
+    {
+      "id": "A.R540",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R540"
+      }
+    },
+    {
+      "id": "A.R555",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R555"
+      }
+    },
+    {
+      "id": "A.R570",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R570"
+      }
+    },
+    {
+      "id": "A.R585",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R585"
+      }
+    },
+    {
+      "id": "A.R600",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R600"
+      }
+    },
+    {
+      "id": "A.R615",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R615"
+      }
+    },
+    {
+      "id": "A.R630",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R630"
+      }
+    },
+    {
+      "id": "A.R645",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R645"
+      }
+    },
+    {
+      "id": "A.R660",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R660"
+      }
+    },
+    {
+      "id": "A.R675",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R675"
+      }
+    },
+    {
+      "id": "A.R690",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R690"
+      }
+    },
+    {
+      "id": "A.R705",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R705"
+      }
+    },
+    {
+      "id": "A.R720",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R720"
+      }
+    },
+    {
+      "id": "A.R735",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R735"
+      }
+    },
+    {
+      "id": "A.R750",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R750"
+      }
+    },
+    {
+      "id": "A.R765",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R765"
+      }
+    },
+    {
+      "id": "A.R780",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R780"
+      }
+    },
+    {
+      "id": "A.R795",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R795"
+      }
+    },
+    {
+      "id": "A.R810",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R810"
+      }
+    },
+    {
+      "id": "A.R825",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R825"
+      }
+    },
+    {
+      "id": "A.R840",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R840"
+      }
+    },
+    {
+      "id": "A.R855",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R855"
+      }
+    },
+    {
+      "id": "A.R870",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R870"
+      }
+    },
+    {
+      "id": "A.R885",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R885"
+      }
+    },
+    {
+      "id": "A.R900",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R900"
+      }
+    },
+    {
+      "id": "A.R915",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R915"
+      }
+    },
+    {
+      "id": "A.R930",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R930"
+      }
+    },
+    {
+      "id": "A.R945",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R945"
+      }
+    },
+    {
+      "id": "A.R960",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R960"
+      }
+    },
+    {
+      "id": "A.R975",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R975"
+      }
+    },
+    {
+      "id": "A.R990",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R990"
+      }
+    },
+    {
+      "id": "A.R1005",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1005"
+      }
+    },
+    {
+      "id": "A.R1020",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1020"
+      }
+    },
+    {
+      "id": "A.R1035",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1035"
+      }
+    },
+    {
+      "id": "A.R1050",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1050"
+      }
+    },
+    {
+      "id": "A.R1065",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1065"
+      }
+    },
+    {
+      "id": "A.R1080",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1080"
+      }
+    },
+    {
+      "id": "A.R1095",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1095"
+      }
+    },
+    {
+      "id": "A.R1110",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1110"
+      }
+    },
+    {
+      "id": "A.R1125",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1125"
+      }
+    },
+    {
+      "id": "A.R1140",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1140"
+      }
+    },
+    {
+      "id": "A.R1155",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1155"
+      }
+    },
+    {
+      "id": "A.R1170",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1170"
+      }
+    },
+    {
+      "id": "A.R1185",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1185"
+      }
+    },
+    {
+      "id": "A.R1200",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1200"
+      }
+    },
+    {
+      "id": "A.R1215",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1215"
+      }
+    },
+    {
+      "id": "A.R1230",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1230"
+      }
+    },
+    {
+      "id": "A.R1245",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1245"
+      }
+    },
+    {
+      "id": "A.R1260",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1260"
+      }
+    },
+    {
+      "id": "A.R1275",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1275"
+      }
+    },
+    {
+      "id": "A.R1290",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1290"
+      }
+    },
+    {
+      "id": "A.R1305",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1305"
+      }
+    },
+    {
+      "id": "A.R1320",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1320"
+      }
+    },
+    {
+      "id": "A.R1335",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1335"
+      }
+    },
+    {
+      "id": "A.R1350",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1350"
+      }
+    },
+    {
+      "id": "A.R1365",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1365"
+      }
+    },
+    {
+      "id": "A.R1380",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1380"
+      }
+    },
+    {
+      "id": "A.R1395",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1395"
+      }
+    },
+    {
+      "id": "A.R1410",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1410"
+      }
+    },
+    {
+      "id": "A.R1425",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1425"
+      }
+    },
+    {
+      "id": "A.R1440",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1440"
+      }
+    },
+    {
+      "id": "A.R1455",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1455"
+      }
+    },
+    {
+      "id": "A.R1470",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1470"
+      }
+    },
+    {
+      "id": "A.R1485",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1485"
+      }
+    },
+    {
+      "id": "A.R1500",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1500"
+      }
+    },
+    {
+      "id": "A.R1515",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1515"
+      }
+    },
+    {
+      "id": "A.R1530",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1530"
+      }
+    },
+    {
+      "id": "A.R1545",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1545"
+      }
+    },
+    {
+      "id": "A.R1560",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1560"
+      }
+    },
+    {
+      "id": "A.R1575",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1575"
+      }
+    },
+    {
+      "id": "A.R1590",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1590"
+      }
+    },
+    {
+      "id": "A.R1605",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1605"
+      }
+    },
+    {
+      "id": "A.R1620",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1620"
+      }
+    },
+    {
+      "id": "A.R1635",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1635"
+      }
+    },
+    {
+      "id": "A.R1650",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1650"
+      }
+    },
+    {
+      "id": "A.R1665",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1665"
+      }
+    },
+    {
+      "id": "A.R1680",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1680"
+      }
+    },
+    {
+      "id": "A.R1695",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1695"
+      }
+    },
+    {
+      "id": "A.R1710",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1710"
+      }
+    },
+    {
+      "id": "A.R1725",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1725"
+      }
+    },
+    {
+      "id": "A.R1740",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1740"
+      }
+    },
+    {
+      "id": "A.R1755",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1755"
+      }
+    },
+    {
+      "id": "A.R1770",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1770"
+      }
+    },
+    {
+      "id": "A.R1785",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1785"
+      }
+    },
+    {
+      "id": "A.R1800",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1800"
+      }
+    },
+    {
+      "id": "A.R1815",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1815"
+      }
+    },
+    {
+      "id": "A.R1830",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1830"
+      }
+    },
+    {
+      "id": "A.R1845",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1845"
+      }
+    },
+    {
+      "id": "A.R1860",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1860"
+      }
+    },
+    {
+      "id": "A.R1875",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1875"
+      }
+    },
+    {
+      "id": "A.R1890",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1890"
+      }
+    },
+    {
+      "id": "A.R1905",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1905"
+      }
+    },
+    {
+      "id": "A.R1920",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1920"
+      }
+    },
+    {
+      "id": "A.R1935",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1935"
+      }
+    },
+    {
+      "id": "A.R1950",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1950"
+      }
+    },
+    {
+      "id": "A.R1965",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1965"
+      }
+    },
+    {
+      "id": "A.R1980",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1980"
+      }
+    },
+    {
+      "id": "A.R1995",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "R1995"
+      }
+    },
+    {
+      "id": "A.DS4000",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4000"
+      }
+    },
+    {
+      "id": "A.DS4020",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4020"
+      }
+    },
+    {
+      "id": "A.DS4040",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4040"
+      }
+    },
+    {
+      "id": "A.DS4060",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4060"
+      }
+    },
+    {
+      "id": "A.DS4080",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4080"
+      }
+    },
+    {
+      "id": "A.DS4100",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4100"
+      }
+    },
+    {
+      "id": "A.DS4120",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4120"
+      }
+    },
+    {
+      "id": "A.DS4140",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4140"
+      }
+    },
+    {
+      "id": "A.DS4160",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4160"
+      }
+    },
+    {
+      "id": "A.DS4180",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4180"
+      }
+    },
+    {
+      "id": "A.DS4200",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4200"
+      }
+    },
+    {
+      "id": "A.DS4220",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4220"
+      }
+    },
+    {
+      "id": "A.DS4240",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4240"
+      }
+    },
+    {
+      "id": "A.DS4260",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4260"
+      }
+    },
+    {
+      "id": "A.DS4280",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4280"
+      }
+    },
+    {
+      "id": "A.DS4300",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4300"
+      }
+    },
+    {
+      "id": "A.DS4320",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4320"
+      }
+    },
+    {
+      "id": "A.DS4340",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4340"
+      }
+    },
+    {
+      "id": "A.DS4360",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4360"
+      }
+    },
+    {
+      "id": "A.DS4380",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4380"
+      }
+    },
+    {
+      "id": "A.DS4400",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4400"
+      }
+    },
+    {
+      "id": "A.DS4420",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4420"
+      }
+    },
+    {
+      "id": "A.DS4440",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4440"
+      }
+    },
+    {
+      "id": "A.DS4460",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4460"
+      }
+    },
+    {
+      "id": "A.DS4480",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4480"
+      }
+    },
+    {
+      "id": "A.DS4500",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4500"
+      }
+    },
+    {
+      "id": "A.DS4520",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4520"
+      }
+    },
+    {
+      "id": "A.DS4540",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4540"
+      }
+    },
+    {
+      "id": "A.DS4560",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4560"
+      }
+    },
+    {
+      "id": "A.DS4580",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4580"
+      }
+    },
+    {
+      "id": "A.DS4600",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4600"
+      }
+    },
+    {
+      "id": "A.DS4620",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4620"
+      }
+    },
+    {
+      "id": "A.DS4640",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4640"
+      }
+    },
+    {
+      "id": "A.DS4660",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4660"
+      }
+    },
+    {
+      "id": "A.DS4680",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4680"
+      }
+    },
+    {
+      "id": "A.DS4700",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4700"
+      }
+    },
+    {
+      "id": "A.DS4720",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4720"
+      }
+    },
+    {
+      "id": "A.DS4740",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4740"
+      }
+    },
+    {
+      "id": "A.DS4760",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4760"
+      }
+    },
+    {
+      "id": "A.DS4780",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4780"
+      }
+    },
+    {
+      "id": "A.DS4800",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4800"
+      }
+    },
+    {
+      "id": "A.DS4820",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4820"
+      }
+    },
+    {
+      "id": "A.DS4840",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4840"
+      }
+    },
+    {
+      "id": "A.DS4860",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4860"
+      }
+    },
+    {
+      "id": "A.DS4880",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4880"
+      }
+    },
+    {
+      "id": "A.DS4900",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4900"
+      }
+    },
+    {
+      "id": "A.DS4920",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4920"
+      }
+    },
+    {
+      "id": "A.DS4940",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4940"
+      }
+    },
+    {
+      "id": "A.DS4960",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4960"
+      }
+    },
+    {
+      "id": "A.DS4980",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D4980"
+      }
+    },
+    {
+      "id": "A.DS5000",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5000"
+      }
+    },
+    {
+      "id": "A.DS5020",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5020"
+      }
+    },
+    {
+      "id": "A.DS5040",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5040"
+      }
+    },
+    {
+      "id": "A.DS5060",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5060"
+      }
+    },
+    {
+      "id": "A.DS5080",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5080"
+      }
+    },
+    {
+      "id": "A.DS5100",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5100"
+      }
+    },
+    {
+      "id": "A.DS5120",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5120"
+      }
+    },
+    {
+      "id": "A.DS5140",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5140"
+      }
+    },
+    {
+      "id": "A.DS5160",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5160"
+      }
+    },
+    {
+      "id": "A.DS5180",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5180"
+      }
+    },
+    {
+      "id": "A.DS5200",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5200"
+      }
+    },
+    {
+      "id": "A.DS5220",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5220"
+      }
+    },
+    {
+      "id": "A.DS5240",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5240"
+      }
+    },
+    {
+      "id": "A.DS5260",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5260"
+      }
+    },
+    {
+      "id": "A.DS5280",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5280"
+      }
+    },
+    {
+      "id": "A.DS5300",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5300"
+      }
+    },
+    {
+      "id": "A.DS5320",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5320"
+      }
+    },
+    {
+      "id": "A.DS5340",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5340"
+      }
+    },
+    {
+      "id": "A.DS5360",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5360"
+      }
+    },
+    {
+      "id": "A.DS5380",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5380"
+      }
+    },
+    {
+      "id": "A.DS5400",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5400"
+      }
+    },
+    {
+      "id": "A.DS5420",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5420"
+      }
+    },
+    {
+      "id": "A.DS5440",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5440"
+      }
+    },
+    {
+      "id": "A.DS5460",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5460"
+      }
+    },
+    {
+      "id": "A.DS5480",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5480"
+      }
+    },
+    {
+      "id": "A.DS5500",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5500"
+      }
+    },
+    {
+      "id": "A.DS5520",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5520"
+      }
+    },
+    {
+      "id": "A.DS5540",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5540"
+      }
+    },
+    {
+      "id": "A.DS5560",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5560"
+      }
+    },
+    {
+      "id": "A.DS5580",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5580"
+      }
+    },
+    {
+      "id": "A.DS5600",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5600"
+      }
+    },
+    {
+      "id": "A.DS5620",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5620"
+      }
+    },
+    {
+      "id": "A.DS5640",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5640"
+      }
+    },
+    {
+      "id": "A.DS5660",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5660"
+      }
+    },
+    {
+      "id": "A.DS5680",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5680"
+      }
+    },
+    {
+      "id": "A.DS5700",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5700"
+      }
+    },
+    {
+      "id": "A.DS5720",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5720"
+      }
+    },
+    {
+      "id": "A.DS5740",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5740"
+      }
+    },
+    {
+      "id": "A.DS5760",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5760"
+      }
+    },
+    {
+      "id": "A.DS5780",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5780"
+      }
+    },
+    {
+      "id": "A.DS5800",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5800"
+      }
+    },
+    {
+      "id": "A.DS5820",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5820"
+      }
+    },
+    {
+      "id": "A.DS5840",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5840"
+      }
+    },
+    {
+      "id": "A.DS5860",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5860"
+      }
+    },
+    {
+      "id": "A.DS5880",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5880"
+      }
+    },
+    {
+      "id": "A.DS5900",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5900"
+      }
+    },
+    {
+      "id": "A.DS5920",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5920"
+      }
+    },
+    {
+      "id": "A.DS5940",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5940"
+      }
+    },
+    {
+      "id": "A.DS5960",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5960"
+      }
+    },
+    {
+      "id": "A.DS5980",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D5980"
+      }
+    },
+    {
+      "id": "A.DS6000",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6000"
+      }
+    },
+    {
+      "id": "A.DS6020",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6020"
+      }
+    },
+    {
+      "id": "A.DS6040",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6040"
+      }
+    },
+    {
+      "id": "A.DS6060",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6060"
+      }
+    },
+    {
+      "id": "A.DS6080",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6080"
+      }
+    },
+    {
+      "id": "A.DS6100",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6100"
+      }
+    },
+    {
+      "id": "A.DS6120",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6120"
+      }
+    },
+    {
+      "id": "A.DS6140",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6140"
+      }
+    },
+    {
+      "id": "A.DS6160",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6160"
+      }
+    },
+    {
+      "id": "A.DS6180",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6180"
+      }
+    },
+    {
+      "id": "A.DS6200",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6200"
+      }
+    },
+    {
+      "id": "A.DS6220",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6220"
+      }
+    },
+    {
+      "id": "A.DS6240",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6240"
+      }
+    },
+    {
+      "id": "A.DS6260",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6260"
+      }
+    },
+    {
+      "id": "A.DS6280",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6280"
+      }
+    },
+    {
+      "id": "A.DS6300",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6300"
+      }
+    },
+    {
+      "id": "A.DS6320",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6320"
+      }
+    },
+    {
+      "id": "A.DS6340",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6340"
+      }
+    },
+    {
+      "id": "A.DS6360",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6360"
+      }
+    },
+    {
+      "id": "A.DS6380",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6380"
+      }
+    },
+    {
+      "id": "A.DS6400",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6400"
+      }
+    },
+    {
+      "id": "A.DS6420",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6420"
+      }
+    },
+    {
+      "id": "A.DS6440",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6440"
+      }
+    },
+    {
+      "id": "A.DS6460",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6460"
+      }
+    },
+    {
+      "id": "A.DS6480",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6480"
+      }
+    },
+    {
+      "id": "A.DS6500",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6500"
+      }
+    },
+    {
+      "id": "A.DS6520",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6520"
+      }
+    },
+    {
+      "id": "A.DS6540",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6540"
+      }
+    },
+    {
+      "id": "A.DS6560",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6560"
+      }
+    },
+    {
+      "id": "A.DS6580",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6580"
+      }
+    },
+    {
+      "id": "A.DS6600",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6600"
+      }
+    },
+    {
+      "id": "A.DS6620",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6620"
+      }
+    },
+    {
+      "id": "A.DS6640",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6640"
+      }
+    },
+    {
+      "id": "A.DS6660",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6660"
+      }
+    },
+    {
+      "id": "A.DS6680",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6680"
+      }
+    },
+    {
+      "id": "A.DS6700",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6700"
+      }
+    },
+    {
+      "id": "A.DS6720",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6720"
+      }
+    },
+    {
+      "id": "A.DS6740",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6740"
+      }
+    },
+    {
+      "id": "A.DS6760",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6760"
+      }
+    },
+    {
+      "id": "A.DS6780",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6780"
+      }
+    },
+    {
+      "id": "A.DS6800",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6800"
+      }
+    },
+    {
+      "id": "A.DS6820",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6820"
+      }
+    },
+    {
+      "id": "A.DS6840",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6840"
+      }
+    },
+    {
+      "id": "A.DS6860",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6860"
+      }
+    },
+    {
+      "id": "A.DS6880",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6880"
+      }
+    },
+    {
+      "id": "A.DS6900",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6900"
+      }
+    },
+    {
+      "id": "A.DS6920",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6920"
+      }
+    },
+    {
+      "id": "A.DS6940",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6940"
+      }
+    },
+    {
+      "id": "A.DS6960",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6960"
+      }
+    },
+    {
+      "id": "A.DS6980",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D6980"
+      }
+    },
+    {
+      "id": "A.DS7000",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7000"
+      }
+    },
+    {
+      "id": "A.DS7020",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7020"
+      }
+    },
+    {
+      "id": "A.DS7040",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7040"
+      }
+    },
+    {
+      "id": "A.DS7060",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7060"
+      }
+    },
+    {
+      "id": "A.DS7080",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7080"
+      }
+    },
+    {
+      "id": "A.DS7100",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7100"
+      }
+    },
+    {
+      "id": "A.DS7120",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7120"
+      }
+    },
+    {
+      "id": "A.DS7140",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7140"
+      }
+    },
+    {
+      "id": "A.DS7160",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7160"
+      }
+    },
+    {
+      "id": "A.DS7180",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7180"
+      }
+    },
+    {
+      "id": "A.DS7200",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7200"
+      }
+    },
+    {
+      "id": "A.DS7220",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7220"
+      }
+    },
+    {
+      "id": "A.DS7240",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7240"
+      }
+    },
+    {
+      "id": "A.DS7260",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7260"
+      }
+    },
+    {
+      "id": "A.DS7280",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7280"
+      }
+    },
+    {
+      "id": "A.DS7300",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7300"
+      }
+    },
+    {
+      "id": "A.DS7320",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7320"
+      }
+    },
+    {
+      "id": "A.DS7340",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7340"
+      }
+    },
+    {
+      "id": "A.DS7360",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7360"
+      }
+    },
+    {
+      "id": "A.DS7380",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7380"
+      }
+    },
+    {
+      "id": "A.DS7400",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7400"
+      }
+    },
+    {
+      "id": "A.DS7420",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7420"
+      }
+    },
+    {
+      "id": "A.DS7440",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7440"
+      }
+    },
+    {
+      "id": "A.DS7460",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7460"
+      }
+    },
+    {
+      "id": "A.DS7480",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7480"
+      }
+    },
+    {
+      "id": "A.DS7500",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7500"
+      }
+    },
+    {
+      "id": "A.DS7520",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7520"
+      }
+    },
+    {
+      "id": "A.DS7540",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7540"
+      }
+    },
+    {
+      "id": "A.DS7560",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7560"
+      }
+    },
+    {
+      "id": "A.DS7580",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7580"
+      }
+    },
+    {
+      "id": "A.DS7600",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7600"
+      }
+    },
+    {
+      "id": "A.DS7620",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7620"
+      }
+    },
+    {
+      "id": "A.DS7640",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7640"
+      }
+    },
+    {
+      "id": "A.DS7660",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7660"
+      }
+    },
+    {
+      "id": "A.DS7680",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7680"
+      }
+    },
+    {
+      "id": "A.DS7700",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7700"
+      }
+    },
+    {
+      "id": "A.DS7720",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7720"
+      }
+    },
+    {
+      "id": "A.DS7740",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7740"
+      }
+    },
+    {
+      "id": "A.DS7760",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7760"
+      }
+    },
+    {
+      "id": "A.DS7780",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7780"
+      }
+    },
+    {
+      "id": "A.DS7800",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7800"
+      }
+    },
+    {
+      "id": "A.DS7820",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7820"
+      }
+    },
+    {
+      "id": "A.DS7840",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7840"
+      }
+    },
+    {
+      "id": "A.DS7860",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7860"
+      }
+    },
+    {
+      "id": "A.DS7880",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7880"
+      }
+    },
+    {
+      "id": "A.DS7900",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7900"
+      }
+    },
+    {
+      "id": "A.DS7920",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7920"
+      }
+    },
+    {
+      "id": "A.DS7940",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7940"
+      }
+    },
+    {
+      "id": "A.DS7960",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7960"
+      }
+    },
+    {
+      "id": "A.DS7980",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D7980"
+      }
+    },
+    {
+      "id": "A.W_I16",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qa",
+        "address": "D500"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_F32",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "qa",
+        "address": "D502"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_I32",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "qa",
+        "address": "D504"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_U32",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "qa",
+        "address": "D506"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_F64",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "qa",
+        "address": "D510"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_I64",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "qa",
+        "address": "D514"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_STR",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "qa",
+        "address": "D520",
+        "stringLength": 8
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_U16",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qa",
+        "address": "D530"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_BIT",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "D540.3"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_M",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "M500"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_Y",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "Y40"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "A.W_B",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qa",
+        "address": "B50"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "B.D100",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "D100"
+      }
+    },
+    {
+      "id": "B.D101",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qb",
+        "address": "D101"
+      }
+    },
+    {
+      "id": "B.D102",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "qb",
+        "address": "D102"
+      }
+    },
+    {
+      "id": "B.D104",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "qb",
+        "address": "D104"
+      }
+    },
+    {
+      "id": "B.D106",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "qb",
+        "address": "D106"
+      }
+    },
+    {
+      "id": "B.D108",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "qb",
+        "address": "D108"
+      }
+    },
+    {
+      "id": "B.D112",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "qb",
+        "address": "D112"
+      }
+    },
+    {
+      "id": "B.D116",
+      "kind": "external",
+      "type": "UINT64",
+      "source": {
+        "device": "qb",
+        "address": "D116"
+      }
+    },
+    {
+      "id": "B.D120",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "qb",
+        "address": "D120",
+        "stringLength": 8
+      }
+    },
+    {
+      "id": "B.D100_5",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "D100.5"
+      }
+    },
+    {
+      "id": "B.D200_0",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "D200.0"
+      }
+    },
+    {
+      "id": "B.D200_5",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "D200.5"
+      }
+    },
+    {
+      "id": "B.D200_6",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "D200.6"
+      }
+    },
+    {
+      "id": "B.D200_F",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "D200.F"
+      }
+    },
+    {
+      "id": "B.W1A0",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qb",
+        "address": "W1A0"
+      }
+    },
+    {
+      "id": "B.W1A1",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "qb",
+        "address": "W1A1"
+      }
+    },
+    {
+      "id": "B.W1B0_A",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "W1B0.A"
+      }
+    },
+    {
+      "id": "B.R500",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "qb",
+        "address": "R500"
+      }
+    },
+    {
+      "id": "B.ZR70000",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qb",
+        "address": "ZR70000"
+      }
+    },
+    {
+      "id": "B.ZR100000",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "qb",
+        "address": "ZR100000"
+      }
+    },
+    {
+      "id": "B.SD210",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qb",
+        "address": "SD210"
+      }
+    },
+    {
+      "id": "B.TN0",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "TN0"
+      }
+    },
+    {
+      "id": "B.CN5",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "CN5"
+      }
+    },
+    {
+      "id": "B.M10",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "M10"
+      }
+    },
+    {
+      "id": "B.M11",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "M11"
+      }
+    },
+    {
+      "id": "B.M12",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "M12"
+      }
+    },
+    {
+      "id": "B.M100",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "M100"
+      }
+    },
+    {
+      "id": "B.M103",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "M103"
+      }
+    },
+    {
+      "id": "B.X1A0",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "X1A0"
+      }
+    },
+    {
+      "id": "B.X1A1",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "X1A1"
+      }
+    },
+    {
+      "id": "B.X1A2",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "X1A2"
+      }
+    },
+    {
+      "id": "B.Y20",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "Y20"
+      }
+    },
+    {
+      "id": "B.Y21",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "Y21"
+      }
+    },
+    {
+      "id": "B.B1F",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "B1F"
+      }
+    },
+    {
+      "id": "B.L7",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "L7"
+      }
+    },
+    {
+      "id": "B.SM400",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "SM400"
+      }
+    },
+    {
+      "id": "B.SM401",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "SM401"
+      }
+    },
+    {
+      "id": "B.R0",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R0"
+      }
+    },
+    {
+      "id": "B.R15",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R15"
+      }
+    },
+    {
+      "id": "B.R30",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R30"
+      }
+    },
+    {
+      "id": "B.R45",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R45"
+      }
+    },
+    {
+      "id": "B.R60",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R60"
+      }
+    },
+    {
+      "id": "B.R75",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R75"
+      }
+    },
+    {
+      "id": "B.R90",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R90"
+      }
+    },
+    {
+      "id": "B.R105",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R105"
+      }
+    },
+    {
+      "id": "B.R120",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R120"
+      }
+    },
+    {
+      "id": "B.R135",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R135"
+      }
+    },
+    {
+      "id": "B.R150",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R150"
+      }
+    },
+    {
+      "id": "B.R165",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R165"
+      }
+    },
+    {
+      "id": "B.R180",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R180"
+      }
+    },
+    {
+      "id": "B.R195",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R195"
+      }
+    },
+    {
+      "id": "B.R210",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R210"
+      }
+    },
+    {
+      "id": "B.R225",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R225"
+      }
+    },
+    {
+      "id": "B.R240",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R240"
+      }
+    },
+    {
+      "id": "B.R255",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R255"
+      }
+    },
+    {
+      "id": "B.R270",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R270"
+      }
+    },
+    {
+      "id": "B.R285",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R285"
+      }
+    },
+    {
+      "id": "B.R300",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R300"
+      }
+    },
+    {
+      "id": "B.R315",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R315"
+      }
+    },
+    {
+      "id": "B.R330",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R330"
+      }
+    },
+    {
+      "id": "B.R345",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R345"
+      }
+    },
+    {
+      "id": "B.R360",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R360"
+      }
+    },
+    {
+      "id": "B.R375",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R375"
+      }
+    },
+    {
+      "id": "B.R390",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R390"
+      }
+    },
+    {
+      "id": "B.R405",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R405"
+      }
+    },
+    {
+      "id": "B.R420",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R420"
+      }
+    },
+    {
+      "id": "B.R435",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R435"
+      }
+    },
+    {
+      "id": "B.R450",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R450"
+      }
+    },
+    {
+      "id": "B.R465",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R465"
+      }
+    },
+    {
+      "id": "B.R480",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R480"
+      }
+    },
+    {
+      "id": "B.R495",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R495"
+      }
+    },
+    {
+      "id": "B.R510",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R510"
+      }
+    },
+    {
+      "id": "B.R525",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R525"
+      }
+    },
+    {
+      "id": "B.R540",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R540"
+      }
+    },
+    {
+      "id": "B.R555",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R555"
+      }
+    },
+    {
+      "id": "B.R570",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R570"
+      }
+    },
+    {
+      "id": "B.R585",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R585"
+      }
+    },
+    {
+      "id": "B.R600",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R600"
+      }
+    },
+    {
+      "id": "B.R615",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R615"
+      }
+    },
+    {
+      "id": "B.R630",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R630"
+      }
+    },
+    {
+      "id": "B.R645",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R645"
+      }
+    },
+    {
+      "id": "B.R660",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R660"
+      }
+    },
+    {
+      "id": "B.R675",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R675"
+      }
+    },
+    {
+      "id": "B.R690",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R690"
+      }
+    },
+    {
+      "id": "B.R705",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R705"
+      }
+    },
+    {
+      "id": "B.R720",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R720"
+      }
+    },
+    {
+      "id": "B.R735",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R735"
+      }
+    },
+    {
+      "id": "B.R750",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R750"
+      }
+    },
+    {
+      "id": "B.R765",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R765"
+      }
+    },
+    {
+      "id": "B.R780",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R780"
+      }
+    },
+    {
+      "id": "B.R795",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R795"
+      }
+    },
+    {
+      "id": "B.R810",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R810"
+      }
+    },
+    {
+      "id": "B.R825",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R825"
+      }
+    },
+    {
+      "id": "B.R840",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R840"
+      }
+    },
+    {
+      "id": "B.R855",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R855"
+      }
+    },
+    {
+      "id": "B.R870",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R870"
+      }
+    },
+    {
+      "id": "B.R885",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R885"
+      }
+    },
+    {
+      "id": "B.R900",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R900"
+      }
+    },
+    {
+      "id": "B.R915",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R915"
+      }
+    },
+    {
+      "id": "B.R930",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R930"
+      }
+    },
+    {
+      "id": "B.R945",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R945"
+      }
+    },
+    {
+      "id": "B.R960",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R960"
+      }
+    },
+    {
+      "id": "B.R975",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R975"
+      }
+    },
+    {
+      "id": "B.R990",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R990"
+      }
+    },
+    {
+      "id": "B.R1005",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1005"
+      }
+    },
+    {
+      "id": "B.R1020",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1020"
+      }
+    },
+    {
+      "id": "B.R1035",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1035"
+      }
+    },
+    {
+      "id": "B.R1050",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1050"
+      }
+    },
+    {
+      "id": "B.R1065",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1065"
+      }
+    },
+    {
+      "id": "B.R1080",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1080"
+      }
+    },
+    {
+      "id": "B.R1095",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1095"
+      }
+    },
+    {
+      "id": "B.R1110",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1110"
+      }
+    },
+    {
+      "id": "B.R1125",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1125"
+      }
+    },
+    {
+      "id": "B.R1140",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1140"
+      }
+    },
+    {
+      "id": "B.R1155",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1155"
+      }
+    },
+    {
+      "id": "B.R1170",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1170"
+      }
+    },
+    {
+      "id": "B.R1185",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1185"
+      }
+    },
+    {
+      "id": "B.R1200",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1200"
+      }
+    },
+    {
+      "id": "B.R1215",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1215"
+      }
+    },
+    {
+      "id": "B.R1230",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1230"
+      }
+    },
+    {
+      "id": "B.R1245",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1245"
+      }
+    },
+    {
+      "id": "B.R1260",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1260"
+      }
+    },
+    {
+      "id": "B.R1275",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1275"
+      }
+    },
+    {
+      "id": "B.R1290",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1290"
+      }
+    },
+    {
+      "id": "B.R1305",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1305"
+      }
+    },
+    {
+      "id": "B.R1320",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1320"
+      }
+    },
+    {
+      "id": "B.R1335",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1335"
+      }
+    },
+    {
+      "id": "B.R1350",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1350"
+      }
+    },
+    {
+      "id": "B.R1365",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1365"
+      }
+    },
+    {
+      "id": "B.R1380",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1380"
+      }
+    },
+    {
+      "id": "B.R1395",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1395"
+      }
+    },
+    {
+      "id": "B.R1410",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1410"
+      }
+    },
+    {
+      "id": "B.R1425",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1425"
+      }
+    },
+    {
+      "id": "B.R1440",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1440"
+      }
+    },
+    {
+      "id": "B.R1455",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1455"
+      }
+    },
+    {
+      "id": "B.R1470",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1470"
+      }
+    },
+    {
+      "id": "B.R1485",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1485"
+      }
+    },
+    {
+      "id": "B.R1500",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1500"
+      }
+    },
+    {
+      "id": "B.R1515",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1515"
+      }
+    },
+    {
+      "id": "B.R1530",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1530"
+      }
+    },
+    {
+      "id": "B.R1545",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1545"
+      }
+    },
+    {
+      "id": "B.R1560",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1560"
+      }
+    },
+    {
+      "id": "B.R1575",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1575"
+      }
+    },
+    {
+      "id": "B.R1590",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1590"
+      }
+    },
+    {
+      "id": "B.R1605",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1605"
+      }
+    },
+    {
+      "id": "B.R1620",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1620"
+      }
+    },
+    {
+      "id": "B.R1635",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1635"
+      }
+    },
+    {
+      "id": "B.R1650",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1650"
+      }
+    },
+    {
+      "id": "B.R1665",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1665"
+      }
+    },
+    {
+      "id": "B.R1680",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1680"
+      }
+    },
+    {
+      "id": "B.R1695",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1695"
+      }
+    },
+    {
+      "id": "B.R1710",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1710"
+      }
+    },
+    {
+      "id": "B.R1725",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1725"
+      }
+    },
+    {
+      "id": "B.R1740",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1740"
+      }
+    },
+    {
+      "id": "B.R1755",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1755"
+      }
+    },
+    {
+      "id": "B.R1770",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1770"
+      }
+    },
+    {
+      "id": "B.R1785",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1785"
+      }
+    },
+    {
+      "id": "B.R1800",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1800"
+      }
+    },
+    {
+      "id": "B.R1815",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1815"
+      }
+    },
+    {
+      "id": "B.R1830",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1830"
+      }
+    },
+    {
+      "id": "B.R1845",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1845"
+      }
+    },
+    {
+      "id": "B.R1860",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1860"
+      }
+    },
+    {
+      "id": "B.R1875",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1875"
+      }
+    },
+    {
+      "id": "B.R1890",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1890"
+      }
+    },
+    {
+      "id": "B.R1905",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1905"
+      }
+    },
+    {
+      "id": "B.R1920",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1920"
+      }
+    },
+    {
+      "id": "B.R1935",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1935"
+      }
+    },
+    {
+      "id": "B.R1950",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1950"
+      }
+    },
+    {
+      "id": "B.R1965",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1965"
+      }
+    },
+    {
+      "id": "B.R1980",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1980"
+      }
+    },
+    {
+      "id": "B.R1995",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "R1995"
+      }
+    },
+    {
+      "id": "B.W_I16",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qb",
+        "address": "D550"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "B.W_M",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qb",
+        "address": "M510"
+      },
+      "access": "RW"
+    },
+    {
+      "id": "C.D100",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qc",
+        "address": "D100"
+      }
+    },
+    {
+      "id": "C.D101",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qc",
+        "address": "D101"
+      }
+    },
+    {
+      "id": "C.D102",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "qc",
+        "address": "D102"
+      }
+    },
+    {
+      "id": "C.D104",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "qc",
+        "address": "D104"
+      }
+    },
+    {
+      "id": "C.D106",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "qc",
+        "address": "D106"
+      }
+    },
+    {
+      "id": "C.D108",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "qc",
+        "address": "D108"
+      }
+    },
+    {
+      "id": "C.D112",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "qc",
+        "address": "D112"
+      }
+    },
+    {
+      "id": "C.D116",
+      "kind": "external",
+      "type": "UINT64",
+      "source": {
+        "device": "qc",
+        "address": "D116"
+      }
+    },
+    {
+      "id": "C.D120",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "qc",
+        "address": "D120",
+        "stringLength": 8
+      }
+    },
+    {
+      "id": "C.D100_5",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "D100.5"
+      }
+    },
+    {
+      "id": "C.D200_0",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "D200.0"
+      }
+    },
+    {
+      "id": "C.D200_5",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "D200.5"
+      }
+    },
+    {
+      "id": "C.D200_6",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "D200.6"
+      }
+    },
+    {
+      "id": "C.D200_F",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "D200.F"
+      }
+    },
+    {
+      "id": "C.W1A0",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qc",
+        "address": "W1A0"
+      }
+    },
+    {
+      "id": "C.W1A1",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "qc",
+        "address": "W1A1"
+      }
+    },
+    {
+      "id": "C.W1B0_A",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "W1B0.A"
+      }
+    },
+    {
+      "id": "C.R500",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "qc",
+        "address": "R500"
+      }
+    },
+    {
+      "id": "C.ZR70000",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qc",
+        "address": "ZR70000"
+      }
+    },
+    {
+      "id": "C.ZR100000",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "qc",
+        "address": "ZR100000"
+      }
+    },
+    {
+      "id": "C.SD210",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "qc",
+        "address": "SD210"
+      }
+    },
+    {
+      "id": "C.TN0",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qc",
+        "address": "TN0"
+      }
+    },
+    {
+      "id": "C.CN5",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "qc",
+        "address": "CN5"
+      }
+    },
+    {
+      "id": "C.M10",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "M10"
+      }
+    },
+    {
+      "id": "C.M11",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "M11"
+      }
+    },
+    {
+      "id": "C.M12",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "M12"
+      }
+    },
+    {
+      "id": "C.M100",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "M100"
+      }
+    },
+    {
+      "id": "C.M103",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "M103"
+      }
+    },
+    {
+      "id": "C.X1A0",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "X1A0"
+      }
+    },
+    {
+      "id": "C.X1A1",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "X1A1"
+      }
+    },
+    {
+      "id": "C.X1A2",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "X1A2"
+      }
+    },
+    {
+      "id": "C.Y20",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "Y20"
+      }
+    },
+    {
+      "id": "C.Y21",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "Y21"
+      }
+    },
+    {
+      "id": "C.B1F",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "B1F"
+      }
+    },
+    {
+      "id": "C.L7",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "L7"
+      }
+    },
+    {
+      "id": "C.SM400",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "SM400"
+      }
+    },
+    {
+      "id": "C.SM401",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "qc",
+        "address": "SM401"
+      }
+    }
+  ]
+}

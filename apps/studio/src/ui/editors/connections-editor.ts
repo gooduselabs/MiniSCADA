@@ -1,6 +1,8 @@
 // Editor Kết nối (feature 006, T130, FR-030, FR-044, studio-ux §5 mục Form, mockup studio-tags.html v-conn): kênh Modbus TCP
-// (RTU ở T171) và thiết bị trường theo nhóm Kết nối, Nâng cao; trợ giúp ngay dưới ô; lỗi tại ô (khi gõ và từ bộ kiểm tra);
-// nhóm quét; và panel Thử kết nối (thời gian, mã, hex, bảng cách hiểu 4 thứ tự byte, exception kèm nghĩa).
+// (RTU ở T171; Siemens S7 ở feature 016: một CPU mỗi kênh, chưa có Thử kết nối; OPC UA ở feature 019: một server mỗi
+// kênh, Lấy chứng chỉ và Duyệt node thay cho Thử kết nối) và thiết bị trường theo nhóm Kết nối,
+// Nâng cao; trợ giúp ngay dưới ô; lỗi tại ô (khi gõ và từ bộ kiểm tra); nhóm quét; và panel Thử kết nối (thời gian, mã,
+// hex, bảng cách hiểu 4 thứ tự byte, exception kèm nghĩa).
 // Mỗi lần xác nhận một trường là một sửa đổi `channelUpsert`/`deviceUpsert` (một bước hoàn tác). Studio không tự kết nối tới
 // thiết bị trường: Thử kết nối đi qua BL335 (`DeviceLink.post`).
 import type { Channel, FieldDevice } from '@mat/project-schema';
@@ -10,8 +12,12 @@ import { exceptionText, issueText, probeCodeText } from '../../app/code-text.ts'
 import { deviceErrorText } from '../../app/device-errors.ts';
 import { t, type MessageKey } from '../../i18n/index.ts';
 import {
+  canAddDevice,
   channelFields,
+  channelSub,
+  FIELD_GROUPS,
   deviceFields,
+  deviceSub,
   fieldDefault,
   fieldText,
   interpretTable,
@@ -19,18 +25,29 @@ import {
   portChoices,
   portProblem,
   portsGate,
+  oneDeviceReason,
+  opcuaNeedsPin,
+  opcuaSecurityConflict,
   probeGate,
+  probeSupported,
   rs485Hint,
+  s7TsapConflict,
   setField,
   tagsPerDevice,
+  visibleChannelFields,
   type ChannelKind,
+  type FieldGroup,
   type FieldSpec,
   type ProbeResult,
 } from '../../model/connections.ts';
 import { treeAddChannel } from '../../app/tree-commands.ts';
+import { mcFieldHint } from '../../model/mc.ts';
+import { OpcUaCards } from './connections-opcua.ts';
+import { planOpcdaImport } from '../../model/opcda-map.ts';
 import { AppElement, icon } from '../base.ts';
 import { registerEditor } from '../registry.ts';
 import './connections-editor.css';
+import './connections-bacnet.ts';
 
 type Target =
   | { type: 'overview' }
@@ -38,6 +55,7 @@ type Target =
   | { type: 'device'; channel: number; index: number; device: FieldDevice; owner: Channel };
 
 const SCAN = ['fast', 'normal', 'slow'] as const;
+
 const ORDERS = ['ABCD', 'CDAB', 'BADC', 'DCBA'] as const;
 
 export class ConnectionsEditor extends AppElement {
@@ -46,12 +64,18 @@ export class ConnectionsEditor extends AppElement {
     errors: { state: true },
     address: { state: true },
     count: { state: true },
+    opcdaQuality: { state: true },
+    opcdaResult: { state: true },
   };
 
   declare drafts: Readonly<Record<string, string>>;
   declare errors: Readonly<Record<string, string>>;
   declare address: string;
   declare count: string;
+  /** Thẻ Chứng chỉ server và Duyệt node của kênh OPC UA (feature 019). */
+  private readonly opcua = new OpcUaCards(this);
+  declare opcdaQuality: boolean;
+  declare opcdaResult: { summary: string; lines: string[] } | null;
   /** Chữ đang gõ dở theo khóa ô; không phải state phản ứng (gõ không vẽ lại). */
   private readonly typing: Record<string, string> = {};
 
@@ -61,6 +85,8 @@ export class ConnectionsEditor extends AppElement {
     this.errors = {};
     this.address = 'HR100';
     this.count = '2';
+    this.opcdaQuality = true;
+    this.opcdaResult = null;
   }
 
   protected override attached(): void {
@@ -237,7 +263,7 @@ export class ConnectionsEditor extends AppElement {
       type="text"
       autocomplete="off"
       spellcheck="false"
-      inputmode=${spec.kind === 'number' ? 'decimal' : nothing}
+      inputmode=${spec.kind === 'number' && !spec.hex ? 'decimal' : nothing}
       placeholder=${def}
       aria-invalid=${common['aria-invalid']}
       aria-describedby=${common['aria-describedby']}
@@ -253,6 +279,40 @@ export class ConnectionsEditor extends AppElement {
         if (e.key === 'Enter' && !e.isComposing) (e.target as HTMLInputElement).blur();
       }}
     />`;
+  }
+
+  /**
+   * Cảnh báo không chặn tại ô. Kênh S7: TSAP đích cùng rack/slot (E_S7_TSAP, báo ngay khi gõ; ở ô TSAP đích chỉ khi bộ kiểm
+   * tra chưa báo). Kênh OPC UA: chế độ và policy không khớp (E_OPCUA_SECURITY), mật khẩu trên kết nối không mã hóa, chưa
+   * tin chứng chỉ server. Kênh RTU khi Online và đã đọc danh sách cổng (US3-4, US3-5): cổng ngoài danh sách cho phép, đang
+   * có ai dùng; RS485.
+   */
+  private fieldWarning(
+    target: Target,
+    spec: FieldSpec,
+    obj: object,
+    found: readonly string[],
+  ): string | null {
+    if (target.type === 'channel' && target.channel.kind === 's7') {
+      const keys = found.length ? ['rack', 'slot'] : ['rack', 'slot', 'remoteTsap'];
+      return keys.includes(spec.key) && s7TsapConflict(obj as Channel)
+        ? t('cn.s7.tsapConflict')
+        : null;
+    }
+    if (target.type === 'channel' && target.channel.kind === 'opcua') {
+      const ch = obj as Channel;
+      if (spec.key === 'securityPolicy' && opcuaSecurityConflict(ch))
+        return t('cn.opcua.securityConflict');
+      if (spec.key === 'serverCertSha256' && opcuaNeedsPin(ch)) return t('cn.opcua.needsPin');
+      if (
+        spec.key === 'authMode' &&
+        ch.opcua?.auth?.mode === 'username' &&
+        (ch.opcua.securityMode ?? 'None') === 'None'
+      )
+        return t('cn.opcua.plainPassword');
+      return null;
+    }
+    return this.portWarning(target, spec, obj);
   }
 
   /** Cảnh báo của Studio khi Online và đã đọc danh sách cổng (US3-4, US3-5): cổng ngoài danh sách cho phép, đang có ai dùng; RS485. */
@@ -277,12 +337,21 @@ export class ConnectionsEditor extends AppElement {
     return null;
   }
 
+  /** Gợi ý mềm của kênh MC (feature 017): cổng Modbus, ASCII, UDP, trạm không khớp mạng, module I/O lạ… */
+  private mcWarning(target: Target, spec: FieldSpec, obj: object): string | null {
+    const owner =
+      target.type === 'channel' ? target.channel : target.type === 'device' ? target.owner : null;
+    if (owner?.kind !== 'mc') return null;
+    const hint = mcFieldHint(spec.key, spec.target, obj as Channel | FieldDevice);
+    return hint ? t(hint.key, hint.params) : null;
+  }
+
   private field(target: Target, spec: FieldSpec, obj: object, issues: Map<string, string[]>) {
     const key = `${spec.target}:${spec.key}`;
     const id = `cn-${spec.target}-${spec.key}`;
     const err = this.errors[key];
     const found = issues.get(key) ?? [];
-    const warn = this.portWarning(target, spec, obj);
+    const warn = this.fieldWarning(target, spec, obj, found) ?? this.mcWarning(target, spec, obj);
     return html`<div class="cn-field ${spec.kind === 'bool' ? 'bool' : ''}">
       <label for=${id}
         >${t(spec.label)}${spec.unit ? html` <span class="unit">(${spec.unit})</span>` : nothing}</label
@@ -297,7 +366,7 @@ export class ConnectionsEditor extends AppElement {
 
   private form(target: Target, title: string, specs: readonly FieldSpec[], obj: object) {
     const issues = this.issuesFor(target);
-    const group = (g: 'basic' | 'advanced') => {
+    const group = (g: FieldGroup) => {
       const list = specs.filter((s) => s.group === g);
       return list.length
         ? html`<fieldset class="cn-group ${g}">
@@ -309,7 +378,7 @@ export class ConnectionsEditor extends AppElement {
     const rest = [...issues.entries()].filter(([k]) => k.endsWith(':*')).flatMap(([, v]) => v);
     return html`<section class="card cn-form" aria-label=${title}>
       <h3>${title}</h3>
-      ${group('basic')} ${group('advanced')}
+      ${FIELD_GROUPS.map((g) => group(g))}
       ${
         rest.length
           ? html`<ul class="cn-issues">
@@ -328,7 +397,14 @@ export class ConnectionsEditor extends AppElement {
     const perDevice = tagsPerDevice((app.store.state.outline.tags?.tags ?? []) as never);
     const sel = app.ui.treeSel;
     const ro = this.readOnly();
-    const item = (id: string, level: number, label: string, sub: string, count: number) =>
+    const item = (
+      id: string,
+      level: number,
+      label: string,
+      sub: string,
+      count: number,
+      s7 = false,
+    ) =>
       html`<li role="treeitem" aria-level=${level} aria-selected=${sel === id ? 'true' : 'false'}>
         <button
           type="button"
@@ -336,30 +412,38 @@ export class ConnectionsEditor extends AppElement {
           data-node=${id}
           @click=${() => app.revealNode(id)}
         >
-          ${icon(level === 1 ? 'connection' : 'device')}<span class="lbl">${label}</span>
+          ${icon(level === 1 ? (s7 ? 'plc' : 'connection') : 'device')}<span class="lbl"
+            >${label}</span
+          >
           <span class="sub">${sub}</span><span class="cnt">${count}</span>
         </button>
       </li>`;
     const addReason = ro ? t('reason.readOnly') : null;
+    const owner =
+      target.type === 'channel' ? target.channel : target.type === 'device' ? target.owner : null;
+    // feature 018: kênh Omron FINS chỉ có từ định dạng 1.1
+    const finsReason =
+      addReason ?? (app.store.state.outline.format11 ? null : t('reason.needFormat11'));
+    // feature 017: kênh MC cần project 1.1 (E_CHANNEL_VERSION)
+    const mcReason = addReason ?? (app.store.state.outline.format11 ? null : t('cn.mc.need11'));
+    // feature 020: kênh BACnet/IP chỉ có từ định dạng 1.1
+    const bacnetReason =
+      addReason ?? (app.store.state.outline.format11 ? null : t('reason.needFormat11'));
     const deviceReason = ro
       ? t('reason.readOnly')
-      : target.type === 'overview'
+      : !owner
         ? t('cn.pick')
-        : null;
+        : !canAddDevice(owner)
+          ? t(oneDeviceReason(owner))
+          : null;
     return html`<nav class="cn-nav card" aria-label=${t('cn.channels')}>
       <h3>${t('cn.channels')}</h3>
       <ul role="tree" class="cn-tree">
         ${channels.map(
           (c) =>
-            html`${item(`channel:${c.id}`, 1, c.name || c.id, c.kind === 'modbus-rtu' ? 'RTU' : 'TCP', c.devices?.length ?? 0)}
+            html`${item(`channel:${c.id}`, 1, c.name || c.id, channelSub(c), c.devices?.length ?? 0, c.kind === 's7')}
             ${(c.devices ?? []).map((d) =>
-              item(
-                `fdev:${d.id}`,
-                2,
-                d.name || d.id,
-                c.kind === 'modbus-rtu' ? `slave ${d.slave ?? 1}` : `unit ${d.unitId ?? 1}`,
-                perDevice.get(d.id) ?? 0,
-              ),
+              item(`fdev:${d.id}`, 2, d.name || d.id, deviceSub(c, d), perDevice.get(d.id) ?? 0),
             )}`,
         )}
       </ul>
@@ -384,6 +468,56 @@ export class ConnectionsEditor extends AppElement {
           @click=${() => (addReason ? app.toast(addReason) : this.addRtuChannel())}
         >
           ${icon('plus')}${t('cn.add.rtu')}
+        </button>
+        <button
+          class="btn sm"
+          type="button"
+          data-act="add-channel-s7"
+          aria-disabled=${addReason ? 'true' : nothing}
+          title=${addReason ?? t('cn.add.s7')}
+          @click=${() => (addReason ? app.toast(addReason) : treeAddChannel(app, 's7'))}
+        >
+          ${icon('plus')}${t('cn.add.s7')}
+        </button>
+        <button
+          class="btn sm"
+          type="button"
+          data-act="add-channel-fins"
+          aria-disabled=${finsReason ? 'true' : nothing}
+          title=${finsReason ?? t('cn.add.fins')}
+          @click=${() => (finsReason ? app.toast(finsReason) : treeAddChannel(app, 'fins'))}
+        >
+          ${icon('plus')}${t('cn.add.fins')}
+        </button>
+        <button
+          class="btn sm"
+          type="button"
+          data-act="add-channel-mc"
+          aria-disabled=${mcReason ? 'true' : nothing}
+          title=${mcReason ?? t('cn.add.mc')}
+          @click=${() => (mcReason ? app.toast(mcReason) : treeAddChannel(app, 'mc'))}
+        >
+          ${icon('plus')}${t('cn.add.mc')}
+        </button>
+        <button
+          class="btn sm"
+          type="button"
+          data-act="add-channel-bacnet"
+          aria-disabled=${bacnetReason ? 'true' : nothing}
+          title=${bacnetReason ?? t('cn.add.bacnet')}
+          @click=${() => (bacnetReason ? app.toast(bacnetReason) : treeAddChannel(app, 'bacnet'))}
+        >
+          ${icon('plus')}${t('cn.add.bacnet')}
+        </button>
+        <button
+          class="btn sm"
+          type="button"
+          data-act="add-channel-opcua"
+          aria-disabled=${addReason ? 'true' : nothing}
+          title=${addReason ?? t('cn.add.opcua')}
+          @click=${() => (addReason ? app.toast(addReason) : treeAddChannel(app, 'opcua'))}
+        >
+          ${icon('plus')}${t('cn.add.opcua')}
         </button>
         <button
           class="btn sm"
@@ -511,6 +645,35 @@ export class ConnectionsEditor extends AppElement {
     </section>`;
   }
 
+  // ---------- Vẽ: kênh Siemens S7 ----------
+
+  /**
+   * Ghi chú cấu hình PLC cho kênh S7 (PUT/GET, optimized block access). Project chưa ở định dạng 1.1: báo ngay (không chặn;
+   * bộ kiểm tra báo E_DRIVER_VERSION hoặc lỗi schema của tệp kết nối).
+   */
+  private s7Note(needs11: boolean) {
+    return html`${
+        needs11
+          ? html`<div class="banner warn" role="status" data-role="s7-version">
+              ${icon('warn', 'warn')}
+              <div>${t('cn.s7.needs11')}</div>
+            </div>`
+          : nothing
+      }
+      <section class="card cn-note" aria-label=${t('cn.kind.s7')} data-role="s7-note">
+        <p class="help">${icon('plc')} ${t('cn.s7.putget')}</p>
+      </section>`;
+  }
+
+  /** Thử kết nối chưa hỗ trợ kênh S7 (feature 016, D8): ghi chú thay cho panel. */
+  private probeUnsupported() {
+    return html`<section class="card cn-probe" aria-labelledby="cn-probe-h">
+      <h3 id="cn-probe-h">${t('cn.s7.probeTitle')}</h3>
+      <p class="help" data-role="probe-unsupported">${t('cn.s7.probeNote')}</p>
+      <p class="help">${t('cn.s7.putget')}</p>
+    </section>`;
+  }
+
   // ---------- Vẽ: Thử kết nối ----------
 
   private probeCard(target: Extract<Target, { type: 'device' }>) {
@@ -523,9 +686,10 @@ export class ConnectionsEditor extends AppElement {
     const st = app.probe.state;
     const reason = lock ? t(lock) : null;
     const count = Number(this.count);
+    const fins = target.owner.kind === 'fins';
     return html`<section class="card cn-probe" aria-labelledby="cn-probe-h">
       <h3 id="cn-probe-h">${t('cn.probe.title')}</h3>
-      <p class="help">${t('cn.probe.help')}</p>
+      <p class="help">${t(fins ? 'cn.probe.finsHelp' : 'cn.probe.help')}</p>
       <div class="cn-probe-row">
         <div class="cn-field">
           <label for="cn-probe-address">${t('cn.probe.address')}</label>
@@ -535,7 +699,7 @@ export class ConnectionsEditor extends AppElement {
             type="text"
             spellcheck="false"
             autocomplete="off"
-            .value=${live(this.address)}
+            .value=${live(this.probeAddress(fins))}
             @input=${(e: Event) => (this.address = (e.target as HTMLInputElement).value)}
           />
         </div>
@@ -576,11 +740,24 @@ export class ConnectionsEditor extends AppElement {
     </section>`;
   }
 
+  /** Địa chỉ của ô Thử kết nối; với thiết bị FINS, địa chỉ Modbus mặc định đổi thành D100 (feature 018). */
+  private probeAddress(fins: boolean): string {
+    return fins && this.address === 'HR100' ? 'D100' : this.address;
+  }
+
+  /** Kênh MC: Thử kết nối chưa có (feature 017, T091); chỉ sang Chẩn đoán driver. */
+  private mcProbeNote() {
+    return html`<section class="card cn-probe" aria-labelledby="cn-probe-h">
+      <h3 id="cn-probe-h">${t('cn.probe.title')}</h3>
+      <p class="help" data-role="probe-mc">${t('cn.probe.mcLater')}</p>
+    </section>`;
+  }
+
   private async runProbe(
     target: Extract<Target, { type: 'device' }>,
     count: number,
   ): Promise<void> {
-    const address = this.address.trim();
+    const address = this.probeAddress(target.owner.kind === 'fins').trim();
     const read = address
       ? { address, count: Number.isFinite(count) && count > 0 ? count : 1 }
       : null;
@@ -609,6 +786,10 @@ export class ConnectionsEditor extends AppElement {
       ${r.connectMs !== undefined || r.responseMs !== undefined ? html`<p class="help">${t('cn.probe.times', { connect: r.connectMs ?? '—', response: r.responseMs ?? '—' })}</p>` : nothing}
       ${r.message ? html`<p>${r.message}</p>` : nothing}
       ${r.exception ? html`<p data-role="probe-exception">${t('cn.probe.exception', { code: r.exception.code, meaning: exceptionText(r.exception.code) })}</p>` : nothing}
+      ${r.model ? html`<p data-role="probe-model">${t('cn.probe.model', { model: r.model })}</p>` : nothing}
+      ${r.nodes ? html`<p class="help">${t('cn.probe.nodes', { client: r.nodes.client, server: r.nodes.server })}</p>` : nothing}
+      ${r.endCode ? html`<p data-role="probe-endcode">${t('cn.probe.endCode', { code: r.endCode.code, meaning: r.endCode.meaning })}</p>` : nothing}
+      ${r.address ? html`<p class="help">${t('cn.probe.finsRead', { address: r.address, count: (r.hex ?? r.bits ?? []).length })}</p>` : nothing}
       ${r.read ? html`<p class="help">${t('cn.probe.read', { fc: r.read.fc, offset: r.read.offset, count: r.read.count })}</p>` : nothing}
       ${r.hex ? html`<p><b>${t('cn.probe.hex')}</b> <code class="mono" data-role="probe-hex">${r.hex.join(' ')}</code></p>` : nothing}
       ${r.bits ? html`<p><b>${t('cn.probe.bits')}</b> <code class="mono">${r.bits.map((b) => (b ? '1' : '0')).join(' ')}</code></p>` : nothing}
@@ -661,50 +842,133 @@ export class ConnectionsEditor extends AppElement {
     }
   }
 
+  /** Thẻ BACnet/IP (feature 020): Tìm thiết bị ở kênh, Thử kết nối và Duyệt đối tượng ở thiết bị. */
+  private bacnetPanel(channel: number, device: number, ro: boolean) {
+    return html`<mat-bacnet-panel
+      .app=${this.app}
+      .mode=${device < 0 ? 'channel' : 'device'}
+      .channelIndex=${channel}
+      .deviceIndex=${Math.max(0, device)}
+      .readOnly=${ro}
+    ></mat-bacnet-panel>`;
+  }
+
+  // ---------- OPC DA qua cầu nối (spec 021) ----------
+
+  private opcdaCard(target: Extract<Target, { type: 'device' }>) {
+    if (target.owner.kind !== 'modbus-tcp') return nothing;
+    const ro = this.readOnly();
+    const r = this.opcdaResult;
+    return html`<section class="card cn-form" data-role="opcda" aria-label=${t('cn.opcda.title')}>
+      <h3>${t('cn.opcda.title')}</h3>
+      <p class="help">${t('cn.opcda.helpDevice')}</p>
+      <div class="cn-probe-row">
+        <label
+          ><input
+            type="checkbox"
+            data-role="opcda-quality"
+            .checked=${live(this.opcdaQuality)}
+            @change=${(e: Event) => (this.opcdaQuality = (e.target as HTMLInputElement).checked)}
+          />
+          ${t('cn.opcda.quality')}</label
+        >
+        <button
+          class="btn sm"
+          type="button"
+          data-act="opcda-import"
+          aria-disabled=${ro ? 'true' : nothing}
+          @click=${() => (ro ? this.app.toast(t('reason.readOnly')) : void this.importOpcda(target))}
+        >
+          ${icon('import')}${t('cn.opcda.import')}
+        </button>
+      </div>
+      ${
+        r
+          ? html`<div role="status" data-role="opcda-result">
+              <p>${r.summary}</p>
+              ${r.lines.map((l) => html`<p class="help">${l}</p>`)}
+            </div>`
+          : nothing
+      }
+    </section>`;
+  }
+
+  private async importOpcda(target: Extract<Target, { type: 'device' }>): Promise<void> {
+    const file = await this.app.csvOpen();
+    if (file === null) return;
+    if ('error' in file) {
+      this.app.toast(t(file.error === 'too-large' ? 'tt.csv.err.too-large' : 'tt.csv.err.io'));
+      return;
+    }
+    const plan = planOpcdaImport(file.bytes, this.app.store.state.outline.tags?.tags ?? [], {
+      device: target.device.id,
+      withQuality: this.opcdaQuality,
+    });
+    if (plan.fatal) {
+      this.app.toast(t('cn.opcda.fatal', { reason: plan.fatal }));
+      return;
+    }
+    if (plan.edits.length) this.app.store.edit(plan.edits);
+    this.opcdaResult = {
+      summary: t('cn.opcda.done', {
+        add: plan.add,
+        update: plan.update,
+        errors: plan.errors.length,
+      }),
+      lines: plan.errors
+        .slice(0, 20)
+        .map((e) => t('cn.opcda.line', { line: e.line, reason: e.reason })),
+    };
+  }
+
   // ---------- Vẽ: tổng quan ----------
 
   private overview() {
     const cfg = this.app.store.state.outline.connections;
     const ro = this.readOnly();
     return html`<section class="card cn-form" aria-label=${t('cn.groups.title')}>
-      <h3>${t('cn.groups.title')}</h3>
-      <p class="help">${t('cn.groups.help')}</p>
-      <div class="cn-scan">
-        ${SCAN.map((g) => {
-          const key = `scan:${g}`;
-          const err = this.errors[key];
-          const value =
-            this.drafts[key] ??
-            (cfg?.scanGroups?.[g] === undefined ? '' : String(cfg.scanGroups[g]));
-          const def = { fast: '250', normal: '1000', slow: '5000' }[g];
-          return html`<div class="cn-field">
-            <label for="cn-scan-${g}"
-              >${t(`cn.scan.${g}` as MessageKey)} <span class="unit">(ms)</span></label
-            >
-            <input
-              id="cn-scan-${g}"
-              class="input sm mono"
-              type="text"
-              inputmode="numeric"
-              placeholder=${def}
-              ?readonly=${ro}
-              aria-invalid=${err ? 'true' : 'false'}
-              .value=${live(value)}
-              @change=${(e: Event) => this.setScan(g, (e.target as HTMLInputElement).value)}
-            />
-            ${err ? html`<p class="field-err" role="alert">${err}</p>` : nothing}
-          </div>`;
-        })}
-      </div>
-      ${
-        this.channels().length
-          ? nothing
-          : html`<div class="empty">
-              ${icon('connection', 'lg')}<b>${t('cn.empty.title')}</b>
-              <p>${t('cn.empty.text')}</p>
-            </div>`
-      }
-    </section>`;
+        <h3>${t('cn.groups.title')}</h3>
+        <p class="help">${t('cn.groups.help')}</p>
+        <div class="cn-scan">
+          ${SCAN.map((g) => {
+            const key = `scan:${g}`;
+            const err = this.errors[key];
+            const value =
+              this.drafts[key] ??
+              (cfg?.scanGroups?.[g] === undefined ? '' : String(cfg.scanGroups[g]));
+            const def = { fast: '250', normal: '1000', slow: '5000' }[g];
+            return html`<div class="cn-field">
+              <label for="cn-scan-${g}"
+                >${t(`cn.scan.${g}` as MessageKey)} <span class="unit">(ms)</span></label
+              >
+              <input
+                id="cn-scan-${g}"
+                class="input sm mono"
+                type="text"
+                inputmode="numeric"
+                placeholder=${def}
+                ?readonly=${ro}
+                aria-invalid=${err ? 'true' : 'false'}
+                .value=${live(value)}
+                @change=${(e: Event) => this.setScan(g, (e.target as HTMLInputElement).value)}
+              />
+              ${err ? html`<p class="field-err" role="alert">${err}</p>` : nothing}
+            </div>`;
+          })}
+        </div>
+        ${
+          this.channels().length
+            ? nothing
+            : html`<div class="empty">
+                ${icon('connection', 'lg')}<b>${t('cn.empty.title')}</b>
+                <p>${t('cn.empty.text')}</p>
+              </div>`
+        }
+      </section>
+      <section class="card cn-form" data-role="opcda-help" aria-label=${t('cn.opcda.title')}>
+        <h3>${t('cn.opcda.title')}</h3>
+        <p class="help">${t('cn.opcda.help')}</p>
+      </section>`;
   }
 
   protected override render() {
@@ -718,13 +982,27 @@ export class ConnectionsEditor extends AppElement {
         ? html`${this.form(
             target,
             `${t(`cn.kind.${target.channel.kind}` as MessageKey)}: ${target.channel.name || target.channel.id}`,
-            channelFields(target.channel.kind as ChannelKind),
+            visibleChannelFields(target.channel),
             target.channel,
           )}
-          ${target.channel.kind === 'modbus-rtu' ? this.portsCard(target) : nothing}`
+          ${target.channel.kind === 'modbus-rtu' ? this.portsCard(target) : nothing}
+          ${target.channel.kind === 's7' ? this.s7Note(!s.outline.format11) : nothing}
+          ${target.channel.kind === 'bacnet' ? this.bacnetPanel(target.index, -1, ro) : nothing}
+          ${target.channel.kind === 'opcua' ? this.opcua.render(target.channel, !s.outline.format11, ro) : nothing}`
         : target.type === 'device'
           ? html`${this.form(target, `${t('cn.device')}: ${target.device.name || target.device.id}`, deviceFields(target.owner.kind as ChannelKind), target.device)}
-            ${this.probeCard(target)}`
+            ${
+              target.owner.kind === 'mc'
+                ? this.mcProbeNote()
+                : target.owner.kind === 'bacnet'
+                  ? this.bacnetPanel(target.channel, target.index, ro)
+                  : probeSupported(target.owner.kind)
+                    ? this.probeCard(target)
+                    : target.owner.kind === 'opcua'
+                      ? this.opcua.probeNote()
+                      : this.probeUnsupported()
+            }
+            ${this.opcdaCard(target)}`
           : this.overview();
     return html`<div class="ed ed-fill cn">
       <div class="ed-head">

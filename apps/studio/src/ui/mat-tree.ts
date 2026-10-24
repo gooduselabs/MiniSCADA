@@ -45,6 +45,8 @@ export class MatTree extends AppElement {
       : MENU_COMMANDS;
     // feature 015: Báo cáo và mẫu báo cáo có lệnh Thêm báo cáo (thư viện mẫu)
     const sel = this.menu?.nodeId ?? this.app.ui.treeSel ?? '';
+    // feature 017: Kết nối và kênh có lệnh Thêm kênh Mitsubishi MC
+    if (sel === 'connections' || sel.startsWith('channel:')) return [...base, 'connections.addMc'];
     return sel === 'reports' || sel.startsWith('report:') ? ['report.add', ...base] : base;
   }
 

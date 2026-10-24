@@ -31,15 +31,36 @@ RuntimeEngine::RuntimeEngine(std::shared_ptr<const ProjectModel> model, TagStore
     ModbusFactoryOptions fo;
     fo.writeQueueCapacity = options_.writeQueuePerChannel;
     fo.checkPort = options_.checkPort;
-    for (auto& d : makeModbusTcpDrivers(*model_, fo)) {
-        const drv::ModbusTcpConfig& cfg = d.driver->config();
-        for (const drv::TagBinding& b : cfg.tags) routes_[b.tag] = {d.driver.get(), b.device};
-        channelPtrs_.push_back(d.driver.get());
-        channels_.push_back(std::move(d.driver));
+    byChannel_.assign(model_->channels.size(), nullptr);
+    // Every channel driver goes the same way (ADR-044..048): its Tags route to it, it takes the
+    // index of its channel, and the engine owns it, starts it at step 6 and stops it.
+    auto adopt = [this](auto made, auto deviceOf) {
+        for (auto& d : made) {
+            for (const auto& b : d.driver->config().tags)
+                routes_[b.tag] = {d.driver.get(), deviceOf(b)};
+            byChannel_[d.channel] = d.driver.get();
+            channels_.push_back(std::move(d.driver));
+        }
+    };
+    auto boundDevice = [](const auto& b) { return static_cast<uint32_t>(b.device); };
+    auto device0 = [](const auto&) { return uint32_t{0}; };  // one device per channel
+    {
+        auto modbus = makeModbusTcpDrivers(*model_, fo);
+        for (auto& d : modbus) channelPtrs_.push_back(d.driver.get());
+        adopt(std::move(modbus), boundDevice);
     }
+    adopt(makeS7Drivers(*model_, options_.writeQueuePerChannel), device0);  // Siemens S7 (016)
+    adopt(makeFinsDrivers(*model_, options_.writeQueuePerChannel),
+          boundDevice);  // Omron FINS (018)
+    adopt(makeMcDrivers(*model_, options_.writeQueuePerChannel),
+          boundDevice);  // Mitsubishi MC (017)
+    adopt(makeBacnetDrivers(*model_, options_.writeQueuePerChannel),
+          boundDevice);  // BACnet/IP (020)
+    adopt(makeOpcUaDrivers(*model_, options_.writeQueuePerChannel, options_.opcua),
+          device0);  // OPC UA (019): one server per channel
 }
 
-drv::ModbusTcpDriver* RuntimeEngine::driverOf(size_t tag) const {
+drv::Driver* RuntimeEngine::driverOf(size_t tag) const {
     const auto it = routes_.find(tag);
     return it == routes_.end() ? nullptr : it->second.driver;
 }

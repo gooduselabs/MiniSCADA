@@ -1,0 +1,35 @@
+{
+  "scenario": "load",
+  "checks": [
+    {
+      "name": "no lost sequence on any client",
+      "pass": true,
+      "detail": "0 gaps"
+    },
+    {
+      "name": "the real period of a changing node is 1 s +/- 10 %",
+      "pass": true,
+      "detail": "1003 ms"
+    },
+    {
+      "name": "all 500 Tags GOOD on every client",
+      "pass": true
+    },
+    {
+      "name": "RSS <= 150 MB (Constitution III)",
+      "pass": true,
+      "detail": "16.7 MB"
+    }
+  ],
+  "measures": {
+    "seconds": 60.2,
+    "clients": 10,
+    "tags": 500,
+    "cpuPercentOneCoreAvg": 0.4,
+    "cpuPercentOneCoreMax5s": 0.6,
+    "rssMaxMB": 16.7,
+    "sequenceGaps": 0,
+    "periodMeanMs": 1003
+  },
+  "pass": true
+}

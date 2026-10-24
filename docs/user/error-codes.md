@@ -12,12 +12,12 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 470 mã.
+Tổng cộng 534 mã.
 
 ## Mục lục
 
-- [Định dạng và phiên bản project](#format) (13)
-- [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (33)
+- [Định dạng và phiên bản project](#format) (15)
+- [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (38)
 - [Biểu thức của Tag tính toán](#expression) (10)
 - [Màn hình, widget, binding và điều hướng](#screens) (49)
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (32)
@@ -27,8 +27,8 @@ Tổng cộng 470 mã.
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
 - [Đăng nhập, phiên và truy cập HTTP](#auth) (37)
 - [Ghi Tag](#write) (39)
-- [Lý do quality của Tag](#quality) (20)
-- [Kết nối PLC, cổng serial và Thử kết nối](#driver) (11)
+- [Lý do quality của Tag](#quality) (62)
+- [Kết nối PLC, cổng serial và Thử kết nối](#driver) (26)
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
 - [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (31)
 - [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (21)
@@ -40,6 +40,8 @@ Tổng cộng 470 mã.
 
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
+| `E_CHANNEL_VERSION` | — | Loại kênh này (Omron FINS, Mitsubishi MC, BACnet/IP) hoặc source.bcd cần project định dạng 1.1 | `core/project-manager`, `packages/project-schema` |
+| `E_DRIVER_VERSION` | — | Kênh của driver mới (Siemens S7, OPC UA) cần project định dạng 1.1 | `core/project-manager`, `packages/project-schema` |
 | `E_DUP_ID` | — | Trùng mã định danh (kênh, thiết bị trường, bảng giá trị hoặc bảng theo dõi) | `core/project-manager`, `packages/project-schema` |
 | `E_FILE_MISSING` | — | File được tham chiếu không tồn tại | `core/project-manager`, `packages/project-schema`, `server` |
 | `E_JSON` | — | File không phải JSON hợp lệ, hoặc lớn hơn 1 MB | `core/project-manager`, `packages/project-schema` |
@@ -60,16 +62,18 @@ Tổng cộng 470 mã.
 
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
-| `E_ADDR_AREA` | — | Vùng địa chỉ không hợp với kiểu hoặc quyền của Tag | `drivers/modbus`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
-| `E_ADDR_RANGE` | — | Địa chỉ ngoài khoảng 0–65535 | `drivers/modbus`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
+| `E_ADDR_AREA` | — | Vùng địa chỉ không hợp với kiểu hoặc quyền của Tag | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/s7`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
+| `E_ADDR_RANGE` | — | Địa chỉ ngoài khoảng 0–65535 | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
 | `E_ADDR_READ_LIMIT` | — | Tag dài hơn giới hạn một lần đọc của thiết bị trường | `core/project-manager`, `drivers/sdk`, `packages/project-schema` |
-| `E_ADDR_SYNTAX` | — | Địa chỉ Modbus không đúng cú pháp (ví dụ HR100, 40101, HR100.3) | `drivers/modbus`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
+| `E_ADDR_SYNTAX` | — | Địa chỉ Modbus không đúng cú pháp (ví dụ HR100, 40101, HR100.3) | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
 | `E_ADDR_WRITE_LIMIT` | — | Tag ghi được dài hơn một lần ghi (tối đa 123 thanh ghi) | `core/project-manager`, `packages/project-schema` |
 | `E_BIT_WRITE` | — | Ghi bit trong thanh ghi cần chọn cách ghi bit (mặt nạ hoặc đọc-sửa-ghi) ở thiết bị trường | `core/project-manager`, `packages/project-schema` |
 | `E_DEADBAND` | — | Vùng chết chỉ cho Tag số và không âm | `core/project-manager`, `packages/project-schema` |
 | `E_DUP_TAG` | — | Tag bị trùng id | `core/project-manager`, `packages/project-schema` |
 | `E_INITIAL` | — | Giá trị đầu sai kiểu, ngoài khoảng hoặc chuỗi quá dài | `core/project-manager`, `packages/project-schema` |
 | `E_LIMITS` | — | Giới hạn ghi sai (cần Tag số, nhỏ nhất ≤ lớn nhất, trong khoảng của kiểu) | `core/project-manager`, `packages/project-schema` |
+| `E_OPCUA_AUTH` | — | Kênh OPC UA: xác thực username cần username và secretId; anonymous thì bỏ cả hai | `core/project-manager`, `packages/project-schema` |
+| `E_OPCUA_SECURITY` | — | Kênh OPC UA: securityMode và securityPolicy không khớp (None đi với None; Sign, SignAndEncrypt đi với Basic256Sha256) | `core/project-manager`, `packages/project-schema` |
 | `E_REF_DEVICE` | — | Thiết bị trường không có trong Kết nối | `core/project-manager`, `packages/project-schema` |
 | `E_REF_TABLE` | — | Bảng giá trị không có trong project | `core/project-manager`, `packages/project-schema` |
 | `E_RENAME_EXISTS` | — | Tên mới đã có ở một Tag khác | `packages/project-schema` |
@@ -77,6 +81,7 @@ Tổng cộng 470 mã.
 | `E_RENAME_SAME` | — | Tên mới trùng tên cũ | `packages/project-schema` |
 | `E_RENAME_SYNTAX` | — | Tên không hợp lệ: bắt đầu bằng chữ cái, gồm chữ, số, gạch dưới, các đoạn cách nhau bằng dấu chấm, tối đa 64 ký tự, không phải true hay false. | `packages/project-schema` |
 | `E_RETAIN` | — | Giữ qua mất điện chỉ dùng cho Tag nội bộ | `core/project-manager`, `packages/project-schema` |
+| `E_S7_TSAP` | — | Kênh S7: nhập TSAP đích (remoteTsap) thì bỏ rack và slot, hoặc ngược lại | `core/project-manager`, `packages/project-schema` |
 | `E_SCALING` | — | Thang đo sai (cần Tag số thực, hai đầu thô và hai đầu kỹ thuật khác nhau) | `core/project-manager`, `packages/project-schema` |
 | `E_SERIAL_NOT_ALLOWED` | — | Cổng serial chưa được phép dùng trên thiết bị | `core/common`, `core/project-manager`, `packages/project-schema`, `server`, `server/cli` |
 | `E_SERIAL_PORT` | — | Tên cổng serial không đúng dạng | `core/common`, `core/project-manager`, `packages/project-schema`, `server/http` |
@@ -90,6 +95,8 @@ Tổng cộng 470 mã.
 | `W_ADDR_MODICON_BASE0` | — | Địa chỉ dạng Modicon trên thiết bị trường có địa chỉ gốc 0: số 40001 là offset 1 | `drivers/modbus`, `packages/project-schema`, `packages/tag-codec` |
 | `W_BIT_RMW` | — | Ghi bit kiểu đọc-sửa-ghi có thể đè lên thay đổi của chương trình PLC | `core/project-manager`, `packages/project-schema` |
 | `W_DETECT_SLOW` | — | Thời gian phát hiện mất kết nối dài hơn chu kỳ quét của nhóm | `core/project-manager`, `packages/project-schema` |
+| `W_OPCUA_CERT_NOT_PINNED` | — | Kênh OPC UA có mã hóa nhưng chưa tin chứng chỉ server (serverCertSha256): runtime sẽ không kết nối | `core/project-manager`, `packages/project-schema` |
+| `W_OPCUA_PLAIN_PASSWORD` | — | Kênh OPC UA dùng username/mật khẩu trên kết nối không mã hóa (securityMode None) | `core/project-manager`, `packages/project-schema` |
 | `W_RTU_SCAN_TIME` | — | Vòng quét RTU ước tính dài hơn chu kỳ của nhóm | `core/project-manager`, `packages/project-schema` |
 | `W_WATCH_REF` | — | Bảng theo dõi có Tag không tồn tại | `core/project-manager`, `packages/project-schema` |
 | `W_WRITE_NO_LIMITS` | — | Tag số ghi được nhưng chưa đặt giới hạn ghi | `core/project-manager`, `packages/project-schema` |
@@ -369,7 +376,7 @@ Tổng cộng 470 mã.
 | `AUTH_FAILED` | 401 | Sai tên đăng nhập hoặc mật khẩu. | `core/auth`, `server/http` |
 | `AUTH_LOCKED` | 429 | Đăng nhập đang bị khóa tạm do sai nhiều lần. Hãy thử lại sau. | `core/auth`, `server/http` |
 | `AUTH_REQUIRED` | 401 | Cần đăng nhập. | `server/http` |
-| `BAD_REQUEST` | 400 | Yêu cầu không hợp lệ. | `drivers/modbus`, `server`, `server/http` |
+| `BAD_REQUEST` | 400 | Yêu cầu không hợp lệ. | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `server`, `server/http` |
 | `BODY_TOO_LARGE` | 413 | Nội dung yêu cầu quá lớn. | `server/http` |
 | `CONFLICT` | 409 | Dữ liệu đã đổi bởi người khác, tải lại rồi thử lại. | `server/http` |
 | `CONTAINS_NAME` | 400 | Mật khẩu chứa tên tài khoản (lý do của WEAK_PASSWORD). | `server/http` |
@@ -410,19 +417,19 @@ Tổng cộng 470 mã.
 | --- | --- | --- | --- |
 | `BAD_TYPE` | — | Giá trị không đúng kiểu của Tag. | `core/tag-engine` |
 | `CONNECTION_BAD` | — | Kết nối tới PLC đang mất. | `core/tag-engine` |
-| `DEVICE_EXCEPTION` | — | Thiết bị trường từ chối lệnh ghi | `core/tag-engine`, `drivers/modbus` |
+| `DEVICE_EXCEPTION` | — | Thiết bị trường từ chối lệnh ghi | `core/tag-engine`, `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
 | `DEVICE_NOT_ACTIVE` | — | Thiết bị trường chưa hoạt động. | `core/tag-engine` |
 | `EXPECT_NOT_BOOL` | — | Chỉ Tag BOOL mới có giá trị mong đợi (expect). | `core/tag-engine` |
 | `LIVE_WRITE_NOT_ALLOWED` | — | Không ghi qua kênh dữ liệu sống | `server` |
 | `NOT_FINITE` | — | Giá trị phải là số hữu hạn. | `core/tag-engine` |
-| `NOT_SENT_DEADLINE` | — | Chưa gửi: lệnh ghi quá hạn writeDeadlineMs trong hàng đợi | `drivers/modbus` |
-| `NOT_SENT_DEVICE_SUSPENDED` | — | Chưa gửi: thiết bị trường đang tạm ngưng | `drivers/modbus` |
-| `NOT_SENT_DISCONNECTED` | — | Chưa gửi: mất kết nối tới thiết bị trường | `drivers/modbus` |
+| `NOT_SENT_DEADLINE` | — | Chưa gửi: lệnh ghi quá hạn writeDeadlineMs trong hàng đợi | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
+| `NOT_SENT_DEVICE_SUSPENDED` | — | Chưa gửi: thiết bị trường đang tạm ngưng | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus` |
+| `NOT_SENT_DISCONNECTED` | — | Chưa gửi: mất kết nối tới thiết bị trường | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
 | `NOT_SENT_PROJECT_CHANGE` | — | Chưa gửi: thiết bị đổi project | `core/tag-engine` |
 | `NOT_SENT_QUEUE_FULL` | — | Chưa gửi: hàng đợi ghi của kênh đã đầy | `core/tag-engine` |
-| `NOT_SENT_READ_FAILED` | — | Chưa gửi: đọc trước khi ghi lỗi | `drivers/modbus` |
-| `NOT_SENT_UNSUPPORTED` | — | Chưa gửi: thiết bị trường không hỗ trợ kiểu ghi này | `drivers/modbus` |
-| `NO_READBACK` | — | Thiết bị xác nhận, không đọc lại | `drivers/modbus` |
+| `NOT_SENT_READ_FAILED` | — | Chưa gửi: đọc trước khi ghi lỗi | `drivers/mc`, `drivers/modbus` |
+| `NOT_SENT_UNSUPPORTED` | — | Chưa gửi: thiết bị trường không hỗ trợ kiểu ghi này | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
+| `NO_READBACK` | — | Thiết bị xác nhận, không đọc lại | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
 | `NO_SUCH_REQUEST` | 404 | Không có lệnh ghi với mã yêu cầu này (quá 15 phút hoặc của tài khoản khác) | `server/http` |
 | `NO_SUCH_TAG` | — | Không có Tag này trên thiết bị. | `core/tag-engine` |
 | `OUT_OF_LIMITS` | — | Giá trị ngoài giới hạn nhập của Tag. | `core/logic`, `core/tag-engine` |
@@ -438,15 +445,15 @@ Tổng cộng 470 mã.
 | `PULSE_RELEASE_FAILED` | — | Đã ghi bật nhưng không ghi được giá trị trả về: bit lệnh có thể đang bật. | `core/tag-engine` |
 | `QUEUE_FULL` | — | Hàng đợi ghi đã đầy. | `core/tag-engine` |
 | `RATE_LIMITED` | 429 | Thao tác quá nhanh: hãy thử lại sau giây lát | `core/logic`, `core/tag-engine`, `server`, `server/http` |
-| `READBACK_ERROR` | — | Lỗi khi đọc lại sau khi ghi | `drivers/modbus` |
-| `READBACK_MISMATCH` | — | Đọc lại khác giá trị đã ghi | `drivers/modbus` |
-| `READBACK_TIMEOUT` | — | Đã ghi nhưng không đọc lại được: không chắc kết quả. | `core/tag-engine`, `drivers/modbus` |
+| `READBACK_ERROR` | — | Lỗi khi đọc lại sau khi ghi | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
+| `READBACK_MISMATCH` | — | Đọc lại khác giá trị đã ghi | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
+| `READBACK_TIMEOUT` | — | Đã ghi nhưng không đọc lại được: không chắc kết quả. | `core/tag-engine`, `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
 | `READ_ONLY` | — | Tag này không ghi được (chỉ đọc hoặc Tag tính toán). | `core/tag-engine` |
 | `REQUEST_ID_CONFLICT` | — | Mã yêu cầu này đã dùng cho một lệnh khác. | `core/tag-engine` |
 | `STALE_EXPECTATION` | — | Giá trị của Tag đã đổi so với lúc bạn xem: không ghi gì. | `core/tag-engine` |
 | `STRING_TOO_LONG` | — | Chuỗi dài hơn mức cho phép. | `core/tag-engine`, `drivers/modbus` |
 | `UNKNOWN_OUTCOME` | — | Runtime dừng giữa chừng: không rõ lệnh đã ghi chưa. | `core/audit`, `core/tag-engine` |
-| `WRITE_TIMEOUT` | — | Thiết bị trường không trả lời: không chắc đã ghi. | `core/tag-engine`, `drivers/modbus` |
+| `WRITE_TIMEOUT` | — | Thiết bị trường không trả lời: không chắc đã ghi. | `core/tag-engine`, `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
 
 <a id="quality"></a>
 
@@ -454,7 +461,20 @@ Tổng cộng 470 mã.
 
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
-| `BAD_FRAME` | — | Khung trả lời hỏng (CRC, độ dài hoặc định dạng Modbus) | `drivers/modbus`, `server/http` |
+| `BACNET_ABORT` | — | Thiết bị BACnet hủy giao dịch (Abort) | `drivers/bacnet`, `server/http` |
+| `BACNET_DATA_TYPE` | — | Kiểu dữ liệu không đúng với thuộc tính BACnet (invalid-data-type) | `drivers/bacnet` |
+| `BACNET_ERROR` | — | Thiết bị BACnet trả lời bằng lỗi khác (Error) | `drivers/bacnet`, `server/http` |
+| `BACNET_FAULT` | — | Đối tượng BACnet báo lỗi (status-flags fault) | `drivers/bacnet` |
+| `BACNET_OUT_OF_SERVICE` | — | Đối tượng BACnet đang out-of-service: giá trị không lấy từ thiết bị thật (UNCERTAIN) | `drivers/bacnet` |
+| `BACNET_OVERRIDDEN` | — | Đối tượng BACnet đang bị ghi đè tại chỗ (status-flags overridden, UNCERTAIN) | `drivers/bacnet` |
+| `BACNET_REJECT` | — | Thiết bị BACnet từ chối yêu cầu (Reject) | `drivers/bacnet`, `server/http` |
+| `BACNET_SEGMENTATION` | — | Câu trả lời BACnet quá lớn, cần segmentation mà driver không hỗ trợ | `drivers/bacnet`, `server/http` |
+| `BACNET_TYPE` | — | Giá trị BACnet trả về không đổi được sang kiểu của Tag | `drivers/bacnet` |
+| `BACNET_UNKNOWN_OBJECT` | — | Thiết bị BACnet không có đối tượng này (unknown-object) | `drivers/bacnet` |
+| `BACNET_UNKNOWN_PROPERTY` | — | Đối tượng BACnet không có thuộc tính này (unknown-property) | `drivers/bacnet` |
+| `BACNET_VALUE_RANGE` | — | Giá trị ngoài tầm thiết bị BACnet chấp nhận (value-out-of-range) | `drivers/bacnet` |
+| `BACNET_WRITE_DENIED` | — | Thiết bị BACnet không cho ghi thuộc tính này (write-access-denied) | `drivers/bacnet` |
+| `BAD_FRAME` | — | Khung trả lời hỏng (CRC, độ dài hoặc định dạng Modbus) | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/s7`, `server/http` |
 | `BAD_OPCODE` | — | Lỗi nội bộ của bộ chạy biểu thức (mã lệnh lạ) | `core/expression` |
 | `CLAMP_RANGE` | — | Hàm clamp có cận dưới lớn hơn cận trên | `core/expression` |
 | `DEVICE_SUSPENDED` | — | Thiết bị trường tạm ngưng sau nhiều lần không trả lời | `drivers/modbus` |
@@ -464,14 +484,43 @@ Tổng cộng 470 mã.
 | `EXCEPTION_0A` | — | Exception 0A: cổng nối không có đường tới thiết bị | `drivers/modbus` |
 | `EXCEPTION_0B` | — | Exception 0B: thiết bị sau cổng nối không trả lời | `drivers/modbus` |
 | `EXCEPTION_OTHER` | — | Exception lạ của thiết bị trường | `drivers/modbus` |
+| `FINS_ACCESS` | — | PLC Omron từ chối: lỗi lệnh, bảo vệ hoặc quyền truy cập (mã kết thúc 26xx, 30xx, 40xx) | `drivers/fins` |
+| `FINS_ADDRESS` | — | Địa chỉ ngoài vùng nhớ của PLC Omron (mã kết thúc 11xx) | `drivers/fins` |
+| `FINS_CANCELED` | — | PLC Omron hủy dịch vụ (mã kết thúc 0001) | `drivers/fins` |
+| `FINS_FORMAT` | — | PLC Omron báo lỗi định dạng lệnh (mã kết thúc 10xx) | `drivers/fins` |
+| `FINS_MODE` | — | PLC Omron không thực hiện được ở chế độ hiện tại, ví dụ PROGRAM (mã kết thúc 22xx) | `drivers/fins` |
+| `FINS_OTHER` | — | Mã kết thúc FINS lạ | `drivers/fins` |
+| `FINS_READ_DENIED` | — | PLC Omron không cho đọc (mã kết thúc 20xx) | `drivers/fins` |
+| `FINS_ROUTING` | — | Không tới được nút FINS đích: mạng, nút, unit hoặc bảng định tuyến (mã kết thúc 01xx, 02xx, 03xx, 05xx) | `drivers/fins` |
+| `FINS_UNIT_ERROR` | — | Lỗi unit hoặc thiết bị của PLC Omron (mã kết thúc 23xx, 24xx, 25xx) | `drivers/fins` |
+| `FINS_UNSUPPORTED` | — | PLC Omron không hỗ trợ lệnh này (mã kết thúc 04xx) | `drivers/fins` |
+| `FINS_WRITE_DENIED` | — | PLC Omron không cho ghi: vùng chỉ đọc hoặc đang bảo vệ (mã kết thúc 21xx) | `drivers/fins` |
 | `INPUT_BAD` | — | Đầu vào của biểu thức không tốt | `core/expression`, `core/logic`, `server/http` |
-| `INVALID_VALUE` | — | Giá trị không hợp lệ (NaN hoặc vô cực) | `core/tag-engine`, `drivers/modbus` |
+| `INVALID_VALUE` | — | Giá trị không hợp lệ (NaN hoặc vô cực) | `core/tag-engine`, `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/s7` |
+| `MC_END_COMMAND` | — | PLC Mitsubishi không nhận lệnh: lệnh, độ dài hoặc mã truyền binary/ASCII không khớp cấu hình PLC | `drivers/mc` |
+| `MC_END_DEVICE` | — | PLC Mitsubishi không đọc/ghi được thiết bị này hoặc chỉ định thiết bị sai (end code C05B, C05C, C060) | `drivers/mc` |
+| `MC_END_OTHER` | — | PLC Mitsubishi trả end code lỗi khác (mã cụ thể ở Chẩn đoán driver) | `drivers/mc` |
+| `MC_END_RANGE` | — | PLC Mitsubishi báo địa chỉ hoặc số điểm ngoài vùng (end code C051–C054, C056, 4030, 4031) | `drivers/mc` |
 | `MOD_ZERO` | — | Chia lấy dư cho 0 | `core/expression` |
 | `NOT_A_NUMBER` | — | Kết quả không phải số | `core/expression`, `core/tag-engine` |
 | `NO_SIGNAL` | — | Tín hiệu mô phỏng không có | `drivers/simulation` |
 | `NO_VALUE` | — | Chưa có giá trị | `core/expression`, `core/logic`, `core/tag-engine`, `server` |
+| `OPCUA_ACCESS_DENIED` | — | Server OPC UA không cho đọc node này (BadNotReadable, BadUserAccessDenied) | `drivers/opcua` |
+| `OPCUA_BAD_STATUS` | — | Server OPC UA trả StatusCode Bad cho node (tên mã ở Chẩn đoán driver) | `drivers/opcua` |
+| `OPCUA_NODE_UNKNOWN` | — | Server OPC UA không có node này (BadNodeIdUnknown) | `drivers/opcua` |
+| `OPCUA_TYPE_MISMATCH` | — | Kiểu dữ liệu của node OPC UA không đổi được sang kiểu của Tag (hoặc giá trị ngoài khoảng) | `drivers/opcua` |
+| `OPCUA_UNCERTAIN` | — | Server OPC UA trả StatusCode Uncertain cho node | `drivers/opcua` |
 | `OUT_OF_RANGE` | — | Kết quả ngoài khoảng của kiểu | `core/expression`, `core/tag-engine` |
 | `RETAIN_LOST` | — | Bản lưu giữ qua mất điện không đọc được, dùng giá trị đầu | `core/tag-engine` |
+| `S7_ACCESS_DENIED` | — | PLC S7 từ chối truy cập vùng nhớ (DB đang bật "Optimized block access" hoặc bị bảo vệ) | `drivers/s7` |
+| `S7_ADDRESS_OUT_OF_RANGE` | — | Địa chỉ S7 vượt quá kích thước DB hoặc vùng nhớ của PLC | `drivers/s7` |
+| `S7_HARDWARE_FAULT` | — | PLC S7 báo lỗi phần cứng khi đọc vùng nhớ | `drivers/s7` |
+| `S7_ITEM_ERROR` | — | PLC S7 báo lỗi khác khi đọc hoặc ghi vùng nhớ | `drivers/s7` |
+| `S7_OBJECT_NOT_FOUND` | — | DB không có trên PLC S7 | `drivers/s7` |
+| `S7_PDU_TOO_SMALL` | — | Tag lớn hơn một lần đọc với kích thước PDU mà PLC S7 chấp nhận | `drivers/s7` |
+| `S7_REQUEST_ERROR` | — | PLC S7 từ chối yêu cầu (lỗi ở đầu khung trả lời) | `drivers/s7` |
+| `S7_TYPE_INCONSISTENT` | — | PLC S7 báo kiểu dữ liệu không khớp | `drivers/s7` |
+| `S7_TYPE_NOT_SUPPORTED` | — | PLC S7 không hỗ trợ kiểu dữ liệu được yêu cầu | `drivers/s7` |
 | `SHORT_READ` | — | Thiết bị trường trả về ít dữ liệu hơn số thanh ghi cần đọc | `drivers/modbus` |
 | `TOO_BIG` | — | Dữ liệu giữ qua mất điện quá lớn để ghi vào file lưu | `core/tag-engine` |
 
@@ -481,15 +530,30 @@ Tổng cộng 470 mã.
 
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
+| `BBMD_NAK` | — | BBMD từ chối đăng ký foreign device của kênh BACnet | `drivers/bacnet` |
+| `END_CODE` | — | Thử kết nối: PLC Omron trả lời bằng mã kết thúc lỗi (FINS end code) | `drivers/fins`, `server/http` |
 | `E_FIELD_MISSING` | — | Thiếu trường bắt buộc trong yêu cầu Thử kết nối | `server/http` |
 | `E_FIELD_VALUE` | — | Giá trị của trường trong yêu cầu Thử kết nối không hợp lệ | `server/http` |
 | `E_PROBE_COUNT` | — | Số lượng cần đọc khi Thử kết nối ngoài khoảng cho phép | `server/http` |
+| `FINS_TCP_REFUSED` | — | PLC Omron từ chối bắt tay FINS/TCP: hết kết nối, nút trùng hoặc ngoài tầm | `drivers/fins` |
+| `NOT_SUPPORTED` | — | Loại kênh này chưa hỗ trợ Thử kết nối | `drivers/opcua`, `drivers/s7`, `server/http` |
+| `OPCUA_AUTH_FAILED` | — | Server OPC UA từ chối đăng nhập (sai username/mật khẩu hoặc không cho anonymous) | `drivers/opcua`, `server/http` |
+| `OPCUA_BROWSE_FAILED` | — | Không duyệt được node trên server OPC UA | `drivers/opcua`, `server/http` |
+| `OPCUA_CERT_UNTRUSTED` | — | Chứng chỉ server OPC UA chưa được tin hoặc khác chứng chỉ đã ghim (serverCertSha256) | `drivers/opcua`, `server/http` |
+| `OPCUA_ENDPOINT_NOT_FOUND` | — | Server OPC UA không có endpoint với securityMode/securityPolicy và kiểu xác thực đã chọn | `server/http` |
+| `OPCUA_SECRET_MISSING` | — | Chưa có mật khẩu của kênh OPC UA trên thiết bị: đặt bằng mat-runtime --set-secret <secretId> | `drivers/opcua`, `server/http` |
+| `OPCUA_SECURITY_REJECTED` | — | Server OPC UA từ chối kênh bảo mật (chứng chỉ client chưa được server tin, hoặc policy không hỗ trợ) | `drivers/opcua`, `server/http` |
+| `OPCUA_SERVER_CERT_EXPIRED` | — | Chứng chỉ server OPC UA đã ghim nhưng đã hết hạn | `drivers/opcua` |
+| `OPCUA_SUBSCRIPTION_FALLBACK` | — | Server OPC UA không cho subscription: nhóm quét chuyển sang đọc định kỳ | `drivers/opcua` |
 | `PORT_BUSY` | — | Cổng đang được chương trình khác dùng, hoặc kênh khác đang giữ cổng với tham số khác | `drivers/modbus`, `drivers/sdk`, `server`, `server/http` |
 | `PORT_CONSOLE` | — | Cổng này là console của hệ điều hành, không dùng được | `server`, `server/http` |
 | `PORT_ERROR` | — | Không mở được cổng serial | `drivers/modbus`, `drivers/sdk`, `server/http` |
 | `PORT_NOT_ALLOWED` | — | Cổng không nằm trong danh sách serialPorts của thiết bị | `server`, `server/http` |
 | `RS485_PROBE` | — | Dò RS485 trên cổng serial (bản ghi audit driver.test) | `server/http` |
 | `RS485_UNSUPPORTED` | — | Driver của cổng serial không hỗ trợ chế độ RS485 | `drivers/sdk`, `server` |
+| `S7_CONNECT_REJECTED` | — | PLC S7 từ chối kết nối ISO-on-TCP (sai rack/slot hoặc TSAP) | `drivers/s7` |
+| `S7_FUNCTION_NOT_AVAILABLE` | — | PLC S7 từ chối đọc/ghi: thường do chưa bật "Permit access with PUT/GET" trong TIA Portal | `drivers/s7` |
+| `S7_SETUP_FAILED` | — | PLC S7 không chấp nhận thương lượng PDU (Setup Communication) | `drivers/s7` |
 | `TEST_BUSY` | 409 | Đang có một lần Thử kết nối khác trên thiết bị này | `server/http` |
 | `TEST_RATE_LIMITED` | 429 | Thử kết nối quá 10 lần mỗi phút; thử lại sau thời gian trong header `Retry-After` | `server/http` |
 

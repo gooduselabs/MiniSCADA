@@ -8,7 +8,13 @@ import type {
   WatchTableDoc,
 } from '@mat/project-schema';
 import { t, type MessageKey } from '../i18n/index.ts';
-import { newChannel, newDevice } from './connections.ts';
+import {
+  canAddDevice,
+  newChannel,
+  newDevice,
+  oneDeviceReason,
+  type ChannelKind,
+} from './connections.ts';
 import type { ProjectEdit, ProjectOutline } from './project-doc.ts';
 import type { NodeRef } from './tree.ts';
 import { newWatchTable } from './watch-table.ts';
@@ -28,6 +34,8 @@ export interface AddPlan {
   edits: ProjectEdit[];
   /** Nút nên chọn sau khi thêm. */
   select: string;
+  /** Lý do không thêm được (để báo người dùng), ví dụ kênh S7 đã có CPU. */
+  reason?: MessageKey;
 }
 
 export interface RemovePlan {
@@ -90,7 +98,7 @@ export function currentName(ref: NodeRef, o: ProjectOutline): string {
 export function planAdd(
   ref: NodeRef,
   o: ProjectOutline,
-  kind: 'modbus-tcp' | 'modbus-rtu' = 'modbus-tcp',
+  kind: ChannelKind = 'modbus-tcp',
 ): AddPlan {
   switch (ref.type) {
     case 'connections': {
@@ -105,6 +113,8 @@ export function planAdd(
           ? chs.findIndex((c) => c.id === ref.id)
           : (locateDevice(o, ref.id)?.channel ?? -1);
       if (at < 0) return { edits: [], select: '' };
+      if (!canAddDevice(chs[at]))
+        return { edits: [], select: '', reason: oneDeviceReason(chs[at]) };
       const device = newDevice(chs[at], deviceIds(o));
       return {
         edits: [{ kind: 'deviceUpsert', channel: at, device }],
@@ -230,6 +240,8 @@ export function planDuplicate(ref: NodeRef, o: ProjectOutline): AddPlan {
     case 'device': {
       const at = locateDevice(o, ref.id);
       if (!at) return none;
+      if (!canAddDevice(channelsOf(o)[at.channel]!))
+        return { ...none, reason: oneDeviceReason(channelsOf(o)[at.channel]!) };
       const id = copyId(at.device.id, new Set([...channelIds(o), ...deviceIds(o)]), 32);
       const device: FieldDevice = {
         ...structuredClone(at.device),

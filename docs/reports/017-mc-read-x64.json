@@ -1,0 +1,36 @@
+{
+  "scenario": "read",
+  "checks": [
+    {
+      "name": "channel plc-a: every Tag GOOD and equal to the map",
+      "pass": true,
+      "detail": "383/383"
+    },
+    {
+      "name": "channel plc-b: every Tag GOOD and equal to the map",
+      "pass": true,
+      "detail": "173/173"
+    },
+    {
+      "name": "channel plc-c: every Tag GOOD and equal to the map",
+      "pass": true,
+      "detail": "37/37"
+    },
+    {
+      "name": "100 % of the Tags match the simulator (SC-001)",
+      "pass": true,
+      "detail": "593/593"
+    },
+    {
+      "name": "the Tags cover every device and every type of FR-003, FR-004",
+      "pass": true,
+      "detail": "D,W,R,ZR,SD,TN,CN,M,X,Y,B,L,SM / INT16,UINT16,INT32,UINT32,FLOAT32,FLOAT64,INT64,UINT64,STRING,BOOL"
+    }
+  ],
+  "measures": {
+    "firstGoodMs": 1,
+    "tagsChecked": 593,
+    "tagsMatching": 593
+  },
+  "pass": true
+}

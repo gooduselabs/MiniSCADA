@@ -200,6 +200,17 @@ export const viTables = {
   'cn.tagCount': '{n} Tag',
   'cn.channels': 'Kênh và thiết bị trường',
   'cn.groups.title': 'Nhóm quét',
+  'cn.opcda.title': 'OPC DA qua cầu nối',
+  'cn.opcda.help':
+    'OPC DA chỉ chạy trên Windows. Cài mAT OPC DA Bridge trên máy có OPC DA server, khai báo item trong config.json, rồi tạo kênh Modbus TCP tới IP máy đó (cổng 502, unit 1) và một thiết bị trong kênh. Xuất bảng ánh xạ bằng "mat-opcda-bridge export-csv" và nhập ở thiết bị này. Quality OPC nằm ở các thanh ghi IR; Tag BRIDGE_OK = 1 khi cầu nối đang nối OPC server.',
+  'cn.opcda.helpDevice':
+    'Nhập file CSV do "mat-opcda-bridge export-csv" xuất: mỗi item thành một Tag external trỏ tới thiết bị này. Tag cùng tên được cập nhật, không Tag nào bị xóa.',
+  'cn.opcda.quality': 'Thêm Tag quality (<tên>_Q)',
+  'cn.opcda.qualityDesc': 'Quality OPC của {id} (0 tốt, 1 không chắc, 2 xấu, 3 chưa có)',
+  'cn.opcda.import': 'Nhập ánh xạ OPC DA…',
+  'cn.opcda.done': 'Đã nhập: {add} Tag mới, {update} Tag cập nhật, {errors} dòng lỗi.',
+  'cn.opcda.line': 'Dòng {line}: {reason}',
+  'cn.opcda.fatal': 'Không nhập được file ánh xạ: {reason}',
   'cn.groups.help': 'Chu kỳ đọc của từng nhóm, 100–60.000 ms. Tag chọn nhóm ở cột Nhóm quét.',
   'cn.scan.fast': 'Nhanh (fast)',
   'cn.scan.normal': 'Thường (normal)',

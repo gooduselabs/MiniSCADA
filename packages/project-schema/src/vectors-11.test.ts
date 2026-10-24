@@ -39,6 +39,13 @@ describe('tests/project-vectors: v11-*', () => {
       // feature 013: security.view / security.operate (README-013.md)
       'E_SECURITY_LEVEL',
       'E_SECURITY_ITEM',
+      // feature 016: kênh S7 (README-016.md); feature 019: kênh OPC UA (README-019.md)
+      'E_DRIVER_VERSION',
+      'E_S7_TSAP',
+      'E_OPCUA_SECURITY',
+      'E_OPCUA_AUTH',
+      'W_OPCUA_PLAIN_PASSWORD',
+      'W_OPCUA_CERT_NOT_PINNED',
     ])
       expect(count(c), c).toBeGreaterThanOrEqual(2);
   });

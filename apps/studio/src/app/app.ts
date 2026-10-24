@@ -67,6 +67,7 @@ import { commandById, type CommandContext, type CommandId } from './commands.ts'
 import { helpTarget } from './help.ts';
 import { refOfNode } from '../model/tree.ts';
 import { ConnectionProbe, SerialPortsLoader, portsGate, probeGate } from '../model/connections.ts';
+import { OpcUaBrowser } from '../model/opcua-browse.ts';
 import { WriteController } from './write-controller.ts';
 import { SimController } from './sim-controller.ts';
 import type { SimEngineOptions } from '../model/sim-engine.ts';
@@ -83,6 +84,7 @@ import {
   screenAdd,
   screenSetEntry,
   treeAdd,
+  treeAddChannel,
   treeDuplicate,
   treeRemove,
   treeRename,
@@ -378,6 +380,8 @@ export class StudioApp {
   readonly probe: ConnectionProbe;
   /** Danh sách cổng serial của BL335 cho kênh RTU (feature 006, T171). */
   readonly ports: SerialPortsLoader;
+  /** Lấy chứng chỉ và Duyệt node của kênh OPC UA (feature 019): qua BL335, Studio không tự nối server. */
+  readonly opcua: OpcUaBrowser;
   /** Lệnh Ghi của Bảng theo dõi (feature 006, US2): trạng thái từng dòng, định nghĩa Tag trên BL335, bản chờ xác nhận. */
   readonly writes: WriteController;
   /** Mô phỏng dùng chung của Bảng Tag, Bảng theo dõi, xem trước (feature 006, FR-052). */
@@ -519,6 +523,20 @@ export class StudioApp {
       },
     });
     this.ports.subscribe(() => this.emit());
+    this.opcua = new OpcUaBrowser({
+      post: async (path, body) => {
+        const id = this.session.deviceId;
+        return link && id ? link.post(id, path, body) : { error: 'unreachable' };
+      },
+      gate: () => {
+        const c = this.commandContext();
+        return probeGate({
+          online: c.onlineAuth,
+          role: c.onlineAuth ? (this.session.auth?.role ?? null) : null,
+        });
+      },
+    });
+    this.opcua.subscribe(() => this.emit());
     this.writes = new WriteController({
       link,
       deviceId: () => this.session.deviceId,
@@ -680,6 +698,7 @@ export class StudioApp {
       this.diag?.reset();
       this.driverDiag?.stop();
       this.ports.reset();
+      this.opcua.reset();
       if (this.audit && this.audit.state.status !== 'idle') this.audit.reset();
     }
     const want = device !== null && this.u?.inspectorTab === 'diag';
@@ -1188,6 +1207,9 @@ export class StudioApp {
         return this.openReimport();
       case 'screen.add':
         return screenAdd(this, 'screen');
+      case 'connections.addMc':
+        this.openEditor('connections');
+        return treeAddChannel(this, 'mc');
       case 'report.add':
         this.openEditor('reports');
         return;

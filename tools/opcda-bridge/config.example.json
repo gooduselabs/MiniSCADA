@@ -1,0 +1,48 @@
+{
+  "opc": {
+    "progId": "Kepware.KEPServerEX.V6",
+    "updateRateMs": 500,
+    "deadbandPercent": 0,
+    "reconnectMaxS": 30,
+    "groupName": "mAT",
+    "subscription": true
+  },
+  "modbus": {
+    "bind": "0.0.0.0",
+    "port": 502,
+    "unitId": 1,
+    "allow": ["192.0.2.10"],
+    "maxConnections": 8,
+    "idleTimeoutS": 60,
+    "writeTimeoutMs": 3000
+  },
+  "log": {
+    "file": "C:\\ProgramData\\mAT\\opcda-bridge\\logs\\bridge.log",
+    "debug": false,
+    "maxBytes": 5000000
+  },
+  "items": [
+    {
+      "id": "TANK1.LEVEL",
+      "item": "Channel1.Device1.Level",
+      "type": "FLOAT32",
+      "unit": "%",
+      "description": "Mức bồn 1"
+    },
+    {
+      "id": "PUMP1.RUN",
+      "item": "Channel1.Device1.PumpRun",
+      "type": "BOOL",
+      "access": "RW",
+      "description": "Lệnh chạy bơm 1"
+    },
+    {
+      "id": "PUMP1.SPEED_SP",
+      "item": "Channel1.Device1.SpeedSP",
+      "type": "INT16",
+      "access": "RW",
+      "unit": "rpm"
+    },
+    { "id": "LINE1.COUNT", "item": "Channel1.Device1.Counter", "type": "UINT32" }
+  ]
+}

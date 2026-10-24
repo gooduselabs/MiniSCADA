@@ -1,0 +1,94 @@
+{
+  "scenario": "write",
+  "checks": [
+    {
+      "name": "write UA.BOOL = false: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:01:04.272Z\",\"readback\":false,\"receivedAt\":\"2026-10-24T16:01:04.122Z\",\"requestId\":\"e1d5723c-ab4b-446d-8608-0ee5321d7fbd\",\"status\":\"CONFIRMED\",\"tag\":\"UA.BOOL\",\"value\":false}"
+    },
+    {
+      "name": "write UA.BOOL: live value",
+      "pass": true,
+      "detail": "{\"value\":false,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write UA.BYTE = 17: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:01:04.521Z\",\"readback\":17,\"receivedAt\":\"2026-10-24T16:01:04.334Z\",\"requestId\":\"7e4af3e2-d9bb-4eeb-868d-fca64b4612d9\",\"status\":\"CONFIRMED\",\"tag\":\"UA.BYTE\",\"value\":17}"
+    },
+    {
+      "name": "write UA.BYTE: live value",
+      "pass": true,
+      "detail": "{\"value\":17,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write UA.INT16 = -2000: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:01:04.770Z\",\"readback\":-2000,\"receivedAt\":\"2026-10-24T16:01:04.547Z\",\"requestId\":\"21c20262-8248-44cb-8a2c-7c96c8a37710\",\"status\":\"CONFIRMED\",\"tag\":\"UA.INT16\",\"value\":-2000}"
+    },
+    {
+      "name": "write UA.INT16: live value",
+      "pass": true,
+      "detail": "{\"value\":-2000,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write UA.INT32 = 765432: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:01:05.020Z\",\"readback\":765432,\"receivedAt\":\"2026-10-24T16:01:04.966Z\",\"requestId\":\"9c041574-293e-4aaf-8e33-bff7b45adb25\",\"status\":\"CONFIRMED\",\"tag\":\"UA.INT32\",\"value\":765432}"
+    },
+    {
+      "name": "write UA.INT32: live value",
+      "pass": true,
+      "detail": "{\"value\":765432,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write UA.FLOAT = 1.5: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:01:05.270Z\",\"readback\":1.5,\"receivedAt\":\"2026-10-24T16:01:05.176Z\",\"requestId\":\"8c22ddc4-b3da-416e-80c8-fedcffad91e6\",\"status\":\"CONFIRMED\",\"tag\":\"UA.FLOAT\",\"value\":1.5}"
+    },
+    {
+      "name": "write UA.FLOAT: live value",
+      "pass": true,
+      "detail": "{\"value\":1.5,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write UA.DOUBLE = 12345.678: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:01:05.520Z\",\"readback\":12345.678,\"receivedAt\":\"2026-10-24T16:01:05.386Z\",\"requestId\":\"86251b29-0a01-4efb-8f43-e3a63b95faa5\",\"status\":\"CONFIRMED\",\"tag\":\"UA.DOUBLE\",\"value\":12345.678}"
+    },
+    {
+      "name": "write UA.DOUBLE: live value",
+      "pass": true,
+      "detail": "{\"value\":12345.678,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write UA.STRING = \"Bơm 2 chạy\": CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:01:05.770Z\",\"readback\":\"Bơm 2 chạy\",\"receivedAt\":\"2026-10-24T16:01:05.597Z\",\"requestId\":\"2227b746-3d8f-422c-87c1-3351e351be19\",\"status\":\"CONFIRMED\",\"tag\":\"UA.STRING\",\"value\":\"Bơm 2 chạy\"}"
+    },
+    {
+      "name": "write UA.STRING: live value",
+      "pass": true,
+      "detail": "{\"value\":\"Bơm 2 chạy\",\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write to a read-only node: refused by the server",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"finishedAt\":\"2026-10-24T16:01:06.021Z\",\"receivedAt\":\"2026-10-24T16:01:05.807Z\",\"requestId\":\"aa67155d-d585-4e7c-8ea3-12cf1b074a4c\",\"status\":\"FAILED\",\"tag\":\"UA.READONLY\",\"value\":50}"
+    },
+    {
+      "name": "write beyond limits refused before the server",
+      "pass": true,
+      "detail": "{\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"4a302f8f-5bbd-4bc0-8211-7082947b659b\",\"status\":\"REJECTED\"}"
+    },
+    {
+      "name": "audit: tag.write rows for UA.INT16",
+      "pass": true,
+      "detail": "3 rows"
+    }
+  ],
+  "measures": {
+    "writeMsMax": 420
+  },
+  "pass": true
+}

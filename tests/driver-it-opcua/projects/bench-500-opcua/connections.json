@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.1.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "ua-1",
+      "name": "Giả lập OPC UA",
+      "kind": "opcua",
+      "opcua": {
+        "endpointUrl": "opc.tcp://sim:4840",
+        "connectTimeoutMs": 3000,
+        "reconnectMaxS": 4
+      },
+      "devices": [
+        {
+          "id": "srv1",
+          "name": "Server giả lập",
+          "timeoutMs": 1000
+        }
+      ]
+    }
+  ]
+}

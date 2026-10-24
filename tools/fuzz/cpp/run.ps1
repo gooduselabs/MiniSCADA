@@ -6,7 +6,7 @@
 param(
     [int]$Seconds = 3600,
     [UInt64]$Seed = 20261017,
-    [string[]]$Targets = @('logic-json', 'package', 'project-json', 'expression', 'modbus', 'update-envelope'),
+    [string[]]$Targets = @('logic-json', 'package', 'project-json', 'expression', 'modbus', 'update-envelope', 'mc'),
     [string]$BuildDir = ''
 )
 $ErrorActionPreference = 'Stop'

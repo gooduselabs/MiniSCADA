@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_OPCUA_SECURITY"],"runtimeVersion":"1.1.0","issues":[{"code":"E_OPCUA_SECURITY","file":"connections.json","path":"/channels/2/opcua/securityPolicy"}]}

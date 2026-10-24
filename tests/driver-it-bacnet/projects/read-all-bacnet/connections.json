@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.1.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "bms",
+      "name": "Giả lập BACnet",
+      "kind": "bacnet",
+      "bacnet": {
+        "broadcast": "172.30.20.255",
+        "reconnectMaxS": 4
+      },
+      "devices": [
+        {
+          "id": "ahu1",
+          "name": "AHU-1",
+          "deviceInstance": 1001,
+          "host": "sim"
+        },
+        {
+          "id": "vav7",
+          "name": "VAV-7 sau router",
+          "deviceInstance": 7,
+          "host": "sim",
+          "network": 5,
+          "mac": "07",
+          "maxApdu": 480
+        }
+      ]
+    }
+  ]
+}

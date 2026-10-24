@@ -12,8 +12,13 @@
 #include "core/project-manager/project_validator.hpp"
 #include "core/tag-engine/scaling.hpp"
 #include "core/tag-engine/tag_store.hpp"
+#include "drivers/bacnet/address.hpp"
+#include "drivers/fins/address.hpp"
+#include "drivers/mc/mc_address.hpp"
 #include "drivers/modbus/address.hpp"
 #include "drivers/modbus/codec.hpp"
+#include "drivers/opcua/node_id.hpp"
+#include "drivers/s7/address.hpp"
 #include "drivers/sdk/driver.hpp"
 #include "drivers/simulation/sim_generators.hpp"
 
@@ -36,6 +41,14 @@ struct TagSourceModel {
     int stringLength = 0;
     bool readback = true;
     modbus::AddressResult addr;  // parsed with the field device's addressBase
+    s7::Address s7addr;          // feature 016: the address of a Tag of an S7 channel
+    // Feature 018: a Tag of an Omron FINS field device (addr is then not used)
+    fins::Address finsAddr;
+    bool bcd = false;
+    mc::McAddress mcAddr;  // feature 017: the address of a Tag of an "mc" channel
+    // Feature 020: a Tag of a BACnet device (addr is then not used)
+    bacnet::Address bacnetAddr;
+    opcua::NodeIdRef nodeId;  // feature 019: the NodeId of a Tag of an OPC UA channel
 };
 
 struct TagModel {
@@ -88,11 +101,40 @@ struct DeviceModel {
     bool singleRegisterFc16 = false;  // write.singleRegister = fc16
     bool singleCoilFc15 = false;      // write.singleCoil = fc15
     drv::BitWrite bitWrite = drv::BitWrite::None;
+    int maxGapBytes = 16;  // S7 (feature 016)
+    // Feature 018, Omron FINS: the destination (network, node 0 = automatic, unit) and the read
+    // plan
+    int finsNetwork = 0, finsNode = 0, finsUnit = 0;
+    int maxReadWords = 999, maxGapWords = 10;
+    bool multiRead = true;
+    int maxMultiItems = 64;
+    // Mitsubishi MC (feature 017)
+    int network = 0, station = 255, moduleIo = 0x03FF, moduleStation = 0;
+    bool xyOctal = false;
+    int maxBatchWords = 960;  // maxGapWords above, shared (the MC parser sets 16)
+    bool randomRead = true;
+    int maxRandomPoints = 192;
+    // Feature 020, BACnet/IP: the device (instance, IP or name, port, router network and MAC in
+    // hex) and how it is read and written
+    uint32_t bacnetInstance = 0;
+    std::string bacnetHost, bacnetMac;
+    int bacnetPort = 47808, bacnetNetwork = 0, bacnetMaxApdu = 1476, bacnetWritePriority = 16;
+    bool bacnetUseRpm = true;
+    int bacnetMaxRpmProps = 32;
 };
 
 struct ChannelModel {
     std::string id, name;
+    std::string kind = "modbus-tcp";  // modbus-tcp | modbus-rtu | s7 (016) | fins (018) | mc (017)
+                                      // | bacnet (020) | opcua (019)
     bool rtu = false;
+    bool isFins = false;  // feature 018: an Omron FINS channel (host, port, the fields below)
+    bool finsTcp = false;
+    int finsSourceNetwork = 0, finsSourceNode = 0, finsLocalPort = 0;
+    // Feature 020: a BACnet/IP channel (port = the local UDP port, the fields below)
+    bool isBacnet = false;
+    std::string bacnetBindAddress, bacnetBroadcast = "255.255.255.255", bacnetBbmdHost;
+    int bacnetBbmdPort = 47808, bacnetBbmdTtlS = 300;
     bool enabled = true;
     std::string host;
     int port = 502;
@@ -104,6 +146,21 @@ struct ChannelModel {
     bool rs485 = true, dropEcho = false;
     int silenceMs = 0;  // 0: derive from the speed (t3.5)
     int requestGapMs = 0;
+    // S7 (feature 016): TSAPs (from rack/slot or given) and the PDU size asked for
+    int s7LocalTsap = 0x0100;
+    int s7RemoteTsap = 0x0101;
+    int s7PduSize = 480;
+    // Mitsubishi MC (feature 017): `mc` of the channel
+    std::string mcFrame = "3E", mcCode = "binary", mcTransport = "tcp";
+    // OPC UA (feature 019, contracts/opcua.md §1); connectTimeoutMs and reconnectMaxS above
+    std::string opcuaEndpoint;
+    std::string opcuaSecurityMode = "None";    // None | Sign | SignAndEncrypt
+    std::string opcuaSecurityPolicy = "None";  // None | Basic256Sha256
+    std::string opcuaServerCertSha256;         // pinned, "" none
+    bool opcuaAuthUsername = false;
+    std::string opcuaUsername, opcuaSecretId;
+    bool opcuaPoll = false;  // readMode poll
+    int opcuaSessionTimeoutMs = 60000;
     std::vector<size_t> devices;  // indexes in ProjectModel::devices
 };
 

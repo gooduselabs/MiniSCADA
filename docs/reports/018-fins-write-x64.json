@@ -1,0 +1,187 @@
+{
+  "scenario": "fins-write",
+  "checks": [
+    {
+      "name": "write WU.I16 = -321 is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:03.361Z\",\"readback\":-321,\"receivedAt\":\"2026-10-24T16:03:03.249Z\",\"requestId\":\"3320bb56-fa5a-43c4-8193-8827315abb56\",\"status\":\"CONFIRMED\",\"tag\":\"WU.I16\",\"value\":-321}"
+    },
+    {
+      "name": "the simulator holds WU.I16",
+      "pass": true
+    },
+    {
+      "name": "the live value of WU.I16 follows",
+      "pass": true,
+      "detail": "{\"value\":-321,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WU.BIT = true is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:03.611Z\",\"readback\":true,\"receivedAt\":\"2026-10-24T16:03:03.413Z\",\"requestId\":\"3320bb57-ccd5-49b9-8ae3-a1024d28bb57\",\"status\":\"CONFIRMED\",\"tag\":\"WU.BIT\",\"value\":true}"
+    },
+    {
+      "name": "the simulator holds WU.BIT",
+      "pass": true
+    },
+    {
+      "name": "the live value of WU.BIT follows",
+      "pass": true,
+      "detail": "{\"value\":true,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WU.BCD = 4321 is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:03.861Z\",\"readback\":4321,\"receivedAt\":\"2026-10-24T16:03:03.731Z\",\"requestId\":\"3320bb58-f7bb-4a5f-8d11-6765ce20bb58\",\"status\":\"CONFIRMED\",\"tag\":\"WU.BCD\",\"value\":4321}"
+    },
+    {
+      "name": "the simulator holds WU.BCD",
+      "pass": true
+    },
+    {
+      "name": "the live value of WU.BCD follows",
+      "pass": true,
+      "detail": "{\"value\":4321,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WU.F32 = 2.5 is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:04.111Z\",\"readback\":2.5,\"receivedAt\":\"2026-10-24T16:03:03.895Z\",\"requestId\":\"3320bb59-21c2-4b8d-82cc-5337758dbb59\",\"status\":\"CONFIRMED\",\"tag\":\"WU.F32\",\"value\":2.5}"
+    },
+    {
+      "name": "the simulator holds WU.F32",
+      "pass": true
+    },
+    {
+      "name": "the live value of WU.F32 follows",
+      "pass": true,
+      "detail": "{\"value\":2.5,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WU.U32 = 3000000000 is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:04.361Z\",\"readback\":3000000000,\"receivedAt\":\"2026-10-24T16:03:04.217Z\",\"requestId\":\"3320bb5a-3410-4293-84f8-df819771bb5a\",\"status\":\"CONFIRMED\",\"tag\":\"WU.U32\",\"value\":3000000000}"
+    },
+    {
+      "name": "the simulator holds WU.U32",
+      "pass": true
+    },
+    {
+      "name": "the live value of WU.U32 follows",
+      "pass": true,
+      "detail": "{\"value\":3000000000,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WU.STR = \"Van 2\" is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:04.611Z\",\"readback\":\"Van 2\",\"receivedAt\":\"2026-10-24T16:03:04.380Z\",\"requestId\":\"3320bb5b-2124-4b7d-84df-092965e6bb5b\",\"status\":\"CONFIRMED\",\"tag\":\"WU.STR\",\"value\":\"Van 2\"}"
+    },
+    {
+      "name": "the simulator holds WU.STR",
+      "pass": true
+    },
+    {
+      "name": "the live value of WU.STR follows",
+      "pass": true,
+      "detail": "{\"value\":\"Van 2\",\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WT.I16 = -321 is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:04.861Z\",\"readback\":-321,\"receivedAt\":\"2026-10-24T16:03:04.695Z\",\"requestId\":\"3320bb5c-7384-447b-8b73-2ff10bbdbb5c\",\"status\":\"CONFIRMED\",\"tag\":\"WT.I16\",\"value\":-321}"
+    },
+    {
+      "name": "the simulator holds WT.I16",
+      "pass": true
+    },
+    {
+      "name": "the live value of WT.I16 follows",
+      "pass": true,
+      "detail": "{\"value\":-321,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WT.BIT = true is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:05.111Z\",\"readback\":true,\"receivedAt\":\"2026-10-24T16:03:05.013Z\",\"requestId\":\"3320bb5d-d667-4bf1-858c-66aee102bb5d\",\"status\":\"CONFIRMED\",\"tag\":\"WT.BIT\",\"value\":true}"
+    },
+    {
+      "name": "the simulator holds WT.BIT",
+      "pass": true
+    },
+    {
+      "name": "the live value of WT.BIT follows",
+      "pass": true,
+      "detail": "{\"value\":true,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WT.BCD = 4321 is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:05.361Z\",\"readback\":4321,\"receivedAt\":\"2026-10-24T16:03:05.176Z\",\"requestId\":\"3320bb5e-64cc-4477-8f18-cd139ef7bb5e\",\"status\":\"CONFIRMED\",\"tag\":\"WT.BCD\",\"value\":4321}"
+    },
+    {
+      "name": "the simulator holds WT.BCD",
+      "pass": true
+    },
+    {
+      "name": "the live value of WT.BCD follows",
+      "pass": true,
+      "detail": "{\"value\":4321,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WT.F32 = 2.5 is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:05.611Z\",\"readback\":2.5,\"receivedAt\":\"2026-10-24T16:03:05.490Z\",\"requestId\":\"3320bb5f-bb6c-4fa2-8221-f7a4c65ebb5f\",\"status\":\"CONFIRMED\",\"tag\":\"WT.F32\",\"value\":2.5}"
+    },
+    {
+      "name": "the simulator holds WT.F32",
+      "pass": true
+    },
+    {
+      "name": "the live value of WT.F32 follows",
+      "pass": true,
+      "detail": "{\"value\":2.5,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WT.U32 = 3000000000 is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:06.361Z\",\"readback\":3000000000,\"receivedAt\":\"2026-10-24T16:03:06.355Z\",\"requestId\":\"3320bb61-ef7c-45b0-8794-d05fbde3bb61\",\"status\":\"CONFIRMED\",\"tag\":\"WT.U32\",\"value\":3000000000}"
+    },
+    {
+      "name": "the simulator holds WT.U32",
+      "pass": true
+    },
+    {
+      "name": "the live value of WT.U32 follows",
+      "pass": true,
+      "detail": "{\"value\":3000000000,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write WT.STR = \"Van 2\" is confirmed",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T16:03:09.402Z\",\"readback\":\"Van 2\",\"receivedAt\":\"2026-10-24T16:03:09.398Z\",\"requestId\":\"3320bb63-9109-48d2-8157-b1842251bb63\",\"status\":\"CONFIRMED\",\"tag\":\"WT.STR\",\"value\":\"Van 2\"}"
+    },
+    {
+      "name": "the simulator holds WT.STR",
+      "pass": true
+    },
+    {
+      "name": "the live value of WT.STR follows",
+      "pass": true,
+      "detail": "{\"value\":\"Van 2\",\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "an end code on a write is DEVICE_EXCEPTION",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"2101\",\"meaning\":\"end code khác của PLC\"},\"finishedAt\":\"2026-10-24T16:03:12.402Z\",\"receivedAt\":\"2026-10-24T16:03:12.399Z\",\"requestId\":\"3320bb65-10b6-4c74-8dd7-b24e2150bb65\",\"status\":\"FAILED\",\"tag\":\"WU.I16\",\"value\":77}"
+    },
+    {
+      "name": "the refused write was sent once",
+      "pass": true,
+      "detail": "1"
+    }
+  ],
+  "measures": {
+    "writes": 13
+  },
+  "pass": true
+}

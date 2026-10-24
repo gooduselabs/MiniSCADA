@@ -4,6 +4,8 @@
 // Chuỗi của từng nhóm editor nằm ở file riêng (vi-tags.ts, vi-device.ts, vi-logging.ts) rồi gộp ở cuối.
 // Feature 005: làm việc với thiết bị (tìm thiết bị, ghim chứng chỉ, đăng nhập) ở vi-online.ts.
 import { viAudit } from './vi-audit.ts';
+import { viFins } from './vi-fins.ts';
+import { viBacnet } from './vi-bacnet.ts';
 import { viTables } from './vi-tables.ts';
 import { viCompare } from './vi-compare.ts';
 import { viDeploy } from './vi-deploy.ts';
@@ -32,6 +34,9 @@ import { viSvgDraw } from './vi-svgdraw.ts';
 import { viUpdate } from './vi-update.ts';
 import { viNewProject } from './vi-newproject.ts';
 import { viDashboard } from './vi-dashboard.ts';
+import { viS7 } from './vi-s7.ts';
+import { viMc } from './vi-mc.ts';
+import { viOpcUa } from './vi-opcua.ts';
 
 const viCore = {
   // ---- Giai đoạn của lộ trình v2: nhãn cạnh mục chưa làm (cây, task card, trang giai đoạn) ----
@@ -485,4 +490,9 @@ export const viMessages = {
   ...viLogicDiagram,
   ...viSvgDraw,
   ...viUpdate,
+  ...viS7,
+  ...viFins,
+  ...viMc,
+  ...viBacnet,
+  ...viOpcUa,
 } as const;

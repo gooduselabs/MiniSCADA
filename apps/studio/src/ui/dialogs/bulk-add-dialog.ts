@@ -59,7 +59,13 @@ export class MatBulkAddDialog extends OnlineDialog {
   private devices() {
     const channels = this.app.store.state.outline.connections?.channels ?? [];
     return channels.flatMap((c) =>
-      (c.devices ?? []).map((d) => ({ id: d.id, name: d.name, addressBase: d.addressBase })),
+      (c.devices ?? []).map((d) => ({
+        id: d.id,
+        name: d.name,
+        addressBase: d.addressBase,
+        // feature 017: thiết bị của kênh MC đọc địa chỉ theo ngữ pháp MC
+        ...(c.kind === 'mc' ? { channelKind: c.kind, xyNotation: d.xyNotation ?? 'hex' } : {}),
+      })),
     );
   }
 

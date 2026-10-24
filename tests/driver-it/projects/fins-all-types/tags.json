@@ -1,0 +1,619 @@
+{
+  "schemaVersion": "1.1.0",
+  "tags": [
+    {
+      "id": "U.D100",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cj2u",
+        "address": "D100"
+      }
+    },
+    {
+      "id": "U.D101",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2u",
+        "address": "D101"
+      }
+    },
+    {
+      "id": "U.D102",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "cj2u",
+        "address": "D102"
+      }
+    },
+    {
+      "id": "U.D104",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "cj2u",
+        "address": "D104"
+      }
+    },
+    {
+      "id": "U.D106",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "cj2u",
+        "address": "D106"
+      }
+    },
+    {
+      "id": "U.D110",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "cj2u",
+        "address": "D110"
+      }
+    },
+    {
+      "id": "U.D120",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "cj2u",
+        "address": "D120"
+      }
+    },
+    {
+      "id": "U.D130",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "cj2u",
+        "address": "D130",
+        "stringLength": 6
+      }
+    },
+    {
+      "id": "U.D140",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2u",
+        "address": "D140",
+        "bcd": true
+      }
+    },
+    {
+      "id": "U.D141",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "cj2u",
+        "address": "D141",
+        "bcd": true
+      }
+    },
+    {
+      "id": "U.D150_03",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2u",
+        "address": "D150.03"
+      }
+    },
+    {
+      "id": "U.D150_04",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2u",
+        "address": "D150.04"
+      }
+    },
+    {
+      "id": "U.CIO10_03",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2u",
+        "address": "CIO10.03"
+      }
+    },
+    {
+      "id": "U.W5_00",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2u",
+        "address": "W5.00"
+      }
+    },
+    {
+      "id": "U.H2",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2u",
+        "address": "H2"
+      }
+    },
+    {
+      "id": "U.A448",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2u",
+        "address": "A448"
+      }
+    },
+    {
+      "id": "U.E0_100",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "cj2u",
+        "address": "E0_100"
+      }
+    },
+    {
+      "id": "U.EC_5",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cj2u",
+        "address": "EC_5"
+      }
+    },
+    {
+      "id": "U.T5",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2u",
+        "address": "T5"
+      }
+    },
+    {
+      "id": "U.T5_DONE",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2u",
+        "address": "T5"
+      }
+    },
+    {
+      "id": "U.C12",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2u",
+        "address": "C12"
+      }
+    },
+    {
+      "id": "U.C12_DONE",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2u",
+        "address": "C12"
+      }
+    },
+    {
+      "id": "U.SCALED",
+      "kind": "external",
+      "type": "FLOAT32",
+      "scaling": {
+        "rawMin": 0,
+        "rawMax": 4000,
+        "engMin": 0,
+        "engMax": 100
+      },
+      "source": {
+        "device": "cj2u",
+        "address": "D160",
+        "rawType": "INT16"
+      }
+    },
+    {
+      "id": "T.D100",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cj2t",
+        "address": "D100"
+      }
+    },
+    {
+      "id": "T.D101",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2t",
+        "address": "D101"
+      }
+    },
+    {
+      "id": "T.D102",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "cj2t",
+        "address": "D102"
+      }
+    },
+    {
+      "id": "T.D104",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "cj2t",
+        "address": "D104"
+      }
+    },
+    {
+      "id": "T.D106",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "cj2t",
+        "address": "D106"
+      }
+    },
+    {
+      "id": "T.D110",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "cj2t",
+        "address": "D110"
+      }
+    },
+    {
+      "id": "T.D120",
+      "kind": "external",
+      "type": "INT64",
+      "source": {
+        "device": "cj2t",
+        "address": "D120"
+      }
+    },
+    {
+      "id": "T.D130",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "cj2t",
+        "address": "D130",
+        "stringLength": 6
+      }
+    },
+    {
+      "id": "T.D140",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2t",
+        "address": "D140",
+        "bcd": true
+      }
+    },
+    {
+      "id": "T.D141",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "cj2t",
+        "address": "D141",
+        "bcd": true
+      }
+    },
+    {
+      "id": "T.D150_03",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2t",
+        "address": "D150.03"
+      }
+    },
+    {
+      "id": "T.D150_04",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2t",
+        "address": "D150.04"
+      }
+    },
+    {
+      "id": "T.CIO10_03",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2t",
+        "address": "CIO10.03"
+      }
+    },
+    {
+      "id": "T.W5_00",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2t",
+        "address": "W5.00"
+      }
+    },
+    {
+      "id": "T.H2",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2t",
+        "address": "H2"
+      }
+    },
+    {
+      "id": "T.A448",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2t",
+        "address": "A448"
+      }
+    },
+    {
+      "id": "T.E0_100",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "cj2t",
+        "address": "E0_100"
+      }
+    },
+    {
+      "id": "T.EC_5",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cj2t",
+        "address": "EC_5"
+      }
+    },
+    {
+      "id": "T.T5",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2t",
+        "address": "T5"
+      }
+    },
+    {
+      "id": "T.T5_DONE",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2t",
+        "address": "T5"
+      }
+    },
+    {
+      "id": "T.C12",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cj2t",
+        "address": "C12"
+      }
+    },
+    {
+      "id": "T.C12_DONE",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cj2t",
+        "address": "C12"
+      }
+    },
+    {
+      "id": "T.SCALED",
+      "kind": "external",
+      "type": "FLOAT32",
+      "scaling": {
+        "rawMin": 0,
+        "rawMax": 4000,
+        "engMin": 0,
+        "engMax": 100
+      },
+      "source": {
+        "device": "cj2t",
+        "address": "D160",
+        "rawType": "INT16"
+      }
+    },
+    {
+      "id": "WU.I16",
+      "kind": "external",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -30000,
+        "max": 30000
+      },
+      "source": {
+        "device": "cj2u",
+        "address": "D300"
+      }
+    },
+    {
+      "id": "WU.BIT",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "cj2u",
+        "address": "W13.07"
+      }
+    },
+    {
+      "id": "WU.BCD",
+      "kind": "external",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 9999
+      },
+      "source": {
+        "device": "cj2u",
+        "address": "D310",
+        "bcd": true
+      }
+    },
+    {
+      "id": "WU.F32",
+      "kind": "external",
+      "type": "FLOAT32",
+      "access": "RW",
+      "limits": {
+        "min": -1000,
+        "max": 1000
+      },
+      "source": {
+        "device": "cj2u",
+        "address": "D320"
+      }
+    },
+    {
+      "id": "WU.U32",
+      "kind": "external",
+      "type": "UINT32",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 4000000000
+      },
+      "source": {
+        "device": "cj2u",
+        "address": "E1_300"
+      }
+    },
+    {
+      "id": "WU.STR",
+      "kind": "external",
+      "type": "STRING",
+      "access": "RW",
+      "limits": {
+        "maxLength": 8
+      },
+      "source": {
+        "device": "cj2u",
+        "address": "D330",
+        "stringLength": 8
+      }
+    },
+    {
+      "id": "WT.I16",
+      "kind": "external",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -30000,
+        "max": 30000
+      },
+      "source": {
+        "device": "cj2t",
+        "address": "D400"
+      }
+    },
+    {
+      "id": "WT.BIT",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "cj2t",
+        "address": "W14.07"
+      }
+    },
+    {
+      "id": "WT.BCD",
+      "kind": "external",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 9999
+      },
+      "source": {
+        "device": "cj2t",
+        "address": "D410",
+        "bcd": true
+      }
+    },
+    {
+      "id": "WT.F32",
+      "kind": "external",
+      "type": "FLOAT32",
+      "access": "RW",
+      "limits": {
+        "min": -1000,
+        "max": 1000
+      },
+      "source": {
+        "device": "cj2t",
+        "address": "D420"
+      }
+    },
+    {
+      "id": "WT.U32",
+      "kind": "external",
+      "type": "UINT32",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 4000000000
+      },
+      "source": {
+        "device": "cj2t",
+        "address": "E1_400"
+      }
+    },
+    {
+      "id": "WT.STR",
+      "kind": "external",
+      "type": "STRING",
+      "access": "RW",
+      "limits": {
+        "maxLength": 8
+      },
+      "source": {
+        "device": "cj2t",
+        "address": "D430",
+        "stringLength": 8
+      }
+    },
+    {
+      "id": "E.D19995",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cj2u",
+        "address": "D19995"
+      }
+    },
+    {
+      "id": "E.D20001",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cj2u",
+        "address": "D20001"
+      }
+    }
+  ]
+}

@@ -8,7 +8,7 @@ import type { IconName } from '../icons/icons.ts';
 import { treeMarks } from './compare-view.ts';
 import type { SessionState } from './device-session.ts';
 import type { ProjectOutline } from './project-doc.ts';
-import { tagsPerDevice } from './connections.ts';
+import { channelSub, deviceSub, tagsPerDevice } from './connections.ts';
 import type { TagV1 } from '@mat/project-schema';
 
 /** Giai đoạn của lộ trình v2 hoặc feature sau (nhãn cạnh mục chưa làm). */
@@ -442,14 +442,14 @@ function deviceChildren02(
   const connChildren: TreeNode[] = channels.map((ch) => ({
     id: `channel:${ch.id}`,
     label: nonEmpty(ch.name) ? ch.name : ch.id,
-    sub: ch.kind === 'modbus-rtu' ? 'RTU' : 'TCP',
-    icon: 'connection',
+    sub: channelSub(ch),
+    icon: ch.kind === 's7' ? 'plc' : 'connection',
     editor: 'connections',
     count: ch.devices?.length ?? 0,
     children: (ch.devices ?? []).map((d) => ({
       id: `fdev:${d.id}`,
       label: nonEmpty(d.name) ? d.name : d.id,
-      sub: ch.kind === 'modbus-rtu' ? `slave ${d.slave ?? 1}` : `unit ${d.unitId ?? 1}`,
+      sub: deviceSub(ch, d),
       icon: 'device',
       editor: 'connections',
       count: perDevice.get(d.id) ?? 0,

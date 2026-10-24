@@ -24,6 +24,9 @@
 #               Tag unit 1, 3 GOOD 100 % mau, khong dong ket noi; unit 3 tra loi muon bi bo; ket qua 011-gateway-x64.json.
 #   pulse-recovery: (011, T054, SC-004) -Rounds (mac dinh 20) vong kill -9 giua xung: bit nha <= 10 s sau khi chay lai,
 #               audit pulse-recovery; roi nhat ky xung khong ghi duoc: PULSE_JOURNAL_FAILED, 0 bit; ket qua 011-pulse-x64.json.
+#   fins-read, fins-endcode, fins-loss, fins-write, fins-load (feature 018, Omron FINS): rig rieng
+#               tests/driver-it/compose-fins.yaml (du an compose mat-drv-it-fins, mang 172.30.18.0/24, gia lap
+#               tools/fins-sim), kich ban o tests/driver-it/fins-it.mjs; ket qua docs/reports/018-<kich ban>-x64.json.
 #   source:     loc nguon (SC-022): tu mang 203.0.113.0/24 va 172.30.6.0/24, o ba che do viewerAccess
 #               (private, any, off; script khoi dong lai runtime theo che do): trang, system/info,
 #               projects/active, live; phien hop le qua HTTPS khong bi loc; any co VIEWER_PUBLIC.
@@ -33,7 +36,7 @@
 # Don khi dung -Keep: docker compose -f tests/driver-it/compose.yaml -p mat-drv-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('read', 'merge', 'split', 'probe', 'unplug', 'write', 'write-race', 'write-kill', 'load', 'calc', 'retain', 'write-io', 'faults', 'source', 'gateway-multiunit', 'pulse-recovery')][string[]]$Scenario = @('read'),
+    [ValidateSet('read', 'merge', 'split', 'probe', 'unplug', 'write', 'write-race', 'write-kill', 'load', 'calc', 'retain', 'write-io', 'faults', 'source', 'gateway-multiunit', 'pulse-recovery', 'fins-read', 'fins-endcode', 'fins-loss', 'fins-write', 'fins-load')][string[]]$Scenario = @('read'),
     [int]$Rounds = 6,
     [int]$Seconds = 60,
     [int]$Clients = 10,
@@ -48,6 +51,8 @@ $root = (Resolve-Path "$PSScriptRoot/..").Path
 . "$PSScriptRoot/lib/platform.ps1"
 if (-not $BuildDir) { $BuildDir = Get-MatBuildDir 'mat-x64-e2' }
 $compose = "$root/tests/driver-it/compose.yaml"
+$clientScript = '/src/tests/driver-it/driver-it.mjs'
+$mapDir = '/src/tools/modbus-sim/maps'
 $utf8 = New-Object Text.UTF8Encoding $false
 $project = 'mat-drv-it'
 $rt = "$project-rt-1"
@@ -82,10 +87,21 @@ function Build-Runtime {
     if ($LASTEXITCODE) { throw 'build failed' }
 }
 
+# The rig of a group: the Modbus one (compose.yaml) or the FINS one (feature 018, compose-fins.yaml).
+function Use-Rig([string]$File, [string]$Name, [string]$SimService, [string]$Script, [string]$Maps) {
+    $script:compose = "$root/tests/driver-it/$File"
+    $script:project = $Name
+    $script:rt = "$Name-rt-1"
+    $script:client = "$Name-client-1"
+    $script:sim = "$Name-$SimService-1"
+    $script:clientScript = $Script
+    $script:mapDir = $Maps
+}
+
 function Start-Rig([string]$ProjectName, [string]$Map) {
     $env:MAT_IT_BUILD = $BuildDir
     $env:MAT_IT_PROJECT = "/src/tests/driver-it/projects/$ProjectName"
-    $env:MAT_IT_MAP = "/src/tools/modbus-sim/maps/$Map.json"
+    $env:MAT_IT_MAP = "$mapDir/$Map.json"
     docker compose -f $compose -p $project down -v *> $null
     Write-Host "starting sim ($Map), rt ($ProjectName) and the Node client..."
     docker compose -f $compose -p $project up -d 2>&1 | Out-Null
@@ -121,7 +137,7 @@ function Get-Fingerprint {
 
 function Invoke-Client([string[]]$ClientArgs, [string]$Fp) {
     $out = docker exec -e MAT_IT_PW_ADMIN -e MAT_IT_PW_KYSU1 -e MAT_IT_PW_VH1 -e MAT_IT_PW_VH2 -e MAT_IT_PW_XEM1 `
-        $client node --no-warnings /src/tests/driver-it/driver-it.mjs @ClientArgs --fp $Fp
+        $client node --no-warnings $clientScript @ClientArgs --fp $Fp
     $line = ($out | Where-Object { $_.Trim().StartsWith('{') } | Select-Object -Last 1)
     if (-not $line) { throw "client $ClientArgs wrote no result: $out" }
     return $line | ConvertFrom-Json
@@ -130,6 +146,7 @@ function Invoke-Client([string[]]$ClientArgs, [string]$Fp) {
 function Write-Result([string]$Name, $Result) {
     $json = $Result | ConvertTo-Json -Depth 10
     $file = @{ 'gateway-multiunit' = '011-gateway'; 'pulse-recovery' = '011-pulse' }[$Name]
+    if (-not $file -and $Name -like 'fins-*') { $file = "018-$Name" }
     if (-not $file) { $file = "006-$Name" }
     [IO.File]::WriteAllText("$root/docs/reports/$file-x64.json", $json + "`n", $utf8)
     $bad = @($Result.checks | Where-Object { -not $_.pass })
@@ -176,11 +193,16 @@ try {
         @{ project = 'bench-500-modbus'; map = 'bench-500'; list = @('load') },
         @{ project = 'calc-200'; map = 'bench-500'; list = @('calc', 'retain', 'write-io') },
         # feature 011 (T054): gateway nhieu unit, nha xung sau kill -9; ket qua docs/reports/011-{gateway,pulse}-x64.json
-        @{ project = 'gateway-3'; map = 'all-types'; list = @('gateway-multiunit', 'pulse-recovery') }
+        @{ project = 'gateway-3'; map = 'all-types'; list = @('gateway-multiunit', 'pulse-recovery') },
+        # feature 018 (T051): Omron FINS tren rig rieng; ket qua docs/reports/018-<kich ban>-x64.json
+        @{ project = 'fins-all-types'; map = 'all-types'; list = @('fins-read', 'fins-endcode', 'fins-loss', 'fins-write'); fins = $true },
+        @{ project = 'bench-500-fins'; map = 'bench-500'; list = @('fins-load'); fins = $true }
     )
     foreach ($g in $groups) {
         $todo = @($g.list | Where-Object { $Scenario -contains $_ })
         if (-not $todo.Count) { continue }
+        if ($g.fins) { Use-Rig 'compose-fins.yaml' 'mat-drv-it-fins' 'fins-sim' '/src/tests/driver-it/fins-it.mjs' '/src/tools/fins-sim/maps' }
+        else { Use-Rig 'compose.yaml' 'mat-drv-it' 'sim' '/src/tests/driver-it/driver-it.mjs' '/src/tools/modbus-sim/maps' }
         Start-Rig $g.project $g.map
         New-Accounts
         $fp = Get-Fingerprint
@@ -190,7 +212,7 @@ try {
             if ($s -in @('unplug', 'write-kill')) { $a += @('--rounds', "$Rounds") }
             if ($s -eq 'pulse-recovery') { $a += @('--rounds', "$(if ($PSBoundParameters.ContainsKey('Rounds')) { $Rounds } else { 20 })") }
             if ($s -eq 'gateway-multiunit') { $a += @('--cycles', "$Cycles") }
-            if ($s -eq 'load') { $a += @('--seconds', "$Seconds", '--clients', "$Clients") }
+            if ($s -eq 'load' -or $s -eq 'fins-load') { $a += @('--seconds', "$Seconds", '--clients', "$Clients") }
             if ($s -eq 'calc') { $a += @('--seconds', "$Seconds", '--clients', "$Clients") }
             if ($s -eq 'retain') { $a += @('--rounds', "$(if ($PSBoundParameters.ContainsKey('Rounds')) { $Rounds } else { 20 })") }
             if ($s -eq 'source') {

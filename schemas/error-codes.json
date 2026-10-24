@@ -114,11 +114,109 @@
       "usedIn": ["server/http"]
     },
     {
+      "code": "BACNET_ABORT",
+      "http": null,
+      "group": "quality",
+      "message": "Thiết bị BACnet hủy giao dịch (Abort)",
+      "usedIn": ["drivers/bacnet", "server/http"]
+    },
+    {
+      "code": "BACNET_DATA_TYPE",
+      "http": null,
+      "group": "quality",
+      "message": "Kiểu dữ liệu không đúng với thuộc tính BACnet (invalid-data-type)",
+      "usedIn": ["drivers/bacnet"]
+    },
+    {
+      "code": "BACNET_ERROR",
+      "http": null,
+      "group": "quality",
+      "message": "Thiết bị BACnet trả lời bằng lỗi khác (Error)",
+      "usedIn": ["drivers/bacnet", "server/http"]
+    },
+    {
+      "code": "BACNET_FAULT",
+      "http": null,
+      "group": "quality",
+      "message": "Đối tượng BACnet báo lỗi (status-flags fault)",
+      "usedIn": ["drivers/bacnet"]
+    },
+    {
+      "code": "BACNET_OUT_OF_SERVICE",
+      "http": null,
+      "group": "quality",
+      "message": "Đối tượng BACnet đang out-of-service: giá trị không lấy từ thiết bị thật (UNCERTAIN)",
+      "usedIn": ["drivers/bacnet"]
+    },
+    {
+      "code": "BACNET_OVERRIDDEN",
+      "http": null,
+      "group": "quality",
+      "message": "Đối tượng BACnet đang bị ghi đè tại chỗ (status-flags overridden, UNCERTAIN)",
+      "usedIn": ["drivers/bacnet"]
+    },
+    {
+      "code": "BACNET_REJECT",
+      "http": null,
+      "group": "quality",
+      "message": "Thiết bị BACnet từ chối yêu cầu (Reject)",
+      "usedIn": ["drivers/bacnet", "server/http"]
+    },
+    {
+      "code": "BACNET_SEGMENTATION",
+      "http": null,
+      "group": "quality",
+      "message": "Câu trả lời BACnet quá lớn, cần segmentation mà driver không hỗ trợ",
+      "usedIn": ["drivers/bacnet", "server/http"]
+    },
+    {
+      "code": "BACNET_TYPE",
+      "http": null,
+      "group": "quality",
+      "message": "Giá trị BACnet trả về không đổi được sang kiểu của Tag",
+      "usedIn": ["drivers/bacnet"]
+    },
+    {
+      "code": "BACNET_UNKNOWN_OBJECT",
+      "http": null,
+      "group": "quality",
+      "message": "Thiết bị BACnet không có đối tượng này (unknown-object)",
+      "usedIn": ["drivers/bacnet"]
+    },
+    {
+      "code": "BACNET_UNKNOWN_PROPERTY",
+      "http": null,
+      "group": "quality",
+      "message": "Đối tượng BACnet không có thuộc tính này (unknown-property)",
+      "usedIn": ["drivers/bacnet"]
+    },
+    {
+      "code": "BACNET_VALUE_RANGE",
+      "http": null,
+      "group": "quality",
+      "message": "Giá trị ngoài tầm thiết bị BACnet chấp nhận (value-out-of-range)",
+      "usedIn": ["drivers/bacnet"]
+    },
+    {
+      "code": "BACNET_WRITE_DENIED",
+      "http": null,
+      "group": "quality",
+      "message": "Thiết bị BACnet không cho ghi thuộc tính này (write-access-denied)",
+      "usedIn": ["drivers/bacnet"]
+    },
+    {
       "code": "BAD_FRAME",
       "http": null,
       "group": "quality",
       "message": "Khung trả lời hỏng (CRC, độ dài hoặc định dạng Modbus)",
-      "usedIn": ["drivers/modbus", "server/http"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/s7",
+        "server/http"
+      ]
     },
     {
       "code": "BAD_MESSAGE",
@@ -146,7 +244,14 @@
       "http": 400,
       "group": "auth",
       "message": "Yêu cầu không hợp lệ.",
-      "usedIn": ["drivers/modbus", "server", "server/http"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "server",
+        "server/http"
+      ]
     },
     {
       "code": "BAD_TYPE",
@@ -161,6 +266,13 @@
       "group": "deploy",
       "message": "Project trên thiết bị đã đổi sau lúc xem trước. Hãy đọc lại rồi thử lại.",
       "usedIn": ["core/project-store", "server/http"]
+    },
+    {
+      "code": "BBMD_NAK",
+      "http": null,
+      "group": "driver",
+      "message": "BBMD từ chối đăng ký foreign device của kênh BACnet",
+      "usedIn": ["drivers/bacnet"]
     },
     {
       "code": "BODY_TOO_LARGE",
@@ -265,7 +377,15 @@
       "http": null,
       "group": "write",
       "message": "Thiết bị trường từ chối lệnh ghi",
-      "usedIn": ["core/tag-engine", "drivers/modbus"]
+      "usedIn": [
+        "core/tag-engine",
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7"
+      ]
     },
     {
       "code": "DEVICE_NOT_ACTIVE",
@@ -287,6 +407,13 @@
       "group": "quality",
       "message": "Phép chia cho 0",
       "usedIn": ["core/expression"]
+    },
+    {
+      "code": "END_CODE",
+      "http": null,
+      "group": "driver",
+      "message": "Thử kết nối: PLC Omron trả lời bằng mã kết thúc lỗi (FINS end code)",
+      "usedIn": ["drivers/fins", "server/http"]
     },
     {
       "code": "ENVELOPE_EXTRA_MEMBER",
@@ -412,14 +539,33 @@
       "http": null,
       "group": "tags",
       "message": "Vùng địa chỉ không hợp với kiểu hoặc quyền của Tag",
-      "usedIn": ["drivers/modbus", "packages/project-schema", "packages/tag-codec", "server/http"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/s7",
+        "packages/project-schema",
+        "packages/tag-codec",
+        "server/http"
+      ]
     },
     {
       "code": "E_ADDR_RANGE",
       "http": null,
       "group": "tags",
       "message": "Địa chỉ ngoài khoảng 0–65535",
-      "usedIn": ["drivers/modbus", "packages/project-schema", "packages/tag-codec", "server/http"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7",
+        "packages/project-schema",
+        "packages/tag-codec",
+        "server/http"
+      ]
     },
     {
       "code": "E_ADDR_READ_LIMIT",
@@ -433,7 +579,17 @@
       "http": null,
       "group": "tags",
       "message": "Địa chỉ Modbus không đúng cú pháp (ví dụ HR100, 40101, HR100.3)",
-      "usedIn": ["drivers/modbus", "packages/project-schema", "packages/tag-codec", "server/http"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7",
+        "packages/project-schema",
+        "packages/tag-codec",
+        "server/http"
+      ]
     },
     {
       "code": "E_ADDR_WRITE_LIMIT",
@@ -625,10 +781,24 @@
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
+      "code": "E_CHANNEL_VERSION",
+      "http": null,
+      "group": "format",
+      "message": "Loại kênh này (Omron FINS, Mitsubishi MC, BACnet/IP) hoặc source.bcd cần project định dạng 1.1",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
       "code": "E_DEADBAND",
       "http": null,
       "group": "tags",
       "message": "Vùng chết chỉ cho Tag số và không âm",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_DRIVER_VERSION",
+      "http": null,
+      "group": "format",
+      "message": "Kênh của driver mới (Siemens S7, OPC UA) cần project định dạng 1.1",
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
@@ -1224,6 +1394,20 @@
       "usedIn": ["server"]
     },
     {
+      "code": "E_OPCUA_AUTH",
+      "http": null,
+      "group": "tags",
+      "message": "Kênh OPC UA: xác thực username cần username và secretId; anonymous thì bỏ cả hai",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_OPCUA_SECURITY",
+      "http": null,
+      "group": "tags",
+      "message": "Kênh OPC UA: securityMode và securityPolicy không khớp (None đi với None; Sign, SignAndEncrypt đi với Basic256Sha256)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
       "code": "E_PACKAGE_EXTRA_FILE",
       "http": null,
       "group": "package",
@@ -1494,6 +1678,13 @@
       "http": null,
       "group": "format",
       "message": "Project cần runtime mới hơn runtime của thiết bị (minRuntimeVersion)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_S7_TSAP",
+      "http": null,
+      "group": "tags",
+      "message": "Kênh S7: nhập TSAP đích (remoteTsap) thì bỏ rack và slot, hoặc ngược lại",
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
@@ -1809,6 +2000,90 @@
       "usedIn": ["core/update"]
     },
     {
+      "code": "FINS_ACCESS",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Omron từ chối: lỗi lệnh, bảo vệ hoặc quyền truy cập (mã kết thúc 26xx, 30xx, 40xx)",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_ADDRESS",
+      "http": null,
+      "group": "quality",
+      "message": "Địa chỉ ngoài vùng nhớ của PLC Omron (mã kết thúc 11xx)",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_CANCELED",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Omron hủy dịch vụ (mã kết thúc 0001)",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_FORMAT",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Omron báo lỗi định dạng lệnh (mã kết thúc 10xx)",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_MODE",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Omron không thực hiện được ở chế độ hiện tại, ví dụ PROGRAM (mã kết thúc 22xx)",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_OTHER",
+      "http": null,
+      "group": "quality",
+      "message": "Mã kết thúc FINS lạ",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_READ_DENIED",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Omron không cho đọc (mã kết thúc 20xx)",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_ROUTING",
+      "http": null,
+      "group": "quality",
+      "message": "Không tới được nút FINS đích: mạng, nút, unit hoặc bảng định tuyến (mã kết thúc 01xx, 02xx, 03xx, 05xx)",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_TCP_REFUSED",
+      "http": null,
+      "group": "driver",
+      "message": "PLC Omron từ chối bắt tay FINS/TCP: hết kết nối, nút trùng hoặc ngoài tầm",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_UNIT_ERROR",
+      "http": null,
+      "group": "quality",
+      "message": "Lỗi unit hoặc thiết bị của PLC Omron (mã kết thúc 23xx, 24xx, 25xx)",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_UNSUPPORTED",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Omron không hỗ trợ lệnh này (mã kết thúc 04xx)",
+      "usedIn": ["drivers/fins"]
+    },
+    {
+      "code": "FINS_WRITE_DENIED",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Omron không cho ghi: vùng chỉ đọc hoặc đang bảo vệ (mã kết thúc 21xx)",
+      "usedIn": ["drivers/fins"]
+    },
+    {
       "code": "FORBIDDEN",
       "http": 403,
       "group": "auth",
@@ -1932,7 +2207,14 @@
       "http": null,
       "group": "quality",
       "message": "Giá trị không hợp lệ (NaN hoặc vô cực)",
-      "usedIn": ["core/tag-engine", "drivers/modbus"]
+      "usedIn": [
+        "core/tag-engine",
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/s7"
+      ]
     },
     {
       "code": "IN_USE",
@@ -2068,6 +2350,34 @@
       "usedIn": ["server/websocket"]
     },
     {
+      "code": "MC_END_COMMAND",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Mitsubishi không nhận lệnh: lệnh, độ dài hoặc mã truyền binary/ASCII không khớp cấu hình PLC",
+      "usedIn": ["drivers/mc"]
+    },
+    {
+      "code": "MC_END_DEVICE",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Mitsubishi không đọc/ghi được thiết bị này hoặc chỉ định thiết bị sai (end code C05B, C05C, C060)",
+      "usedIn": ["drivers/mc"]
+    },
+    {
+      "code": "MC_END_OTHER",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Mitsubishi trả end code lỗi khác (mã cụ thể ở Chẩn đoán driver)",
+      "usedIn": ["drivers/mc"]
+    },
+    {
+      "code": "MC_END_RANGE",
+      "http": null,
+      "group": "quality",
+      "message": "PLC Mitsubishi báo địa chỉ hoặc số điểm ngoài vùng (end code C051–C054, C056, 4030, 4031)",
+      "usedIn": ["drivers/mc"]
+    },
+    {
       "code": "MESSAGE_TOO_BIG",
       "http": null,
       "group": "live",
@@ -2149,21 +2459,35 @@
       "http": null,
       "group": "write",
       "message": "Chưa gửi: lệnh ghi quá hạn writeDeadlineMs trong hàng đợi",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7"
+      ]
     },
     {
       "code": "NOT_SENT_DEVICE_SUSPENDED",
       "http": null,
       "group": "write",
       "message": "Chưa gửi: thiết bị trường đang tạm ngưng",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": ["drivers/bacnet", "drivers/fins", "drivers/mc", "drivers/modbus"]
     },
     {
       "code": "NOT_SENT_DISCONNECTED",
       "http": null,
       "group": "write",
       "message": "Chưa gửi: mất kết nối tới thiết bị trường",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7"
+      ]
     },
     {
       "code": "NOT_SENT_PROJECT_CHANGE",
@@ -2184,14 +2508,21 @@
       "http": null,
       "group": "write",
       "message": "Chưa gửi: đọc trước khi ghi lỗi",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": ["drivers/mc", "drivers/modbus"]
     },
     {
       "code": "NOT_SENT_UNSUPPORTED",
       "http": null,
       "group": "write",
       "message": "Chưa gửi: thiết bị trường không hỗ trợ kiểu ghi này",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7"
+      ]
     },
     {
       "code": "NOT_SHELVED",
@@ -2199,6 +2530,13 @@
       "group": "alarm",
       "message": "Alarm không đang tạm ẩn",
       "usedIn": ["core/alarm"]
+    },
+    {
+      "code": "NOT_SUPPORTED",
+      "http": null,
+      "group": "driver",
+      "message": "Loại kênh này chưa hỗ trợ Thử kết nối",
+      "usedIn": ["drivers/opcua", "drivers/s7", "server/http"]
     },
     {
       "code": "NO_AGGREGATES",
@@ -2247,7 +2585,14 @@
       "http": null,
       "group": "write",
       "message": "Thiết bị xác nhận, không đọc lại",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7"
+      ]
     },
     {
       "code": "NO_SIGNAL",
@@ -2318,6 +2663,97 @@
       "group": "quality",
       "message": "Chưa có giá trị",
       "usedIn": ["core/expression", "core/logic", "core/tag-engine", "server"]
+    },
+    {
+      "code": "OPCUA_ACCESS_DENIED",
+      "http": null,
+      "group": "quality",
+      "message": "Server OPC UA không cho đọc node này (BadNotReadable, BadUserAccessDenied)",
+      "usedIn": ["drivers/opcua"]
+    },
+    {
+      "code": "OPCUA_AUTH_FAILED",
+      "http": null,
+      "group": "driver",
+      "message": "Server OPC UA từ chối đăng nhập (sai username/mật khẩu hoặc không cho anonymous)",
+      "usedIn": ["drivers/opcua", "server/http"]
+    },
+    {
+      "code": "OPCUA_BAD_STATUS",
+      "http": null,
+      "group": "quality",
+      "message": "Server OPC UA trả StatusCode Bad cho node (tên mã ở Chẩn đoán driver)",
+      "usedIn": ["drivers/opcua"]
+    },
+    {
+      "code": "OPCUA_BROWSE_FAILED",
+      "http": null,
+      "group": "driver",
+      "message": "Không duyệt được node trên server OPC UA",
+      "usedIn": ["drivers/opcua", "server/http"]
+    },
+    {
+      "code": "OPCUA_CERT_UNTRUSTED",
+      "http": null,
+      "group": "driver",
+      "message": "Chứng chỉ server OPC UA chưa được tin hoặc khác chứng chỉ đã ghim (serverCertSha256)",
+      "usedIn": ["drivers/opcua", "server/http"]
+    },
+    {
+      "code": "OPCUA_ENDPOINT_NOT_FOUND",
+      "http": null,
+      "group": "driver",
+      "message": "Server OPC UA không có endpoint với securityMode/securityPolicy và kiểu xác thực đã chọn",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "OPCUA_NODE_UNKNOWN",
+      "http": null,
+      "group": "quality",
+      "message": "Server OPC UA không có node này (BadNodeIdUnknown)",
+      "usedIn": ["drivers/opcua"]
+    },
+    {
+      "code": "OPCUA_SECRET_MISSING",
+      "http": null,
+      "group": "driver",
+      "message": "Chưa có mật khẩu của kênh OPC UA trên thiết bị: đặt bằng mat-runtime --set-secret <secretId>",
+      "usedIn": ["drivers/opcua", "server/http"]
+    },
+    {
+      "code": "OPCUA_SECURITY_REJECTED",
+      "http": null,
+      "group": "driver",
+      "message": "Server OPC UA từ chối kênh bảo mật (chứng chỉ client chưa được server tin, hoặc policy không hỗ trợ)",
+      "usedIn": ["drivers/opcua", "server/http"]
+    },
+    {
+      "code": "OPCUA_SERVER_CERT_EXPIRED",
+      "http": null,
+      "group": "driver",
+      "message": "Chứng chỉ server OPC UA đã ghim nhưng đã hết hạn",
+      "usedIn": ["drivers/opcua"]
+    },
+    {
+      "code": "OPCUA_SUBSCRIPTION_FALLBACK",
+      "http": null,
+      "group": "driver",
+      "message": "Server OPC UA không cho subscription: nhóm quét chuyển sang đọc định kỳ",
+      "usedIn": ["drivers/opcua"]
+    },
+    {
+      "code": "OPCUA_TYPE_MISMATCH",
+      "http": null,
+      "group": "quality",
+      "message": "Kiểu dữ liệu của node OPC UA không đổi được sang kiểu của Tag (hoặc giá trị ngoài khoảng)",
+      "usedIn": ["drivers/opcua"]
+    },
+    {
+      "code": "OPCUA_UNCERTAIN",
+      "http": null,
+      "group": "quality",
+      "message": "Server OPC UA trả StatusCode Uncertain cho node",
+      "usedIn": ["drivers/opcua"]
     },
     {
       "code": "ORIGIN_MISMATCH",
@@ -2548,21 +2984,43 @@
       "http": null,
       "group": "write",
       "message": "Lỗi khi đọc lại sau khi ghi",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7"
+      ]
     },
     {
       "code": "READBACK_MISMATCH",
       "http": null,
       "group": "write",
       "message": "Đọc lại khác giá trị đã ghi",
-      "usedIn": ["drivers/modbus"]
+      "usedIn": [
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7"
+      ]
     },
     {
       "code": "READBACK_TIMEOUT",
       "http": null,
       "group": "write",
       "message": "Đã ghi nhưng không đọc lại được: không chắc kết quả.",
-      "usedIn": ["core/tag-engine", "drivers/modbus"]
+      "usedIn": [
+        "core/tag-engine",
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7"
+      ]
     },
     {
       "code": "READ_ONLY",
@@ -2633,6 +3091,90 @@
       "group": "driver",
       "message": "Driver của cổng serial không hỗ trợ chế độ RS485",
       "usedIn": ["drivers/sdk", "server"]
+    },
+    {
+      "code": "S7_ACCESS_DENIED",
+      "http": null,
+      "group": "quality",
+      "message": "PLC S7 từ chối truy cập vùng nhớ (DB đang bật \"Optimized block access\" hoặc bị bảo vệ)",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_ADDRESS_OUT_OF_RANGE",
+      "http": null,
+      "group": "quality",
+      "message": "Địa chỉ S7 vượt quá kích thước DB hoặc vùng nhớ của PLC",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_CONNECT_REJECTED",
+      "http": null,
+      "group": "driver",
+      "message": "PLC S7 từ chối kết nối ISO-on-TCP (sai rack/slot hoặc TSAP)",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_FUNCTION_NOT_AVAILABLE",
+      "http": null,
+      "group": "driver",
+      "message": "PLC S7 từ chối đọc/ghi: thường do chưa bật \"Permit access with PUT/GET\" trong TIA Portal",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_HARDWARE_FAULT",
+      "http": null,
+      "group": "quality",
+      "message": "PLC S7 báo lỗi phần cứng khi đọc vùng nhớ",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_ITEM_ERROR",
+      "http": null,
+      "group": "quality",
+      "message": "PLC S7 báo lỗi khác khi đọc hoặc ghi vùng nhớ",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_OBJECT_NOT_FOUND",
+      "http": null,
+      "group": "quality",
+      "message": "DB không có trên PLC S7",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_PDU_TOO_SMALL",
+      "http": null,
+      "group": "quality",
+      "message": "Tag lớn hơn một lần đọc với kích thước PDU mà PLC S7 chấp nhận",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_REQUEST_ERROR",
+      "http": null,
+      "group": "quality",
+      "message": "PLC S7 từ chối yêu cầu (lỗi ở đầu khung trả lời)",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_SETUP_FAILED",
+      "http": null,
+      "group": "driver",
+      "message": "PLC S7 không chấp nhận thương lượng PDU (Setup Communication)",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_TYPE_INCONSISTENT",
+      "http": null,
+      "group": "quality",
+      "message": "PLC S7 báo kiểu dữ liệu không khớp",
+      "usedIn": ["drivers/s7"]
+    },
+    {
+      "code": "S7_TYPE_NOT_SUPPORTED",
+      "http": null,
+      "group": "quality",
+      "message": "PLC S7 không hỗ trợ kiểu dữ liệu được yêu cầu",
+      "usedIn": ["drivers/s7"]
     },
     {
       "code": "SCAN_LIMIT",
@@ -3003,7 +3545,15 @@
       "http": null,
       "group": "write",
       "message": "Thiết bị trường không trả lời: không chắc đã ghi.",
-      "usedIn": ["core/tag-engine", "drivers/modbus"]
+      "usedIn": [
+        "core/tag-engine",
+        "drivers/bacnet",
+        "drivers/fins",
+        "drivers/mc",
+        "drivers/modbus",
+        "drivers/opcua",
+        "drivers/s7"
+      ]
     },
     {
       "code": "W_ACTION_NOOP",
@@ -3241,6 +3791,20 @@
       "http": null,
       "group": "history",
       "message": "Ước tính ghi > 8 GiB/ngày (4 lần ngân sách): Studio cần xác nhận mạnh hơn khi nạp xuống",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_OPCUA_CERT_NOT_PINNED",
+      "http": null,
+      "group": "tags",
+      "message": "Kênh OPC UA có mã hóa nhưng chưa tin chứng chỉ server (serverCertSha256): runtime sẽ không kết nối",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_OPCUA_PLAIN_PASSWORD",
+      "http": null,
+      "group": "tags",
+      "message": "Kênh OPC UA dùng username/mật khẩu trên kết nối không mã hóa (securityMode None)",
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {

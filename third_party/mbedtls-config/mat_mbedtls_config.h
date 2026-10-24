@@ -11,6 +11,8 @@
  * Deliberately off (R4): TLS client, DTLS, renegotiation, RSA (key exchange and keys), CBC and
  * every non-AEAD cipher, static ECDH, (EC)DHE-PSK and TLS 1.3 PSK modes, session tickets and cache,
  * early data, SHA-1, MD5, curves other than X25519 and P-256, debug output, self tests.
+ * Feature 019 turned on RSA, CBC and SHA-1 as primitives for OPC UA (section at the end); the TLS
+ * server still negotiates none of them.
  */
 #ifndef MAT_MBEDTLS_CONFIG_H
 #define MAT_MBEDTLS_CONFIG_H
@@ -103,6 +105,25 @@
  * run out of a fixed number of key slots. No persistent keys (no PSA storage, no ITS file). */
 #define MBEDTLS_PSA_CRYPTO_C
 #define MBEDTLS_PSA_KEY_STORE_DYNAMIC
+
+/* --- OPC UA client (feature 019, ADR-047): the SecurityPolicy Basic256Sha256 of open62541
+ * (third_party/open62541) runs on this same library. It needs RSA keys (OAEP-SHA1 to encrypt,
+ * PKCS#1 v1.5 SHA-256 to sign, a 2048-bit client key generated on the device), AES-256-CBC for the
+ * symmetric part, SHA-1 (OAEP, certificate thumbprints) and CRL parsing (its PKI plugin). These are
+ * primitives only: the TLS cipher suites stay the fixed AEAD list above (MBEDTLS_SSL_CIPHERSUITES),
+ * RSA key exchange stays off, and mbedtls_config_test checks at run time that TLS offers no CBC,
+ * no RSA suite. */
+#define MBEDTLS_RSA_C
+#define MBEDTLS_PKCS1_V15
+#define MBEDTLS_PKCS1_V21
+#define MBEDTLS_GENPRIME
+#define MBEDTLS_CIPHER_MODE_CBC
+#define MBEDTLS_SHA1_C
+#define MBEDTLS_X509_CRL_PARSE_C
+/* The SecurityPolicy plugins of open62541 run mbedtls_entropy_self_test() when a policy is set
+ * up; the self tests only exist with this flag. The other self tests are never called, and the
+ * linkers of the device binaries drop them (--gc-sections). */
+#define MBEDTLS_SELF_TEST
 
 /* --- Diagnostics: error strings for logs (mbedtls_strerror) and the version. */
 #define MBEDTLS_ERROR_C

@@ -11,6 +11,7 @@ import {
 } from '../model/tree-ops.ts';
 import { planAddScreen, planSetEntry, type ScreenLayoutKind } from '../model/screen-ops.ts';
 import { refOfNode, type NodeRef } from '../model/tree.ts';
+import type { ChannelKind } from '../model/connections.ts';
 import type { StudioApp } from './app.ts';
 
 /** Nút đang chọn trên cây dưới dạng đối tượng của project; `null` nếu nút không có thao tác. */
@@ -23,7 +24,10 @@ export function treeAdd(app: StudioApp): void {
   const ref = selectedRef(app);
   if (!ref) return;
   const plan = planAdd(ref, app.store.state.outline);
-  if (!plan.edits.length) return;
+  if (!plan.edits.length) {
+    if (plan.reason) app.toast(t(plan.reason));
+    return;
+  }
   app.store.edit(plan.edits);
   app.revealNode(plan.select);
   app.toast(t('tree.added'));
@@ -68,8 +72,8 @@ export function screenSetEntry(app: StudioApp): void {
   app.toast(t('screen.entrySet', { name: app.editorTitle(`screen:${id}`) }));
 }
 
-/** Thêm kênh mới theo loại (nút Thêm kênh Modbus RTU của editor Kết nối); luôn thêm vào mục Kết nối. */
-export function treeAddChannel(app: StudioApp, kind: 'modbus-tcp' | 'modbus-rtu'): void {
+/** Thêm kênh mới theo loại (nút Thêm kênh Modbus RTU, Siemens S7, Omron FINS, Mitsubishi MC, BACnet/IP, OPC UA của editor Kết nối); luôn thêm vào mục Kết nối. */
+export function treeAddChannel(app: StudioApp, kind: ChannelKind): void {
   const plan = planAdd({ type: 'connections' }, app.store.state.outline, kind);
   if (!plan.edits.length) return;
   app.store.edit(plan.edits);
@@ -81,7 +85,10 @@ export function treeDuplicate(app: StudioApp): void {
   const ref = selectedRef(app);
   if (!ref) return;
   const plan = planDuplicate(ref, app.store.state.outline);
-  if (!plan.edits.length) return;
+  if (!plan.edits.length) {
+    if (plan.reason) app.toast(t(plan.reason));
+    return;
+  }
   app.store.edit(plan.edits);
   app.revealNode(plan.select);
   app.toast(t('tree.duplicated'));

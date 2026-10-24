@@ -1,0 +1,64 @@
+# Rig of the S7 driver integration tests (feature 016 T021), started by tools/driver-it-s7.ps1: the
+# x64 runtime under the supervision loop of tests/device-it (supervise.sh), the S7comm simulator of
+# tools/s7-sim, and a Node client that runs the scenarios (tests/driver-it-s7/s7-it.mjs). Its own
+# compose project name (mat-s7-it) and network (172.30.16.0/24), so it runs beside the Modbus rig
+# (tests/driver-it, 172.30.6.0/24) and the rigs of other drivers.
+#
+# lan 172.30.16.0/24: rt .10, sim .20, client .50
+name: mat-s7-it
+
+services:
+  sim:
+    image: node:22.23.3-alpine
+    command:
+      - node
+      - /src/tools/s7-sim/sim.mjs
+      - --tcp
+      - "102"
+      - --control
+      - "1503"
+      - --control-host
+      - 0.0.0.0
+      - --map
+      - ${MAT_IT_MAP:-/src/tools/s7-sim/maps/all-types.json}
+    init: true
+    volumes:
+      - ../..:/src:ro
+    networks:
+      lan: { ipv4_address: 172.30.16.20 }
+
+  rt:
+    image: mat-armhf
+    working_dir: /
+    hostname: rt
+    command: ["sh", "/src/tests/device-it/supervise.sh", "--no-sim-load", "--no-discovery", "--max-live-clients-per-source", "10"]
+    environment:
+      MAT_IT_PROJECT: ${MAT_IT_PROJECT:-/src/tests/driver-it-s7/projects/read-all-types-s7}
+    volumes:
+      - ../..:/src:ro
+      - ${MAT_IT_BUILD:?MAT_IT_BUILD}:/build:ro
+      - rt-data:/data
+    stop_grace_period: 5s
+    depends_on: [sim]
+    networks:
+      lan: { ipv4_address: 172.30.16.10 }
+
+  client:
+    image: node:22.23.3-alpine
+    command: ["sleep", "infinity"]
+    init: true
+    pid: "service:rt"
+    volumes:
+      - ../..:/src:ro
+    networks:
+      lan: { ipv4_address: 172.30.16.50 }
+
+networks:
+  lan:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.16.0/24
+
+volumes:
+  rt-data:

@@ -100,6 +100,17 @@ target_compile_definitions(mat_miniz PUBLIC
   MINIZ_NO_ZLIB_COMPATIBLE_NAMES MINIZ_NO_MALLOC)
 target_compile_options(mat_miniz PRIVATE -w -O2 -ffunction-sections -fdata-sections)
 
+# open62541 1.4.21 (MPL-2.0, unmodified) vendored in third_party/open62541 (feature 019, ADR-047):
+# the OPC UA client of drivers/opcua, single-file distribution generated with the options of
+# third_party/open62541/amalgamate.sh. Encryption (Basic256Sha256) runs on mat_mbedtls, so it is
+# compiled against the same MBEDTLS_CONFIG_FILE. One section per function: the runtime links with
+# --gc-sections and keeps only the client side; the server side serves the test server
+# (tools/opcua-sim) and the driver tests.
+add_library(mat_open62541 STATIC third_party/open62541/open62541.c)
+target_include_directories(mat_open62541 SYSTEM PUBLIC third_party/open62541)
+target_link_libraries(mat_open62541 PUBLIC mat_mbedtls Threads::Threads)
+target_compile_options(mat_open62541 PRIVATE -w -O2 -ffunction-sections -fdata-sections)
+
 # Feature 005 device modules (crypto, audit, auth, package, project store, discovery, diagnostics):
 # one static library per module (mat_crypto, mat_audit, ...), so a test links only the modules it
 # exercises. mat_device gathers them for mat-runtime and the device commands (T044, T047). Each
@@ -285,9 +296,34 @@ target_compile_options(mat_expression PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
 add_library(mat_modbus_codec STATIC
   drivers/modbus/address.cpp
   drivers/modbus/codec.cpp)
+# OPC UA NodeId (feature 019): pure, shared vectors with packages/tag-codec; the validator uses it.
+add_library(mat_opcua_codec STATIC drivers/opcua/node_id.cpp)
+target_include_directories(mat_opcua_codec PUBLIC ${CMAKE_SOURCE_DIR})
+target_compile_options(mat_opcua_codec PRIVATE ${MAT_WARN} -O2)
 target_include_directories(mat_modbus_codec PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_modbus_codec PUBLIC mat_json)
 target_compile_options(mat_modbus_codec PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
+# Siemens S7 address (feature 016): pure, shared vectors with packages/tag-codec; the validator uses it.
+add_library(mat_s7_codec STATIC drivers/s7/address.cpp)
+target_include_directories(mat_s7_codec PUBLIC ${CMAKE_SOURCE_DIR})
+target_compile_options(mat_s7_codec PRIVATE ${MAT_WARN} -O2)
+
+# Omron FINS address (feature 018): pure, shared vectors with packages/tag-codec; the validator uses it.
+add_library(mat_fins_codec STATIC drivers/fins/address.cpp)
+target_include_directories(mat_fins_codec PUBLIC ${CMAKE_SOURCE_DIR})
+target_compile_options(mat_fins_codec PRIVATE ${MAT_WARN} -O2)
+# Mitsubishi MC address and frames (feature 017): pure, shared vectors tests/mc-vectors.
+add_library(mat_mc_codec STATIC
+  drivers/mc/mc_address.cpp
+  drivers/mc/mc_frame.cpp)
+target_include_directories(mat_mc_codec PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_mc_codec PUBLIC mat_json)
+target_compile_options(mat_mc_codec PRIVATE ${MAT_WARN} -O2)
+
+# BACnet Tag address (feature 020): pure, shared vectors with packages/tag-codec; the validator uses it.
+add_library(mat_bacnet_codec STATIC drivers/bacnet/address.cpp)
+target_include_directories(mat_bacnet_codec PUBLIC ${CMAKE_SOURCE_DIR})
+target_compile_options(mat_bacnet_codec PRIVATE ${MAT_WARN} -O2)
 
 # Simulation generators (T026): bit-for-bit with packages/tag-sim.
 add_library(mat_sim STATIC
@@ -319,6 +355,9 @@ add_library(mat_core STATIC
   core/project-manager/rules_010.cpp
   core/project-manager/rules_10.cpp
   core/project-manager/rules_11.cpp
+  core/project-manager/rules_fins.cpp
+  core/project-manager/rules_mc.cpp
+  core/project-manager/rules_bacnet.cpp
   core/project-manager/widget_catalog.cpp
   core/project-manager/logging_estimate.cpp
   core/project-manager/rules_logic.cpp
@@ -330,8 +369,8 @@ add_library(mat_core STATIC
   server/ssh_audit.cpp
   server/time_sync.cpp)
 target_include_directories(mat_core PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(mat_core PUBLIC mat_json mat_diagnostics Threads::Threads mat_expression mat_modbus_codec
-                      mat_merge_planner mat_calc_graph)
+target_link_libraries(mat_core PUBLIC mat_json mat_diagnostics Threads::Threads mat_expression mat_modbus_codec mat_s7_codec mat_mc_codec
+                      mat_merge_planner mat_calc_graph mat_fins_codec mat_bacnet_codec mat_opcua_codec)
 target_compile_definitions(mat_core PUBLIC VALIJSON_USE_EXCEPTIONS=1)
 target_compile_options(mat_core PRIVATE ${MAT_WARN} -O2)
 
@@ -356,13 +395,18 @@ add_library(mat_tag_engine STATIC
   core/tag-engine/engine.cpp
   core/tag-engine/sim_factory.cpp
   core/tag-engine/modbus_factory.cpp
+  core/tag-engine/s7_factory.cpp
+  core/tag-engine/fins_factory.cpp
+  core/tag-engine/mc_factory.cpp
+  core/tag-engine/bacnet_factory.cpp
+  core/tag-engine/opcua_factory.cpp
   core/tag-engine/token_bucket.cpp
   core/tag-engine/write_coordinator.cpp
   core/tag-engine/pulse_journal.cpp
   core/tag-engine/retain_store.cpp)
 target_include_directories(mat_tag_engine PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_tag_engine PUBLIC mat_core mat_expression mat_modbus_codec mat_sim mat_calc_graph
-                      mat_drivers mat_modbus)
+                      mat_drivers mat_modbus mat_s7 mat_fins mat_mc mat_bacnet mat_opcua)
 target_compile_options(mat_tag_engine PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
 
 # Logic v2 (feature 011 T134, ADR-037): the engine of rules, timers, counters, totalizers, run hours
@@ -414,6 +458,74 @@ target_link_libraries(mat_modbus PUBLIC mat_drivers mat_modbus_codec mat_merge_p
 target_compile_options(mat_modbus PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat_device INTERFACE mat_modbus)
 
+# Siemens S7 driver (feature 016, ADR-044): address, S7comm frames over ISO-on-TCP, read plan and
+# the driver, over the SDK and the planner. Written here, no outside library.
+add_library(mat_s7 STATIC
+  drivers/s7/frames.cpp
+  drivers/s7/plan.cpp
+  drivers/s7/s7_driver.cpp)
+target_include_directories(mat_s7 PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_s7 PUBLIC mat_drivers mat_merge_planner mat_s7_codec)
+target_compile_options(mat_s7 PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
+target_link_libraries(mat_device INTERFACE mat_s7)
+
+# Omron FINS driver (feature 018, ADR-046): frames, end codes, BCD, the UDP transport, the driver and
+# its connection test, over the SDK (TcpSocket for FINS/TCP) and the Modbus register codec.
+add_library(mat_fins STATIC
+  drivers/fins/frame.cpp
+  drivers/fins/end_codes.cpp
+  drivers/fins/bcd.cpp
+  drivers/fins/udp_link.cpp
+  drivers/fins/fins_driver.cpp)
+target_include_directories(mat_fins PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_fins PUBLIC mat_drivers mat_modbus_codec mat_fins_codec mat_merge_planner)
+target_compile_options(mat_fins PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(mat_device INTERFACE mat_fins)
+
+# Mitsubishi MC driver (feature 017, ADR-045): the driver and its UDP transport, over the MC codec,
+# the planner, the SDK and the register codec of Modbus (the same word <-> value rules).
+add_library(mat_mc STATIC
+  drivers/mc/mc_driver.cpp
+  drivers/mc/udp_socket.cpp)
+target_include_directories(mat_mc PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_mc PUBLIC mat_drivers mat_mc_codec mat_modbus_codec mat_merge_planner)
+target_compile_options(mat_mc PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(mat_device INTERFACE mat_mc)
+
+# BACnet/IP client driver (feature 020, ADR-048): BVLC/NPDU/APDU and tag codec, the UDP port, the
+# request client (invoke ID, retries), the driver and its connection test (Who-Is, object-list).
+add_library(mat_bacnet STATIC
+  drivers/bacnet/codec.cpp
+  drivers/bacnet/udp_port.cpp
+  drivers/bacnet/client.cpp
+  drivers/bacnet/bacnet_driver.cpp)
+target_include_directories(mat_bacnet PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_bacnet PUBLIC mat_drivers mat_bacnet_codec)
+target_compile_options(mat_bacnet PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(mat_device INTERFACE mat_bacnet)
+
+# OPC UA client driver (feature 019, ADR-047): StatusCodes, values, client certificate, the driver
+# and the browse of POST /api/v1/drivers/opcua/browse, over open62541 and the SDK.
+add_library(mat_opcua STATIC
+  drivers/opcua/status_map.cpp
+  drivers/opcua/value_codec.cpp
+  drivers/opcua/client_cert.cpp
+  drivers/opcua/opcua_driver.cpp
+  drivers/opcua/browse.cpp)
+target_include_directories(mat_opcua PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_opcua PUBLIC mat_drivers mat_opcua_codec mat_open62541)
+target_compile_options(mat_opcua PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(mat_device INTERFACE mat_opcua)
+# The OPC UA test server (feature 019, spec D13): in process for the driver tests, and the binary
+# mat-opcua-sim of the integration rig. Never in the device package.
+add_library(mat_opcua_sim STATIC tools/opcua-sim/sim_server.cpp)
+target_include_directories(mat_opcua_sim PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_opcua_sim PUBLIC mat_opcua Threads::Threads)
+target_compile_options(mat_opcua_sim PRIVATE ${MAT_WARN} -O2)
+add_executable(mat-opcua-sim tools/opcua-sim/main.cpp)
+target_link_libraries(mat-opcua-sim PRIVATE mat_opcua_sim)
+target_compile_options(mat-opcua-sim PRIVATE ${MAT_WARN} -O2)
+
 # Project activation (adds the Tags of the model to the store) and the runtime's Tag Engine, apart
 # from main.cpp and CivetWeb so that they can be tested (feature 006 T059, T060).
 add_library(mat_startup STATIC server/startup.cpp)
@@ -428,7 +540,7 @@ target_link_libraries(mat_viewer_gate PUBLIC civetweb_runtime mat_json mat_auth)
 target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 # The routes of device API 1.1.0 (feature 006 T106, T145): the connection test and the tag writes are
 # member functions of EngineeringApi, in files of their own.
-add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/http/logic_api.cpp server/write_glue.cpp
+add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/http/opcua_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/http/logic_api.cpp server/write_glue.cpp
             server/write_subsystem.cpp server/http/update_api.cpp server/update_service.cpp
             server/http/admin_api.cpp server/access_glue.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
@@ -529,6 +641,8 @@ add_executable(mat-runtime
   server/http/web_contexts.cpp
   server/project_glue.cpp)
 target_compile_options(mat-runtime PRIVATE ${MAT_WARN} -O2)
+# Feature 019: drop the unused sections (the server side of open62541, one section per function).
+target_link_options(mat-runtime PRIVATE -Wl,--gc-sections)
 target_link_libraries(mat-runtime PRIVATE mat_cli mat_historian mat_core civetweb_runtime mat_startup
                       mat_runtime_engine mat_viewer_gate mat_api_ext)
 # Feature 005: every device module (T044): crypto, package digest, audit, auth, certificate,
@@ -713,6 +827,8 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   # Tag Engine v1 (T044, T046).
   mat_test(tag_model_test core/tag-engine/tests/tag_model_test.cpp)
   target_link_libraries(tag_model_test PRIVATE mat_tag_engine)
+  mat_test(fins_factory_test core/tag-engine/tests/fins_factory_test.cpp)  # feature 018
+  target_link_libraries(fins_factory_test PRIVATE mat_tag_engine)
   mat_test(engine_test core/tag-engine/tests/engine_test.cpp)
   target_link_libraries(engine_test PRIVATE mat_tag_engine)
   mat_test(retain_store_test core/tag-engine/tests/retain_store_test.cpp)
@@ -749,6 +865,16 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   target_link_libraries(source_filter_test PRIVATE mat_viewer_gate)
   mat_test(codec_test drivers/modbus/tests/codec_test.cpp)
   target_link_libraries(codec_test PRIVATE mat_modbus_codec)
+  # Mitsubishi MC (feature 017): addresses and frames on tests/mc-vectors.
+  foreach(t mc_address_test mc_frame_test)
+    mat_test(${t} drivers/mc/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_mc_codec)
+  endforeach()
+  # The MC driver on a fake PLC (conformance suite included) and its fuzz.
+  foreach(t mc_driver_test mc_fuzz_test)
+    mat_test(${t} drivers/mc/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_mc)
+  endforeach()
   # Modbus TCP frames (T093) on tests/modbus-vectors.
   mat_test(frames_test drivers/modbus/tests/frames_test.cpp)
   target_link_libraries(frames_test PRIVATE mat_modbus)
@@ -766,9 +892,34 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     mat_test(${t} drivers/modbus/tests/${t}.cpp)
     target_link_libraries(${t} PRIVATE mat_modbus)
   endforeach()
+  # Siemens S7 (feature 016): address and frame vectors, the plan, the driver on a fake PLC, the fuzz.
+  foreach(t s7_address_test s7_frames_test s7_plan_test s7_driver_test s7_fuzz_test)
+    mat_test(${t} drivers/s7/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_s7)
+  endforeach()
+  # BACnet/IP (feature 020): addresses and frames on tests/bacnet-vectors, the driver and the
+  # connection test on fake devices, the timed fuzz of the decoders.
+  foreach(t bacnet_codec_test bacnet_driver_test bacnet_fuzz_test)
+    mat_test(${t} drivers/bacnet/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_bacnet)
+  endforeach()
+  mat_test(bacnet_factory_test core/tag-engine/tests/bacnet_factory_test.cpp)
+  target_link_libraries(bacnet_factory_test PRIVATE mat_tag_engine)
+  # OPC UA (feature 019): NodeId vectors, values and certificates, the driver on the test server.
+  mat_test(opcua_node_id_test drivers/opcua/tests/opcua_node_id_test.cpp)
+  foreach(t opcua_codec_test opcua_driver_test opcua_browse_test)
+    mat_test(${t} drivers/opcua/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_opcua_sim)
+  endforeach()
   foreach(t serial_port_test serial_ports_test)
     mat_test(${t} drivers/sdk/tests/${t}.cpp)
     target_link_libraries(${t} PRIVATE mat_drivers)
+  endforeach()
+  # Omron FINS (feature 018): addresses, frames, end codes, BCD on tests/fins-vectors; the UDP link on
+  # the loopback; the driver on a fake PLC (the standard suite, UDP and TCP); the timed fuzz.
+  foreach(t fins_frame_test fins_udp_link_test fins_driver_test fins_fuzz_test)
+    mat_test(${t} drivers/fins/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_fins)
   endforeach()
   mat_test(scaling_test core/tag-engine/tests/scaling_test.cpp)
   target_link_libraries(scaling_test PRIVATE mat_tag_engine)
@@ -940,7 +1091,7 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
                           mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext)
     # The list of serial ports and the connection test of an RTU channel (T167), the diagnostics of the
     # drivers (T194): the same listeners.
-    foreach(t serial_api_test drivers_diag_api_test)
+    foreach(t serial_api_test drivers_diag_api_test drivers_fins_api_test drivers_bacnet_api_test)  # 018, 020
       mat_test(${t} server/tests/${t}.cpp server/http/auth_gate.cpp
                server/http/engineering_api.cpp server/http/engineering_api_project.cpp
                server/http/web_contexts.cpp server/project_glue.cpp)

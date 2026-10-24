@@ -1,0 +1,19 @@
+1.4.21
+Source: https://github.com/open62541/open62541/archive/refs/tags/v1.4.21.tar.gz (tag v1.4.21, release 2026-10-04)
+SHA-256 of the tarball: c56d5c034e13cfd0fc642e3ac9a85a6aad8f4b1612040c8d4e87f9b9a2df12a5 (computed, no published value)
+Retrieved: 2026-10-24
+Files: open62541.c, open62541.h = the single-file distribution generated from that tarball by
+amalgamate.sh (the upstream generator tools/amalgamate.py through its CMake targets, no edit), with
+the options listed in amalgamate.sh: client and server code, encryption through Mbed TLS, namespace
+zero MINIMAL, subscriptions on (events off), no methods, node management, history, discovery,
+PubSub, JSON/XML encodings, nodeset loader, diagnostics; NodeId parsing and type names on (the
+1.4.21 amalgamation does not compile with UA_ENABLE_TYPEDESCRIPTION off); one thread
+(UA_MULTITHREADING 0); log level 300 (warnings).
+SHA-256 open62541.c: cd3c3fb3973dc89cded68e9686542240f86fef5e385c6b497ae20d0ea3bf660e
+SHA-256 open62541.h: 86177c2af57ed923c3e0f9d978493246a0f9360164e6fe1fea5d8448c2651ce7
+LICENSE (MPL-2.0) and LICENSE-CC0 copied unchanged from the tarball. Embedded dependencies of the
+amalgamation (deps/ of the tarball, each with its notice inside open62541.c): base64 (BSD), cj5
+(MIT), dtoa, itoa, parse_num (MIT/MPL-2.0), libc_time (MIT, musl), mp_printf (MIT), pcg_basic
+(Apache-2.0), open62541_queue (BSD-3-Clause), ziptree (MPL-2.0).
+The mAT runtime links only the client side (the linker keeps what is called); the server side is
+used by the test server tools/opcua-sim and the driver tests.

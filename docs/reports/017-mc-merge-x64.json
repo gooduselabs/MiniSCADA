@@ -1,0 +1,122 @@
+{
+  "scenario": "merge",
+  "checks": [
+    {
+      "name": "plc-a: the simulator saw exactly the requests that were computed",
+      "pass": true,
+      "detail": "seen 0401/B/16/5 0401/D/100/24 0401/D/500/41 0401/M/0/7 0401/R/0/946 0401/R/1920/76 0401/R/960/946 0401/W/416/17 0401/Y/32/3 0403/n17/m1 0403/n192/m0 | want 0401/B/16/5 0401/D/100/24 0401/D/500/41 0401/M/0/7 0401/R/0/946 0401/R/1920/76 0401/R/960/946 0401/W/416/17 0401/Y/32/3 0403/n17/m1 0403/n192/m0"
+    },
+    {
+      "name": "plc-a: one round of 11 requests per second",
+      "pass": true,
+      "detail": "110 requests in 10.2 s = 10 rounds"
+    },
+    {
+      "name": "plc-a: every Batch Read <= 960 points, every Random Read <= 192 points",
+      "pass": true
+    },
+    {
+      "name": "plc-a: every answer has end code 0000",
+      "pass": true,
+      "detail": "0000"
+    },
+    {
+      "name": "plc-b: the simulator saw exactly the requests that were computed",
+      "pass": true,
+      "detail": "seen 0401/D/100/24 0401/M/0/7 0401/R/0/946 0401/R/1920/76 0401/R/960/946 0401/W/416/17 0403/n12/m1 | want 0401/D/100/24 0401/M/0/7 0401/R/0/946 0401/R/1920/76 0401/R/960/946 0401/W/416/17 0403/n12/m1"
+    },
+    {
+      "name": "plc-b: one round of 7 requests per second",
+      "pass": true,
+      "detail": "70 requests in 10.2 s = 10 rounds"
+    },
+    {
+      "name": "plc-b: every Batch Read <= 960 points, every Random Read <= 192 points",
+      "pass": true
+    },
+    {
+      "name": "plc-b: every answer has end code 0000",
+      "pass": true,
+      "detail": "0000"
+    },
+    {
+      "name": "plc-c: the simulator saw exactly the requests that were computed",
+      "pass": true,
+      "detail": "seen 0401/D/100/24 0401/M/0/7 0401/W/416/17 0403/n10/m2 | want 0401/D/100/24 0401/M/0/7 0401/W/416/17 0403/n10/m2"
+    },
+    {
+      "name": "plc-c: one round of 4 requests per second",
+      "pass": true,
+      "detail": "40 requests in 10.2 s = 10 rounds"
+    },
+    {
+      "name": "plc-c: every Batch Read <= 960 points, every Random Read <= 192 points",
+      "pass": true
+    },
+    {
+      "name": "plc-c: every answer has end code 0000",
+      "pass": true,
+      "detail": "0000"
+    },
+    {
+      "name": "no request of another kind of frame",
+      "pass": true,
+      "detail": "0"
+    }
+  ],
+  "measures": {
+    "windowS": 10.2,
+    "channels": {
+      "plc-a": {
+        "tags": 383,
+        "requestsPerRound": 11,
+        "batchReads": 9,
+        "randomReads": 2,
+        "plan": [
+          "0401/D/100/24",
+          "0401/D/500/41",
+          "0401/W/416/17",
+          "0401/R/0/946",
+          "0401/R/960/946",
+          "0401/R/1920/76",
+          "0401/M/0/7",
+          "0401/Y/32/3",
+          "0401/B/16/5",
+          "0403/n192/m0",
+          "0403/n17/m1"
+        ],
+        "requestsInWindow": 110
+      },
+      "plc-b": {
+        "tags": 173,
+        "requestsPerRound": 7,
+        "batchReads": 6,
+        "randomReads": 1,
+        "plan": [
+          "0401/D/100/24",
+          "0401/W/416/17",
+          "0401/R/0/946",
+          "0401/R/960/946",
+          "0401/R/1920/76",
+          "0401/M/0/7",
+          "0403/n12/m1"
+        ],
+        "requestsInWindow": 70
+      },
+      "plc-c": {
+        "tags": 37,
+        "requestsPerRound": 4,
+        "batchReads": 3,
+        "randomReads": 1,
+        "plan": [
+          "0401/D/100/24",
+          "0401/W/416/17",
+          "0401/M/0/7",
+          "0403/n10/m2"
+        ],
+        "requestsInWindow": 40
+      }
+    }
+  },
+  "pass": true
+}

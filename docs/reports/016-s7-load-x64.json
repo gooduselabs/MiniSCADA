@@ -1,0 +1,38 @@
+{
+  "scenario": "load",
+  "checks": [
+    {
+      "name": "no lost sequence on any client",
+      "pass": true,
+      "detail": "0 gaps"
+    },
+    {
+      "name": "the real period of an animated Tag is 1 s +/- 10 %",
+      "pass": true,
+      "detail": "1001.5 ms"
+    },
+    {
+      "name": "all 500 Tags GOOD on every client",
+      "pass": true
+    },
+    {
+      "name": "RSS <= 150 MB (Constitution III)",
+      "pass": true,
+      "detail": "16.5 MB"
+    }
+  ],
+  "measures": {
+    "seconds": 60.1,
+    "clients": 10,
+    "tags": 500,
+    "cpuPercentOneCoreAvg": 0.3,
+    "cpuPercentOneCoreMax5s": 0.6,
+    "rssMaxMB": 16.5,
+    "readRequestsPerSecond": 3,
+    "maxRequestPdu": 36,
+    "maxResponsePdu": 480,
+    "sequenceGaps": 0,
+    "periodMeanMs": 1001.5
+  },
+  "pass": true
+}

@@ -1,0 +1,471 @@
+{
+  "schemaVersion": "1.1.0",
+  "tags": [
+    {
+      "id": "TANK01.LEVEL",
+      "kind": "external",
+      "type": "FLOAT32",
+      "description": "Mức nước bồn",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "deadband": 0.5,
+      "source": {
+        "device": "plc1",
+        "address": "HR100",
+        "rawType": "INT16"
+      },
+      "scaling": {
+        "rawMin": 0,
+        "rawMax": 27648,
+        "engMin": 0,
+        "engMax": 100,
+        "clamp": true
+      }
+    },
+    {
+      "id": "TANK01.SP",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 90
+      },
+      "source": {
+        "device": "plc1",
+        "address": "HR200",
+        "byteOrder": "CDAB"
+      }
+    },
+    {
+      "id": "PUMP01.RUN_CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C10",
+        "readback": false
+      }
+    },
+    {
+      "id": "PUMP01.STATE",
+      "kind": "external",
+      "type": "INT16",
+      "valueTable": "TrangThaiBom",
+      "source": {
+        "device": "plc1",
+        "address": "HR10"
+      }
+    },
+    {
+      "id": "METER1.P",
+      "kind": "external",
+      "type": "FLOAT32",
+      "unit": "kW",
+      "source": {
+        "device": "meter1",
+        "address": "30013"
+      }
+    },
+    {
+      "id": "PUMP01.FAULT",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "plc1",
+        "address": "HR12.3"
+      }
+    },
+    {
+      "id": "PUMP01.NAME",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "plc1",
+        "address": "HR300",
+        "stringLength": 16
+      }
+    },
+    {
+      "id": "TANK01.SP_HI",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "unit": "%",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "initial": 85,
+      "retain": true
+    },
+    {
+      "id": "TANK01.VOLUME",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "unit": "m3",
+      "expression": "TANK01.LEVEL * 12.5"
+    },
+    {
+      "id": "TANK01.HIGH",
+      "kind": "calculated",
+      "type": "BOOL",
+      "expression": "TANK01.LEVEL > TANK01.SP_HI"
+    },
+    {
+      "id": "PUMP01.STATE_TEXT",
+      "kind": "calculated",
+      "type": "STRING",
+      "expression": "text(PUMP01.STATE, TrangThaiBom)"
+    },
+    {
+      "id": "DEMO.WAVE",
+      "kind": "simulation",
+      "type": "FLOAT64",
+      "sim": {
+        "kind": "sine",
+        "center": 50,
+        "amplitude": 25,
+        "periodMs": 20000
+      }
+    },
+    {
+      "id": "DEMO.SET",
+      "kind": "simulation",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -100,
+        "max": 100
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 0
+      }
+    },
+    {
+      "id": "PUMP02.CMD",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "plc1",
+        "address": "C11"
+      }
+    },
+    {
+      "id": "NOTE.TEXT",
+      "kind": "internal",
+      "type": "STRING",
+      "access": "RW",
+      "limits": {
+        "maxLength": 8
+      },
+      "initial": ""
+    },
+    {
+      "id": "CNT.U16",
+      "kind": "internal",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 65535
+      },
+      "initial": 0
+    },
+    {
+      "id": "SEL.TAB",
+      "kind": "internal",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 5
+      },
+      "valueTable": "TrangThaiBom",
+      "initial": 0
+    },
+    {
+      "id": "NO.TABLE",
+      "kind": "internal",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 5
+      },
+      "initial": 0
+    },
+    {
+      "id": "PUMP07.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "PUMP07.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "PUMP07.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "PUMP08.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "PUMP08.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "PUMP08.RUN_CMD",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "initial": false
+    },
+    {
+      "id": "PUMP01.RUN",
+      "kind": "internal",
+      "type": "BOOL",
+      "initial": false
+    },
+    {
+      "id": "PUMP01.FLOW",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "initial": 0
+    },
+    {
+      "id": "MC.D100",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "q03",
+        "address": "D100"
+      }
+    },
+    {
+      "id": "MC.D101",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "q03",
+        "address": "D101"
+      }
+    },
+    {
+      "id": "MC.D200",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "q03",
+        "address": "D200"
+      }
+    },
+    {
+      "id": "MC.D202",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "q03",
+        "address": "D202"
+      }
+    },
+    {
+      "id": "MC.D300",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "q03",
+        "address": "D300"
+      }
+    },
+    {
+      "id": "MC.D302",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "q03",
+        "address": "D302"
+      }
+    },
+    {
+      "id": "MC.D400",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "q03",
+        "address": "D400",
+        "stringLength": 10
+      }
+    },
+    {
+      "id": "MC.D100_5",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "q03",
+        "address": "D100.5"
+      }
+    },
+    {
+      "id": "MC.ZR1000",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "q03",
+        "address": "ZR1000"
+      }
+    },
+    {
+      "id": "MC.R10",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "q03",
+        "address": "R10"
+      }
+    },
+    {
+      "id": "MC.W1A",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "q03",
+        "address": "W1A"
+      }
+    },
+    {
+      "id": "MC.SD210",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "q03",
+        "address": "SD210"
+      }
+    },
+    {
+      "id": "MC.TN0",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "q03",
+        "address": "TN0"
+      }
+    },
+    {
+      "id": "MC.CN3",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "q03",
+        "address": "CN3"
+      }
+    },
+    {
+      "id": "MC.M10",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "q03",
+        "address": "M10"
+      }
+    },
+    {
+      "id": "MC.X1F",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "q03",
+        "address": "X1F"
+      }
+    },
+    {
+      "id": "MC.Y20",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "q03",
+        "address": "Y20"
+      }
+    },
+    {
+      "id": "MC.B1F",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "q03",
+        "address": "B1F"
+      }
+    },
+    {
+      "id": "MC.L5",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "q03",
+        "address": "L5"
+      }
+    },
+    {
+      "id": "MC.SM400",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "q03",
+        "address": "SM400"
+      }
+    },
+    {
+      "id": "MC.FX_X17",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "fx5u",
+        "address": "X17"
+      }
+    },
+    {
+      "id": "MC.FX_D0",
+      "kind": "external",
+      "type": "FLOAT32",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "source": {
+        "device": "fx5u",
+        "address": "D0",
+        "byteOrder": "ABCD",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "MC.BAD",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "q03",
+        "address": "M10"
+      }
+    }
+  ]
+}

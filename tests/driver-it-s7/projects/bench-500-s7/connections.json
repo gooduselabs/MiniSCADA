@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.1.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "s7-1",
+      "name": "Giả lập S7",
+      "kind": "s7",
+      "tcp": {
+        "host": "sim",
+        "port": 102,
+        "connectTimeoutMs": 1000,
+        "reconnectMaxS": 4
+      },
+      "s7": {
+        "rack": 0,
+        "slot": 1,
+        "pduSize": 480
+      },
+      "devices": [
+        {
+          "id": "cpu1",
+          "name": "CPU giả lập",
+          "timeoutMs": 400
+        }
+      ]
+    }
+  ]
+}

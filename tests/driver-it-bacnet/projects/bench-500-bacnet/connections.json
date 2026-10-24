@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.1.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "bms",
+      "name": "Giả lập BACnet",
+      "kind": "bacnet",
+      "bacnet": {
+        "broadcast": "172.30.20.255",
+        "reconnectMaxS": 4
+      },
+      "devices": [
+        {
+          "id": "bench",
+          "name": "BENCH-500",
+          "deviceInstance": 2001,
+          "host": "sim"
+        }
+      ]
+    }
+  ]
+}

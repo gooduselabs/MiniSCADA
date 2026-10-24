@@ -36,6 +36,7 @@
 #include "core/diagnostics/proc_stats.hpp"
 #include "core/diagnostics/run_record.hpp"
 #include "core/discovery/discovery_proto.hpp"
+#include "drivers/opcua/browse.hpp"
 #include "server/device_state.hpp"
 #include "server/http/auth_gate.hpp"
 #include "server/http/drivers_api.hpp"
@@ -134,8 +135,19 @@ class EngineeringApi {
         // Empty: a modbus-rtu test answers 501.
         std::function<drv::TestOutcome(const std::string& port, const drv::RtuProbeRequest&)>
             probeRtu;
+        // Omron FINS (feature 018): a new, temporary UDP socket or TCP connection, the node
+        // handshake (TCP), then a Controller Data Read or the read of an address. Empty: a fins
+        // test answers 501.
+        std::function<drv::FinsProbeOutcome(const drv::FinsProbeRequest&)> probeFins;
+        // BACnet/IP (feature 020): a new, temporary UDP port; a read, a Who-Is or the object-list
+        // of a device. Empty: a bacnet test answers 501.
+        std::function<drv::BacnetProbeOutcome(const drv::BacnetProbeRequest&)> probeBacnet;
         // GET /api/v1/drivers/diagnostics (US5, T195): the whole body of §5. Empty: 501.
         std::function<nlohmann::json()> diagnostics;
+        // Feature 019 (contracts/opcua.md §4): an OPC UA endpoints/browse request, the password
+        // taken from the device secrets by its id. Empty: the route answers 501.
+        std::function<opcua::BrowseResult(opcua::BrowseRequest, const std::string& secretId)>
+            opcuaBrowse;
         std::function<int64_t()> monoMs;  // rate limit; empty: CLOCK_BOOTTIME
     };
     void setDrivers(DriversBackend backend);
@@ -261,6 +273,9 @@ class EngineeringApi {
     int driversTest(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                     bool close);
     int driversDiagnostics(mg_connection* c, bool close);
+    // Feature 019: POST /api/v1/drivers/opcua/browse (opcua_api.cpp).
+    int opcuaBrowse(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                    bool close);
     int serialPorts(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                     bool close);
     // Runs the steps of operation `opId` on a worker thread (one operation at a time).
@@ -286,6 +301,7 @@ class EngineeringApi {
     std::mutex testMu_;              // guards the two members below
     std::deque<int64_t> testTimes_;  // when the tests of the last minute began
     bool testBusy_ = false;
+    std::deque<int64_t> browseTimes_;  // feature 019: OPC UA browses of the last minute (testMu_)
     std::mutex workerMu_;
     std::thread worker_;
 };

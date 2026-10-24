@@ -91,14 +91,17 @@ pub const POST_TIMEOUT_WRITE: Duration = Duration::from_secs(10);
 /// Hạn request `POST /api/v1/drivers/test` (lần thử có thể tới 35 s).
 pub const POST_TIMEOUT_TEST: Duration = Duration::from_secs(40);
 
-/// Đường dẫn `device_post` được gọi: chỉ ghi Tag và Thử kết nối.
+/// Đường dẫn `device_post` được gọi: chỉ ghi Tag, Thử kết nối và Lấy chứng chỉ / Duyệt node OPC UA (feature 019).
 pub fn allowed_post_path(path: &str) -> bool {
-    matches!(path, "/api/v1/tags/write" | "/api/v1/drivers/test")
+    matches!(
+        path,
+        "/api/v1/tags/write" | "/api/v1/drivers/test" | "/api/v1/drivers/opcua/browse"
+    )
 }
 
 /// Hạn request của `device_post` theo đường dẫn.
 pub fn post_timeout(path: &str) -> Duration {
-    if path == "/api/v1/drivers/test" {
+    if path == "/api/v1/drivers/test" || path == "/api/v1/drivers/opcua/browse" {
         POST_TIMEOUT_TEST
     } else {
         POST_TIMEOUT_WRITE
@@ -804,7 +807,10 @@ mod tests {
     async fn device_post_paths_size_and_timeouts() {
         assert!(allowed_post_path("/api/v1/tags/write"));
         assert!(allowed_post_path("/api/v1/drivers/test"));
+        assert!(allowed_post_path("/api/v1/drivers/opcua/browse"));
         for bad in [
+            "/api/v1/drivers/opcua",
+            "/api/v1/drivers/opcua/browse/",
             "",
             "/api/v1/auth/login",
             "/api/v1/tags/write/",
@@ -818,6 +824,10 @@ mod tests {
         assert_eq!(post_timeout("/api/v1/tags/write"), Duration::from_secs(10));
         assert_eq!(
             post_timeout("/api/v1/drivers/test"),
+            Duration::from_secs(40)
+        );
+        assert_eq!(
+            post_timeout("/api/v1/drivers/opcua/browse"),
             Duration::from_secs(40)
         );
         assert_eq!(MAX_POST_BODY, 16 * 1024);

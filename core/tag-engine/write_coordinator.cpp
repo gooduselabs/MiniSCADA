@@ -296,6 +296,11 @@ std::string pulseTargetHash(const ProjectModel& model, const TagModel& t) {
         if (t.device < model.devices.size()) {
             const DeviceModel& d = model.devices[t.device];
             key += "|unit|" + std::to_string(d.unitId) + "|base|" + std::to_string(d.addressBase);
+            if (t.channel < model.channels.size() && model.channels[t.channel].isFins)  // 018
+                key += "|fins|" + std::to_string(d.finsNetwork) + "." + std::to_string(d.finsNode) +
+                       "." + std::to_string(d.finsUnit);
+            if (t.channel < model.channels.size() && model.channels[t.channel].isBacnet)  // 020
+                key += "|bacnet|" + std::to_string(d.bacnetInstance) + "@" + d.bacnetHost;
         }
         const modbus::AddressResult& r = t.source.addr;
         key += "|addr|" + t.source.address + "|" + (r.ok ? "ok" : "raw") + "|" +

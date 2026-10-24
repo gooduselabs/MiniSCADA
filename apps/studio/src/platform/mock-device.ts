@@ -217,7 +217,12 @@ const ALLOWED = [
   /^\/api\/v1\/tags\/write\/[0-9a-f-]{36}$/,
 ];
 /** Đường dẫn `device_post` được phép (tauri-commands-006 §3). */
-const ALLOWED_POST = ['/api/v1/tags/write', '/api/v1/drivers/test'];
+const ALLOWED_POST = [
+  '/api/v1/tags/write',
+  '/api/v1/drivers/test',
+  // feature 019: Lấy chứng chỉ, Duyệt node OPC UA
+  '/api/v1/drivers/opcua/browse',
+];
 const RANK: Readonly<Record<Role, number>> = {
   viewer: 0,
   operator: 1,
@@ -2064,6 +2069,19 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
           s6.dropNextWriteReply = false;
           return { error: 'timeout' };
         }
+        return reply;
+      }
+      if (path === '/api/v1/drivers/opcua/browse') {
+        // feature 019: Lấy chứng chỉ, Duyệt node (contracts/opcua.md §4); audit driver.test như Thử kết nối
+        const reply = m6.postOpcUaBrowse(f, body);
+        appendAudit(f, {
+          action: 'driver.test',
+          result: reply.status === 200 ? 'ok' : 'error',
+          user: t.user,
+          role: t.role,
+          target: 'opcua-browse',
+          code: 'OK',
+        });
         return reply;
       }
       const s = m6.stateOf(f);

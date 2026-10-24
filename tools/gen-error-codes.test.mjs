@@ -42,6 +42,10 @@ const NOT_CODES = new Map([
   ['TANK01_LEVEL', 'ví dụ tên cột trong chú thích (logging_config.hpp)'],
   ['SQL_ASCII', 'tên bảng mã của PostgreSQL (pg_destination.cpp)'],
   ['IP_PKTINFO', 'tên tùy chọn socket trong câu log (discovery_server.cpp)'],
+  [
+    'MAT_OPCUA_LOG',
+    'tên biến môi trường bật log cảnh báo của open62541 (drivers/opcua/status_map.cpp)',
+  ],
 ]);
 
 const GROUPS = [

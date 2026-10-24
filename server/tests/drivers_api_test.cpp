@@ -392,3 +392,142 @@ TEST(DriversApi, TheRoleTableHasTheRow) {
     EXPECT_TRUE(rule->refreshesSession);
     EXPECT_TRUE(rule->changesDevice);
 }
+
+// ---- feature 019 (contracts/opcua.md §4): OPC UA ----
+
+namespace {
+
+struct UaRig : ApiRig {
+    UaRig()
+        : ApiRig([this](ApiRig& rig) {
+              EngineeringApi::DriversBackend d;
+              d.probeTcp = [](const drv::TcpProbeRequest&) { return drv::TestOutcome{}; };
+              d.opcuaBrowse = [this](opcua::BrowseRequest q, const std::string& secretId) {
+                  std::lock_guard<std::mutex> l(mu);
+                  last = q;
+                  lastSecret = secretId;
+                  ++calls;
+                  return answer;
+              };
+              d.monoMs = [&rig] { return rig.mono.load(); };
+              rig.eng->setDrivers(d);
+          }) {}
+    std::mutex mu;
+    opcua::BrowseRequest last;
+    std::string lastSecret;
+    int calls = 0;
+    opcua::BrowseResult answer;
+};
+
+json uaBody() {
+    return {
+        {"channel",
+         {{"id", "ua-1"},
+          {"kind", "opcua"},
+          {"opcua",
+           {{"endpointUrl", "opc.tcp://10.0.0.5:4840"},
+            {"securityMode", "SignAndEncrypt"},
+            {"securityPolicy", "Basic256Sha256"},
+            {"auth", {{"mode", "username"}, {"username", "op"}, {"secretId", "opcua-ua-1"}}}}}}},
+        {"action", "browse"},
+        {"nodeId", "ns=02;s=Tank"},
+        {"timeoutMs", 4000}};
+}
+
+}  // namespace
+
+TEST(DriversApiOpcUa, BrowseRunsWithTheChannelAndIsAudited) {
+    UaRig r;
+    r.answer.ok = true;
+    r.answer.code = "OK";
+    r.answer.certSha256 = std::string(64, 'b');
+    r.answer.certNotAfterMs = 1792810800000LL;
+    opcua::BrowseRef ref;
+    ref.nodeId = "ns=2;s=Tank.Level";
+    ref.browseName = "2:Level";
+    ref.displayName = "Level";
+    ref.nodeClass = "Variable";
+    ref.dataType = "Double";
+    ref.tagType = "FLOAT64";
+    ref.writable = true;
+    r.answer.references.push_back(ref);
+    r.answer.endpoints.push_back({"None", "None", {"anonymous"}});
+    const HttpResult res = r.postAs("kysu1", "/api/v1/drivers/opcua/browse", uaBody().dump());
+    ASSERT_EQ(res.status, 200) << res.body;
+    const json j = bodyJson(res);
+    EXPECT_EQ(j["ok"], true);
+    EXPECT_EQ(j["code"], "OK");
+    EXPECT_EQ(j["server"]["certSha256"], std::string(64, 'b'));
+    EXPECT_EQ(j["server"]["certNotAfter"], "2026-10-24T03:00:00Z");
+    EXPECT_EQ(j["references"][0]["nodeId"], "ns=2;s=Tank.Level");
+    EXPECT_EQ(j["references"][0]["tagType"], "FLOAT64");
+    EXPECT_EQ(j["references"][0]["writable"], true);
+    EXPECT_EQ(j["endpoints"][0]["userTokens"][0], "anonymous");
+    EXPECT_EQ(r.calls, 1);
+    EXPECT_EQ(r.last.endpointUrl, "opc.tcp://10.0.0.5:4840");
+    EXPECT_EQ(r.last.securityMode, drv::OpcUaSecurityMode::SignAndEncrypt);
+    EXPECT_TRUE(r.last.basic256Sha256);
+    EXPECT_TRUE(r.last.authUsername);
+    EXPECT_EQ(r.last.username, "op");
+    EXPECT_EQ(r.lastSecret, "opcua-ua-1");
+    EXPECT_EQ(r.last.nodeId, "ns=2;s=Tank");  // normalized
+    EXPECT_EQ(r.last.timeoutMs, 4000);
+    EXPECT_FALSE(r.last.password.has_value());  // the backend takes it from the device
+    const auto rows = r.records("driver.test");
+    ASSERT_EQ(rows.size(), 1u);
+    EXPECT_EQ(rows[0].target.value_or(""), "opc.tcp://10.0.0.5:4840");
+    EXPECT_EQ(rows[0].code.value_or(""), "OK");
+    // a viewer may not
+    EXPECT_EQ(r.postAs("xem1", "/api/v1/drivers/opcua/browse", uaBody().dump()).status, 403);
+    EXPECT_EQ(r.calls, 1);
+}
+
+TEST(DriversApiOpcUa, ABadRequestIs400WithIssues) {
+    UaRig r;
+    auto issues = [&](json body) {
+        const HttpResult res = r.postAs("kysu1", "/api/v1/drivers/opcua/browse", body.dump());
+        EXPECT_EQ(res.status, 400) << res.body;
+        return bodyJson(res)["issues"];
+    };
+    json b = uaBody();
+    b["channel"]["opcua"]["endpointUrl"] = "http://x";
+    EXPECT_EQ(issues(b)[0]["path"], "channel.opcua.endpointUrl");
+    b = uaBody();
+    b["channel"]["opcua"]["securityPolicy"] = "None";
+    EXPECT_EQ(issues(b)[0]["path"], "channel.opcua.securityPolicy");
+    b = uaBody();
+    b["nodeId"] = "ns=2;x=1";
+    EXPECT_EQ(issues(b)[0]["code"], "E_ADDR_SYNTAX");
+    b = uaBody();
+    b["action"] = "write";
+    EXPECT_EQ(issues(b)[0]["path"], "action");
+    b = uaBody();
+    b["channel"]["opcua"]["auth"].erase("secretId");
+    EXPECT_EQ(issues(b)[0]["path"], "channel.opcua.auth");
+    b = uaBody();
+    b["channel"]["opcua"]["serverCertSha256"] = std::string(64, 'A');
+    EXPECT_EQ(issues(b)[0]["path"], "channel.opcua.serverCertSha256");
+    b = uaBody();
+    b["timeoutMs"] = 50;
+    EXPECT_EQ(issues(b)[0]["path"], "timeoutMs");
+    EXPECT_EQ(r.calls, 0);
+}
+
+TEST(DriversApiOpcUa, AtMost60BrowsesAMinuteAndTheTestRouteSaysNotSupported) {
+    UaRig r;
+    r.answer.ok = false;
+    r.answer.code = "OPCUA_CERT_UNTRUSTED";
+    for (int i = 0; i < 60; ++i) {
+        const HttpResult res = r.postAs("kysu1", "/api/v1/drivers/opcua/browse", uaBody().dump());
+        ASSERT_EQ(res.status, 200) << i;
+        EXPECT_EQ(bodyJson(res)["code"], "OPCUA_CERT_UNTRUSTED");
+    }
+    const HttpResult res = r.postAs("kysu1", "/api/v1/drivers/opcua/browse", uaBody().dump());
+    EXPECT_EQ(res.status, 429);
+    EXPECT_EQ(bodyJson(res)["error"], "TEST_RATE_LIMITED");
+    r.mono += 60 * 1000;
+    EXPECT_EQ(r.postAs("kysu1", "/api/v1/drivers/opcua/browse", uaBody().dump()).status, 200);
+    const HttpResult t = r.postAs("kysu1", "/api/v1/drivers/test", uaBody().dump());
+    ASSERT_EQ(t.status, 200);
+    EXPECT_EQ(bodyJson(t)["code"], "NOT_SUPPORTED");
+}

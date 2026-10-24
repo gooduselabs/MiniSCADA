@@ -2,6 +2,8 @@
 // chỉ khi trang đang mở (`DriverDiagFeed.start/stop`), giữ bản đầu của lần mở để hiện phần tăng thêm (US5-4), dựng các dòng
 // số đếm, chu kỳ thực và Tag xấu. Hàm thuần và máy trạng thái, không DOM.
 import { reasonText } from '../app/code-text.ts';
+import { hasKey, t } from '../i18n/index.ts';
+import { mcEndCode } from './mc.ts';
 import { isDeviceError, type ApiResult, type DeviceError } from '../platform/device-types.ts';
 
 /** Chu kỳ hỏi (FR-051: cập nhật ít nhất 2 s một lần). */
@@ -45,6 +47,8 @@ export interface DiagChannelView {
   lastError: { code: string; at: number; device: string } | null;
   reconnects: number;
   warnings: string[];
+  /** Thông số đã thương lượng của kênh (S7: `pduSize`, `localTsap`, `remoteTsap`); `null` khi thiết bị không gửi. */
+  details: Record<string, string> | null;
   devices: DiagDeviceView[];
 }
 
@@ -75,6 +79,53 @@ const counts = (v: unknown): Record<string, number> => {
   if (isObject(v)) for (const [k, n] of Object.entries(v)) out[k] = num(n);
   return out;
 };
+
+/** Đối tượng chỉ gồm giá trị chữ (bỏ giá trị khác); không phải đối tượng hay rỗng thì `null`. */
+const strings = (v: unknown): Record<string, string> | null => {
+  if (!isObject(v)) return null;
+  const out: Record<string, string> = {};
+  for (const [k, s] of Object.entries(v)) if (typeof s === 'string') out[k] = s;
+  return Object.keys(out).length ? out : null;
+};
+
+/**
+ * Một mã lỗi PLC trong `exceptions` của CPU S7 (contracts/s7-driver.md §5): mã trả về của item (1, 3, 5, 6, 7, 10) viết 2 chữ số
+ * hex, lỗi đầu khung (lớp·256 + mã, ví dụ 33028) viết 4 chữ số hex, kèm tên: "03 truy cập bị từ chối", "8104 chưa bật PUT/GET".
+ */
+export function s7ExceptionText(code: string): string {
+  // khóa hex như Modbus: "03", "0A", "8104" (lỗi đầu khung)
+  const n = /^[0-9A-Fa-f]{2,4}$/.test(code) ? parseInt(code, 16) : NaN;
+  if (!Number.isFinite(n)) return `${code} ${t('s7Ex.other')}`;
+  const hex = n
+    .toString(16)
+    .toUpperCase()
+    .padStart(n > 255 ? 4 : 2, '0');
+  const key = `s7Ex.${n}`;
+  return `${hex} ${hasKey(key) ? t(key) : t('s7Ex.other')}`;
+}
+
+/**
+ * Dòng thông tin của kênh OPC UA (specs/019-driver-opcua/contracts/opcua.md §3) theo thứ tự hiện: khóa và giá trị; khóa lạ
+ * bỏ qua, giá trị rỗng bỏ qua.
+ */
+export const OPCUA_DETAIL_KEYS = [
+  'endpointUrl',
+  'securityMode',
+  'securityPolicy',
+  'readMode',
+  'session',
+  'publishingMs',
+  'serverCertSha256',
+  'clientCertSha256',
+  'lastStatus',
+] as const;
+
+export function opcuaDetailRows(
+  details: Record<string, string> | null,
+): Array<{ key: (typeof OPCUA_DETAIL_KEYS)[number]; value: string }> {
+  if (!details) return [];
+  return OPCUA_DETAIL_KEYS.filter((k) => details[k]).map((k) => ({ key: k, value: details[k] }));
+}
 
 function parseDevice(v: unknown): DiagDeviceView | null {
   if (!isObject(v) || typeof v.id !== 'string') return null;
@@ -135,6 +186,7 @@ function parseChannel(v: unknown): DiagChannelView | null {
     warnings: (Array.isArray(v.warnings) ? v.warnings : []).filter(
       (w): w is string => typeof w === 'string',
     ),
+    details: strings(v.details),
     devices: (Array.isArray(v.devices) ? v.devices : [])
       .map(parseDevice)
       .filter((d): d is DiagDeviceView => d !== null),
@@ -354,4 +406,37 @@ export class DriverDiagFeed {
       error: null,
     });
   }
+}
+
+// ---------- Kênh Mitsubishi MC (feature 017, contracts/mc-protocol.md §4) ----------
+
+/**
+ * Nhãn của dòng `exception:{mã}`: Modbus "Exception 02"; S7 tên lỗi; FINS mã kết thúc; kênh MC đếm theo end code (số thập phân trong JSON) nên hiện hex
+ * kèm nghĩa ngắn: `C056` → "End code C056: địa chỉ hoặc số điểm ngoài vùng".
+ */
+export function exceptionLabel(code: string, channelKind: string): string {
+  // BACnet/IP (feature 020): error:31, reject:9, abort:4
+  const bac = /^(error|reject|abort):(d+)$/.exec(code);
+  if (bac)
+    return t(
+      bac[1] === 'error'
+        ? 'dd.row.bacnetError'
+        : bac[1] === 'reject'
+          ? 'dd.row.bacnetReject'
+          : 'dd.row.bacnetAbort',
+      { code: bac[2]! },
+    );
+  // CPU S7 (feature 016): mã lỗi PLC (item hay đầu khung), tên S7 thay cho exception Modbus
+  if (channelKind === 's7') return t('dd.row.s7item', { code: s7ExceptionText(code) });
+  if (channelKind === 'mc') {
+    const e = mcEndCode(code);
+    return t('dd.row.mcEndCode', { code: e.hex, meaning: t(`mc.end.${e.reason}`) });
+  }
+  // Omron FINS (feature 018): mã kết thúc bốn chữ số hex; Modbus: exception hai chữ số
+  return t(code.length === 4 ? 'dd.row.endCode' : 'dd.row.exception', { code });
+}
+
+/** Loại kênh chứa thiết bị trường `deviceId` trong bản chẩn đoán (rỗng khi không thấy). */
+export function channelKindOf(data: DriverDiag | null | undefined, deviceId: string): string {
+  return data?.channels.find((c) => c.devices.some((d) => d.id === deviceId))?.kind ?? '';
 }

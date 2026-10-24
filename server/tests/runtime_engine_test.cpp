@@ -468,3 +468,98 @@ TEST(RuntimeEngineChannels, ProjectsActiveOfA02ProjectNamesTheChannelsButNeverTh
     r.rt->stop();
     old.rt->stop();
 }
+
+// Feature 016: an S7 channel gets an S7 driver, its Tags route to it, the Modbus channels keep
+// theirs.
+TEST(RuntimeEngineChannels, AnS7ChannelGetsAnS7DriverAndItsTagsRouteToIt) {
+    Rig r(kVectors + "/v11-s7-valid-channel", false);
+    ASSERT_TRUE(r.rt->active()) << resultJson(r.validation);
+    const auto& by = r.rt->driversByChannel();
+    ASSERT_EQ(by.size(), 3u);
+    EXPECT_EQ(r.rt->channelDrivers().size(), 2u);
+    auto* s7 = dynamic_cast<drv::S7Driver*>(by[2]);
+    ASSERT_NE(s7, nullptr);
+    const drv::S7Config& c = s7->config();
+    EXPECT_EQ(c.host, "192.168.0.10");
+    EXPECT_EQ(c.port, 102);
+    EXPECT_EQ(c.remoteTsap, 0x0101);
+    EXPECT_EQ(c.pduSize, 480);
+    EXPECT_EQ(c.deviceId, "cpu1");
+    EXPECT_EQ(c.timeoutMs, 200);
+    EXPECT_EQ(c.tags.size(), 17u);
+    const size_t sp = *r.store.indexOf("S7.SP");
+    EXPECT_EQ(r.rt->driverOf(sp), by[2]);
+    EXPECT_EQ(r.rt->deviceOf(sp), 0u);
+    EXPECT_EQ(r.rt->driverOf(*r.store.indexOf("TANK01.LEVEL")), by[0]);
+}
+
+// Feature 017: a Mitsubishi MC channel gets an McDriver at its place in the model; the Modbus
+// channels keep theirs; a Tag of the MC channel is routed to it with its MC address resolved.
+TEST(RuntimeEngineChannels, AnMcChannelGetsItsDriver) {
+    Rig r(kVectors + "/v11-mc-valid", false);
+    ASSERT_TRUE(r.active.active);
+    ASSERT_EQ(r.rt->driversByChannel().size(), 3u);
+    EXPECT_EQ(r.rt->channelDrivers().size(), 2u) << "the Modbus channels";
+    auto* mcDrv = dynamic_cast<drv::McDriver*>(r.rt->driversByChannel()[2]);
+    ASSERT_NE(mcDrv, nullptr);
+    const drv::McConfig& c = mcDrv->config();
+    EXPECT_EQ(c.channelId, "plc-mc");
+    EXPECT_EQ(c.port, 5007);
+    EXPECT_EQ(c.frame, mc::FrameType::E3);
+    ASSERT_EQ(c.devices.size(), 2u);
+    EXPECT_TRUE(c.devices[0].xyOctal);
+    EXPECT_EQ(c.devices[0].timeoutMs, 200);
+    EXPECT_EQ(c.devices[1].route.station, 255);
+    EXPECT_EQ(c.devices[1].route.moduleIo, 0x03FF);
+    EXPECT_EQ(c.tags.size(), 22u);
+    const size_t d200 = *r.store.indexOf("MC.D200");
+    EXPECT_EQ(r.rt->driverOf(d200), r.rt->driversByChannel()[2]);
+    const auto it = std::find_if(c.tags.begin(), c.tags.end(),
+                                 [&](const drv::McTagBinding& b) { return b.tag == d200; });
+    ASSERT_NE(it, c.tags.end());
+    EXPECT_EQ(it->dev, mc::Device::D);
+    EXPECT_EQ(it->number, 200u);
+    EXPECT_EQ(it->words, 2);
+    EXPECT_EQ(it->byteOrder, modbus::ByteOrder::CDAB);
+    const size_t x17 = *r.store.indexOf("MC.FX_X17");
+    const auto xt = std::find_if(c.tags.begin(), c.tags.end(),
+                                 [&](const drv::McTagBinding& b) { return b.tag == x17; });
+    ASSERT_NE(xt, c.tags.end());
+    EXPECT_EQ(xt->number, 15u) << "X17 octal on the FX5";
+    EXPECT_EQ(xt->device, 0u);
+    r.rt->stop();
+}
+
+// Feature 019: an OPC UA channel gets an OPC UA driver, its Tags route to it, the Modbus channels
+// keep theirs.
+TEST(RuntimeEngineChannels, AnOpcUaChannelGetsAnOpcUaDriverAndItsTagsRouteToIt) {
+    Rig r(kVectors + "/v11-opcua-valid-channel", false);
+    ASSERT_TRUE(r.rt->active()) << resultJson(r.validation);
+    const auto& by = r.rt->driversByChannel();
+    ASSERT_EQ(by.size(), 3u);
+    EXPECT_EQ(r.rt->channelDrivers().size(), 2u);
+    auto* ua = dynamic_cast<drv::OpcUaDriver*>(by[2]);
+    ASSERT_NE(ua, nullptr);
+    const drv::OpcUaConfig& c = ua->config();
+    EXPECT_EQ(c.endpointUrl, "opc.tcp://192.168.0.20:4840");
+    EXPECT_EQ(c.securityMode, drv::OpcUaSecurityMode::None);
+    EXPECT_FALSE(c.basic256Sha256);
+    EXPECT_FALSE(c.authUsername);
+    EXPECT_FALSE(c.poll);
+    EXPECT_EQ(c.deviceId, "srv1");
+    EXPECT_EQ(c.timeoutMs, 500);
+    EXPECT_EQ(c.connectTimeoutMs, 5000);
+    EXPECT_EQ(c.tags.size(), 17u);
+    const size_t b = *r.store.indexOf("UA.BOOL");
+    EXPECT_EQ(r.rt->driverOf(b), by[2]);
+    EXPECT_EQ(r.rt->deviceOf(b), 0u);
+    EXPECT_EQ(r.rt->driverOf(*r.store.indexOf("TANK01.LEVEL")), by[0]);
+    bool found = false;
+    for (const auto& t : c.tags)
+        if (t.tag == b) {
+            found = true;
+            EXPECT_EQ(t.nodeId, "ns=2;s=Bool");
+            EXPECT_EQ(t.rawType, TagType::BOOL);
+        }
+    EXPECT_TRUE(found);
+}

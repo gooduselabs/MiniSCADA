@@ -1,0 +1,15 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "1.1.0",
+  "projectId": "bacnet-it-bench-500-bacnet",
+  "projectName": "Kiểm thử driver BACnet/IP: bench-500-bacnet",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "1.1.0",
+  "entryScreen": "main",
+  "screens": [
+    "main"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "maxClients": 10
+}

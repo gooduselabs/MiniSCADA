@@ -585,6 +585,19 @@ Nút xung bật bit rồi tự nhả sau N ms. Runtime ghi nhật ký xung `/var
 
 Bản dựng trước khi phát hành chính thức mang hậu tố `-rc.N` (Studio và runtime `1.0.0-rc.1`, …): trong bảng trên chúng thuộc dòng 1.0 / 1.0.0. Mỗi runtime có `minRuntimeVersion` của project: runtime cũ hơn từ chối với `E_RUNTIME_TOO_OLD`. Phép so chỉ dùng phần số (`1.0.0-rc.1` nhận project `minRuntimeVersion` 1.0.0). Xem phiên bản đang chạy: `system/info` (khóa `runtimeVersion`) hoặc tab Thiết bị của Studio.
 
+### 11.1. mAT OPC DA Bridge (máy Windows có OPC DA server)
+
+Cầu nối (ADR-049) là chương trình Windows riêng, không chạy trên BL335. Cài trên **cùng máy** với OPC DA server: nối bằng COM cục bộ nên **không cần cấu hình DCOM**.
+
+1. Giải nén ZIP vào `C:\Program Files\mAT\opcda-bridge\`, kiểm `SHA256SUMS` (`Get-FileHash`). Bản ZIP hiện ký thử hoặc chưa ký: SmartScreen có thể cảnh báo.
+2. Cấu hình ở `C:\ProgramData\mAT\opcda-bridge\config.json`. Khóa thư mục để chỉ Administrators sửa cấu hình, dịch vụ chỉ ghi được log: `icacls C:\ProgramData\mAT\opcda-bridge /inheritance:r /grant:r Administrators:(OI)(CI)F SYSTEM:(OI)(CI)F "LOCAL SERVICE":(OI)(CI)RX` rồi `icacls C:\ProgramData\mAT\opcda-bridge\logs /grant "LOCAL SERVICE":(OI)(CI)M`. `modbus.allow` chỉ ghi IP của BL335 (mặc định chỉ `127.0.0.1`); kết nối từ IP khác bị đóng ngay và ghi log `MODBUS_DENIED`. Nếu máy có nhiều card mạng, đặt `modbus.bind` là IP của card nối mạng điều khiển.
+3. Cài dịch vụ (PowerShell quyền Administrator): `mat-opcda-bridge service install --config C:\ProgramData\mAT\opcda-bridge\config.json`, rồi `sc.exe start matOpcDaBridge`. Dịch vụ tự khởi động, chạy dưới `NT AUTHORITY\LocalService`. Gỡ: `mat-opcda-bridge service uninstall`.
+4. Quyền: nếu log báo `OPC_CONNECT ... 0x80070005` (từ chối truy cập), cấp quyền Launch/Activation và Access cho LOCAL SERVICE trong `dcomcnfg` › DCOM Config › ứng dụng OPC server, hoặc đổi tài khoản dịch vụ (services.msc › Log On) sang tài khoản đang chạy OPC server. Không mở quyền cho Everyone.
+5. Tường lửa: chỉ mở cổng Modbus cho BL335: `New-NetFirewallRule -DisplayName "mAT OPC DA Bridge" -Direction Inbound -Protocol TCP -LocalPort 502 -RemoteAddress <IP BL335> -Action Allow`.
+6. Log: `log.file` (mặc định `C:\ProgramData\mAT\opcda-bridge\logs\bridge.log`, xoay vòng một bản `.1` khi quá `maxBytes`). Mã chính: `OPC_CONNECTED`, `OPC_DISCONNECTED`, `OPC_CONNECT`, `OPC_ITEM_ADD`, `OPC_SUBSCRIBE` (callback bị chặn, chuyển sang đọc cache theo chu kỳ), `OPC_WRITE_FAILED`, `MODBUS_DENIED`, `MODBUS_LIMIT`, `MODBUS_FRAME`. `log.debug: true` ghi thêm giá trị ghi và quality xấu; chỉ bật khi chẩn đoán.
+
+Modbus TCP không mã hóa, không xác thực: đặt máy cầu nối và BL335 trong cùng mạng điều khiển cách ly, chỉ cấp `access: RW` cho item thật sự cần ghi.
+
 ## 12. Sự cố thường gặp
 
 | Hiện tượng | Kiểm | Xử lý |

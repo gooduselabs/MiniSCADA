@@ -23,6 +23,8 @@ export interface TagSource {
   stringLength?: number;
   stringByteOrder?: 'AB' | 'BA';
   readback?: boolean;
+  /** Định dạng 1.1, feature 018: số BCD trên PLC Omron (INT16/UINT16 4 chữ số, INT32/UINT32 8 chữ số). */
+  bcd?: boolean;
 }
 
 export interface TagScaling {
@@ -105,17 +107,44 @@ export interface FieldDevice {
   timeoutMs?: number;
   retries?: number;
   writeDeadlineMs?: number;
+  /** Chỉ S7 (feature 016): khe byte tối đa khi gộp khoảng đọc. */
+  maxGapBytes?: number;
   write?: {
     singleRegister?: 'fc06' | 'fc16';
     singleCoil?: 'fc05' | 'fc15';
     registerBit?: 'none' | 'mask' | 'rmw';
   };
+  /** Chỉ Omron FINS (feature 018): địa chỉ FINS đích (mạng, nút, unit) và giới hạn gom. */
+  network?: number;
+  node?: number;
+  unit?: number;
+  maxReadWords?: number;
+  maxGapWords?: number;
+  multiRead?: boolean;
+  maxMultiItems?: number;
+  // Mitsubishi MC (feature 017, kênh `mc`; specs/017-driver-mc/plan.md)
+  station?: number;
+  moduleIo?: number;
+  moduleStation?: number;
+  xyNotation?: 'hex' | 'octal';
+  maxBatchWords?: number;
+  randomRead?: boolean;
+  maxRandomPoints?: number;
+  /** Chỉ BACnet/IP (feature 020): thiết bị đích và cách đọc/ghi. */
+  deviceInstance?: number;
+  host?: string;
+  port?: number;
+  mac?: string;
+  maxApdu?: number;
+  writePriority?: number;
+  useRpm?: boolean;
+  maxRpmProps?: number;
 }
 
 export interface Channel {
   id: string;
   name: string;
-  kind: 'modbus-tcp' | 'modbus-rtu';
+  kind: 'modbus-tcp' | 'modbus-rtu' | 's7' | 'fins' | 'mc' | 'bacnet' | 'opcua';
   enabled?: boolean;
   requestGapMs?: number;
   tcp?: { host: string; port?: number; connectTimeoutMs?: number; reconnectMaxS?: number };
@@ -129,6 +158,31 @@ export interface Channel {
     dropEcho?: boolean;
     silenceMs?: number;
   };
+  /** Kênh `s7` (feature 016, định dạng 1.1): rack/slot hoặc TSAP, PDU xin. */
+  s7?: { rack?: number; slot?: number; localTsap?: string; remoteTsap?: string; pduSize?: number };
+  /** Kênh Omron FINS (định dạng 1.1, feature 018). */
+  fins?: {
+    host: string;
+    port?: number;
+    transport?: 'udp' | 'tcp';
+    sourceNetwork?: number;
+    sourceNode?: number;
+    localPort?: number;
+    connectTimeoutMs?: number;
+    reconnectMaxS?: number;
+  };
+  /** Chỉ kênh `mc` (feature 017). */
+  mc?: { frame?: '3E' | '4E'; code?: 'binary' | 'ascii'; transport?: 'tcp' | 'udp' };
+  /** Kênh BACnet/IP (định dạng 1.1, feature 020). */
+  bacnet?: {
+    localPort?: number;
+    bindAddress?: string;
+    broadcast?: string;
+    bbmd?: { host: string; port?: number; ttlS?: number };
+    reconnectMaxS?: number;
+  };
+  /** Kênh opcua (feature 019, định dạng 1.1; specs/019-driver-opcua/contracts/opcua.md §1). */
+  opcua?: OpcUaChannelConfig;
   devices: FieldDevice[];
 }
 
@@ -200,4 +254,17 @@ export interface LoadedProject02 {
   watchTables: Record<string, WatchTableDoc>;
   screens: Record<string, LoadedScreen02>;
   logging?: LoggingConfig;
+}
+
+/** Khối opcua của kênh OPC UA (feature 019). */
+export interface OpcUaChannelConfig {
+  endpointUrl: string;
+  securityMode?: 'None' | 'Sign' | 'SignAndEncrypt';
+  securityPolicy?: 'None' | 'Basic256Sha256';
+  serverCertSha256?: string;
+  auth?: { mode: 'anonymous' | 'username'; username?: string; secretId?: string };
+  readMode?: 'subscription' | 'poll';
+  sessionTimeoutMs?: number;
+  connectTimeoutMs?: number;
+  reconnectMaxS?: number;
 }

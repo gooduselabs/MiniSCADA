@@ -1,0 +1,41 @@
+{
+  "scenario": "read",
+  "checks": [
+    {
+      "name": "read: 100 % of the Tags match the simulator",
+      "pass": true,
+      "detail": "20/20"
+    },
+    {
+      "name": "diagnostics: kind s7, connected",
+      "pass": true,
+      "detail": "\"connected\""
+    },
+    {
+      "name": "diagnostics: negotiated PDU 480 (asked 960)",
+      "pass": true,
+      "detail": "{\"localTsap\":\"0100\",\"pduSize\":\"480\",\"remoteTsap\":\"0101\"}"
+    },
+    {
+      "name": "every request within the PDU",
+      "pass": true,
+      "detail": "{\"requests\":10,\"items\":23,\"maxRequestPdu\":108,\"maxResponsePdu\":166}"
+    },
+    {
+      "name": "no protocol error at the simulator",
+      "pass": true,
+      "detail": "0"
+    }
+  ],
+  "measures": {
+    "tagsMatching": 20,
+    "firstGoodMs": 1,
+    "sim": {
+      "requests": 10,
+      "items": 23,
+      "maxRequestPdu": 108,
+      "maxResponsePdu": 166
+    }
+  },
+  "pass": true
+}

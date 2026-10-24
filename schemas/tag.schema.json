@@ -119,7 +119,7 @@
             },
             "address": {
               "type": "string",
-              "maxLength": 16
+              "maxLength": 256
             },
             "scanGroup": {
               "enum": ["fast", "normal", "slow"]
@@ -150,6 +150,9 @@
               "enum": ["AB", "BA"]
             },
             "readback": {
+              "type": "boolean"
+            },
+            "bcd": {
               "type": "boolean"
             }
           }

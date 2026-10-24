@@ -312,6 +312,8 @@ int EngineeringApi::handle(mg_connection* c) {
     if (diag_.proc && path == kAuditPath) return auditRead(c, r, d, close);
     if (drivers_.probeTcp && path == kDriversTestPath) return driversTest(c, r, d, close);
     if (drivers_.diagnostics && path == kDriversDiagPath) return driversDiagnostics(c, close);
+    if (drivers_.opcuaBrowse && path == "/api/v1/drivers/opcua/browse")
+        return opcuaBrowse(c, r, d, close);
     if (serial_.list && path == kSerialPortsPath) return serialPorts(c, r, d, close);
     if (history_ && path.rfind("/api/v1/history/", 0) == 0) return history_->handle(c, r, d, close);
     if (tags_.coordinator && path == kTagsWritePath) {

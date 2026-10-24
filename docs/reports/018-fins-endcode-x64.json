@@ -1,0 +1,40 @@
+{
+  "scenario": "fins-endcode",
+  "checks": [
+    {
+      "name": "a Tag past the end of the DM is BAD FINS_ADDRESS (1103)",
+      "pass": true,
+      "detail": "{\"value\":null,\"quality\":\"BAD\",\"reason\":\"FINS_ADDRESS\"}"
+    },
+    {
+      "name": "its neighbour of the same block is GOOD after the split",
+      "pass": true,
+      "detail": "{\"value\":99,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "diagnostics count the end code 1103 by its four digits",
+      "pass": true,
+      "detail": "{\"1103\":3}"
+    },
+    {
+      "name": "end code 2203 (PROGRAM mode) gives FINS_MODE",
+      "pass": true,
+      "detail": "{\"value\":-1234,\"quality\":\"BAD\",\"reason\":\"FINS_MODE\"}"
+    },
+    {
+      "name": "the Tags are GOOD again at the next good answer",
+      "pass": true
+    },
+    {
+      "name": "the UDP channel kept its Tags GOOD meanwhile",
+      "pass": true
+    },
+    {
+      "name": "the TCP channel stays connected (an end code is an answer)",
+      "pass": true,
+      "detail": "connected"
+    }
+  ],
+  "measures": {},
+  "pass": true
+}

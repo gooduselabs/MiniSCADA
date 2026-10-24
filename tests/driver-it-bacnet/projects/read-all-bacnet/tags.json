@@ -1,0 +1,207 @@
+{
+  "schemaVersion": "1.1.0",
+  "tags": [
+    {
+      "id": "AHU.AI1",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "ahu1",
+        "address": "AI:1"
+      }
+    },
+    {
+      "id": "AHU.AI2",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "ahu1",
+        "address": "AI:2"
+      }
+    },
+    {
+      "id": "AHU.AI3_FAULT",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "ahu1",
+        "address": "AI:3"
+      }
+    },
+    {
+      "id": "AHU.AI4_OOS",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "ahu1",
+        "address": "AI:4"
+      }
+    },
+    {
+      "id": "AHU.AO1",
+      "kind": "external",
+      "type": "FLOAT32",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "source": {
+        "device": "ahu1",
+        "address": "AO:1"
+      }
+    },
+    {
+      "id": "AHU.AV5",
+      "kind": "external",
+      "type": "FLOAT32",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 50
+      },
+      "source": {
+        "device": "ahu1",
+        "address": "AV:5@8"
+      }
+    },
+    {
+      "id": "AHU.BI1",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "ahu1",
+        "address": "BI:1"
+      }
+    },
+    {
+      "id": "AHU.BO2",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "ahu1",
+        "address": "BO:2"
+      }
+    },
+    {
+      "id": "AHU.BV3",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "ahu1",
+        "address": "BV:3"
+      }
+    },
+    {
+      "id": "AHU.MSI1",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "ahu1",
+        "address": "MSI:1"
+      }
+    },
+    {
+      "id": "AHU.MSO1",
+      "kind": "external",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 1,
+        "max": 3
+      },
+      "source": {
+        "device": "ahu1",
+        "address": "MSO:1"
+      }
+    },
+    {
+      "id": "AHU.MSV3",
+      "kind": "external",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 1,
+        "max": 5
+      },
+      "source": {
+        "device": "ahu1",
+        "address": "MSV:3"
+      }
+    },
+    {
+      "id": "AHU.UNITS",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "ahu1",
+        "address": "AI:1:units",
+        "scanGroup": "slow"
+      }
+    },
+    {
+      "id": "AHU.FLAGS3",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "ahu1",
+        "address": "AI:3:status-flags"
+      }
+    },
+    {
+      "id": "AHU.NAME",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "ahu1",
+        "address": "DEV:1001:object-name",
+        "stringLength": 32,
+        "scanGroup": "slow"
+      }
+    },
+    {
+      "id": "AHU.MISSING",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "ahu1",
+        "address": "AI:99"
+      }
+    },
+    {
+      "id": "AHU.REL8",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "ahu1",
+        "address": "AV:5:relinquish@8"
+      }
+    },
+    {
+      "id": "VAV.AI1",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "vav7",
+        "address": "AI:1"
+      }
+    },
+    {
+      "id": "VAV.AO1",
+      "kind": "external",
+      "type": "FLOAT32",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "source": {
+        "device": "vav7",
+        "address": "AO:1"
+      }
+    }
+  ]
+}

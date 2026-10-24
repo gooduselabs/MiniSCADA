@@ -1,0 +1,70 @@
+# Rig of the Omron FINS integration tests (feature 018, T051), started by tools/driver-it.ps1 with a
+# -Scenario fins-*: the x64 runtime under the supervision loop of tests/device-it (supervise.sh), the
+# FINS simulator of tools/fins-sim (FINS/UDP and FINS/TCP on 9600, control on 9601) and a Node client
+# that runs the scenarios (tests/driver-it/fins-it.mjs). Its own compose project, network and volumes
+# (mat-drv-it-fins, 172.30.18.0/24), so that it runs beside the rig of the Modbus tests.
+#
+# lan 172.30.18.0/24:  rt .10, fins-sim .20, client .50
+name: mat-drv-it-fins
+
+services:
+  fins-sim:
+    image: node:22.23.3-alpine
+    command:
+      - node
+      - /src/tools/fins-sim/sim.mjs
+      - --port
+      - "9600"
+      - --control
+      - "9601"
+      - --control-host
+      - 0.0.0.0
+      - --map
+      - ${MAT_IT_MAP:-/src/tools/fins-sim/maps/all-types.json}
+      - --log
+      - /logs/requests.jsonl
+    init: true
+    volumes:
+      - ../..:/src:ro
+      - sim-logs:/logs
+    networks:
+      lan: { ipv4_address: 172.30.18.20 }
+
+  rt:
+    image: mat-armhf
+    working_dir: /
+    hostname: rt
+    command: ["sh", "/src/tests/device-it/supervise.sh", "--no-sim-load", "--no-discovery", "--max-live-clients-per-source", "10"]
+    environment:
+      MAT_IT_PROJECT: ${MAT_IT_PROJECT:-/src/tests/driver-it/projects/fins-all-types}
+    volumes:
+      - ../..:/src:ro
+      - ${MAT_IT_BUILD:?MAT_IT_BUILD}:/build:ro
+      - rt-data:/data
+    stop_grace_period: 5s
+    depends_on: [fins-sim]
+    networks:
+      lan: { ipv4_address: 172.30.18.10 }
+
+  client:
+    image: node:22.23.3-alpine
+    command: ["sleep", "infinity"]
+    init: true
+    pid: "service:rt"
+    volumes:
+      - ../..:/src:ro
+      - rt-data:/rt-data
+      - sim-logs:/sim-logs:ro
+    networks:
+      lan: { ipv4_address: 172.30.18.50 }
+
+networks:
+  lan:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.18.0/24
+
+volumes:
+  rt-data:
+  sim-logs:

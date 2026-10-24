@@ -262,3 +262,34 @@ describe('Tag của nút (vùng Details)', () => {
     expect(tagsOfNode(null, o)).toBeNull();
   });
 });
+
+describe('kênh Siemens S7 (feature 016)', () => {
+  it('thêm kênh S7: có sẵn một CPU, chọn kênh mới', () => {
+    const plan = planAdd({ type: 'connections' }, outline(), 's7');
+    expect(plan.select).toBe('channel:s7-1');
+    const ch = after(plan.edits).connections!.channels.find((c) => c.id === 's7-1')!;
+    expect(ch.kind).toBe('s7');
+    expect(ch.devices.map((d) => d.id)).toEqual(['cpu1']);
+  });
+
+  it('kênh S7 đã có CPU: không thêm, không nhân bản CPU, kèm lý do', () => {
+    const add = planAdd({ type: 'connections' }, outline(), 's7');
+    const o = outlineOf({
+      ...files(),
+      'connections.json': after(add.edits).connections,
+    } as ProjectFiles);
+    for (const ref of [
+      { type: 'channel', id: 's7-1' },
+      { type: 'device', id: 'cpu1' },
+    ] as const) {
+      const p = planAdd(ref, o);
+      expect(p.edits).toEqual([]);
+      expect(p.reason).toBe('cn.s7.oneDevice');
+    }
+    const dup = planDuplicate({ type: 'device', id: 'cpu1' }, o);
+    expect(dup.edits).toEqual([]);
+    expect(dup.reason).toBe('cn.s7.oneDevice');
+    // Nhân bản cả kênh S7 vẫn được (kênh mới có CPU riêng).
+    expect(planDuplicate({ type: 'channel', id: 's7-1' }, o).edits).toHaveLength(1);
+  });
+});

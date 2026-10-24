@@ -2,7 +2,7 @@
 // channel of the model, with its field devices and its external Tags resolved as the driver wants
 // them (drivers/modbus/modbus_tcp_driver.hpp). The index of a Tag is its index in the model, which
 // is its index in the TagStore. A `modbus-rtu` channel gets a ModbusRtuDriver (the same class with
-// the serial line set).
+// the serial line set). The other kinds (S7, FINS, MC, BACnet/IP) have factories of their own.
 #pragma once
 #include <functional>
 #include <memory>

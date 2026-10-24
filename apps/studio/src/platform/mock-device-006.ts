@@ -87,11 +87,13 @@ export interface DiagDevice {
 export interface DiagChannel {
   id: string;
   name: string;
-  kind: 'modbus-tcp' | 'modbus-rtu';
+  kind: 'modbus-tcp' | 'modbus-rtu' | 's7' | 'fins' | 'mc' | 'opcua';
   state: 'disabled' | 'connecting' | 'opening' | 'connected' | 'error';
   lastError: { code: string; at: number; device?: string } | null;
   reconnects: number;
   warnings: string[];
+  /** Thông số kết nối của driver: S7 (016) PDU, TSAP; OPC UA (019) endpoint, policy, chứng chỉ. */
+  details?: Record<string, string>;
   devices: DiagDevice[];
 }
 
@@ -705,6 +707,134 @@ export function postProbe(f: Dev006, body: unknown): ApiResult | DeviceError {
   return { status: reply.status ?? 200, body: reply.body };
 }
 
+// ---------- OPC UA: Lấy chứng chỉ, Duyệt node (feature 019, contracts/opcua.md §4) ----------
+
+/** SHA-256 chứng chỉ của server OPC UA giả (để e2e ghim). */
+export const MOCK_OPCUA_CERT = '5f2b8c1e9a7d4036b1e8c2f4a6d9e0b37c5a1f8e2d4b6c9a0e3f7d1b5c8a2e46';
+
+interface MockNode {
+  nodeId: string;
+  browseName: string;
+  displayName: string;
+  nodeClass: 'Object' | 'Variable';
+  dataType?: string;
+  tagType?: string;
+  writable?: boolean;
+  children?: MockNode[];
+}
+
+const uaVar = (
+  nodeId: string,
+  name: string,
+  dataType: string,
+  tagType: string,
+  writable = false,
+): MockNode => ({
+  nodeId,
+  browseName: `2:${name}`,
+  displayName: name,
+  nodeClass: 'Variable',
+  dataType,
+  tagType,
+  writable,
+});
+
+/** Không gian địa chỉ giả: Objects › Tank (Level, Temp, Running, Name, Setpoint), Counters, Server. */
+const MOCK_SPACE: MockNode[] = [
+  {
+    nodeId: 'ns=2;s=Tank',
+    browseName: '2:Tank',
+    displayName: 'Tank',
+    nodeClass: 'Object',
+    children: [
+      uaVar('ns=2;s=Tank.Level', 'Level', 'Double', 'FLOAT64'),
+      uaVar('ns=2;s=Tank.Temp', 'Temp', 'Float', 'FLOAT32'),
+      uaVar('ns=2;s=Tank.Running', 'Running', 'Boolean', 'BOOL'),
+      uaVar('ns=2;s=Tank.Name', 'Name', 'String', 'STRING', true),
+      uaVar('ns=2;s=Tank.Setpoint', 'Setpoint', 'Double', 'FLOAT64', true),
+    ],
+  },
+  {
+    nodeId: 'ns=2;s=Counters',
+    browseName: '2:Counters',
+    displayName: 'Counters',
+    nodeClass: 'Object',
+    children: [
+      uaVar('ns=2;i=1001', 'Counter1', 'Int32', 'INT32'),
+      uaVar('ns=2;i=1002', 'Counter2', 'UInt16', 'UINT16'),
+    ],
+  },
+  {
+    nodeId: 'i=2253',
+    browseName: 'Server',
+    displayName: 'Server',
+    nodeClass: 'Object',
+    children: [],
+  },
+];
+
+function findNode(list: MockNode[], id: string): MockNode | null {
+  for (const n of list) {
+    if (n.nodeId === id) return n;
+    const c = findNode(n.children ?? [], id);
+    if (c) return c;
+  }
+  return null;
+}
+
+/** `POST /api/v1/drivers/opcua/browse` của thiết bị giả: endpoint có `refuse`/`timeout` thì lỗi tương ứng. */
+export function postOpcUaBrowse(f: Dev006, body: unknown): ApiResult {
+  const s = stateOf(f);
+  const issue = (code: string, path: string): ApiResult => ({
+    status: 400,
+    body: { code, issues: [{ code, path }] },
+  });
+  if (!isObject(body) || !isObject(body.channel) || !isObject(body.channel.opcua))
+    return issue('E_FIELD_MISSING', 'channel.opcua');
+  s.probes.push(body);
+  const ua = body.channel.opcua;
+  const url = String(ua.endpointUrl ?? '');
+  if (!/^opc\.tcp:\/\//.test(url)) return issue('E_FIELD_VALUE', 'channel.opcua.endpointUrl');
+  const reply = (b: Record<string, unknown>): ApiResult => ({
+    status: 200,
+    body: { endpoints: [], references: [], truncated: false, ...b },
+  });
+  if (/refuse/i.test(url))
+    return reply({ ok: false, code: 'REFUSED', message: 'Server từ chối kết nối', elapsedMs: 3 });
+  if (/timeout/i.test(url)) return reply({ ok: false, code: 'TIMEOUT', elapsedMs: 5000 });
+  const server = {
+    applicationUri: 'urn:mat:opcua-sim',
+    certSha256: MOCK_OPCUA_CERT,
+    certSubject: 'CN=mat-opcua-sim, O=ATPro',
+    certNotAfter: '2036-10-24T00:00:00Z',
+  };
+  const tokens = ['anonymous', 'username'];
+  const endpoints = [
+    { securityMode: 'None', securityPolicy: 'None', userTokens: tokens },
+    { securityMode: 'Sign', securityPolicy: 'Basic256Sha256', userTokens: tokens },
+    { securityMode: 'SignAndEncrypt', securityPolicy: 'Basic256Sha256', userTokens: tokens },
+  ];
+  if (body.action === 'endpoints')
+    return reply({ ok: true, code: 'OK', elapsedMs: 12, server, endpoints });
+  const secure = (ua.securityMode ?? 'None') !== 'None';
+  if (secure && ua.serverCertSha256 !== MOCK_OPCUA_CERT)
+    return reply({ ok: false, code: 'OPCUA_CERT_UNTRUSTED', elapsedMs: 9, server });
+  const nodeId = typeof body.nodeId === 'string' ? body.nodeId : 'i=85';
+  const list = nodeId === 'i=85' ? MOCK_SPACE : (findNode(MOCK_SPACE, nodeId)?.children ?? null);
+  if (!list)
+    return reply({
+      ok: false,
+      code: 'OPCUA_BROWSE_FAILED',
+      message: 'BadNodeIdUnknown',
+      elapsedMs: 4,
+    });
+  const references = list.map(({ children, ...n }) => ({
+    ...n,
+    hasChildren: n.nodeClass === 'Object' && (children?.length ?? 0) > 0,
+  }));
+  return reply({ ok: true, code: 'OK', elapsedMs: 15, server, endpoints, references });
+}
+
 // ---------- Chẩn đoán driver ----------
 
 function defaultChannels(f: Dev006): DiagChannel[] {
@@ -719,11 +849,34 @@ function defaultChannels(f: Dev006): DiagChannel[] {
   return channels.map((c) => ({
     id: String(c.id),
     name: String(c.name ?? c.id),
-    kind: (c.kind === 'modbus-rtu' ? 'modbus-rtu' : 'modbus-tcp') as DiagChannel['kind'],
+    kind: (['modbus-rtu', 's7', 'fins', 'mc', 'opcua'].includes(String(c.kind))
+      ? c.kind
+      : 'modbus-tcp') as DiagChannel['kind'],
     state: c.enabled === false ? 'disabled' : 'connected',
     lastError: null,
     reconnects: 0,
     warnings: [],
+    ...(c.kind === 's7'
+      ? {
+          details: { pduSize: '480', localTsap: '0100', remoteTsap: '0101' } as Record<
+            string,
+            string
+          >,
+        }
+      : {}),
+    ...(c.kind === 'opcua' && isObject(c.opcua)
+      ? {
+          details: {
+            endpointUrl: String(c.opcua.endpointUrl ?? ''),
+            securityMode: String(c.opcua.securityMode ?? 'None'),
+            securityPolicy: String(c.opcua.securityPolicy ?? 'None'),
+            readMode: String(c.opcua.readMode ?? 'subscription'),
+            session: 'active',
+            publishingMs: '250/1000/5000',
+            serverCertSha256: MOCK_OPCUA_CERT,
+          },
+        }
+      : {}),
     devices: (Array.isArray(c.devices) ? c.devices : []).filter(isObject).map((d) => ({
       id: String(d.id),
       name: String(d.name ?? d.id),

@@ -542,3 +542,35 @@ describe('mat-connections-editor: kênh Modbus RTU (T170, US3-1, US3-4, US3-5, U
     expect(rtu.el.querySelector('.cn-probe')).not.toBeNull();
   });
 });
+
+describe('mat-connections-editor: OPC DA qua cầu nối (spec 021)', () => {
+  it('tổng quan có hướng dẫn; thiết bị TCP nhập CSV ánh xạ thành Tag external', async () => {
+    const overview = await open('');
+    expect(overview.el.querySelector('[data-role="opcda-help"]')).not.toBeNull();
+    cleanup();
+    const { app, el } = await open('fdev:plc1');
+    const csv =
+      'id,type,address,access,qualityAddress\nOPC.LEVEL,FLOAT32,HR1,R,IR1\nBAD-NAME,INT16,HR3,R,IR2\n';
+    vi.spyOn(app, 'csvOpen').mockResolvedValue({
+      name: 'map.csv',
+      bytes: new TextEncoder().encode(csv),
+    } as never);
+    el.querySelector<HTMLButtonElement>('[data-act="opcda-import"]')!.click();
+    await vi.waitFor(() => expect(el.querySelector('[data-role="opcda-result"]')).not.toBeNull());
+    const tags = (app.store.state.outline.tags?.tags ?? []) as unknown as {
+      id: string;
+      source?: unknown;
+    }[];
+    expect(tags.find((x) => x.id === 'OPC.LEVEL')?.source).toEqual({
+      device: 'plc1',
+      address: 'HR1',
+    });
+    expect(tags.some((x) => x.id === 'OPC.LEVEL_Q')).toBe(true);
+    expect(textOf(el.querySelector('[data-role="opcda-result"]'))).toContain('Dòng 3');
+  });
+
+  it('thiết bị RTU không có mục nhập ánh xạ', async () => {
+    const { el } = await open('fdev:meter2');
+    expect(el.querySelector('[data-role="opcda"]')).toBeNull();
+  });
+});

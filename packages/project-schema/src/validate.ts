@@ -80,6 +80,8 @@ import { runRules03, type Rule03Screen } from './rules-03.ts';
 import { runRules05 } from './rules-05.ts';
 import { runRules10 } from './rules-10.ts';
 import { runRules11 } from './rules-11.ts';
+import { finsVersionRules } from './rules-fins.ts';
+import { bacnetVersionRules } from './rules-bacnet.ts';
 import type { LoadedProject10, LogicDoc, Project10, TemplateDoc } from './types-10.ts';
 import { runRules04 } from './rules-04.ts';
 import { svgContentRules, svgTooLargeIssue } from './rules-04-svg.ts';
@@ -716,7 +718,14 @@ async function validateProject03(
       });
       // họ 1.x: bố cục lưới, chủ đề (feature 012, rules-11.ts)
       const r11 = runRules11({ project: project as Project10, screens });
-      r = { errors: [...r.errors, ...r11.errors], warnings: [...r.warnings, ...r11.warnings] };
+      // kênh Omron FINS và source.bcd (feature 018, rules-fins.ts), kênh BACnet/IP (feature 020,
+      // rules-bacnet.ts) chỉ từ 1.1
+      const rf = finsVersionRules({ project, connections, tags });
+      const rb = bacnetVersionRules({ project, connections });
+      r = {
+        errors: [...r.errors, ...r11.errors, ...rf.errors, ...rb.errors],
+        warnings: [...r.warnings, ...r11.warnings],
+      };
     } else if (set === '0.5' || set === '0.6') {
       r = runRules05({
         ...input,

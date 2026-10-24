@@ -1,0 +1,40 @@
+{
+  "scenario": "fins-load",
+  "checks": [
+    {
+      "name": "no lost sequence on any client",
+      "pass": true,
+      "detail": "0 gaps"
+    },
+    {
+      "name": "the real period of a Tag is 1 s +/- 10 %",
+      "pass": true,
+      "detail": "1001.6 ms"
+    },
+    {
+      "name": "500 Tags take 5 commands a round (one 0101, four 0104)",
+      "pass": true,
+      "detail": "5/s {\"0101\":60,\"0104\":240}"
+    },
+    {
+      "name": "all 500 Tags GOOD on every client",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "seconds": 60.1,
+    "clients": 10,
+    "tags": 500,
+    "cpuPercentOneCoreAvg": 0.4,
+    "cpuPercentOneCoreMax5s": 0.6,
+    "rssMaxMB": 16.7,
+    "commandsPerSecond": 5,
+    "byCommand": {
+      "0101": 60,
+      "0104": 240
+    },
+    "sequenceGaps": 0,
+    "periodMeanMs": 1001.6
+  },
+  "pass": true
+}

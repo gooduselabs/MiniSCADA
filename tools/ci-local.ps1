@@ -191,7 +191,7 @@ if (Test-Online) {
 
 # Modbus TCP simulator of feature 006 (tools/modbus-sim): its own tests, independent of the C++ code.
 Invoke-Step 'modbus-sim (node --test)' {
-    Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" "tools/gen-error-codes.test.mjs" "tools/measure/tab-rss.test.mjs" } finally { Pop-Location }
+    Push-Location $root; try { node --test "tools/modbus-sim/*.test.mjs" "tools/s7-sim/*.test.mjs" "tools/fins-sim/*.test.mjs" "tools/mc-sim/*.test.mjs" "tools/bacnet-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" "tools/gen-error-codes.test.mjs" "tools/measure/tab-rss.test.mjs" } finally { Pop-Location }
 }
 
 # Nhập SVG của feature 008 (T050): CLI nhập được 10 fixture; test gói nhập, thư viện ký hiệu, CLI.

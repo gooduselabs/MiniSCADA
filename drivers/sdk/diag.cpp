@@ -40,6 +40,11 @@ void DiagCounters::addWarning(const std::string& code) {
         channel_.warnings.push_back(code);
 }
 
+void DiagCounters::setDetails(std::vector<std::pair<std::string, std::string>> details) {
+    std::lock_guard<std::mutex> g(mu_);
+    channel_.details = std::move(details);
+}
+
 void DiagCounters::setDeviceState(size_t device, const std::string& state) {
     std::lock_guard<std::mutex> g(mu_);
     if (device < devs_.size()) devs_[device].d.state = state;

@@ -48,8 +48,574 @@
         },
         {
           "$ref": "#/definitions/rtuChannel"
+        },
+        {
+          "$ref": "#/definitions/s7Channel"
+        },
+        {
+          "$ref": "#/definitions/finsChannel"
+        },
+        {
+          "$ref": "#/definitions/mcChannel"
+        },
+        {
+          "$ref": "#/definitions/bacnetChannel"
+        },
+        {
+          "$ref": "#/definitions/opcuaChannel"
         }
       ]
+    },
+    "s7Channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "tcp", "devices"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "requestGapMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "kind": {
+          "const": "s7"
+        },
+        "tcp": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host"],
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "connectTimeoutMs": {
+              "type": "integer",
+              "minimum": 500,
+              "maximum": 30000
+            },
+            "reconnectMaxS": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60
+            }
+          }
+        },
+        "s7": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "rack": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 7
+            },
+            "slot": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 31
+            },
+            "localTsap": {
+              "type": "string",
+              "pattern": "^[0-9A-Fa-f]{4}$"
+            },
+            "remoteTsap": {
+              "type": "string",
+              "pattern": "^[0-9A-Fa-f]{4}$"
+            },
+            "pduSize": {
+              "type": "integer",
+              "minimum": 240,
+              "maximum": 960
+            }
+          }
+        },
+        "devices": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "$ref": "#/definitions/s7Device"
+          }
+        }
+      }
+    },
+    "s7Device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "writeDeadlineMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        },
+        "maxGapBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 256
+        }
+      }
+    },
+    "finsChannel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "fins", "devices"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "requestGapMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "kind": {
+          "const": "fins"
+        },
+        "fins": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host"],
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "transport": {
+              "enum": ["udp", "tcp"]
+            },
+            "sourceNetwork": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 127
+            },
+            "sourceNode": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 254
+            },
+            "localPort": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "connectTimeoutMs": {
+              "type": "integer",
+              "minimum": 500,
+              "maximum": 30000
+            },
+            "reconnectMaxS": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60
+            }
+          }
+        },
+        "devices": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/definitions/finsDevice"
+          }
+        }
+      }
+    },
+    "finsDevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "network": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 127
+        },
+        "node": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 254
+        },
+        "unit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "writeDeadlineMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        },
+        "maxReadWords": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999
+        },
+        "maxGapWords": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999
+        },
+        "multiRead": {
+          "type": "boolean"
+        },
+        "maxMultiItems": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "byteOrder": {
+          "enum": ["ABCD", "CDAB", "BADC", "DCBA"]
+        }
+      }
+    },
+    "bacnetChannel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "devices"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "requestGapMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "kind": {
+          "const": "bacnet"
+        },
+        "bacnet": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "localPort": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "bindAddress": {
+              "type": "string",
+              "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$"
+            },
+            "broadcast": {
+              "type": "string",
+              "pattern": "^(\\d{1,3}\\.){3}\\d{1,3}$"
+            },
+            "bbmd": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["host"],
+              "properties": {
+                "host": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 253,
+                  "pattern": "^[^\\s/\\\\]+$"
+                },
+                "port": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 65535
+                },
+                "ttlS": {
+                  "type": "integer",
+                  "minimum": 30,
+                  "maximum": 65535
+                }
+              }
+            },
+            "reconnectMaxS": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60
+            }
+          }
+        },
+        "devices": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/definitions/bacnetDevice"
+          }
+        }
+      }
+    },
+    "bacnetDevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "deviceInstance", "host"],
+      "dependencies": {
+        "mac": ["network"]
+      },
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "deviceInstance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4194302
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 253,
+          "pattern": "^[^\\s/\\\\]+$"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "network": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65534
+        },
+        "mac": {
+          "type": "string",
+          "pattern": "^([0-9A-Fa-f]{2}){1,6}$"
+        },
+        "maxApdu": {
+          "type": "integer",
+          "minimum": 50,
+          "maximum": 1476
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 30000
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "writeDeadlineMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        },
+        "writePriority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "not": {
+            "const": 6
+          }
+        },
+        "useRpm": {
+          "type": "boolean"
+        },
+        "maxRpmProps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        }
+      }
+    },
+    "opcuaChannel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "opcua", "devices"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "opcua"
+        },
+        "opcua": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["endpointUrl"],
+          "properties": {
+            "endpointUrl": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^opc\\.tcp://[^\\s/:]+(:[0-9]{1,5})?(/\\S*)?$"
+            },
+            "securityMode": {
+              "enum": ["None", "Sign", "SignAndEncrypt"]
+            },
+            "securityPolicy": {
+              "enum": ["None", "Basic256Sha256"]
+            },
+            "serverCertSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "auth": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["mode"],
+              "properties": {
+                "mode": {
+                  "enum": ["anonymous", "username"]
+                },
+                "username": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "secretId": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+                }
+              }
+            },
+            "readMode": {
+              "enum": ["subscription", "poll"]
+            },
+            "sessionTimeoutMs": {
+              "type": "integer",
+              "minimum": 10000,
+              "maximum": 3600000
+            },
+            "connectTimeoutMs": {
+              "type": "integer",
+              "minimum": 500,
+              "maximum": 30000
+            },
+            "reconnectMaxS": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60
+            }
+          }
+        },
+        "devices": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "$ref": "#/definitions/opcuaDevice"
+          }
+        }
+      }
+    },
+    "opcuaDevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000
+        },
+        "writeDeadlineMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        }
+      }
     },
     "tcpChannel": {
       "type": "object",
@@ -334,6 +900,164 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 247
+        }
+      }
+    },
+    "mcChannel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "tcp", "devices"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "requestGapMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "kind": {
+          "const": "mc"
+        },
+        "tcp": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host"],
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "connectTimeoutMs": {
+              "type": "integer",
+              "minimum": 500,
+              "maximum": 30000
+            },
+            "reconnectMaxS": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60
+            }
+          }
+        },
+        "mc": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "frame": {
+              "enum": ["3E", "4E"]
+            },
+            "code": {
+              "enum": ["binary", "ascii"]
+            },
+            "transport": {
+              "enum": ["tcp", "udp"]
+            }
+          }
+        },
+        "devices": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "$ref": "#/definitions/mcDevice"
+          }
+        }
+      }
+    },
+    "mcDevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "network": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 239
+        },
+        "station": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "moduleIo": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "moduleStation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "xyNotation": {
+          "enum": ["hex", "octal"]
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "writeDeadlineMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        },
+        "maxBatchWords": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 960
+        },
+        "maxGapWords": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 960
+        },
+        "randomRead": {
+          "type": "boolean"
+        },
+        "maxRandomPoints": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 192
+        },
+        "write": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "registerBit": {
+              "enum": ["none", "rmw"]
+            }
+          }
         }
       }
     }

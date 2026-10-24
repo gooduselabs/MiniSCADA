@@ -1,0 +1,489 @@
+{
+  "description": "Địa chỉ Tag BACnet (feature 020, spec FR-005..FR-007). Chung cho packages/tag-codec (bacnet-address.test.ts) và drivers/bacnet (bacnet_address_test.cpp). expect: kết quả khi hợp lệ (objectType, instance, property, priority 0 = không có, relinquish, normalized) hoặc { error }.",
+  "cases": [
+    {
+      "name": "AI mặc định present-value",
+      "address": "AI:1",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": {
+        "objectType": "AI",
+        "instance": 1,
+        "property": 85,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "AI:1"
+      }
+    },
+    {
+      "name": "chữ thường và thuộc tính viết rõ",
+      "address": "av:5:present-value",
+      "rawType": "FLOAT64",
+      "access": "RW",
+      "expect": {
+        "objectType": "AV",
+        "instance": 5,
+        "property": 85,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "AV:5"
+      }
+    },
+    {
+      "name": "AO số nguyên",
+      "address": "AO:3",
+      "rawType": "INT32",
+      "access": "RW",
+      "expect": {
+        "objectType": "AO",
+        "instance": 3,
+        "property": 85,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "AO:3"
+      }
+    },
+    {
+      "name": "BO có priority",
+      "address": "BO:2@8",
+      "rawType": "BOOL",
+      "access": "RW",
+      "expect": {
+        "objectType": "BO",
+        "instance": 2,
+        "property": 85,
+        "priority": 8,
+        "relinquish": false,
+        "normalized": "BO:2@8"
+      }
+    },
+    {
+      "name": "BO thuộc tính và priority",
+      "address": "BO:2:present-value@1",
+      "rawType": "BOOL",
+      "access": "RW",
+      "expect": {
+        "objectType": "BO",
+        "instance": 2,
+        "property": 85,
+        "priority": 1,
+        "relinquish": false,
+        "normalized": "BO:2@1"
+      }
+    },
+    {
+      "name": "BI đọc UINT16",
+      "address": "BI:7",
+      "rawType": "UINT16",
+      "access": "R",
+      "expect": {
+        "objectType": "BI",
+        "instance": 7,
+        "property": 85,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "BI:7"
+      }
+    },
+    {
+      "name": "BV",
+      "address": "BV:3",
+      "rawType": "BOOL",
+      "access": "RW",
+      "expect": {
+        "objectType": "BV",
+        "instance": 3,
+        "property": 85,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "BV:3"
+      }
+    },
+    {
+      "name": "MSV priority 16",
+      "address": "MSV:3@16",
+      "rawType": "UINT16",
+      "access": "RW",
+      "expect": {
+        "objectType": "MSV",
+        "instance": 3,
+        "property": 85,
+        "priority": 16,
+        "relinquish": false,
+        "normalized": "MSV:3@16"
+      }
+    },
+    {
+      "name": "MSI",
+      "address": "MSI:4",
+      "rawType": "UINT32",
+      "access": "R",
+      "expect": {
+        "objectType": "MSI",
+        "instance": 4,
+        "property": 85,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "MSI:4"
+      }
+    },
+    {
+      "name": "MSO",
+      "address": "MSO:9",
+      "rawType": "INT16",
+      "access": "RW",
+      "expect": {
+        "objectType": "MSO",
+        "instance": 9,
+        "property": 85,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "MSO:9"
+      }
+    },
+    {
+      "name": "status-flags",
+      "address": "AI:1:status-flags",
+      "rawType": "UINT16",
+      "access": "R",
+      "expect": {
+        "objectType": "AI",
+        "instance": 1,
+        "property": 111,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "AI:1:status-flags"
+      }
+    },
+    {
+      "name": "units",
+      "address": "AV:2:units",
+      "rawType": "UINT32",
+      "access": "R",
+      "expect": {
+        "objectType": "AV",
+        "instance": 2,
+        "property": 117,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "AV:2:units"
+      }
+    },
+    {
+      "name": "out-of-service",
+      "address": "BI:1:out-of-service",
+      "rawType": "BOOL",
+      "access": "R",
+      "expect": {
+        "objectType": "BI",
+        "instance": 1,
+        "property": 81,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "BI:1:out-of-service"
+      }
+    },
+    {
+      "name": "tên thiết bị",
+      "address": "DEV:1001:object-name",
+      "rawType": "STRING",
+      "access": "R",
+      "expect": {
+        "objectType": "DEV",
+        "instance": 1001,
+        "property": 77,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "DEV:1001:object-name"
+      }
+    },
+    {
+      "name": "description",
+      "address": "AI:1:description",
+      "rawType": "STRING",
+      "access": "R",
+      "expect": {
+        "objectType": "AI",
+        "instance": 1,
+        "property": 28,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "AI:1:description"
+      }
+    },
+    {
+      "name": "reliability",
+      "address": "MSI:1:reliability",
+      "rawType": "UINT16",
+      "access": "R",
+      "expect": {
+        "objectType": "MSI",
+        "instance": 1,
+        "property": 103,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "MSI:1:reliability"
+      }
+    },
+    {
+      "name": "event-state",
+      "address": "BV:1:event-state",
+      "rawType": "UINT16",
+      "access": "R",
+      "expect": {
+        "objectType": "BV",
+        "instance": 1,
+        "property": 36,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "BV:1:event-state"
+      }
+    },
+    {
+      "name": "thuộc tính số tự do",
+      "address": "AI:1:65",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": {
+        "objectType": "AI",
+        "instance": 1,
+        "property": 65,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "AI:1:65"
+      }
+    },
+    {
+      "name": "số trùng tên được chuẩn hóa",
+      "address": "AI:1:117",
+      "rawType": "UINT16",
+      "access": "R",
+      "expect": {
+        "objectType": "AI",
+        "instance": 1,
+        "property": 117,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "AI:1:units"
+      }
+    },
+    {
+      "name": "relinquish",
+      "address": "AO:1:relinquish@8",
+      "rawType": "BOOL",
+      "access": "RW",
+      "expect": {
+        "objectType": "AO",
+        "instance": 1,
+        "property": 85,
+        "priority": 8,
+        "relinquish": true,
+        "normalized": "AO:1:relinquish@8"
+      }
+    },
+    {
+      "name": "instance lớn nhất",
+      "address": "AV:4194302",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": {
+        "objectType": "AV",
+        "instance": 4194302,
+        "property": 85,
+        "priority": 0,
+        "relinquish": false,
+        "normalized": "AV:4194302"
+      }
+    },
+
+    {
+      "name": "rỗng",
+      "address": "",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_SYNTAX" }
+    },
+    {
+      "name": "loại lạ",
+      "address": "XX:1",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_SYNTAX" }
+    },
+    {
+      "name": "thiếu instance",
+      "address": "AI:",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_SYNTAX" }
+    },
+    {
+      "name": "instance âm",
+      "address": "AI:-1",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_SYNTAX" }
+    },
+    {
+      "name": "khoảng trắng",
+      "address": "AI: 1",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_SYNTAX" }
+    },
+    {
+      "name": "thuộc tính lạ",
+      "address": "AI:1:foo",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_SYNTAX" }
+    },
+    {
+      "name": "relinquish thiếu priority",
+      "address": "AO:1:relinquish",
+      "rawType": "BOOL",
+      "access": "RW",
+      "expect": { "error": "E_ADDR_SYNTAX" }
+    },
+    {
+      "name": "priority không phải số",
+      "address": "AO:1@x",
+      "rawType": "FLOAT32",
+      "access": "RW",
+      "expect": { "error": "E_ADDR_SYNTAX" }
+    },
+    {
+      "name": "instance 4194303",
+      "address": "AI:4194303",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_RANGE" }
+    },
+    {
+      "name": "thuộc tính quá lớn",
+      "address": "AI:1:4194304",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_RANGE" }
+    },
+    {
+      "name": "priority 0",
+      "address": "AO:1@0",
+      "rawType": "FLOAT32",
+      "access": "RW",
+      "expect": { "error": "E_ADDR_RANGE" }
+    },
+    {
+      "name": "priority 17",
+      "address": "AO:1@17",
+      "rawType": "FLOAT32",
+      "access": "RW",
+      "expect": { "error": "E_ADDR_RANGE" }
+    },
+    {
+      "name": "priority 6 dành riêng",
+      "address": "BO:1@6",
+      "rawType": "BOOL",
+      "access": "RW",
+      "expect": { "error": "E_ADDR_RANGE" }
+    },
+    {
+      "name": "priority trên AI",
+      "address": "AI:1@8",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "priority trên units",
+      "address": "AV:1:units@8",
+      "rawType": "UINT16",
+      "access": "R",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "ghi AI",
+      "address": "AI:1",
+      "rawType": "FLOAT32",
+      "access": "RW",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "ghi status-flags",
+      "address": "AV:1:status-flags",
+      "rawType": "UINT16",
+      "access": "RW",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "analog kiểu BOOL",
+      "address": "AV:1",
+      "rawType": "BOOL",
+      "access": "R",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "binary kiểu FLOAT32",
+      "address": "BV:1",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "multi-state kiểu FLOAT32",
+      "address": "MSV:1",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "status-flags kiểu FLOAT32",
+      "address": "AI:1:status-flags",
+      "rawType": "FLOAT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "object-name kiểu số",
+      "address": "AI:1:object-name",
+      "rawType": "UINT16",
+      "access": "R",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "units trên binary",
+      "address": "BV:1:units",
+      "rawType": "UINT16",
+      "access": "R",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "present-value của Device",
+      "address": "DEV:1",
+      "rawType": "UINT32",
+      "access": "R",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "relinquish kiểu số",
+      "address": "AO:1:relinquish@8",
+      "rawType": "FLOAT32",
+      "access": "RW",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "relinquish trên BI",
+      "address": "BI:1:relinquish@8",
+      "rawType": "BOOL",
+      "access": "RW",
+      "expect": { "error": "E_ADDR_AREA" }
+    },
+    {
+      "name": "ghi thuộc tính số",
+      "address": "AV:1:65",
+      "rawType": "FLOAT32",
+      "access": "RW",
+      "expect": { "error": "E_ADDR_AREA" }
+    }
+  ]
+}

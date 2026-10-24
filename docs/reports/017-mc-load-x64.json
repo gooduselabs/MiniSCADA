@@ -1,0 +1,55 @@
+{
+  "scenario": "load",
+  "checks": [
+    {
+      "name": "no lost sequence on any client",
+      "pass": true,
+      "detail": "0 gaps"
+    },
+    {
+      "name": "the real period of a Tag is 1 s +/- 10 %",
+      "pass": true,
+      "detail": "1000.5 ms"
+    },
+    {
+      "name": "delay from the PLC to the client within a cycle and a second",
+      "pass": true,
+      "detail": "p95 4 ms"
+    },
+    {
+      "name": "every one of the 500 Tags changes",
+      "pass": true,
+      "detail": "500"
+    },
+    {
+      "name": "all 500 Tags GOOD on every client",
+      "pass": true
+    },
+    {
+      "name": "three requests a round (D0-D399, D1100-D1139, M0-M79)",
+      "pass": true,
+      "detail": "3 requests/s"
+    }
+  ],
+  "measures": {
+    "seconds": 60,
+    "clients": 10,
+    "tags": 500,
+    "cpuPercentOneCoreAvg": 0.4,
+    "cpuPercentOneCoreMax5s": 0.6,
+    "rssMaxMB": 16.1,
+    "requestsPerSecond": 3,
+    "requestKinds": [
+      "0401/D/0/400",
+      "0401/D/1100/40",
+      "0401/M/0/5"
+    ],
+    "sequenceGaps": 0,
+    "periodMeanMs": 1000.5,
+    "periodP95Ms": 1001,
+    "lagP95Ms": 4,
+    "lagMaxMs": 8,
+    "tagsChangingPerClient": 500
+  },
+  "pass": true
+}

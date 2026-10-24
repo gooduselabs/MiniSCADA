@@ -1,0 +1,15 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "1.1.0",
+  "projectId": "bacnet-it-read-all-bacnet",
+  "projectName": "Kiểm thử driver BACnet/IP: read-all-bacnet",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "1.1.0",
+  "entryScreen": "main",
+  "screens": [
+    "main"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "maxClients": 10
+}

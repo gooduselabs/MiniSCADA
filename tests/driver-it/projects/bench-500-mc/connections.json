@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.1.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "plc1",
+      "name": "Giả lập MC 3E binary TCP",
+      "kind": "mc",
+      "tcp": {
+        "host": "sim",
+        "port": 5007,
+        "connectTimeoutMs": 1000,
+        "reconnectMaxS": 4
+      },
+      "devices": [
+        {
+          "id": "q1",
+          "name": "PLC giả lập plc1",
+          "timeoutMs": 500
+        }
+      ]
+    }
+  ]
+}

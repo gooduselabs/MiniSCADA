@@ -1,0 +1,299 @@
+{
+  "scenario": "write",
+  "checks": [
+    {
+      "name": "INT16 A.W_I16 = -321: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:53.310Z\",\"readback\":-321,\"receivedAt\":\"2026-10-24T15:56:53.102Z\",\"requestId\":\"331b1582-6cf4-4d71-8a18-8ea4f9ef1582\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_I16\",\"value\":-321}"
+    },
+    {
+      "name": "INT16 A.W_I16 = -321: the simulator holds -321",
+      "pass": true,
+      "detail": "-321"
+    },
+    {
+      "name": "INT16 A.W_I16 = -321: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":-321,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857413310}"
+    },
+    {
+      "name": "FLOAT32 A.W_F32 = 12.5: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:53.561Z\",\"readback\":12.5,\"receivedAt\":\"2026-10-24T15:56:53.522Z\",\"requestId\":\"331b1583-76a6-4ec3-8c77-4f2aa4c91583\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_F32\",\"value\":12.5}"
+    },
+    {
+      "name": "FLOAT32 A.W_F32 = 12.5: the simulator holds 12.5",
+      "pass": true,
+      "detail": "12.5"
+    },
+    {
+      "name": "FLOAT32 A.W_F32 = 12.5: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":12.5,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857413561}"
+    },
+    {
+      "name": "INT32 A.W_I32 = -7654321: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:53.810Z\",\"readback\":-7654321,\"receivedAt\":\"2026-10-24T15:56:53.753Z\",\"requestId\":\"331b1584-7ca0-4d81-85dc-da9cf4be1584\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_I32\",\"value\":-7654321}"
+    },
+    {
+      "name": "INT32 A.W_I32 = -7654321: the simulator holds -7654321",
+      "pass": true,
+      "detail": "-7654321"
+    },
+    {
+      "name": "INT32 A.W_I32 = -7654321: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":-7654321,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857413810}"
+    },
+    {
+      "name": "UINT32 A.W_U32 = 4000000000: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:54.060Z\",\"readback\":4000000000,\"receivedAt\":\"2026-10-24T15:56:53.974Z\",\"requestId\":\"331b1585-0e0c-4d80-8e6b-2895ba2c1585\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_U32\",\"value\":4000000000}"
+    },
+    {
+      "name": "UINT32 A.W_U32 = 4000000000: the simulator holds 4000000000",
+      "pass": true,
+      "detail": "4000000000"
+    },
+    {
+      "name": "UINT32 A.W_U32 = 4000000000: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":4000000000,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857414060}"
+    },
+    {
+      "name": "FLOAT64 A.W_F64 = 2.718281828459045: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:54.310Z\",\"readback\":2.718281828459045,\"receivedAt\":\"2026-10-24T15:56:54.191Z\",\"requestId\":\"331b1586-38cb-48b1-8f29-28432ea31586\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_F64\",\"value\":2.718281828459045}"
+    },
+    {
+      "name": "FLOAT64 A.W_F64 = 2.718281828459045: the simulator holds 2.718281828459045",
+      "pass": true,
+      "detail": "2.718281828459045"
+    },
+    {
+      "name": "FLOAT64 A.W_F64 = 2.718281828459045: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":2.71828183,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857414311}"
+    },
+    {
+      "name": "INT64 A.W_I64 = -1234567890123: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:54.560Z\",\"readback\":-1234567890123,\"receivedAt\":\"2026-10-24T15:56:54.402Z\",\"requestId\":\"331b1587-b617-4344-8f28-22cb49c81587\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_I64\",\"value\":-1234567890123}"
+    },
+    {
+      "name": "INT64 A.W_I64 = -1234567890123: the simulator holds -1234567890123",
+      "pass": true,
+      "detail": "-1234567890123"
+    },
+    {
+      "name": "INT64 A.W_I64 = -1234567890123: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":\"-1234567890123\",\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857414560}"
+    },
+    {
+      "name": "STRING A.W_STR = PUMP-07: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:54.810Z\",\"readback\":\"PUMP-07\",\"receivedAt\":\"2026-10-24T15:56:54.614Z\",\"requestId\":\"331b1588-1819-4dcf-8f44-b37f57331588\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_STR\",\"value\":\"PUMP-07\"}"
+    },
+    {
+      "name": "STRING A.W_STR = PUMP-07: the simulator holds \"PUMP-07\"",
+      "pass": true,
+      "detail": "\"PUMP-07\""
+    },
+    {
+      "name": "STRING A.W_STR = PUMP-07: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":\"PUMP-07\",\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857414810}"
+    },
+    {
+      "name": "UINT16 A.W_U16 = 65000: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:55.060Z\",\"readback\":65000,\"receivedAt\":\"2026-10-24T15:56:54.826Z\",\"requestId\":\"331b1589-1370-453f-8878-dbd1ba1e1589\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_U16\",\"value\":65000}"
+    },
+    {
+      "name": "UINT16 A.W_U16 = 65000: the simulator holds 65000",
+      "pass": true,
+      "detail": "65000"
+    },
+    {
+      "name": "UINT16 A.W_U16 = 65000: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":65000,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857415060}"
+    },
+    {
+      "name": "bit in a word A.W_BIT (D540.3) = true, read-modify-write: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:56.810Z\",\"readback\":true,\"receivedAt\":\"2026-10-24T15:56:56.745Z\",\"requestId\":\"331b158a-8edc-4d26-8fd5-b56edb34158a\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_BIT\",\"value\":true}"
+    },
+    {
+      "name": "bit in a word A.W_BIT (D540.3) = true, read-modify-write: the simulator holds true",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "bit in a word A.W_BIT (D540.3) = true, read-modify-write: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":true,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857416810}"
+    },
+    {
+      "name": "read-modify-write kept the other bits of D540 (bit 0 still set)",
+      "pass": true,
+      "detail": "[9]"
+    },
+    {
+      "name": "bit device A.W_M (M500) = true: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:57.060Z\",\"readback\":true,\"receivedAt\":\"2026-10-24T15:56:56.989Z\",\"requestId\":\"331b158b-56a5-465d-8f90-b311fa5f158b\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_M\",\"value\":true}"
+    },
+    {
+      "name": "bit device A.W_M (M500) = true: the simulator holds true",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "bit device A.W_M (M500) = true: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":true,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857417061}"
+    },
+    {
+      "name": "bit device A.W_Y (Y40) = true: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:57.310Z\",\"readback\":true,\"receivedAt\":\"2026-10-24T15:56:57.207Z\",\"requestId\":\"331b158c-bb5b-48fb-8e54-97a0b5f9158c\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_Y\",\"value\":true}"
+    },
+    {
+      "name": "bit device A.W_Y (Y40) = true: the simulator holds true",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "bit device A.W_Y (Y40) = true: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":true,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857417310}"
+    },
+    {
+      "name": "bit device A.W_B (B50) = true: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:56:59.310Z\",\"readback\":true,\"receivedAt\":\"2026-10-24T15:56:59.209Z\",\"requestId\":\"331b158e-a16e-4c5f-85ae-fb00aec7158e\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_B\",\"value\":true}"
+    },
+    {
+      "name": "bit device A.W_B (B50) = true: the simulator holds true",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "bit device A.W_B (B50) = true: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":true,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857419310}"
+    },
+    {
+      "name": "4E ASCII: INT16 B.W_I16 = 4321: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:57:02.310Z\",\"readback\":4321,\"receivedAt\":\"2026-10-24T15:57:02.207Z\",\"requestId\":\"331b1590-35d1-4853-8610-1f7741f61590\",\"status\":\"CONFIRMED\",\"tag\":\"B.W_I16\",\"value\":4321}"
+    },
+    {
+      "name": "4E ASCII: INT16 B.W_I16 = 4321: the simulator holds 4321",
+      "pass": true,
+      "detail": "4321"
+    },
+    {
+      "name": "4E ASCII: INT16 B.W_I16 = 4321: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":4321,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857422311}"
+    },
+    {
+      "name": "4E ASCII: bit device B.W_M (M510) = true: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:57:05.310Z\",\"readback\":true,\"receivedAt\":\"2026-10-24T15:57:05.209Z\",\"requestId\":\"331b1592-16a3-497a-8ee4-c32619741592\",\"status\":\"CONFIRMED\",\"tag\":\"B.W_M\",\"value\":true}"
+    },
+    {
+      "name": "4E ASCII: bit device B.W_M (M510) = true: the simulator holds true",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "4E ASCII: bit device B.W_M (M510) = true: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":true,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857425310}"
+    },
+    {
+      "name": "bit device A.W_M (M500) = false: CONFIRMED",
+      "pass": true,
+      "detail": "200 {\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:57:08.360Z\",\"readback\":false,\"receivedAt\":\"2026-10-24T15:57:08.258Z\",\"requestId\":\"331b1594-899d-4ada-8485-b4560ca21594\",\"status\":\"CONFIRMED\",\"tag\":\"A.W_M\",\"value\":false}"
+    },
+    {
+      "name": "bit device A.W_M (M500) = false: the simulator holds false",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "bit device A.W_M (M500) = false: the Tag carries the value",
+      "pass": true,
+      "detail": "{\"value\":false,\"quality\":\"GOOD\",\"reason\":\"\",\"ts\":1792857428360}"
+    },
+    {
+      "name": "bit devices are written with 1401/0001, words with 1401/0000",
+      "pass": true,
+      "detail": "0000:D500,0000:D502,0000:D504,0000:D506,0000:D510,0000:D514,0000:D520,0000:D530,0000:D540,0001:M500,0001:Y64,0001:B80,0000:D550,0001:M510,0001:M500"
+    },
+    {
+      "name": "end code C05B on the write: FAILED DEVICE_EXCEPTION",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"DEVICE_EXCEPTION\",\"exception\":{\"code\":\"C05B\",\"meaning\":\"PLC không cho đọc/ghi thiết bị này (cấm ghi khi RUN?)\"},\"finishedAt\":\"2026-10-24T15:57:11.360Z\",\"receivedAt\":\"2026-10-24T15:57:11.271Z\",\"requestId\":\"331b1596-1843-430b-8163-e48aa5831596\",\"status\":\"FAILED\",\"tag\":\"A.W_I16\",\"value\":99}"
+    },
+    {
+      "name": "end code C05B on the write: the result names the end code C05B",
+      "pass": true,
+      "detail": "{\"code\":\"C05B\",\"meaning\":\"PLC không cho đọc/ghi thiết bị này (cấm ghi khi RUN?)\"}"
+    },
+    {
+      "name": "the refused write did not change the simulator",
+      "pass": true
+    },
+    {
+      "name": "audit tag.write: every command has its record of receipt and its result",
+      "pass": true,
+      "detail": "0 of 16 missing: "
+    },
+    {
+      "name": "audit tag.write: the refused write is recorded as failed",
+      "pass": true,
+      "detail": "[\"failed\",\"started\"]"
+    }
+  ],
+  "measures": {
+    "writesAtTheSimulator": 15,
+    "endCodeResult": {
+      "clockOk": false,
+      "code": "DEVICE_EXCEPTION",
+      "exception": {
+        "code": "C05B",
+        "meaning": "PLC không cho đọc/ghi thiết bị này (cấm ghi khi RUN?)"
+      },
+      "finishedAt": "2026-10-24T15:57:11.36Z",
+      "receivedAt": "2026-10-24T15:57:11.271Z",
+      "requestId": "331b1596-1843-430b-8163-e48aa5831596",
+      "status": "FAILED",
+      "tag": "A.W_I16",
+      "value": 99
+    },
+    "confirmedMs": [
+      209,
+      209,
+      209,
+      210,
+      211,
+      212,
+      213,
+      215,
+      222,
+      224,
+      228,
+      230,
+      231,
+      414,
+      444
+    ]
+  },
+  "pass": true
+}

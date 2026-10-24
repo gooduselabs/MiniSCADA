@@ -6,6 +6,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace mat::drv {
@@ -48,6 +49,9 @@ struct ChannelDiag {
     std::string lastErrorDevice;  // the field device the error came from, "" when it is the channel
     uint64_t reconnects = 0;
     std::vector<std::string> warnings;  // RS485_UNSUPPORTED ...
+    // Driver specific facts of the connection, shown as they are (feature 016: the PDU size and the
+    // TSAPs of an S7 connection). Empty for Modbus.
+    std::vector<std::pair<std::string, std::string>> details;
 };
 
 struct DriverDiag {
@@ -67,6 +71,7 @@ class DiagCounters {
     void setLastError(const std::string& code, int64_t atMs, const std::string& device = "");
     void onReconnect();
     void addWarning(const std::string& code);
+    void setDetails(std::vector<std::pair<std::string, std::string>> details);
 
     void setDeviceState(size_t device, const std::string& state);
     void onRequestOk(size_t device, int64_t responseMs, int64_t nowMs);

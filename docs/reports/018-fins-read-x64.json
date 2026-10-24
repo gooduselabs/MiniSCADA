@@ -1,0 +1,43 @@
+{
+  "scenario": "fins-read",
+  "checks": [
+    {
+      "name": "100 % of the Tags match the simulator over FINS/UDP and FINS/TCP",
+      "pass": true,
+      "detail": "46/46"
+    },
+    {
+      "name": "the simulator got udp:0101",
+      "pass": true
+    },
+    {
+      "name": "the simulator got udp:0104",
+      "pass": true
+    },
+    {
+      "name": "the simulator got tcp:0101",
+      "pass": true
+    },
+    {
+      "name": "the simulator got tcp:0104",
+      "pass": true
+    },
+    {
+      "name": "diagnostics: both channels connected, kind fins",
+      "pass": true,
+      "detail": "[\"connected\",\"connected\",\"fins\"]"
+    }
+  ],
+  "measures": {
+    "firstGoodMs": 1,
+    "tagsChecked": 46,
+    "tagsMatching": 46,
+    "commandKinds": [
+      "tcp:0101",
+      "tcp:0104",
+      "udp:0101",
+      "udp:0104"
+    ]
+  },
+  "pass": true
+}

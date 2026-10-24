@@ -258,3 +258,55 @@ describe('mã Thử kết nối', () => {
     expect(probeCodeText('MA_LA')).toBe('không rõ (MA_LA)');
   });
 });
+
+describe('mã của driver Siemens S7 (feature 016)', () => {
+  it('lý do quality và lỗi kênh S7 có câu tiếng Việt (schemas/error-codes.json)', () => {
+    for (const code of [
+      'S7_ACCESS_DENIED',
+      'S7_ADDRESS_OUT_OF_RANGE',
+      'S7_HARDWARE_FAULT',
+      'S7_ITEM_ERROR',
+      'S7_OBJECT_NOT_FOUND',
+      'S7_PDU_TOO_SMALL',
+      'S7_REQUEST_ERROR',
+      'S7_TYPE_INCONSISTENT',
+      'S7_TYPE_NOT_SUPPORTED',
+      'S7_FUNCTION_NOT_AVAILABLE',
+      'S7_CONNECT_REJECTED',
+      'S7_SETUP_FAILED',
+    ])
+      expect(reasonText(code)).not.toMatch(/không rõ/);
+    expect(reasonText('S7_FUNCTION_NOT_AVAILABLE')).toContain('PUT/GET');
+    expect(reasonText('S7_OBJECT_NOT_FOUND')).toContain('DB không có');
+  });
+
+  it('lỗi của bộ kiểm tra: E_DRIVER_VERSION, E_S7_TSAP; lỗi địa chỉ của Tag S7 nói S7, không nói Modbus', () => {
+    expect(issueText({ code: 'E_DRIVER_VERSION', message: 'x' })).toContain('định dạng 1.1');
+    expect(issueText({ code: 'E_S7_TSAP', message: 'x' })).toContain('rack và slot');
+    const s7 = issueText({ code: 'E_ADDR_SYNTAX', message: "S7 address 'DB1.X': E_ADDR_SYNTAX" });
+    expect(s7).toContain('DB1.DBX0.0');
+    expect(s7).not.toContain('Modbus');
+    expect(issueText({ code: 'E_ADDR_SYNTAX', message: 'bad address' })).toContain('Modbus');
+    expect(
+      issueText({ code: 'E_ADDR_RANGE', message: "S7 address 'DB0.DBW0': E_ADDR_RANGE" }),
+    ).toContain('DB 1–65535');
+    expect(
+      issueText({
+        code: 'E_ADDR_READ_LIMIT',
+        message: 'the tag takes 300 bytes, more than one read of PDU 240 allows (222)',
+      }),
+    ).toContain('PDU');
+    expect(
+      issueText({
+        code: 'E_ADDR_WRITE_LIMIT',
+        message: 'a write of the tag takes 300 bytes, more than PDU 240 allows (212)',
+      }),
+    ).toContain('PDU');
+    expect(
+      issueText({
+        code: 'E_SCHEMA',
+        message: 'byteOrder does not apply to S7 tags (always big-endian)',
+      }),
+    ).toContain('big-endian');
+  });
+});

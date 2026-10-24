@@ -18,6 +18,8 @@ import { initialGrid, setFilter, type GridState } from '../../model/grid/index.t
 import { issueCells } from '../../model/issue-map.ts';
 import {
   COLUMN_SETS,
+  addressInfoText,
+  bacnetHint,
   tableInputs,
   tagTable,
   tagsFileUsage,
@@ -530,18 +532,27 @@ export class TagGrid extends AppElement {
     return this.usage;
   }
 
-  /** Dòng gợi ý của ô địa chỉ: mã hàm, offset thật, số thanh ghi (FR-015). */
+  /**
+   * Dòng gợi ý của ô địa chỉ: mã hàm, offset thật, số thanh ghi (FR-015); Tag của CPU S7: vùng, kiểu S7, số byte, và định dạng
+   * địa chỉ S7 khi ô còn trống (feature 016).
+   */
   private addressHint(adapter: TagTable, grid: MatGrid | null) {
     const cell = grid?.state.cell;
     if (!cell || cell.col !== 'address') return nothing;
     const info = adapter.addressInfo(cell.row);
+    // Omron FINS (feature 018): cú pháp FINS thay cho cú pháp Modbus
+    const fins = adapter.isFinsRow(cell.row);
+    // BACnet/IP (feature 020): cú pháp BACnet thay cho cú pháp Modbus
+    const bacnet = adapter.isBacnetRow(cell.row);
     if (!info)
-      return html`<p class="help tg-hint" data-role="addr-hint">${t('tt.hint.syntax')}</p>`;
+      return html`<p class="help tg-hint" data-role="addr-hint">
+        ${fins ? adapter.finsHint() : bacnet ? bacnetHint() : adapter.addressSyntaxHint(cell.row)}
+      </p>`;
     if (!info.ok)
-      return html`<p class="field-err tg-hint" data-role="addr-hint">${t(info.error!)}</p>`;
-    return html`<p class="help tg-hint" data-role="addr-hint">
-      ${t('tt.hint.address', { fc: info.fc ?? '', offset: info.offset ?? 0, regs: info.regs ?? 0 })}
-    </p>`;
+      return html`<p class="field-err tg-hint" data-role="addr-hint">
+        ${t(info.error!)}${fins ? html` · ${adapter.finsHint()}` : bacnet ? html` · ${bacnetHint()}` : nothing}
+      </p>`;
+    return html`<p class="help tg-hint" data-role="addr-hint">${addressInfoText(info)}</p>`;
   }
 
   /** Vẽ riêng quality (chip có chữ, màu không là tín hiệu duy nhất) và giá trị thiết bị không có. */

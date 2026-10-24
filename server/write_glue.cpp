@@ -136,7 +136,7 @@ std::optional<StoredWrite> AuditLogWriteAudit::find(const std::string& requestId
 // ---- backend ----
 
 drv::LinkState RuntimeWriteBackend::link(size_t tag) {
-    if (drv::ModbusTcpDriver* d = rt_.driverOf(tag)) return d->linkState(rt_.deviceOf(tag));
+    if (drv::Driver* d = rt_.driverOf(tag)) return d->linkState(rt_.deviceOf(tag));
     // an external Tag whose channel has no driver here (RTU, until its stage): never writable
     return {drv::ChannelState::Error, drv::DeviceState::Error};
 }
@@ -146,7 +146,7 @@ bool RuntimeWriteBackend::submit(size_t tag, drv::WriteCommand cmd) {
     if (!m || tag >= m->tags.size()) return false;
     switch (m->tags[tag].kind) {
         case TagKind::External: {
-            drv::ModbusTcpDriver* d = rt_.driverOf(tag);
+            drv::Driver* d = rt_.driverOf(tag);
             return d && d->enqueueWrite(std::move(cmd));
         }
         case TagKind::Internal:
@@ -164,7 +164,8 @@ bool RuntimeWriteBackend::submit(size_t tag, drv::WriteCommand cmd) {
 
 std::vector<uint64_t> RuntimeWriteBackend::cancelUnsent() {
     std::vector<uint64_t> ids;
-    for (drv::ModbusTcpDriver* d : rt_.channelDrivers()) {
+    for (drv::Driver* d : rt_.driversByChannel()) {
+        if (!d) continue;
         auto got = d->cancelQueuedWrites();
         ids.insert(ids.end(), got.begin(), got.end());
     }
@@ -177,8 +178,11 @@ std::vector<uint64_t> RuntimeWriteBackend::cancelUnsent() {
 
 int64_t RuntimeWriteBackend::maxTimeoutMs() {
     int64_t t = 1000;
-    for (drv::ModbusTcpDriver* d : rt_.channelDrivers())
-        for (const auto& dev : d->config().devices) t = std::max<int64_t>(t, dev.timeoutMs);
+    // every field device of a channel that has a driver (Modbus, S7, FINS, MC, BACnet/IP)
+    if (const ProjectModel* m = rt_.model())
+        for (const DeviceModel& dev : m->devices)
+            if (dev.channel < rt_.driversByChannel().size() && rt_.driversByChannel()[dev.channel])
+                t = std::max<int64_t>(t, dev.timeoutMs);
     return t;
 }
 

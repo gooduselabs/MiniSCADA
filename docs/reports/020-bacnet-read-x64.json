@@ -1,0 +1,56 @@
+{
+  "scenario": "read",
+  "checks": [
+    {
+      "name": "read: 100 % of the Tags as the simulator says",
+      "pass": true,
+      "detail": "19/19"
+    },
+    {
+      "name": "diagnostics: kind bacnet, connected",
+      "pass": true,
+      "detail": "\"connected\""
+    },
+    {
+      "name": "diagnostics: the VAV rejected RPM once (reject:9), then ReadProperty",
+      "pass": true,
+      "detail": "{\"reject:9\":1}"
+    },
+    {
+      "name": "the AHU is read by ReadPropertyMultiple",
+      "pass": true,
+      "detail": "{\"tagsMatching\":19,\"firstGoodMs\":1,\"rpmPerRound\":3,\"maxRpmProps\":27}"
+    },
+    {
+      "name": "every RPM answer within 1476 bytes",
+      "pass": true
+    },
+    {
+      "name": "Who-Is through the runtime finds devices 7 and 1001",
+      "pass": true,
+      "detail": "200 {\"action\":\"whois\",\"code\":\"OK\",\"connectMs\":0,\"devices\":[{\"host\":\"172.30.20.20\",\"instance\":7,\"mac\":\"07\",\"maxApdu\":480,\"network\":5,\"port\":47808,\"segmentation\":3,\"vendorId\":260},{\"host\":\"172.30.20.20\",\"instance\":1001,\"mac\":\"\",\"maxApdu\":1476,\"network\":0,\"port\":47808,\"segmentation\":3,\"vendorId\":260}],\"ok\":true,\"truncated\":false}"
+    },
+    {
+      "name": "the VAV is behind network 5, MAC 07",
+      "pass": true,
+      "detail": "{\"host\":\"172.30.20.20\",\"instance\":7,\"mac\":\"07\",\"maxApdu\":480,\"network\":5,\"port\":47808,\"segmentation\":3,\"vendorId\":260}"
+    },
+    {
+      "name": "object-list of the AHU: 13 objects with names",
+      "pass": true,
+      "detail": "200 DEV:1001,AI:1,AI:2,AI:3,AI:4,AO:1,AV:5,BI:1,BO:2,BV:3,MSI:1,MSO:1,MSV:3"
+    },
+    {
+      "name": "read AI:1 of the VAV through the router",
+      "pass": true,
+      "detail": "{\"action\":\"read\",\"code\":\"OK\",\"connectMs\":0,\"ok\":true,\"read\":{\"address\":\"AI:1\",\"kind\":\"real\",\"value\":\"310.5\"},\"responseMs\":1}"
+    }
+  ],
+  "measures": {
+    "tagsMatching": 19,
+    "firstGoodMs": 1,
+    "rpmPerRound": 3,
+    "maxRpmProps": 27
+  },
+  "pass": true
+}

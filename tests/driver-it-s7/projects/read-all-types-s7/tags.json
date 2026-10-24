@@ -1,0 +1,313 @@
+{
+  "schemaVersion": "1.1.0",
+  "tags": [
+    {
+      "id": "S7.DB_BOOL",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBX0.0"
+      }
+    },
+    {
+      "id": "S7.DB_BOOL5",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBX0.5"
+      }
+    },
+    {
+      "id": "S7.DB_BYTE",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBB1"
+      }
+    },
+    {
+      "id": "S7.DB_INT",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBW2"
+      }
+    },
+    {
+      "id": "S7.DB_WORD",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBW4"
+      }
+    },
+    {
+      "id": "S7.DB_DINT",
+      "kind": "external",
+      "type": "INT32",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBD6"
+      }
+    },
+    {
+      "id": "S7.DB_DWORD",
+      "kind": "external",
+      "type": "UINT32",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBD10"
+      }
+    },
+    {
+      "id": "S7.DB_REAL",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBD14"
+      }
+    },
+    {
+      "id": "S7.DB_LREAL",
+      "kind": "external",
+      "type": "FLOAT64",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.LREAL18"
+      }
+    },
+    {
+      "id": "S7.DB_CHAR",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBB26",
+        "stringLength": 1
+      }
+    },
+    {
+      "id": "S7.DB_CHARS",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBB27",
+        "stringLength": 4
+      }
+    },
+    {
+      "id": "S7.DB_STRING",
+      "kind": "external",
+      "type": "STRING",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.STRING32",
+        "stringLength": 20
+      }
+    },
+    {
+      "id": "S7.DB2_INT",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cpu1",
+        "address": "DB2.DBW0"
+      }
+    },
+    {
+      "id": "S7.M_BOOL",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cpu1",
+        "address": "M0.1",
+        "scanGroup": "fast"
+      }
+    },
+    {
+      "id": "S7.M_WORD",
+      "kind": "external",
+      "type": "UINT16",
+      "source": {
+        "device": "cpu1",
+        "address": "MW10"
+      }
+    },
+    {
+      "id": "S7.M_REAL",
+      "kind": "external",
+      "type": "FLOAT32",
+      "source": {
+        "device": "cpu1",
+        "address": "MD20"
+      }
+    },
+    {
+      "id": "S7.I_BOOL",
+      "kind": "external",
+      "type": "BOOL",
+      "source": {
+        "device": "cpu1",
+        "address": "I0.1"
+      }
+    },
+    {
+      "id": "S7.I_WORD",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cpu1",
+        "address": "IW2"
+      }
+    },
+    {
+      "id": "S7.Q_BOOL",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "cpu1",
+        "address": "Q0.0"
+      }
+    },
+    {
+      "id": "S7.Q_BYTE",
+      "kind": "external",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 255
+      },
+      "source": {
+        "device": "cpu1",
+        "address": "QB1"
+      }
+    },
+    {
+      "id": "S7.W_BOOL",
+      "kind": "external",
+      "type": "BOOL",
+      "access": "RW",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBX60.0"
+      }
+    },
+    {
+      "id": "S7.W_INT",
+      "kind": "external",
+      "type": "INT16",
+      "access": "RW",
+      "limits": {
+        "min": -30000,
+        "max": 30000
+      },
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBW62"
+      }
+    },
+    {
+      "id": "S7.W_REAL",
+      "kind": "external",
+      "type": "FLOAT32",
+      "access": "RW",
+      "limits": {
+        "min": -1000,
+        "max": 1000
+      },
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBD64"
+      }
+    },
+    {
+      "id": "S7.W_STRING",
+      "kind": "external",
+      "type": "STRING",
+      "access": "RW",
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.STRING70",
+        "stringLength": 10
+      }
+    },
+    {
+      "id": "S7.W_BYTE",
+      "kind": "external",
+      "type": "UINT16",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 255
+      },
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBB84"
+      }
+    },
+    {
+      "id": "S7.W_DINT",
+      "kind": "external",
+      "type": "INT32",
+      "access": "RW",
+      "limits": {
+        "min": -1000000,
+        "max": 1000000
+      },
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.DBD86"
+      }
+    },
+    {
+      "id": "S7.W_LREAL",
+      "kind": "external",
+      "type": "FLOAT64",
+      "access": "RW",
+      "limits": {
+        "min": -1000000,
+        "max": 1000000
+      },
+      "source": {
+        "device": "cpu1",
+        "address": "DB1.LREAL90"
+      }
+    },
+    {
+      "id": "S7.DENIED",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cpu1",
+        "address": "DB3.DBW0"
+      }
+    },
+    {
+      "id": "S7.NO_DB",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cpu1",
+        "address": "DB9.DBW0"
+      }
+    },
+    {
+      "id": "S7.OUT_OF_RANGE",
+      "kind": "external",
+      "type": "INT16",
+      "source": {
+        "device": "cpu1",
+        "address": "DB2.DBW100"
+      }
+    }
+  ]
+}

@@ -17,13 +17,18 @@ legacy_vectors_test source_filter_test config_test
 frames_test tcp_socket_test modbus_tcp_driver_test modbus_tcp_write_test modbus_fuzz_test test_probe_test
 token_bucket_test write_coordinator_test tag_write_audit_test pulse_journal_test
 rtu_frame_test serial_port_test serial_ports_test modbus_rtu_driver_test serial_cli_test retain_cli_test
+s7_address_test s7_frames_test s7_plan_test s7_driver_test s7_fuzz_test
+bacnet_codec_test bacnet_driver_test bacnet_fuzz_test bacnet_factory_test
+opcua_node_id_test opcua_codec_test opcua_driver_test opcua_browse_test
 alarm_text_test alarm_defs_test alarm_engine_test alarm_state_table_test alarm_engine_vectors_test
 alarm_store_test alarm_service_test
 proc_stats_test diagnostics_011_test time_sync_test check_data_test
 logic_vectors_test logic_timers_test logic_counters_test logic_totalizer_test logic_runhours_test
 logic_schedule_test logic_rules_test logic_skip_test rules_logic_test logic_write_test logic_runtime_test
 update_envelope_test update_signature_test update_fuzz_test
-access_model_test access_vectors_test access_catalog_test access_store_test account_store_test"
+access_model_test access_vectors_test access_catalog_test access_store_test account_store_test
+fins_frame_test fins_udp_link_test fins_driver_test fins_fuzz_test fins_factory_test
+mc_address_test mc_frame_test mc_driver_test mc_fuzz_test"
 TESTS=${*:-$DEFAULT}
 cmake -S . -B "$B" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=deployment/toolchain/armhf.cmake \
   -DMAT_ARMHF_TESTS=ON > /dev/null || { echo "armhf tests: configure failed"; exit 1; }

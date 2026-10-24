@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "main",
+  "name": "Tổng quan",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "card1",
+      "type": "widget",
+      "widget": "card",
+      "x": 20,
+      "y": 20,
+      "width": 240,
+      "height": 120,
+      "props": {
+        "label": "Giá trị đầu"
+      },
+      "tags": {
+        "value": "U.D100"
+      }
+    }
+  ]
+}

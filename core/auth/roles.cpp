@@ -74,6 +74,8 @@ const std::vector<EndpointRule>& endpointRules() {
         // device-api 1.1.0 (feature 006): the connection test and the tag writes. Polling for the
         // result of a write is not a person's request, so it does not restart the idle time.
         {"POST", "/api/v1/drivers/test", true, Role::Engineer, true, true},
+        // feature 019 (contracts/opcua.md §4): endpoints and browse of an OPC UA server
+        {"POST", "/api/v1/drivers/opcua/browse", true, Role::Engineer, true, false},
         // Polled by Studio: do not restart the idle time. The serial ports are a read of /sys.
         {"GET", "/api/v1/drivers/diagnostics", true, Role::Viewer, false, false},
         {"GET", "/api/v1/serial/ports", true, Role::Engineer, false, false},

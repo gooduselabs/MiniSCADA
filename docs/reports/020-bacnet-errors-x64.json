@@ -1,0 +1,57 @@
+{
+  "scenario": "errors",
+  "checks": [
+    {
+      "name": "no answer: BAD TIMEOUT within 5 s",
+      "pass": true,
+      "detail": "3007 ms"
+    },
+    {
+      "name": "answers again: GOOD within the device backoff (<= 32 s)",
+      "pass": true,
+      "detail": "1012 ms"
+    },
+    {
+      "name": "small APDU: requests split, every Tag still as expected",
+      "pass": true
+    },
+    {
+      "name": "no ReadPropertyMultiple: fallback to ReadProperty, every Tag as expected",
+      "pass": true
+    },
+    {
+      "name": "overridden at the device: UNCERTAIN BACNET_OVERRIDDEN with the value",
+      "pass": true,
+      "detail": "{\"value\":30.25,\"quality\":\"UNCERTAIN\",\"reason\":\"BACNET_OVERRIDDEN\"}"
+    },
+    {
+      "name": "the runtime never restarted",
+      "pass": true,
+      "detail": "9 -> 9"
+    }
+  ],
+  "measures": {
+    "timeoutDetectMs": 3007,
+    "recoverMs": 1012,
+    "diag": [
+      {
+        "id": "ahu1",
+        "timeouts": 4,
+        "exceptions": {
+          "abort:4": 3,
+          "error:31": 10,
+          "error:40": 1,
+          "reject:9": 1
+        }
+      },
+      {
+        "id": "vav7",
+        "timeouts": 3,
+        "exceptions": {
+          "reject:9": 1
+        }
+      }
+    ]
+  },
+  "pass": true
+}

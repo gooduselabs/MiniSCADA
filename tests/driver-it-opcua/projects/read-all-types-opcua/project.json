@@ -1,0 +1,15 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "1.1.0",
+  "projectId": "opcua-it-read-all-types-opcua",
+  "projectName": "Kiểm thử driver OPC UA: read-all-types-opcua",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "1.1.0",
+  "entryScreen": "main",
+  "screens": [
+    "main"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "maxClients": 10
+}

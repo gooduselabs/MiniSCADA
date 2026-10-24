@@ -143,6 +143,13 @@ Cột "Rủi ro còn lại" là thứ chấp nhận ở bản 1.0; mục 5 gom l
 - **Biện pháp:** quyền hiệu lực tính ở máy chủ theo phiên (`computeAccess` thuần, vector chung C++/TS); **mọi** đường dữ liệu lọc theo tập Tag được phép (bảng [admin-api §6](../../specs/013-access-control/contracts/admin-api.md)); màn hình bị cấm 403, item ẩn bị cắt khỏi tệp màn hình trả về; lệnh ghi từ cookie phải mang `context` và item phải `operate` và có Tag trong binding; quyền chỉ thu hẹp, không vượt vai trò; API quản trị chỉ administrator, chỉ HTTPS, CSRF và `Origin`, xác nhận lại mật khẩu cho thao tác nhạy cảm (tính vào khóa tạm), 30 yêu cầu/phút/phiên, thân ≤ 64 KiB, `rev` chống ghi đè (409), chặn `LAST_ADMIN`; đổi vai trò, nhóm, trạng thái, mật khẩu hủy mọi phiên của người đó; kho hỏng → chỉ administrator vào (an toàn mặc định), `.bak` để khôi phục; audit mọi thay đổi (trước/sau, không có mật khẩu) và mọi từ chối; CLI root phục hồi (`--access-reset`).
 - **Rủi ro còn lại:** RR-11; quyền theo Tag dùng trực tiếp trong binding, không theo đầu vào gián tiếp của Tag tính toán hay logic (Tag tính toán là Tag riêng, phải được cấp riêng).
 
+### I-16. mAT OPC DA Bridge (feature 021, ADR-049)
+
+- **Giao diện mới:** Modbus TCP server trên máy Windows có OPC DA server (cổng 502 mặc định) ↔ runtime trên BL335; COM cục bộ giữa cầu nối và OPC server; dịch vụ Windows; file cấu hình JSON.
+- **Đe dọa:** máy lạ trong mạng đọc dữ liệu hoặc ghi item OPC (Modbus không xác thực); khung Modbus độc làm sập hoặc chiếm bộ nhớ cầu nối; mở nhiều kết nối làm cạn tài nguyên; giả mạo cầu nối (ARP/IP) trả giá trị giả cho runtime; DCOM mở rộng qua mạng; dịch vụ chạy quyền cao bị lợi dụng; sửa `config.json` để thêm item ghi.
+- **Biện pháp:** allowlist IP/CIDR kiểm trước khi đọc byte nào (mặc định chỉ `127.0.0.1`, `allow` rỗng bị từ chối); chỉ item `access: RW` ghi được, còn lại ngoại lệ 0x02; bộ phân tích khung viết bằng Rust (an toàn bộ nhớ), độ dài MBAP ≤ 254, số lượng theo giới hạn chuẩn, khung sai → đóng kết nối, fuzz test; tối đa `maxConnections` (8) kết nối, timeout rỗi 60 s; COM chỉ `CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER` (không DCOM ra mạng); `CoInitializeSecurity` mức NONE chỉ để callback cục bộ của OPC server về được; dịch vụ dưới `LocalService`; tường lửa giới hạn theo IP BL335; `config.json` trong `ProgramData` khóa ACL chỉ Administrators sửa (dịch vụ chỉ ghi thư mục `logs`); log không ghi giá trị ghi ở mức info.
+- **Rủi ro còn lại:** RR-16.
+
 ## 5. Rủi ro còn lại được chấp nhận ở bản 1.0
 
 | # | Rủi ro | Vì sao chấp nhận | Giảm nhẹ |
@@ -158,6 +165,7 @@ Cột "Rủi ro còn lại" là thứ chấp nhận ở bản 1.0; mục 5 gom l
 | RR-9 | Gia cố thiết bị chưa áp dụng trên BL335 của dự án | đổi `sshd` có thể mất truy cập | T064 ⚠️🔌, cảnh báo `SSH_ROOT_PASSWORD` |
 | RR-10 | Lộ khóa phát hành OTA | gốc tin cậy phải ở đâu đó | khóa ngoại tuyến, hai khóa, OTA mặc định tắt |
 | RR-11 | Kho tài khoản do runtime ghi được (`/var/lib/mat-runtime/auth`, 013) | người dùng yêu cầu quản lý tài khoản trên web (D22); runtime vốn đã giữ quyền ghi PLC | API hẹp, xác nhận lại, audit, systemd `ProtectSystem=strict`, CLI root phục hồi |
+| RR-16 | Modbus TCP của OPC DA Bridge không mã hóa, không xác thực (021) | runtime chỉ có driver Modbus khi làm 021; cùng mức với driver Modbus sẵn có | allowlist IP, chỉ item `RW` ghi được, tường lửa theo IP BL335, mạng điều khiển cách ly; sau: mặt OPC UA có TLS (ADR-049) |
 
 ## 6. Ánh xạ phát hiện Medium trở lên
 

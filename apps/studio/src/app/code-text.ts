@@ -46,8 +46,38 @@ export function issueText(issue: { code: string; message: string }): string {
       ? t('issue.W_DETECT_SLOW', { total: number(m[1]), group: m[2], period: number(m[3]) })
       : t('issue.W_DETECT_SLOW.plain');
   }
+  const s7 = s7IssueKey(code, message);
+  if (s7) return t(s7);
+  const ua = opcuaIssueKey(code, message);
+  if (ua) return t(ua);
   const key = lookup('issue', code);
   return key ? t(key) : message;
+}
+
+/**
+ * Lỗi của Tag S7 dùng chung mã với Modbus (E_ADDR_*, E_SCHEMA): nhận ra theo câu tiếng Anh của bộ kiểm tra
+ * (packages/project-schema/src/rules-s7.ts) để câu tiếng Việt nói S7 thay vì Modbus.
+ */
+function s7IssueKey(code: string, message: string): MessageKey | null {
+  if (/^E_ADDR_(SYNTAX|AREA|RANGE)$/.test(code) && message.startsWith('S7 address'))
+    return lookup('issue', `${code}.s7`);
+  if ((code === 'E_ADDR_READ_LIMIT' || code === 'E_ADDR_WRITE_LIMIT') && /\bPDU\b/.test(message))
+    return lookup('issue', `${code}.s7`);
+  if (code === 'E_SCHEMA' && /does not apply to S7 tags/.test(message))
+    return 'issue.E_SCHEMA.s7ByteOrder';
+  return null;
+}
+
+/**
+ * Lỗi của Tag OPC UA dùng chung mã với Modbus (E_ADDR_*, E_SCHEMA): nhận ra theo câu tiếng Anh của bộ kiểm tra
+ * (packages/project-schema/src/rules-opcua.ts) để câu tiếng Việt nói NodeId thay vì địa chỉ Modbus.
+ */
+function opcuaIssueKey(code: string, message: string): MessageKey | null {
+  if ((code === 'E_ADDR_SYNTAX' || code === 'E_ADDR_RANGE') && message.startsWith('OPC UA NodeId'))
+    return lookup('issue', `${code}.opcua`);
+  if (code === 'E_SCHEMA' && /does not apply to OPC UA tags/.test(message))
+    return 'issue.E_SCHEMA.opcuaByteOrder';
+  return null;
 }
 
 /** Trạng thái của một lệnh ghi: ACCEPTED, CONFIRMED, FAILED, TIMEOUT, REJECTED, UNKNOWN. */

@@ -1,0 +1,160 @@
+{
+  "scenario": "faults",
+  "checks": [
+    {
+      "name": "diagnostics: three channels of kind \"mc\"",
+      "pass": true,
+      "detail": "plc-a:mc,plc-b:mc,plc-c:mc"
+    },
+    {
+      "name": "C056 at D104: A.D104 BAD MC_END_RANGE",
+      "pass": true,
+      "detail": "{\"value\":3456789012,\"quality\":\"BAD\",\"reason\":\"MC_END_RANGE\",\"ts\":1792857437610}"
+    },
+    {
+      "name": "C056 at D104: every other Tag GOOD (block split)",
+      "pass": true
+    },
+    {
+      "name": "C056 at D104: diagnostics count end code C056 on qa",
+      "pass": true,
+      "detail": "exceptions before {\"C05B\":1} after {\"C056\":7,\"C05B\":1}"
+    },
+    {
+      "name": "C056 at D104: A.D104 GOOD again when the PLC is fixed",
+      "pass": true
+    },
+    {
+      "name": "C056 at SD210: A.SD210 BAD MC_END_RANGE",
+      "pass": true,
+      "detail": "{\"value\":2026,\"quality\":\"BAD\",\"reason\":\"MC_END_RANGE\",\"ts\":1792857441610}"
+    },
+    {
+      "name": "C056 at SD210: every other Tag GOOD (block split)",
+      "pass": true
+    },
+    {
+      "name": "C056 at SD210: diagnostics count end code C056 on qa",
+      "pass": true,
+      "detail": "exceptions before {\"C056\":7,\"C05B\":1} after {\"C056\":11,\"C05B\":1}"
+    },
+    {
+      "name": "C056 at SD210: A.SD210 GOOD again when the PLC is fixed",
+      "pass": true
+    },
+    {
+      "name": "silent: every Tag of plc-a BAD (TIMEOUT for the request that timed out, else DISCONNECTED)",
+      "pass": true,
+      "detail": "1500 ms, reasons seen TIMEOUT,DISCONNECTED"
+    },
+    {
+      "name": "silent on plc-a: plc-b and plc-c stay GOOD",
+      "pass": true
+    },
+    {
+      "name": "silent: the timeouts are counted",
+      "pass": true,
+      "detail": "0 -> 1"
+    },
+    {
+      "name": "silent: GOOD again within 12 s",
+      "pass": true,
+      "detail": "990 ms"
+    },
+    {
+      "name": "close x3: plc-a counts 3 reconnects",
+      "pass": true,
+      "detail": "1 -> 4"
+    },
+    {
+      "name": "close x3: every Tag of plc-a GOOD again within 12 s",
+      "pass": true
+    },
+    {
+      "name": "garbage: Tags of plc-a BAD_FRAME",
+      "pass": true,
+      "detail": "BAD_FRAME,DISCONNECTED"
+    },
+    {
+      "name": "garbage: bad frames counted",
+      "pass": true,
+      "detail": "{\"crc\":0,\"echo\":0,\"format\":0,\"length\":0,\"tid\":0,\"unit\":0} -> {\"crc\":0,\"echo\":0,\"format\":3,\"length\":0,\"tid\":0,\"unit\":0}"
+    },
+    {
+      "name": "garbage: every Tag of plc-a GOOD again within 12 s",
+      "pass": true
+    },
+    {
+      "name": "plc-a is connected after the faults",
+      "pass": true,
+      "detail": "connected"
+    },
+    {
+      "name": "the last error has a code and a time",
+      "pass": true,
+      "detail": "{\"at\":1792857458297,\"code\":\"BAD_FRAME\"}"
+    }
+  ],
+  "measures": {
+    "steps": [
+      {
+        "step": "C056 D104",
+        "badMs": 4776,
+        "othersBadForAMoment": 0,
+        "exceptions": {
+          "C056": 7,
+          "C05B": 1
+        }
+      },
+      {
+        "step": "C056 SD210",
+        "badMs": 992,
+        "othersBadForAMoment": 0,
+        "exceptions": {
+          "C056": 11,
+          "C05B": 1
+        }
+      },
+      {
+        "step": "silent",
+        "badMs": 1500,
+        "goodMs": 990,
+        "sinceStartMs": 1510
+      },
+      {
+        "step": "close x3",
+        "reconnects": 3,
+        "goodMs": 142
+      },
+      {
+        "step": "garbage x3",
+        "reasons": [
+          "BAD_FRAME",
+          "DISCONNECTED"
+        ],
+        "goodMs": 2721
+      }
+    ],
+    "finalCounters": {
+      "timeouts": 1,
+      "exceptions": {
+        "C056": 11,
+        "C05B": 1
+      },
+      "badFrames": {
+        "crc": 0,
+        "echo": 0,
+        "format": 3,
+        "length": 0,
+        "tid": 0,
+        "unit": 0
+      },
+      "reconnects": 7,
+      "lastError": {
+        "at": 1792857458297,
+        "code": "BAD_FRAME"
+      }
+    }
+  },
+  "pass": true
+}

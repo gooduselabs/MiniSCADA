@@ -87,8 +87,10 @@ static_assert(MBEDTLS_VERSION_NUMBER == 0x03060700, "R4/R19: the vendored Mbed T
 #if defined(MBEDTLS_KEY_EXCHANGE_RSA_ENABLED)
 #error "R4: MBEDTLS_KEY_EXCHANGE_RSA_ENABLED must be off"
 #endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-#error "R4: MBEDTLS_CIPHER_MODE_CBC must be off"
+// CBC is on since feature 019 (ADR-047) for the OPC UA policy Basic256Sha256 only: the TLS server
+// still offers no CBC suite (OnlyAeadSuitesWithEcdheAndEcdsa checks the list at run time).
+#if !defined(MBEDTLS_SSL_CIPHERSUITES)
+#error "R4: the TLS suites must stay a fixed list (MBEDTLS_SSL_CIPHERSUITES)"
 #endif
 #if defined(MBEDTLS_DEBUG_C)
 #error "R4: MBEDTLS_DEBUG_C must be off"

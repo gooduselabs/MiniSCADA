@@ -1,0 +1,48 @@
+{
+  "scenario": "errors",
+  "checks": [
+    {
+      "name": "S7.DENIED BAD S7_ACCESS_DENIED",
+      "pass": true,
+      "detail": "{\"value\":null,\"quality\":\"BAD\",\"reason\":\"S7_ACCESS_DENIED\"}"
+    },
+    {
+      "name": "S7.NO_DB BAD S7_OBJECT_NOT_FOUND",
+      "pass": true,
+      "detail": "{\"value\":null,\"quality\":\"BAD\",\"reason\":\"S7_OBJECT_NOT_FOUND\"}"
+    },
+    {
+      "name": "S7.OUT_OF_RANGE BAD S7_ADDRESS_OUT_OF_RANGE",
+      "pass": true,
+      "detail": "{\"value\":null,\"quality\":\"BAD\",\"reason\":\"S7_ADDRESS_OUT_OF_RANGE\"}"
+    },
+    {
+      "name": "the other Tags stay GOOD",
+      "pass": true
+    },
+    {
+      "name": "PUT/GET off: every Tag BAD S7_FUNCTION_NOT_AVAILABLE",
+      "pass": true,
+      "detail": "405 ms"
+    },
+    {
+      "name": "diagnostics: last error S7_FUNCTION_NOT_AVAILABLE, exception 8104",
+      "pass": true,
+      "detail": "{\"lastError\":{\"at\":1792857309301,\"code\":\"S7_FUNCTION_NOT_AVAILABLE\",\"device\":\"cpu1\"},\"exceptions\":{\"8104\":3,\"03\":5,\"05\":5,\"0A\":5}}"
+    },
+    {
+      "name": "PUT/GET on again: GOOD without a new connection",
+      "pass": true,
+      "detail": "962 ms"
+    }
+  ],
+  "measures": {
+    "exceptions": {
+      "8104": 3,
+      "03": 5,
+      "05": 5,
+      "0A": 5
+    }
+  },
+  "pass": true
+}

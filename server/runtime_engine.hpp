@@ -17,9 +17,14 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/tag-engine/bacnet_factory.hpp"
 #include "core/tag-engine/engine.hpp"
+#include "core/tag-engine/fins_factory.hpp"
+#include "core/tag-engine/mc_factory.hpp"
 #include "core/tag-engine/modbus_factory.hpp"
+#include "core/tag-engine/opcua_factory.hpp"
 #include "core/tag-engine/retain_store.hpp"
+#include "core/tag-engine/s7_factory.hpp"
 #include "core/tag-engine/sim_factory.hpp"
 #include "core/tag-engine/tag_model.hpp"
 #include "core/tag-engine/tag_store.hpp"
@@ -41,6 +46,9 @@ struct RuntimeEngineOptions {
     // only by firstRound(): the caller may free the document after it (T147).
     const nlohmann::json* logic = nullptr;
     LogicOptions logicOptions;
+    // Feature 019: what the OPC UA drivers need from the device (client certificate directory,
+    // passwords of the secrets file).
+    drv::OpcUaEnv opcua;
 };
 
 class RuntimeEngine {
@@ -77,9 +85,12 @@ class RuntimeEngine {
     // The Modbus TCP channel drivers, in the order of the model (a disabled channel has one too: it
     // publishes DISABLED and never connects). Valid until the engine is destroyed.
     const std::vector<drv::ModbusTcpDriver*>& channelDrivers() const { return channelPtrs_; }
+    // Every channel's driver, by the channel's index in the model (Modbus, S7, FINS, ...); null for
+    // a channel without one. Valid until the engine is destroyed.
+    const std::vector<drv::Driver*>& driversByChannel() const { return byChannel_; }
     // The driver of the channel of an external Tag and the number of its field device inside that
-    // driver; null for any other Tag (and for a channel whose driver does not exist yet: RTU).
-    drv::ModbusTcpDriver* driverOf(size_t tag) const;
+    // driver; null for any other Tag.
+    drv::Driver* driverOf(size_t tag) const;
     uint32_t deviceOf(size_t tag) const;
     // The driver of the simulation Tags (manual writes).
     drv::Driver* simulationDriver() { return sim_.get(); }
@@ -92,10 +103,11 @@ class RuntimeEngine {
     RuntimeEngineOptions options_;
     std::unique_ptr<Engine> engine_;
     std::unique_ptr<SimulationDriver> sim_;
-    std::vector<std::unique_ptr<drv::ModbusTcpDriver>> channels_;
+    std::vector<std::unique_ptr<drv::Driver>> channels_;
     std::vector<drv::ModbusTcpDriver*> channelPtrs_;
+    std::vector<drv::Driver*> byChannel_;
     struct Route {
-        drv::ModbusTcpDriver* driver = nullptr;
+        drv::Driver* driver = nullptr;
         uint32_t device = 0;
     };
     std::unordered_map<size_t, Route> routes_;  // Tag index -> its channel driver

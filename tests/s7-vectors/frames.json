@@ -1,0 +1,346 @@
+{
+  "description": "Khung S7comm qua ISO-on-TCP (feature 016, specs/016-driver-s7/contracts/s7-driver.md §3). Viết tay theo RFC 1006, RFC 905 (COTP lớp 0) và bố cục S7comm công khai (Wireshark packet-s7comm, tài liệu Snap7). Dùng chung: drivers/s7/tests/s7_frames_test.cpp (C++) và tools/s7-sim/sim.test.mjs (giả lập). Hex viết hoa, cách nhau bằng dấu cách.",
+  "cotpConnect": [
+    {
+      "name": "pg-rack0-slot2-snap7",
+      "localTsap": "0100",
+      "remoteTsap": "0102",
+      "hex": "03 00 00 16 11 E0 00 00 00 01 00 C0 01 0A C1 02 01 00 C2 02 01 02"
+    },
+    {
+      "name": "pg-rack0-slot1-s7-1200",
+      "localTsap": "0100",
+      "remoteTsap": "0101",
+      "hex": "03 00 00 16 11 E0 00 00 00 01 00 C0 01 0A C1 02 01 00 C2 02 01 01"
+    },
+    {
+      "name": "pg-rack1-slot3",
+      "localTsap": "0100",
+      "remoteTsap": "0123",
+      "hex": "03 00 00 16 11 E0 00 00 00 01 00 C0 01 0A C1 02 01 00 C2 02 01 23"
+    },
+    {
+      "name": "custom-tsap-op",
+      "localTsap": "1000",
+      "remoteTsap": "0301",
+      "hex": "03 00 00 16 11 E0 00 00 00 01 00 C0 01 0A C1 02 10 00 C2 02 03 01"
+    }
+  ],
+  "tsap": [
+    { "rack": 0, "slot": 1, "remote": "0101" },
+    { "rack": 0, "slot": 2, "remote": "0102" },
+    { "rack": 0, "slot": 0, "remote": "0100" },
+    { "rack": 1, "slot": 3, "remote": "0123" },
+    { "rack": 7, "slot": 31, "remote": "01FF" }
+  ],
+  "cotpConfirm": [
+    {
+      "name": "cc-echo-params",
+      "hex": "03 00 00 16 11 D0 00 01 00 01 00 C0 01 0A C1 02 01 00 C2 02 01 02",
+      "expect": { "accepted": true }
+    },
+    {
+      "name": "cc-no-params",
+      "hex": "03 00 00 0B 06 D0 00 01 44 31 00",
+      "expect": { "accepted": true }
+    },
+    {
+      "name": "dr-refused",
+      "hex": "03 00 00 0B 06 80 00 01 00 00 01",
+      "expect": { "accepted": false }
+    },
+    {
+      "name": "cr-instead-of-cc",
+      "hex": "03 00 00 16 11 E0 00 00 00 01 00 C0 01 0A C1 02 01 00 C2 02 01 02",
+      "expect": { "accepted": false }
+    },
+    {
+      "name": "dt-instead-of-cc",
+      "hex": "03 00 00 07 02 F0 80",
+      "expect": { "accepted": false }
+    }
+  ],
+  "setupRequest": [
+    {
+      "name": "pdu-480-ref-1",
+      "ref": 1,
+      "pduSize": 480,
+      "hex": "03 00 00 19 02 F0 80 32 01 00 00 00 01 00 08 00 00 F0 00 00 01 00 01 01 E0"
+    },
+    {
+      "name": "pdu-960-ref-256",
+      "ref": 256,
+      "pduSize": 960,
+      "hex": "03 00 00 19 02 F0 80 32 01 00 00 01 00 00 08 00 00 F0 00 00 01 00 01 03 C0"
+    },
+    {
+      "name": "pdu-240-ref-65535",
+      "ref": 65535,
+      "pduSize": 240,
+      "hex": "03 00 00 19 02 F0 80 32 01 00 00 FF FF 00 08 00 00 F0 00 00 01 00 01 00 F0"
+    }
+  ],
+  "setupResponse": [
+    {
+      "name": "s7-1200-pdu-240",
+      "hex": "03 00 00 1B 02 F0 80 32 03 00 00 00 01 00 08 00 00 00 00 F0 00 00 01 00 01 00 F0",
+      "expect": { "ok": true, "ref": 1, "pduSize": 240 }
+    },
+    {
+      "name": "s7-1500-pdu-960",
+      "hex": "03 00 00 1B 02 F0 80 32 03 00 00 00 01 00 08 00 00 00 00 F0 00 00 03 00 03 03 C0",
+      "expect": { "ok": true, "ref": 1, "pduSize": 960 }
+    },
+    {
+      "name": "header-error",
+      "hex": "03 00 00 13 02 F0 80 32 03 00 00 00 01 00 00 00 00 81 04",
+      "expect": { "ok": false, "ref": 1, "error": 33028 }
+    },
+    {
+      "name": "wrong-function",
+      "hex": "03 00 00 1B 02 F0 80 32 03 00 00 00 01 00 08 00 00 00 00 04 00 00 01 00 01 00 F0",
+      "expect": { "ok": false, "format": true }
+    }
+  ],
+  "readRequest": [
+    {
+      "name": "db1-4-bytes",
+      "ref": 2,
+      "items": [{ "area": "DB", "db": 1, "byte": 0, "bit": null, "size": 4 }],
+      "hex": "03 00 00 1F 02 F0 80 32 01 00 00 00 02 00 0E 00 00 04 01 12 0A 10 02 00 04 00 01 84 00 00 00"
+    },
+    {
+      "name": "m10-3-bit",
+      "ref": 3,
+      "items": [{ "area": "M", "db": 0, "byte": 10, "bit": 3, "size": 1 }],
+      "hex": "03 00 00 1F 02 F0 80 32 01 00 00 00 03 00 0E 00 00 04 01 12 0A 10 01 00 01 00 00 83 00 00 53"
+    },
+    {
+      "name": "two-items-db-and-input",
+      "ref": 4,
+      "items": [
+        { "area": "DB", "db": 1, "byte": 0, "bit": null, "size": 4 },
+        { "area": "I", "db": 0, "byte": 2, "bit": null, "size": 2 }
+      ],
+      "hex": "03 00 00 2B 02 F0 80 32 01 00 00 00 04 00 1A 00 00 04 02 12 0A 10 02 00 04 00 01 84 00 00 00 12 0A 10 02 00 02 00 00 81 00 00 10"
+    },
+    {
+      "name": "db300-byte1000-8-bytes-and-q",
+      "ref": 5,
+      "items": [
+        { "area": "DB", "db": 300, "byte": 1000, "bit": null, "size": 8 },
+        { "area": "Q", "db": 0, "byte": 0, "bit": 7, "size": 1 }
+      ],
+      "hex": "03 00 00 2B 02 F0 80 32 01 00 00 00 05 00 1A 00 00 04 02 12 0A 10 02 00 08 01 2C 84 00 1F 40 12 0A 10 01 00 01 00 00 82 00 00 07"
+    },
+    {
+      "name": "db65535-byte65535",
+      "ref": 6,
+      "items": [{ "area": "DB", "db": 65535, "byte": 65535, "bit": null, "size": 1 }],
+      "hex": "03 00 00 1F 02 F0 80 32 01 00 00 00 06 00 0E 00 00 04 01 12 0A 10 02 00 01 FF FF 84 07 FF F8"
+    }
+  ],
+  "readResponse": [
+    {
+      "name": "one-item-4-bytes",
+      "sizes": [4],
+      "hex": "03 00 00 1D 02 F0 80 32 03 00 00 00 02 00 02 00 08 00 00 04 01 FF 04 00 20 42 F6 E9 79",
+      "expect": { "ok": true, "ref": 2, "items": [{ "rc": 255, "data": "42 F6 E9 79" }] }
+    },
+    {
+      "name": "odd-item-then-bit-fill-byte",
+      "sizes": [3, 1],
+      "hex": "03 00 00 22 02 F0 80 32 03 00 00 00 04 00 02 00 0D 00 00 04 02 FF 04 00 18 01 02 03 00 FF 03 00 01 01",
+      "expect": {
+        "ok": true,
+        "ref": 4,
+        "items": [
+          { "rc": 255, "data": "01 02 03" },
+          { "rc": 255, "data": "01" }
+        ]
+      }
+    },
+    {
+      "name": "item-error-then-ok",
+      "sizes": [4, 2],
+      "hex": "03 00 00 1F 02 F0 80 32 03 00 00 00 04 00 02 00 0A 00 00 04 02 0A 00 00 00 FF 04 00 10 12 34",
+      "expect": {
+        "ok": true,
+        "ref": 4,
+        "items": [
+          { "rc": 10, "data": "" },
+          { "rc": 255, "data": "12 34" }
+        ]
+      }
+    },
+    {
+      "name": "octet-string-length-in-bytes",
+      "sizes": [2],
+      "hex": "03 00 00 1B 02 F0 80 32 03 00 00 00 09 00 02 00 06 00 00 04 01 FF 09 00 02 AB CD",
+      "expect": { "ok": true, "ref": 9, "items": [{ "rc": 255, "data": "AB CD" }] }
+    },
+    {
+      "name": "access-denied-05-and-03",
+      "sizes": [2, 2],
+      "hex": "03 00 00 1D 02 F0 80 32 03 00 00 00 0A 00 02 00 08 00 00 04 02 05 00 00 00 03 00 00 00",
+      "expect": {
+        "ok": true,
+        "ref": 10,
+        "items": [
+          { "rc": 5, "data": "" },
+          { "rc": 3, "data": "" }
+        ]
+      }
+    },
+    {
+      "name": "header-error-put-get-disabled",
+      "sizes": [4],
+      "hex": "03 00 00 13 02 F0 80 32 03 00 00 00 05 00 00 00 00 81 04",
+      "expect": { "ok": false, "ref": 5, "error": 33028 }
+    },
+    {
+      "name": "header-error-ack-rosctr-2",
+      "sizes": [4],
+      "hex": "03 00 00 13 02 F0 80 32 02 00 00 00 05 00 00 00 00 85 00",
+      "expect": { "ok": false, "ref": 5, "error": 34048 }
+    },
+    {
+      "name": "item-count-mismatch",
+      "sizes": [4, 2],
+      "hex": "03 00 00 1D 02 F0 80 32 03 00 00 00 02 00 02 00 08 00 00 04 01 FF 04 00 20 42 F6 E9 79",
+      "expect": { "ok": false, "format": true }
+    },
+    {
+      "name": "item-data-longer-than-frame",
+      "sizes": [4],
+      "hex": "03 00 00 1D 02 F0 80 32 03 00 00 00 02 00 02 00 08 00 00 04 01 FF 04 00 40 42 F6 E9 79",
+      "expect": { "ok": false, "format": true }
+    },
+    {
+      "name": "size-different-from-request",
+      "sizes": [2],
+      "hex": "03 00 00 1D 02 F0 80 32 03 00 00 00 02 00 02 00 08 00 00 04 01 FF 04 00 20 42 F6 E9 79",
+      "expect": { "ok": false, "format": true }
+    },
+    {
+      "name": "not-s7-protocol-id",
+      "sizes": [4],
+      "hex": "03 00 00 1D 02 F0 80 72 03 00 00 00 02 00 02 00 08 00 00 04 01 FF 04 00 20 42 F6 E9 79",
+      "expect": { "ok": false, "format": true }
+    }
+  ],
+  "writeRequest": [
+    {
+      "name": "bit-db1-dbx2-1-true",
+      "ref": 7,
+      "item": { "area": "DB", "db": 1, "byte": 2, "bit": 1, "size": 1 },
+      "data": "01",
+      "hex": "03 00 00 24 02 F0 80 32 01 00 00 00 07 00 0E 00 05 05 01 12 0A 10 01 00 01 00 01 84 00 00 11 00 03 00 01 01"
+    },
+    {
+      "name": "word-db1-dbw4-1234",
+      "ref": 8,
+      "item": { "area": "DB", "db": 1, "byte": 4, "bit": null, "size": 2 },
+      "data": "04 D2",
+      "hex": "03 00 00 25 02 F0 80 32 01 00 00 00 08 00 0E 00 06 05 01 12 0A 10 02 00 02 00 01 84 00 00 20 00 04 00 10 04 D2"
+    },
+    {
+      "name": "real-md20-1-5",
+      "ref": 9,
+      "item": { "area": "M", "db": 0, "byte": 20, "bit": null, "size": 4 },
+      "data": "3F C0 00 00",
+      "hex": "03 00 00 27 02 F0 80 32 01 00 00 00 09 00 0E 00 08 05 01 12 0A 10 02 00 04 00 00 83 00 00 A0 00 04 00 20 3F C0 00 00"
+    },
+    {
+      "name": "bit-q0-0-false",
+      "ref": 10,
+      "item": { "area": "Q", "db": 0, "byte": 0, "bit": 0, "size": 1 },
+      "data": "00",
+      "hex": "03 00 00 24 02 F0 80 32 01 00 00 00 0A 00 0E 00 05 05 01 12 0A 10 01 00 01 00 00 82 00 00 00 00 03 00 01 00"
+    }
+  ],
+  "writeResponse": [
+    {
+      "name": "ok",
+      "hex": "03 00 00 16 02 F0 80 32 03 00 00 00 07 00 02 00 01 00 00 05 01 FF",
+      "expect": { "ok": true, "ref": 7, "rc": 255 }
+    },
+    {
+      "name": "object-not-found",
+      "hex": "03 00 00 16 02 F0 80 32 03 00 00 00 08 00 02 00 01 00 00 05 01 0A",
+      "expect": { "ok": true, "ref": 8, "rc": 10 }
+    },
+    {
+      "name": "header-error",
+      "hex": "03 00 00 13 02 F0 80 32 03 00 00 00 09 00 00 00 00 81 04",
+      "expect": { "ok": false, "ref": 9, "error": 33028 }
+    },
+    {
+      "name": "read-function-in-write-answer",
+      "hex": "03 00 00 16 02 F0 80 32 03 00 00 00 07 00 02 00 01 00 00 04 01 FF",
+      "expect": { "ok": false, "format": true }
+    }
+  ],
+  "split": [
+    {
+      "name": "two-frames-in-one-read",
+      "hex": "03 00 00 07 02 F0 80 03 00 00 07 02 F0 80",
+      "expect": { "frames": [7, 7], "rest": 0, "bad": false }
+    },
+    {
+      "name": "partial-header",
+      "hex": "03 00 00",
+      "expect": { "frames": [], "rest": 3, "bad": false }
+    },
+    {
+      "name": "partial-body",
+      "hex": "03 00 00 16 11 D0 00 01",
+      "expect": { "frames": [], "rest": 8, "bad": false }
+    },
+    {
+      "name": "bad-version",
+      "hex": "04 00 00 07 02 F0 80",
+      "expect": { "frames": [], "rest": 7, "bad": true }
+    },
+    {
+      "name": "length-too-small",
+      "hex": "03 00 00 03 02 F0 80",
+      "expect": { "frames": [], "rest": 7, "bad": true }
+    },
+    {
+      "name": "length-too-large",
+      "hex": "03 00 10 01",
+      "expect": { "frames": [], "rest": 4, "bad": true }
+    }
+  ],
+  "values": [
+    { "name": "bool-true", "s7Type": "BOOL", "bit": 3, "bytes": "08", "value": true },
+    { "name": "bool-false", "s7Type": "BOOL", "bit": 3, "bytes": "F7", "value": false },
+    { "name": "byte-255", "s7Type": "BYTE", "bytes": "FF", "value": 255 },
+    { "name": "int-minus-1234", "s7Type": "INT", "bytes": "FB 2E", "value": -1234 },
+    { "name": "int-min", "s7Type": "INT", "bytes": "80 00", "value": -32768 },
+    { "name": "word-64302", "s7Type": "WORD", "bytes": "FB 2E", "value": 64302 },
+    { "name": "dint-minus-100000", "s7Type": "DINT", "bytes": "FF FE 79 60", "value": -100000 },
+    { "name": "dword-4000000000", "s7Type": "DWORD", "bytes": "EE 6B 28 00", "value": 4000000000 },
+    { "name": "real-123-456", "s7Type": "REAL", "bytes": "42 F6 E9 79", "value": 123.45600128173828 },
+    { "name": "real-minus-1-5", "s7Type": "REAL", "bytes": "BF C0 00 00", "value": -1.5 },
+    { "name": "real-nan", "s7Type": "REAL", "bytes": "7F C0 00 00", "invalid": true },
+    { "name": "real-inf", "s7Type": "REAL", "bytes": "7F 80 00 00", "invalid": true },
+    { "name": "lreal-pi", "s7Type": "LREAL", "bytes": "40 09 21 FB 54 44 2D 18", "value": 3.141592653589793 },
+    { "name": "lreal-nan", "s7Type": "LREAL", "bytes": "7F F8 00 00 00 00 00 00", "invalid": true },
+    { "name": "char-a", "s7Type": "CHAR", "length": 1, "bytes": "41", "value": "A" },
+    { "name": "char-array-trailing-zero", "s7Type": "CHAR", "length": 4, "bytes": "4F 4B 00 00", "value": "OK", "encodes": "4F 4B 00 00" },
+    { "name": "char-latin1", "s7Type": "CHAR", "length": 2, "bytes": "E9 74", "value": "ét" },
+    { "name": "string-bom-1", "s7Type": "STRING", "length": 10, "bytes": "0A 05 42 6F 6D 20 31 00 00 00 00 00", "value": "Bom 1" },
+    { "name": "string-empty", "s7Type": "STRING", "length": 4, "bytes": "04 00 00 00 00 00", "value": "" },
+    { "name": "string-cur-over-max", "s7Type": "STRING", "length": 3, "bytes": "03 09 41 42 43", "value": "ABC", "decodeOnly": true },
+    { "name": "string-plc-max-longer-than-tag", "s7Type": "STRING", "length": 2, "bytes": "FE 03 41 42", "value": "AB", "decodeOnly": true },
+    { "name": "string-latin1", "s7Type": "STRING", "length": 4, "bytes": "04 02 C4 D6 00 00", "value": "ÄÖ" }
+  ],
+  "encodeErrors": [
+    { "name": "string-too-long", "s7Type": "STRING", "length": 3, "value": "ABCD" },
+    { "name": "char-too-long", "s7Type": "CHAR", "length": 2, "value": "ABC" },
+    { "name": "string-not-latin1", "s7Type": "STRING", "length": 10, "value": "Bơm" },
+    { "name": "char-not-latin1", "s7Type": "CHAR", "length": 4, "value": "đ" }
+  ]
+}

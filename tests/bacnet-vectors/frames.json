@@ -1,0 +1,242 @@
+{
+  "description": "Vector byte BACnet/IP (feature 020, SC-001). APDU lấy từ ví dụ mã hóa ASHRAE 135 Annex F (F.3.5 ReadProperty, F.3.7 ReadPropertyMultiple, F.3.9 WriteProperty) bọc BVLC/NPDU theo Annex J và clause 6; còn lại dựng tay theo clause 20. Dùng chung C++ (drivers/bacnet/tests/bacnet_codec_test.cpp) và giả lập Node (tools/bacnet-sim/sim.test.mjs).",
+  "encode": [
+    {
+      "name": "F.3.5 ReadProperty AI 5 present-value",
+      "service": "readProperty",
+      "invokeId": 1,
+      "maxApdu": 1476,
+      "object": "AI:5",
+      "property": 85,
+      "hex": "810a0011 0104 0005010c 0c00000005 1955"
+    },
+    {
+      "name": "F.3.7 ReadPropertyMultiple AI 16 present-value, reliability",
+      "service": "readPropertyMultiple",
+      "invokeId": 241,
+      "maxApdu": 1024,
+      "objects": [{ "object": "AI:16", "properties": [85, 103] }],
+      "hex": "810a0015 0104 0004f10e 0c00000010 1e 0955 0967 1f"
+    },
+    {
+      "name": "F.3.9 WriteProperty AV 1 present-value 180.0",
+      "service": "writeProperty",
+      "invokeId": 89,
+      "maxApdu": 1024,
+      "object": "AV:1",
+      "property": 85,
+      "value": { "real": 180.0 },
+      "hex": "810a0018 0104 0004590f 0c00800001 1955 3e 4443340000 3f"
+    },
+    {
+      "name": "relinquish AO 1 priority 8",
+      "service": "writeProperty",
+      "invokeId": 7,
+      "maxApdu": 1476,
+      "object": "AO:1",
+      "property": 85,
+      "value": { "null": true },
+      "priority": 8,
+      "hex": "810a0016 0104 0005070f 0c00400001 1955 3e 00 3f 4908"
+    },
+    {
+      "name": "WriteProperty BO 2 active priority 1",
+      "service": "writeProperty",
+      "invokeId": 2,
+      "maxApdu": 1476,
+      "object": "BO:2",
+      "property": 85,
+      "value": { "enumerated": 1 },
+      "priority": 1,
+      "hex": "810a0017 0104 0005020f 0c01000002 1955 3e 9101 3f 4901"
+    },
+    {
+      "name": "ReadProperty qua router DNET 5 DADR 07",
+      "service": "readProperty",
+      "invokeId": 3,
+      "maxApdu": 1476,
+      "object": "DEV:1001",
+      "property": 77,
+      "network": 5,
+      "mac": "07",
+      "hex": "810a0016 0124 0005 01 07 ff 0005030c 0c020003e9 194d"
+    },
+    {
+      "name": "Who-Is broadcast toàn cục",
+      "service": "whoIs",
+      "bvlc": "broadcast",
+      "network": 65535,
+      "hex": "810b000c 0120ffff00ff 1008"
+    },
+    {
+      "name": "Who-Is cục bộ khoảng 1000-1100",
+      "service": "whoIs",
+      "bvlc": "broadcast",
+      "low": 1000,
+      "high": 1100,
+      "hex": "810b000e 0100 1008 0a03e8 1a044c"
+    },
+    {
+      "name": "Who-Is qua BBMD",
+      "service": "whoIs",
+      "bvlc": "distribute",
+      "hex": "8109000801001008"
+    },
+    {
+      "name": "Register-Foreign-Device TTL 300 s",
+      "service": "registerForeignDevice",
+      "ttl": 300,
+      "hex": "81050006012c"
+    }
+  ],
+  "decode": [
+    {
+      "name": "F.3.5 ReadProperty-ACK 72.3",
+      "hex": "810a0017 0100 30010c 0c00000005 1955 3e 444290999a 3f",
+      "expect": {
+        "pdu": "complexAck",
+        "invokeId": 1,
+        "service": 12,
+        "readProperty": { "object": "AI:5", "property": 85, "real": 72.3 }
+      }
+    },
+    {
+      "name": "F.3.7 ReadPropertyMultiple-ACK",
+      "hex": "810a001f 0100 30f10e 0c00000010 1e 2955 4e 444290999a 4f 2967 4e 9100 4f 1f",
+      "expect": {
+        "pdu": "complexAck",
+        "invokeId": 241,
+        "service": 14,
+        "results": [
+          { "object": "AI:16", "property": 85, "real": 72.3 },
+          { "object": "AI:16", "property": 103, "enumerated": 0 }
+        ]
+      }
+    },
+    {
+      "name": "RPM-ACK lỗi theo thuộc tính (unknown-object)",
+      "hex": "810a0018 0100 30020e 0c00000063 1e 2955 5e 9101 911f 5f 1f",
+      "expect": {
+        "pdu": "complexAck",
+        "invokeId": 2,
+        "service": 14,
+        "results": [{ "object": "AI:99", "property": 85, "errorClass": 1, "errorCode": 31 }]
+      }
+    },
+    {
+      "name": "F.3.9 Simple-ACK",
+      "hex": "810a0009 0100 20590f",
+      "expect": { "pdu": "simpleAck", "invokeId": 89, "service": 15 }
+    },
+    {
+      "name": "Error unknown-object",
+      "hex": "810a000d 0100 50010c 9101 911f",
+      "expect": { "pdu": "error", "invokeId": 1, "service": 12, "errorClass": 1, "errorCode": 31 }
+    },
+    {
+      "name": "Reject unrecognized-service",
+      "hex": "810a0009 0100 600109",
+      "expect": { "pdu": "reject", "invokeId": 1, "reason": 9 }
+    },
+    {
+      "name": "Abort segmentation-not-supported từ server",
+      "hex": "810a0009 0100 710104",
+      "expect": { "pdu": "abort", "invokeId": 1, "reason": 4, "server": true }
+    },
+    {
+      "name": "Complex-ACK phân đoạn",
+      "hex": "810a000b 0100 3c0100010c",
+      "expect": { "pdu": "complexAck", "invokeId": 1, "service": 12, "segmented": true }
+    },
+    {
+      "name": "I-Am device 1001",
+      "hex": "810b0014 0100 1000 c4020003e9 2205c4 9103 210f",
+      "expect": {
+        "pdu": "unconfirmed",
+        "service": 0,
+        "iAm": { "instance": 1001, "maxApdu": 1476, "segmentation": 3, "vendorId": 15 }
+      }
+    },
+    {
+      "name": "Forwarded-NPDU I-Am từ 192.168.1.50:47808",
+      "hex": "8104001a c0a80132bac0 0100 1000 c4020003e9 2205c4 9103 210f",
+      "expect": {
+        "pdu": "unconfirmed",
+        "service": 0,
+        "originIp": "192.168.1.50",
+        "originPort": 47808,
+        "iAm": { "instance": 1001, "maxApdu": 1476, "segmentation": 3, "vendorId": 15 }
+      }
+    },
+    {
+      "name": "ACK qua router SNET 5 SADR 07",
+      "hex": "810a001b 0108 0005 01 07 30010c 0c00000005 1955 3e 444290999a 3f",
+      "expect": {
+        "pdu": "complexAck",
+        "invokeId": 1,
+        "service": 12,
+        "srcNetwork": 5,
+        "srcMac": "07",
+        "readProperty": { "object": "AI:5", "property": 85, "real": 72.3 }
+      }
+    },
+    {
+      "name": "BVLC-Result NAK đăng ký foreign device",
+      "hex": "810000060030",
+      "expect": { "bvlcResult": 48 }
+    },
+    {
+      "name": "bản tin lớp mạng bị bỏ",
+      "hex": "810a0009 0180 00 0005",
+      "expect": { "noApdu": true }
+    },
+    { "name": "không phải BVLC", "hex": "820a00080100 2001", "expect": { "invalid": true } },
+    { "name": "độ dài BVLC sai", "hex": "810a00100100 20010c", "expect": { "invalid": true } },
+    { "name": "phiên bản NPDU sai", "hex": "810a0009 0200 20010c", "expect": { "invalid": true } },
+    { "name": "APDU cụt", "hex": "810a0007 0100 20", "expect": { "invalid": true } },
+    {
+      "name": "Error PDU không có mã",
+      "hex": "810a0009 0100 50010c",
+      "expect": { "invalid": true }
+    }
+  ],
+  "values": [
+    { "name": "NULL", "hex": "00", "tag": 0 },
+    { "name": "Boolean true", "hex": "11", "tag": 1, "bool": true },
+    { "name": "Unsigned 1476", "hex": "2205c4", "tag": 2, "unsigned": 1476 },
+    { "name": "Unsigned 70000", "hex": "23011170", "tag": 2, "unsigned": 70000 },
+    { "name": "Signed -1", "hex": "31ff", "tag": 3, "signed": -1 },
+    { "name": "Signed -129", "hex": "32ff7f", "tag": 3, "signed": -129 },
+    { "name": "Signed 128", "hex": "320080", "tag": 3, "signed": 128 },
+    { "name": "Real 72.3", "hex": "444290999a", "tag": 4, "real": 72.3 },
+    { "name": "Double 1.5", "hex": "5508 3ff8000000000000", "tag": 5, "real": 1.5 },
+    {
+      "name": "CharacterString UTF-8 AHU-1",
+      "hex": "7506 00 4148552d31",
+      "tag": 7,
+      "string": "AHU-1"
+    },
+    {
+      "name": "CharacterString dài 300 byte (độ dài 254)",
+      "repeat": { "prefix": "75fe012d00", "byte": "41", "count": 300 },
+      "tag": 7,
+      "stringLength": 300
+    },
+    { "name": "BitString status-flags fault", "hex": "820440", "tag": 8, "bits": 2, "bitCount": 4 },
+    {
+      "name": "BitString status-flags out-of-service và in-alarm",
+      "hex": "820490",
+      "tag": 8,
+      "bits": 9,
+      "bitCount": 4
+    },
+    { "name": "Enumerated 62", "hex": "913e", "tag": 9, "unsigned": 62 },
+    {
+      "name": "ObjectIdentifier device 1001",
+      "hex": "c4020003e9",
+      "tag": 12,
+      "objectType": 8,
+      "instance": 1001
+    }
+  ]
+}

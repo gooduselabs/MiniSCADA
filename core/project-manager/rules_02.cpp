@@ -9,8 +9,14 @@
 #include "core/common/serial_match.hpp"
 #include "core/expression/expression.hpp"
 #include "core/expression/value_table_json.hpp"
+#include "core/project-manager/rules_11.hpp"
+#include "core/project-manager/rules_bacnet.hpp"
+#include "core/project-manager/rules_fins.hpp"
+#include "core/project-manager/rules_mc.hpp"
 #include "core/tag-engine/calc_graph.hpp"
 #include "drivers/modbus/address.hpp"
+#include "drivers/opcua/node_id.hpp"
+#include "drivers/s7/address.hpp"
 #include "drivers/sdk/merge_planner.hpp"
 
 namespace mat {
@@ -122,6 +128,10 @@ class Rules {
         warnings_.push_back({code, file, path, msg});
     }
     static std::string idx(size_t i) { return std::to_string(i); }
+    McIssueFn issueFn() {
+        return [this](const char* c, const std::string& f, const std::string& path,
+                      const std::string& m) { add(c, f, path, m); };
+    }
 
     // ---- versions, runtime, project.json ----
     void versionsAndProject() {
@@ -258,6 +268,10 @@ class Rules {
                 else
                     deviceById_[did] = {&devs[di], &ch, ci, di};
             }
+            if (ch["kind"] == "s7") s7ChannelChecks(ch, cp);
+            mcChannelChecks(ch, cp, project_["schemaVersion"].get<std::string>(), connFile_,
+                            issueFn());  // feature 017
+            if (ch["kind"] == "opcua") opcuaChannelChecks(ch, cp);
             if (ch["kind"] == "modbus-rtu" && ch.contains("serial")) {
                 const std::string port = ch["serial"]["port"];
                 if (!serialPortOk(port)) {
@@ -471,6 +485,26 @@ class Rules {
         }
     }
 
+    // W_DETECT_SLOW. Defaults: RTU 1 retry; FINS (feature 018) 500 ms, 1 retry over UDP; else
+    // 1000 ms, none.
+    void detectSlow(const DeviceRef& ref, const std::string& group) {
+        const json& dev = *ref.device;
+        const json& channel = *ref.channel;
+        const std::string devId = dev["id"];
+        const double period = scanGroups_[group];
+        const bool fins = channel["kind"] == "fins";
+        const bool finsUdp = fins && !(channel.contains("fins") &&
+                                       channel["fins"].value("transport", "udp") == "tcp");
+        const double retries =
+            dev.value("retries", (channel["kind"] == "modbus-rtu" || finsUdp) ? 1.0 : 0.0);
+        const double timeout = dev.value("timeoutMs", fins ? 500.0 : 1000.0);
+        if (!slowSeen_.count(devId) && timeout * (retries + 1) > period) {
+            slowSeen_.insert(devId);
+            warn("W_DETECT_SLOW", connFile_, "/channels/" + idx(ref.ci) + "/devices/" + idx(ref.di),
+                 "timeoutMs x (retries + 1) exceeds the " + group + " scan period");
+        }
+    }
+
     void externalChecks(const json& t, const std::string& p) {
         const json& src = t["source"];
         const std::string devId = src["device"];
@@ -492,6 +526,64 @@ class Rules {
         if (rawTypeName != "STRING" && src.contains("stringLength"))
             add("E_SCHEMA", tagFile_, p + "/source/stringLength",
                 "stringLength only applies to STRING");
+        // Omron FINS (feature 018): address, BCD, limits in words (rules_fins); W_DETECT_SLOW as
+        // Modbus
+        if (channel["kind"] == "fins") {
+            if (finsSourceRules(t, p, dev, tagFile_, errors_))
+                detectSlow(found->second, src.value("scanGroup", "normal"));
+            return;
+        }
+        bcdOutsideFins(t, p, tagFile_, errors_);
+        if (channel["kind"] == "s7") {  // feature 016
+            if (s7TagChecks(t, p, channel, rawTypeName))
+                detectSlow(found->second, src.value("scanGroup", "normal"));
+            return;
+        }
+        if (channel["kind"] == "mc") {  // feature 017: Mitsubishi MC (rules_mc.cpp)
+            McTagCtx ctx;
+            ctx.tagFile = tagFile_;
+            ctx.connFile = connFile_;
+            ctx.device = &dev;
+            ctx.ci = found->second.ci;
+            ctx.di = found->second.di;
+            ctx.scanGroups = &scanGroups_;
+            ctx.bitRmwSeen = &bitRmwSeen_;
+            ctx.slowSeen = &slowSeen_;
+            ctx.add = issueFn();
+            ctx.warn = [this](const char* c, const std::string& f, const std::string& path,
+                              const std::string& m) { warn(c, f, path, m); };
+            mcTagChecks(t, p, ctx);
+            return;
+        }
+        // BACnet/IP (feature 020): the address (rules_bacnet); W_DETECT_SLOW with the BACnet
+        // defaults (500 ms, 1 retry)
+        if (channel["kind"] == "bacnet") {
+            if (!bacnetSourceRules(t, p, tagFile_, errors_)) return;
+            const std::string g = src.value("scanGroup", "normal");
+            const double retries = dev.value("retries", kBacnetRetries);
+            const double timeout = dev.value("timeoutMs", kBacnetTimeoutMs);
+            if (!slowSeen_.count(devId) && timeout * (retries + 1) > scanGroups_[g]) {
+                slowSeen_.insert(devId);
+                warn("W_DETECT_SLOW", connFile_,
+                     "/channels/" + idx(found->second.ci) + "/devices/" + idx(found->second.di),
+                     "timeoutMs x (retries + 1) exceeds the " + g + " scan period");
+            }
+            return;
+        }
+        if (channel["kind"] == "opcua") {
+            if (opcuaTagChecks(src, p)) {
+                // W_DETECT_SLOW as Modbus TCP: no retries, timeoutMs 2000 by default
+                const std::string group = src.value("scanGroup", "normal");
+                const double timeout = dev.value("timeoutMs", 2000.0);
+                if (!slowSeen_.count(devId) && timeout > scanGroups_[group]) {
+                    slowSeen_.insert(devId);
+                    warn("W_DETECT_SLOW", connFile_,
+                         "/channels/" + idx(found->second.ci) + "/devices/" + idx(found->second.di),
+                         "timeoutMs x (retries + 1) exceeds the " + group + " scan period");
+                }
+            }
+            return;
+        }
         modbus::AddressOptions opts;
         opts.addressBase = static_cast<int>(dev.value("addressBase", 0.0));
         opts.rawType = parseTagType(rawTypeName).value_or(TagType::UINT16);
@@ -529,16 +621,8 @@ class Rules {
                      "device '" + devId + "' writes bits by read-modify-write");
         }
         const std::string group = src.value("scanGroup", "normal");
-        const double period = scanGroups_[group];
         const bool rtu = channel["kind"] == "modbus-rtu";
-        const double retries = dev.value("retries", rtu ? 1.0 : 0.0);
-        const double timeout = dev.value("timeoutMs", 1000.0);
-        if (!slowSeen_.count(devId) && timeout * (retries + 1) > period) {
-            slowSeen_.insert(devId);
-            warn("W_DETECT_SLOW", connFile_,
-                 "/channels/" + idx(found->second.ci) + "/devices/" + idx(found->second.di),
-                 "timeoutMs x (retries + 1) exceeds the " + group + " scan period");
-        }
+        detectSlow(found->second, group);
         if (rtu && dev.value("enabled", true) && channel.value("enabled", true)) {
             auto& entry = rtuGroups_[channel["id"].get<std::string>()][group]
                                     [devId + "|" + modbus::areaName(r.area)];
@@ -547,6 +631,103 @@ class Rules {
             entry.spans.push_back(
                 {static_cast<size_t>(entry.spans.size()), r.offset, r.offset + r.registers});
         }
+    }
+
+    // ---- Siemens S7 (feature 016; rules-s7.ts, tests/project-vectors/README-016.md) ----
+    void s7ChannelChecks(const json& ch, const std::string& cp) {
+        if (!isSchema11(project_["schemaVersion"].get<std::string>()))
+            add("E_DRIVER_VERSION", connFile_, cp + "/kind",
+                "channel kind 's7' needs project format 1.1");
+        if (ch.contains("s7")) {
+            const json& s = ch["s7"];
+            if (s.contains("remoteTsap") && (s.contains("rack") || s.contains("slot")))
+                add("E_S7_TSAP", connFile_, cp + "/s7/remoteTsap",
+                    "remoteTsap replaces rack and slot: give one or the other");
+        }
+    }
+
+    // false: the address does not parse (no W_DETECT_SLOW then, as for Modbus).
+    bool s7TagChecks(const json& t, const std::string& p, const json& channel,
+                     const std::string& rawTypeName) {
+        const json& src = t["source"];
+        if (src.contains("byteOrder"))
+            add("E_SCHEMA", tagFile_, p + "/source/byteOrder",
+                "byteOrder does not apply to S7 tags (always big-endian)");
+        if (src.contains("stringByteOrder"))
+            add("E_SCHEMA", tagFile_, p + "/source/stringByteOrder",
+                "stringByteOrder does not apply to S7 tags");
+        s7::AddressOptions o;
+        o.rawType = parseTagType(rawTypeName).value_or(TagType::INT16);
+        o.stringLength =
+            src.contains("stringLength") ? static_cast<int>(num(src, "stringLength")) : 0;
+        o.rw = t.value("access", "R") == "RW";
+        const std::string address = src["address"];
+        const s7::Address a = s7::parseAddress(address, o);
+        if (!a.ok) {
+            add(a.error.c_str(), tagFile_, p + "/source/address",
+                "S7 address '" + address + "': " + a.error);
+            return false;
+        }
+        const int pdu =
+            channel.contains("s7") ? static_cast<int>(channel["s7"].value("pduSize", 480.0)) : 480;
+        if (a.size > pdu - 18)
+            add("E_ADDR_READ_LIMIT", tagFile_, p + "/source",
+                "the tag takes " + std::to_string(a.size) + " bytes, more than one read of PDU " +
+                    std::to_string(pdu) + " allows");
+        const int w = s7::writeSize(a.type, a.size);
+        if (o.rw && w > pdu - 28)
+            add("E_ADDR_WRITE_LIMIT", tagFile_, p + "/source",
+                "a write of the tag takes " + std::to_string(w) + " bytes, more than PDU " +
+                    std::to_string(pdu) + " allows");
+        return true;
+    }
+
+    // ---- OPC UA (feature 019; rules-opcua.ts, contracts/opcua.md §1, README-019.md) ----
+    void opcuaChannelChecks(const json& ch, const std::string& cp) {
+        if (!isSchema11(project_["schemaVersion"].get<std::string>()))
+            add("E_DRIVER_VERSION", connFile_, cp + "/kind",
+                "channel kind 'opcua' needs project format 1.1");
+        if (!ch.contains("opcua")) return;
+        const json& o = ch["opcua"];
+        const std::string mode = o.value("securityMode", "None");
+        const std::string policy = o.value("securityPolicy", "None");
+        if ((mode == "None") != (policy == "None"))
+            add("E_OPCUA_SECURITY", connFile_, cp + "/opcua/securityPolicy",
+                "security mode " + mode + " does not go with policy " + policy);
+        const json auth = o.contains("auth") ? o["auth"] : json{{"mode", "anonymous"}};
+        const std::string am = auth.value("mode", "anonymous");
+        const bool user = auth.contains("username"), secret = auth.contains("secretId");
+        if (am == "username" && (!user || !secret))
+            add("E_OPCUA_AUTH", connFile_, cp + "/opcua/auth",
+                "username authentication needs username and secretId");
+        if (am == "anonymous" && (user || secret))
+            add("E_OPCUA_AUTH", connFile_, cp + "/opcua/auth",
+                "anonymous authentication takes no username or secretId");
+        if (am == "username" && mode == "None")
+            warn("W_OPCUA_PLAIN_PASSWORD", connFile_, cp + "/opcua/auth",
+                 "username and password on a channel without encryption (securityMode None)");
+        if (mode != "None" && !o.contains("serverCertSha256"))
+            warn("W_OPCUA_CERT_NOT_PINNED", connFile_, cp + "/opcua",
+                 "the server certificate is not trusted yet (serverCertSha256): the runtime "
+                 "will not connect");
+    }
+
+    // false: the NodeId does not parse (no W_DETECT_SLOW then, as for Modbus).
+    bool opcuaTagChecks(const json& src, const std::string& p) {
+        if (src.contains("byteOrder"))
+            add("E_SCHEMA", tagFile_, p + "/source/byteOrder",
+                "byteOrder does not apply to OPC UA tags");
+        if (src.contains("stringByteOrder"))
+            add("E_SCHEMA", tagFile_, p + "/source/stringByteOrder",
+                "stringByteOrder does not apply to OPC UA tags");
+        const std::string address = src["address"];
+        const opcua::NodeIdRef r = opcua::parseNodeId(address);
+        if (!r.ok) {
+            add(r.error.c_str(), tagFile_, p + "/source/address",
+                "OPC UA NodeId '" + address + "': " + r.error);
+            return false;
+        }
+        return true;
     }
 
     // ---- W_RTU_SCAN_TIME ----

@@ -190,6 +190,18 @@ export const ERROR_CODES = [
   'E_SECURITY_LEVEL',
   /** `security.operate` trên item không thao tác được (widget không thuộc nhóm control, SVG không có sự kiện ghi). */
   'E_SECURITY_ITEM',
+  // feature 016, 019: driver Siemens S7 (rules-s7.ts), OPC UA client (rules-opcua.ts)
+  /** Kênh của driver chỉ có từ định dạng 1.1 (kênh `s7`, `opcua`) nằm trong project 1.0. */
+  'E_DRIVER_VERSION',
+  /** Kênh S7 có `remoteTsap` cùng với `rack` hoặc `slot`. */
+  'E_S7_TSAP',
+  /** Kênh OPC UA: securityMode và securityPolicy không khớp. */
+  'E_OPCUA_SECURITY',
+  /** Kênh OPC UA: auth username thiếu username/secretId, hoặc anonymous có chúng. */
+  'E_OPCUA_AUTH',
+  // feature 018 (rules-fins.ts), 017 (rules-mc.ts), 020 (rules-bacnet.ts): kênh fins, mc, bacnet
+  /** Kênh loại `fins`, `mc`, `bacnet` hoặc `source.bcd` ở project dưới 1.1. */
+  'E_CHANNEL_VERSION',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**
@@ -243,6 +255,9 @@ export type WarningCode =
   | 'W_LOGIC_PT_ROUNDED'
   | 'W_LOGIC_WRITE_CONFLICT'
   | 'W_LOGIC_RETAIN_IO'
+  // feature 019 (specs/019-driver-opcua/contracts/opcua.md §1)
+  | 'W_OPCUA_PLAIN_PASSWORD'
+  | 'W_OPCUA_CERT_NOT_PINNED'
   | 'W_LOGIC_WRITES_OFF'
   | 'W_LOGIC_NO_HOLD'
   | 'W_LOGIC_DISABLED';

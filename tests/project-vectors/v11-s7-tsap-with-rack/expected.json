@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_S7_TSAP"],"runtimeVersion":"1.1.0","issues":[{"code":"E_S7_TSAP","file":"connections.json","path":"/channels/2/s7/remoteTsap"}]}

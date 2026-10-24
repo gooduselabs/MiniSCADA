@@ -1,0 +1,73 @@
+{
+  "scenario": "reconnect",
+  "checks": [
+    {
+      "name": "close: every Tag BAD with a reason within 2 cycles + timeout",
+      "pass": true,
+      "detail": "{\"badMs\":402,\"goodMs\":1008,\"reasons\":[\"DISCONNECTED\"]}"
+    },
+    {
+      "name": "close: every Tag GOOD again within 12 s",
+      "pass": true,
+      "detail": "1008 ms"
+    },
+    {
+      "name": "silent: every Tag BAD with a reason within 2 cycles + timeout",
+      "pass": true,
+      "detail": "{\"badMs\":704,\"goodMs\":1007,\"reasons\":[\"DISCONNECTED\",\"TIMEOUT\"]}"
+    },
+    {
+      "name": "silent: every Tag GOOD again within 12 s",
+      "pass": true,
+      "detail": "1007 ms"
+    },
+    {
+      "name": "refuse: every Tag BAD with a reason within 2 cycles + timeout",
+      "pass": true,
+      "detail": "{\"badMs\":251,\"goodMs\":1005,\"reasons\":[\"REFUSED\"]}"
+    },
+    {
+      "name": "refuse: every Tag GOOD again within 12 s",
+      "pass": true,
+      "detail": "1005 ms"
+    },
+    {
+      "name": "the runtime did not restart",
+      "pass": true,
+      "detail": "10 -> 10"
+    },
+    {
+      "name": "diagnostics count the reconnections",
+      "pass": true,
+      "detail": "3"
+    }
+  ],
+  "measures": {
+    "rounds": {
+      "close": {
+        "badMs": 402,
+        "goodMs": 1008,
+        "reasons": [
+          "DISCONNECTED"
+        ]
+      },
+      "silent": {
+        "badMs": 704,
+        "goodMs": 1007,
+        "reasons": [
+          "DISCONNECTED",
+          "TIMEOUT"
+        ]
+      },
+      "refuse": {
+        "badMs": 251,
+        "goodMs": 1005,
+        "reasons": [
+          "REFUSED"
+        ]
+      }
+    },
+    "reconnects": 3
+  },
+  "pass": true
+}

@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.1.0",
+  "scanGroups": {
+    "fast": 250,
+    "normal": 1000,
+    "slow": 5000
+  },
+  "channels": [
+    {
+      "id": "plc-a",
+      "name": "Giả lập MC 3E binary TCP",
+      "kind": "mc",
+      "tcp": {
+        "host": "sim",
+        "port": 5007,
+        "connectTimeoutMs": 1000,
+        "reconnectMaxS": 4
+      },
+      "devices": [
+        {
+          "id": "qa",
+          "name": "PLC giả lập plc-a",
+          "timeoutMs": 500,
+          "write": {
+            "registerBit": "rmw"
+          }
+        }
+      ]
+    },
+    {
+      "id": "plc-b",
+      "name": "Giả lập MC 4E ASCII TCP",
+      "kind": "mc",
+      "tcp": {
+        "host": "sim",
+        "port": 5007,
+        "connectTimeoutMs": 1000,
+        "reconnectMaxS": 4
+      },
+      "mc": {
+        "frame": "4E",
+        "code": "ascii"
+      },
+      "devices": [
+        {
+          "id": "qb",
+          "name": "PLC giả lập plc-b",
+          "timeoutMs": 500
+        }
+      ]
+    },
+    {
+      "id": "plc-c",
+      "name": "Giả lập MC 3E binary UDP",
+      "kind": "mc",
+      "tcp": {
+        "host": "sim",
+        "port": 5007,
+        "connectTimeoutMs": 1000,
+        "reconnectMaxS": 4
+      },
+      "mc": {
+        "transport": "udp"
+      },
+      "devices": [
+        {
+          "id": "qc",
+          "name": "PLC giả lập plc-c",
+          "timeoutMs": 500
+        }
+      ]
+    }
+  ]
+}

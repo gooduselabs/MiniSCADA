@@ -1,0 +1,14 @@
+{
+  "description": "500 điểm cho đo tải x64 (feature 020): 300 AV đổi giá trị mỗi lần đọc, 100 BV, 100 MSV trên một thiết bị.",
+  "devices": [
+    {
+      "instance": 2001,
+      "name": "BENCH-500",
+      "generate": [
+        { "type": "AV", "from": 1, "count": 300, "value": 0, "drift": 0.5 },
+        { "type": "BV", "from": 1, "count": 100, "value": 1 },
+        { "type": "MSV", "from": 1, "count": 100, "value": 2 }
+      ]
+    }
+  ]
+}

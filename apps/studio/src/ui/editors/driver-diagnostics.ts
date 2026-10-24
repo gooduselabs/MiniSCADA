@@ -1,15 +1,19 @@
 // Trang Chẩn đoán driver (feature 006, T198, FR-051, FR-029, R22; mockup studio-tags.html v-diag): cây kênh › thiết bị trường có
 // trạng thái; số đếm của thiết bị đang chọn kèm phần tăng thêm từ lúc mở trang (US5-4); chu kỳ thực cạnh chu kỳ đặt, dấu quá tải
 // (US5-3); Tag xấu kèm lý do tiếng Việt, nhấp đúp tới Bảng Tag (US5-5). Hỏi `GET /api/v1/drivers/diagnostics` mỗi 2 s chỉ khi
-// trang đang mở và đang Online có đăng nhập (role viewer trở lên); nguồn dữ liệu ở model/driver-diag.ts.
+// trang đang mở và đang Online có đăng nhập (role viewer trở lên); nguồn dữ liệu ở model/driver-diag.ts. Kênh Siemens S7
+// (feature 016): PDU và TSAP đã thương lượng ở thông tin kênh, lỗi PLC theo tên S7 thay cho exception Modbus.
 import { html, nothing, type PropertyValues } from 'lit';
 import type { StudioApp } from '../../app/app.ts';
 import { deviceErrorText } from '../../app/device-errors.ts';
 import { hasKey, t, type MessageKey } from '../../i18n/index.ts';
 import {
   badTagLine,
+  channelKindOf,
   counterRows,
+  exceptionLabel,
   groupRows,
+  opcuaDetailRows,
   type DiagChannelView,
   type DiagDeviceView,
   type DriverDiag,
@@ -202,10 +206,11 @@ export class DriverDiagnostics extends AppElement {
     const base = this.app.driverDiag?.state.baseline;
     const baseDev = base?.channels.flatMap((c) => c.devices).find((x) => x.id === d.id);
     const rows = counterRows(d, baseDev);
-    void data;
+    // feature 017: kênh MC đếm theo end code, hiện hex kèm nghĩa
+    const kind = channelKindOf(data, d.id);
     const label = (key: string): string =>
       key.startsWith('exception:')
-        ? t('dd.row.exception', { code: key.slice(10) })
+        ? exceptionLabel(key.slice(10), kind)
         : t(`dd.row.${key}` as MessageKey);
     const total = (key: string, v: string): string =>
       key === 'requestsOk' || key === 'timeouts' || key.startsWith('exception:')
@@ -284,10 +289,22 @@ export class DriverDiagnostics extends AppElement {
 
   private channelInfo(c: DiagChannelView) {
     const le = c.lastError;
+    const det = c.details;
     return html`<section class="dd-card" data-role="channel-info" aria-label=${c.name}>
       <h3>${c.name} ${this.chip(c.state)}</h3>
       <ul class="dd-facts">
         <li>${kindText(c.kind)}</li>
+        ${det?.pduSize ? html`<li data-role="pdu">${t('dd.channel.pdu', { n: det.pduSize })}</li>` : nothing}
+        ${det?.localTsap || det?.remoteTsap ? html`<li class="mono" data-role="tsap">${t('dd.channel.tsap', { local: det.localTsap ?? '—', remote: det.remoteTsap ?? '—' })}</li>` : nothing}
+        ${opcuaDetailRows(c.details).map(
+          (r) =>
+            html`<li
+              data-role="ua-${r.key}"
+              class=${r.key.endsWith('Sha256') || r.key === 'endpointUrl' ? 'mono dd-wrap' : ''}
+            >
+              ${t(`dd.ua.${r.key}` as MessageKey)}: ${r.value}
+            </li>`,
+        )}
         <li>${t('dd.channel.reconnects', { n: c.reconnects })}</li>
         <li>
           ${

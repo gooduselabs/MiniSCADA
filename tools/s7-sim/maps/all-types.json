@@ -1,0 +1,55 @@
+{
+  "pduSize": 480,
+  "areas": {
+    "DB1": {
+      "size": 512,
+      "data": [
+        { "byte": 0, "bit": 0, "type": "BOOL", "value": true },
+        { "byte": 0, "bit": 5, "type": "BOOL", "value": false },
+        { "byte": 1, "type": "BYTE", "value": 200 },
+        { "byte": 2, "type": "INT", "value": -1234 },
+        { "byte": 4, "type": "WORD", "value": 64302 },
+        { "byte": 6, "type": "DINT", "value": -100000 },
+        { "byte": 10, "type": "DWORD", "value": 4000000000 },
+        { "byte": 14, "type": "REAL", "value": 123.456 },
+        { "byte": 18, "type": "LREAL", "value": 3.141592653589793 },
+        { "byte": 26, "type": "CHAR", "value": "A" },
+        { "byte": 27, "type": "CHAR", "length": 4, "value": "OK" },
+        { "byte": 32, "type": "STRING", "maxLength": 20, "value": "Bom 1" },
+        { "byte": 60, "bit": 0, "type": "BOOL", "value": false },
+        { "byte": 62, "type": "INT", "value": 0 },
+        { "byte": 64, "type": "REAL", "value": 0 },
+        { "byte": 70, "type": "STRING", "maxLength": 10, "value": "" },
+        { "byte": 84, "type": "BYTE", "value": 0 },
+        { "byte": 86, "type": "DINT", "value": 0 },
+        { "byte": 90, "type": "LREAL", "value": 0 }
+      ]
+    },
+    "DB2": { "size": 64, "data": [{ "byte": 0, "type": "INT", "value": 42 }] },
+    "DB3": { "size": 16 },
+    "M": {
+      "size": 256,
+      "data": [
+        { "byte": 0, "bit": 1, "type": "BOOL", "value": true },
+        { "byte": 10, "type": "WORD", "value": 4660 },
+        { "byte": 20, "type": "REAL", "value": -1.5 }
+      ]
+    },
+    "I": {
+      "size": 16,
+      "data": [
+        { "byte": 0, "bit": 1, "type": "BOOL", "value": true },
+        { "byte": 2, "type": "INT", "value": 100 }
+      ]
+    },
+    "Q": {
+      "size": 16,
+      "data": [
+        { "byte": 0, "bit": 0, "type": "BOOL", "value": true },
+        { "byte": 1, "type": "BYTE", "value": 7 }
+      ]
+    }
+  },
+  "denied": ["DB3"],
+  "putGetDisabled": false
+}

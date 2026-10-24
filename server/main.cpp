@@ -38,6 +38,7 @@
 #include "core/diagnostics/proc_stats.hpp"
 #include "core/diagnostics/run_record.hpp"
 #include "core/historian/historian.hpp"
+#include "core/historian/secrets.hpp"
 #include "core/historian/status.hpp"
 #include "core/historian/write_counter_vfs.hpp"
 #include "core/package/manifest.hpp"
@@ -569,6 +570,13 @@ int main(int argc, char** argv) {
     };
     engineOptions.retainWindowS = cfg.retainWindowS;
     engineOptions.writeQueuePerChannel = cfg.tagWriteQueuePerChannel;
+    // Feature 019 (contracts/opcua.md §5): the OPC UA client certificate in <dataDir>/opcua, the
+    // passwords in the device secrets file (read again at each connection attempt).
+    engineOptions.opcua.certDir = cfg.dataDir + "/opcua";
+    engineOptions.opcua.password = [file = cfg.secretsFile](const std::string& id) {
+        const SecretResult s = readSecret(file, id);
+        return s.ok ? std::optional<std::string>(s.secret) : std::nullopt;
+    };
     // Feature 011 (logic v2, T136 to T139): logic.json of the active project in the engine's
     // round; its writes go to the coordinator (set below), its state to <dataDir>/logic-state.json.
     if (active.active && validation.project && validation.project->logic.is_object())
@@ -1093,16 +1101,32 @@ int main(int argc, char** argv) {
         drivers.probeRtu = [serialEnv](const std::string& port, const drv::RtuProbeRequest& r) {
             return probeSerialOnDevice(serialEnv, port, r);
         };
+        // Omron FINS (feature 018): a new UDP socket or TCP connection on this worker thread
+        drivers.probeFins = [](const drv::FinsProbeRequest& r) { return drv::probeFins(r); };
+        // BACnet/IP (feature 020): a new UDP port on this worker thread
+        drivers.probeBacnet = [](const drv::BacnetProbeRequest& r) { return drv::probeBacnet(r); };
         // GET /api/v1/drivers/diagnostics (T195)
         drivers.diagnostics = [&rtEngine, &store, startWallMs = epochMs()] {
             DriversDiagInput in;
             in.model = rtEngine.model();
-            in.channels.assign(rtEngine.channelDrivers().begin(), rtEngine.channelDrivers().end());
+            in.channels.assign(rtEngine.driversByChannel().begin(),
+                               rtEngine.driversByChannel().end());
             in.store = &store;
             in.engine = rtEngine.engine();
             in.nowMs = epochMs();
             in.startedAtMs = startWallMs;
             return driversDiagnosticsJson(in);
+        };
+        // POST /api/v1/drivers/opcua/browse (feature 019, contracts/opcua.md §4): the client
+        // certificate of the drivers, the password from the device secrets.
+        drivers.opcuaBrowse = [certDir = cfg.dataDir + "/opcua", secrets = cfg.secretsFile](
+                                  opcua::BrowseRequest q, const std::string& secretId) {
+            q.certDir = certDir;
+            if (q.authUsername) {
+                const SecretResult s = readSecret(secrets, secretId);
+                if (s.ok) q.password = s.secret;
+            }
+            return opcua::browse(q);
         };
         engineering.setDrivers(std::move(drivers));
         // GET /api/v1/serial/ports (T168)

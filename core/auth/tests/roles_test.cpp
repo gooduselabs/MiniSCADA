@@ -51,6 +51,8 @@ const std::vector<Expected> kContract11 = {
     {"GET", "/api/v1/tags/write", true, Role::Operator, false, false},
     {"GET", "/api/v1/drivers/diagnostics", true, Role::Viewer, false, false},
     {"GET", "/api/v1/serial/ports", true, Role::Engineer, false, false},
+    // feature 019: endpoints and browse of an OPC UA server (reads a server, changes nothing here)
+    {"POST", "/api/v1/drivers/opcua/browse", true, Role::Engineer, true, false},
 };
 
 // device-api 1.2.0 (feature 007): the sign-in of the web page and its cookie session.

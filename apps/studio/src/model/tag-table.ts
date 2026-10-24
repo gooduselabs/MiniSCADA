@@ -1,7 +1,25 @@
 // Adapter Bảng Tag cho mat-grid (feature 006, T122, FR-045, FR-015, data-model §1, §13.2): bộ cột theo loại Tag, chữ của
 // ô, trình sửa ô (danh sách chọn), đổi chữ thành sửa đổi project, điền xuống tăng địa chỉ, mức dùng tags.json.
 // Project 0.1 mở qua cùng lớp này với bộ cột của 004 (`version: '0.1'`). Chữ số luôn viết dấu chấm thập phân.
-import { parseAddress, registerCount, type AddressResult, type TagDataType } from '@mat/tag-codec';
+import {
+  BACNET_ADDRESS_HINTS,
+  BACNET_PROPERTIES,
+  FINS_ADDRESS_HINTS,
+  parseAddress,
+  parseBacnetAddress,
+  parseFinsAddress,
+  parseMcAddress,
+  parseOpcUaNodeId,
+  parseS7Address,
+  registerCount,
+  type AddressResult,
+  type BacnetAddressResult,
+  type McAddressResult,
+  type OpcUaNodeIdResult,
+  type S7AddressResult,
+  type TagDataType,
+} from '@mat/tag-codec';
+import { mcAddressError, mcDefaultStep, mcExamples, mcStepAddress } from './mc.ts';
 import { LIMITS_02, formatTagsFile, type TagV1 } from '@mat/project-schema';
 import { fold, t, type MessageKey } from '../i18n/index.ts';
 import { nextTagId } from './tag-ids.ts';
@@ -29,6 +47,16 @@ export interface DeviceInfo {
   name: string;
   addressBase?: 0 | 1;
   byteOrder?: string;
+  /** Loại kênh chứa thiết bị trường (`modbus-tcp`, `modbus-rtu`, `s7`); vắng: Modbus. */
+  kind?: string;
+  /** Loại kênh chứa thiết bị trường (feature 017: `mc` đọc địa chỉ theo ngữ pháp MC). Vắng: Modbus. */
+  channelKind?: string;
+  /** Cách viết X, Y của thiết bị MC. */
+  xyNotation?: 'hex' | 'octal';
+  /** Thiết bị của kênh Omron FINS (feature 018): địa chỉ FINS, thứ tự word mặc định CDAB. */
+  fins?: boolean;
+  /** Thiết bị của kênh BACnet/IP (feature 020): địa chỉ `AI:1`, `AV:5@8`… */
+  bacnet?: boolean;
 }
 
 /** Thứ tự chuẩn của mọi cột 0.2 (bộ cột "tất cả"). */
@@ -194,8 +222,16 @@ export interface PropGroup {
   fields: PropField[];
 }
 
-/** Nhóm thuộc tính của một Tag cho Inspector (FR-047): chỉ nhóm và trường dùng được cho loại và kiểu của Tag. */
-export function propertyGroups(tag: unknown): PropGroup[] {
+/**
+ * Nhóm thuộc tính của một Tag cho Inspector (FR-047): chỉ nhóm và trường dùng được cho loại và kiểu của Tag. `s7`: Tag của
+ * CPU Siemens S7 (không có mã hàm, offset, thanh ghi, thứ tự byte).
+ */
+export function propertyGroups(
+  tag: unknown,
+  opts: { s7?: boolean; opcua?: boolean } = {},
+): PropGroup[] {
+  // Tag của CPU S7 (016) hay server OPC UA (019): không mã hàm, offset, thanh ghi, thứ tự byte
+  const s7 = opts.s7 === true || opts.opcua === true;
   const tg = obj(tag);
   const kind = tg.kind as Kind | undefined;
   const numeric = NUMERIC.has(String(tg.type));
@@ -230,13 +266,14 @@ export function propertyGroups(tag: unknown): PropGroup[] {
       fields: [
         f('device', 'select', true),
         f('address', 'text', true),
-        f('fc', 'readonly', true),
-        f('offset', 'readonly', true),
-        f('regs', 'readonly'),
+        ...(s7
+          ? []
+          : [f('fc', 'readonly', true), f('offset', 'readonly', true), f('regs', 'readonly')]),
         f('scanGroup', 'select'),
         f('rawType', 'select'),
-        ...(wide ? [f('byteOrder', 'select', true)] : []),
-        ...(isString ? [f('stringLength', 'number'), f('stringByteOrder', 'select', true)] : []),
+        ...(wide && !s7 ? [f('byteOrder', 'select', true)] : []),
+        ...(isString ? [f('stringLength', 'number')] : []),
+        ...(isString && !s7 ? [f('stringByteOrder', 'select', true)] : []),
         f('readback', 'select'),
       ],
     });
@@ -403,19 +440,101 @@ export interface AddressInfo {
   fc?: string;
   offset?: number;
   regs?: number;
+  /** Tag của CPU S7: vùng, kiểu S7, số byte (thay cho mã hàm, offset, thanh ghi). */
+  s7?: { area: string; type: string; size: number };
+  /** Tag của server OPC UA (feature 019): namespace và loại NodeId. */
+  opcua?: { ns: number; idType: string };
+  /** Địa chỉ Mitsubishi MC (feature 017): thiết bị, số, số word, bit trong word. */
+  /** Địa chỉ BACnet hợp lệ (feature 020): đối tượng, thuộc tính, priority. */
+  bacnet?: { object: string; property: string; priority: number };
+  mc?: { device: string; bitDevice: boolean; number: number; words: number; bit: number | null };
   /** Khóa chuỗi lỗi khi `ok = false`. */
   error?: MessageKey;
 }
 
-const fcText = (r: Extract<AddressResult, { ok: true }>): string =>
-  String(r.fcRead).padStart(2, '0') +
-  (r.fcWrite.length ? ` / ${r.fcWrite.map((n) => String(n).padStart(2, '0')).join(', ')}` : '');
+/** Địa chỉ FINS đã kiểm (feature 018), cùng các trường mà cột fc/offset/regs đọc. */
+interface FinsParsed {
+  ok: true;
+  fins: true;
+  normalized: string;
+  offset: number;
+  registers: number;
+  /** Lệnh và mã vùng: `0101/0102 · 82`. */
+  codeText: string;
+}
+type ModbusOrFins = AddressResult | FinsParsed;
+
+const fcText = (r: Extract<ModbusOrFins, { ok: true }>): string =>
+  'fins' in r
+    ? r.codeText
+    : String(r.fcRead).padStart(2, '0') +
+      (r.fcWrite.length ? ` / ${r.fcWrite.map((n) => String(n).padStart(2, '0')).join(', ')}` : '');
 
 const ADDR_ERR: Record<string, MessageKey> = {
   E_ADDR_SYNTAX: 'tt.err.address',
   E_ADDR_AREA: 'tt.err.addressArea',
   E_ADDR_RANGE: 'tt.err.addressRange',
 };
+
+const OPCUA_ADDR_ERR: Record<string, MessageKey> = {
+  E_ADDR_SYNTAX: 'tt.err.opcuaNodeId',
+  E_ADDR_RANGE: 'tt.err.opcuaNodeIdRange',
+};
+
+const S7_ADDR_ERR: Record<string, MessageKey> = {
+  E_ADDR_SYNTAX: 'tt.err.s7Address',
+  E_ADDR_AREA: 'tt.err.s7AddressArea',
+  E_ADDR_RANGE: 'tt.err.s7AddressRange',
+};
+
+/** Câu của một địa chỉ hợp lệ (dòng gợi ý, Inspector): mã hàm, offset, thanh ghi; Tag S7: vùng, kiểu S7, số byte. */
+export function addressInfoText(info: AddressInfo): string {
+  if (info.opcua)
+    return t('tt.hint.opcuaNodeId', {
+      ns: info.opcua.ns,
+      idType: t(`tt.opcuaIdType.${info.opcua.idType}` as MessageKey),
+    });
+  if (info.bacnet)
+    return t('tt.hint.bacnet', {
+      object: info.bacnet.object,
+      property: info.bacnet.property,
+      priority: info.bacnet.priority ? ` @${info.bacnet.priority}` : '',
+    });
+  const m = info.mc;
+  if (m)
+    return m.bit !== null
+      ? t('tt.hint.mcBit', {
+          device: m.device,
+          bit: m.bit.toString(16).toUpperCase(),
+          number: m.number,
+        })
+      : t('tt.hint.mc', {
+          device: m.device,
+          area: t(m.bitDevice ? 'tt.mc.area.bit' : 'tt.mc.area.word'),
+          number: m.number,
+          words: m.words,
+        });
+  return info.s7
+    ? t('tt.hint.s7Address', { area: info.s7.area, type: info.s7.type, size: info.s7.size })
+    : t('tt.hint.address', { fc: info.fc ?? '', offset: info.offset ?? 0, regs: info.regs ?? 0 });
+}
+
+/** Gợi ý cú pháp địa chỉ BACnet (feature 020). */
+export const bacnetHint = (): string =>
+  t('tagTable.bacnetHint', {
+    examples: BACNET_ADDRESS_HINTS.slice(0, 5)
+      .map((h) => h.example)
+      .join(', '),
+  });
+
+/** Dòng gợi ý của địa chỉ (ô địa chỉ, Thuộc tính): lỗi, hoặc câu của địa chỉ hợp lệ (feature 017). */
+export function addressHintText(info: AddressInfo): string {
+  if (!info.ok) return info.error ? t(info.error) : '';
+  return addressInfoText(info);
+}
+
+/** Địa chỉ đã phân tích của một dòng: theo Modbus hoặc theo S7 (thiết bị trường thuộc kênh S7). */
+type Parsed = { s7: false; r: ModbusOrFins } | { s7: true; r: S7AddressResult };
 
 export class TagTable implements GridAdapter {
   readonly columns: readonly GridColumn[];
@@ -427,7 +546,10 @@ export class TagTable implements GridAdapter {
   private readonly v01: boolean;
   private readonly readOnly: boolean;
   private readonly liveText: TagTableOptions['liveText'];
-  private readonly addrCache = new Map<number, AddressResult | null>();
+  private readonly addrCache = new Map<number, Parsed | null>();
+  private readonly mcCache = new Map<number, McAddressResult | null>();
+  private readonly bacnetCache = new Map<number, BacnetAddressResult | null>();
+  private readonly opcuaCache = new Map<number, OpcUaNodeIdResult | null>();
   private readonly opts: TagTableOptions;
 
   constructor(opts: TagTableOptions) {
@@ -470,7 +592,49 @@ export class TagTable implements GridAdapter {
     return this.devices.find((d) => d.id === id);
   }
 
-  private parsed(row: number): AddressResult | null {
+  /** Tag ngoài của một CPU Siemens S7 (thiết bị trường thuộc kênh `s7`). */
+  private isOpcUa(tag: Obj): boolean {
+    return tag.kind === 'external' && this.deviceOf(tag)?.kind === 'opcua';
+  }
+
+  /** Tag S7 (016) hay OPC UA (019): không có thứ tự byte của Modbus. */
+  private noByteOrder(tag: Obj): boolean {
+    return this.isS7(tag) || this.isOpcUa(tag);
+  }
+
+  private opcuaParsed(row: number): OpcUaNodeIdResult | null {
+    const hit = this.opcuaCache.get(row);
+    if (hit !== undefined) return hit;
+    const r = this.opcuaParseFor(this.tag(row));
+    this.opcuaCache.set(row, r);
+    return r;
+  }
+
+  /** NodeId của Tag thuộc kênh `opcua` (giữ hoa/thường và dấu cách bên trong, chỉ bỏ cách hai đầu); khác thì `null`. */
+  private opcuaParseFor(tag: Obj, address?: string): OpcUaNodeIdResult | null {
+    const src = obj(tag.source);
+    const text = address ?? (typeof src.address === 'string' ? src.address : '');
+    if (text.trim() === '' || !this.isOpcUa(tag)) return null;
+    return parseOpcUaNodeId(text.trim());
+  }
+
+  /** Dòng là Tag của một server OPC UA (feature 019). */
+  isOpcUaRow(row: number): boolean {
+    return this.isOpcUa(this.tag(row));
+  }
+
+  /** Tag ngoài của một CPU Siemens S7 (thiết bị trường thuộc kênh `s7`). */
+  private isS7(tag: Obj): boolean {
+    return tag.kind === 'external' && this.deviceOf(tag)?.kind === 's7';
+  }
+
+  /** Địa chỉ Modbus của dòng (Tag S7 hay chưa có địa chỉ: `null`); cho các cột mã hàm, offset, thanh ghi. */
+  private modbus(row: number): ModbusOrFins | null {
+    const p = this.parsed(row);
+    return p && !p.s7 ? p.r : null;
+  }
+
+  private parsed(row: number): Parsed | null {
     const hit = this.addrCache.get(row);
     if (hit !== undefined) return hit;
     const r = this.parseFor(this.tag(row));
@@ -478,23 +642,180 @@ export class TagTable implements GridAdapter {
     return r;
   }
 
-  private parseFor(tag: Obj, address?: string): AddressResult | null {
+  /** Thiết bị trường của Tag thuộc kênh BACnet/IP (feature 020). */
+  private isBacnet(tag: Obj): boolean {
+    return tag.kind === 'external' && !!this.deviceOf(tag)?.bacnet;
+  }
+
+  private bacnetParsed(row: number): BacnetAddressResult | null {
+    const hit = this.bacnetCache.get(row);
+    if (hit !== undefined) return hit;
+    const r = this.bacnetParseFor(this.tag(row));
+    this.bacnetCache.set(row, r);
+    return r;
+  }
+
+  /** Địa chỉ BACnet của Tag ngoài có thiết bị thuộc kênh `bacnet`; khác thì `null`. */
+  private bacnetParseFor(tag: Obj, address?: string): BacnetAddressResult | null {
     const src = obj(tag.source);
     const text = address ?? (typeof src.address === 'string' ? src.address : '');
-    if (tag.kind !== 'external' || text.trim() === '') return null;
+    if (text.trim() === '' || !this.isBacnet(tag)) return null;
     const raw = (typeof src.rawType === 'string' ? src.rawType : tag.type) as TagDataType;
-    return parseAddress(text.trim(), {
-      addressBase: this.deviceOf(tag)?.addressBase ?? 0,
+    return parseBacnetAddress(text.trim(), {
+      rawType: raw,
+      access: tag.access === 'RW' ? 'RW' : 'R',
+    });
+  }
+
+  /** Dòng là Tag của thiết bị BACnet (feature 020): gợi ý cú pháp BACnet thay cho Modbus. */
+  isBacnetRow(row: number): boolean {
+    return this.isBacnet(this.tag(row));
+  }
+
+  /** Thiết bị trường của Tag thuộc kênh Mitsubishi MC (feature 017). */
+  private isMc(tag: Obj): boolean {
+    return this.deviceOf(tag)?.channelKind === 'mc';
+  }
+
+  private mcParsed(row: number): McAddressResult | null {
+    const hit = this.mcCache.get(row);
+    if (hit !== undefined) return hit;
+    const r = this.mcParseFor(this.tag(row));
+    this.mcCache.set(row, r);
+    return r;
+  }
+
+  /** Địa chỉ MC của Tag ngoài có thiết bị thuộc kênh `mc`; khác thì `null`. */
+  private mcParseFor(tag: Obj, address?: string): McAddressResult | null {
+    const src = obj(tag.source);
+    const text = address ?? (typeof src.address === 'string' ? src.address : '');
+    if (tag.kind !== 'external' || text.trim() === '' || !this.isMc(tag)) return null;
+    const raw = (typeof src.rawType === 'string' ? src.rawType : tag.type) as TagDataType;
+    return parseMcAddress(text.trim(), {
       rawType: raw,
       stringLength: typeof src.stringLength === 'number' ? src.stringLength : undefined,
       access: tag.access === 'RW' ? 'RW' : 'R',
+      xyNotation: this.deviceOf(tag)?.xyNotation ?? 'hex',
+    });
+  }
+
+  private parseFor(tag: Obj, address?: string): Parsed | null {
+    const src = obj(tag.source);
+    const text = address ?? (typeof src.address === 'string' ? src.address : '');
+    if (
+      tag.kind !== 'external' ||
+      text.trim() === '' ||
+      this.isMc(tag) ||
+      this.isBacnet(tag) ||
+      this.isOpcUa(tag)
+    )
+      return null;
+    const raw = (typeof src.rawType === 'string' ? src.rawType : tag.type) as TagDataType;
+    if (this.deviceOf(tag)?.fins) {
+      const r = parseFinsAddress(text.trim(), {
+        rawType: raw,
+        stringLength: typeof src.stringLength === 'number' ? src.stringLength : undefined,
+        access: tag.access === 'RW' ? 'RW' : 'R',
+      });
+      if (!r.ok) return { s7: false, r };
+      const code = r.flag || r.bit !== null ? r.bitCode : r.wordCode;
+      return {
+        s7: false,
+        r: {
+          ok: true,
+          fins: true,
+          normalized: r.normalized,
+          offset: r.wire,
+          registers: r.words,
+          codeText: `0101${r.writable ? '/0102' : ''} · ${code}`,
+        },
+      };
+    }
+    const opts = {
+      rawType: raw,
+      stringLength: typeof src.stringLength === 'number' ? src.stringLength : undefined,
+      access: tag.access === 'RW' ? ('RW' as const) : ('R' as const),
+    };
+    if (this.isS7(tag)) return { s7: true, r: parseS7Address(text.trim(), opts) };
+    return {
+      s7: false,
+      r: parseAddress(text.trim(), { ...opts, addressBase: this.deviceOf(tag)?.addressBase ?? 0 }),
+    };
+  }
+
+  /** Dòng của Tag ngoài trên thiết bị Omron FINS (feature 018). */
+  isFinsRow(row: number): boolean {
+    const tg = this.tag(row);
+    return tg.kind === 'external' && this.deviceOf(tg)?.fins === true;
+  }
+
+  /** Gợi ý cú pháp địa chỉ FINS cho ô địa chỉ (feature 018). */
+  finsHint(): string {
+    return t('tagTable.finsHint', {
+      examples: FINS_ADDRESS_HINTS.map((h) => h.example).join(', '),
     });
   }
 
   /** Thông tin địa chỉ của dòng: dùng cho dòng gợi ý và cột chỉ đọc. */
   addressInfo(row: number): AddressInfo | null {
-    const r = this.parsed(row);
-    if (!r) return null;
+    const u = this.opcuaParsed(row);
+    if (u) {
+      if (!u.ok) return { ok: false, error: OPCUA_ADDR_ERR[u.error] };
+      return { ok: true, normalized: u.normalized, opcua: { ns: u.ns, idType: u.idType } };
+    }
+    const b = this.bacnetParsed(row);
+    if (b) {
+      if (!b.ok) return { ok: false, error: ADDR_ERR[b.error] };
+      const name = Object.keys(BACNET_PROPERTIES).find((k) => BACNET_PROPERTIES[k] === b.property);
+      return {
+        ok: true,
+        normalized: b.normalized,
+        bacnet: {
+          object: `${b.objectType}:${b.instance}`,
+          property: b.relinquish ? 'relinquish' : (name ?? String(b.property)),
+          priority: b.priority,
+        },
+      };
+    }
+    const m = this.mcParsed(row);
+    if (m) {
+      if (!m.ok) {
+        const src = obj(this.tag(row).source);
+        return {
+          ok: false,
+          error: mcAddressError(
+            m.error,
+            str(src.address),
+            this.deviceOf(this.tag(row))?.xyNotation,
+          ),
+        };
+      }
+      return {
+        ok: true,
+        normalized: m.normalized,
+        offset: m.number,
+        regs: m.words,
+        mc: {
+          device: m.device,
+          bitDevice: m.bitDevice,
+          number: m.number,
+          words: m.words,
+          bit: m.bit,
+        },
+      };
+    }
+    const p = this.parsed(row);
+    if (!p) return null;
+    if (p.s7) {
+      const r = p.r;
+      if (!r.ok) return { ok: false, error: S7_ADDR_ERR[r.error] };
+      return {
+        ok: true,
+        normalized: r.normalized,
+        s7: { area: r.area, type: r.s7Type, size: r.size },
+      };
+    }
+    const r = p.r;
     if (!r.ok) return { ok: false, error: ADDR_ERR[r.error] };
     return {
       ok: true,
@@ -503,6 +824,26 @@ export class TagTable implements GridAdapter {
       offset: r.offset,
       regs: r.registers,
     };
+  }
+
+  /** Dòng là Tag của một CPU Siemens S7. */
+  isS7Row(row: number): boolean {
+    return this.isS7(this.tag(row));
+  }
+
+  /**
+   * Câu gợi ý định dạng địa chỉ khi ô còn trống: theo loại kênh của thiết bị trường (Modbus, S7, hay ví dụ MC theo kiểu
+   * Tag và cách viết X, Y của feature 017).
+   */
+  addressSyntaxHint(row: number): string {
+    const tg = this.tag(row);
+    if (this.isS7(tg)) return t('tt.hint.s7Syntax');
+    if (this.isOpcUa(tg)) return t('tt.hint.opcuaSyntax');
+    if (!this.isMc(tg)) return t('tt.hint.syntax');
+    const raw = (obj(tg.source).rawType ?? tg.type) as TagDataType | undefined;
+    return t('tt.hint.mcSyntax', {
+      examples: mcExamples(raw, this.deviceOf(tg)?.xyNotation).join(', '),
+    });
   }
 
   text(row: number, col: string): string {
@@ -536,19 +877,23 @@ export class TagTable implements GridAdapter {
       case 'rawType':
         return kind === 'external' ? str(src.rawType) || str(tg.type) : '';
       case 'byteOrder':
-        return kind === 'external' && this.wide(tg)
+        return kind === 'external' && this.wide(tg) && !this.noByteOrder(tg)
           ? str(src.byteOrder) || this.deviceOf(tg)?.byteOrder || 'ABCD'
           : '';
       case 'fc': {
-        const r = this.parsed(row);
+        const r = this.modbus(row);
         return r?.ok ? fcText(r) : '';
       }
       case 'offset': {
-        const r = this.parsed(row);
+        const m = this.mcParsed(row);
+        if (m) return m.ok ? String(m.number) : '';
+        const r = this.modbus(row);
         return r?.ok ? String(r.offset) : '';
       }
       case 'regs': {
-        const r = this.parsed(row);
+        const m = this.mcParsed(row);
+        if (m) return m.ok ? String(m.words) : '';
+        const r = this.modbus(row);
         return r?.ok ? String(r.registers) : '';
       }
       case 'valueTable':
@@ -576,7 +921,9 @@ export class TagTable implements GridAdapter {
       case 'stringLength':
         return kind === 'external' ? num(src.stringLength) : '';
       case 'stringByteOrder':
-        return kind === 'external' && this.isString(tg) ? str(src.stringByteOrder) || 'AB' : '';
+        return kind === 'external' && this.isString(tg) && !this.noByteOrder(tg)
+          ? str(src.stringByteOrder) || 'AB'
+          : '';
       case 'readback':
         return kind === 'external'
           ? t(src.readback === false ? 'tt.bool.false' : 'tt.bool.true')
@@ -649,7 +996,7 @@ export class TagTable implements GridAdapter {
       case 'rawType':
         return kind === 'external';
       case 'byteOrder':
-        return kind === 'external' && this.wide(tg);
+        return kind === 'external' && this.wide(tg) && !this.noByteOrder(tg);
       case 'rawMin':
       case 'rawMax':
       case 'engMin':
@@ -658,7 +1005,7 @@ export class TagTable implements GridAdapter {
       case 'stringLength':
         return kind === 'external' && this.isString(tg);
       case 'stringByteOrder':
-        return kind === 'external' && this.isString(tg);
+        return kind === 'external' && this.isString(tg) && !this.noByteOrder(tg);
       case 'readback':
         return kind === 'external';
       case 'clamp':
@@ -905,13 +1252,28 @@ export class TagTable implements GridAdapter {
       case 'device': {
         const d = this.devices.find((x) => x.id === text || fold(x.name) === fold(text));
         if (!d) return 'tt.err.device';
-        w.source = { ...obj(w.source), device: d.id };
+        const src: Obj = { ...obj(w.source), device: d.id };
+        // PLC S7 luôn big-endian: thứ tự byte của Modbus không áp (bộ kiểm tra báo E_SCHEMA nếu còn).
+        if (d.kind === 's7' || d.kind === 'opcua') {
+          delete src.byteOrder;
+          delete src.stringByteOrder;
+        }
+        w.source = src;
         return null;
       }
       case 'address': {
         const src = { ...obj(w.source) };
-        const info = this.parseFor(w, text);
-        src.address = info?.ok ? info.normalized : text.toUpperCase();
+        const info =
+          this.parseFor(w, text)?.r ??
+          this.mcParseFor(w, text) ??
+          this.bacnetParseFor(w, text) ??
+          this.opcuaParseFor(w, text);
+        // NodeId OPC UA giữ nguyên chữ (chuỗi `s=` là nguyên văn)
+        src.address = info?.ok
+          ? info.normalized
+          : this.isOpcUa(w)
+            ? text.trim()
+            : text.toUpperCase();
         w.source = src;
         return null;
       }
@@ -934,6 +1296,8 @@ export class TagTable implements GridAdapter {
         return null;
       }
       case 'byteOrder': {
+        if (this.isS7(w)) return 'tt.err.s7ByteOrder';
+        if (this.isOpcUa(w)) return 'tt.err.opcuaByteOrder';
         const up = text.toUpperCase();
         if (!(ORDERS as readonly string[]).includes(up)) return 'tt.err.byteOrder';
         w.source = { ...obj(w.source), byteOrder: up };
@@ -1014,6 +1378,8 @@ export class TagTable implements GridAdapter {
         return null;
       }
       case 'stringByteOrder': {
+        if (this.isS7(w)) return 'tt.err.s7ByteOrder';
+        if (this.isOpcUa(w)) return 'tt.err.opcuaByteOrder';
         const up = text.toUpperCase();
         if (up !== 'AB' && up !== 'BA') return 'tt.err.stringByteOrder';
         const src = { ...obj(w.source) };
@@ -1110,12 +1476,66 @@ export class TagTable implements GridAdapter {
     const tg = this.tag(row);
     const raw = (obj(tg.source).rawType ?? tg.type) as TagDataType | undefined;
     const sl = obj(tg.source).stringLength;
+    if (this.isMc(tg))
+      return mcStepAddress(
+        above,
+        mcDefaultStep(above, raw, typeof sl === 'number' ? sl : undefined),
+        steps,
+        this.deviceOf(tg)?.xyNotation,
+      );
+    if (this.isOpcUa(tg)) return stepOpcUaNodeId(above, steps);
+    if (this.isS7(tg))
+      return raw
+        ? stepS7Address(above, raw, typeof sl === 'number' ? sl : undefined, steps)
+        : undefined;
     return stepAddress(
       above,
       defaultStep(above, raw, typeof sl === 'number' ? sl : undefined),
       steps,
     );
   }
+}
+
+/**
+ * NodeId sau `steps` dòng khi điền xuống: id số tăng `steps` (`ns=2;i=1001` → `ns=2;i=1002`); id chuỗi kết thúc bằng số
+ * tăng số cuối, giữ số chữ số (`ns=2;s=Pump01.Speed` không đổi được; `ns=2;s=Tag09` → `ns=2;s=Tag10`). Không tăng được:
+ * `undefined`.
+ */
+export function stepOpcUaNodeId(address: string, steps: number): string | undefined {
+  const r = parseOpcUaNodeId(address.trim());
+  if (!r.ok) return undefined;
+  const prefix = r.ns === 0 ? '' : `ns=${r.ns};`;
+  if (r.idType === 'i') {
+    const n = Number(r.id) + steps;
+    return n > 4294967295 ? undefined : `${prefix}i=${n}`;
+  }
+  if (r.idType !== 's') return undefined;
+  const m = /^(.*?)(\d+)$/.exec(r.id);
+  if (!m) return undefined;
+  const n = String(Number(m[2]) + steps).padStart(m[2].length, '0');
+  return `${prefix}s=${m[1]}${n}`;
+}
+
+/**
+ * Địa chỉ S7 sau `steps` Tag cùng kiểu: bit tăng chỉ số bit (sang byte kế sau bit 7), kiểu khác tăng byte theo cỡ kiểu S7
+ * (STRING n: n + 2). Không đọc được hoặc vượt byte 65535: `undefined`.
+ */
+export function stepS7Address(
+  address: string,
+  rawType: TagDataType,
+  stringLength: number | undefined,
+  steps: number,
+): string | undefined {
+  const r = parseS7Address(address.trim(), { rawType, stringLength });
+  if (!r.ok) return undefined;
+  const prefix = /^(.*?)\d+(?:\.\d)?$/.exec(r.normalized)?.[1] ?? '';
+  if (r.bit !== null) {
+    const pos = r.byte * 8 + r.bit + steps;
+    const byte = Math.floor(pos / 8);
+    return byte > 65535 ? undefined : `${prefix}${byte}.${pos % 8}`;
+  }
+  const byte = r.byte + r.size * steps;
+  return byte + r.size > 65536 ? undefined : `${prefix}${byte}`;
 }
 
 /** Số đơn vị địa chỉ một Tag chiếm (bit: 1; coil và DI: 1; thanh ghi: theo kiểu). */
@@ -1191,7 +1611,14 @@ export function tableInputs(outline: {
   tags: { tags: unknown[] } | null;
   connections: {
     channels: Array<{
-      devices?: Array<{ id: string; name: string; addressBase?: 0 | 1; byteOrder?: string }>;
+      kind?: string;
+      devices?: Array<{
+        id: string;
+        name: string;
+        addressBase?: 0 | 1;
+        byteOrder?: string;
+        xyNotation?: 'hex' | 'octal';
+      }>;
     }>;
   } | null;
   valueTables: Array<{ name: string }>;
@@ -1203,7 +1630,12 @@ export function tableInputs(outline: {
         id: d.id,
         name: d.name,
         addressBase: d.addressBase,
-        byteOrder: d.byteOrder,
+        // Omron FINS (feature 018): word thấp trước theo mặc định
+        byteOrder: d.byteOrder ?? (c.kind === 'fins' ? 'CDAB' : undefined),
+        kind: c.kind,
+        ...(c.kind === 'fins' ? { fins: true } : {}),
+        ...(c.kind === 'bacnet' ? { bacnet: true } : {}),
+        ...(c.kind === 'mc' ? { channelKind: c.kind, xyNotation: d.xyNotation ?? 'hex' } : {}),
       })),
     ),
     valueTables: outline.valueTables.map((v) => v.name),

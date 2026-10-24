@@ -380,3 +380,13 @@ TEST(DriversDiagApi, TheEndpointIsInTheTableOfRoles) {
     EXPECT_FALSE(rule->refreshesSession);
     EXPECT_FALSE(rule->changesDevice);
 }
+
+// Feature 017: an MC end code keeps its 4 hex digits in the API (a Modbus exception keeps 2).
+TEST(DriversDiagApi, McEndCodesKeepTheirFourHexDigits) {
+    EXPECT_EQ(exceptionKey(2), "02");
+    EXPECT_EQ(exceptionKey(0xC056), "C056");
+    EXPECT_EQ(exceptionKey(0x4031), "4031");
+    EXPECT_EQ(exceptionJson(0xC05B)["code"], "C05B");
+    EXPECT_EQ(exceptionJson(0xC05B)["meaning"], drv::mcEndMeaning(0xC05B));
+    EXPECT_EQ(exceptionJson(2)["meaning"], modbus::exceptionMeaning(2));
+}

@@ -81,7 +81,7 @@ jobs:
       - run: npx vitest run packages/project-schema/src/vectors-05.test.ts packages/project-schema/src/alarm-widget-rules.test.ts
       - run: npm test -w @mat/alarm-engine
       - run: node --test tools/lint-rules-alarm.test.mjs
-      - run: node --test "tools/modbus-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" "tools/gen-error-codes.test.mjs"
+      - run: node --test "tools/modbus-sim/*.test.mjs" "tools/s7-sim/*.test.mjs" "tools/fins-sim/*.test.mjs" "tools/mc-sim/*.test.mjs" "tools/bacnet-sim/*.test.mjs" "tools/project-validator/*.test.mjs" "tools/dashboard-demo/*.test.mjs" "tools/gen-widget-docs.test.mjs" "tools/gen-error-codes.test.mjs"
       # Feature 011 (T177, T059): links, file references, CLI flags and error codes of the Markdown docs
       - run: node --test tools/docs-check.test.mjs tools/build-docs.test.mjs && node tools/docs-check.mjs
       # Pilot (feature 011, T187 to T189): KPI on the sample set tests/pilot-kpi; collect.ps1 against a fake API (pwsh is on the runner)

@@ -29,9 +29,14 @@ import {
   type WarningCode,
 } from './codes.ts';
 import { estimateLogging, loggingRules, unverifiedConnections } from './logging.ts';
+import { mcChannelChecks, mcTagChecks } from './rules-mc.ts';
 import type { ReportsConfig } from './reports.ts';
 import { compareSemver, isNumericTag } from './rules.ts';
+import { BACNET_RETRIES, BACNET_TIMEOUT_MS, bacnetSourceRules } from './rules-bacnet.ts';
 import { blockDataBytes, planBlocks, requestTimeMs, type Span } from './rtu-estimate.ts';
+import { s7ChannelIssues, s7TagIssues } from './rules-s7.ts';
+import { bcdOutsideFins, finsSourceRules } from './rules-fins.ts';
+import { OPCUA_DEFAULT_TIMEOUT_MS, opcuaChannelIssues, opcuaTagIssues } from './rules-opcua.ts';
 import { serialPortAllowed, type SerialPolicy } from './serial-allow.ts';
 import {
   SUPPORTED_TARGETS,
@@ -311,6 +316,15 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
           );
         else deviceById.set(d.id, { device: d, channel: ch, ci, di });
       });
+      if (ch.kind === 's7')
+        for (const [code, path, msg] of s7ChannelIssues(ch, ci, project.schemaVersion))
+          add(code, connFile, path, msg);
+      mcChannelChecks(ch, cp, project.schemaVersion, connFile, add); // feature 017
+      if (ch.kind === 'opcua') {
+        const r = opcuaChannelIssues(ch, ci, project.schemaVersion);
+        for (const [code, path, msg] of r.errors) add(code, connFile, path, msg);
+        for (const [code, path, msg] of r.warnings) warn(code, connFile, path, msg);
+      }
       if (ch.kind === 'modbus-rtu' && ch.serial) {
         const port = ch.serial.port;
         if (!SERIAL_PORT_PATTERNS.some((re) => re.test(port)))
@@ -546,6 +560,32 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
       }
     }
 
+    function detectSlow(
+      found: { channel: Channel; ci: number; di: number },
+      dev: FieldDevice,
+      scanGroup: ScanGroupName | undefined,
+    ): void {
+      const group = scanGroup ?? 'normal';
+      const period = scanGroups[group];
+      // mặc định: RTU gửi lại 1; FINS (feature 018) chờ 500 ms, UDP gửi lại 1; còn lại 1000 ms, 0
+      const fins = found.channel.kind === 'fins';
+      const retries =
+        dev.retries ??
+        (found.channel.kind === 'modbus-rtu' || (fins && found.channel.fins?.transport !== 'tcp')
+          ? 1
+          : 0);
+      const timeout = dev.timeoutMs ?? (fins ? 500 : 1000);
+      if (!slowSeen.has(dev.id) && timeout * (retries + 1) > period) {
+        slowSeen.add(dev.id);
+        warn(
+          'W_DETECT_SLOW',
+          connFile,
+          `/channels/${found.ci}/devices/${found.di}`,
+          `timeoutMs x (retries + 1) = ${timeout * (retries + 1)} ms exceeds the ${group} scan period (${period} ms)`,
+        );
+      }
+    }
+
     function externalChecks(t: TagV1, p: string): void {
       const src = t.source!;
       const found = deviceById.get(src.device);
@@ -571,6 +611,69 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
         );
       if (rawType !== 'STRING' && src.stringLength !== undefined)
         add('E_SCHEMA', tagFile, `${p}/source/stringLength`, 'stringLength only applies to STRING');
+      // Omron FINS (feature 018): địa chỉ, BCD, giới hạn theo word ở rules-fins.ts; W_DETECT_SLOW như Modbus
+      if (found.channel.kind === 'fins') {
+        if (finsSourceRules(t, p, dev, tagFile, add)) detectSlow(found, dev, src.scanGroup);
+        return;
+      }
+      bcdOutsideFins(t, p, tagFile, add);
+      if (found.channel.kind === 's7') {
+        const issues = s7TagIssues(t, p, found.channel);
+        for (const [code, path, msg] of issues) add(code, tagFile, path, msg);
+        if (!issues.some(([, path]) => path.endsWith('/source/address')))
+          detectSlow(found, dev, src.scanGroup);
+        return;
+      }
+      if (found.channel.kind === 'mc') {
+        // feature 017: địa chỉ và luật Mitsubishi MC (rules-mc.ts)
+        mcTagChecks(t, p, {
+          tagFile,
+          connFile,
+          found,
+          scanGroups,
+          bitRmwSeen,
+          slowSeen,
+          add,
+          warn,
+        });
+        return;
+      }
+      // BACnet/IP (feature 020): địa chỉ ở rules-bacnet.ts; W_DETECT_SLOW với mặc định BACnet (500 ms, gửi lại 1)
+      if (found.channel.kind === 'bacnet') {
+        if (!bacnetSourceRules(t, p, tagFile, add)) return;
+        const g = src.scanGroup ?? 'normal';
+        const total = (dev.timeoutMs ?? BACNET_TIMEOUT_MS) * ((dev.retries ?? BACNET_RETRIES) + 1);
+        if (!slowSeen.has(dev.id) && total > scanGroups[g]) {
+          slowSeen.add(dev.id);
+          warn(
+            'W_DETECT_SLOW',
+            connFile,
+            `/channels/${found.ci}/devices/${found.di}`,
+            `timeoutMs x (retries + 1) = ${total} ms exceeds the ${g} scan period (${scanGroups[g]} ms)`,
+          );
+        }
+        return;
+      }
+      if (found.channel.kind === 'opcua') {
+        const issues = opcuaTagIssues(t, p);
+        for (const [code, path, msg] of issues) add(code, tagFile, path, msg);
+        const timeout = dev.timeoutMs ?? OPCUA_DEFAULT_TIMEOUT_MS;
+        const g = src.scanGroup ?? 'normal';
+        if (
+          !issues.some(([, path]) => path.endsWith('/source/address')) &&
+          !slowSeen.has(dev.id) &&
+          timeout > scanGroups[g]
+        ) {
+          slowSeen.add(dev.id);
+          warn(
+            'W_DETECT_SLOW',
+            connFile,
+            `/channels/${found.ci}/devices/${found.di}`,
+            `timeoutMs x (retries + 1) = ${timeout} ms exceeds the ${g} scan period (${scanGroups[g]} ms)`,
+          );
+        }
+        return;
+      }
       const r = parseAddress(src.address, {
         addressBase: dev.addressBase ?? 0,
         rawType,
@@ -625,17 +728,7 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
       }
       // W_DETECT_SLOW
       const group = src.scanGroup ?? 'normal';
-      const period = scanGroups[group];
-      const retries = dev.retries ?? (found.channel.kind === 'modbus-rtu' ? 1 : 0);
-      if (!slowSeen.has(dev.id) && (dev.timeoutMs ?? 1000) * (retries + 1) > period) {
-        slowSeen.add(dev.id);
-        warn(
-          'W_DETECT_SLOW',
-          connFile,
-          `/channels/${found.ci}/devices/${found.di}`,
-          `timeoutMs x (retries + 1) = ${(dev.timeoutMs ?? 1000) * (retries + 1)} ms exceeds the ${group} scan period (${period} ms)`,
-        );
-      }
+      detectSlow(found, dev, src.scanGroup);
       // gom khoảng cho ước tính RTU
       if (
         found.channel.kind === 'modbus-rtu' &&

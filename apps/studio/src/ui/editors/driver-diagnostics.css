@@ -133,3 +133,8 @@ mat-driver-diagnostics .warn-text {
     overflow: auto;
   }
 }
+
+/* Kênh OPC UA (feature 019): endpoint và SHA-256 dài */
+mat-driver-diagnostics .dd-wrap {
+  overflow-wrap: anywhere;
+}

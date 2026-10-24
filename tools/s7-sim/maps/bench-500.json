@@ -1,0 +1,11 @@
+{
+  "pduSize": 480,
+  "areas": {
+    "DB10": { "size": 2048 },
+    "M": { "size": 256 }
+  },
+  "animate": [
+    { "area": "DB10", "byte": 0, "type": "INT", "count": 250, "stride": 2 },
+    { "area": "DB10", "byte": 500, "type": "REAL", "count": 125, "stride": 4 }
+  ]
+}

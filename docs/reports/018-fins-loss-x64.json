@@ -1,0 +1,48 @@
+{
+  "scenario": "fins-loss",
+  "checks": [
+    {
+      "name": "a lost datagram is sent again at once with a new SID",
+      "pass": true,
+      "detail": "[{\"seq\":122,\"ts\":1792857773611,\"transport\":\"udp\",\"command\":\"0101\",\"sid\":173,\"da1\":20,\"sa1\":10,\"code\":130,\"address\":100,\"bit\":0,\"count\":61,\"result\":\"silent\"},{\"seq\":127,\"ts\":1792857774112,\"transport\":\"udp\",\"command\":\"0101\",\"sid\":174,\"da1\":20,\"sa1\":10,\"code\":130,\"address\":100,\"bit\":0,\"count\":61,\"result\":\"ok\"},{\"seq\":128,\"ts\":1792857774112,\"transport\":\"udp\",\"command\":\"0101\",\"sid\":175,\"da1\":20,\"sa1\":10,\"code\":130,\"address\":300,\"bit\":0,\"count\":34,\"result\":\"ok\"},{\"seq\":129,\"ts\":1792857774112,\"transport\":\"udp\",\"command\":\"0101\",\"sid\":176,\"da1\":20,\"sa1\":10,\"code\":177,\"address\":5,\"bit\":0,\"count\":9,\"result\":\"ok\"}]"
+    },
+    {
+      "name": "no UDP Tag turned BAD for one lost datagram",
+      "pass": true,
+      "detail": "[]"
+    },
+    {
+      "name": "diagnostics: one timeout more",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "a late answer is dropped by its SID and counted",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "still no UDP Tag BAD",
+      "pass": true
+    },
+    {
+      "name": "no answer: the UDP Tags turn BAD with TIMEOUT or DISCONNECTED",
+      "pass": true,
+      "detail": "{\"value\":-1234,\"quality\":\"BAD\",\"reason\":\"TIMEOUT\"}"
+    },
+    {
+      "name": "the TCP Tags stay GOOD",
+      "pass": true
+    },
+    {
+      "name": "answers again: GOOD within the backoff (<= 32 s)",
+      "pass": true,
+      "detail": "993 ms"
+    }
+  ],
+  "measures": {
+    "badMs": 2148,
+    "goodMs": 993
+  },
+  "pass": true
+}

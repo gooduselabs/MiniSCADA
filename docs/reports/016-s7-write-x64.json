@@ -1,0 +1,154 @@
+{
+  "scenario": "write",
+  "checks": [
+    {
+      "name": "write S7.W_BOOL = true: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:55:06.283Z\",\"readback\":true,\"receivedAt\":\"2026-10-24T15:55:06.001Z\",\"requestId\":\"e26de873-9f28-4701-8b1d-91953e2ff323\",\"status\":\"CONFIRMED\",\"tag\":\"S7.W_BOOL\",\"value\":true}"
+    },
+    {
+      "name": "write S7.W_BOOL: simulator memory 01",
+      "pass": true,
+      "detail": "01"
+    },
+    {
+      "name": "write S7.W_BOOL: live value",
+      "pass": true,
+      "detail": "{\"value\":true,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write S7.W_INT = -1234: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:55:06.533Z\",\"readback\":-1234,\"receivedAt\":\"2026-10-24T15:55:06.479Z\",\"requestId\":\"198b95c3-fc7d-4f7d-87f0-a3625ab00f09\",\"status\":\"CONFIRMED\",\"tag\":\"S7.W_INT\",\"value\":-1234}"
+    },
+    {
+      "name": "write S7.W_INT: simulator memory FB 2E",
+      "pass": true,
+      "detail": "FB 2E"
+    },
+    {
+      "name": "write S7.W_INT: live value",
+      "pass": true,
+      "detail": "{\"value\":-1234,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write S7.W_REAL = 1.5: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:55:06.783Z\",\"readback\":1.5,\"receivedAt\":\"2026-10-24T15:55:06.693Z\",\"requestId\":\"d5c1627d-10d6-4898-8854-68696ef88f43\",\"status\":\"CONFIRMED\",\"tag\":\"S7.W_REAL\",\"value\":1.5}"
+    },
+    {
+      "name": "write S7.W_REAL: simulator memory 3F C0 00 00",
+      "pass": true,
+      "detail": "3F C0 00 00"
+    },
+    {
+      "name": "write S7.W_REAL: live value",
+      "pass": true,
+      "detail": "{\"value\":1.5,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write S7.W_STRING = \"Van 2\": CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:55:07.033Z\",\"readback\":\"Van 2\",\"receivedAt\":\"2026-10-24T15:55:06.910Z\",\"requestId\":\"8b52704d-51e0-4855-831a-dd71db7a9731\",\"status\":\"CONFIRMED\",\"tag\":\"S7.W_STRING\",\"value\":\"Van 2\"}"
+    },
+    {
+      "name": "write S7.W_STRING: simulator memory 0A 05 56 61 6E 20 32",
+      "pass": true,
+      "detail": "0A 05 56 61 6E 20 32"
+    },
+    {
+      "name": "write S7.W_STRING: live value",
+      "pass": true,
+      "detail": "{\"value\":\"Van 2\",\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write S7.W_BYTE = 255: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:55:07.283Z\",\"readback\":255,\"receivedAt\":\"2026-10-24T15:55:07.122Z\",\"requestId\":\"4b545dcd-b55c-4b7e-8b04-1857dc3f14fd\",\"status\":\"CONFIRMED\",\"tag\":\"S7.W_BYTE\",\"value\":255}"
+    },
+    {
+      "name": "write S7.W_BYTE: simulator memory FF",
+      "pass": true,
+      "detail": "FF"
+    },
+    {
+      "name": "write S7.W_BYTE: live value",
+      "pass": true,
+      "detail": "{\"value\":255,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write S7.W_DINT = -100000: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:55:07.533Z\",\"readback\":-100000,\"receivedAt\":\"2026-10-24T15:55:07.336Z\",\"requestId\":\"35473f64-3869-4c5a-8ddb-e5aac70003e3\",\"status\":\"CONFIRMED\",\"tag\":\"S7.W_DINT\",\"value\":-100000}"
+    },
+    {
+      "name": "write S7.W_DINT: simulator memory FF FE 79 60",
+      "pass": true,
+      "detail": "FF FE 79 60"
+    },
+    {
+      "name": "write S7.W_DINT: live value",
+      "pass": true,
+      "detail": "{\"value\":-100000,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write S7.W_LREAL = 2.5: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:55:07.783Z\",\"readback\":2.5,\"receivedAt\":\"2026-10-24T15:55:07.549Z\",\"requestId\":\"33bc0ab9-5c24-40b1-85c3-5fde46ff85fb\",\"status\":\"CONFIRMED\",\"tag\":\"S7.W_LREAL\",\"value\":2.5}"
+    },
+    {
+      "name": "write S7.W_LREAL: simulator memory 40 04 00 00 00 00 00 00",
+      "pass": true,
+      "detail": "40 04 00 00 00 00 00 00"
+    },
+    {
+      "name": "write S7.W_LREAL: live value",
+      "pass": true,
+      "detail": "{\"value\":2.5,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write S7.Q_BYTE = 9: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:55:08.033Z\",\"readback\":9,\"receivedAt\":\"2026-10-24T15:55:07.965Z\",\"requestId\":\"2cdca371-cc4d-4667-83d7-c7fe8074dc99\",\"status\":\"CONFIRMED\",\"tag\":\"S7.Q_BYTE\",\"value\":9}"
+    },
+    {
+      "name": "write S7.Q_BYTE: simulator memory 09",
+      "pass": true,
+      "detail": "09"
+    },
+    {
+      "name": "write S7.Q_BYTE: live value",
+      "pass": true,
+      "detail": "{\"value\":9,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write S7.Q_BOOL = false: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-24T15:55:08.283Z\",\"readback\":false,\"receivedAt\":\"2026-10-24T15:55:08.197Z\",\"requestId\":\"1311cad2-8f83-4803-8427-7651aa3c8ce5\",\"status\":\"CONFIRMED\",\"tag\":\"S7.Q_BOOL\",\"value\":false}"
+    },
+    {
+      "name": "write S7.Q_BOOL: simulator memory 00",
+      "pass": true,
+      "detail": "00"
+    },
+    {
+      "name": "write S7.Q_BOOL: live value",
+      "pass": true,
+      "detail": "{\"value\":false,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "write beyond limits refused before the PLC",
+      "pass": true,
+      "detail": "{\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"367d33c0-4991-4141-890c-d4864b6e6b16\",\"status\":\"REJECTED\"}"
+    },
+    {
+      "name": "audit: tag.write rows for S7.W_INT",
+      "pass": true,
+      "detail": "3 rows, 1 confirmed"
+    }
+  ],
+  "measures": {
+    "writeMsMax": 504
+  },
+  "pass": true
+}
