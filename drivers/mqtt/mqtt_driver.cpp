@@ -633,7 +633,7 @@ void MqttDriver::runGroups() {
         st.pending = false;
         mqtt::Publish m;
         m.topic = gc.topic;
-        m.payload = mqtt::encodeGroup(wall(), entries);
+        m.payload = mqtt::encodeGroup(wall(), entries, gc.timestamps);
         m.qos = gc.qos;
         m.retain = gc.retain;
         if (m.qos > 0) m.packetId = nextPacketId();  // its PUBACK is not waited for

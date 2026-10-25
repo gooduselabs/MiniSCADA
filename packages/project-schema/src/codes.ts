@@ -217,6 +217,8 @@ export const ERROR_CODES = [
   'E_MQTT_DIRECTION',
   /** Nhóm publish MQTT có Tag không tồn tại. */
   'E_MQTT_GROUP_TAG',
+  /** Feature 025: mẫu tên Tag của nhóm publish MQTT không khớp Tag nào, hoặc nhóm quá 500 Tag. */
+  'E_MQTT_GROUP_PATTERN',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**

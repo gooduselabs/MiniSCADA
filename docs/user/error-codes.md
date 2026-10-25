@@ -12,20 +12,20 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 572 mã.
+Tổng cộng 580 mã.
 
 ## Mục lục
 
 - [Định dạng và phiên bản project](#format) (15)
-- [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (43)
+- [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (44)
 - [Biểu thức của Tag tính toán](#expression) (10)
 - [Màn hình, widget, binding và điều hướng](#screens) (49)
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (32)
-- [Alarm](#alarm) (53)
+- [Alarm](#alarm) (54)
 - [Lưu trữ, lịch sử và báo cáo](#history) (43)
 - [Gói project (.matscada)](#package) (16)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
-- [Đăng nhập, phiên và truy cập HTTP](#auth) (37)
+- [Đăng nhập, phiên và truy cập HTTP](#auth) (43)
 - [Ghi Tag](#write) (39)
 - [Lý do quality của Tag](#quality) (65)
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (32)
@@ -74,6 +74,7 @@ Tổng cộng 572 mã.
 | `E_INITIAL` | — | Giá trị đầu sai kiểu, ngoài khoảng hoặc chuỗi quá dài | `core/project-manager`, `packages/project-schema` |
 | `E_LIMITS` | — | Giới hạn ghi sai (cần Tag số, nhỏ nhất ≤ lớn nhất, trong khoảng của kiểu) | `core/project-manager`, `packages/project-schema` |
 | `E_MQTT_DIRECTION` | — | Tag MQTT: hướng của địa chỉ không khớp quyền (ghi được thì cần pub: hoặc both:; pub: cần quyền RW) | `core/project-manager`, `packages/project-schema` |
+| `E_MQTT_GROUP_PATTERN` | — | Nhóm publish MQTT: mẫu tên Tag không khớp Tag nào, hoặc nhóm quá 500 Tag | `core/project-manager`, `packages/project-schema` |
 | `E_MQTT_GROUP_TAG` | — | Nhóm publish MQTT có Tag không tồn tại | `core/project-manager`, `packages/project-schema` |
 | `E_MQTT_TLS` | — | Kênh MQTT: serverCertSha256, caCertPem hoặc serverName chỉ dùng khi tls.enabled là true | `core/project-manager`, `packages/project-schema` |
 | `E_OPCUA_AUTH` | — | Kênh OPC UA: xác thực username cần username và secretId; anonymous thì bỏ cả hai | `core/project-manager`, `packages/project-schema` |
@@ -266,6 +267,7 @@ Tổng cộng 572 mã.
 | `NOT_ACTIVE` | — | Alarm đã hết, không còn ở trạng thái đang có | `core/alarm` |
 | `NOT_DISABLED` | — | Alarm không bị vô hiệu nên không cần bật lại | `core/alarm` |
 | `NOT_SHELVED` | — | Alarm không đang tạm ẩn | `core/alarm` |
+| `NO_ALARMS` | 404 | Project đang chạy không có alarm. | `server/http` |
 | `NO_DATA` | — | Tag chưa có dữ liệu cho động cơ alarm | `server` |
 | `NO_PASSWORD` | — | Chưa đặt mật khẩu SMTP trên thiết bị: sudo mat-runtime --set-secret smtp (email alarm). | `core/notify` |
 | `OUTBOX_DAMAGED` | — | Một email trong hàng đợi trên đĩa bị hỏng và đã bị bỏ (email.dropped). | `core/notify` |
@@ -386,10 +388,16 @@ Tổng cộng 572 mã.
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
 | `ACCESS_DENIED` | 403 | Bạn không có quyền với trang hoặc component này. | `server`, `server/http` |
+| `APIKEY_EXPIRED` | 401 | API key đã hết hạn: tạo key mới ở trang Quản trị. | `core/auth` |
+| `APIKEY_INVALID` | 401 | API key không đúng hoặc đã bị thu hồi. | `core/auth` |
+| `APIKEY_LIMIT` | 409 | Đã có 32 API key: thu hồi bớt key không dùng. | `server/http` |
+| `APIKEY_SOURCE` | 403 | API key không được dùng từ địa chỉ này (danh sách địa chỉ cho phép của key). | `core/auth` |
+| `APIKEY_STORE` | 503 | Kho API key trên thiết bị bị hỏng: mọi key bị từ chối đến khi lưu lại danh sách. | `core/auth`, `server/http` |
+| `APIKEY_THROTTLED` | 429 | Địa chỉ này gửi API key sai quá nhiều lần: bị chặn đến hết phút. | `core/auth` |
 | `AUDIT_UNAVAILABLE` | 503 | Thiết bị không ghi được nhật ký kiểm toán nên chưa thực hiện | `core/auth`, `core/project-store`, `core/recipe`, `core/tag-engine`, `server`, `server/http` |
 | `AUTH_FAILED` | 401 | Sai tên đăng nhập hoặc mật khẩu. | `core/auth`, `server/http` |
 | `AUTH_LOCKED` | 429 | Đăng nhập đang bị khóa tạm do sai nhiều lần. Hãy thử lại sau. | `core/auth`, `server/http` |
-| `AUTH_REQUIRED` | 401 | Cần đăng nhập. | `server/http` |
+| `AUTH_REQUIRED` | 401 | Cần đăng nhập. | `core/auth`, `server/http` |
 | `BAD_REQUEST` | 400 | Yêu cầu không hợp lệ. | `core/recipe`, `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `server`, `server/http` |
 | `BODY_TOO_LARGE` | 413 | Nội dung yêu cầu quá lớn. | `server/http` |
 | `CONFLICT` | 409 | Dữ liệu đã đổi bởi người khác, tải lại rồi thử lại. | `server/http` |
@@ -458,7 +466,7 @@ Tổng cộng 572 mã.
 | `PULSE_RANGE` | — | Độ dài xung phải từ 100 đến 10.000 ms. | `core/tag-engine` |
 | `PULSE_RELEASE_FAILED` | — | Đã ghi bật nhưng không ghi được giá trị trả về: bit lệnh có thể đang bật. | `core/tag-engine` |
 | `QUEUE_FULL` | — | Hàng đợi ghi đã đầy. | `core/tag-engine` |
-| `RATE_LIMITED` | 429 | Thao tác quá nhanh: hãy thử lại sau giây lát | `core/logic`, `core/recipe`, `core/tag-engine`, `server`, `server/http` |
+| `RATE_LIMITED` | 429 | Thao tác quá nhanh: hãy thử lại sau giây lát | `core/auth`, `core/logic`, `core/recipe`, `core/tag-engine`, `server`, `server/http` |
 | `READBACK_ERROR` | — | Lỗi khi đọc lại sau khi ghi | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
 | `READBACK_MISMATCH` | — | Đọc lại khác giá trị đã ghi | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
 | `READBACK_TIMEOUT` | — | Đã ghi nhưng không đọc lại được: không chắc kết quả. | `core/tag-engine`, `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |

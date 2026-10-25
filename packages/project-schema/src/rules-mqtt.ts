@@ -1,7 +1,7 @@
 // Luật của kênh, nhóm publish và Tag MQTT (feature 022, specs/022-driver-mqtt/spec.md FR-006). Gọi từ rules-02.ts
 // (kênh trong vòng kết nối, nhóm sau vòng Tag, Tag trong externalChecks). Bản C++ cài giống hệt:
 // core/project-manager/rules_mqtt.cpp; vector chung tests/project-vectors/v11-mqtt-* (README-022.md).
-import { parseMqttAddress } from '@mat/tag-codec';
+import { mqttTagPatternMatches, parseMqttAddress } from '@mat/tag-codec';
 import { SUPPORTED_SCHEMA_11, type ErrorCode, type WarningCode } from './codes.ts';
 import type { Channel, ConnectionsConfig, TagV1 } from './types-02.ts';
 
@@ -53,21 +53,50 @@ export function mqttChannelIssues(
   return { errors, warnings };
 }
 
-/** Tag của mọi nhóm publish phải tồn tại (E_MQTT_GROUP_TAG). */
+/** Số Tag tối đa của một nhóm publish sau khi mở rộng mẫu tên (bằng maxItems của `tags`). */
+export const MQTT_GROUP_MAX_TAGS = 500;
+
+/**
+ * Tag của mọi nhóm publish phải tồn tại (E_MQTT_GROUP_TAG); feature 025: mỗi mẫu tên phải khớp ít nhất một Tag, và
+ * nhóm sau khi mở rộng không quá 500 Tag (E_MQTT_GROUP_PATTERN).
+ */
 export function mqttGroupIssues(conn: ConnectionsConfig, tagIds: Set<string>): MqttIssue[] {
   const out: MqttIssue[] = [];
   conn.channels.forEach((ch, ci) => {
     if (ch.kind !== 'mqtt' || !ch.mqtt?.publishGroups) return;
-    ch.mqtt.publishGroups.forEach((g, gi) =>
-      g.tags.forEach((id, k) => {
+    ch.mqtt.publishGroups.forEach((g, gi) => {
+      const gp = `/channels/${ci}/mqtt/publishGroups/${gi}`;
+      const members = new Set<string>();
+      (g.tags ?? []).forEach((id, k) => {
         if (!tagIds.has(id))
           out.push([
             'E_MQTT_GROUP_TAG',
-            `/channels/${ci}/mqtt/publishGroups/${gi}/tags/${k}`,
+            `${gp}/tags/${k}`,
             `Tag '${id}' of the publish group does not exist`,
           ]);
-      }),
-    );
+        else members.add(id);
+      });
+      (g.tagPatterns ?? []).forEach((pat, k) => {
+        let any = false;
+        for (const id of tagIds)
+          if (mqttTagPatternMatches(pat, id)) {
+            any = true;
+            members.add(id);
+          }
+        if (!any)
+          out.push([
+            'E_MQTT_GROUP_PATTERN',
+            `${gp}/tagPatterns/${k}`,
+            `pattern '${pat}' matches no Tag`,
+          ]);
+      });
+      if (members.size > MQTT_GROUP_MAX_TAGS)
+        out.push([
+          'E_MQTT_GROUP_PATTERN',
+          gp,
+          `the publish group has ${members.size} Tags, more than ${MQTT_GROUP_MAX_TAGS}`,
+        ]);
+    });
   });
   return out;
 }

@@ -196,6 +196,21 @@ class DirLock {
 
 }  // namespace
 
+bool readAuthPrivateFile(const std::string& path, size_t maxBytes, std::string& text, bool& missing,
+                         std::string& error) {
+    return readPrivateFile(path, maxBytes, text, missing, error);
+}
+
+bool writeAuthPrivateFile(const std::string& dir, const std::string& name, const std::string& text,
+                          const std::string& ownerUser, std::string& err) {
+    DirLock lock(dir);
+    if (!lock.held()) {
+        err = lock.error();
+        return false;
+    }
+    return writePrivateFile(dir, name, text, ownerOf(ownerUser), err);
+}
+
 AuthFiles readAuthFiles(const std::string& usersPath, const std::string& accessPath,
                         bool deviceCommand) {
     AuthFiles f;

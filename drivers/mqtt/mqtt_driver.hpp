@@ -54,6 +54,7 @@ struct MqttGroupConfig {
     bool onChange = false;
     int qos = 0;
     bool retain = false;
+    bool timestamps = false;  // feature 025: "sourceTs" in the payload
 };
 
 struct MqttConfig {

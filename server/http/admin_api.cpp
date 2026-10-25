@@ -139,6 +139,99 @@ const char* pageTitle(const std::string& p) {
 
 json strings(const std::vector<std::string>& v) { return json(v); }
 
+// ---- feature 025: API keys (specs/025-data-api FR-007)
+
+json apiKeySummary(const ApiKey& k) {
+    return json{{"name", k.name},
+                {"role", roleName(k.role)},
+                {"groups", k.groups},
+                {"readOnly", k.readOnly},
+                {"allowFrom", k.allowFrom},
+                {"expiresAt", k.expiresAtMs ? json(isoUtcText(*k.expiresAtMs)) : json(nullptr)},
+                {"ratePerMin", k.ratePerMin},
+                {"prefix", k.prefix}};
+}
+
+int64_t wallNowMs() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+        .count();
+}
+
+// The settings of a request onto `k`; "" or why not. Only the keys of the contract.
+std::string applyApiKeySettings(const json& body, ApiKey& k, bool create) {
+    for (auto it = body.begin(); it != body.end(); ++it) {
+        const std::string& n = it.key();
+        if (n != "rev" && n != "reauth" && n != "name" && n != "role" && n != "groups" &&
+            n != "readOnly" && n != "allowFrom" && n != "expiresAt" && n != "ratePerMin")
+            return "Khóa lạ: " + n + ".";
+    }
+    if (create && !body.contains("name")) return "Cần name.";
+    if (body.contains("name")) {
+        if (!body["name"].is_string()) return "name phải là chuỗi.";
+        k.name = body["name"].get<std::string>();
+    }
+    if (body.contains("role")) {
+        const auto r =
+            body["role"].is_string() ? parseRole(body["role"].get<std::string>()) : std::nullopt;
+        if (!r) return "role là viewer hoặc operator.";
+        k.role = *r;
+    }
+    if (body.contains("readOnly")) {
+        if (!body["readOnly"].is_boolean()) return "readOnly phải là true hoặc false.";
+        k.readOnly = body["readOnly"].get<bool>();
+    }
+    for (const char* list : {"groups", "allowFrom"}) {
+        if (!body.contains(list)) continue;
+        const json& v = body[list];
+        if (!v.is_array() || v.size() > 64) return std::string(list) + " phải là danh sách.";
+        std::vector<std::string> out;
+        for (const json& x : v) {
+            if (!x.is_string()) return std::string(list) + " phải là danh sách chuỗi.";
+            out.push_back(x.get<std::string>());
+        }
+        (std::string(list) == "groups" ? k.groups : k.allowFrom) = std::move(out);
+    }
+    if (body.contains("expiresAt")) {
+        if (body["expiresAt"].is_null()) {
+            k.expiresAtMs.reset();
+        } else {
+            const auto ms = body["expiresAt"].is_string()
+                                ? parseIsoUtcMs(body["expiresAt"].get<std::string>())
+                                : std::nullopt;
+            if (!ms) return "expiresAt là thời điểm UTC dạng 2026-12-31T00:00:00Z hoặc null.";
+            k.expiresAtMs = ms;
+        }
+    }
+    if (body.contains("ratePerMin")) {
+        if (!body["ratePerMin"].is_number_integer() && !body["ratePerMin"].is_number_unsigned())
+            return "ratePerMin phải là số nguyên.";
+        const int64_t r = body["ratePerMin"].get<int64_t>();
+        k.ratePerMin = r < 0 || r > 1000000 ? -1 : static_cast<int>(r);
+    }
+    return "";
+}
+
+AdminReply apiKeyChangeError(ApiKeyChange c, int64_t rev, const std::string& err) {
+    switch (c) {
+        case ApiKeyChange::Ok:
+            return reply(200);
+        case ApiKeyChange::Conflict:
+            return error(409, "CONFLICT", {{"rev", rev}});
+        case ApiKeyChange::NotFound:
+            return error(404, "NOT_FOUND", {{"message", "Không có key này (đã thu hồi?)."}});
+        case ApiKeyChange::Full:
+            return error(409, "APIKEY_LIMIT", {{"message", "Đã có 32 key: thu hồi bớt key cũ."}});
+        case ApiKeyChange::Invalid:
+            return error(400, "BAD_REQUEST", {{"message", err}});
+        case ApiKeyChange::Store:
+            return error(503, "APIKEY_STORE");
+        case ApiKeyChange::IoError:
+            break;
+    }
+    return error(503, "STORE_IO", {{"message", "Không ghi được api-keys.json: " + err}});
+}
+
 }  // namespace
 
 struct AdminApi::Impl {
@@ -1172,6 +1265,167 @@ struct AdminApi::Impl {
                            {"message", r.message},
                            {"peerSha256", r.peerSha256}});
     }
+    // ---- feature 025: API keys
+    AdminReply apikeysList() {
+        const ApiKeysFile f = b.keys->list();
+        const auto use = b.keys->usage();
+        const int64_t now = wallNowMs();
+        json keys = json::array();
+        for (const ApiKey& k : f.keys) {
+            json j = apiKeySummary(k);
+            j["id"] = k.id;
+            j["canWrite"] = k.canWrite();
+            j["expired"] = k.expiresAtMs.has_value() && now >= *k.expiresAtMs;
+            j["createdAt"] = k.createdAt;
+            j["createdBy"] = k.createdBy;
+            j["updatedAt"] = k.updatedAt.empty() ? json(nullptr) : json(k.updatedAt);
+            const auto u = use.find(k.id);
+            const bool used = u != use.end();
+            j["lastUsedAt"] = used && u->second.lastUsedMs > 0
+                                  ? json(isoUtcText(u->second.lastUsedMs))
+                                  : json(nullptr);
+            j["lastFrom"] =
+                used && !u->second.lastFrom.empty() ? json(u->second.lastFrom) : json(nullptr);
+            j["calls"] = used ? u->second.calls : 0;
+            j["denied"] = used ? u->second.denied : 0;
+            keys.push_back(std::move(j));
+        }
+        json groups = json::array();
+        for (const auto& g : b.store->read().access.groups)
+            groups.push_back({{"id", g.id}, {"name", g.name}});
+        json out = {{"rev", f.rev},
+                    {"storeOk", b.keys->storeOk()},
+                    {"keys", std::move(keys)},
+                    {"groups", std::move(groups)},
+                    {"limits",
+                     {{"maxKeys", kMaxApiKeys},
+                      {"maxAllowFrom", kMaxApiKeyAllowFrom},
+                      {"rateMin", kApiKeyRateMin},
+                      {"rateMax", kApiKeyRateMax},
+                      {"rateDefault", kApiKeyRateDefault}}}};
+        if (!b.keys->storeOk()) out["storeError"] = b.keys->storeError();
+        return reply(200, std::move(out));
+    }
+
+    // A group named by a request must be a group of access.json (one the key had may stay).
+    std::optional<AdminReply> unknownGroup(const ApiKey& k, const std::vector<std::string>& had) {
+        const AuthFiles f = b.store->read();
+        for (const auto& g : k.groups)
+            if (validGroupId(g) && !f.access.group(g) &&
+                std::find(had.begin(), had.end(), g) == had.end())
+                return error(400, "NOT_FOUND",
+                             {{"group", g}, {"message", "Không có nhóm " + g + "."}});
+        return std::nullopt;
+    }
+
+    AdminReply apikeysCreate(const json& body, const AdminCaller& who) {
+        const AuditAction act = AuditAction::ApiKeyCreate;
+        if (!body.contains("rev") || !isRev(body["rev"])) return error(400, "BAD_REQUEST");
+        ApiKey k;
+        if (const std::string why = applyApiKeySettings(body, k, true); !why.empty())
+            return error(400, "BAD_REQUEST", {{"message", why}});
+        if (auto bad = unknownGroup(k, {})) return *bad;
+        if (const std::string p = apiKeySettingsProblem(k, wallNowMs()); !p.empty())
+            return error(400, "BAD_REQUEST", {{"message", p}});
+        const int64_t rev = body["rev"].get<int64_t>();
+        const int64_t current = b.keys->list().rev;
+        if (current != rev) return deny(act, who, k.name, 409, "CONFLICT", {{"rev", current}});
+        // a key that may write: the administrator's password again (like a new account)
+        if (k.canWrite())
+            if (auto refused = reauth(body, who, act, k.name)) return *refused;
+        k.id = newApiKeyId();
+        AuditEvent e = event(act, AuditResult::Ok, who);
+        e.target = k.id;
+        e.detail = jsonText({{"after", apiKeySummary(k)}});
+        if (!audit(e)) return error(503, "AUDIT_UNAVAILABLE");
+        std::string token, err;
+        ApiKey made;
+        int64_t newRev = 0;
+        const ApiKeyChange c = b.keys->create(rev, k, who.user, token, made, newRev, err);
+        if (c != ApiKeyChange::Ok) {
+            AuditEvent fe = event(act, AuditResult::Failed, who);
+            fe.target = k.id;
+            fe.code = c == ApiKeyChange::Conflict ? "CONFLICT" : "STORE_IO";
+            audit(fe);
+            return apiKeyChangeError(c, newRev, err);
+        }
+        json out = apiKeySummary(made);
+        out["id"] = made.id;
+        json r = {{"rev", newRev}, {"key", std::move(out)}, {"token", token}};
+        secureZero(token);
+        return reply(201, std::move(r));
+    }
+
+    AdminReply apikeysUpdate(const std::string& id, const json& body, const AdminCaller& who) {
+        const AuditAction act = AuditAction::ApiKeyUpdate;
+        if (!body.contains("rev") || !isRev(body["rev"])) return error(400, "BAD_REQUEST");
+        const auto before = b.keys->find(id);
+        if (!before) return deny(act, who, id, 404, "NOT_FOUND");
+        ApiKey k = *before;
+        if (const std::string why = applyApiKeySettings(body, k, false); !why.empty())
+            return error(400, "BAD_REQUEST", {{"message", why}});
+        if (auto bad = unknownGroup(k, before->groups)) return *bad;
+        {
+            ApiKey probe = k;  // an expiry already over may stay as it was
+            if (probe.expiresAtMs && before->expiresAtMs &&
+                *probe.expiresAtMs == *before->expiresAtMs)
+                probe.expiresAtMs.reset();
+            if (const std::string p = apiKeySettingsProblem(probe, wallNowMs()); !p.empty())
+                return error(400, "BAD_REQUEST", {{"message", p}});
+        }
+        const int64_t rev = body["rev"].get<int64_t>();
+        const int64_t current = b.keys->list().rev;
+        if (current != rev) return deny(act, who, id, 409, "CONFLICT", {{"rev", current}});
+        if (k.canWrite() && !before->canWrite())
+            if (auto refused = reauth(body, who, act, id)) return *refused;
+        AuditEvent e = event(act, AuditResult::Ok, who);
+        e.target = id;
+        e.detail = jsonText({{"before", apiKeySummary(*before)}, {"after", apiKeySummary(k)}});
+        if (!audit(e)) return error(503, "AUDIT_UNAVAILABLE");
+        ApiKey after;
+        int64_t newRev = 0;
+        std::string err;
+        const ApiKeyChange c = b.keys->update(
+            rev, id, [&k](ApiKey& x) { x = k; }, after, newRev, err);
+        if (c != ApiKeyChange::Ok) {
+            AuditEvent fe = event(act, AuditResult::Failed, who);
+            fe.target = id;
+            fe.code = c == ApiKeyChange::Conflict
+                          ? "CONFLICT"
+                          : c == ApiKeyChange::Invalid ? "BAD_REQUEST" : "STORE_IO";
+            audit(fe);
+            return apiKeyChangeError(c, newRev, err);
+        }
+        json out = apiKeySummary(after);
+        out["id"] = after.id;
+        return reply(200, {{"rev", newRev}, {"key", std::move(out)}});
+    }
+
+    AdminReply apikeysRevoke(const std::string& id, const json& body, const AdminCaller& who) {
+        const AuditAction act = AuditAction::ApiKeyRevoke;
+        if (!body.contains("rev") || !isRev(body["rev"])) return error(400, "BAD_REQUEST");
+        const auto before = b.keys->find(id);
+        if (!before) return deny(act, who, id, 404, "NOT_FOUND");
+        const int64_t rev = body["rev"].get<int64_t>();
+        const int64_t current = b.keys->list().rev;
+        if (current != rev) return deny(act, who, id, 409, "CONFLICT", {{"rev", current}});
+        AuditEvent e = event(act, AuditResult::Ok, who);
+        e.target = id;
+        e.detail = jsonText({{"before", apiKeySummary(*before)}});
+        if (!audit(e)) return error(503, "AUDIT_UNAVAILABLE");
+        ApiKey gone;
+        int64_t newRev = 0;
+        std::string err;
+        const ApiKeyChange c = b.keys->revoke(rev, id, gone, newRev, err);
+        if (c != ApiKeyChange::Ok) {
+            AuditEvent fe = event(act, AuditResult::Failed, who);
+            fe.target = id;
+            fe.code = c == ApiKeyChange::Conflict ? "CONFLICT" : "STORE_IO";
+            audit(fe);
+            return apiKeyChangeError(c, newRev, err);
+        }
+        return reply(200, {{"rev", newRev}});
+    }
 };
 
 AdminApi::AdminApi(AdminBackend backend) : impl_(std::make_shared<Impl>()) {
@@ -1246,6 +1500,16 @@ AdminReply AdminApi::call(const std::string& method, const std::string& path,
     if (path == "/api/v1/admin/access/cleanup") return s.accessCleanup(body, who);
     if (path == "/api/v1/admin/access/restore") return s.accessRestore(body, who);
     if (path == "/api/v1/admin/effective") return s.effective(query, who);
+    if (path == "/api/v1/admin/apikeys" || path.rfind("/api/v1/admin/apikeys/", 0) == 0) {
+        if (!s.b.keys) return error(501, "NOT_IMPLEMENTED");
+        if (path == "/api/v1/admin/apikeys")
+            return method == "GET" ? s.apikeysList() : s.apikeysCreate(body, who);
+        if (splitTail(path, "/api/v1/admin/apikeys/", id, rest)) {
+            if (rest.empty()) return s.apikeysUpdate(id, body, who);
+            if (rest == "/revoke") return s.apikeysRevoke(id, body, who);
+        }
+        return error(404, "NOT_FOUND");
+    }
     if (path == "/api/v1/admin/email" || path == "/api/v1/admin/email/test") {
         if (!s.b.email) return error(501, "NOT_IMPLEMENTED");
         if (path == "/api/v1/admin/email/test") return s.emailTest(body, who);
@@ -1349,8 +1613,9 @@ int AdminApi::handle(mg_connection* c, const GateRequest& r, const GateDecision&
     AdminReply a = call(r.method, r.path, query, body, who);
     const std::string text = a.status == 204 ? std::string() : jsonText(a.body);
     const int status = eapi::send(c, a.status, text, close, a.extra);
-    if (a.body.is_object() && a.body.contains("password") && a.body["password"].is_string())
-        secureZero(a.body["password"].get_ref<std::string&>());
+    for (const char* k : {"password", "token"})  // token: a new API key (feature 025)
+        if (a.body.is_object() && a.body.contains(k) && a.body[k].is_string())
+            secureZero(a.body[k].get_ref<std::string&>());
     return status;
 }
 

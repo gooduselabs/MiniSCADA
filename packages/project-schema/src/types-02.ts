@@ -276,7 +276,11 @@ export interface OpcUaChannelConfig {
 /** Một nhóm publish của kênh MQTT (feature 022): giá trị nhiều Tag thành một tin JSON. */
 export interface MqttPublishGroup {
   topic: string;
-  tags: string[];
+  tags?: string[];
+  /** Feature 025: mẫu tên Tag (`*`, `?`), cộng thêm sau `tags`. */
+  tagPatterns?: string[];
+  /** Feature 025: payload có `sourceTs` (thời điểm đọc từng giá trị). */
+  timestamps?: boolean;
   intervalMs?: number;
   onChange?: boolean;
   qos?: 0 | 1;

@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { mqttTopicMatches, parseMqttAddress } from './index.ts';
+import { mqttTagPatternMatches, mqttTopicMatches, parseMqttAddress } from './index.ts';
 
 interface Case {
   name: string;
@@ -14,9 +14,18 @@ interface Match {
   topic: string;
   expect: boolean;
 }
+interface Pattern {
+  pattern: string;
+  tag: string;
+  expect: boolean;
+}
 
 const FILE = resolve(__dirname, '../../../tests/mqtt-vectors/address.json');
-const doc = JSON.parse(readFileSync(FILE, 'utf8')) as { cases: Case[]; match: Match[] };
+const doc = JSON.parse(readFileSync(FILE, 'utf8')) as {
+  cases: Case[];
+  match: Match[];
+  tagPatterns: Pattern[];
+};
 
 describe('mqtt-vectors/address.json', () => {
   it('đủ ca, đủ mã lỗi và đủ hướng', () => {
@@ -31,6 +40,11 @@ describe('mqtt-vectors/address.json', () => {
       const r = parseMqttAddress(c.address);
       if (c.expect.error) expect(r).toEqual({ ok: false, error: c.expect.error });
       else expect(r).toEqual({ ok: true, ...c.expect });
+    });
+  // feature 025: mẫu tên Tag của nhóm publish
+  for (const m of doc.tagPatterns)
+    it(`pattern ${m.pattern} ~ ${m.tag}`, () => {
+      expect(mqttTagPatternMatches(m.pattern, m.tag)).toBe(m.expect);
     });
   for (const m of doc.match)
     it(`match ${m.filter} ~ ${m.topic}`, () => {

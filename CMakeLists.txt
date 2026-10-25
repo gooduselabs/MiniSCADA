@@ -173,7 +173,8 @@ add_library(mat_auth STATIC
   core/auth/access_model.cpp
   core/auth/access_catalog.cpp
   core/auth/access_store.cpp
-  core/auth/access_service.cpp)
+  core/auth/access_service.cpp
+  core/auth/api_keys.cpp)
 target_include_directories(mat_auth PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_auth PUBLIC mat_audit mat_crypto PRIVATE mat_argon2 mat_core
                       Threads::Threads)
@@ -597,7 +598,7 @@ target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/http/opcua_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/http/logic_api.cpp server/write_glue.cpp
             server/write_subsystem.cpp server/http/update_api.cpp server/update_service.cpp
             server/http/admin_api.cpp server/access_glue.cpp
-            server/http/recipes_api.cpp server/recipe_glue.cpp)
+            server/http/recipes_api.cpp server/recipe_glue.cpp server/http/data_api.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_api_ext PUBLIC mat_historian_query civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
                       mat_runtime_engine mat_update mat_project_store mat_recipe mat_notify)
@@ -1073,7 +1074,7 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(auth_service_test core/auth/tests/auth_service_test.cpp)
   target_link_libraries(auth_service_test PRIVATE mat_auth)
   # Feature 013: the access model (pure), the shared vectors of tests/access-vectors.
-  foreach(t access_model_test access_vectors_test access_catalog_test access_store_test)
+  foreach(t access_model_test access_vectors_test access_catalog_test access_store_test api_keys_test)
     mat_test(${t} core/auth/tests/${t}.cpp)
     target_link_libraries(${t} PRIVATE mat_auth)
   endforeach()
@@ -1215,7 +1216,7 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     endforeach()
     # Feature 013 (T014, T019, T024): the admin API over the real sign-in service, store and access
     # model; the enforcement on the page's routes, the live hub and the tag writes.
-    foreach(t admin_api_test access_enforce_test)
+    foreach(t admin_api_test access_enforce_test admin_apikeys_test data_api_test)
       mat_test(${t} server/tests/${t}.cpp server/http/auth_gate.cpp server/http/engineering_api.cpp
                server/http/engineering_api_project.cpp server/http/web_contexts.cpp
                server/project_glue.cpp server/http/http_api.cpp server/websocket/civet_transport.cpp)

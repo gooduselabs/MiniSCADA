@@ -77,6 +77,7 @@
 #include "server/host_policy.hpp"
 #include "server/http/admin_api.hpp"
 #include "server/http/conn_limit.hpp"
+#include "server/http/data_api.hpp"
 #include "server/http/engineering_api.hpp"
 #include "server/http/history_api.hpp"
 #include "server/http/http_api.hpp"
@@ -1071,6 +1072,16 @@ int main(int argc, char** argv) {
         return viewerGate.check(FilteredPath::ProjectsActive, o).allow;
     };
     adminBackend.email = &emailService;  // feature 023
+    // Feature 025 (ADR-053): the API keys of the data API, in <dataDir>/auth/api-keys.json. A file
+    // that cannot be read refuses every key until the admin page saves the list again.
+    ApiKeyService::Options apiKeyOptions;
+    apiKeyOptions.dir = cfg.authDir;
+    ApiKeyService apiKeys(apiKeyOptions);
+    {
+        std::string keyError;
+        if (!apiKeys.load(keyError)) std::fprintf(stderr, "api-keys: %s\n", keyError.c_str());
+    }
+    adminBackend.keys = &apiKeys;
     AdminApi adminApi(adminBackend);
     engineering.setAdmin(&adminApi);
     engineering.setAccess(&accessService);
@@ -1245,6 +1256,20 @@ int main(int argc, char** argv) {
         historyApi = std::make_unique<HistoryApi>(std::move(hq));
         engineering.setHistory(historyApi.get());
     }
+    // Feature 025 (specs/025-data-api): the data API of other systems, over the same access model,
+    // history queries, alarms and write coordinator as the page.
+    DataBackend dataBackend;
+    dataBackend.keys = &apiKeys;
+    dataBackend.access = &accessService;
+    dataBackend.model = rtEngine.model();
+    dataBackend.store = &store;
+    dataBackend.coordinator = writes ? &writes->coordinator() : nullptr;
+    dataBackend.history = historyApi.get();
+    dataBackend.alarms = &alarmGlue;
+    dataBackend.audit = auditAppend;
+    dataBackend.auditAvailable = [&audit] { return audit.isOpen(); };
+    DataApi dataApi(dataBackend);
+    engineering.setData(&dataApi);
 
     std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);

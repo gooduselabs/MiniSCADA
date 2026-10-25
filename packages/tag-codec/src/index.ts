@@ -48,5 +48,10 @@ export type {
   BacnetObjectType,
 } from './bacnet-address.ts';
 // Địa chỉ MQTT (feature 022), cùng vector tests/mqtt-vectors/address.json với drivers/mqtt.
-export { MQTT_ADDRESS_HINTS, mqttTopicMatches, parseMqttAddress } from './mqtt-address.ts';
+export {
+  MQTT_ADDRESS_HINTS,
+  mqttTagPatternMatches,
+  mqttTopicMatches,
+  parseMqttAddress,
+} from './mqtt-address.ts';
 export type { MqttAddressErrorCode, MqttAddressResult, MqttDirection } from './mqtt-address.ts';

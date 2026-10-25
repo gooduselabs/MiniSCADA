@@ -55,6 +55,7 @@ drv::MqttConfig mqttConfigOf(const ProjectModel& model, size_t channel, int writ
         gc.onChange = g.onChange;
         gc.qos = g.qos;
         gc.retain = g.retain;
+        gc.timestamps = g.timestamps;
         for (const std::string& id : g.tags)
             if (const auto idx = model.tagIndex(id)) {
                 gc.tags.push_back(*idx);

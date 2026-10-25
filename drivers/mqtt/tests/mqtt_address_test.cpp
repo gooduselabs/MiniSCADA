@@ -19,6 +19,15 @@ json vectors() {
 }
 }  // namespace
 
+// Feature 025: the name patterns of a publish group (tagPatterns).
+TEST(MqttAddress, TagPatternsOfTheSharedVectors) {
+    const json all = vectors()["tagPatterns"];
+    ASSERT_GE(all.size(), 15u);
+    for (const auto& c : all)
+        EXPECT_EQ(mqtt::tagPatternMatches(c["pattern"], c["tag"]), c["expect"].get<bool>())
+            << c.dump();
+}
+
 TEST(MqttAddress, SharedVectors) {
     const json all = vectors()["cases"];
     ASSERT_GE(all.size(), 50u);

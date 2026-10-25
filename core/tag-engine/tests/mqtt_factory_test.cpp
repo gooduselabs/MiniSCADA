@@ -109,3 +109,24 @@ TEST(MqttFactory, DriversPerChannel) {
     // the Modbus factory has only the Modbus channel
     EXPECT_EQ(makeModbusTcpDrivers(*m).size(), 1u);
 }
+
+// Feature 025: a publish group names its Tags by patterns too (after the listed ones, in the order
+// of the Tags, each once) and may carry the time of each value.
+TEST(MqttFactory, PublishGroupPatternsAndTimestamps) {
+    json conn = kConnections;
+    conn["channels"][2]["mqtt"]["publishGroups"] =
+        json::parse(R"([{"topic": "site7/all", "tags": ["N"], "tagPatterns": ["?", "S*"],
+                         "intervalMs": 1000, "timestamps": true}])");
+    std::string err;
+    const auto m = buildProjectModel(projectOf(kTags, conn), &err);
+    ASSERT_TRUE(m) << err;
+    const MqttGroupModel& g = m->channels[2].mqttGroups.at(0);
+    EXPECT_EQ(g.tags, (std::vector<std::string>{"N", "M", "T", "S"}));
+    EXPECT_TRUE(g.timestamps);
+    const auto drivers = makeMqttDrivers(*m, 8);
+    ASSERT_EQ(drivers.size(), 2u);
+    const drv::MqttConfig& c = drivers[1].driver->config();
+    ASSERT_EQ(c.groups.size(), 1u);
+    EXPECT_TRUE(c.groups[0].timestamps);
+    EXPECT_EQ(c.groups[0].ids, (std::vector<std::string>{"N", "M", "T", "S"}));
+}

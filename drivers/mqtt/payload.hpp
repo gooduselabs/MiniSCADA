@@ -1,7 +1,8 @@
 // MQTT payloads <-> Tag values (feature 022, specs/022-driver-mqtt/spec.md "Giá trị"). Pure.
 //   - in: the raw text (trimmed) or the node at a JSON path, decoded by the raw type of the Tag;
 //   - out: the value as text (BOOL 1/0), or a JSON object built along the path;
-//   - a group: {"ts":<ms>,"values":{"<id>":<v>|null},"quality":{"<id>":"GOOD"|...}}.
+//   - a group: {"ts":<ms>,"values":{"<id>":<v>|null},"quality":{"<id>":"GOOD"|...}}, with
+//     "sourceTs":{"<id>":<ms>|null} when the group asks for timestamps (feature 025).
 #pragma once
 #include <string>
 #include <utility>
@@ -34,6 +35,8 @@ struct GroupEntry {
     std::string id;
     TagValue value;
 };
-std::string encodeGroup(int64_t tsMs, const std::vector<GroupEntry>& entries);
+// Feature 025: `timestamps` adds "sourceTs":{"<id>":<ms>|null}, the time each value was read.
+std::string encodeGroup(int64_t tsMs, const std::vector<GroupEntry>& entries,
+                        bool timestamps = false);
 
 }  // namespace mat::mqtt

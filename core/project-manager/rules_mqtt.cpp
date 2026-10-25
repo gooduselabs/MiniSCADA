@@ -1,11 +1,17 @@
 #include "core/project-manager/rules_mqtt.hpp"
 
+#include <set>
+
 #include "core/project-manager/rules_11.hpp"
 #include "drivers/mqtt/address.hpp"
 
 namespace mat {
 
 using nlohmann::json;
+
+namespace {
+constexpr size_t kMqttGroupMaxTags = 500;  // as maxItems of "tags"
+}  // namespace
 
 void mqttChannelRules(const json& ch, const std::string& cp, const std::string& schemaVersion,
                       const std::string& connFile, const MqttIssueFn& add,
@@ -42,15 +48,41 @@ void mqttGroupRules(const json& connections, const std::set<std::string>& tagIds
         if (!q.contains("publishGroups")) continue;
         const json& gs = q["publishGroups"];
         for (size_t g = 0; g < gs.size(); ++g) {
-            const json& tags = gs[g]["tags"];
-            for (size_t k = 0; k < tags.size(); ++k) {
-                const std::string id = tags[k];
-                if (!tagIds.count(id))
-                    add("E_MQTT_GROUP_TAG", connFile,
-                        "/channels/" + std::to_string(ci) + "/mqtt/publishGroups/" +
-                            std::to_string(g) + "/tags/" + std::to_string(k),
-                        "Tag '" + id + "' of the publish group does not exist");
+            const std::string gp =
+                "/channels/" + std::to_string(ci) + "/mqtt/publishGroups/" + std::to_string(g);
+            std::set<std::string> members;
+            if (gs[g].contains("tags")) {
+                const json& tags = gs[g]["tags"];
+                for (size_t k = 0; k < tags.size(); ++k) {
+                    const std::string id = tags[k];
+                    if (!tagIds.count(id))
+                        add("E_MQTT_GROUP_TAG", connFile, gp + "/tags/" + std::to_string(k),
+                            "Tag '" + id + "' of the publish group does not exist");
+                    else
+                        members.insert(id);
+                }
             }
+            // feature 025: each name pattern matches a Tag; at most 500 Tags once expanded
+            if (gs[g].contains("tagPatterns")) {
+                const json& pats = gs[g]["tagPatterns"];
+                for (size_t k = 0; k < pats.size(); ++k) {
+                    const std::string pat = pats[k];
+                    bool any = false;
+                    for (const std::string& id : tagIds)
+                        if (mqtt::tagPatternMatches(pat, id)) {
+                            any = true;
+                            members.insert(id);
+                        }
+                    if (!any)
+                        add("E_MQTT_GROUP_PATTERN", connFile,
+                            gp + "/tagPatterns/" + std::to_string(k),
+                            "pattern '" + pat + "' matches no Tag");
+                }
+            }
+            if (members.size() > kMqttGroupMaxTags)
+                add("E_MQTT_GROUP_PATTERN", connFile, gp,
+                    "the publish group has " + std::to_string(members.size()) +
+                        " Tags, more than " + std::to_string(kMqttGroupMaxTags));
         }
     }
 }

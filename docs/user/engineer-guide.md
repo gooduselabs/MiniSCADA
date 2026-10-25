@@ -260,6 +260,8 @@ Dùng để nhận dữ liệu từ cảm biến IoT, gateway hay hệ thống k
 
 Tin: `{"ts":1730000000000,"values":{"TANK01.LEVEL":12.5,"PUMP01.RUN":true},"quality":{"TANK01.LEVEL":"GOOD","PUMP01.RUN":"GOOD"}}`. Tag không tồn tại: `E_MQTT_GROUP_TAG`.
 
+Từ feature 025 một nhóm còn chọn Tag theo **mẫu tên** (`"tagPatterns": ["TANK01.*", "MOTOR0?.RUN"]`, tối đa 16 mẫu; `*` khớp mọi chuỗi, `?` một ký tự; Tag khớp được thêm sau `tags`, cần `tags` hoặc `tagPatterns`; mẫu không khớp Tag nào hoặc nhóm quá 500 Tag: `E_MQTT_GROUP_PATTERN`) và thêm **thời điểm từng giá trị** (`"timestamps": true` → `"sourceTs":{"TANK01.LEVEL":1729999999500}`). Dùng nhóm publish để đẩy dữ liệu ra broker của hệ thống khác: [API dữ liệu, mục 9](data-api.md#9-đẩy-dữ-liệu-ra-broker-mqtt).
+
 Broker từ chối subscribe (ACL): Tag BAD `MQTT_SUBSCRIBE_REFUSED`. Mất broker: Tag BAD `DISCONNECTED`, tự kết nối lại sau 1 s, 2 s, 4 s… tối đa `reconnectMaxS`. **Thử kết nối** không dùng cho kênh MQTT: nạp xuống rồi xem **Chẩn đoán driver** (broker, TLS, số subscription, số tin nhận/gửi/bỏ, SHA-256 chứng chỉ broker). Chưa hỗ trợ QoS 2, MQTT 5, Sparkplug B, đệm tin khi mất kết nối. Driver mới thử với broker giả lập, chưa thử với broker thật.
 
 <a id="help-tags"></a>

@@ -2,7 +2,7 @@
 // trường thêm; 401 gọi onUnauthorized; đọc thân phòng thủ.
 import { describe, expect, it, vi } from 'vitest';
 import { fakeFetch } from '../testing.ts';
-import { AdminApi, AdminApiError, parseAccessStore, parseUsers } from './api.ts';
+import { AdminApi, AdminApiError, parseAccessStore, parseApiKeys, parseUsers } from './api.ts';
 
 function mk(routes: Parameters<typeof fakeFetch>[0]) {
   const f = fakeFetch(routes);
@@ -10,6 +10,68 @@ function mk(routes: Parameters<typeof fakeFetch>[0]) {
   const api = new AdminApi({ fetch: f.fn, csrf: () => ({ 'X-MAT-CSRF': 'T' }), onUnauthorized });
   return { f, api, onUnauthorized };
 }
+
+describe('AdminApi: API key (feature 025)', () => {
+  it('đọc danh sách phòng thủ, không có token', () => {
+    const l = parseApiKeys({
+      rev: 4,
+      storeOk: true,
+      keys: [
+        {
+          id: '0123456789ab',
+          name: 'ERP',
+          prefix: 'matk_AbCdEfG',
+          role: 'operator',
+          readOnly: false,
+          canWrite: true,
+          groups: ['kho'],
+          allowFrom: ['192.0.2.0/24'],
+          expiresAt: null,
+          calls: 7,
+          lastUsedAt: '2026-10-25T01:00:00.000Z',
+        },
+        'rác',
+      ],
+      groups: [{ id: 'kho', name: 'Kho' }],
+    });
+    expect(l.rev).toBe(4);
+    expect(l.keys).toHaveLength(1);
+    expect(l.keys[0]).toMatchObject({ id: '0123456789ab', canWrite: true, calls: 7, denied: 0 });
+    expect(l.groups).toEqual([{ id: 'kho', name: 'Kho' }]);
+    expect(() => parseApiKeys({ rev: 1 })).toThrow(AdminApiError);
+  });
+
+  it('tạo, sửa, thu hồi: đường, CSRF, rev, reauth', async () => {
+    const { api, f } = mk({
+      'POST /api/v1/admin/apikeys': {
+        status: 201,
+        json: { rev: 2, key: { id: 'abcdefabcdef' }, token: 'matk_x' },
+      },
+      'POST /api/v1/admin/apikeys/abcdefabcdef': { json: { rev: 3 } },
+      'POST /api/v1/admin/apikeys/abcdefabcdef/revoke': { json: { rev: 4 } },
+    });
+    expect(
+      await api.createApiKey({
+        rev: 1,
+        name: 'MES',
+        role: 'operator',
+        readOnly: false,
+        reauth: 'mk',
+      }),
+    ).toEqual({ rev: 2, id: 'abcdefabcdef', token: 'matk_x' });
+    expect(f.calls[0]!.headers['x-mat-csrf']).toBe('T');
+    expect(f.calls[0]!.body).toEqual({
+      rev: 1,
+      name: 'MES',
+      role: 'operator',
+      readOnly: false,
+      reauth: 'mk',
+    });
+    expect(await api.updateApiKey('abcdefabcdef', { rev: 2, ratePerMin: 60 })).toEqual({ rev: 3 });
+    expect(await api.revokeApiKey('abcdefabcdef', 3)).toEqual({ rev: 4 });
+    expect(f.calls[2]!.body).toEqual({ rev: 3 });
+  });
+});
 
 describe('AdminApi', () => {
   it('GET users: đọc rev và người dùng', async () => {

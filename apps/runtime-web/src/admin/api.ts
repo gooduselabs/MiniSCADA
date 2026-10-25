@@ -70,6 +70,47 @@ export interface AuditRecord {
   detail: unknown;
 }
 
+/** Feature 025: một API key như `GET /api/v1/admin/apikeys` trả về (không bao giờ có token hay băm). */
+export interface ApiKeyInfo {
+  id: string;
+  name: string;
+  prefix: string;
+  role: 'viewer' | 'operator';
+  readOnly: boolean;
+  canWrite: boolean;
+  groups: string[];
+  allowFrom: string[];
+  expiresAt: string | null;
+  expired: boolean;
+  ratePerMin: number;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string | null;
+  lastUsedAt: string | null;
+  lastFrom: string | null;
+  calls: number;
+  denied: number;
+}
+
+export interface ApiKeyList {
+  rev: number;
+  storeOk: boolean;
+  storeError: string | null;
+  keys: ApiKeyInfo[];
+  groups: { id: string; name: string }[];
+}
+
+/** Thân của tạo/sửa key (feature 025): mọi trường tùy chọn khi sửa. */
+export interface ApiKeySettings {
+  name?: string;
+  role?: 'viewer' | 'operator';
+  readOnly?: boolean;
+  groups?: string[];
+  allowFrom?: string[];
+  expiresAt?: string | null;
+  ratePerMin?: number;
+}
+
 export class AdminApiError extends Error {
   readonly status: number;
   readonly code: string;
@@ -134,6 +175,39 @@ export function parseUsers(b: unknown): { rev: number; users: AdminUser[] } {
       sessions: num(u.sessions) ?? 0,
       email: typeof u.email === 'string' && u.email ? u.email : null,
     })),
+  };
+}
+
+export function parseApiKeys(b: unknown): ApiKeyList {
+  if (!isObj(b) || !Array.isArray(b.keys)) throw new AdminApiError(0, 'BAD_RESPONSE', {});
+  const s = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
+  return {
+    rev: num(b.rev) ?? 0,
+    storeOk: b.storeOk !== false,
+    storeError: s(b.storeError),
+    keys: b.keys.filter(isObj).map((k) => ({
+      id: String(k.id ?? ''),
+      name: String(k.name ?? ''),
+      prefix: String(k.prefix ?? ''),
+      role: k.role === 'operator' ? 'operator' : 'viewer',
+      readOnly: k.readOnly !== false,
+      canWrite: k.canWrite === true,
+      groups: strs(k.groups),
+      allowFrom: strs(k.allowFrom),
+      expiresAt: s(k.expiresAt),
+      expired: k.expired === true,
+      ratePerMin: num(k.ratePerMin) ?? 0,
+      createdAt: String(k.createdAt ?? ''),
+      createdBy: String(k.createdBy ?? ''),
+      updatedAt: s(k.updatedAt),
+      lastUsedAt: s(k.lastUsedAt),
+      lastFrom: s(k.lastFrom),
+      calls: num(k.calls) ?? 0,
+      denied: num(k.denied) ?? 0,
+    })),
+    groups: Array.isArray(b.groups)
+      ? b.groups.filter(isObj).map((g) => ({ id: String(g.id ?? ''), name: String(g.name ?? '') }))
+      : [],
   };
 }
 
@@ -588,6 +662,30 @@ export class AdminApi {
       code: num(o.code) ?? 0,
       message: str(o.message),
     };
+  }
+
+  // ---- API key của API dữ liệu (feature 025) ----
+  async apiKeys() {
+    return parseApiKeys(await this.#call('GET', '/api/v1/admin/apikeys'));
+  }
+  /** Tạo key: `token` chỉ có trong câu trả lời này, trang hiện đúng một lần rồi bỏ. */
+  async createApiKey(
+    b: ApiKeySettings & { rev: number; name: string; reauth?: string },
+  ): Promise<{ rev: number; id: string; token: string }> {
+    const r = await this.#call('POST', '/api/v1/admin/apikeys', b);
+    const o = isObj(r) ? r : {};
+    const key = isObj(o.key) ? o.key : {};
+    return { rev: num(o.rev) ?? 0, id: str(key.id), token: str(o.token) };
+  }
+  async updateApiKey(id: string, b: ApiKeySettings & { rev: number; reauth?: string }) {
+    return this.#rev(
+      await this.#call('POST', `/api/v1/admin/apikeys/${encodeURIComponent(id)}`, b),
+    );
+  }
+  async revokeApiKey(id: string, rev: number) {
+    return this.#rev(
+      await this.#call('POST', `/api/v1/admin/apikeys/${encodeURIComponent(id)}/revoke`, { rev }),
+    );
   }
 
   #rev(r: unknown): { rev: number; password?: string; signedOut?: boolean; accessRev?: number } {

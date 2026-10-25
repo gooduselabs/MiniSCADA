@@ -1,0 +1,172 @@
+{
+  "scenario": "data-api",
+  "checks": [
+    {
+      "name": "quản trị viên đăng nhập web được",
+      "pass": true
+    },
+    {
+      "name": "GET admin/apikeys: 200, rỗng",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "tạo key chỉ đọc: 201, token matk_",
+      "pass": true,
+      "detail": "201"
+    },
+    {
+      "name": "key ghi được không có mật khẩu: 403 REAUTH_REQUIRED",
+      "pass": true,
+      "detail": "403 REAUTH_REQUIRED"
+    },
+    {
+      "name": "tạo key ghi được có mật khẩu: 201",
+      "pass": true,
+      "detail": "201"
+    },
+    {
+      "name": "danh sách không có token",
+      "pass": true
+    },
+    {
+      "name": "data/key: viewer, chỉ đọc",
+      "pass": true,
+      "detail": "200 {\"apiVersion\":\"1.0\",\"canWrite\":false,\"expiresAt\":null,\"groups\":[],\"id\":\"c2b276132484\",\"name\":\"BI chỉ đọc\",\"prefix\":\"matk_3tuo2ox\",\"ratePerMin\":600,\"readOnly\":true,\"role\":\"viewer\",\"source\":\"172.30.7.50\"}"
+    },
+    {
+      "name": "data/tags: có TANK01.LEVEL, TANK01.SP",
+      "pass": true,
+      "detail": "200 98"
+    },
+    {
+      "name": "data/values: giá trị GOOD từ giả lập, có thời điểm",
+      "pass": true,
+      "detail": "200 {\"time\":\"2026-10-25T08:23:48.564Z\",\"values\":[{\"name\":\"TANK01.LEVEL\",\"quality\":\"GOOD\",\"serverTs\":\"2026-10-25T08:23:46.566Z\",\"sourceTs\":\"2026-10-25T08:23:46.317Z\",\"value\":50.0},{\"name\":\"TANK01.SP\",\"qual"
+    },
+    {
+      "name": "Tag không có: 403 ACCESS_DENIED",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "name": "key chỉ đọc ghi: 403 FORBIDDEN",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "name": "ghi TANK01.SP: ACCEPTED",
+      "pass": true,
+      "detail": "200 {\"results\":[{\"old\":{\"quality\":\"BAD\",\"value\":null},\"phase\":\"queued\",\"receivedAt\":\"2026-10-25T08:23:48.589Z\",\"requestId\":\"436b00d9-19eb-43cf-adc6-4956001f2ca4\",\"status\":\"ACCEPTED\",\"tag\":\"TANK01.SP\",\"value\":72}]}"
+    },
+    {
+      "name": "kết quả: CONFIRMED",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"CONFIRMED\",\"finishedAt\":\"2026-10-25T08:23:48.816Z\",\"readback\":72,\"receivedAt\":\"2026-10-25T08:23:48.589Z\",\"requestId\":\"436b00d9-19eb-43cf-adc6-4956001f2ca4\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP\",\"value\":72}"
+    },
+    {
+      "name": "gửi lại cùng requestId: duplicate",
+      "pass": true,
+      "detail": "{\"results\":[{\"clockOk\":false,\"code\":\"CONFIRMED\",\"duplicate\":true,\"finishedAt\":\"2026-10-25T08:23:48.816Z\",\"readback\":72.0,\"receivedAt\":\"2026-10-25T08:23:48.589Z\",\"requestId\":\"436b00d9-19eb-43cf-adc6-4956001f2ca4\",\"status\":\"CONFIRMED\",\"tag\":\"TANK01.SP\",\"value\":72}]}"
+    },
+    {
+      "name": "giả lập nhận đúng một lệnh ghi",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "key khác không thấy kết quả",
+      "pass": true,
+      "detail": "{\"results\":[{\"requestId\":\"436b00d9-19eb-43cf-adc6-4956001f2ca4\",\"status\":\"UNKNOWN\"}]}"
+    },
+    {
+      "name": "HTTP thường: 403 HTTPS_REQUIRED",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "name": "token phiên của người: 401 AUTH_REQUIRED",
+      "pass": true,
+      "detail": "401"
+    },
+    {
+      "name": "thu hồi: 200",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "key đã thu hồi: 401 APIKEY_INVALID ngay",
+      "pass": true,
+      "detail": "401"
+    },
+    {
+      "name": "bảng key: số gọi và lần dùng cuối",
+      "pass": true,
+      "detail": "{\"allowFrom\":[],\"calls\":6,\"canWrite\":false,\"createdAt\":\"2026-10-25T08:23:48.512Z\",\"createdBy\":\"admin\",\"denied\":0,\"expired\":false,\"expiresAt\":null,\"groups\":[],\"id\":\"c2b276132484\",\"lastFrom\":\"172.30.7.50\",\"lastUsedAt\":\"2026-10-25T08:23:49.519Z\",\"name\":\"BI chỉ đọc\",\"prefix\":\"matk_3tuo2ox\",\"ratePerMin\":600,\"readOnly\":true,\"role\":\"viewer\",\"updatedAt\":null}"
+    },
+    {
+      "name": "audit: apikey.create, apikey.revoke, apikey.denied",
+      "pass": true,
+      "detail": "apikey.denied/denied, apikey.revoke/ok, apikey.create/ok, apikey.create/denied"
+    },
+    {
+      "name": "audit: tag.write của apikey:<id>",
+      "pass": true,
+      "detail": "apikey:739033b4d31f/ok, apikey:739033b4d31f/started, apikey:c2b276132484/denied"
+    },
+    {
+      "name": "audit không chứa token",
+      "pass": true
+    },
+    {
+      "name": "curl: ghim khóa công khai của thiết bị",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "curl: admin đăng nhập Bearer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "curl: tạo key bằng curl (Bearer admin + mật khẩu)",
+      "pass": true,
+      "detail": "id=915ba0fd0f42"
+    },
+    {
+      "name": "curl: curl GET data/values: 200 và có quality",
+      "pass": true,
+      "detail": "200 {time:2026-10-25T08:23:49.804Z,values:[{name:TANK01.LEVEL,quality:GOOD,serverTs:2026-10-25T08:23:46.566"
+    },
+    {
+      "name": "curl: curl POST data/write: 200 ACCEPTED",
+      "pass": true,
+      "detail": "200 {results:[{old:{quality:GOOD,value:72.0},phase:queued,receivedAt:2026-10-25T08:23:49.818Z,requestId:a477e0fe-f76b-494d-8822-e4710a535574,"
+    },
+    {
+      "name": "curl: curl GET data/write/{id}: CONFIRMED",
+      "pass": true,
+      "detail": "CONFIRMED"
+    },
+    {
+      "name": "curl: curl HTTP thường: 403",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "name": "curl: curl thu hồi key: 200",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "curl: key đã thu hồi: 401 APIKEY_INVALID",
+      "pass": true,
+      "detail": "401"
+    }
+  ],
+  "measures": {
+    "tags": 98,
+    "simWrites": 1
+  },
+  "pass": true
+}

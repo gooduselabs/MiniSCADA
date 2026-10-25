@@ -16,6 +16,7 @@ import {
   type AdminUser,
 } from './api.ts';
 import { RuleDraft } from './model.ts';
+import { ApiKeysTab } from './tab-apikeys.ts';
 import { AuditTab } from './tab-audit.ts';
 import { ComponentsTab } from './tab-components.ts';
 import { EmailTab } from './tab-email.ts';
@@ -33,6 +34,7 @@ export const TABS = [
   'quyen-thanh-phan',
   'xem-voi-tu-cach',
   'thong-bao-email',
+  'api-key',
   'nhat-ky',
 ] as const;
 export type TabId = (typeof TABS)[number];
@@ -489,7 +491,9 @@ export class AdminPage implements AdminCtx {
                   ? new ViewAsTab(this)
                   : t === 'thong-bao-email'
                     ? new EmailTab(this)
-                    : new AuditTab(this);
+                    : t === 'api-key'
+                      ? new ApiKeysTab(this)
+                      : new AuditTab(this);
       this.#tabs.set(t, tab);
     }
     return tab;

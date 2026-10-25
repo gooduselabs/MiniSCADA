@@ -5,6 +5,7 @@
 // Mật khẩu từ môi trường (MAT_IT_PW_ADMIN, _KYSU1, _VH1, _VH2, _XEM1).
 import { access, accessData, adminAttack, loginRequired } from './scenarios/access.mjs';
 import { attack, attackAccounts } from './scenarios/attack.mjs';
+import { dataApi } from './scenarios/data-api.mjs';
 import { gate } from './scenarios/gate.mjs';
 import { writeMinRole } from './scenarios/write-min-role.mjs';
 import { lockoutDos } from './lockout-dos.mjs';
@@ -41,6 +42,8 @@ const table = {
   access: () => access(fp),
   'access-data': () => accessData(fp),
   'admin-attack': () => adminAttack(fp),
+  // feature 025 (T042): API dữ liệu bằng API key
+  'data-api': () => dataApi(fp),
 };
 
 if (!table[scenario]) {

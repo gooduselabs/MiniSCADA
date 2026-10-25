@@ -346,6 +346,12 @@ Gõ mật khẩu (không hiện ra màn hình), Enter. Mật khẩu nằm trong 
 | `STARTTLS_UNSUPPORTED` | cổng 465 mà chọn STARTTLS | chọn SMTPS hoặc cổng 587 |
 | `REJECTED` (5xx) | địa chỉ gửi không được phép, người nhận không tồn tại | sửa địa chỉ |
 
+### 4.6. API key cho hệ thống khác
+
+ERP, MES, BI hay script đọc giá trị, lịch sử, alarm và (nếu được phép) ghi Tag qua HTTPS bằng **API key**, không dùng tài khoản người. Trang **Quản trị** > tab **API key** (chỉ administrator): **Tạo API key** (tên, vai trò viewer/operator, chỉ đọc, nhóm, địa chỉ hoặc mạng cho phép, ngày hết hạn, giới hạn gọi mỗi phút); key hiện **đúng một lần**, sao chép ngay. Key ghi được Tag cần nhập lại mật khẩu của bạn. Bảng key cho biết lần dùng cuối, địa chỉ gọi cuối, số gọi (từ lần khởi động runtime gần nhất); **Thu hồi** có hiệu lực ngay. Quyền của key theo đúng quy tắc quyền như một người cùng vai trò và nhóm. Hướng dẫn gọi API (curl, Python, Node-RED) và đẩy dữ liệu ra MQTT: [API dữ liệu](data-api.md).
+
+Kho key là `/var/lib/mat-runtime/auth/api-keys.json` (chỉ có băm SHA-256 của key). Kho hỏng: mọi key bị từ chối (`APIKEY_STORE`), tab báo lỗi; lưu lại một thay đổi bất kỳ (hoặc thu hồi rồi tạo lại) để ghi lại kho.
+
 ## 5. Cấu hình mạng và gia cố
 
 Cấu hình ở `/etc/mat-runtime/runtime.json`. Sửa xong: `systemctl restart mat-runtime`, rồi xem cảnh báo bằng `journalctl -u mat-runtime -n 50 --no-pager`. Sai kiểu hoặc ngoài khoảng: runtime không chạy và in tên khóa sai. Khóa lạ: bỏ qua kèm `warning: bỏ qua khóa không hỗ trợ` (gõ sai tên khóa thì runtime dùng mặc định: luôn đọc cảnh báo).
@@ -402,7 +408,7 @@ Kết nối HTTPS rảnh được giữ 3 s rồi đóng. Mặc định 64 worke
 | Nội dung | Nơi trên thiết bị | Ghi chú |
 |---|---|---|
 | Cấu hình | `/etc/mat-runtime/runtime.json` | |
-| Tài khoản, nhóm, quy tắc quyền | `/var/lib/mat-runtime/auth/` (`users.json`, `access.json` và bản `.bak`) | chỉ có băm mật khẩu, vẫn giữ kín; `/etc/mat-runtime/users.json` chỉ còn là nguồn khởi tạo (mục 4) |
+| Tài khoản, nhóm, quy tắc quyền, API key | `/var/lib/mat-runtime/auth/` (`users.json`, `access.json`, `api-keys.json` và bản `.bak`) | chỉ có băm mật khẩu, vẫn giữ kín; `/etc/mat-runtime/users.json` chỉ còn là nguồn khởi tạo (mục 4) |
 | Mật khẩu DB ngoài | `/etc/mat-runtime/secrets.json` | **bí mật**: lưu bản sao mã hóa |
 | Chứng chỉ và khóa | `/var/lib/mat-runtime/tls/` | **bí mật**; giữ thì không phải ghim lại |
 | Project đang chạy và 3 bản dự phòng | `/var/lib/mat-runtime/projects/` | bản chính nên nằm ở máy kỹ sư (Đọc lên) |

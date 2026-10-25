@@ -1,0 +1,448 @@
+# API dữ liệu của mAT SCADA cho hệ thống khác (feature 025, specs/025-data-api, ADR-053).
+# Đường và method ở đây phải đúng bằng các dòng /api/v1/data/* của core/auth/roles.cpp:
+# tools/data-api-openapi.test.mjs kiểm. Hướng dẫn: docs/user/data-api.md.
+openapi: 3.1.0
+info:
+  title: mAT SCADA — API dữ liệu
+  version: 1.0.0
+  summary: Đọc Tag, lịch sử, alarm và ghi Tag bằng API key qua HTTPS.
+  description: |
+    Mỗi yêu cầu mang `Authorization: Bearer matk_…` (API key do quản trị viên tạo ở trang Quản trị,
+    tab "API key"). Chỉ HTTPS (HTTP thường: 403 `HTTPS_REQUIRED`). Quyền của key theo mô hình phân quyền
+    của thiết bị (vai trò viewer/operator và nhóm): Tag ngoài quyền không xuất hiện ở đường nào.
+    Lỗi luôn là JSON `{"error": "<MÃ>", "message": "<câu tiếng Việt>"}`; danh mục mã:
+    docs/user/error-codes.md.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-ATPro
+servers:
+  - url: https://{device}:{port}
+    variables:
+      device:
+        default: 192.0.2.10
+      port:
+        default: '8443'
+security:
+  - apiKey: []
+tags:
+  - name: key
+  - name: tags
+  - name: history
+  - name: alarms
+  - name: write
+paths:
+  /api/v1/data/key:
+    get:
+      tags: [key]
+      operationId: getKey
+      summary: Thông tin của key đang dùng (tên, vai trò, nhóm, hạn, giới hạn).
+      responses:
+        '200':
+          description: Key của yêu cầu.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KeyInfo' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/tags:
+    get:
+      tags: [tags]
+      operationId: listTags
+      summary: Các Tag key được đọc, kèm kiểu, đơn vị, mô tả, có ghi được không.
+      responses:
+        '200':
+          description: Danh sách theo thứ tự của project.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tags]
+                properties:
+                  tags:
+                    type: array
+                    items: { $ref: '#/components/schemas/TagInfo' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/values:
+    get:
+      tags: [tags]
+      operationId: getValues
+      summary: Giá trị hiện tại của một hoặc nhiều Tag.
+      parameters:
+        - name: tags
+          in: query
+          required: false
+          description: 1 đến 200 Tag, cách nhau dấu phẩy. Không có → mọi Tag key được đọc.
+          schema: { type: string, examples: ['TANK01.LEVEL,MOTOR01.RUN'] }
+      responses:
+        '200':
+          description: Giá trị, quality và thời điểm.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [time, values]
+                properties:
+                  time: { type: string, format: date-time, description: Giờ thiết bị lúc trả lời. }
+                  values:
+                    type: array
+                    items: { $ref: '#/components/schemas/TagValue' }
+        '403':
+          description: '`ACCESS_DENIED`: có Tag không có hoặc ngoài quyền (liệt kê trong `tags`).'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/history/catalog:
+    get:
+      tags: [history]
+      operationId: historyCatalog
+      summary: Nhóm ghi lịch sử, Tag (chỉ Tag key được đọc), giới hạn truy vấn.
+      responses:
+        '200':
+          description: Như GET /api/v1/history/catalog (feature 010).
+          content:
+            application/json:
+              schema: { type: object }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/history/series:
+    get:
+      tags: [history]
+      operationId: historySeries
+      summary: Chuỗi giá trị theo thời gian (thô hoặc tổng hợp, tự giảm điểm).
+      parameters:
+        - $ref: '#/components/parameters/Group'
+        - $ref: '#/components/parameters/TagsRequired'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: maxPoints
+          in: query
+          schema: { type: integer, minimum: 10, maximum: 5000, default: 1000 }
+        - name: res
+          in: query
+          schema: { type: string, enum: [auto, raw, 1m, 1h], default: auto }
+        - name: reduce
+          in: query
+          schema: { type: string, enum: [minmax, lttb, decimate], default: minmax }
+      responses:
+        '200':
+          description: Như GET /api/v1/history/series (feature 010).
+          content:
+            application/json:
+              schema: { type: object }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/history/aggregate:
+    get:
+      tags: [history]
+      operationId: historyAggregate
+      summary: Tổng hợp theo cửa sổ (min, max, avg, first, last, sum, count).
+      parameters:
+        - $ref: '#/components/parameters/Group'
+        - $ref: '#/components/parameters/TagsRequired'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: bucketMs
+          in: query
+          required: true
+          description: Bội số của 60000, từ 60000 đến 2678400000.
+          schema: { type: integer }
+        - name: offsetMs
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: Như GET /api/v1/history/aggregate (feature 010).
+          content:
+            application/json:
+              schema: { type: object }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/history/rows:
+    get:
+      tags: [history]
+      operationId: historyRows
+      summary: Dòng thô theo trang (phân trang bằng `after`).
+      parameters:
+        - $ref: '#/components/parameters/Group'
+        - name: tags
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: desc }
+        - name: after
+          in: query
+          description: '`seq` của dòng cuối trang trước.'
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Như GET /api/v1/history/rows (feature 010).
+          content:
+            application/json:
+              schema: { type: object }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/history/export.csv:
+    get:
+      tags: [history]
+      operationId: historyExportCsv
+      summary: Xuất CSV (UTF-8, có BOM mặc định), truyền từng phần.
+      parameters:
+        - $ref: '#/components/parameters/Group'
+        - name: tags
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: res
+          in: query
+          schema: { type: string, enum: [raw, 1m, 1h], default: raw }
+        - name: fields
+          in: query
+          schema: { type: string, examples: ['avg,min,max,last'] }
+        - name: bom
+          in: query
+          schema: { type: string, enum: ['0', '1'], default: '1' }
+      responses:
+        '200':
+          description: Tệp CSV.
+          content:
+            text/csv:
+              schema: { type: string }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/alarms:
+    get:
+      tags: [alarms]
+      operationId: activeAlarms
+      summary: Alarm đang có (chỉ alarm của Tag key được đọc).
+      responses:
+        '200':
+          description: Như GET /api/v1/alarms (feature 009).
+          content:
+            application/json:
+              schema: { type: object }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/alarms/history:
+    get:
+      tags: [alarms]
+      operationId: alarmHistory
+      summary: Lịch sử alarm, phân trang theo `beforeId`.
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: alarmId
+          in: query
+          schema: { type: string }
+        - name: area
+          in: query
+          schema: { type: string }
+        - name: class
+          in: query
+          schema: { type: string }
+        - name: priority
+          in: query
+          schema: { type: string, enum: [critical, major, minor, advisory] }
+        - name: state
+          in: query
+          schema: { type: string, enum: [active, acked, closed, all], default: all }
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 80 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+        - name: beforeId
+          in: query
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Như GET /api/v1/alarms/history (feature 009).
+          content:
+            application/json:
+              schema: { type: object }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/write:
+    post:
+      tags: [write]
+      operationId: writeTags
+      summary: Ghi 1 đến 16 Tag qua write coordinator (key operator, không chỉ đọc).
+      description: |
+        `requestId` (UUID v4) là khóa idempotency: gửi lại cùng id trả kết quả cũ kèm `duplicate: true`,
+        không ghi lần hai. Thiếu `requestId` thì thiết bị tự cấp (không còn idempotency). `expect`
+        (Tag BOOL): giá trị phải đang bằng `expect`, khác thì `STALE_EXPECTATION` và không ghi gì.
+        Tag ngoài các component key được thao tác: `ACCESS_DENIED` cho lệnh đó, lệnh khác vẫn chạy.
+        Kết quả cuối (`CONFIRMED`, `FAILED`…) hỏi lại bằng GET /api/v1/data/write.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requests]
+              properties:
+                requests:
+                  type: array
+                  minItems: 1
+                  maxItems: 16
+                  items: { $ref: '#/components/schemas/WriteRequest' }
+      responses:
+        '200':
+          description: Kết quả từng lệnh, cùng thứ tự.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResults' }
+        '403':
+          description: '`FORBIDDEN`: key chỉ đọc/viewer, hoặc có Tag cần vai trò cao hơn (cả lô).'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResults' }
+        default: { $ref: '#/components/responses/Error' }
+    get:
+      tags: [write]
+      operationId: writeResults
+      summary: Kết quả của tối đa 16 lệnh ghi của chính key này.
+      parameters:
+        - name: ids
+          in: query
+          required: true
+          description: '`requestId` cách nhau dấu phẩy.'
+          schema: { type: string }
+      responses:
+        '200':
+          description: '`UNKNOWN` cho id lạ, quá 15 phút, hoặc của key khác.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResults' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/v1/data/write/{requestId}:
+    get:
+      tags: [write]
+      operationId: writeResult
+      summary: Kết quả của một lệnh ghi.
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Một phần tử trong `results`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WriteResults' }
+        default: { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      bearerFormat: matk_ + 43 ký tự base64url
+  parameters:
+    Group:
+      name: group
+      in: query
+      required: true
+      description: Id nhóm ghi lịch sử (xem history/catalog).
+      schema: { type: string }
+    TagsRequired:
+      name: tags
+      in: query
+      required: true
+      description: 1 đến 16 Tag của nhóm, cách nhau dấu phẩy.
+      schema: { type: string }
+    From:
+      name: from
+      in: query
+      description: Epoch ms UTC, tính cả.
+      schema: { type: integer }
+    To:
+      name: to
+      in: query
+      description: Epoch ms UTC, không tính.
+      schema: { type: integer }
+  responses:
+    Error:
+      description: |
+        401 `AUTH_REQUIRED`, `APIKEY_INVALID`, `APIKEY_EXPIRED`; 403 `HTTPS_REQUIRED`, `APIKEY_SOURCE`,
+        `ACCESS_DENIED`; 404 `NO_HISTORY`, `NO_ALARMS`; 429 `RATE_LIMITED`, `APIKEY_THROTTLED` (kèm
+        `Retry-After` và `retryAfterMs`); 503 `APIKEY_STORE`, `AUDIT_UNAVAILABLE`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string }
+        message: { type: string }
+        retryAfterMs: { type: integer }
+        tags: { type: array, items: { type: string } }
+    KeyInfo:
+      type: object
+      required: [id, name, role, readOnly, canWrite]
+      properties:
+        apiVersion: { type: string, const: '1.0' }
+        id: { type: string, pattern: '^[0-9a-f]{12}$' }
+        name: { type: string }
+        prefix: { type: string, description: 12 ký tự đầu của key. }
+        role: { type: string, enum: [viewer, operator] }
+        groups: { type: array, items: { type: string } }
+        readOnly: { type: boolean }
+        canWrite: { type: boolean }
+        expiresAt: { type: [string, 'null'], format: date-time }
+        ratePerMin: { type: integer }
+        source: { type: string, description: Địa chỉ nguồn thiết bị thấy. }
+    TagInfo:
+      type: object
+      required: [name, type, writable]
+      properties:
+        name: { type: string }
+        type:
+          type: string
+          enum: [BOOL, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT32, FLOAT64, STRING]
+        unit: { type: [string, 'null'] }
+        description: { type: [string, 'null'] }
+        writable: { type: boolean, description: Key này ghi được Tag này. }
+        history: { type: boolean, description: Key đọc được lịch sử của Tag. }
+    TagValue:
+      type: object
+      required: [name, value, quality]
+      properties:
+        name: { type: string }
+        value:
+          description: Số nguyên ngoài ±2^53 là chuỗi thập phân; không có giá trị là null.
+          type: [number, integer, boolean, string, 'null']
+        quality: { type: string, enum: [GOOD, BAD, UNCERTAIN] }
+        reason: { type: string, description: Lý do khi quality khác GOOD. }
+        sourceTs: { type: [string, 'null'], format: date-time }
+        serverTs: { type: [string, 'null'], format: date-time }
+    WriteRequest:
+      type: object
+      required: [tag, value]
+      properties:
+        requestId: { type: string, format: uuid, description: UUID v4 chữ thường. }
+        tag: { type: string, maxLength: 64 }
+        value: { type: [number, integer, boolean, string] }
+        expect: { type: boolean }
+    WriteResults:
+      type: object
+      properties:
+        error: { type: string }
+        results:
+          type: array
+          items:
+            type: object
+            required: [requestId, status]
+            properties:
+              requestId: { type: string }
+              tag: { type: string }
+              status:
+                type: string
+                enum: [ACCEPTED, REJECTED, CONFIRMED, FAILED, UNKNOWN, NO_READBACK]
+              reason: { type: string }
+              code: { type: string }
+              message: { type: string }
+              duplicate: { type: boolean }
+              retryAfterMs: { type: integer }

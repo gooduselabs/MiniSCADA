@@ -40,6 +40,10 @@ const char* directionName(Direction d);
 // does not match a topic that starts with `$`.
 bool topicMatches(const std::string& filter, const std::string& topic);
 
+// Feature 025: a name pattern of a publish group (tagPatterns): "*" any characters (also none),
+// "?" exactly one character (a UTF-8 character, not a byte), anything else itself; case matters.
+bool tagPatternMatches(const std::string& pattern, const std::string& tag);
+
 // A topic of a publish (a group, the will): non empty, no wildcard, no NUL.
 bool validPublishTopic(const std::string& topic);
 

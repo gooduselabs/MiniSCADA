@@ -7,6 +7,7 @@ Chọn tài liệu theo việc bạn làm.
 | Người vận hành | [Hướng dẫn người vận hành](operator-guide.md) | đăng nhập, xem, điều khiển, trạng thái giá trị, alarm, khi có sự cố |
 | Kỹ sư dựng project | [Hướng dẫn kỹ sư](engineer-guide.md) | Studio, kết nối Modbus, Tag, màn hình, SVG, template, logic, nạp xuống, chẩn đoán |
 | Quản trị viên | [Hướng dẫn quản trị viên](admin-guide.md) | cài đặt, chứng chỉ, tài khoản, sao lưu, cập nhật, gia cố, chẩn đoán, ma trận phiên bản |
+| Người tích hợp hệ thống (ERP, MES, BI, script) | [API dữ liệu](data-api.md) | API key, đọc giá trị, lịch sử, alarm, ghi Tag qua HTTPS; đẩy dữ liệu ra broker MQTT |
 | Mọi người | [Thuật ngữ](glossary.md) | nghĩa của các từ dùng trong phần mềm |
 | Mọi người | [Mã lỗi và cảnh báo](error-codes.md) | mọi mã lỗi, ý nghĩa, nơi dùng |
 

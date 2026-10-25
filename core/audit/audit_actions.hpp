@@ -109,6 +109,11 @@ enum class AuditAction {
     EmailDropped,  // email.dropped: an email given up (outbox full, damaged, expired after 24 h)
     EmailConfig,   // email.config: the email settings changed (Quản trị > Thông báo email)
     EmailTest,     // email.test: a test email sent from the admin page
+    // Feature 025 (API keys, ADR-053).
+    ApiKeyCreate,  // apikey.create: a key made on the admin page (never its token)
+    ApiKeyUpdate,  // apikey.update: its rights, sources, expiry or rate changed
+    ApiKeyRevoke,  // apikey.revoke: the key removed
+    ApiKeyDenied,  // apikey.denied: a call of /api/v1/data/* refused (limited like access.denied)
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -119,7 +124,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 enum class AuditChannel { Https, Http, Cli, System, Web, Logic };
 
 // clang-format off
-inline constexpr std::array<AuditAction, 76> kAuditActions = {
+inline constexpr std::array<AuditAction, 80> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -160,6 +165,8 @@ inline constexpr std::array<AuditAction, 76> kAuditActions = {
     AuditAction::AccountEmail,          AuditAction::EmailSent,
     AuditAction::EmailFailed,           AuditAction::EmailDropped,
     AuditAction::EmailConfig,           AuditAction::EmailTest,
+    AuditAction::ApiKeyCreate,          AuditAction::ApiKeyUpdate,
+    AuditAction::ApiKeyRevoke,          AuditAction::ApiKeyDenied,
 };
 // clang-format on
 
@@ -317,6 +324,14 @@ constexpr const char* auditActionName(AuditAction a) {
             return "email.config";
         case AuditAction::EmailTest:
             return "email.test";
+        case AuditAction::ApiKeyCreate:
+            return "apikey.create";
+        case AuditAction::ApiKeyUpdate:
+            return "apikey.update";
+        case AuditAction::ApiKeyRevoke:
+            return "apikey.revoke";
+        case AuditAction::ApiKeyDenied:
+            return "apikey.denied";
     }
     return "";
 }
@@ -370,6 +385,7 @@ constexpr bool auditLimited(AuditAction a, AuditResult r, AuditChannel c = Audit
     return ((a == AuditAction::AuthLogin || a == AuditAction::AuthReauth) &&
             r == AuditResult::Failed) ||
            a == AuditAction::AuthLocked || a == AuditAction::AccessDenied ||
+           a == AuditAction::ApiKeyDenied ||  // feature 025: a refused call of the data API
            // feature 006: a refused tag write or connection test can be repeated at will too
            ((a == AuditAction::TagWrite || a == AuditAction::DriverTest) &&
             r == AuditResult::Denied) ||

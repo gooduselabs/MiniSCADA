@@ -130,7 +130,9 @@ struct DeviceModel {
 // Feature 022: a publish group of an MQTT channel (mqtt.publishGroups[i]).
 struct MqttGroupModel {
     std::string topic;
-    std::vector<std::string> tags;  // Tag ids
+    std::vector<std::string> tags;  // Tag ids, then those of tagPatterns (feature 025) not listed
+    std::vector<std::string> patterns;  // feature 025: tagPatterns, as written
+    bool timestamps = false;            // feature 025: "sourceTs" in the payload
     int64_t intervalMs = 0;
     bool onChange = false;
     int qos = 0;

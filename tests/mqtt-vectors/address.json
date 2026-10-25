@@ -85,5 +85,25 @@
   {"filter":"+","topic":"a/b","expect":false},
   {"filter":"a//b","topic":"a//b","expect":true},
   {"filter":"a/+/b","topic":"a//b","expect":true}
+],
+"tagPatterns": [
+  {"pattern":"TANK01.*","tag":"TANK01.LEVEL","expect":true},
+  {"pattern":"TANK01.*","tag":"TANK01.","expect":true},
+  {"pattern":"TANK01.*","tag":"TANK02.LEVEL","expect":false},
+  {"pattern":"*.LEVEL","tag":"TANK01.LEVEL","expect":true},
+  {"pattern":"*.LEVEL","tag":"TANK01.LEVEL_SP","expect":false},
+  {"pattern":"TANK0?.LEVEL","tag":"TANK07.LEVEL","expect":true},
+  {"pattern":"TANK0?.LEVEL","tag":"TANK10.LEVEL","expect":false},
+  {"pattern":"TANK0?.LEVEL","tag":"TANK0.LEVEL","expect":false},
+  {"pattern":"*","tag":"ANY.TAG","expect":true},
+  {"pattern":"*","tag":"","expect":true},
+  {"pattern":"A*B*C","tag":"AxxBxxC","expect":true},
+  {"pattern":"A*B*C","tag":"AxxCxxB","expect":false},
+  {"pattern":"**X","tag":"X","expect":true},
+  {"pattern":"PUMP.RUN","tag":"PUMP.RUN","expect":true},
+  {"pattern":"PUMP.RUN","tag":"pump.run","expect":false},
+  {"pattern":"M?TOR*","tag":"MOTOR01.SPEED","expect":true},
+  {"pattern":"Bơm.*","tag":"Bơm.Chạy","expect":true},
+  {"pattern":"B?m.*","tag":"Bơm.Chạy","expect":true}
 ]
 }

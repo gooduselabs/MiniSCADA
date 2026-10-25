@@ -104,6 +104,8 @@ export const viMqtt = {
   'issue.E_MQTT_DIRECTION':
     'Tag MQTT: Tag ghi được cần pub: hoặc both: ở đầu địa chỉ; Tag pub: cần quyền RW',
   'issue.E_MQTT_GROUP_TAG': 'nhóm publish MQTT có Tag không tồn tại',
+  'issue.E_MQTT_GROUP_PATTERN':
+    'nhóm publish MQTT: mẫu tên Tag không khớp Tag nào, hoặc nhóm có quá 500 Tag',
   'issue.W_MQTT_TLS_NOT_PINNED':
     'kênh MQTT bật TLS nhưng chưa ghim chứng chỉ broker hay CA: runtime sẽ không kết nối',
   'issue.W_MQTT_PLAIN_PASSWORD': 'kênh MQTT gửi tài khoản và mật khẩu trên kết nối không TLS',

@@ -102,6 +102,16 @@ export function mqttCases(ok, bad, to10, base) {
     }),
   );
 
+  // feature 025: mẫu tên Tag và timestamp từng Tag trong nhóm publish
+  ok('v11-mqtt-valid-group-patterns', (f) =>
+    withMqtt(f, (ch) => {
+      ch.mqtt.publishGroups = [
+        { topic: 'mat/all', tagPatterns: ['MQ.*', 'MQ.?EMP'], intervalMs: 1000, timestamps: true },
+        { topic: 'mat/mix', tags: ['MQ.RUN'], tagPatterns: ['MQ.L*'], onChange: true },
+      ];
+    }),
+  );
+
   // ---------- cảnh báo ----------
   ok(
     'v11-mqtt-warn-plain-password',
@@ -151,6 +161,21 @@ export function mqttCases(ok, bad, to10, base) {
     ['E_MQTT_GROUP_TAG'],
     undefined,
     iss(at('E_MQTT_GROUP_TAG', '/channels/2/mqtt/publishGroups/0/tags/1', C)),
+  );
+
+  bad(
+    'v11-mqtt-group-pattern-no-match',
+    (f) =>
+      withMqtt(
+        f,
+        (ch) =>
+          (ch.mqtt.publishGroups = [
+            { topic: 'mat/state', tagPatterns: ['MQ.*', 'Khong.*'], intervalMs: 1000 },
+          ]),
+      ),
+    ['E_MQTT_GROUP_PATTERN'],
+    undefined,
+    iss(at('E_MQTT_GROUP_PATTERN', '/channels/2/mqtt/publishGroups/0/tagPatterns/1', C)),
   );
 
   // ---------- Tag ----------
@@ -232,6 +257,12 @@ export function mqttCases(ok, bad, to10, base) {
     'v11-mqtt-schema-group-no-trigger',
     (f) =>
       withMqtt(f, (ch) => (ch.mqtt.publishGroups = [{ topic: 'mat/state', tags: ['MQ.LEVEL'] }])),
+    ['E_SCHEMA'],
+  );
+  bad(
+    'v11-mqtt-schema-group-no-tags',
+    (f) =>
+      withMqtt(f, (ch) => (ch.mqtt.publishGroups = [{ topic: 'mat/state', intervalMs: 1000 }])),
     ['E_SCHEMA'],
   );
   bad(

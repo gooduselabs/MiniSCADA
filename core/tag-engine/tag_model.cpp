@@ -1,6 +1,7 @@
 #include "core/tag-engine/tag_model.hpp"
 
 #include <cmath>
+#include <set>
 
 #include "core/expression/value_table_json.hpp"
 #include "core/project-manager/rules_logic.hpp"
@@ -190,7 +191,13 @@ std::optional<ProjectModel> buildProjectModel(const LoadedProject& p, std::strin
                     for (const auto& gj : q["publishGroups"]) {
                         MqttGroupModel g;
                         g.topic = str(gj, "topic");
-                        for (const auto& id : gj["tags"]) g.tags.push_back(id.get<std::string>());
+                        if (gj.contains("tags"))
+                            for (const auto& id : gj["tags"])
+                                g.tags.push_back(id.get<std::string>());
+                        if (gj.contains("tagPatterns"))  // feature 025: expanded below
+                            for (const auto& p : gj["tagPatterns"])
+                                g.patterns.push_back(p.get<std::string>());
+                        g.timestamps = boolean(gj, "timestamps", false);
                         g.intervalMs = integer(gj, "intervalMs", 0);
                         g.onChange = boolean(gj, "onChange", false);
                         g.qos = integer(gj, "qos", 0);
@@ -478,6 +485,19 @@ std::optional<ProjectModel> buildProjectModel(const LoadedProject& p, std::strin
             m.tags.push_back(std::move(t));
         }
     }
+    // ---- feature 025: the name patterns of the MQTT publish groups, in the order of the Tags,
+    // after the Tags the group lists (each Tag once) ----
+    for (ChannelModel& ch : m.channels)
+        for (MqttGroupModel& g : ch.mqttGroups) {
+            if (g.patterns.empty()) continue;
+            std::set<std::string> have(g.tags.begin(), g.tags.end());
+            for (const TagModel& t : m.tags)
+                for (const std::string& pat : g.patterns)
+                    if (mqtt::tagPatternMatches(pat, t.id)) {
+                        if (have.insert(t.id).second) g.tags.push_back(t.id);
+                        break;
+                    }
+        }
     return m;
 }
 

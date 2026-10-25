@@ -25,6 +25,7 @@
 #include "server/host_policy.hpp"
 #include "server/http/admin_api.hpp"
 #include "server/http/alarms_api.hpp"
+#include "server/http/data_api.hpp"
 #include "server/http/engineering_api_internal.hpp"
 #include "server/http/history_api.hpp"
 #include "server/logic_glue.hpp"
@@ -216,6 +217,13 @@ void EngineeringApi::setAdmin(AdminApi* admin) {
 
 void EngineeringApi::setAccess(AccessService* access) { access_ = access; }
 
+void EngineeringApi::setData(DataApi* data) {
+    data_ = data;
+    if (data &&
+        std::find(opt_.features.begin(), opt_.features.end(), "data-api") == opt_.features.end())
+        opt_.features.push_back("data-api");  // feature 025
+}
+
 void EngineeringApi::setHistory(HistoryApi* api) {
     history_ = api;
     if (api) opt_.features.push_back("history");
@@ -307,6 +315,8 @@ int EngineeringApi::handle(mg_connection* c) {
         path == "/api/v1/web/password")
         return admin_ ? admin_->handle(c, r, d, close)
                       : sendError(c, 501, "NOT_IMPLEMENTED", close);
+    if (path.rfind("/api/v1/data/", 0) == 0)  // feature 025: the API key is checked there
+        return data_ ? data_->handle(c, r, d, close) : sendError(c, 501, "NOT_IMPLEMENTED", close);
     if (path.rfind("/api/v1/project/", 0) == 0) return projectRoute(c, r, d, close);
     if (diag_.proc && path == kDiagnosticsPath) return diagnostics(c, close);
     if (diag_.proc && path == kAuditPath) return auditRead(c, r, d, close);

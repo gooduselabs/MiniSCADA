@@ -112,6 +112,33 @@ export function parseMqttAddress(address: string): MqttAddressResult {
 }
 
 /** MQTT 3.1.1 §4.7: topic (không wildcard) có khớp filter không. Filter bắt đầu bằng wildcard không khớp topic `$...`. */
+/**
+ * Feature 025: mẫu tên Tag của nhóm publish (`tagPatterns`): `*` khớp mọi chuỗi (kể cả rỗng), `?` đúng một ký tự
+ * (một code point), ký tự khác khớp chính nó, phân biệt hoa thường. Bản C++: `tagPatternMatches` (drivers/mqtt/address).
+ */
+export function mqttTagPatternMatches(pattern: string, tag: string): boolean {
+  const p = [...pattern];
+  const t = [...tag];
+  let i = 0;
+  let j = 0;
+  let star = -1;
+  let mark = 0;
+  while (j < t.length) {
+    if (i < p.length && (p[i] === '?' || p[i] === t[j])) {
+      i++;
+      j++;
+    } else if (i < p.length && p[i] === '*') {
+      star = i++;
+      mark = j;
+    } else if (star >= 0) {
+      i = star + 1;
+      j = ++mark;
+    } else return false;
+  }
+  while (i < p.length && p[i] === '*') i++;
+  return i === p.length;
+}
+
 export function mqttTopicMatches(filter: string, topic: string): boolean {
   if (topic.startsWith('$') && (filter.startsWith('+') || filter.startsWith('#'))) return false;
   const f = filter.split('/');

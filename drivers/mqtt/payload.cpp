@@ -214,16 +214,18 @@ std::string encodePayload(const TagScalar& value, TagType rawType, bool isJson,
     return v.dump(-1, ' ', false, json::error_handler_t::replace);
 }
 
-std::string encodeGroup(int64_t tsMs, const std::vector<GroupEntry>& entries) {
-    json values = json::object(), quality = json::object();
+std::string encodeGroup(int64_t tsMs, const std::vector<GroupEntry>& entries, bool timestamps) {
+    json values = json::object(), quality = json::object(), times = json::object();
     for (const GroupEntry& e : entries) {
         values[e.id] = scalarJson(e.value.value);
         quality[e.id] = qualityName(e.value.quality);
+        if (timestamps) times[e.id] = e.value.sourceTs > 0 ? json(e.value.sourceTs) : json(nullptr);
     }
     json doc = json::object();
     doc["ts"] = tsMs;
     doc["values"] = std::move(values);
     doc["quality"] = std::move(quality);
+    if (timestamps) doc["sourceTs"] = std::move(times);
     return doc.dump(-1, ' ', false, json::error_handler_t::replace);
 }
 

@@ -135,6 +135,30 @@ const std::vector<Expected> kContract024 = {
     {"POST", "/api/v1/recipes/download", true, Role::Operator, true, true},
 };
 
+// feature 025 (specs/025-data-api): the API keys of the admin page (cookie or Bearer), then the
+// data API, which needs no session: the key is checked by DataApi, never a cookie.
+const std::vector<Expected> kContract025Admin = {
+    {"GET", "/api/v1/admin/apikeys", true, Role::Administrator, true, false},
+    {"POST", "/api/v1/admin/apikeys", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/apikeys/{id}", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/apikeys/{id}/revoke", true, Role::Administrator, true, true},
+};
+const std::vector<Expected> kContract025Data = {
+    {"GET", "/api/v1/data/key", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/tags", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/values", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/history/catalog", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/history/series", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/history/aggregate", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/history/rows", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/history/export.csv", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/alarms", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/alarms/history", false, Role::Viewer, false, false},
+    {"POST", "/api/v1/data/write", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/write", false, Role::Viewer, false, false},
+    {"GET", "/api/v1/data/write/{requestId}", false, Role::Viewer, false, false},
+};
+
 const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};
 
 // The path of a request for a row: every {name} segment filled in.
@@ -192,10 +216,13 @@ TEST(Roles, TheTableIsTheContract) {
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     for (const auto& e : kContract024)
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
-    EXPECT_EQ(endpointRules().size(), kContract.size() + kContract11.size() + kContract12.size() +
-                                          kContract13.size() + kContract14.size() +
-                                          kContract011.size() + kContract16.size() +
-                                          kContract024.size());
+    for (const auto& list : {kContract025Admin, kContract025Data})
+        for (const auto& e : list)
+            contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
+    EXPECT_EQ(endpointRules().size(),
+              kContract.size() + kContract11.size() + kContract12.size() + kContract13.size() +
+                  kContract14.size() + kContract011.size() + kContract16.size() +
+                  kContract024.size() + kContract025Admin.size() + kContract025Data.size());
     EXPECT_EQ(table, contract);
 }
 
@@ -321,6 +348,8 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
     for (const auto& e : kContract16) cookie.insert(e.method + " " + e.path);
     // feature 024: recipes (the page)
     for (const auto& e : kContract024) cookie.insert(e.method + " " + e.path);
+    // feature 025: the API keys of the admin page (the data API itself: never a cookie)
+    for (const auto& e : kContract025Admin) cookie.insert(e.method + " " + e.path);
     std::set<std::string> seen;
     for (const auto& r : endpointRules()) {
         const std::string key = std::string(r.method) + " " + r.path;

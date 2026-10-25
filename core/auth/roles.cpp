@@ -161,6 +161,28 @@ const std::vector<EndpointRule>& endpointRules() {
         {"GET", "/api/v1/admin/email", true, Role::Administrator, true, false, true},
         {"POST", "/api/v1/admin/email", true, Role::Administrator, true, true, true},
         {"POST", "/api/v1/admin/email/test", true, Role::Administrator, true, true, true},
+        // feature 025 (specs/025-data-api, ADR-053): the API keys of the admin page, then the data
+        // API of other systems. Its routes need no session: the gate checks HTTPS and the method,
+        // DataApi the key of "Authorization: Bearer matk_…" (a cookie never opens them).
+        {"GET", "/api/v1/admin/apikeys", true, Role::Administrator, true, false, true},
+        {"POST", "/api/v1/admin/apikeys", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/apikeys/{id}", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/apikeys/{id}/revoke", true, Role::Administrator, true, true, true},
+        {"GET", "/api/v1/data/key", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/tags", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/values", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/history/catalog", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/history/series", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/history/aggregate", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/history/rows", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/history/export.csv", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/alarms", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/alarms/history", false, Role::Viewer, false, false},
+        // changesDevice false: there is no session for the gate's step 4; DataApi checks that the
+        // audit can take the records before a write
+        {"POST", "/api/v1/data/write", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/write", false, Role::Viewer, false, false},
+        {"GET", "/api/v1/data/write/{requestId}", false, Role::Viewer, false, false},
     };
     return rules;
 }

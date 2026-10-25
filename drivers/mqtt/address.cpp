@@ -131,6 +131,43 @@ Address parseAddress(const std::string& address) {
     return a;
 }
 
+namespace {
+// The code points of UTF-8 text (a byte that does not start a sequence counts as one).
+std::vector<std::string> utf8Chars(const std::string& s) {
+    std::vector<std::string> out;
+    for (size_t i = 0; i < s.size();) {
+        const unsigned char c = static_cast<unsigned char>(s[i]);
+        size_t n = c < 0x80 ? 1 : (c >> 5) == 6 ? 2 : (c >> 4) == 14 ? 3 : (c >> 3) == 30 ? 4 : 1;
+        if (i + n > s.size()) n = 1;
+        out.push_back(s.substr(i, n));
+        i += n;
+    }
+    return out;
+}
+}  // namespace
+
+bool tagPatternMatches(const std::string& pattern, const std::string& tag) {
+    const std::vector<std::string> p = utf8Chars(pattern), t = utf8Chars(tag);
+    // the classic two-pointer glob: the last star and where it stood in the text
+    size_t i = 0, j = 0, star = std::string::npos, mark = 0;
+    while (j < t.size()) {
+        if (i < p.size() && (p[i] == "?" || p[i] == t[j])) {
+            ++i;
+            ++j;
+        } else if (i < p.size() && p[i] == "*") {
+            star = i++;
+            mark = j;
+        } else if (star != std::string::npos) {
+            i = star + 1;
+            j = ++mark;
+        } else {
+            return false;
+        }
+    }
+    while (i < p.size() && p[i] == "*") ++i;
+    return i == p.size();
+}
+
 bool topicMatches(const std::string& filter, const std::string& topic) {
     if (!topic.empty() && topic[0] == '$' && !filter.empty() &&
         (filter[0] == '+' || filter[0] == '#'))

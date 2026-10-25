@@ -99,6 +99,14 @@ class AuthStore {
 AuthFiles readAuthFiles(const std::string& usersPath, const std::string& accessPath,
                         bool deviceCommand = false);
 
+// Feature 025: the other private files of the directory (api-keys.json), same rules: a regular
+// file, not a link, 0600, owner root or this process, at most `maxBytes`; written under the
+// directory's lock through a temporary file, the file before kept as <name>.bak, rename, fsync.
+bool readAuthPrivateFile(const std::string& path, size_t maxBytes, std::string& text, bool& missing,
+                         std::string& error);
+bool writeAuthPrivateFile(const std::string& dir, const std::string& name, const std::string& text,
+                          const std::string& ownerUser, std::string& err);
+
 // How often the runtime looks at access.json (one lstat): with the live hub asking about the access
 // every second (kLiveGrantCheckMs), a rule the device command changes is in force within 2 s.
 constexpr int64_t kAccessRecheckMs = 1000;

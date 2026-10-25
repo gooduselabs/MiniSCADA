@@ -86,6 +86,48 @@
       "usedIn": ["core/alarm"]
     },
     {
+      "code": "APIKEY_EXPIRED",
+      "http": 401,
+      "group": "auth",
+      "message": "API key đã hết hạn: tạo key mới ở trang Quản trị.",
+      "usedIn": ["core/auth"]
+    },
+    {
+      "code": "APIKEY_INVALID",
+      "http": 401,
+      "group": "auth",
+      "message": "API key không đúng hoặc đã bị thu hồi.",
+      "usedIn": ["core/auth"]
+    },
+    {
+      "code": "APIKEY_LIMIT",
+      "http": 409,
+      "group": "auth",
+      "message": "Đã có 32 API key: thu hồi bớt key không dùng.",
+      "usedIn": ["server/http"]
+    },
+    {
+      "code": "APIKEY_SOURCE",
+      "http": 403,
+      "group": "auth",
+      "message": "API key không được dùng từ địa chỉ này (danh sách địa chỉ cho phép của key).",
+      "usedIn": ["core/auth"]
+    },
+    {
+      "code": "APIKEY_STORE",
+      "http": 503,
+      "group": "auth",
+      "message": "Kho API key trên thiết bị bị hỏng: mọi key bị từ chối đến khi lưu lại danh sách.",
+      "usedIn": ["core/auth", "server/http"]
+    },
+    {
+      "code": "APIKEY_THROTTLED",
+      "http": 429,
+      "group": "auth",
+      "message": "Địa chỉ này gửi API key sai quá nhiều lần: bị chặn đến hết phút.",
+      "usedIn": ["core/auth"]
+    },
+    {
       "code": "AUDIT_UNAVAILABLE",
       "http": 503,
       "group": "auth",
@@ -125,7 +167,7 @@
       "http": 401,
       "group": "auth",
       "message": "Cần đăng nhập.",
-      "usedIn": ["server/http"]
+      "usedIn": ["core/auth", "server/http"]
     },
     {
       "code": "AUTH_UNSUPPORTED",
@@ -1401,6 +1443,13 @@
       "http": null,
       "group": "tags",
       "message": "Tag MQTT: hướng của địa chỉ không khớp quyền (ghi được thì cần pub: hoặc both:; pub: cần quyền RW)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_MQTT_GROUP_PATTERN",
+      "http": null,
+      "group": "tags",
+      "message": "Nhóm publish MQTT: mẫu tên Tag không khớp Tag nào, hoặc nhóm quá 500 Tag",
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
@@ -2705,6 +2754,13 @@
       "usedIn": ["core/historian", "server/http"]
     },
     {
+      "code": "NO_ALARMS",
+      "http": 404,
+      "group": "alarm",
+      "message": "Project đang chạy không có alarm.",
+      "usedIn": ["server/http"]
+    },
+    {
       "code": "NO_BACKUP",
       "http": 404,
       "group": "auth",
@@ -3165,7 +3221,14 @@
       "http": 429,
       "group": "write",
       "message": "Thao tác quá nhanh: hãy thử lại sau giây lát",
-      "usedIn": ["core/logic", "core/recipe", "core/tag-engine", "server", "server/http"]
+      "usedIn": [
+        "core/auth",
+        "core/logic",
+        "core/recipe",
+        "core/tag-engine",
+        "server",
+        "server/http"
+      ]
     },
     {
       "code": "RATIO_TOO_HIGH",

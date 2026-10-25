@@ -206,6 +206,8 @@ export function makeAccess(seed, deps) {
   const rate = new Map(); // phiên → [thời điểm]
   const cfg = { rateLimit: seed.rateLimit ?? 30, viewerLogin: seed.viewerLogin ?? 'required' };
   const log = { reauth: [], posts: [], effective: [] };
+  // feature 025: API key giả (token chỉ trả một lần, không giữ)
+  const apikeys = { rev: 0, keys: [], seq: 0, tokens: [] };
   // feature 023: cấu hình email alarm giả (không có mật khẩu: chỉ passwordSet)
   const email = {
     rev: 0,
@@ -747,6 +749,80 @@ export function makeAccess(seed, deps) {
         message: ok ? 'Đã gửi.' : 'Mọi người nhận bị từ chối',
       });
     }
+    // ---- API key (feature 025) ----
+    if (path === '/api/v1/admin/apikeys' && m === 'GET')
+      return json(res, 200, {
+        rev: apikeys.rev,
+        storeOk: true,
+        keys: apikeys.keys,
+        groups: store.groups.map((g) => ({ id: g.id, name: g.name })),
+        limits: { maxKeys: 32, maxAllowFrom: 16, rateMin: 10, rateMax: 6000, rateDefault: 600 },
+      });
+    if (path.startsWith('/api/v1/admin/apikeys') && m === 'POST') {
+      if (body.rev !== apikeys.rev) return err(res, 409, 'CONFLICT', { rev: apikeys.rev });
+      const keyOf = (id) => apikeys.keys.find((k) => k.id === id);
+      const settings = (k, b) => {
+        for (const f of [
+          'name',
+          'role',
+          'readOnly',
+          'groups',
+          'allowFrom',
+          'expiresAt',
+          'ratePerMin',
+        ])
+          if (b[f] !== undefined) k[f] = b[f];
+        if (k.role === 'viewer') k.readOnly = true;
+        k.canWrite = k.role === 'operator' && !k.readOnly;
+      };
+      const tail = path.slice('/api/v1/admin/apikeys'.length);
+      if (tail === '') {
+        if (typeof body.name !== 'string' || !body.name.trim()) return err(res, 400, 'BAD_REQUEST');
+        const k = {
+          id: (++apikeys.seq).toString(16).padStart(12, '0'),
+          role: 'viewer',
+          readOnly: true,
+          groups: [],
+          allowFrom: [],
+          expiresAt: null,
+          ratePerMin: 600,
+          expired: false,
+          createdAt: new Date(now()).toISOString(),
+          createdBy: s.user,
+          updatedAt: null,
+          lastUsedAt: null,
+          lastFrom: null,
+          calls: 0,
+          denied: 0,
+        };
+        settings(k, body);
+        if (k.canWrite && !reauthOk(s, body)) return err(res, 403, 'REAUTH_REQUIRED');
+        const token = `matk_${'T'.repeat(36)}${String(apikeys.seq).padStart(7, '0')}`;
+        k.prefix = token.slice(0, 12);
+        apikeys.keys.push(k);
+        apikeys.tokens.push(token);
+        apikeys.rev++;
+        record(s, 'apikey.create', k.id, 'ok');
+        return json(res, 201, { rev: apikeys.rev, key: { id: k.id, name: k.name }, token });
+      }
+      const [, id, verb] = tail.split('/');
+      const k = keyOf(id);
+      if (!k) return err(res, 404, 'NOT_FOUND');
+      if (verb === 'revoke') {
+        apikeys.keys = apikeys.keys.filter((x) => x !== k);
+        apikeys.rev++;
+        record(s, 'apikey.revoke', id, 'ok');
+        return json(res, 200, { rev: apikeys.rev });
+      }
+      const before = k.canWrite;
+      const next = { ...k };
+      settings(next, body);
+      if (next.canWrite && !before && !reauthOk(s, body)) return err(res, 403, 'REAUTH_REQUIRED');
+      Object.assign(k, next, { updatedAt: new Date(now()).toISOString() });
+      apikeys.rev++;
+      record(s, 'apikey.update', id, 'ok');
+      return json(res, 200, { rev: apikeys.rev, key: { id } });
+    }
     if (path === '/api/v1/admin/audit' && m === 'GET') {
       const p = url.searchParams;
       const limit = Math.min(200, Math.max(1, Number(p.get('limit') ?? 100)));
@@ -788,6 +864,7 @@ export function makeAccess(seed, deps) {
     audit,
     log,
     email,
+    apikeys,
     cfg,
     /** Admin khác vừa sửa: tăng rev (lần lưu kế tiếp của trang nhận 409). */
     bumpRev(kind = 'access') {

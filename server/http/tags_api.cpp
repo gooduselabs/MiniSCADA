@@ -19,6 +19,7 @@
 #include "server/http/drivers_api.hpp"
 #include "server/http/engineering_api.hpp"
 #include "server/http/engineering_api_internal.hpp"
+#include "server/http/tags_write_json.hpp"
 
 namespace mat {
 
@@ -189,6 +190,15 @@ WriteCaller callerOf(const GateRequest& r, const GateDecision& d) {
 }
 
 }  // namespace
+
+bool isWriteRequestId(const std::string& s) { return isUuidV4(s); }
+bool parseWriteRequests(const json& body, std::vector<WriteRequest>& out) {
+    return parseBody(body, out);
+}
+json writeViewJson(const WriteView& v) { return viewJson(v); }
+std::optional<WriteValue> writeValueOf(const json& v) { return valueOf(v); }
+json tagScalarJson(const TagScalar& v) { return scalarJson(v); }
+std::string isoUtcMsText(int64_t ms) { return isoUtcMs(ms); }
 
 int EngineeringApi::tagsWrite(mg_connection* c, const GateRequest& r, const GateDecision& d,
                               bool close) {

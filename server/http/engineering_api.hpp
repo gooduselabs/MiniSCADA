@@ -62,6 +62,7 @@ class UpdateService;
 struct UpdateCaller;
 class AdminApi;
 class AccessService;
+class DataApi;
 namespace recipe {
 class Service;
 }
@@ -221,6 +222,10 @@ class EngineeringApi {
     };
     void setRecipes(RecipesBackend backend);
 
+    // Feature 025 (specs/025-data-api): /api/v1/data/* go to `data` (the API key is checked
+    // there); without it they answer 501. Call before install(); adds "data-api" to the features.
+    void setData(DataApi* data);
+
     void setAdmin(AdminApi* admin);
     void setAccess(AccessService* access);
 
@@ -312,6 +317,7 @@ class EngineeringApi {
     UpdateBackend update_;
     RecipesBackend recipes_;
     AdminApi* admin_ = nullptr;
+    DataApi* data_ = nullptr;
     AccessService* access_ = nullptr;
     std::unique_ptr<alarmsapi::PostLimiter> postLimiter_;
     std::mutex testMu_;              // guards the two members below

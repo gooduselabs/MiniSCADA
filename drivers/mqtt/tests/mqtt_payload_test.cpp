@@ -96,4 +96,11 @@ TEST(MqttPayload, Group) {
     EXPECT_EQ(encodeGroup(1730000000000, e),
               R"({"quality":{"Old":"BAD","Pump.Run":"UNCERTAIN","Tank.Level":"GOOD"},)"
               R"("ts":1730000000000,"values":{"Old":null,"Pump.Run":true,"Tank.Level":12.5}})");
+    // feature 025: the time each value was read, null for a value never read
+    e[0].value.sourceTs = 1729999999500;
+    e[1].value.sourceTs = 1729999999000;
+    EXPECT_EQ(encodeGroup(1730000000000, e, true),
+              R"({"quality":{"Old":"BAD","Pump.Run":"UNCERTAIN","Tank.Level":"GOOD"},)"
+              R"("sourceTs":{"Old":null,"Pump.Run":1729999999000,"Tank.Level":1729999999500},)"
+              R"("ts":1730000000000,"values":{"Old":null,"Pump.Run":true,"Tank.Level":12.5}})");
 }

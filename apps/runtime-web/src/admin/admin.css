@@ -1234,3 +1234,28 @@
 .ad-email-pw {
   margin: 8px 0 0;
 }
+
+/* Feature 025: tab API key */
+.ad-apikeys .ad-field-label {
+  margin: 8px 0 4px;
+  font-weight: 600;
+}
+.ad-apikey-help {
+  margin-top: 12px;
+}
+.ad-code {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--ad-soft, rgba(127, 127, 127, 0.12));
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.ad-token {
+  width: 100%;
+  font-size: 0.95rem;
+}
+.ad-dialog .ad-field-label {
+  margin: 8px 0 4px;
+  font-weight: 600;
+}

@@ -396,6 +396,11 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"GET /api/v1/admin/email", true},
         {"POST /api/v1/admin/email", true},
         {"POST /api/v1/admin/email/test", true},
+        // feature 025: the API keys of the admin page (the data API needs no session: its key)
+        {"GET /api/v1/admin/apikeys", true},
+        {"POST /api/v1/admin/apikeys", true},
+        {"POST /api/v1/admin/apikeys/k1", true},
+        {"POST /api/v1/admin/apikeys/k1/revoke", true},
     };
     for (const auto& kv : expected) {
         const size_t space = kv.first.find(' ');
