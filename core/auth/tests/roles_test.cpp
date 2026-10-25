@@ -118,6 +118,21 @@ const std::vector<Expected> kContract16 = {
     {"POST", "/api/v1/admin/access/restore", true, Role::Administrator, true, true},
     {"GET", "/api/v1/admin/effective", true, Role::Administrator, true, false},
     {"GET", "/api/v1/admin/audit", true, Role::Administrator, true, false},
+    // device-api 1.6.0 mở rộng, apiVersion không đổi (feature 023): alarm email.
+    {"GET", "/api/v1/admin/email", true, Role::Administrator, true, false},
+    {"POST", "/api/v1/admin/email", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/email/test", true, Role::Administrator, true, true},
+};
+
+// feature 024 (specs/024-recipes/plan.md): recipes, for the page (cookie) too.
+const std::vector<Expected> kContract024 = {
+    {"GET", "/api/v1/recipes", true, Role::Viewer, false, false},
+    {"GET", "/api/v1/recipes/current", true, Role::Viewer, false, false},
+    {"GET", "/api/v1/recipes/jobs/{id}", true, Role::Viewer, false, false},
+    {"POST", "/api/v1/recipes/save", true, Role::Operator, true, true},
+    {"POST", "/api/v1/recipes/delete", true, Role::Operator, true, true},
+    {"POST", "/api/v1/recipes/capture", true, Role::Operator, true, true},
+    {"POST", "/api/v1/recipes/download", true, Role::Operator, true, true},
 };
 
 const Role kRoles[] = {Role::Viewer, Role::Operator, Role::Engineer, Role::Administrator};
@@ -175,9 +190,12 @@ TEST(Roles, TheTableIsTheContract) {
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     for (const auto& e : kContract16)
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
+    for (const auto& e : kContract024)
+        contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     EXPECT_EQ(endpointRules().size(), kContract.size() + kContract11.size() + kContract12.size() +
                                           kContract13.size() + kContract14.size() +
-                                          kContract011.size() + kContract16.size());
+                                          kContract011.size() + kContract16.size() +
+                                          kContract024.size());
     EXPECT_EQ(table, contract);
 }
 
@@ -301,6 +319,8 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
         "GET /api/v1/logic/events"};
     // feature 013: the page's access, the own password and the whole admin API
     for (const auto& e : kContract16) cookie.insert(e.method + " " + e.path);
+    // feature 024: recipes (the page)
+    for (const auto& e : kContract024) cookie.insert(e.method + " " + e.path);
     std::set<std::string> seen;
     for (const auto& r : endpointRules()) {
         const std::string key = std::string(r.method) + " " + r.path;
@@ -321,7 +341,8 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
             EXPECT_TRUE(std::string(r.path) == "/api/v1/tags/write" ||
                         std::string(r.path).rfind("/api/v1/alarms/", 0) == 0 ||
                         std::string(r.path) == "/api/v1/web/password" ||
-                        std::string(r.path).rfind("/api/v1/admin/", 0) == 0)
+                        std::string(r.path).rfind("/api/v1/admin/", 0) == 0 ||
+                        std::string(r.path).rfind("/api/v1/recipes/", 0) == 0)
                 << "only the tag write, the alarm acknowledgement and the accounts (013) change "
                    "a device: "
                 << r.path;

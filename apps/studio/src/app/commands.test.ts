@@ -120,6 +120,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'screen.add',
       // feature 015: thư viện mẫu báo cáo (bảng lệnh và menu chuột phải của cây)
       'report.add',
+      // feature 024: thêm loại recipe (bảng lệnh và menu chuột phải của cây)
+      'recipe.add',
       // feature 017: thêm kênh Mitsubishi MC (bảng lệnh và menu chuột phải của Kết nối)
       'connections.addMc',
       'screen.addFree',

@@ -13,6 +13,7 @@
 #include "core/project-manager/rules_bacnet.hpp"
 #include "core/project-manager/rules_fins.hpp"
 #include "core/project-manager/rules_mc.hpp"
+#include "core/project-manager/rules_mqtt.hpp"
 #include "core/tag-engine/calc_graph.hpp"
 #include "drivers/modbus/address.hpp"
 #include "drivers/opcua/node_id.hpp"
@@ -128,6 +129,10 @@ class Rules {
         warnings_.push_back({code, file, path, msg});
     }
     static std::string idx(size_t i) { return std::to_string(i); }
+    McIssueFn warnFn() {
+        return [this](const char* c, const std::string& f, const std::string& path,
+                      const std::string& m) { warn(c, f, path, m); };
+    }
     McIssueFn issueFn() {
         return [this](const char* c, const std::string& f, const std::string& path,
                       const std::string& m) { add(c, f, path, m); };
@@ -272,6 +277,9 @@ class Rules {
             mcChannelChecks(ch, cp, project_["schemaVersion"].get<std::string>(), connFile_,
                             issueFn());  // feature 017
             if (ch["kind"] == "opcua") opcuaChannelChecks(ch, cp);
+            if (ch["kind"] == "mqtt")  // feature 022
+                mqttChannelRules(ch, cp, project_["schemaVersion"].get<std::string>(), connFile_,
+                                 issueFn(), warnFn());
             if (ch["kind"] == "modbus-rtu" && ch.contains("serial")) {
                 const std::string port = ch["serial"]["port"];
                 if (!serialPortOk(port)) {
@@ -333,6 +341,11 @@ class Rules {
                 add("E_DUP_TAG", tagFile_, p + "/id", "Tag '" + id + "' is duplicated");
             tagChecks(t, p);
             if (t["kind"] == "external" && t.contains("source")) externalChecks(t, p);
+        }
+        if (in_.connections) {  // feature 022: the Tags of the MQTT publish groups
+            std::set<std::string> ids;
+            for (const auto& kv : tagTypes_) ids.insert(kv.first);
+            mqttGroupRules(*in_.connections, ids, connFile_, issueFn());
         }
         rtuScanTime();
         expressions(list);
@@ -568,6 +581,10 @@ class Rules {
                      "/channels/" + idx(found->second.ci) + "/devices/" + idx(found->second.di),
                      "timeoutMs x (retries + 1) exceeds the " + g + " scan period");
             }
+            return;
+        }
+        if (channel["kind"] == "mqtt") {  // feature 022 (rules_mqtt): no W_DETECT_SLOW
+            mqttTagRules(t, p, tagFile_, issueFn());
             return;
         }
         if (channel["kind"] == "opcua") {

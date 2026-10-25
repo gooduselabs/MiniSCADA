@@ -42,6 +42,7 @@ import {
   shiftLabels,
   suggestUnit,
   toggleFunction,
+  setLogo,
 } from './reports-doc.ts';
 import { bucketReportIssues } from './reports-issues.ts';
 import { readProjectDir, REPO } from './test-fixtures.ts';
@@ -384,5 +385,15 @@ describe('lưới cột (adapter của mat-grid)', () => {
     expect(a.apply([{ row: 0, col: 'tag', text: 'METER1.KW' }]).rejected).toEqual([]);
     expect(a.apply([{ row: 0, col: 'tag', text: 'PROC.PRESSURE' }]).rejected).toHaveLength(1);
     expect(a.apply([{ row: 0, col: 'tag', text: '' }]).rejected).toHaveLength(1);
+  });
+});
+
+describe('setLogo (feature 024)', () => {
+  it('đặt và bỏ logo', () => {
+    const base = { schemaVersion: '1.1.0', reports: [] } as unknown as ReportsConfig;
+    const a = setLogo(base, ' graphics/logo.svg ');
+    expect(a.logo).toBe('graphics/logo.svg');
+    expect(setLogo(a, '').logo).toBeUndefined();
+    expect(base.logo).toBeUndefined();
   });
 });

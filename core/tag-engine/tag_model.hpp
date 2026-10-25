@@ -17,6 +17,7 @@
 #include "drivers/mc/mc_address.hpp"
 #include "drivers/modbus/address.hpp"
 #include "drivers/modbus/codec.hpp"
+#include "drivers/mqtt/address.hpp"
 #include "drivers/opcua/node_id.hpp"
 #include "drivers/s7/address.hpp"
 #include "drivers/sdk/driver.hpp"
@@ -49,6 +50,7 @@ struct TagSourceModel {
     // Feature 020: a Tag of a BACnet device (addr is then not used)
     bacnet::Address bacnetAddr;
     opcua::NodeIdRef nodeId;  // feature 019: the NodeId of a Tag of an OPC UA channel
+    mqtt::Address mqttAddr;  // feature 022: topic, JSON path, direction of a Tag of an MQTT channel
 };
 
 struct TagModel {
@@ -121,12 +123,24 @@ struct DeviceModel {
     int bacnetPort = 47808, bacnetNetwork = 0, bacnetMaxApdu = 1476, bacnetWritePriority = 16;
     bool bacnetUseRpm = true;
     int bacnetMaxRpmProps = 32;
+    // Feature 022, MQTT: no message for this long makes a subscribed Tag UNCERTAIN (0: never)
+    int64_t mqttStaleAfterMs = 0;
+};
+
+// Feature 022: a publish group of an MQTT channel (mqtt.publishGroups[i]).
+struct MqttGroupModel {
+    std::string topic;
+    std::vector<std::string> tags;  // Tag ids
+    int64_t intervalMs = 0;
+    bool onChange = false;
+    int qos = 0;
+    bool retain = false;
 };
 
 struct ChannelModel {
     std::string id, name;
     std::string kind = "modbus-tcp";  // modbus-tcp | modbus-rtu | s7 (016) | fins (018) | mc (017)
-                                      // | bacnet (020) | opcua (019)
+                                      // | bacnet (020) | opcua (019) | mqtt (022)
     bool rtu = false;
     bool isFins = false;  // feature 018: an Omron FINS channel (host, port, the fields below)
     bool finsTcp = false;
@@ -161,6 +175,21 @@ struct ChannelModel {
     std::string opcuaUsername, opcuaSecretId;
     bool opcuaPoll = false;  // readMode poll
     int opcuaSessionTimeoutMs = 60000;
+    // MQTT (feature 022, specs/022-driver-mqtt/spec.md); host, port, connectTimeoutMs and
+    // reconnectMaxS above
+    std::string mqttClientId;
+    int mqttKeepAliveS = 30;
+    bool mqttCleanSession = true;
+    bool mqttTls = false;
+    std::string mqttServerCertSha256, mqttCaCertPem, mqttServerName;
+    bool mqttAuth = false;
+    std::string mqttUsername, mqttSecretId;
+    bool mqttWill = false;
+    std::string mqttWillTopic, mqttWillPayload;
+    int mqttWillQos = 0;
+    bool mqttWillRetain = false;
+    int mqttMaxPublishPerS = 20;
+    std::vector<MqttGroupModel> mqttGroups;
     std::vector<size_t> devices;  // indexes in ProjectModel::devices
 };
 

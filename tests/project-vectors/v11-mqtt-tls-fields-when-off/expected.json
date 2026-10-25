@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_MQTT_TLS"],"runtimeVersion":"1.1.0","issues":[{"code":"E_MQTT_TLS","file":"connections.json","path":"/channels/2/mqtt/tls"}]}

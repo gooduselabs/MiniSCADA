@@ -7,6 +7,8 @@
 //   GET|POST /api/v1/admin/groups, POST …/groups/{id}, …/{id}/delete
 //   GET|POST /api/v1/admin/access, POST …/access/cleanup, …/access/restore
 //   GET  /api/v1/admin/effective?user=<name>
+//   GET|POST /api/v1/admin/email, POST …/email/test   (feature 023, device-api 1.6.0 mở rộng,
+//   apiVersion không đổi: alarm email)
 // The roles table (core/auth/roles.cpp) and the gate have already checked HTTPS, the session, the
 // role (administrator for /admin/), Origin and the CSRF token of a cookie. Here: the body (at most
 // 64 KiB of JSON, 400 before anything), 30 changes a minute per session (429), the `rev` the
@@ -30,6 +32,7 @@
 #include "core/auth/access_service.hpp"
 #include "core/auth/access_store.hpp"
 #include "core/auth/auth_service.hpp"
+#include "core/notify/email_service.hpp"
 #include "nlohmann/json.hpp"
 
 struct mg_connection;
@@ -56,6 +59,8 @@ struct AdminBackend {
     std::function<std::string()> nowIso;  // createdAt / updatedAt; empty: the system clock
     std::function<std::string(const std::string&)> hash;  // empty: hashPassword
     std::function<std::string()> generatePassword;        // empty: 20 random characters
+    // Feature 023: the alarm email service (null: /admin/email answers 501).
+    notify::EmailService* email = nullptr;
 };
 
 // The person of a request, as the gate saw it.

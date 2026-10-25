@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_RECIPE_VALUE"],"runtimeVersion":"1.1.0","issues":[{"code":"E_RECIPE_VALUE","file":"recipes.json","path":"/types/0/recipes/0/values/TANK01.SP"}]}

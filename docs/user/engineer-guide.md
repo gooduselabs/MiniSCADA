@@ -227,6 +227,41 @@ OPC DA (Kepware, Matrikon, RSLinx…) chỉ chạy trên Windows nên BL335 khô
 
 Khi OPC server dừng, cầu nối trả ngoại lệ Modbus 0x0B nên các Tag dữ liệu thành quality xấu; cầu nối tự nối lại khi server chạy lại. Ghi vào item chỉ đọc bị từ chối (0x02), OPC từ chối ghi thì 0x04. Modbus không mang timestamp của OPC: thời điểm của Tag là lúc runtime đọc. Mỗi lần đổi danh sách item, xuất và nhập lại CSV (địa chỉ cấp liên tiếp theo thứ tự item). Cài dịch vụ và tường lửa: xem hướng dẫn quản trị.
 
+### 4.7. Kết nối MQTT (broker)
+
+Dùng để nhận dữ liệu từ cảm biến IoT, gateway hay hệ thống khác qua broker MQTT (Mosquitto, EMQX, HiveMQ…), và đẩy dữ liệu của thiết bị lên broker cho cloud/MES. MQTT 3.1.1, QoS 0 và 1. Cần project định dạng 1.1.
+
+1. **Kết nối** › **Thêm kênh MQTT**: kênh có sẵn một broker (mỗi kênh một broker). Điền **Host** và **Cổng** (để trống: 1883, hoặc 8883 khi bật TLS), **Client id** (mỗi client trên broker phải khác nhau; trống thì `mat-<id kênh>`).
+2. **TLS** (khuyến nghị khi đi qua mạng ngoài): bật TLS và điền **Chứng chỉ broker (SHA-256)**, 64 chữ số hex lấy từ quản trị broker, ví dụ `openssl x509 -in broker.crt -noout -fingerprint -sha256` (bỏ dấu `:`). Runtime chỉ kết nối broker có đúng chứng chỉ này; sai thì Tag BAD `MQTT_CERT_UNTRUSTED`. Dùng CA riêng của nhà máy thay cho ghim: thêm `"caCertPem": "-----BEGIN CERTIFICATE-----\n…"` vào khối `mqtt.tls` của `connections.json` (khi đó **Tên máy (SNI)** phải khớp chứng chỉ). Không ghim, không CA thì runtime không kết nối.
+3. **Tài khoản**: **Tên đăng nhập** và **Mã bí mật (secretId)**, ví dụ `mqtt-mqtt1`. Đặt mật khẩu trên thiết bị: `sudo mat-runtime --set-secret mqtt-mqtt1` (gõ mật khẩu ở dòng tiếp theo). Thiếu mật khẩu: Tag BAD `MQTT_SECRET_MISSING`; sai: `MQTT_AUTH_FAILED`.
+4. Mục nâng cao: **Keepalive** (30 s), **Clean session**, **Di chúc (LWT)**: topic, nội dung, QoS, retain, broker gửi khi thiết bị mất kết nối bất thường, ví dụ `mat/tram1/status` = `offline`; **Giới hạn publish** (20 tin/s cho mọi publish của kênh).
+5. Broker: **Quá hạn dữ liệu** (`staleAfterMs`): không có tin cho một Tag quá thời gian này thì Tag UNCERTAIN `MQTT_STALE` (giữ giá trị cuối); 0 là không xét. **Thời hạn** (2000 ms) là thời gian chờ CONNACK, SUBACK, PUBACK.
+
+**Địa chỉ Tag** (cột **Địa chỉ** của Bảng Tag, phân biệt hoa thường):
+
+| Địa chỉ | Ý nghĩa |
+| --- | --- |
+| `plant/tank1/level` | nhận: payload là số/chữ (`21.5`, `true`, `ON`) |
+| `sensors/+/data\|$.temp` | nhận từ mọi thiết bị `sensors/<x>/data`, lấy trường `temp` của JSON |
+| `sensors/t9\|$.values[2].v` | phần tử thứ 3 của mảng `values` |
+| `events/#;qos=1` | mọi topic dưới `events/`, subscribe QoS 1 |
+| `pub:plant/cmd/sp\|$.data.sp;qos=1;retain` | chỉ gửi: ghi Tag (quyền RW) là publish `{"data":{"sp":<giá trị>}}` QoS 1 retain |
+| `both:plant/mode` | nhận và gửi trên cùng topic |
+
+`+` chiếm trọn một cấp, `#` chỉ ở cấp cuối; Tag `pub`/`both` không có wildcard. Tag ghi được phải là `pub:` hoặc `both:` (`E_MQTT_DIRECTION`). Payload thô: BOOL nhận `1/0/true/false/on/off`, số nguyên nhận cả `12.0`, ngoài miền của kiểu thì BAD `MQTT_PAYLOAD`; gửi BOOL là `1`/`0`. Topic không được chứa `|` và `;`.
+
+**Nhóm publish** (sửa trong `connections.json`, khối `mqtt.publishGroups`): đẩy giá trị của nhiều Tag (bất kỳ kênh nào) thành một tin JSON theo chu kỳ và/hoặc khi đổi:
+
+```json
+"publishGroups": [
+  { "topic": "mat/tram1/state", "tags": ["TANK01.LEVEL", "PUMP01.RUN"], "intervalMs": 5000, "onChange": true, "qos": 1 }
+]
+```
+
+Tin: `{"ts":1730000000000,"values":{"TANK01.LEVEL":12.5,"PUMP01.RUN":true},"quality":{"TANK01.LEVEL":"GOOD","PUMP01.RUN":"GOOD"}}`. Tag không tồn tại: `E_MQTT_GROUP_TAG`.
+
+Broker từ chối subscribe (ACL): Tag BAD `MQTT_SUBSCRIBE_REFUSED`. Mất broker: Tag BAD `DISCONNECTED`, tự kết nối lại sau 1 s, 2 s, 4 s… tối đa `reconnectMaxS`. **Thử kết nối** không dùng cho kênh MQTT: nạp xuống rồi xem **Chẩn đoán driver** (broker, TLS, số subscription, số tin nhận/gửi/bỏ, SHA-256 chứng chỉ broker). Chưa hỗ trợ QoS 2, MQTT 5, Sparkplug B, đệm tin khi mất kết nối. Driver mới thử với broker giả lập, chưa thử với broker thật.
+
 <a id="help-tags"></a>
 
 ## 5. Tag
@@ -609,7 +644,7 @@ Thao tác:
 4. **Cột**: Tag, nhãn, đơn vị (**Gợi ý đơn vị**: kW + Tổng ra kWh, Thời gian ON ra giờ), số lẻ, hàm: **Trung bình**, **Nhỏ nhất**, **Lớn nhất**, **Tổng (tích phân)**, **Đầu kỳ**, **Cuối kỳ**, **Chênh lệch**, **Số mẫu**, **Thời gian ON** (Tag BOOL). Vận hành thiết bị: **Thời gian ON**, **Số lần bật**. **Lên**, **Xuống** đổi thứ tự; **Bỏ cột**.
 5. **Thẻ tổng hợp**: bật, tắt hàng thẻ (giá trị cả kỳ của tối đa 4 cột đầu và Dữ liệu đủ).
 6. **Biểu đồ**: **Tự chọn** (các cột cùng đơn vị với cột đầu; hàm cộng dồn vẽ cột, còn lại vẽ đường), **Đường**, **Cột**, **Không vẽ**.
-7. **Trang in**: **Tên đơn vị** (chung cho mọi báo cáo; trống thì dùng tên project), khổ A4/A3, hướng, chân trang, dòng tổng.
+7. **Trang in**: **Tên đơn vị** (chung cho mọi báo cáo; trống thì dùng tên project), **Logo đơn vị** (tệp `graphics/*.svg` hoặc `graphics/*.png` của project, tối đa 256 KiB; hiện trên dải tiêu đề của trang, PDF và XLSX; lỗi `E_RPT_LOGO`), khổ A4/A3, hướng, chân trang, dòng tổng.
 
 Mỗi thay đổi hoàn tác được (Ctrl+Z). Lỗi `E_RPT_*` hiện tại trường và ở tab **Thông tin** của dock dưới (nhấp đúp để tới đúng chỗ); vẫn lưu được khi còn lỗi.
 
@@ -618,6 +653,20 @@ Báo cáo alarm và logic không có cột Tag: xem trước dùng sự kiện m
 ![Trình thiết kế với báo cáo Alarm theo ngày: thẻ số lần xuất hiện, chưa xác nhận, thời gian trung bình tới xác nhận, đang còn; biểu đồ số lần xuất hiện theo giờ](img/eng-thiet-ke-bao-cao-alarm.png)
 
 **Định dạng 1.1**: loại báo cáo, kỳ Tuần và Khoảng ngày, thẻ, biểu đồ, Thời gian ON và Tên đơn vị cần project định dạng 1.1. Project cũ: các tùy chọn này bị khóa kèm lý do; mở lại project và đồng ý nâng cấp ở hộp **Mở project định dạng …**. Project mẫu: `projects/report-demo`.
+
+### 12.2. Recipe (công thức)
+
+Recipe cho phép người vận hành nạp cả một bộ thông số (mẻ, sản phẩm) xuống PLC bằng một thao tác. Cần project định dạng 1.1.
+
+- **Loại recipe**: danh sách Tag tham số (chỉ Tag ghi được: RW, không phải Tag tính toán, Tag mô phỏng chỉ loại Thủ công), mỗi tham số có nhãn, đơn vị, **Min**, **Max**, số lẻ, mô tả. Thứ tự tham số là thứ tự ghi xuống PLC.
+- **Bản recipe**: tên và giá trị của mọi tham số (thiếu, sai kiểu hoặc ngoài giới hạn là lỗi).
+- **Quyền** của loại (Thuộc tính): **Xem**, **Tải xuống** (mặc định operator), **Sửa trên thiết bị** (Đọc từ PLC, sửa, sao chép, xóa bản thiết bị; mặc định operator).
+
+Thêm: chuột phải **Recipe** trên cây > **Thêm loại recipe**. Editor có ba vùng: danh sách loại (trái), lưới kiểu bảng tính (giữa: mỗi tham số một hàng, mỗi bản một cột; sửa tại ô, Enter/Tab/mũi tên, dán nhiều ô từ Excel), **Thuộc tính** (phải). Kéo Tag từ panel **Tag** thả vào lưới để thêm tham số. **Nhập CSV**/**Xuất CSV** trao đổi bảng với Excel (cột đầu `tagId`, mỗi bản một cột). Ô lỗi tô đỏ; mã `E_RECIPE_*` ở tab **Thông tin**.
+
+![Editor Recipe trong Studio: danh sách loại, lưới tham số × bản, thuộc tính](img/eng-recipe-studio.png)
+
+Trên thiết bị, bản của project chỉ đọc; bản do người vận hành tạo được lưu riêng trên thiết bị và không mất khi nạp lại project cùng `projectId`. Mỗi lần tải xuống ghi từng Tag qua cùng đường ghi có kiểm tra như nút trên màn hình (vai trò tối thiểu của Tag, giới hạn, trạng thái kết nối, tối đa 20 ghi/phút: recipe nhiều tham số tải chậm hơn), dừng ở tham số lỗi đầu tiên; audit có `recipe.download` và một `tag.write` cho từng tham số. Project mẫu: `projects/report-demo` (loại Lò sấy).
 
 <a id="help-errors"></a>
 

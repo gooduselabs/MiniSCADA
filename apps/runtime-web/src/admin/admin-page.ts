@@ -18,6 +18,7 @@ import {
 import { RuleDraft } from './model.ts';
 import { AuditTab } from './tab-audit.ts';
 import { ComponentsTab } from './tab-components.ts';
+import { EmailTab } from './tab-email.ts';
 import { GroupsTab } from './tab-groups.ts';
 import { PagesTab } from './tab-pages.ts';
 import { UsersTab } from './tab-users.ts';
@@ -31,6 +32,7 @@ export const TABS = [
   'quyen-trang',
   'quyen-thanh-phan',
   'xem-voi-tu-cach',
+  'thong-bao-email',
   'nhat-ky',
 ] as const;
 export type TabId = (typeof TABS)[number];
@@ -485,7 +487,9 @@ export class AdminPage implements AdminCtx {
                 ? new ComponentsTab(this)
                 : t === 'xem-voi-tu-cach'
                   ? new ViewAsTab(this)
-                  : new AuditTab(this);
+                  : t === 'thong-bao-email'
+                    ? new EmailTab(this)
+                    : new AuditTab(this);
       this.#tabs.set(t, tab);
     }
     return tab;

@@ -1,0 +1,27 @@
+{
+  "scenario": "stale",
+  "checks": [
+    {
+      "name": "MQ.STALE GOOD",
+      "pass": true
+    },
+    {
+      "name": "no message for staleAfterMs (3 s): UNCERTAIN MQTT_STALE with the last value",
+      "pass": true,
+      "detail": "{\"value\":3.25,\"quality\":\"UNCERTAIN\",\"reason\":\"MQTT_STALE\"}"
+    },
+    {
+      "name": "not before 3 s",
+      "pass": true,
+      "detail": "3006 ms"
+    },
+    {
+      "name": "a new message: GOOD again",
+      "pass": true
+    }
+  ],
+  "measures": {
+    "staleAfterMs": 3006
+  },
+  "pass": true
+}

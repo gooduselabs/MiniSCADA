@@ -95,6 +95,20 @@ enum class AuditAction {
     AccessStoreInvalid,  // access.store-invalid: access.json damaged, only administrators get in
     AdminRead,           // admin.read: the list of accounts read (not again within 60 s)
     AdminViewAs,         // admin.view-as: the access of another account looked at
+    // Feature 024 (specs/024-recipes/plan.md decision 5): recipes. A download is started (before
+    // its
+    // first tag write), then ok / failed with what was written; the writes are tag.write each.
+    RecipeDownload,  // recipe.download
+    RecipeSave,      // recipe.save: a recipe of the device made or changed
+    RecipeDelete,    // recipe.delete
+    RecipeCapture,   // recipe.capture: the values on the PLC saved as a new recipe
+    // Feature 023 (alarm email, ADR-051).
+    AccountEmail,  // account.email: the email address of an account set or removed
+    EmailSent,     // email.sent: an alarm or test email accepted by the SMTP server
+    EmailFailed,   // email.failed: an attempt failed (retried later, or dropped when permanent)
+    EmailDropped,  // email.dropped: an email given up (outbox full, damaged, expired after 24 h)
+    EmailConfig,   // email.config: the email settings changed (Quản trị > Thông báo email)
+    EmailTest,     // email.test: a test email sent from the admin page
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -105,7 +119,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 enum class AuditChannel { Https, Http, Cli, System, Web, Logic };
 
 // clang-format off
-inline constexpr std::array<AuditAction, 66> kAuditActions = {
+inline constexpr std::array<AuditAction, 76> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -141,6 +155,11 @@ inline constexpr std::array<AuditAction, 66> kAuditActions = {
     AuditAction::AccessRestore,         AuditAction::AccessReset,
     AuditAction::AccessStoreInvalid,    AuditAction::AdminRead,
     AuditAction::AdminViewAs,
+    AuditAction::RecipeDownload,        AuditAction::RecipeSave,
+    AuditAction::RecipeDelete,          AuditAction::RecipeCapture,
+    AuditAction::AccountEmail,          AuditAction::EmailSent,
+    AuditAction::EmailFailed,           AuditAction::EmailDropped,
+    AuditAction::EmailConfig,           AuditAction::EmailTest,
 };
 // clang-format on
 
@@ -278,6 +297,26 @@ constexpr const char* auditActionName(AuditAction a) {
             return "admin.read";
         case AuditAction::AdminViewAs:
             return "admin.view-as";
+        case AuditAction::RecipeDownload:
+            return "recipe.download";
+        case AuditAction::RecipeSave:
+            return "recipe.save";
+        case AuditAction::RecipeDelete:
+            return "recipe.delete";
+        case AuditAction::RecipeCapture:
+            return "recipe.capture";
+        case AuditAction::AccountEmail:
+            return "account.email";
+        case AuditAction::EmailSent:
+            return "email.sent";
+        case AuditAction::EmailFailed:
+            return "email.failed";
+        case AuditAction::EmailDropped:
+            return "email.dropped";
+        case AuditAction::EmailConfig:
+            return "email.config";
+        case AuditAction::EmailTest:
+            return "email.test";
     }
     return "";
 }

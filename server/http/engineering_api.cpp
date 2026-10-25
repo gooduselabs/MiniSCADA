@@ -325,6 +325,8 @@ int EngineeringApi::handle(mg_connection* c) {
         return logicEvents(c, r, d, close);  // feature 015
     if (logic_.logic && path.rfind("/api/v1/logic", 0) == 0)
         return logicRoute(c, r, d, close);  // feature 011
+    if (recipes_.service && path.rfind("/api/v1/recipes", 0) == 0)
+        return recipesRoute(c, r, d, close);  // feature 024
     if (update_.service && path.rfind("/api/v1/system/update", 0) == 0)
         return updateRoute(c, r, d, close);  // feature 011 (OTA)
     // Endpoints of the table this runtime does not serve (the routes of a story not set up).

@@ -62,6 +62,9 @@ class UpdateService;
 struct UpdateCaller;
 class AdminApi;
 class AccessService;
+namespace recipe {
+class Service;
+}
 
 constexpr size_t kJsonBodyMaxBytes = 16 * 1024;  // device-api §1.2
 constexpr size_t kLoginBodyMaxBytes = 4 * 1024;  // device-api §3
@@ -209,6 +212,15 @@ class EngineeringApi {
     // /api/v1/admin/* go to `admin` (they answer 501 without it); the access model of the sessions
     // checks the cookie's tag writes (context.screen, context.widget, operate) and the alarm
     // actions. Both must outlive the contexts. Call before install().
+    // Feature 024 (specs/024-recipes/plan.md): GET /api/v1/recipes, …/current, …/jobs/{id} and
+    // POST …/save, …/delete, …/capture, …/download (cookie of the page or Bearer) go to the recipe
+    // service of the running project (null: 404 NO_RECIPES). Call before install(); adds
+    // "recipes" to the features of device/identity. Without it the routes answer 501.
+    struct RecipesBackend {
+        std::function<recipe::Service*()> service;
+    };
+    void setRecipes(RecipesBackend backend);
+
     void setAdmin(AdminApi* admin);
     void setAccess(AccessService* access);
 
@@ -265,6 +277,9 @@ class EngineeringApi {
     // feature 013 needs page:reports. No audit.read row (a filtered read of the page).
     int logicEvents(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                     bool close);
+    // The routes of recipes (recipes_api.cpp, feature 024).
+    int recipesRoute(mg_connection* c, const GateRequest& request, const GateDecision& decision,
+                     bool close);
     // The routes of OTA (update_api.cpp).
     int updateRoute(mg_connection* c, const GateRequest& request, const GateDecision& decision,
                     bool close);
@@ -295,6 +310,7 @@ class EngineeringApi {
     AlarmsBackend alarms_;
     LogicBackend logic_;
     UpdateBackend update_;
+    RecipesBackend recipes_;
     AdminApi* admin_ = nullptr;
     AccessService* access_ = nullptr;
     std::unique_ptr<alarmsapi::PostLimiter> postLimiter_;

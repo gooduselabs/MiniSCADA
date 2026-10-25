@@ -61,6 +61,8 @@ struct LoadedProject {
     std::map<std::string, nlohmann::json> watchTables;
     // Format 0.6 (feature 010): reports.json (null without `reportsFile`).
     nlohmann::json reports;
+    // Format 1.1 (feature 024): recipes.json (null without `recipesFile`).
+    nlohmann::json recipes;
     // Format 1.0 (feature 011): logic.json (null without `logic`); checked by its schema only here.
     nlohmann::json logic;
 

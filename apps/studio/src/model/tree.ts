@@ -86,6 +86,9 @@ export type EditorId =
   /** Danh sách mẫu báo cáo và từng mẫu (feature 010, project định dạng 0.6). */
   | 'reports'
   | `report:${string}`
+  /** Recipe (feature 024, project định dạng 1.1): một editor, mỗi loại là một tab. */
+  | `recipe:${string}`
+  | 'recipes'
   /** Thư viện template và từng template (feature 011, project định dạng 1.0). */
   | 'templates'
   | `template:${string}`
@@ -409,6 +412,25 @@ function graphicsNode(files: readonly string[]): TreeNode {
   };
 }
 
+/** Mục Recipe của project 1.1 (feature 024): mỗi loại một editor. */
+function recipesNode(outline: ProjectOutline): TreeNode {
+  const list = outline.recipes?.types ?? [];
+  return {
+    id: 'recipes',
+    label: t('tree.recipes'),
+    icon: 'recipe',
+    editor: 'recipes',
+    count: list.length,
+    children: list.map((r) => ({
+      id: `recipe:${r.id}`,
+      label: nonEmpty(r.name) ? r.name : r.id,
+      icon: 'recipe',
+      editor: `recipe:${r.id}`,
+      count: r.recipes?.length ?? 0,
+    })),
+  };
+}
+
 /** Mục Báo cáo của project 0.6 (feature 010): danh sách mẫu, mỗi mẫu một editor. */
 function reportsNode(outline: ProjectOutline): TreeNode {
   const list = outline.reports?.reports ?? [];
@@ -526,6 +548,7 @@ function deviceChildren02(
     ...(outline.schema === '0.3' ? [graphicsNode(svgFiles)] : []),
     ...(outline.format10 ? [templatesNode(outline)] : []),
     outline.format06 ? reportsNode(outline) : phaseNode('reports', 'reports', 'tree.reports'),
+    ...(outline.format10 ? [recipesNode(outline)] : []),
     phaseNode('users', 'users', 'tree.users'),
   ];
 }

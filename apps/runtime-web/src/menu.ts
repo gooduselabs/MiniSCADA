@@ -6,6 +6,7 @@
 import type { Navigation, NavigationItem } from '@mat/project-schema';
 import { vi } from './i18n/vi.ts';
 import { viHist } from './i18n/vi-history.ts';
+import { viRecipe } from './i18n/vi-recipe.ts';
 import { createIcon, isIconName, type IconName } from './icons.ts';
 import type { ScreenSummary } from './project-store.ts';
 
@@ -36,6 +37,8 @@ export interface MenuExtra {
   canView?: (screen: string) => boolean;
   /** Feature 013: administrator → mục "Quản trị" (`@quan-tri`) cuối menu. */
   admin?: boolean;
+  /** Feature 024: project có recipe → mục "Recipe" (`@recipes`). */
+  recipes?: boolean;
 }
 type NavItem = NavigationItem & { report?: string };
 
@@ -81,7 +84,11 @@ export function buildMenu(
   const withAlarm = alarm?.show === true && (nav as { alarms?: boolean } | null)?.alarms !== false;
   const reports = new Map((extra.reports ?? []).map((r) => [r.id, r.name]));
   const admin = extra.admin === true;
-  if (routable.length + reports.size + (extra.history ? 1 : 0) <= 1 && !withAlarm && !admin)
+  if (
+    routable.length + reports.size + (extra.history ? 1 : 0) + (extra.recipes ? 1 : 0) <= 1 &&
+    !withAlarm &&
+    !admin
+  )
     return null;
   // Quản trị viên luôn có đường vào trang Quản trị, kể cả khi project ẩn menu.
   if (nav?.position === 'hidden' && !admin) return null;
@@ -126,6 +133,8 @@ export function buildMenu(
   }
   if (extra.history)
     entries.push({ kind: 'item', label: viHist.menuHistory, screen: '@history', icon: 'chart' });
+  if (extra.recipes)
+    entries.push({ kind: 'item', label: viRecipe.menu, screen: '@recipes', icon: 'list' });
   if (admin)
     entries.push({
       kind: 'item',

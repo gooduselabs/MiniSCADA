@@ -46,6 +46,14 @@ describe('tests/project-vectors: v11-*', () => {
       'E_OPCUA_AUTH',
       'W_OPCUA_PLAIN_PASSWORD',
       'W_OPCUA_CERT_NOT_PINNED',
+      // feature 024: recipe, logo báo cáo (README-024.md)
+      'E_RECIPE_VERSION',
+      'E_RECIPE_DUP_ID',
+      'E_RECIPE_TAG',
+      'E_RECIPE_TAG_RW',
+      'E_RECIPE_LIMIT',
+      'E_RECIPE_VALUE',
+      'E_RPT_LOGO',
     ])
       expect(count(c), c).toBeGreaterThanOrEqual(2);
   });

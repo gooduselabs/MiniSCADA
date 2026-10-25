@@ -31,6 +31,8 @@ export type Location =
   | { editor: 'alarmClasses'; row?: number; column?: string }
   /** logic.json (feature 011): đường dẫn của lỗi (`/rules/1/when`); editor Logic tìm nhóm, khối, ô. */
   | { editor: 'logic'; path: string }
+  /** Recipe (feature 024): loại theo id; ô của lưới: tham số (dòng) và bản (cột) khi biết. */
+  | { editor: 'recipe'; id: string; param?: number; recipe?: number }
   | { editor: null };
 
 export type Severity = 'error' | 'warning';
@@ -191,6 +193,25 @@ export function locate(issue: Issue, outline: ProjectOutline): Location {
     if (seg[0] === 'groups' && i !== null) return { editor: 'logging', group: i };
     if (seg[0] === 'connections' && i !== null) return { editor: 'logging', connection: i };
     return { editor: 'logging' };
+  }
+
+  if (outline.recipesFile !== null && issue.file === outline.recipesFile) {
+    const i = seg[0] === 'types' ? index(seg[1]) : null;
+    const ty = i === null ? undefined : outline.recipes?.types[i];
+    if (!ty) return NONE;
+    const loc: Location = { editor: 'recipe', id: ty.id };
+    const j = seg[2] === 'params' ? index(seg[3]) : null;
+    if (j !== null) loc.param = j;
+    const k = seg[2] === 'recipes' ? index(seg[3]) : null;
+    if (k !== null) {
+      loc.recipe = k;
+      const p =
+        seg[4] === 'values' && seg[5] !== undefined
+          ? ty.params.findIndex((x) => x.tagId === seg[5])
+          : -1;
+      if (p >= 0) loc.param = p;
+    }
+    return loc;
   }
 
   if (outline.reportsFile !== null && issue.file === outline.reportsFile) {

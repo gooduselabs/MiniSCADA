@@ -22,6 +22,7 @@
 #include "core/tag-engine/fins_factory.hpp"
 #include "core/tag-engine/mc_factory.hpp"
 #include "core/tag-engine/modbus_factory.hpp"
+#include "core/tag-engine/mqtt_factory.hpp"
 #include "core/tag-engine/opcua_factory.hpp"
 #include "core/tag-engine/retain_store.hpp"
 #include "core/tag-engine/s7_factory.hpp"
@@ -49,6 +50,9 @@ struct RuntimeEngineOptions {
     // Feature 019: what the OPC UA drivers need from the device (client certificate directory,
     // passwords of the secrets file).
     drv::OpcUaEnv opcua;
+    // Feature 022: the passwords of the MQTT channels (the snapshot of the publish groups is the
+    // store of the engine, set here).
+    drv::MqttEnv mqtt;
 };
 
 class RuntimeEngine {

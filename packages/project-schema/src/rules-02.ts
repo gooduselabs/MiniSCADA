@@ -37,6 +37,7 @@ import { blockDataBytes, planBlocks, requestTimeMs, type Span } from './rtu-esti
 import { s7ChannelIssues, s7TagIssues } from './rules-s7.ts';
 import { bcdOutsideFins, finsSourceRules } from './rules-fins.ts';
 import { OPCUA_DEFAULT_TIMEOUT_MS, opcuaChannelIssues, opcuaTagIssues } from './rules-opcua.ts';
+import { mqttChannelIssues, mqttGroupIssues, mqttTagIssues } from './rules-mqtt.ts';
 import { serialPortAllowed, type SerialPolicy } from './serial-allow.ts';
 import {
   SUPPORTED_TARGETS,
@@ -322,6 +323,12 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
       mcChannelChecks(ch, cp, project.schemaVersion, connFile, add); // feature 017
       if (ch.kind === 'opcua') {
         const r = opcuaChannelIssues(ch, ci, project.schemaVersion);
+        for (const [code, path, msg] of r.errors) add(code, connFile, path, msg);
+        for (const [code, path, msg] of r.warnings) warn(code, connFile, path, msg);
+      }
+      if (ch.kind === 'mqtt') {
+        // feature 022 (rules-mqtt.ts)
+        const r = mqttChannelIssues(ch, ci, project.schemaVersion);
         for (const [code, path, msg] of r.errors) add(code, connFile, path, msg);
         for (const [code, path, msg] of r.warnings) warn(code, connFile, path, msg);
       }
@@ -654,6 +661,11 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
         }
         return;
       }
+      // MQTT (feature 022): địa chỉ và hướng ở rules-mqtt.ts; không có W_DETECT_SLOW
+      if (found.channel.kind === 'mqtt') {
+        for (const [code, path, msg] of mqttTagIssues(t, p)) add(code, tagFile, path, msg);
+        return;
+      }
       if (found.channel.kind === 'opcua') {
         const issues = opcuaTagIssues(t, p);
         for (const [code, path, msg] of issues) add(code, tagFile, path, msg);
@@ -745,6 +757,11 @@ export function runRules02(input: Rule02Input): { errors: Issue[]; warnings: Iss
         entry.spans.push({ start: r.offset, end: r.offset + r.registers });
       }
     }
+
+    // feature 022: Tag của các nhóm publish MQTT
+    if (connections)
+      for (const [code, path, msg] of mqttGroupIssues(connections, new Set(tagType.keys())))
+        add(code, connFile, path, msg);
 
     // W_RTU_SCAN_TIME
     if (connections) {

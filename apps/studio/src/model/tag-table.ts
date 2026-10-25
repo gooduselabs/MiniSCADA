@@ -9,12 +9,14 @@ import {
   parseBacnetAddress,
   parseFinsAddress,
   parseMcAddress,
+  parseMqttAddress,
   parseOpcUaNodeId,
   parseS7Address,
   registerCount,
   type AddressResult,
   type BacnetAddressResult,
   type McAddressResult,
+  type MqttAddressResult,
   type OpcUaNodeIdResult,
   type S7AddressResult,
   type TagDataType,
@@ -444,6 +446,8 @@ export interface AddressInfo {
   s7?: { area: string; type: string; size: number };
   /** Tag của server OPC UA (feature 019): namespace và loại NodeId. */
   opcua?: { ns: number; idType: string };
+  /** Tag của broker MQTT (feature 022): hướng, topic, đường dẫn JSON, QoS. */
+  mqtt?: { dir: string; topic: string; path?: string; qos: number };
   /** Địa chỉ Mitsubishi MC (feature 017): thiết bị, số, số word, bit trong word. */
   /** Địa chỉ BACnet hợp lệ (feature 020): đối tượng, thuộc tính, priority. */
   bacnet?: { object: string; property: string; priority: number };
@@ -481,6 +485,11 @@ const OPCUA_ADDR_ERR: Record<string, MessageKey> = {
   E_ADDR_RANGE: 'tt.err.opcuaNodeIdRange',
 };
 
+const MQTT_ADDR_ERR: Record<string, MessageKey> = {
+  E_ADDR_SYNTAX: 'tt.err.mqttAddress',
+  E_ADDR_RANGE: 'tt.err.mqttQos',
+};
+
 const S7_ADDR_ERR: Record<string, MessageKey> = {
   E_ADDR_SYNTAX: 'tt.err.s7Address',
   E_ADDR_AREA: 'tt.err.s7AddressArea',
@@ -489,6 +498,13 @@ const S7_ADDR_ERR: Record<string, MessageKey> = {
 
 /** Câu của một địa chỉ hợp lệ (dòng gợi ý, Inspector): mã hàm, offset, thanh ghi; Tag S7: vùng, kiểu S7, số byte. */
 export function addressInfoText(info: AddressInfo): string {
+  if (info.mqtt)
+    return t('tt.hint.mqttAddress', {
+      dir: t(`tt.mqttDir.${info.mqtt.dir}` as MessageKey),
+      topic: info.mqtt.topic,
+      path: info.mqtt.path ? ` ${t('tt.mqttPath', { path: info.mqtt.path })}` : '',
+      qos: info.mqtt.qos,
+    });
   if (info.opcua)
     return t('tt.hint.opcuaNodeId', {
       ns: info.opcua.ns,
@@ -550,6 +566,7 @@ export class TagTable implements GridAdapter {
   private readonly mcCache = new Map<number, McAddressResult | null>();
   private readonly bacnetCache = new Map<number, BacnetAddressResult | null>();
   private readonly opcuaCache = new Map<number, OpcUaNodeIdResult | null>();
+  private readonly mqttCache = new Map<number, MqttAddressResult | null>();
   private readonly opts: TagTableOptions;
 
   constructor(opts: TagTableOptions) {
@@ -597,9 +614,35 @@ export class TagTable implements GridAdapter {
     return tag.kind === 'external' && this.deviceOf(tag)?.kind === 'opcua';
   }
 
-  /** Tag S7 (016) hay OPC UA (019): không có thứ tự byte của Modbus. */
+  /** Tag S7 (016), OPC UA (019) hay MQTT (022): không có thứ tự byte của Modbus. */
   private noByteOrder(tag: Obj): boolean {
-    return this.isS7(tag) || this.isOpcUa(tag);
+    return this.isS7(tag) || this.isOpcUa(tag) || this.isMqtt(tag);
+  }
+
+  /** Tag ngoài của một broker MQTT (thiết bị trường thuộc kênh `mqtt`, feature 022). */
+  private isMqtt(tag: Obj): boolean {
+    return tag.kind === 'external' && this.deviceOf(tag)?.kind === 'mqtt';
+  }
+
+  private mqttParsed(row: number): MqttAddressResult | null {
+    const hit = this.mqttCache.get(row);
+    if (hit !== undefined) return hit;
+    const r = this.mqttParseFor(this.tag(row));
+    this.mqttCache.set(row, r);
+    return r;
+  }
+
+  /** Địa chỉ của Tag thuộc kênh `mqtt` (topic phân biệt hoa thường, chỉ bỏ cách hai đầu); khác thì `null`. */
+  private mqttParseFor(tag: Obj, address?: string): MqttAddressResult | null {
+    const src = obj(tag.source);
+    const text = address ?? (typeof src.address === 'string' ? src.address : '');
+    if (text.trim() === '' || !this.isMqtt(tag)) return null;
+    return parseMqttAddress(text.trim());
+  }
+
+  /** Dòng là Tag của một broker MQTT (feature 022). */
+  isMqttRow(row: number): boolean {
+    return this.isMqtt(this.tag(row));
   }
 
   private opcuaParsed(row: number): OpcUaNodeIdResult | null {
@@ -707,7 +750,8 @@ export class TagTable implements GridAdapter {
       text.trim() === '' ||
       this.isMc(tag) ||
       this.isBacnet(tag) ||
-      this.isOpcUa(tag)
+      this.isOpcUa(tag) ||
+      this.isMqtt(tag)
     )
       return null;
     const raw = (typeof src.rawType === 'string' ? src.rawType : tag.type) as TagDataType;
@@ -758,6 +802,15 @@ export class TagTable implements GridAdapter {
 
   /** Thông tin địa chỉ của dòng: dùng cho dòng gợi ý và cột chỉ đọc. */
   addressInfo(row: number): AddressInfo | null {
+    const q = this.mqttParsed(row);
+    if (q) {
+      if (!q.ok) return { ok: false, error: MQTT_ADDR_ERR[q.error] };
+      return {
+        ok: true,
+        normalized: obj(this.tag(row).source).address as string,
+        mqtt: { dir: q.dir, topic: q.topic, ...(q.path ? { path: q.path } : {}), qos: q.qos },
+      };
+    }
     const u = this.opcuaParsed(row);
     if (u) {
       if (!u.ok) return { ok: false, error: OPCUA_ADDR_ERR[u.error] };
@@ -839,6 +892,7 @@ export class TagTable implements GridAdapter {
     const tg = this.tag(row);
     if (this.isS7(tg)) return t('tt.hint.s7Syntax');
     if (this.isOpcUa(tg)) return t('tt.hint.opcuaSyntax');
+    if (this.isMqtt(tg)) return t('tt.hint.mqttSyntax');
     if (!this.isMc(tg)) return t('tt.hint.syntax');
     const raw = (obj(tg.source).rawType ?? tg.type) as TagDataType | undefined;
     return t('tt.hint.mcSyntax', {
@@ -1254,7 +1308,7 @@ export class TagTable implements GridAdapter {
         if (!d) return 'tt.err.device';
         const src: Obj = { ...obj(w.source), device: d.id };
         // PLC S7 luôn big-endian: thứ tự byte của Modbus không áp (bộ kiểm tra báo E_SCHEMA nếu còn).
-        if (d.kind === 's7' || d.kind === 'opcua') {
+        if (d.kind === 's7' || d.kind === 'opcua' || d.kind === 'mqtt') {
           delete src.byteOrder;
           delete src.stringByteOrder;
         }
@@ -1263,6 +1317,12 @@ export class TagTable implements GridAdapter {
       }
       case 'address': {
         const src = { ...obj(w.source) };
+        // Topic MQTT phân biệt hoa thường: giữ nguyên chữ (feature 022)
+        if (this.isMqtt(w)) {
+          src.address = text.trim();
+          w.source = src;
+          return null;
+        }
         const info =
           this.parseFor(w, text)?.r ??
           this.mcParseFor(w, text) ??
@@ -1298,6 +1358,7 @@ export class TagTable implements GridAdapter {
       case 'byteOrder': {
         if (this.isS7(w)) return 'tt.err.s7ByteOrder';
         if (this.isOpcUa(w)) return 'tt.err.opcuaByteOrder';
+        if (this.isMqtt(w)) return 'tt.err.mqttByteOrder';
         const up = text.toUpperCase();
         if (!(ORDERS as readonly string[]).includes(up)) return 'tt.err.byteOrder';
         w.source = { ...obj(w.source), byteOrder: up };

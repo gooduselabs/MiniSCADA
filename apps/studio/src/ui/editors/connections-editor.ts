@@ -27,6 +27,8 @@ import {
   portsGate,
   oneDeviceReason,
   opcuaNeedsPin,
+  mqttNeedsPin,
+  mqttPlainPassword,
   opcuaSecurityConflict,
   probeGate,
   probeSupported,
@@ -299,6 +301,15 @@ export class ConnectionsEditor extends AppElement {
         ? t('cn.s7.tsapConflict')
         : null;
     }
+    if (target.type === 'channel' && target.channel.kind === 'mqtt') {
+      // feature 022: W_MQTT_TLS_NOT_PINNED, W_MQTT_PLAIN_PASSWORD tại ô
+      const ch = obj as Channel;
+      if (spec.key === 'mqttCertSha256' && mqttNeedsPin(ch)) return t('cn.mqtt.needsPin');
+      if (spec.key === 'mqttUsername' && mqttPlainPassword(ch)) return t('cn.mqtt.plainPassword');
+      if (spec.key === 'mqttSecretId' && ch.mqtt?.auth?.secretId)
+        return t('cn.mqtt.secretNote', { id: ch.mqtt.auth.secretId });
+      return null;
+    }
     if (target.type === 'channel' && target.channel.kind === 'opcua') {
       const ch = obj as Channel;
       if (spec.key === 'securityPolicy' && opcuaSecurityConflict(ch))
@@ -518,6 +529,16 @@ export class ConnectionsEditor extends AppElement {
           @click=${() => (addReason ? app.toast(addReason) : treeAddChannel(app, 'opcua'))}
         >
           ${icon('plus')}${t('cn.add.opcua')}
+        </button>
+        <button
+          class="btn sm"
+          type="button"
+          data-act="add-channel-mqtt"
+          aria-disabled=${bacnetReason ? 'true' : nothing}
+          title=${bacnetReason ?? t('cn.add.mqtt')}
+          @click=${() => (bacnetReason ? app.toast(bacnetReason) : treeAddChannel(app, 'mqtt'))}
+        >
+          ${icon('plus')}${t('cn.add.mqtt')}
         </button>
         <button
           class="btn sm"
@@ -988,7 +1009,8 @@ export class ConnectionsEditor extends AppElement {
           ${target.channel.kind === 'modbus-rtu' ? this.portsCard(target) : nothing}
           ${target.channel.kind === 's7' ? this.s7Note(!s.outline.format11) : nothing}
           ${target.channel.kind === 'bacnet' ? this.bacnetPanel(target.index, -1, ro) : nothing}
-          ${target.channel.kind === 'opcua' ? this.opcua.render(target.channel, !s.outline.format11, ro) : nothing}`
+          ${target.channel.kind === 'opcua' ? this.opcua.render(target.channel, !s.outline.format11, ro) : nothing}
+          ${target.channel.kind === 'mqtt' ? html`<p class="help" data-role="mqtt-note">${t('cn.mqtt.groupsNote')}</p>` : nothing}`
         : target.type === 'device'
           ? html`${this.form(target, `${t('cn.device')}: ${target.device.name || target.device.id}`, deviceFields(target.owner.kind as ChannelKind), target.device)}
             ${
@@ -1000,7 +1022,9 @@ export class ConnectionsEditor extends AppElement {
                     ? this.probeCard(target)
                     : target.owner.kind === 'opcua'
                       ? this.opcua.probeNote()
-                      : this.probeUnsupported()
+                      : target.owner.kind === 'mqtt'
+                        ? html`<p class="help" data-role="mqtt-probe">${t('cn.mqtt.probeNote')}</p>`
+                        : this.probeUnsupported()
             }
             ${this.opcdaCard(target)}`
           : this.overview();

@@ -37,6 +37,8 @@ export interface ReportsConfig {
   schemaVersion: string;
   /** Tên đơn vị trên dải tiêu đề (1.1). */
   org?: string;
+  /** Ảnh logo của đơn vị (1.1, feature 024): `graphics/*.svg` hoặc `graphics/*.png`, tối đa 256 KiB. */
+  logo?: string;
   reports: ReportTemplate[];
 }
 

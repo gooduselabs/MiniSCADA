@@ -159,6 +159,8 @@ Xử lý một alarm:
 
 Lịch sử alarm: menu **Lịch sử alarm**.
 
+**Email cảnh báo:** nếu quản trị viên đã bật (hướng dẫn quản trị mục 4.5), bạn nhận email khi alarm xuất hiện, hết hoặc chưa được xác nhận sau một khoảng thời gian. Tiêu đề có tên trạm và mức, ví dụ "[Trạm bơm số 1] Khẩn cấp: Mức bể cao"; nhiều alarm gần nhau gom vào một email "… 5 sự kiện alarm (2 Khẩn cấp, 3 Quan trọng)". Nội dung có thời gian, mức, Tag và giá trị, thông điệp, trạng thái và liên kết **Mở trang Alarm**. Email chỉ để báo: **xác nhận alarm trên trang Alarm** (trả lời email không có tác dụng). Xác nhận rồi thì không còn email nhắc lại. Muốn nhận hay thôi nhận, nhờ quản trị viên sửa **Email** trong tài khoản của bạn.
+
 ![Trang Alarm: banner Khẩn cấp, tab Đang có và Tạm ẩn, bộ lọc, nút Xác nhận, Xác nhận tất cả, Tạm ẩn; bảng ba alarm mức Khẩn cấp, Quan trọng, Nhỏ đang có, chưa xác nhận](img/op-alarm.png)
 
 ## 7. Mất kết nối
@@ -193,7 +195,7 @@ Cần trang `https://` và đăng nhập.
 
 Từ trên xuống:
 
-1. **Dải tiêu đề**: tên đơn vị, tên báo cáo, kỳ.
+1. **Dải tiêu đề**: logo và tên đơn vị, tên báo cáo, kỳ.
 2. **Thẻ tổng hợp** màu: giá trị cả kỳ của các cột đầu (ví dụ tổng điện năng, công suất trung bình, lớn nhất) và **Dữ liệu đủ** (phần trăm thời gian có dữ liệu; dưới 100 % là thiết bị có lúc không ghi).
 3. **Biểu đồ** trong khung có tiêu đề: rê chuột lên cột hay điểm để xem số.
 4. **Bảng số liệu**: một hàng mỗi giờ, ca hoặc ngày; hàng xen màu; **Tổng** ở cuối luôn thấy khi cuộn. Hàng của kỳ chưa tới ghi "chưa tới"; ô gạch chấm là hàng thiếu dữ liệu (dưới 95 %).
@@ -213,6 +215,21 @@ Từ trên xuống:
 ![Trang đầu PDF của báo cáo Điện năng theo ngày: dải tiêu đề, năm thẻ màu, biểu đồ cột trong khung, bảng sọc](img/op-bao-cao-pdf.png)
 
 ![Trang đầu PDF của báo cáo logic: dải tiêu đề, bốn thẻ, biểu đồ cột chồng thành công, lỗi, bị chặn; bảng theo giờ](img/op-bao-cao-pdf-logic.png)
+
+### 8.3. Recipe (công thức)
+
+Mục **Recipe** trên menu (cần `https://` và đăng nhập). Chọn loại bên trái; bảng có mỗi tham số một hàng, mỗi bản recipe một cột (huy hiệu **Project** hoặc **Thiết bị**) và cột **Hiện tại trên PLC** (cập nhật 2 giây một lần). Chọn một bản: ô khác giá trị trên PLC được tô.
+
+- **Tải xuống**: hộp xác nhận liệt kê mọi tham số sẽ đổi (cũ → mới). Bấm **Tải xuống** để ghi lần lượt từng Tag; tiến trình hiện từng dòng **Đã ghi**, **Lỗi** (kèm lý do), **Bỏ qua**. Một ghi lỗi thì dừng: các tham số trước đó **đã nằm trên PLC**, tham số sau không ghi. Kiểm tra máy rồi tải lại. Giá trị ngoài giới hạn bị từ chối trước khi ghi bất kỳ Tag nào.
+- **Đọc từ PLC**: lưu giá trị đang chạy thành bản mới (mọi Tag phải có chất lượng tốt).
+- **Sửa**, **Xóa**: chỉ với bản **Thiết bị**; bản **Project** dùng **Sao chép** để tạo bản sửa được.
+- Người khác vừa sửa: trang báo và tải lại bảng; làm lại thao tác.
+
+Nút chỉ hiện theo vai trò của bạn. Mọi thao tác được ghi nhật ký.
+
+![Trang Recipe: danh sách loại, bảng tham số × bản recipe với cột hiện tại trên PLC, ô khác được tô](img/op-recipe.png)
+
+![Hộp xác nhận tải recipe xuống PLC: danh sách tham số thay đổi cũ → mới](img/op-recipe-xac-nhan.png)
 
 ## 9. Khi có sự cố: làm gì, gọi ai
 

@@ -17,6 +17,8 @@ export interface AdminUser {
   createdAt: number | null;
   updatedAt: number | null;
   sessions: number;
+  /** Feature 023: email nhận cảnh báo alarm của nhóm; null = chưa có. */
+  email: string | null;
 }
 
 export interface AdminGroup {
@@ -130,6 +132,7 @@ export function parseUsers(b: unknown): { rev: number; users: AdminUser[] } {
       createdAt: num(u.createdAt),
       updatedAt: num(u.updatedAt),
       sessions: num(u.sessions) ?? 0,
+      email: typeof u.email === 'string' && u.email ? u.email : null,
     })),
   };
 }
@@ -216,6 +219,187 @@ export function parseAudit(b: unknown): { records: AuditRecord[]; next: number |
   };
 }
 
+// ---- email alarm (feature 023, device-api 1.6.0 mở rộng, apiVersion không đổi) ----
+
+export type EmailEvent = 'active' | 'return' | 'reminder';
+export interface EmailRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  priorities: number[];
+  classes: string[];
+  areas: string[];
+  events: EmailEvent[];
+  reminderMin: number;
+  to: string[];
+  groups: string[];
+}
+export interface EmailConfig {
+  enabled: boolean;
+  siteName: string;
+  baseUrl: string;
+  smtp: {
+    host: string;
+    port: number;
+    security: 'starttls' | 'smtps' | 'none';
+    username: string;
+    auth: 'auto' | 'plain' | 'login';
+    from: string;
+    fromName: string;
+    caFile: string;
+    pinSha256: string;
+    timeoutS: number;
+  };
+  rules: EmailRule[];
+  quietHours: { enabled: boolean; from: string; to: string; minPriority: number };
+  batchSeconds: number;
+  maxPerHour: number;
+  reminderMax: number;
+}
+export interface EmailStatus {
+  enabled: boolean;
+  queue: { count: number; bytes: number };
+  pendingEvents: number;
+  lastOkAt: number | null;
+  lastError: { at: number; stage: string; error: string; code: number; message: string } | null;
+  nextAttemptInS: number;
+  sent: number;
+  failed: number;
+  dropped: number;
+  configError: string | null;
+}
+export interface EmailSettings {
+  rev: number;
+  config: EmailConfig;
+  passwordSet: boolean;
+  status: EmailStatus;
+  groups: { id: string; name: string; members: number; withEmail: number }[];
+}
+export interface EmailTestResult {
+  ok: boolean;
+  stage: string;
+  error: string;
+  code: number;
+  message: string;
+}
+
+const str = (v: unknown, d = ''): string => (typeof v === 'string' ? v : d);
+const EVENTS: readonly EmailEvent[] = ['active', 'return', 'reminder'];
+
+export function defaultEmailConfig(): EmailConfig {
+  return {
+    enabled: false,
+    siteName: '',
+    baseUrl: '',
+    smtp: {
+      host: '',
+      port: 587,
+      security: 'starttls',
+      username: '',
+      auth: 'auto',
+      from: '',
+      fromName: '',
+      caFile: '',
+      pinSha256: '',
+      timeoutS: 20,
+    },
+    rules: [],
+    quietHours: { enabled: false, from: '22:00', to: '06:00', minPriority: 1 },
+    batchSeconds: 30,
+    maxPerHour: 20,
+    reminderMax: 3,
+  };
+}
+
+export function parseEmailSettings(b: unknown): EmailSettings {
+  if (!isObj(b) || !isObj(b.config)) throw new AdminApiError(0, 'BAD_RESPONSE', {});
+  const c = b.config;
+  const d = defaultEmailConfig();
+  const s = isObj(c.smtp) ? c.smtp : {};
+  const q = isObj(c.quietHours) ? c.quietHours : {};
+  const sec = s.security === 'smtps' || s.security === 'none' ? s.security : 'starttls';
+  const auth = s.auth === 'plain' || s.auth === 'login' ? s.auth : 'auto';
+  const st = isObj(b.status) ? b.status : {};
+  const le = isObj(st.lastError) ? st.lastError : null;
+  return {
+    rev: num(b.rev) ?? 0,
+    passwordSet: b.passwordSet === true,
+    config: {
+      enabled: c.enabled === true,
+      siteName: str(c.siteName),
+      baseUrl: str(c.baseUrl),
+      smtp: {
+        host: str(s.host),
+        port: num(s.port) ?? d.smtp.port,
+        security: sec,
+        username: str(s.username),
+        auth,
+        from: str(s.from),
+        fromName: str(s.fromName),
+        caFile: str(s.caFile),
+        pinSha256: str(s.pinSha256),
+        timeoutS: num(s.timeoutS) ?? d.smtp.timeoutS,
+      },
+      rules: Array.isArray(c.rules)
+        ? c.rules.filter(isObj).map((r) => ({
+            id: str(r.id),
+            name: str(r.name),
+            enabled: r.enabled !== false,
+            priorities: Array.isArray(r.priorities)
+              ? r.priorities.filter((p): p is number => typeof p === 'number')
+              : [],
+            classes: strs(r.classes),
+            areas: strs(r.areas),
+            events: strs(r.events).filter((e): e is EmailEvent => EVENTS.includes(e as EmailEvent)),
+            reminderMin: num(r.reminderMin) ?? 30,
+            to: strs(r.to),
+            groups: strs(r.groups),
+          }))
+        : [],
+      quietHours: {
+        enabled: q.enabled === true,
+        from: str(q.from, d.quietHours.from),
+        to: str(q.to, d.quietHours.to),
+        minPriority: num(q.minPriority) ?? 1,
+      },
+      batchSeconds: num(c.batchSeconds) ?? d.batchSeconds,
+      maxPerHour: num(c.maxPerHour) ?? d.maxPerHour,
+      reminderMax: num(c.reminderMax) ?? d.reminderMax,
+    },
+    status: {
+      enabled: st.enabled === true,
+      queue: {
+        count: isObj(st.queue) ? (num(st.queue.count) ?? 0) : 0,
+        bytes: isObj(st.queue) ? (num(st.queue.bytes) ?? 0) : 0,
+      },
+      pendingEvents: num(st.pendingEvents) ?? 0,
+      lastOkAt: num(st.lastOkAt),
+      lastError: le
+        ? {
+            at: num(le.at) ?? 0,
+            stage: str(le.stage),
+            error: str(le.error),
+            code: num(le.code) ?? 0,
+            message: str(le.message),
+          }
+        : null,
+      nextAttemptInS: num(st.nextAttemptInS) ?? 0,
+      sent: num(st.sent) ?? 0,
+      failed: num(st.failed) ?? 0,
+      dropped: num(st.dropped) ?? 0,
+      configError: typeof st.configError === 'string' ? st.configError : null,
+    },
+    groups: Array.isArray(b.groups)
+      ? b.groups.filter(isObj).map((g) => ({
+          id: str(g.id),
+          name: str(g.name, str(g.id)),
+          members: num(g.members) ?? 0,
+          withEmail: num(g.withEmail) ?? 0,
+        }))
+      : [],
+  };
+}
+
 export interface AdminApiOptions {
   fetch?: typeof fetch;
   csrf: () => Record<string, string>;
@@ -283,6 +467,7 @@ export class AdminApi {
     groups: string[];
     password?: string;
     generate?: true;
+    email?: string;
   }): Promise<{ rev: number; password?: string }> {
     return this.#rev(await this.#call('POST', '/api/v1/admin/users', b));
   }
@@ -295,6 +480,7 @@ export class AdminApi {
       enabled?: boolean;
       unlock?: true;
       reauth?: string;
+      email?: string | null;
     },
   ): Promise<{ rev: number; signedOut?: boolean }> {
     return this.#rev(
@@ -383,6 +569,25 @@ export class AdminApi {
     for (const [k, v] of Object.entries(q)) if (v !== undefined && v !== '') p.set(k, String(v));
     const qs = p.toString();
     return parseAudit(await this.#call('GET', `/api/v1/admin/audit${qs ? `?${qs}` : ''}`));
+  }
+
+  // ---- email alarm (feature 023) ----
+  async emailSettings() {
+    return parseEmailSettings(await this.#call('GET', '/api/v1/admin/email'));
+  }
+  async saveEmail(rev: number, config: EmailConfig) {
+    return this.#rev(await this.#call('POST', '/api/v1/admin/email', { rev, config }));
+  }
+  async testEmail(to: string): Promise<EmailTestResult> {
+    const r = await this.#call('POST', '/api/v1/admin/email/test', { to });
+    const o = isObj(r) ? r : {};
+    return {
+      ok: o.ok === true,
+      stage: str(o.stage),
+      error: str(o.error),
+      code: num(o.code) ?? 0,
+      message: str(o.message),
+    };
   }
 
   #rev(r: unknown): { rev: number; password?: string; signedOut?: boolean; accessRev?: number } {

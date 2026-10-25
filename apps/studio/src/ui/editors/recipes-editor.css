@@ -1,0 +1,150 @@
+/* Editor Recipe (feature 024). Light DOM: mọi bộ chọn trong mat-recipes-editor, lớp riêng tiền tố rc-. Chỉ token theme. */
+
+mat-recipes-editor {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-recipes-editor .rc {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+mat-recipes-editor .ed-tools .sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 4px;
+  background: var(--border);
+}
+mat-recipes-editor .rc-body {
+  display: grid;
+  grid-template-columns: minmax(120px, 150px) minmax(0, 1fr) minmax(210px, 250px);
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+mat-recipes-editor .rc-types,
+mat-recipes-editor .rc-props {
+  overflow: auto;
+  min-height: 0;
+}
+mat-recipes-editor .rc-types {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+}
+mat-recipes-editor .rc-pane-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 4px;
+}
+mat-recipes-editor .rc-pane-head h3,
+mat-recipes-editor .rc-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: var(--fs-s);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+mat-recipes-editor .rc-types ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+mat-recipes-editor .rc-types li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+mat-recipes-editor .rc-types li:hover {
+  background: var(--hover);
+}
+mat-recipes-editor .rc-types li.on {
+  background: var(--sel);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+mat-recipes-editor .rc-types li:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+mat-recipes-editor .rc-tname {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+mat-recipes-editor .rc-gridwrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  border-radius: var(--radius);
+}
+mat-recipes-editor .rc-gridwrap.drop {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+}
+mat-recipes-editor mat-grid {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+mat-recipes-editor .rc-dropzone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px dashed var(--border-2);
+  border-radius: var(--radius);
+  color: var(--muted);
+  text-align: center;
+  padding: 24px;
+}
+mat-recipes-editor .rc-props {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+mat-recipes-editor .rc-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+mat-recipes-editor .rc-card h4 {
+  margin: 10px 0 4px;
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+mat-recipes-editor .rc-field {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 5px;
+}
+mat-recipes-editor .rc-field label {
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+mat-recipes-editor .rc-field .input {
+  width: 100%;
+}
+mat-recipes-editor .rc-tagline {
+  margin: 0 0 6px;
+}
+mat-recipes-editor .rc-foot {
+  margin: 6px 0 0;
+}

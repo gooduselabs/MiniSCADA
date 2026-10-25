@@ -47,6 +47,7 @@ export class MatTree extends AppElement {
     const sel = this.menu?.nodeId ?? this.app.ui.treeSel ?? '';
     // feature 017: Kết nối và kênh có lệnh Thêm kênh Mitsubishi MC
     if (sel === 'connections' || sel.startsWith('channel:')) return [...base, 'connections.addMc'];
+    if (sel === 'recipes' || sel.startsWith('recipe:')) return ['recipe.add', ...base];
     return sel === 'reports' || sel.startsWith('report:') ? ['report.add', ...base] : base;
   }
 

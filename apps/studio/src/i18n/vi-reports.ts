@@ -2,6 +2,9 @@
 // báo cáo (bảng, alarm, thiết bị, logic), kỳ tuần/khoảng, thẻ, biểu đồ, lệnh Thêm báo cáo.
 export const viReports = {
   'cmd.report.add': 'Thêm báo cáo…',
+  'rpt.ds.logo': 'Logo đơn vị',
+  'rpt.ds.logoHelp':
+    'Tệp SVG hoặc PNG trong graphics/ (tối đa 256 KiB), hiện trên dải tiêu đề, PDF và XLSX.',
   'rpt.fn.onTime': 'Thời gian ON',
   'rpt.fn.starts': 'Số lần bật',
   'rpt.unit.times': 'lần',

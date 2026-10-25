@@ -219,6 +219,43 @@ void AlarmGlue::stop() {
 void AlarmGlue::afterEvents(const std::vector<AlarmEvent>& events) {
     if (events.empty()) return;
     if (service_) service_->push(events);
+    if (opt_.notices) {  // feature 023: what the email service needs, copied on the tick thread
+        std::vector<notify::AlarmNotice> out;
+        for (const AlarmEvent& e : events) {
+            const bool state = e.kind == AlarmEvent::Kind::State && e.to;
+            const bool gone = e.kind == AlarmEvent::Kind::Removed ||
+                              e.kind == AlarmEvent::Kind::Disable ||
+                              e.kind == AlarmEvent::Kind::Shelve;
+            if (!state && !gone) continue;
+            const auto it = byId_.find(e.instance);
+            if (it == byId_.end()) continue;
+            const InstanceDef& d = *it->second;
+            notify::AlarmNotice n;
+            n.kind = state ? notify::AlarmNotice::Kind::State : notify::AlarmNotice::Kind::Gone;
+            n.tEpochMs = e.tEpoch;
+            n.instance = e.instance;
+            n.occurrence = e.occurrence;
+            n.from = e.from ? stateName(*e.from) : "NORMAL";
+            n.to = e.to ? stateName(*e.to) : "NORMAL";
+            n.startup = e.startup;
+            n.priority = 3;
+            for (const ClassDef& c : defs_.classes)
+                if (c.id == d.classId) {
+                    n.priority = static_cast<int>(c.priority);
+                    n.className = c.name;
+                }
+            n.classId = d.classId;
+            n.areaId = d.areaId;
+            const auto an = areaName_.find(d.areaId);
+            if (an != areaName_.end()) n.areaName = an->second;
+            n.name = d.name;
+            n.tag = d.tagId.empty() ? d.deviceId : d.tagId;
+            n.text = e.text.empty() && e.row ? e.row->text : e.text;
+            n.value = e.value;
+            out.push_back(std::move(n));
+        }
+        if (!out.empty()) opt_.notices(std::move(out));
+    }
     std::lock_guard<std::mutex> l(liveMu_);
     for (const AlarmEvent& e : events)
         if (!e.instance.empty() && e.kind != AlarmEvent::Kind::Command)

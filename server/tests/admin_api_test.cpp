@@ -608,5 +608,105 @@ TEST(AdminApi, TheAdminPasswordReset) {
     EXPECT_EQ(r.auth->loginWeb("vh1", old, {kIp, 6}).status, LoginStatus::Failed);
 }
 
+// Feature 023 (device-api 1.6.0 mở rộng, apiVersion không đổi): the email of an account (no
+// sign-out), the alarm email settings (strict check, groups that exist, rev, audit before the file)
+// and the test email.
+TEST(AdminApi, AlarmEmailSettingsAndAccountEmail) {
+    Rig r;
+    const AdminCaller admin = r.signIn("admin");
+    const AdminCaller vh1 = r.signIn("vh1", 40001);
+    const AdminCaller xem = r.signIn("xem1", 40002);
+    EXPECT_EQ(r.get("/api/v1/admin/email", admin).status, 501) << "no email service";
+
+    std::vector<std::string> sentTo;
+    notify::EmailServiceOptions eo;
+    eo.dir = r.dir.file("notify");
+    eo.send = [&](const notify::SmtpOptions& o, const std::string&,
+                  const std::vector<std::string>& to, const std::string& data) {
+        notify::SmtpResult res;
+        res.ok = o.host == "smtp.example.com" && data.find("Subject:") != std::string::npos;
+        res.stage = "done";
+        sentTo.insert(sentTo.end(), to.begin(), to.end());
+        return res;
+    };
+    eo.password = []() -> std::optional<std::string> { return std::string("app-pass-123"); };
+    notify::EmailService svc(eo);
+    std::string err;
+    ASSERT_TRUE(svc.start(err, false)) << err;
+    AdminBackend b;
+    b.auth = r.auth.get();
+    b.store = r.store.get();
+    b.access = r.access.get();
+    b.audit = [&r](const AuditEvent& e) {
+        std::lock_guard<std::mutex> l(r.mu);
+        r.events.push_back(e);
+    };
+    b.monoMs = [&r] { return r.now; };
+    b.email = &svc;
+    r.api = std::make_unique<AdminApi>(b);
+
+    EXPECT_EQ(r.get("/api/v1/admin/email", xem).status, 403);
+    AdminReply a = r.get("/api/v1/admin/email", admin);
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    EXPECT_EQ(a.body["rev"], 0);
+    EXPECT_EQ(a.body["passwordSet"], true);
+    EXPECT_EQ(a.body.dump().find("app-pass-123"), std::string::npos);
+
+    json cfg = {{"enabled", true},
+                {"siteName", "Trạm 1"},
+                {"smtp",
+                 {{"host", "smtp.example.com"},
+                  {"port", 587},
+                  {"username", "u"},
+                  {"from", "scada@example.com"}}},
+                {"rules", {{{"id", "r1"}, {"to", {"a@example.com"}}, {"groups", {"ca-a"}}}}}};
+    a = r.post("/api/v1/admin/email", {{"rev", 0}, {"config", cfg}}, admin);
+    EXPECT_EQ(a.status, 400) << "group ca-a does not exist yet";
+    ASSERT_EQ(r.makeGroup("ca-a", admin).status, 201);
+    json bad = cfg;
+    bad["smtp"]["password"] = "x";
+    EXPECT_EQ(r.post("/api/v1/admin/email", {{"rev", 0}, {"config", bad}}, admin).status, 400)
+        << "no password through the API";
+    a = r.post("/api/v1/admin/email", {{"rev", 0}, {"config", cfg}}, admin);
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    EXPECT_EQ(a.body["rev"], 1);
+    EXPECT_EQ(r.audit(AuditAction::EmailConfig).size(), 1u);
+    a = r.post("/api/v1/admin/email", {{"rev", 0}, {"config", cfg}}, admin);
+    EXPECT_EQ(a.status, 409);
+    EXPECT_EQ(a.body["rev"], 1);
+    EXPECT_EQ(svc.config().smtp.host, "smtp.example.com");
+
+    EXPECT_EQ(r.post("/api/v1/admin/email/test", {{"to", "bad address"}}, admin).status, 400);
+    a = r.post("/api/v1/admin/email/test", {{"to", "t@example.com"}}, admin);
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    EXPECT_EQ(a.body["ok"], true);
+    EXPECT_EQ(sentTo, std::vector<std::string>{"t@example.com"});
+    EXPECT_EQ(r.audit(AuditAction::EmailTest).size(), 1u);
+
+    // The email of an account: kept, listed, audited, no sign-out.
+    const int64_t rev = r.usersRev();
+    EXPECT_EQ(
+        r.post("/api/v1/admin/users/vh1", {{"rev", rev}, {"email", "not valid"}}, admin).status,
+        400);
+    a = r.post("/api/v1/admin/users/vh1", {{"rev", rev}, {"email", "vh1@example.com"}}, admin);
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    EXPECT_TRUE(r.alive(vh1)) << "an email change does not end the sessions";
+    EXPECT_EQ(r.audit(AuditAction::AccountEmail).size(), 1u);
+    a = r.get("/api/v1/admin/users", admin);
+    bool seen = false;
+    for (const auto& u : a.body["users"]) {
+        if (u["name"] == "vh1") {
+            EXPECT_EQ(u["email"], "vh1@example.com");
+            seen = true;
+        } else {
+            EXPECT_TRUE(u["email"].is_null());
+        }
+    }
+    EXPECT_TRUE(seen);
+    a = r.post("/api/v1/admin/users/vh1", {{"rev", r.usersRev()}, {"email", nullptr}}, admin);
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    EXPECT_EQ(r.store->read().users.file.find("vh1")->email, "");
+}
+
 }  // namespace
 }  // namespace mat

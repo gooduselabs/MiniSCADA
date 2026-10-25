@@ -116,6 +116,36 @@ TEST(UsersFile, LaterMinorVersionsAndUnknownKeys) {
     EXPECT_TRUE(empty.file.users.empty());
 }
 
+// Feature 023: the optional email of an account, read, written back, checked.
+TEST(UsersFile, EmailOfAnAccount) {
+    for (const char* ok : {"a@example.com", "van.an+ca1@mail.example.com", "x_y-z@sub.example.org"})
+        EXPECT_TRUE(validAccountEmail(ok)) << ok;
+    for (const char* bad :
+         {"", "a@", "@example.com", "a@b@example.com", "a b@example.com", "a@example",
+          "a@.example.com", "a@example.com.", "a@exa..mple.com", "a<b>@example.com",
+          "a@example.com\r\nBcc: x@example.com", "\xC3\xA1@example.com", "a,b@example.com"})
+        EXPECT_FALSE(validAccountEmail(bad)) << bad;
+    EXPECT_FALSE(validAccountEmail(std::string(250, 'a') + "@example.com"));
+
+    nlohmann::json j = usersJsonOf(threeAccounts());
+    j["users"][0]["email"] = "admin@example.com";
+    j["users"][1]["email"] = nullptr;
+    UsersRead r = parseUsers(j.dump());
+    ASSERT_EQ(r.status, UsersStatus::Ok) << r.error;
+    EXPECT_EQ(r.file.find("admin")->email, "admin@example.com");
+    EXPECT_EQ(r.file.find("kysu1")->email, "");
+    const std::string back = usersJson(r.file);
+    const UsersRead again = parseUsers(back);
+    ASSERT_EQ(again.status, UsersStatus::Ok) << again.error;
+    EXPECT_EQ(again.file.find("admin")->email, "admin@example.com");
+    EXPECT_EQ(back.find("\"email\":\"\""), std::string::npos) << "no empty email written";
+
+    j["users"][0]["email"] = "not an address";
+    EXPECT_EQ(parseUsers(j.dump()).status, UsersStatus::Error);
+    j["users"][0]["email"] = 5;
+    EXPECT_EQ(parseUsers(j.dump()).status, UsersStatus::Error);
+}
+
 TEST(UsersFile, AnythingWrongGivesNoAccount) {
     const nlohmann::json good = usersJsonOf(threeAccounts());
     auto with = [&](const std::function<void(nlohmann::json&)>& change) {

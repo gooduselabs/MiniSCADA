@@ -44,4 +44,14 @@ export class NodeDirSource implements ProjectSource {
       return { error: 'missing' };
     }
   }
+  async size(rel: string): Promise<number | null> {
+    if (!isSafeRelPath(rel)) return null;
+    try {
+      if (!(await exactCase(this.root, rel))) return null;
+      const st = await stat(resolve(this.root, rel));
+      return st.isFile() ? st.size : null;
+    } catch {
+      return null;
+    }
+  }
 }

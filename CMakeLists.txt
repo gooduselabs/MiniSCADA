@@ -296,6 +296,11 @@ target_compile_options(mat_expression PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
 add_library(mat_modbus_codec STATIC
   drivers/modbus/address.cpp
   drivers/modbus/codec.cpp)
+# MQTT address and topic filters (feature 022): pure, shared vectors with packages/tag-codec; the
+# validator uses it.
+add_library(mat_mqtt_codec STATIC drivers/mqtt/address.cpp)
+target_include_directories(mat_mqtt_codec PUBLIC ${CMAKE_SOURCE_DIR})
+target_compile_options(mat_mqtt_codec PRIVATE ${MAT_WARN} -O2)
 # OPC UA NodeId (feature 019): pure, shared vectors with packages/tag-codec; the validator uses it.
 add_library(mat_opcua_codec STATIC drivers/opcua/node_id.cpp)
 target_include_directories(mat_opcua_codec PUBLIC ${CMAKE_SOURCE_DIR})
@@ -358,6 +363,8 @@ add_library(mat_core STATIC
   core/project-manager/rules_fins.cpp
   core/project-manager/rules_mc.cpp
   core/project-manager/rules_bacnet.cpp
+  core/project-manager/rules_recipes.cpp
+  core/project-manager/rules_mqtt.cpp
   core/project-manager/widget_catalog.cpp
   core/project-manager/logging_estimate.cpp
   core/project-manager/rules_logic.cpp
@@ -370,9 +377,19 @@ add_library(mat_core STATIC
   server/time_sync.cpp)
 target_include_directories(mat_core PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_core PUBLIC mat_json mat_diagnostics Threads::Threads mat_expression mat_modbus_codec mat_s7_codec mat_mc_codec
-                      mat_merge_planner mat_calc_graph mat_fins_codec mat_bacnet_codec mat_opcua_codec)
+                      mat_merge_planner mat_calc_graph mat_fins_codec mat_bacnet_codec mat_opcua_codec mat_mqtt_codec)
 target_compile_definitions(mat_core PUBLIC VALIJSON_USE_EXCEPTIONS=1)
 target_compile_options(mat_core PRIVATE ${MAT_WARN} -O2)
+
+# Recipes (feature 024, ADR-052): the model, the device store and the service of the recipe API, without
+# HTTP; the writes go through an interface (the tag write coordinator in the runtime).
+add_library(mat_recipe STATIC
+  core/recipe/recipe_model.cpp
+  core/recipe/recipe_store.cpp
+  core/recipe/recipe_service.cpp)
+target_include_directories(mat_recipe PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_recipe PUBLIC mat_core Threads::Threads)
+target_compile_options(mat_recipe PRIVATE ${MAT_WARN} -O2)
 
 # Alarms (feature 009, ADR-027, ADR-028): the engine (pure), the text, the compiled definitions, alarm.db
 # and its service. No page, HTTP or audit library: audit is injected as a function (Constitution II).
@@ -388,6 +405,21 @@ target_include_directories(mat_alarm PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_alarm PUBLIC mat_json mat_sqlite mat_sqlite_count Threads::Threads)
 target_compile_options(mat_alarm PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
 
+# Alarm email (feature 023, ADR-051): the SMTP client on Mbed TLS (STARTTLS, SMTPS), the message, the
+# rules (batch, reminders, quiet hours, hourly limit), the durable outbox and the service thread.
+# No HTTP and no audit library: the runtime injects audit, clocks, the password and the groups.
+add_library(mat_notify STATIC
+  core/notify/email_config.cpp
+  core/notify/email_message.cpp
+  core/notify/email_rules.cpp
+  core/notify/email_outbox.cpp
+  core/notify/smtp_client.cpp
+  core/notify/email_service.cpp)
+target_include_directories(mat_notify PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_notify PUBLIC mat_json Threads::Threads PRIVATE mat_auth mat_crypto mat_mbedtls)
+target_compile_options(mat_notify PRIVATE ${MAT_WARN} -O2 -ffunction-sections -fdata-sections)
+target_link_libraries(mat_device INTERFACE mat_notify)
+
 # Tag Engine v1 (feature 006, ADR-017): scaling now, tag model, engine and retained values below.
 add_library(mat_tag_engine STATIC
   core/tag-engine/scaling.cpp
@@ -400,13 +432,14 @@ add_library(mat_tag_engine STATIC
   core/tag-engine/mc_factory.cpp
   core/tag-engine/bacnet_factory.cpp
   core/tag-engine/opcua_factory.cpp
+  core/tag-engine/mqtt_factory.cpp
   core/tag-engine/token_bucket.cpp
   core/tag-engine/write_coordinator.cpp
   core/tag-engine/pulse_journal.cpp
   core/tag-engine/retain_store.cpp)
 target_include_directories(mat_tag_engine PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_tag_engine PUBLIC mat_core mat_expression mat_modbus_codec mat_sim mat_calc_graph
-                      mat_drivers mat_modbus mat_s7 mat_fins mat_mc mat_bacnet mat_opcua)
+                      mat_drivers mat_modbus mat_s7 mat_fins mat_mc mat_bacnet mat_opcua mat_mqtt)
 target_compile_options(mat_tag_engine PRIVATE ${MAT_WARN} -O2 -ffp-contract=off)
 
 # Logic v2 (feature 011 T134, ADR-037): the engine of rules, timers, counters, totalizers, run hours
@@ -517,6 +550,27 @@ target_link_libraries(mat_opcua PUBLIC mat_drivers mat_opcua_codec mat_open62541
 target_compile_options(mat_opcua PRIVATE ${MAT_WARN} -O2)
 target_link_libraries(mat_device INTERFACE mat_opcua)
 # The OPC UA test server (feature 019, spec D13): in process for the driver tests, and the binary
+# MQTT 3.1.1 client driver (feature 022, ADR-050): packets, payloads, the TCP/TLS link (mat_mbedtls)
+# and the driver, over the SDK. Written here, no third-party MQTT library (specs/022-driver-mqtt/plan.md).
+add_library(mat_mqtt STATIC
+  drivers/mqtt/packet.cpp
+  drivers/mqtt/payload.cpp
+  drivers/mqtt/link.cpp
+  drivers/mqtt/mqtt_driver.cpp)
+target_include_directories(mat_mqtt PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_mqtt PUBLIC mat_drivers mat_mqtt_codec mat_json mat_mbedtls)
+target_compile_options(mat_mqtt PRIVATE ${MAT_WARN} -O2)
+target_link_libraries(mat_device INTERFACE mat_mqtt)
+
+# mat-mqtt-sim, the broker of the driver tests and of tests/driver-it-mqtt. Never in the device package.
+add_library(mat_mqtt_sim STATIC tools/mqtt-sim/broker.cpp)
+target_include_directories(mat_mqtt_sim PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(mat_mqtt_sim PUBLIC mat_mqtt Threads::Threads)
+target_compile_options(mat_mqtt_sim PRIVATE ${MAT_WARN} -O2)
+add_executable(mat-mqtt-sim tools/mqtt-sim/main.cpp)
+target_link_libraries(mat-mqtt-sim PRIVATE mat_mqtt_sim)
+target_compile_options(mat-mqtt-sim PRIVATE ${MAT_WARN} -O2)
+
 # mat-opcua-sim of the integration rig. Never in the device package.
 add_library(mat_opcua_sim STATIC tools/opcua-sim/sim_server.cpp)
 target_include_directories(mat_opcua_sim PUBLIC ${CMAKE_SOURCE_DIR})
@@ -542,10 +596,11 @@ target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 # member functions of EngineeringApi, in files of their own.
 add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/http/opcua_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/http/logic_api.cpp server/write_glue.cpp
             server/write_subsystem.cpp server/http/update_api.cpp server/update_service.cpp
-            server/http/admin_api.cpp server/access_glue.cpp)
+            server/http/admin_api.cpp server/access_glue.cpp
+            server/http/recipes_api.cpp server/recipe_glue.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_api_ext PUBLIC mat_historian_query civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
-                      mat_runtime_engine mat_update mat_project_store)
+                      mat_runtime_engine mat_update mat_project_store mat_recipe mat_notify)
 target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
 # The alarm engine in the runtime and its routes (feature 009 T038, T055, T095): the glue owns the
 # engine and alarm.db, alarms_api reads the requests. Linked by whoever builds http_api.cpp, which
@@ -717,6 +772,9 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   mat_test(vectors_10_test core/project-manager/tests/vectors_10_test.cpp)
   # Format 1.1 (feature 012 T011): the shared vectors v11-* (grid layout, theme).
   mat_test(vectors_11_test core/project-manager/tests/vectors_11_test.cpp)
+  # Recipes (feature 024): model, device store, service (sequential writes, failure, limits, rights).
+  mat_test(recipe_service_test core/recipe/tests/recipe_service_test.cpp)
+  target_link_libraries(recipe_service_test PRIVATE mat_recipe)
   # Extra files of a project (feature 011 T022, T023): project-stage package vectors.
   mat_test(package_files_test core/project-manager/tests/package_files_test.cpp)
   target_link_libraries(package_files_test PRIVATE mat_package mat_crypto)
@@ -911,6 +969,14 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
     mat_test(${t} drivers/opcua/tests/${t}.cpp)
     target_link_libraries(${t} PRIVATE mat_opcua_sim)
   endforeach()
+  # MQTT (feature 022): address vectors, packets, payloads, the driver on mat-mqtt-sim, the factory.
+  mat_test(mqtt_address_test drivers/mqtt/tests/mqtt_address_test.cpp)
+  foreach(t mqtt_packet_test mqtt_payload_test mqtt_driver_test)
+    mat_test(${t} drivers/mqtt/tests/${t}.cpp)
+    target_link_libraries(${t} PRIVATE mat_mqtt_sim)
+  endforeach()
+  mat_test(mqtt_factory_test core/tag-engine/tests/mqtt_factory_test.cpp)
+  target_link_libraries(mqtt_factory_test PRIVATE mat_tag_engine)
   foreach(t serial_port_test serial_ports_test)
     mat_test(${t} drivers/sdk/tests/${t}.cpp)
     target_link_libraries(${t} PRIVATE mat_drivers)
@@ -987,6 +1053,12 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
   # core/auth (T026–T031): password_hash_test also calls the Argon2 library directly (RFC 9106).
   mat_test(password_hash_test core/auth/tests/password_hash_test.cpp)
   target_link_libraries(password_hash_test PRIVATE mat_auth mat_argon2)
+  # Alarm email (feature 023): the pure parts, then the SMTP client and the service against a fake
+  # SMTP server with a test certificate (server/tls makes it).
+  mat_test(notify_test core/notify/tests/notify_test.cpp)
+  target_link_libraries(notify_test PRIVATE mat_notify)
+  mat_test(smtp_client_test core/notify/tests/smtp_client_test.cpp)
+  target_link_libraries(smtp_client_test PRIVATE mat_notify mat_server_tls mat_mbedtls)
   mat_test(account_store_test core/auth/tests/account_store_test.cpp)
   target_link_libraries(account_store_test PRIVATE mat_auth)
   mat_test(session_store_test core/auth/tests/session_store_test.cpp)
@@ -1109,6 +1181,13 @@ if(NOT CMAKE_CROSSCOMPILING OR MAT_ARMHF_TESTS)
              server/http/engineering_api.cpp server/http/engineering_api_project.cpp
              server/http/web_contexts.cpp server/project_glue.cpp)
     target_link_libraries(logic_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
+                          mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext
+                          mat_runtime_engine)
+    # The routes of recipes (feature 024): the same listeners, the real coordinator, fake drivers.
+    mat_test(recipes_api_test server/tests/recipes_api_test.cpp server/http/auth_gate.cpp
+             server/http/engineering_api.cpp server/http/engineering_api_project.cpp
+             server/http/web_contexts.cpp server/project_glue.cpp)
+    target_link_libraries(recipes_api_test PRIVATE mat_tls_test_support mat_auth mat_audit mat_server_tls
                           mat_package mat_project_store mat_diagnostics mat_discovery mat_api_ext
                           mat_runtime_engine)
     # The update routes (feature 011 T107): the same listeners, the update service on a temporary

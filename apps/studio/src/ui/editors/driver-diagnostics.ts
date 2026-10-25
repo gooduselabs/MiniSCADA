@@ -14,6 +14,7 @@ import {
   exceptionLabel,
   groupRows,
   opcuaDetailRows,
+  mqttDetailRows,
   type DiagChannelView,
   type DiagDeviceView,
   type DriverDiag,
@@ -296,7 +297,16 @@ export class DriverDiagnostics extends AppElement {
         <li>${kindText(c.kind)}</li>
         ${det?.pduSize ? html`<li data-role="pdu">${t('dd.channel.pdu', { n: det.pduSize })}</li>` : nothing}
         ${det?.localTsap || det?.remoteTsap ? html`<li class="mono" data-role="tsap">${t('dd.channel.tsap', { local: det.localTsap ?? '—', remote: det.remoteTsap ?? '—' })}</li>` : nothing}
-        ${opcuaDetailRows(c.details).map(
+        ${(c.kind === 'mqtt' ? mqttDetailRows(c.details) : []).map(
+          (r) =>
+            html`<li
+              data-role="mqtt-${r.key}"
+              class=${r.key === 'serverCertSha256' || r.key === 'broker' ? 'mono dd-wrap' : ''}
+            >
+              ${t(`dd.mqtt.${r.key}` as MessageKey)}: ${r.value}
+            </li>`,
+        )}
+        ${(c.kind === 'mqtt' ? [] : opcuaDetailRows(c.details)).map(
           (r) =>
             html`<li
               data-role="ua-${r.key}"

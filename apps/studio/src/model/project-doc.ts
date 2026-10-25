@@ -24,6 +24,7 @@ import {
   type Channel,
   type ConnectionsConfig,
   type ReportsConfig,
+  type RecipesConfig,
   type FieldDevice,
   type LoggingConfig,
   type Project,
@@ -125,6 +126,9 @@ export type ProjectEdit =
   | { kind: 'logging'; value: LoggingConfig }
   /** Thay cả file mẫu báo cáo (reports.json); project.json nhận `reportsFile` khi chưa có. */
   | { kind: 'reports'; value: ReportsConfig }
+  // ---- Feature 024 (định dạng 1.1): recipe ----
+  /** Thay cả recipes.json; project.json nhận `recipesFile` khi chưa có. */
+  | { kind: 'recipes'; value: RecipesConfig }
   // ---- Feature 011 (định dạng 1.0): template ----
   /** Thêm hoặc thay cả `templates/<id>.template.json`; template mới tạo file và thêm đường dẫn vào `project.json › templates`. */
   | { kind: 'templateUpsert'; template: TemplateDoc }
@@ -154,6 +158,8 @@ export interface EditableProject {
   /** Định dạng 0.6: lưu trữ và mẫu báo cáo (sửa được); thiếu nghĩa là chưa có file. */
   logging?: LoggingConfig | null;
   reports?: ReportsConfig | null;
+  /** Định dạng 1.1 (feature 024): recipe; thiếu nghĩa là chưa có file. */
+  recipes?: RecipesConfig | null;
   /** Định dạng 1.0: template theo id (tệp `templates/<id>.template.json` khai ở project.json). */
   templates?: Record<string, TemplateDoc>;
   /** Định dạng 1.0: logic.json (thiếu: project chưa có logic). */
@@ -170,6 +176,7 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.str
 export const CONNECTIONS_FILE = 'connections.json';
 export const LOGGING_FILE = 'logging.json';
 export const REPORTS_FILE = 'reports.json';
+export const RECIPES_FILE = 'recipes.json';
 export const LOGIC_FILE = 'logic.json';
 export const valueTableFile = (name: string): string => `value-tables/${name}.json`;
 export const watchTableFile = (id: string): string => `watch-tables/${id}.json`;
@@ -193,6 +200,7 @@ export interface Touched {
   svgBindings: Set<string>;
   logging: boolean;
   reports: boolean;
+  recipes: boolean;
   templates: Set<string>;
   logic: boolean;
   logicLayout: boolean;
@@ -210,6 +218,7 @@ const newTouched = (): Touched => ({
   svgBindings: new Set(),
   logging: false,
   reports: false,
+  recipes: false,
   templates: new Set(),
   logic: false,
   logicLayout: false,
@@ -237,6 +246,7 @@ export function applyEdits(
     ...(base.svgBindings ? { svgBindings: clone(base.svgBindings) } : {}),
     ...(base.logging !== undefined ? { logging: clone(base.logging) } : {}),
     ...(base.reports !== undefined ? { reports: clone(base.reports) } : {}),
+    ...(base.recipes !== undefined ? { recipes: clone(base.recipes) } : {}),
     ...(base.templates ? { templates: clone(base.templates) } : {}),
     ...(base.logic !== undefined ? { logic: clone(base.logic) } : {}),
     ...(base.logicLayout !== undefined ? { logicLayout: clone(base.logicLayout) } : {}),
@@ -297,6 +307,17 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
           s.reports = clone(e.value);
           touched.reports = true;
         }
+        break;
+      }
+      case 'recipes': {
+        if (!isObject(s.project)) break;
+        const rec = s.project as unknown as Record<string, unknown>;
+        if (typeof rec.recipesFile !== 'string') {
+          rec.recipesFile = RECIPES_FILE;
+          touched.project = true;
+        }
+        s.recipes = clone(e.value);
+        touched.recipes = true;
         break;
       }
       case 'project':
@@ -869,6 +890,10 @@ export function editableRels(docs: ProjectDocs): Set<string> {
     if (typeof rec.loggingFile === 'string') out.add(rec.loggingFile);
     if (typeof rec.reportsFile === 'string') out.add(rec.reportsFile);
   }
+  if (isVersion11(p)) {
+    const rec = p as Record<string, unknown>;
+    if (typeof rec.recipesFile === 'string') out.add(rec.recipesFile);
+  }
   if (isVersion10(p)) {
     for (const f of stringList((p as Record<string, unknown>).templates))
       if (TEMPLATE_REL.test(f)) out.add(f);
@@ -1001,6 +1026,12 @@ function editableOf(docs: ProjectDocs): EditableProject | null {
     state.reports =
       r && !r.removed && isObject(r.value) ? (r.value as unknown as ReportsConfig) : null;
   }
+  if (isVersion11(p)) {
+    const rec = p as unknown as Record<string, unknown>;
+    const rc = typeof rec.recipesFile === 'string' ? docs[rec.recipesFile] : undefined;
+    state.recipes =
+      rc && !rc.removed && isObject(rc.value) ? (rc.value as unknown as RecipesConfig) : null;
+  }
   if (isVersion10(p)) {
     const templates: Record<string, TemplateDoc> = {};
     for (const f of stringList((p as unknown as Record<string, unknown>).templates)) {
@@ -1080,6 +1111,8 @@ export function applyDocEdits(
     syncTable(rec06.loggingFile, state.logging);
   if (touched.reports && state.reports && typeof rec06.reportsFile === 'string')
     syncTable(rec06.reportsFile, state.reports);
+  if (touched.recipes && state.recipes && typeof rec06.recipesFile === 'string')
+    syncTable(rec06.recipesFile, state.recipes);
   for (const id of touched.templates) syncTable(templateFile(id), state.templates?.[id]);
   if (touched.logic && state.logic)
     syncTable(typeof rec06.logic === 'string' ? rec06.logic : LOGIC_FILE, state.logic);
@@ -1252,6 +1285,9 @@ export interface ProjectOutline {
   /** null: project không có mẫu báo cáo. */
   reportsFile: string | null;
   reports: ReportsConfig | null;
+  /** Feature 024 (1.1): null khi project không có recipe. */
+  recipesFile: string | null;
+  recipes: RecipesConfig | null;
   /** Họ 1.x (feature 011): template, logic sửa được. */
   format10: boolean;
   /** Định dạng 1.1 (feature 012): định dạng hiện hành (bố cục lưới, chủ đề); project cũ hơn được đề nghị nâng cấp. */
@@ -1354,7 +1390,15 @@ export function outlineOf(files: ProjectFiles): ProjectOutline {
   const reportsFile = typeof rec.reportsFile === 'string' ? rec.reportsFile : null;
   const reports = reportsFile === null ? undefined : files[reportsFile];
   const format10 = isVersion10(project);
+  const recipesFile =
+    isVersion11(project) && typeof rec.recipesFile === 'string' ? rec.recipesFile : null;
+  const recipesDoc = recipesFile === null ? undefined : files[recipesFile];
   return {
+    recipesFile,
+    recipes:
+      isObject(recipesDoc) && Array.isArray(recipesDoc.types)
+        ? (recipesDoc as unknown as RecipesConfig)
+        : null,
     format10,
     format11: isVersion11(project),
     logicFile: format10 && typeof rec.logic === 'string' ? rec.logic : null,

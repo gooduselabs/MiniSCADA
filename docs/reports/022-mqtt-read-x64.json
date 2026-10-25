@@ -1,0 +1,99 @@
+{
+  "scenario": "read",
+  "checks": [
+    {
+      "name": "the channel is connected",
+      "pass": true,
+      "detail": "{\"value\":null,\"quality\":\"BAD\",\"reason\":\"MQTT_SUBSCRIBE_REFUSED\"}"
+    },
+    {
+      "name": "a filter the broker refuses: BAD MQTT_SUBSCRIBE_REFUSED",
+      "pass": true
+    },
+    {
+      "name": "raw number: MQ.LEVEL = 42.5 GOOD",
+      "pass": true
+    },
+    {
+      "name": "JSON on a + filter: MQ.TEMP = 19.25",
+      "pass": true
+    },
+    {
+      "name": "JSON array path: MQ.ARR = -7",
+      "pass": true
+    },
+    {
+      "name": "ON as BOOL: MQ.RUN = true",
+      "pass": true
+    },
+    {
+      "name": "UTF-8 string",
+      "pass": true
+    },
+    {
+      "name": "# filter",
+      "pass": true
+    },
+    {
+      "name": "TLS with the pinned certificate: TLS.V = 8.5",
+      "pass": true,
+      "detail": "{\"value\":8.5,\"quality\":\"GOOD\",\"reason\":\"\"}"
+    },
+    {
+      "name": "TLS with a wrong pin: BAD MQTT_CERT_UNTRUSTED",
+      "pass": true,
+      "detail": "{\"value\":null,\"quality\":\"BAD\",\"reason\":\"MQTT_CERT_UNTRUSTED\"}"
+    },
+    {
+      "name": "a payload that does not decode: BAD MQTT_PAYLOAD",
+      "pass": true
+    },
+    {
+      "name": "and GOOD again",
+      "pass": true
+    },
+    {
+      "name": "diagnostics: connected, broker sim:1883",
+      "pass": true,
+      "detail": "{\"details\":{\"broker\":\"sim:1883\",\"clientId\":\"mat-rt-it\",\"dropped\":\"0\",\"groups\":\"1\",\"messagesIn\":\"0\",\"messagesOut\":\"1\",\"subscriptions\":\"9\",\"tls\":\"off\"},\"devices\":[{\"badFrames\":{\"crc\":0,\"echo\":0,\"format\":0,\"length\":0,\"tid\":0,\"unit\":0},\"exceptions\":{},\"groups\":[],\"id\":\"broker\",\"name\":\"Broker mq\",\"requestsOk\":8,\"responseMs\":{\"avg\":0,\"max\":0},\"state\":\"active\",\"timeouts\":0,\"writes\":{\"confirmed\":0,\"failed\":0,\"rejected\":0,\"timeout\":0}}],\"id\":\"mq\",\"kind\":\"mqtt\",\"lastError\":{\"at\":1792866704852,\"code\":\"MQTT_SUBSCRIBE_REFUSED\",\"device\":\"broker\"},\"name\":\"Broker mq\",\"reconnects\":0,\"state\":\"connected\",\"warnings\":[]}"
+    },
+    {
+      "name": "diagnostics of the TLS channel show the broker certificate",
+      "pass": true,
+      "detail": "{\"broker\":\"sim:8883\",\"clientId\":\"mat-rt-tls\",\"dropped\":\"0\",\"groups\":\"0\",\"messagesIn\":\"0\",\"messagesOut\":\"0\",\"serverCertSha256\":\"4167c5a7e4725c51cadd0714016f9b57ac79fb72215eeacd155ec129fabef3f9\",\"subscriptions\":\"1\",\"tls\":\"on\"}"
+    }
+  ],
+  "measures": {
+    "readLatencyMs": 81,
+    "diag": {
+      "broker": "sim:1883",
+      "clientId": "mat-rt-it",
+      "dropped": "0",
+      "groups": "1",
+      "messagesIn": "0",
+      "messagesOut": "1",
+      "subscriptions": "9",
+      "tls": "off"
+    },
+    "tlsDiag": {
+      "state": "connected",
+      "lastError": {
+        "at": 1792866703832,
+        "code": "MQTT_SECRET_MISSING",
+        "device": "broker-tls"
+      },
+      "details": {
+        "broker": "sim:8883",
+        "clientId": "mat-rt-tls",
+        "dropped": "0",
+        "groups": "0",
+        "messagesIn": "0",
+        "messagesOut": "0",
+        "serverCertSha256": "4167c5a7e4725c51cadd0714016f9b57ac79fb72215eeacd155ec129fabef3f9",
+        "subscriptions": "1",
+        "tls": "on"
+      }
+    }
+  },
+  "pass": true
+}

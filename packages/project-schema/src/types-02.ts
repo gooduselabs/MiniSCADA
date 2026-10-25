@@ -139,12 +139,14 @@ export interface FieldDevice {
   writePriority?: number;
   useRpm?: boolean;
   maxRpmProps?: number;
+  /** Chỉ MQTT (feature 022): quá hạn này không có tin thì Tag UNCERTAIN MQTT_STALE (0: không bao giờ). */
+  staleAfterMs?: number;
 }
 
 export interface Channel {
   id: string;
   name: string;
-  kind: 'modbus-tcp' | 'modbus-rtu' | 's7' | 'fins' | 'mc' | 'bacnet' | 'opcua';
+  kind: 'modbus-tcp' | 'modbus-rtu' | 's7' | 'fins' | 'mc' | 'bacnet' | 'opcua' | 'mqtt';
   enabled?: boolean;
   requestGapMs?: number;
   tcp?: { host: string; port?: number; connectTimeoutMs?: number; reconnectMaxS?: number };
@@ -183,6 +185,8 @@ export interface Channel {
   };
   /** Kênh opcua (feature 019, định dạng 1.1; specs/019-driver-opcua/contracts/opcua.md §1). */
   opcua?: OpcUaChannelConfig;
+  /** Kênh mqtt (feature 022, định dạng 1.1; specs/022-driver-mqtt/spec.md). */
+  mqtt?: MqttChannelConfig;
   devices: FieldDevice[];
 }
 
@@ -265,6 +269,32 @@ export interface OpcUaChannelConfig {
   auth?: { mode: 'anonymous' | 'username'; username?: string; secretId?: string };
   readMode?: 'subscription' | 'poll';
   sessionTimeoutMs?: number;
+  connectTimeoutMs?: number;
+  reconnectMaxS?: number;
+}
+
+/** Một nhóm publish của kênh MQTT (feature 022): giá trị nhiều Tag thành một tin JSON. */
+export interface MqttPublishGroup {
+  topic: string;
+  tags: string[];
+  intervalMs?: number;
+  onChange?: boolean;
+  qos?: 0 | 1;
+  retain?: boolean;
+}
+
+/** Khối mqtt của kênh MQTT (feature 022). */
+export interface MqttChannelConfig {
+  host: string;
+  port?: number;
+  clientId?: string;
+  keepAliveS?: number;
+  cleanSession?: boolean;
+  tls?: { enabled: boolean; serverCertSha256?: string; caCertPem?: string; serverName?: string };
+  auth?: { username: string; secretId: string };
+  will?: { topic: string; payload?: string; qos?: 0 | 1; retain?: boolean };
+  maxPublishPerS?: number;
+  publishGroups?: MqttPublishGroup[];
   connectTimeoutMs?: number;
   reconnectMaxS?: number;
 }

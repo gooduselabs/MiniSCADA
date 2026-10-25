@@ -1,0 +1,321 @@
+/* Trang Recipe (feature 024): danh sách loại bên trái, bảng tham số × bản recipe; token --mat-* của chủ đề. */
+.rc-page {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  padding: 12px;
+  box-sizing: border-box;
+  color: var(--mat-text);
+}
+.rc-empty,
+.rc-login {
+  grid-column: 1 / -1;
+  padding: 24px;
+  color: var(--mat-text-muted);
+}
+.rc-login {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.rc-types {
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border);
+  border-radius: var(--mat-radius);
+  padding: 8px;
+  overflow: auto;
+}
+.rc-types h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mat-text-muted);
+  margin: 4px 6px 8px;
+}
+.rc-types ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.rc-btn {
+  font: inherit;
+  color: var(--mat-text);
+  background: var(--mat-surface-2);
+  border: 1px solid var(--mat-border-strong);
+  border-radius: var(--mat-radius);
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.rc-btn:hover:not(:disabled) {
+  border-color: var(--mat-accent);
+}
+.rc-btn:focus-visible,
+.rc-col:focus-visible,
+.rc-table input:focus-visible {
+  outline: 2px solid var(--mat-accent);
+  outline-offset: 1px;
+}
+.rc-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.rc-btn.primary {
+  background: var(--mat-accent);
+  color: var(--mat-accent-ink);
+  border-color: var(--mat-accent);
+}
+.rc-btn.danger {
+  color: var(--mat-bad);
+  border-color: var(--mat-bad);
+}
+.rc-type {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+}
+.rc-type[aria-current='true'] {
+  background: var(--mat-surface-2);
+  border-color: var(--mat-accent);
+  font-weight: 600;
+}
+.rc-count {
+  font-size: 12px;
+  color: var(--mat-text-muted);
+}
+.rc-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border);
+  border-radius: var(--mat-radius);
+}
+.rc-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 14px 4px;
+}
+.rc-head h1 {
+  font-size: 18px;
+  margin: 0;
+}
+.rc-desc {
+  margin: 2px 0 0;
+  color: var(--mat-text-muted);
+}
+.rc-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rc-status {
+  margin: 4px 14px 8px;
+  min-height: 1.4em;
+  color: var(--mat-text-muted);
+}
+.rc-status[data-tone='ok'] {
+  color: var(--mat-good);
+}
+.rc-status[data-tone='warn'] {
+  color: var(--mat-warn);
+}
+.rc-status[data-tone='bad'] {
+  color: var(--mat-bad);
+}
+.rc-scroll {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  border-top: 1px solid var(--mat-border);
+}
+.rc-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.rc-table th,
+.rc-table td {
+  border-bottom: 1px solid var(--mat-border);
+  padding: 6px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+.rc-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--mat-surface-2);
+  font-size: 12px;
+  z-index: 1;
+}
+.rc-table tbody th {
+  font-weight: 500;
+}
+.rc-tagid,
+.rc-lim {
+  color: var(--mat-text-muted);
+  font-size: 12px;
+}
+td.rc-cur {
+  font-weight: 600;
+}
+td.rc-cur[data-quality='BAD'],
+td.rc-cur[data-quality='UNCERTAIN'] {
+  color: var(--mat-text-muted);
+  font-style: italic;
+}
+.rc-val {
+  text-align: right;
+}
+.rc-sel {
+  background: color-mix(in srgb, var(--mat-accent) 9%, transparent);
+}
+td.rc-diff {
+  background: var(--mat-warn-soft);
+  box-shadow: inset 3px 0 0 var(--mat-warn);
+  font-weight: 600;
+}
+td.rc-bad {
+  background: var(--mat-bad-soft);
+  box-shadow: inset 3px 0 0 var(--mat-bad);
+}
+.rc-col {
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--mat-radius);
+  padding: 2px 6px;
+  color: var(--mat-text);
+  cursor: pointer;
+}
+.rc-col[aria-pressed='true'] {
+  border-color: var(--mat-accent);
+}
+.rc-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+.rc-origin {
+  font-size: 11px;
+  border-radius: 8px;
+  padding: 0 6px;
+  border: 1px solid var(--mat-border-strong);
+  color: var(--mat-text-muted);
+}
+.rc-origin.device {
+  border-color: var(--mat-accent);
+  color: var(--mat-text);
+}
+.rc-table input {
+  font: inherit;
+  width: 8em;
+  text-align: right;
+  color: var(--mat-text);
+  background: var(--mat-bg);
+  border: 1px solid var(--mat-border-strong);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.rc-table input[aria-invalid] {
+  border-color: var(--mat-bad);
+  background: var(--mat-bad-soft);
+}
+.rc-dialog {
+  min-width: min(520px, 92vw);
+  max-width: 92vw;
+  color: var(--mat-text);
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border-strong);
+  border-radius: var(--mat-radius);
+  padding: 16px;
+}
+.rc-dialog.danger {
+  border-color: var(--mat-bad);
+}
+.rc-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+.rc-dialog h2 {
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+.rc-dialog-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+.rc-error {
+  color: var(--mat-bad);
+}
+.rc-field {
+  display: block;
+  margin-bottom: 4px;
+}
+.rc-dialog input {
+  font: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  color: var(--mat-text);
+  background: var(--mat-bg);
+  border: 1px solid var(--mat-border-strong);
+  border-radius: 4px;
+  padding: 6px;
+}
+.rc-changes {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.rc-changes th,
+.rc-changes td {
+  border-bottom: 1px solid var(--mat-border);
+  padding: 4px 8px;
+  text-align: left;
+}
+.rc-to {
+  font-weight: 600;
+}
+.rc-steps {
+  margin: 0;
+  padding-left: 22px;
+}
+.rc-steps li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  padding: 3px 0;
+}
+.rc-steps li[data-status='ok'] .rc-step-st {
+  color: var(--mat-good);
+}
+.rc-steps li[data-status='failed'] .rc-step-st {
+  color: var(--mat-bad);
+  font-weight: 600;
+}
+.rc-steps li[data-status='skipped'],
+.rc-steps li[data-status='pending'] {
+  color: var(--mat-text-muted);
+}
+@media (max-width: 720px) {
+  .rc-page {
+    grid-template-columns: 1fr;
+  }
+}
+.rc-host {
+  height: 100%;
+}

@@ -158,6 +158,13 @@
         "pattern": "^templates/[a-z][a-z0-9-]{0,47}\\.template\\.json$"
       }
     },
+    "recipesFile": {
+      "description": "Định dạng 1.1 (feature 024): recipes.json (loại và bản recipe); ở project 1.0 là E_RECIPE_VERSION.",
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 128,
+      "pattern": "\\.json$"
+    },
     "theme": {
       "enum": ["vivid", "industrial", "dark"],
       "description": "Định dạng 1.1 (feature 012): chủ đề giao diện của trang vận hành; thiếu = industrial."

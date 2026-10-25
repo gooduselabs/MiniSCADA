@@ -666,6 +666,31 @@ const studioScenes = [
     },
   },
   {
+    // feature 024: editor Recipe (loại, lưới bảng tính, thuộc tính)
+    name: 'studio-recipe',
+    async run({ page, shot }) {
+      await openAndWait(page, readProject(REPORT_DEMO), 'D:\\Projects\\report-demo');
+      await closeTaskCard(page);
+      await page.evaluate(() =>
+        window.__matApp.setLayout(
+          { inspectorHeight: 90 },
+          { leftColumnHeight: 700, centerHeight: 640 },
+        ),
+      );
+      await expandNode(page, 'recipes');
+      await treeNode(page, 'recipe:lo-say');
+      await page.waitForSelector('mat-recipes-editor mat-grid [role="gridcell"]');
+      await page.$eval('mat-recipes-editor [role="gridcell"][data-r="1"][data-c="r0"]', (c) =>
+        c.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, button: 0 })),
+      );
+      await page.evaluate(() =>
+        window.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true })),
+      );
+      await sleep(800);
+      await shot('eng-recipe-studio');
+    },
+  },
+  {
     name: 'studio-tong-quan',
     async run({ page, shot }) {
       await openAndWait(page, readProject(DASHBOARD_DEMO), 'D:\\Projects\\dashboard-demo');
@@ -1221,6 +1246,26 @@ const webScenes = [
       await waitDeep(page, 'mat-w-history-trend', 1, 15000);
       await sleep(2500);
       await shot('op-lich-su');
+    },
+  },
+  {
+    // feature 024: trang Recipe (bảng tham số × bản, ô khác PLC tô; hộp xác nhận tải xuống)
+    name: 'web-recipe',
+    options: { fixture: renamed(dashboard, 'Lò sấy'), recipes: {} },
+    async run({ page, rt, shot }) {
+      await page.goto(`${rt.httpsUrl}/#/recipes`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('#app-login-btn');
+      await login(page, 'vanhanh1', 'op-pass');
+      await submitLogin(page);
+      await page.goto('about:blank');
+      await page.goto(`${rt.httpsUrl}/#/recipes/lo-say`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.rc-table td.rc-diff', { timeout: 15000 });
+      await sleep(500);
+      await shot('op-recipe');
+      await page.click('[data-act="download"]');
+      await page.waitForSelector('dialog[open] .rc-changes');
+      await sleep(300);
+      await shot('op-recipe-xac-nhan');
     },
   },
   {

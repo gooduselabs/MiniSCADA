@@ -65,6 +65,7 @@ const user = (over: Partial<AdminUser> = {}): AdminUser => ({
   createdAt: null,
   updatedAt: null,
   sessions: 0,
+  email: null,
   ...over,
 });
 

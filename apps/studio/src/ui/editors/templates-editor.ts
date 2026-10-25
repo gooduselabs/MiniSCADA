@@ -44,6 +44,7 @@ import {
   setColumnField,
   setKind,
   setOrg,
+  setLogo,
   setPaper,
   setPeriod,
   setReportField,
@@ -346,6 +347,36 @@ export class TemplatesEditor extends AppElement {
 
   // ---------- Vẽ: các mẩu dùng chung ----------
 
+  /** Tệp ảnh của project dùng được làm logo (graphics/*.svg, PNG Studio biết). */
+  private logoFiles(): string[] {
+    return this.app.svg.files().filter((f) => /^graphics\/[^/]+\.(svg|png)$/i.test(f));
+  }
+
+  /** Lỗi E_RPT_LOGO (mức file, `/logo`) hiện ngay dưới trường. */
+  private logoErrs(b: ReportIssueBuckets) {
+    const list = b.file.filter((x) => x.path === '/logo');
+    if (!list.length) return nothing;
+    return html`<div class="te-err" data-error="logo" role="alert">
+      ${list.map((x) => html`<div><span class="mono">${x.code}</span> ${x.message}</div>`)}
+    </div>`;
+  }
+
+  /** Data URL của logo SVG cho xem trước (đọc một lần theo đường dẫn); rỗng khi không đọc được. */
+  private logoCache = new Map<string, string>();
+  private logoUrl(): string {
+    const rel = this.cfg()?.logo;
+    if (!rel || !rel.toLowerCase().endsWith('.svg')) return '';
+    const hit = this.logoCache.get(rel);
+    if (hit !== undefined) return hit;
+    this.logoCache.set(rel, '');
+    void this.app.platform.read(rel).then((r) => {
+      if (!('text' in r)) return;
+      this.logoCache.set(rel, `data:image/svg+xml;charset=utf-8,${encodeURIComponent(r.text)}`);
+      this.requestUpdate();
+    });
+    return '';
+  }
+
   private errs(b: ReportIssueBuckets, name: string) {
     const list = b.fields.get(this.index())?.get(name);
     if (!list?.length) return nothing;
@@ -379,10 +410,11 @@ export class TemplatesEditor extends AppElement {
     value: string,
     onChange: (e: Event) => void,
     b: ReportIssueBuckets,
-    o: { mono?: boolean; errKey?: string; disabled?: boolean } = {},
+    o: { mono?: boolean; errKey?: string; disabled?: boolean; list?: string } = {},
   ) {
     return html`<input
       id=${`te-${name}`}
+      list=${o.list ?? nothing}
       class=${o.mono ? 'mono' : ''}
       type="text"
       data-field=${name}
@@ -816,6 +848,24 @@ export class TemplatesEditor extends AppElement {
         `${t('rpt.ds.orgHelp')}${f11 ? '' : ` ${t('rpt.ds.need11')}`}`,
       )}
       ${this.field(
+        t('rpt.ds.logo'),
+        'logo',
+        html`${this.input(
+            'logo',
+            cfg.logo ?? '',
+            (e) => {
+              const c = this.guard();
+              if (c) this.edit(setLogo(c, (e.target as HTMLInputElement).value));
+            },
+            b,
+            { disabled: !f11, mono: true, list: 'te-logo-files' },
+          )}<datalist id="te-logo-files">
+            ${this.logoFiles().map((f) => html`<option value=${f}></option>`)}
+          </datalist>`,
+        `${t('rpt.ds.logoHelp')}${f11 ? '' : ` ${t('rpt.ds.need11')}`}`,
+        this.logoErrs(b),
+      )}
+      ${this.field(
         t('rpt.ed.paperSize'),
         'paper.size',
         this.select_(
@@ -1134,6 +1184,7 @@ export class TemplatesEditor extends AppElement {
               .save=${this.save}
               .theme=${projectTheme(s.outline.project)}
               .org=${this.org()}
+              .logo=${this.logoUrl()}
               .selected=${previewSel}
             ></mat-report-preview>
           </div>

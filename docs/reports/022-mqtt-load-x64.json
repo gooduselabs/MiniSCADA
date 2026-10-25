@@ -1,0 +1,42 @@
+{
+  "scenario": "load",
+  "checks": [
+    {
+      "name": "all 500 Tags GOOD",
+      "pass": true
+    },
+    {
+      "name": "the last message reached its Tag",
+      "pass": true
+    },
+    {
+      "name": "no lost sequence on any client",
+      "pass": true,
+      "detail": "0 gaps"
+    },
+    {
+      "name": "RSS <= 150 MB (Constitution III)",
+      "pass": true,
+      "detail": "17 MB"
+    }
+  ],
+  "measures": {
+    "seconds": 60.1,
+    "clients": 10,
+    "tags": 500,
+    "messagesPerSecond": 49.9,
+    "cpuPercentOneCoreAvg": 0.9,
+    "rssMaxMB": 17,
+    "driver": {
+      "broker": "sim:1883",
+      "clientId": "mat-rt-bench",
+      "dropped": "0",
+      "groups": "0",
+      "messagesIn": "3500",
+      "messagesOut": "0",
+      "subscriptions": "500",
+      "tls": "off"
+    }
+  },
+  "pass": true
+}

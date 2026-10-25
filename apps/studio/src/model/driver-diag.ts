@@ -127,6 +127,26 @@ export function opcuaDetailRows(
   return OPCUA_DETAIL_KEYS.filter((k) => details[k]).map((k) => ({ key: k, value: details[k] }));
 }
 
+/** Dòng thông tin của kênh MQTT (feature 022): broker, TLS, client id, số subscription, nhóm, số tin vào/ra/bỏ. */
+export const MQTT_DETAIL_KEYS = [
+  'broker',
+  'tls',
+  'clientId',
+  'subscriptions',
+  'groups',
+  'messagesIn',
+  'messagesOut',
+  'dropped',
+  'serverCertSha256',
+] as const;
+
+export function mqttDetailRows(
+  details: Record<string, string> | null,
+): Array<{ key: (typeof MQTT_DETAIL_KEYS)[number]; value: string }> {
+  if (!details) return [];
+  return MQTT_DETAIL_KEYS.filter((k) => details[k]).map((k) => ({ key: k, value: details[k] }));
+}
+
 function parseDevice(v: unknown): DiagDeviceView | null {
   if (!isObject(v) || typeof v.id !== 'string') return null;
   const bf = isObject(v.badFrames) ? v.badFrames : {};

@@ -161,6 +161,25 @@ bool validAccountName(std::string_view name) {
     return true;
 }
 
+bool validAccountEmail(std::string_view email) {
+    if (email.size() < 3 || email.size() > 254) return false;
+    const size_t at = email.find('@');
+    if (at == std::string_view::npos || at == 0 || at + 1 >= email.size() ||
+        email.find('@', at + 1) != std::string_view::npos)
+        return false;
+    for (const char c : email) {
+        const unsigned char u = static_cast<unsigned char>(c);
+        if (u <= 0x20 || u >= 0x7f) return false;
+        if (c == '"' || c == '<' || c == '>' || c == ',' || c == ';' || c == '(' || c == ')' ||
+            c == '\\' || c == '[' || c == ']' || c == ':')
+            return false;
+    }
+    const std::string_view domain = email.substr(at + 1);
+    const size_t dot = domain.find('.');
+    return dot != std::string_view::npos && dot != 0 && domain.back() != '.' &&
+           domain.find("..") == std::string_view::npos;
+}
+
 const Account* UsersFile::find(std::string_view name) const {
     for (const auto& a : users)
         if (a.name == name) return &a;
@@ -249,6 +268,13 @@ UsersRead parseUsers(std::string_view text) {
                 a.lastLoginAt = ms;
             }
         }
+        if (const nlohmann::json* mail = member(u, "email")) {  // feature 023
+            if (!mail->is_null()) {
+                if (!mail->is_string() || !validAccountEmail(mail->get<std::string>()))
+                    return fail(who + ": email is not a valid address");
+                a.email = mail->get<std::string>();
+            }
+        }
         std::string why;
         a.hash = parsePhc(a.passwordHash, &why);
         if (!a.hash) r.damaged.push_back(a.name + ": " + why);
@@ -285,6 +311,7 @@ std::string usersJson(const UsersFile& f) {
                                     {"createdAt", a.createdAt},
                                     {"updatedAt", a.updatedAt}};
         if (a.lastLoginAt) u["lastLoginAt"] = *a.lastLoginAt;
+        if (!a.email.empty()) u["email"] = a.email;
         users.push_back(std::move(u));
     }
     // The first write of a 1.0.0 file makes it 1.1.0 (feature 013).

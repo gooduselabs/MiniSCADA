@@ -135,6 +135,14 @@ export const ERROR_CODES = [
   'E_RPT_FN',
   'E_RPT_LIMIT',
   'E_RPT_KIND',
+  // feature 024: logo báo cáo, recipe (specs/024-recipes/plan.md mục Hợp đồng)
+  'E_RPT_LOGO',
+  'E_RECIPE_VERSION',
+  'E_RECIPE_DUP_ID',
+  'E_RECIPE_TAG',
+  'E_RECIPE_TAG_RW',
+  'E_RECIPE_LIMIT',
+  'E_RECIPE_VALUE',
   'E_NAV_REPORT',
   'E_WIDGET_HISTORY_GROUP',
   'E_WIDGET_HISTORY_TAG',
@@ -191,7 +199,7 @@ export const ERROR_CODES = [
   /** `security.operate` trên item không thao tác được (widget không thuộc nhóm control, SVG không có sự kiện ghi). */
   'E_SECURITY_ITEM',
   // feature 016, 019: driver Siemens S7 (rules-s7.ts), OPC UA client (rules-opcua.ts)
-  /** Kênh của driver chỉ có từ định dạng 1.1 (kênh `s7`, `opcua`) nằm trong project 1.0. */
+  /** Kênh của driver chỉ có từ định dạng 1.1 (kênh `s7`, `opcua`, `mqtt`) nằm trong project 1.0. */
   'E_DRIVER_VERSION',
   /** Kênh S7 có `remoteTsap` cùng với `rack` hoặc `slot`. */
   'E_S7_TSAP',
@@ -202,6 +210,13 @@ export const ERROR_CODES = [
   // feature 018 (rules-fins.ts), 017 (rules-mc.ts), 020 (rules-bacnet.ts): kênh fins, mc, bacnet
   /** Kênh loại `fins`, `mc`, `bacnet` hoặc `source.bcd` ở project dưới 1.1. */
   'E_CHANNEL_VERSION',
+  // feature 022: driver MQTT client (rules-mqtt.ts)
+  /** Kênh MQTT: serverCertSha256, caCertPem hoặc serverName khi tls.enabled là false. */
+  'E_MQTT_TLS',
+  /** Tag MQTT: hướng của địa chỉ không khớp quyền (`sub` mà RW, `pub` mà chỉ đọc). */
+  'E_MQTT_DIRECTION',
+  /** Nhóm publish MQTT có Tag không tồn tại. */
+  'E_MQTT_GROUP_TAG',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 /**
@@ -258,6 +273,9 @@ export type WarningCode =
   // feature 019 (specs/019-driver-opcua/contracts/opcua.md §1)
   | 'W_OPCUA_PLAIN_PASSWORD'
   | 'W_OPCUA_CERT_NOT_PINNED'
+  // feature 022 (specs/022-driver-mqtt/spec.md FR-002, FR-003)
+  | 'W_MQTT_TLS_NOT_PINNED'
+  | 'W_MQTT_PLAIN_PASSWORD'
   | 'W_LOGIC_WRITES_OFF'
   | 'W_LOGIC_NO_HOLD'
   | 'W_LOGIC_DISABLED';

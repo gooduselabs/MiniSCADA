@@ -782,6 +782,12 @@ function packageInfo(dir) {
   // Định dạng 1.0 (contracts/project-format-1.0.md §2, §6)
   if (p.logic !== undefined) set.add(p.logic);
   for (const t of p.templates ?? []) set.add(t);
+  // Định dạng 1.1 (feature 024): recipe, logo của báo cáo
+  if (p.recipesFile !== undefined) set.add(p.recipesFile);
+  if (p.reportsFile !== undefined) {
+    const logo = parse(p.reportsFile).logo;
+    if (logo !== undefined) set.add(logo);
+  }
   for (const id of p.screens) {
     const s = parse(`screens/${id}.screen.json`);
     set.add(`screens/${id}.screen.json`);

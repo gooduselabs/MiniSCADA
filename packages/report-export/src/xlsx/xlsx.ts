@@ -57,6 +57,39 @@ const STYLE_MUTED = 7;
 const FIXED_XFS = 8;
 const PER_FMT = 3;
 
+// ---- logo (feature 024) --------------------------------------------------------------------------------------------
+
+const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+/** Khung của logo trong XLSX, px; ảnh nhỏ hơn giữ nguyên cỡ. */
+const LOGO_BOX = { width: 160, height: 48 } as const;
+const EMU_PER_PX = 9525;
+
+/** Kích thước của ảnh PNG theo IHDR; null khi không phải PNG. */
+export function pngSize(b: Uint8Array): { width: number; height: number } | null {
+  if (b.length < 24 || PNG_SIG.some((x, i) => b[i] !== x)) return null;
+  if (String.fromCharCode(b[12]!, b[13]!, b[14]!, b[15]!) !== 'IHDR') return null;
+  const v = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  const width = v.getUint32(16);
+  const height = v.getUint32(20);
+  return width > 0 && height > 0 ? { width, height } : null;
+}
+
+/** drawing1.xml: một ảnh neo ở ô (`col`, hàng 0), cỡ `w` x `h` px. */
+function drawingXml(col: number, w: number, h: number): string {
+  const cx = w * EMU_PER_PX;
+  const cy = h * EMU_PER_PX;
+  return (
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+    `<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+    `<xdr:oneCellAnchor><xdr:from><xdr:col>${col}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>` +
+    `<xdr:ext cx="${cx}" cy="${cy}"/>` +
+    `<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>` +
+    `<xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>` +
+    `<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>` +
+    `</xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`
+  );
+}
+
 const sanitizeSheetName = (s: string | undefined): string => {
   const n = stripControl(s ?? '')
     .replace(/[[\]:*?/\\]/g, '')
@@ -280,17 +313,50 @@ export function buildXlsx(t: ReportTable, meta: ExportMeta, labels: ExportLabels
   const cols = widths
     .map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`)
     .join('');
+  // feature 024: logo PNG ở góc trên bên phải (cột ngay sau cột cuối của bảng chính), giữ tỉ lệ trong khung
+  const logoSize = meta.logoPng ? pngSize(meta.logoPng) : null;
+  const logoScale = logoSize
+    ? Math.min(1, LOGO_BOX.width / logoSize.width, LOGO_BOX.height / logoSize.height)
+    : 1;
   const sheet =
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-    `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+    `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
     `<sheetViews><sheetView workbookViewId="0"><pane xSplit="1" ySplit="${headerRow}" topLeftCell="B${headerRow + 1}" activePane="bottomRight" state="frozen"/><selection pane="bottomRight"/></sheetView></sheetViews>` +
     `<sheetFormatPr defaultRowHeight="15"/><cols>${cols}</cols><sheetData>${rows.join('')}</sheetData>` +
+    (logoSize ? `<drawing r:id="rId1"/>` : '') +
     `</worksheet>`;
+  const rels = (body: string) =>
+    strToU8(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${body}</Relationships>`,
+    );
+  const logoFiles: Record<string, Uint8Array> =
+    logoSize && meta.logoPng
+      ? {
+          'xl/media/image1.png': meta.logoPng,
+          'xl/drawings/drawing1.xml': strToU8(
+            drawingXml(
+              t.columns.length + 1,
+              Math.max(1, Math.round(logoSize.width * logoScale)),
+              Math.max(1, Math.round(logoSize.height * logoScale)),
+            ),
+          ),
+          'xl/drawings/_rels/drawing1.xml.rels': rels(
+            `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>`,
+          ),
+          'xl/worksheets/_rels/sheet1.xml.rels': rels(
+            `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>`,
+          ),
+        }
+      : {};
 
   const files: Record<string, Uint8Array> = {
     '[Content_Types].xml': strToU8(
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
         `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>` +
+        (logoSize
+          ? `<Default Extension="png" ContentType="image/png"/>` +
+            `<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`
+          : '') +
         `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
         `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
         `<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`,
@@ -310,6 +376,7 @@ export function buildXlsx(t: ReportTable, meta: ExportMeta, labels: ExportLabels
     ),
     'xl/styles.xml': strToU8(stylesXml(formats, p)),
     'xl/worksheets/sheet1.xml': strToU8(sheet),
+    ...logoFiles,
   };
   return zipSync(files, { level: 6, mtime: meta.exportedAt });
 }

@@ -160,6 +160,45 @@ std::optional<ProjectModel> buildProjectModel(const LoadedProject& p, std::strin
                 ch.opcuaSessionTimeoutMs = integer(o, "sessionTimeoutMs", 60000);
                 ch.connectTimeoutMs = integer(o, "connectTimeoutMs", 5000);
                 ch.reconnectMaxS = integer(o, "reconnectMaxS", 10);
+            } else if (ch.kind == "mqtt") {  // feature 022
+                const json& q = cj["mqtt"];
+                ch.host = q["host"].get<std::string>();
+                ch.mqttTls = q.contains("tls") && boolean(q["tls"], "enabled", false);
+                ch.port = integer(q, "port", ch.mqttTls ? 8883 : 1883);
+                ch.mqttClientId = str(q, "clientId", "mat-" + ch.id);
+                ch.mqttKeepAliveS = integer(q, "keepAliveS", 30);
+                ch.mqttCleanSession = boolean(q, "cleanSession", true);
+                if (ch.mqttTls) {
+                    ch.mqttServerCertSha256 = str(q["tls"], "serverCertSha256");
+                    ch.mqttCaCertPem = str(q["tls"], "caCertPem");
+                    ch.mqttServerName = str(q["tls"], "serverName");
+                }
+                if (q.contains("auth")) {
+                    ch.mqttAuth = true;
+                    ch.mqttUsername = str(q["auth"], "username");
+                    ch.mqttSecretId = str(q["auth"], "secretId");
+                }
+                if (q.contains("will")) {
+                    ch.mqttWill = true;
+                    ch.mqttWillTopic = str(q["will"], "topic");
+                    ch.mqttWillPayload = str(q["will"], "payload");
+                    ch.mqttWillQos = integer(q["will"], "qos", 0);
+                    ch.mqttWillRetain = boolean(q["will"], "retain", false);
+                }
+                ch.mqttMaxPublishPerS = integer(q, "maxPublishPerS", 20);
+                if (q.contains("publishGroups"))
+                    for (const auto& gj : q["publishGroups"]) {
+                        MqttGroupModel g;
+                        g.topic = str(gj, "topic");
+                        for (const auto& id : gj["tags"]) g.tags.push_back(id.get<std::string>());
+                        g.intervalMs = integer(gj, "intervalMs", 0);
+                        g.onChange = boolean(gj, "onChange", false);
+                        g.qos = integer(gj, "qos", 0);
+                        g.retain = boolean(gj, "retain", false);
+                        ch.mqttGroups.push_back(std::move(g));
+                    }
+                ch.connectTimeoutMs = integer(q, "connectTimeoutMs", 5000);
+                ch.reconnectMaxS = integer(q, "reconnectMaxS", 10);
             } else {
                 const json& t = cj["tcp"];
                 ch.host = t["host"].get<std::string>();
@@ -199,7 +238,9 @@ std::optional<ProjectModel> buildProjectModel(const LoadedProject& p, std::strin
                 d.maxGapBits = integer(dj, "maxGapBits", 64);
                 d.byteOrder = modbus::parseByteOrder(str(dj, "byteOrder", "ABCD"))
                                   .value_or(modbus::ByteOrder::ABCD);
-                d.timeoutMs = integer(dj, "timeoutMs", ch.kind == "opcua" ? 2000 : 1000);
+                d.timeoutMs =
+                    integer(dj, "timeoutMs", ch.kind == "opcua" || ch.kind == "mqtt" ? 2000 : 1000);
+                d.mqttStaleAfterMs = integer(dj, "staleAfterMs", 0);
                 d.retries = integer(dj, "retries", ch.rtu ? 1 : 0);
                 d.writeDeadlineMs = integer(dj, "writeDeadlineMs", 5000);
                 d.maxGapBytes = integer(dj, "maxGapBytes", 16);
@@ -359,6 +400,11 @@ std::optional<ProjectModel> buildProjectModel(const LoadedProject& p, std::strin
                     if (!t.source.nodeId.ok)
                         return fail("tag '" + t.id + "': OPC UA NodeId " + t.source.address + ": " +
                                     t.source.nodeId.error);
+                } else if (m.channels[t.channel].kind == "mqtt") {  // feature 022
+                    t.source.mqttAddr = mqtt::parseAddress(t.source.address);
+                    if (!t.source.mqttAddr.ok)
+                        return fail("tag '" + t.id + "': MQTT address " + t.source.address + ": " +
+                                    t.source.mqttAddr.error);
                 } else if (m.channels[t.channel].isBacnet) {  // feature 020
                     bacnet::AddressOptions o;
                     o.rawType = t.source.rawType;

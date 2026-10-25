@@ -191,6 +191,14 @@ export function setOrg(cfg: ReportsConfig, org: string): ReportsConfig {
   return next;
 }
 
+/** Logo của đơn vị (1.1, feature 024): đường dẫn tệp `graphics/*.svg|png`; rỗng bỏ khóa. */
+export function setLogo(cfg: ReportsConfig, rel: string): ReportsConfig {
+  const next = clone(cfg);
+  if (rel.trim() === '') delete next.logo;
+  else next.logo = rel.trim();
+  return next;
+}
+
 export function duplicateReport(cfg: ReportsConfig, index: number): ReportsConfig {
   const src = cfg.reports[index];
   if (!src) return cfg;

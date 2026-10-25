@@ -17,7 +17,8 @@ import {
   type BacnetObjectRow,
 } from './connections-bacnet.ts';
 
-export type ChannelKind = 'modbus-tcp' | 'modbus-rtu' | 's7' | 'fins' | 'mc' | 'bacnet' | 'opcua';
+export type ChannelKind =
+  'modbus-tcp' | 'modbus-rtu' | 's7' | 'fins' | 'mc' | 'bacnet' | 'opcua' | 'mqtt';
 /** Nhóm của form; Modbus chỉ dùng `basic`, `advanced`. Kênh MC (feature 017) thêm Khung, Định tuyến, Gom yêu cầu, Ghi. */
 export type FieldGroup = 'basic' | 'advanced' | 'frame' | 'routing' | 'batch' | 'write';
 /** Thứ tự các nhóm trên form. */
@@ -537,6 +538,135 @@ const OPCUA_DEVICE: FieldSpec[] = [
   }),
 ];
 
+// ---------- Kênh MQTT (feature 022, specs/022-driver-mqtt/spec.md) ----------
+
+/** Như `connections.schema.json`: host, client id; topic publish không có wildcard. */
+export const MQTT_HOST_RE = /^[A-Za-z0-9.:_-]+$/;
+export const MQTT_CLIENT_ID_RE = /^[A-Za-z0-9_.-]{1,64}$/;
+export const MQTT_PUB_TOPIC_RE = /^[^#+]+$/;
+
+const MQTT_CHANNEL: FieldSpec[] = [
+  ...COMMON_CHANNEL,
+  ch('host', ['mqtt', 'host'], 'basic', 'text', {
+    required: true,
+    mono: true,
+    maxLen: 253,
+    pattern: MQTT_HOST_RE,
+    patternError: 'cn.err.mqttHost',
+    help: 'cn.h.mqttHost',
+  }),
+  ch('port', ['mqtt', 'port'], 'basic', 'number', {
+    min: 1,
+    max: 65535,
+    default: 1883,
+    mono: true,
+    help: 'cn.h.mqttPort',
+  }),
+  ch('mqttClientId', ['mqtt', 'clientId'], 'basic', 'text', {
+    mono: true,
+    maxLen: 64,
+    pattern: MQTT_CLIENT_ID_RE,
+    patternError: 'cn.err.mqttClientId',
+  }),
+  ch('mqttTls', ['mqtt', 'tls', 'enabled'], 'basic', 'bool', { default: false }),
+  ch('mqttCertSha256', ['mqtt', 'tls', 'serverCertSha256'], 'basic', 'text', {
+    mono: true,
+    pattern: SHA256_RE,
+    patternError: 'cn.err.sha256',
+    lower: true,
+  }),
+  ch('mqttServerName', ['mqtt', 'tls', 'serverName'], 'advanced', 'text', {
+    mono: true,
+    maxLen: 253,
+  }),
+  ch('mqttUsername', ['mqtt', 'auth', 'username'], 'basic', 'text', { maxLen: 128 }),
+  ch('mqttSecretId', ['mqtt', 'auth', 'secretId'], 'basic', 'text', {
+    mono: true,
+    maxLen: 48,
+    pattern: SECRET_ID_RE,
+    patternError: 'cn.err.secretId',
+  }),
+  ch('mqttKeepAliveS', ['mqtt', 'keepAliveS'], 'advanced', 'number', {
+    min: 5,
+    max: 3600,
+    default: 30,
+    unit: 's',
+  }),
+  ch('mqttCleanSession', ['mqtt', 'cleanSession'], 'advanced', 'bool', { default: true }),
+  ch('mqttWillTopic', ['mqtt', 'will', 'topic'], 'advanced', 'text', {
+    mono: true,
+    maxLen: 256,
+    pattern: MQTT_PUB_TOPIC_RE,
+    patternError: 'cn.err.mqttTopic',
+  }),
+  ch('mqttWillPayload', ['mqtt', 'will', 'payload'], 'advanced', 'text', { maxLen: 1024 }),
+  ch('mqttWillQos', ['mqtt', 'will', 'qos'], 'advanced', 'select', {
+    options: ['0', '1'],
+    numeric: true,
+    default: 0,
+  }),
+  ch('mqttWillRetain', ['mqtt', 'will', 'retain'], 'advanced', 'bool', { default: false }),
+  ch('mqttMaxPublishPerS', ['mqtt', 'maxPublishPerS'], 'advanced', 'number', {
+    min: 1,
+    max: 1000,
+    default: 20,
+    unit: '/s',
+  }),
+  ch('connectTimeoutMs', ['mqtt', 'connectTimeoutMs'], 'advanced', 'number', {
+    min: 500,
+    max: 30000,
+    default: 5000,
+    unit: 'ms',
+    help: 'cn.h.mqttConnectTimeoutMs',
+  }),
+  ch('reconnectMaxS', ['mqtt', 'reconnectMaxS'], 'advanced', 'number', {
+    min: 1,
+    max: 60,
+    default: 10,
+    unit: 's',
+  }),
+];
+
+const MQTT_DEVICE: FieldSpec[] = [
+  dv('id', ['id'], 'basic', 'text', { required: true, mono: true, maxLen: 32 }),
+  dv('name', ['name'], 'basic', 'text', { required: true, maxLen: 64 }),
+  dv('enabled', ['enabled'], 'basic', 'bool', { default: true }),
+  dv('mqttStaleAfterMs', ['staleAfterMs'], 'basic', 'number', {
+    min: 0,
+    max: 86400000,
+    default: 0,
+    unit: 'ms',
+  }),
+  dv('timeoutMs', ['timeoutMs'], 'advanced', 'number', {
+    min: 100,
+    max: 10000,
+    default: 2000,
+    unit: 'ms',
+    help: 'cn.h.mqttTimeoutMs',
+  }),
+  dv('writeDeadlineMs', ['writeDeadlineMs'], 'advanced', 'number', {
+    min: 1000,
+    max: 60000,
+    default: 5000,
+    unit: 'ms',
+  }),
+];
+
+/** Kênh MQTT bật TLS mà chưa ghim chứng chỉ broker hay CA (W_MQTT_TLS_NOT_PINNED; CA chỉ đặt được trong tệp). */
+export function mqttNeedsPin(channel: Channel): boolean {
+  const tls = channel.mqtt?.tls;
+  return (
+    channel.kind === 'mqtt' &&
+    tls?.enabled === true &&
+    tls.serverCertSha256 === undefined &&
+    tls.caCertPem === undefined
+  );
+}
+
+/** Kênh MQTT có tài khoản mà không TLS (W_MQTT_PLAIN_PASSWORD). */
+export const mqttPlainPassword = (channel: Channel): boolean =>
+  channel.kind === 'mqtt' && channel.mqtt?.auth !== undefined && channel.mqtt.tls?.enabled !== true;
+
 export const channelFields = (kind: ChannelKind): readonly FieldSpec[] =>
   kind === 'modbus-tcp'
     ? TCP_CHANNEL
@@ -550,7 +680,9 @@ export const channelFields = (kind: ChannelKind): readonly FieldSpec[] =>
             ? BACNET_CHANNEL
             : kind === 'opcua'
               ? OPCUA_CHANNEL
-              : RTU_CHANNEL;
+              : kind === 'mqtt'
+                ? MQTT_CHANNEL
+                : RTU_CHANNEL;
 export const deviceFields = (kind: ChannelKind): readonly FieldSpec[] =>
   kind === 's7'
     ? S7_DEVICE
@@ -562,7 +694,9 @@ export const deviceFields = (kind: ChannelKind): readonly FieldSpec[] =>
           ? BACNET_DEVICE
           : kind === 'opcua'
             ? OPCUA_DEVICE
-            : deviceCommon(kind);
+            : kind === 'mqtt'
+              ? MQTT_DEVICE
+              : deviceCommon(kind);
 
 /** Số 16 bit viết hex 4 chữ số hoa: 1023 → `03FF`. */
 export const hexText = (n: number): string => n.toString(16).toUpperCase().padStart(4, '0');
@@ -597,8 +731,9 @@ export function opcuaNeedsPin(channel: Channel): boolean {
   );
 }
 
-/** Kênh chỉ có một thiết bị trường (schema `maxItems: 1`): S7 một CPU, OPC UA một server. */
-const singleDevice = (kind: string): boolean => kind === 's7' || kind === 'opcua';
+/** Kênh chỉ có một thiết bị trường (schema `maxItems: 1`): S7 một CPU, OPC UA một server, MQTT một broker. */
+const singleDevice = (kind: string): boolean =>
+  kind === 's7' || kind === 'opcua' || kind === 'mqtt';
 
 /** Kênh còn nhận thêm thiết bị trường không. */
 export const canAddDevice = (channel: Channel): boolean =>
@@ -606,13 +741,18 @@ export const canAddDevice = (channel: Channel): boolean =>
 
 /** Lý do không thêm được thiết bị trường vào kênh một thiết bị. */
 export const oneDeviceReason = (channel: Pick<Channel, 'kind'>): MessageKey =>
-  channel.kind === 'opcua' ? 'cn.opcua.oneDevice' : 'cn.s7.oneDevice';
+  channel.kind === 'opcua'
+    ? 'cn.opcua.oneDevice'
+    : channel.kind === 'mqtt'
+      ? 'cn.mqtt.oneDevice'
+      : 'cn.s7.oneDevice';
 
 /**
  * `POST /api/v1/drivers/test` chưa hỗ trợ kênh S7 (feature 016, D8); không dùng cho kênh OPC UA (Lấy chứng chỉ thay nó,
  * feature 019 D12).
  */
-export const probeSupported = (kind: string): boolean => kind !== 's7' && kind !== 'opcua';
+export const probeSupported = (kind: string): boolean =>
+  kind !== 's7' && kind !== 'opcua' && kind !== 'mqtt';
 
 /** Chữ mặc định (để hiện ở ô trống). */
 export const fieldDefault = (spec: FieldSpec): string =>
@@ -717,6 +857,7 @@ export function setField<T extends object>(
   const next = write(own, spec.path, value);
   if (spec.path[0] === 'opcua' && spec.path[1] === 'auth')
     return { value: fixAuth(next, spec) as T };
+  if (spec.path[0] === 'mqtt' && spec.path[1] === 'tls') return { value: fixMqttTls(next) as T };
   return { value: next as T };
 }
 
@@ -732,6 +873,19 @@ function fixAuth(channel: Obj, spec: FieldSpec): Obj {
   else if (auth.mode === 'username') opcua.auth = { mode: 'username' };
   else delete opcua.auth;
   return { ...channel, opcua };
+}
+
+/**
+ * Khối `mqtt.tls` sau khi sửa một trường của nó (feature 022): schema cần `enabled`, nên có trường TLS nào thì ghi
+ * `enabled` rõ (false nếu chưa bật: bộ kiểm tra báo E_MQTT_TLS); chỉ còn `enabled: false` thì bỏ cả khối.
+ */
+function fixMqttTls(channel: Obj): Obj {
+  const mqtt = { ...((channel.mqtt as Obj | undefined) ?? {}) };
+  const tls = { ...((mqtt.tls as Obj | undefined) ?? {}) };
+  if (tls.enabled === undefined) tls.enabled = false;
+  if (tls.enabled === false && Object.keys(tls).length === 1) delete mqtt.tls;
+  else mqtt.tls = tls;
+  return { ...channel, mqtt };
 }
 
 function freeId(prefix: string, taken: ReadonlySet<string>): { id: string; n: number } {
@@ -761,7 +915,9 @@ export function newChannel(
               ? 'bms'
               : kind === 'opcua'
                 ? 'ua-'
-                : 'rtu';
+                : kind === 'mqtt'
+                  ? 'mqtt'
+                  : 'rtu';
   const { id, n } = freeId(prefix, taken);
   const base = { id, name: t('cn.newChannel', { n }), kind, devices: [] as FieldDevice[] };
   if (kind === 's7') {
@@ -790,6 +946,17 @@ export function newChannel(
       devices: [{ id: srv.id, name: t('cn.newServer', { n: srv.n }), timeoutMs: 1000 }],
     };
   }
+  if (kind === 'mqtt') {
+    // feature 022: mỗi kênh MQTT là đúng một broker, có sẵn thiết bị trường
+    taken.add(id);
+    const br = freeId('broker', taken);
+    return {
+      ...base,
+      kind,
+      mqtt: { host: '192.0.2.30' },
+      devices: [{ id: br.id, name: t('cn.newBroker', { n: br.n }) }],
+    };
+  }
   return kind === 'modbus-tcp'
     ? { ...base, kind, tcp: { host: '192.168.1.10' } }
     : { ...base, kind, serial: { port: '' } };
@@ -801,6 +968,10 @@ export function newDevice(channel: Channel, deviceIds: readonly string[]): Field
   if (channel.kind === 's7') {
     const cpu = freeId('cpu', taken);
     return { id: cpu.id, name: t('cn.newCpu', { n: cpu.n }) };
+  }
+  if (channel.kind === 'mqtt') {
+    const br = freeId('broker', taken);
+    return { id: br.id, name: t('cn.newBroker', { n: br.n }) };
   }
   if (channel.kind === 'opcua') {
     const srv = freeId('srv', taken);
@@ -821,7 +992,7 @@ export function newDevice(channel: Channel, deviceIds: readonly string[]): Field
 }
 
 /** Chữ phụ của kênh trên cây và danh sách: TCP, RTU, S7, FINS/UDP, FINS/TCP, `MC 3E`, `MC 4E UDP`. */
-export function channelSub(ch: Pick<Channel, 'kind' | 'mc' | 'fins'>): string {
+export function channelSub(ch: Pick<Channel, 'kind' | 'mc' | 'fins' | 'mqtt'>): string {
   switch (ch.kind) {
     case 'mc':
       return [
@@ -839,6 +1010,8 @@ export function channelSub(ch: Pick<Channel, 'kind' | 'mc' | 'fins'>): string {
       return 'BACnet/IP';
     case 'opcua':
       return 'OPC UA';
+    case 'mqtt':
+      return ch.mqtt?.tls?.enabled ? 'MQTT TLS' : 'MQTT';
     case 'modbus-rtu':
       return 'RTU';
     default:
@@ -850,8 +1023,13 @@ export function channelSub(ch: Pick<Channel, 'kind' | 'mc' | 'fins'>): string {
  * Chữ phụ của thiết bị trường: `unit 1` (TCP), `slave 1` (RTU), rack/slot hoặc TSAP đích (S7), nút FINS,
  * MC `mạng 0 · trạm FF`.
  */
-export function deviceSub(ch: Pick<Channel, 'kind' | 's7' | 'opcua'>, d: FieldDevice): string {
+export function deviceSub(
+  ch: Pick<Channel, 'kind' | 's7' | 'opcua' | 'mqtt'>,
+  d: FieldDevice,
+): string {
   switch (ch.kind) {
+    case 'mqtt': // host:cổng của broker
+      return `${ch.mqtt?.host ?? ''}:${ch.mqtt?.port ?? (ch.mqtt?.tls?.enabled ? 8883 : 1883)}`;
     case 'opcua': // host:cổng của endpoint
       return (ch.opcua?.endpointUrl ?? '').replace(/^opc\.tcp:\/\//, '');
     case 'mc':

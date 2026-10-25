@@ -308,6 +308,10 @@ const CUSTOM = {
   layer: custom(
     '<path d="M8 2l6 3.2-6 3.2-6-3.2z"/><path d="M2 8.4l6 3.2 6-3.2M2 11.4l6 3.2 6-3.2"/>',
   ),
+  // ---- Recipe (feature 024): bình chia độ ----
+  recipe: custom(
+    '<path d="M6 1.8h4M6.7 1.8v4.4L3 12.6a1.1 1.1 0 0 0 1 1.6h8a1.1 1.1 0 0 0 1-1.6L9.3 6.2V1.8"/><path d="M4.6 9.8h6.8"/>',
+  ),
   ruler: custom(
     '<rect x="1.5" y="5" width="13" height="6" rx=".6"/><path d="M4 5v2.5M6.5 5v1.5M9 5v2.5M11.5 5v1.5"/>',
   ),

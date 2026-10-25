@@ -22,7 +22,11 @@ export interface ProjectFileRefs {
     /** Định dạng 1.0 (feature 011). */
     logic?: string;
     templates?: readonly string[];
+    /** Định dạng 1.1 (feature 024). */
+    recipesFile?: string;
   };
+  /** Feature 024: logo của báo cáo (`reports.json` `logo`) thuộc tập file. */
+  reports?: { logo?: string };
   screens: Readonly<Record<string, { screen: ScreenRefs }>>;
 }
 
@@ -70,6 +74,9 @@ export function projectFiles(p: ProjectFileRefs): string[] {
   // Định dạng 1.0 (contracts/project-format-1.0.md §2, §6): logic.json và các tệp template khai trong project.json
   if (p.project.logic !== undefined) files.add(p.project.logic);
   for (const t of p.project.templates ?? []) files.add(t);
+  // Định dạng 1.1 (feature 024): recipe, logo của báo cáo
+  if (p.project.recipesFile !== undefined) files.add(p.project.recipesFile);
+  if (p.reports?.logo !== undefined) files.add(p.reports.logo);
   for (const id of p.project.screens) {
     files.add(`screens/${id}.screen.json`);
     if (!Object.prototype.hasOwnProperty.call(p.screens, id)) continue;

@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <regex>
 #include <sstream>
 
@@ -27,6 +28,7 @@
 #include "core/project-manager/rules_11.hpp"
 #include "core/project-manager/rules_bacnet.hpp"
 #include "core/project-manager/rules_fins.hpp"
+#include "core/project-manager/rules_recipes.hpp"
 #include "valijson/adapters/nlohmann_json_adapter.hpp"
 #include "valijson/schema.hpp"
 #include "valijson/schema_parser.hpp"
@@ -175,6 +177,7 @@ struct Schemas {
         if (set == 10) {
             kinds.push_back({"logic", "logic"});
             kinds.push_back({"template", "template"});
+            kinds.push_back({"recipes", "recipes"});  // feature 024 (1.1 only, by rule)
         }
         for (const auto& [kind, name] : kinds) {
             std::ifstream f(dir + "/" + name + ".schema.json");
@@ -299,6 +302,21 @@ class Checker {
     bool exists(const std::string& rel) {
         std::string dummy;
         return readContained(root_, rel, dummy) != ReadStatus::Missing;
+    }
+
+    // Feature 024 (E_RPT_LOGO): the size of a file of the project; nullopt when it is missing,
+    // SIZE_MAX above the cap of a read (1 MiB).
+    std::optional<size_t> sizeOf(const std::string& rel) {
+        std::string text;
+        switch (readContained(root_, rel, text)) {
+            case ReadStatus::Missing:
+                return std::nullopt;
+            case ReadStatus::TooBig:
+                return SIZE_MAX;
+            case ReadStatus::Ok:
+                break;
+        }
+        return text.size();
     }
 
    private:
@@ -938,7 +956,8 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
     json project;
     const bool projectOk = c.loadJson("project.json", "project", project);
 
-    json tags, connections, logging, reports, alarmsDoc, alarmClassesDoc;
+    json tags, connections, logging, reports, alarmsDoc, alarmClassesDoc, recipesDoc;
+    bool recipesOk = false;  // feature 024
     bool tagsOk = false, connectionsOk = false, loggingOk = false, reportsOk = false;
     bool alarmsOk = false, alarmClassesOk = false;
     json logicDoc;
@@ -992,6 +1011,29 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
                 unsafe("project.json", "/reportsFile", f);
             else
                 reportsOk = c.loadJson(f, "reports", reports);
+            // Feature 024: the logo of the organisation (1.1; present, at most 256 KiB), like TS
+            if (reportsOk && reports.contains("logo")) {
+                const std::string logo = reports["logo"].get<std::string>();
+                auto bad = [&](const std::string& m) { c.add("E_RPT_LOGO", f, "/logo", m); };
+                if (!isSchema11(project.value("schemaVersion", ""))) {
+                    bad("logo cần định dạng 1.1");
+                } else {
+                    const auto size = c.sizeOf(logo);
+                    if (!size)
+                        bad("Không tìm thấy '" + logo + "'");
+                    else if (*size > kReportLogoMaxBytes)
+                        bad("'" + logo + "' lớn hơn 256 KiB");
+                }
+            }
+        }
+        // Format 1.1 (feature 024): recipes.json (in a 1.0 project: E_RECIPE_VERSION, not read)
+        if (v10 && project.contains("recipesFile") &&
+            isSchema11(project.value("schemaVersion", ""))) {
+            const std::string f = project["recipesFile"];
+            if (!isSafeRelPath(f))
+                unsafe("project.json", "/recipesFile", f);
+            else
+                recipesOk = c.loadJson(f, "recipes", recipesDoc);
         }
         // Format 1.0 (feature 011): logic.json (schema only) and the template files, like TS
         if (v10) {
@@ -1153,6 +1195,8 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
                              tagsOk ? &tags : nullptr, errs);
             // BACnet/IP channels only from 1.1 (feature 020, rules_bacnet)
             bacnetVersionRules(project, connectionsOk ? &connections : nullptr, errs);
+            // recipes (feature 024, rules_recipes)
+            recipeRules(project, recipesOk ? &recipesDoc : nullptr, tagsOk ? &tags : nullptr, errs);
         }
         for (auto& e : errs) c.errors.push_back(std::move(e));
         for (auto& w : warns) c.warnings.push_back(std::move(w));
@@ -1170,6 +1214,7 @@ ProjectValidation validate03(const std::string& projectDir, const std::string& s
         if (alarmsOk) lp.alarms = std::move(alarmsDoc);
         if (alarmClassesOk) lp.alarmClasses = std::move(alarmClassesDoc);
         if (reportsOk) lp.reports = std::move(reports);
+        if (recipesOk) lp.recipes = std::move(recipesDoc);
         if (logicOk) lp.logic = std::move(logicDoc);
         for (auto& [name, d] : in.valueTables) lp.valueTables[name] = std::move(d.doc);
         for (auto& [id, d] : in.watchTables) lp.watchTables[id] = std::move(d.doc);
@@ -1251,6 +1296,9 @@ std::set<std::string> LoadedProject::allowlist() const {
         // report templates (feature 010): the report page loads them like the screen files
         if (project.contains("reportsFile"))
             out.insert(project.at("reportsFile").get<std::string>());
+        // feature 024: the logo of the report header
+        if (reports.is_object() && reports.contains("logo"))
+            out.insert(reports.at("logo").get<std::string>());
         return out;
     }
     for (const auto& s : screens) out.insert(s.screen["svgFile"].get<std::string>());
@@ -1281,6 +1329,10 @@ std::vector<std::string> LoadedProject::files() const {
     if (project.contains("logic")) out.insert(project.at("logic").get<std::string>());
     if (project.contains("templates"))
         for (const auto& t : project.at("templates")) out.insert(t.get<std::string>());
+    // Format 1.1 (feature 024): recipes, the logo of the reports
+    if (project.contains("recipesFile")) out.insert(project.at("recipesFile").get<std::string>());
+    if (reports.is_object() && reports.contains("logo"))
+        out.insert(reports.at("logo").get<std::string>());
     for (const auto& id : project.at("screens"))
         out.insert("screens/" + id.get<std::string>() + ".screen.json");
     if (is03()) {

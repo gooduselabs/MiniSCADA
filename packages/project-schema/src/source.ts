@@ -23,6 +23,11 @@ export type ReadResult = { text: string; hash?: string } | { error: ReadFailure 
 export interface ProjectSource {
   /** Nội dung file theo đường dẫn tương đối trong project (giữ BOM nếu có), hoặc lý do lỗi. */
   read(rel: string): Promise<ReadResult>;
+  /**
+   * Số byte của tệp (feature 024: logo PNG của báo cáo, không đọc được như văn bản), null khi không có. Nguồn không
+   * cài thì luật kích thước chỉ áp cho tệp đọc được như văn bản.
+   */
+  size?(rel: string): Promise<number | null>;
 }
 
 /** Nội dung file, hoặc null khi không đọc được. */
@@ -76,5 +81,9 @@ export class MemorySource implements ProjectSource {
     return Object.prototype.hasOwnProperty.call(this.files, rel)
       ? { text: this.files[rel] }
       : { error: 'missing' };
+  }
+  async size(rel: string): Promise<number | null> {
+    const r = await this.read(rel);
+    return 'text' in r ? new TextEncoder().encode(r.text).length : null;
   }
 }

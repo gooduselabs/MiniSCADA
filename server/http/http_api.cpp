@@ -631,8 +631,10 @@ int HttpApi::onProjectFile(mg_connection* c, void* self) {
             }
         }
     }
+    // feature 024: the logo of the reports may be a PNG
+    const bool png = rel.size() > 4 && rel.compare(rel.size() - 4, 4, ".png") == 0;
     return serveFile(c, api->opt_.projectDir + "/" + rel,
-                     json ? "application/json" : "image/svg+xml", extra, false);
+                     json ? "application/json" : png ? "image/png" : "image/svg+xml", extra, false);
 }
 
 }  // namespace mat

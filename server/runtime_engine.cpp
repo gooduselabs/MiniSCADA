@@ -58,6 +58,14 @@ RuntimeEngine::RuntimeEngine(std::shared_ptr<const ProjectModel> model, TagStore
           boundDevice);  // BACnet/IP (020)
     adopt(makeOpcUaDrivers(*model_, options_.writeQueuePerChannel, options_.opcua),
           device0);  // OPC UA (019): one server per channel
+    {
+        drv::MqttEnv env = options_.mqtt;  // MQTT (022): one broker per channel
+        if (!env.snapshot)
+            env.snapshot = [this](const std::vector<size_t>& idx, std::vector<TagValue>& out) {
+                store_.snapshot(idx, out);
+            };
+        adopt(makeMqttDrivers(*model_, options_.writeQueuePerChannel, env), device0);
+    }
 }
 
 drv::Driver* RuntimeEngine::driverOf(size_t tag) const {

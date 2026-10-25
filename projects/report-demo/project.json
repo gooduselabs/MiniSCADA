@@ -73,5 +73,6 @@
   "theme": "vivid",
   "alarmFile": "alarms.json",
   "alarmClassFile": "alarm-classes.json",
-  "logic": "logic.json"
+  "logic": "logic.json",
+  "recipesFile": "recipes.json"
 }

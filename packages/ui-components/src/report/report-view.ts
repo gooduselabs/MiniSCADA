@@ -45,6 +45,7 @@ export class MatReportView extends LitElement {
     compact: { type: Boolean, reflect: true },
     selectable: { type: Boolean, reflect: true },
     selected: { type: String },
+    logo: { type: String },
   };
 
   declare table: ReportTable | null;
@@ -58,6 +59,11 @@ eport-select với
    */
   declare selectable: boolean;
   declare selected: string;
+  /**
+   * Ảnh logo của đơn vị trên dải tiêu đề (feature 024): URL cùng nguồn của tệp trong project hoặc data URL; hiển
+   * thị bằng <img> (SVG không chạy script). Rỗng: không có.
+   */
+  declare logo: string;
 
   #chart: ChartInstance | null = null;
   #chartBox: HTMLElement | null = null;
@@ -71,6 +77,7 @@ eport-select với
     this.compact = false;
     this.selectable = false;
     this.selected = '';
+    this.logo = '';
   }
 
   #pick(part: string): void {
@@ -125,6 +132,21 @@ eport-select với
         color-mix(in srgb, var(--mat-accent, #0b7285) 78%, #000) 100%
       );
       box-shadow: var(--mat-shadow-card, none);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .logo {
+      display: block;
+      max-width: 140px;
+      max-height: 44px;
+      object-fit: contain;
+      padding: 4px 6px;
+      border-radius: 6px;
+      background: #fff;
     }
     .org {
       font-size: 12px;
@@ -354,9 +376,12 @@ eport-select với
         data-part="general"
         @click=${() => this.#pick('general')}
       >
-        <div>
-          ${t.org ? html`<div class="org">${t.org}</div>` : nothing}
-          <h2 class="title">${t.title}</h2>
+        <div class="brand">
+          ${this.logo ? html`<img class="logo" src=${this.logo} alt="" />` : nothing}
+          <div>
+            ${t.org ? html`<div class="org">${t.org}</div>` : nothing}
+            <h2 class="title">${t.title}</h2>
+          </div>
         </div>
         <div class="period">${l.period}: ${t.periodLabel}</div>
       </header>

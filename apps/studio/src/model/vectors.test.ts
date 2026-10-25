@@ -95,6 +95,9 @@ describe('tests/project-vectors mở trong Studio (SC-006)', () => {
       const exp = JSON.parse(readFileSync(join(DIR, c, 'expected.json'), 'utf8')) as Expected;
       // Ca "runtime quá cũ" chỉ đúng với runtime của vector; Studio kiểm theo runtime đi kèm nó (feature 012: 1.1.0).
       if (exp.errors.includes('E_RUNTIME_TOO_OLD') && exp.runtimeVersion !== undefined) return;
+      // Feature 024: lớp platform của Studio chỉ đọc tệp văn bản, không biết kích thước tệp nhị phân (logo PNG); trần
+      // 256 KiB của PNG do CLI (NodeDirSource.size) và runtime C++ kiểm.
+      if (c === 'v11-report-logo-png-too-large') return;
       const store = new StudioStore({ platform: dirPlatform(join(DIR, c)) });
       expect(await store.openProject()).toBe(true);
       await store.idle();

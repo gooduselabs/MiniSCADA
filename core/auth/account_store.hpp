@@ -27,6 +27,10 @@ constexpr size_t kMaxGroupsPerAccount = 16;
 constexpr int64_t kUsersRecheckMs = 2000;  // the runtime looks at the file at most this often
 
 bool validAccountName(std::string_view name);  // ^[a-z][a-z0-9._-]{2,31}$
+// Feature 023: an email address as accounts and the email rules keep it: 3..254 bytes, printable
+// ASCII without spaces, quotes, angle brackets, commas, semicolons or colons, exactly one '@' with
+// text on both sides and a '.' inside the domain part.
+bool validAccountEmail(std::string_view email);
 
 struct Account {
     std::string name;
@@ -42,6 +46,9 @@ struct Account {
     // the last sign-in (UTC ms; the runtime writes it at most once an hour per account).
     std::vector<std::string> groups;
     std::optional<int64_t> lastLoginAt;
+    // Feature 023 (alarm email): the address alarm emails of the account's groups go to; "" none.
+    // An optional key of users.json 1.1.0 (older 1.x readers ignore it); rev does not change.
+    std::string email;
 };
 
 struct UsersFile {

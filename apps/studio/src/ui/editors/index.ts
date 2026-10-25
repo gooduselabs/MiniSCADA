@@ -31,3 +31,4 @@ import '../props-svg-element.ts';
 // Feature 011: trình vẽ SVG (tab `svgdraw:<tệp>`) và tab "Mới: SVG trống".
 import '../svg/svg-new.ts';
 import '../svg/svg-editor.ts';
+import './recipes-editor.ts';

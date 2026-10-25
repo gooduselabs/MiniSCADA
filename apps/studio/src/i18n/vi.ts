@@ -27,6 +27,7 @@ import { viExpr } from './vi-expr.ts';
 import { viAlarm } from './vi-alarm.ts';
 import { viHistory } from './vi-history.ts';
 import { viReports } from './vi-reports.ts';
+import { viRecipes } from './vi-recipes.ts';
 import { viTemplate } from './vi-template.ts';
 import { viLogic } from './vi-logic.ts';
 import { viLogicDiagram } from './vi-logic-diagram.ts';
@@ -37,6 +38,7 @@ import { viDashboard } from './vi-dashboard.ts';
 import { viS7 } from './vi-s7.ts';
 import { viMc } from './vi-mc.ts';
 import { viOpcUa } from './vi-opcua.ts';
+import { viMqtt } from './vi-mqtt.ts';
 
 const viCore = {
   // ---- Giai đoạn của lộ trình v2: nhãn cạnh mục chưa làm (cây, task card, trang giai đoạn) ----
@@ -485,6 +487,7 @@ export const viMessages = {
   ...viImport,
   ...viHistory,
   ...viReports,
+  ...viRecipes,
   ...viTemplate,
   ...viLogic,
   ...viLogicDiagram,
@@ -495,4 +498,5 @@ export const viMessages = {
   ...viMc,
   ...viBacnet,
   ...viOpcUa,
+  ...viMqtt,
 } as const;

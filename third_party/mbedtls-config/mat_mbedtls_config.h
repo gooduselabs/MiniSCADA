@@ -8,7 +8,7 @@
  * Checked by core/crypto/tests/mbedtls_config_test.cpp; the flags were settled by the T007 spike
  * (docs/adr/010-device-discovery-https.md, "Số đo / bằng chứng").
  *
- * Deliberately off (R4): TLS client, DTLS, renegotiation, RSA (key exchange and keys), CBC and
+ * Deliberately off (R4): TLS client (on since feature 023, alarm email), DTLS, renegotiation, RSA (key exchange and keys), CBC and
  * every non-AEAD cipher, static ECDH, (EC)DHE-PSK and TLS 1.3 PSK modes, session tickets and cache,
  * early data, SHA-1, MD5, curves other than X25519 and P-256, debug output, self tests.
  * Feature 019 turned on RSA, CBC and SHA-1 as primitives for OPC UA (section at the end); the TLS
@@ -55,7 +55,20 @@
     MBEDTLS_TLS1_3_AES_256_GCM_SHA384,                     \
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, \
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,       \
-    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+    MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,       \
+    MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,   \
+    MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,         \
+    MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+
+/* --- TLS client for the alarm emails (feature 023, ADR-051) and the MQTT driver (feature 022,
+ * ADR-050, drivers/mqtt/link.cpp, brokers with an RSA certificate or a P-384 chain). STARTTLS/SMTPS
+ * towards public mail servers (Gmail, Office 365), whose certificates are often RSA and whose CA chains use P-384.
+ * So: the client side, SNI, ECDHE-RSA with the same AEAD ciphers (still forward secret; static RSA
+ * key exchange stays off) and secp384r1 for ECDHE and certificate signatures. The device's HTTPS
+ * server has only an ECDSA P-256 certificate, so it never negotiates an ECDHE-RSA suite. */
+#define MBEDTLS_SSL_CLI_C
+#define MBEDTLS_SSL_SERVER_NAME_INDICATION
+#define MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 
 /* --- Ciphers and hashes: AES-GCM, ChaCha20-Poly1305, SHA-256, SHA-384 (R4). */
 #define MBEDTLS_CIPHER_C
@@ -75,6 +88,7 @@
 #define MBEDTLS_BIGNUM_C
 #define MBEDTLS_ECP_C
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
+#define MBEDTLS_ECP_DP_SECP384R1_ENABLED /* feature 023: CA chains of mail servers (ECDSA P-384 roots) */
 #define MBEDTLS_ECP_DP_CURVE25519_ENABLED
 #define MBEDTLS_ECP_NIST_OPTIM /* fast P-256 reduction */
 #define MBEDTLS_ECDH_C

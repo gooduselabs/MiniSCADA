@@ -141,6 +141,8 @@ export type Project10 = Project05 & {
   logic?: string;
   /** Tệp template `templates/<id>.template.json` (tùy chọn; thứ tự không có nghĩa). */
   templates?: string[];
+  /** Định dạng 1.1 (feature 024): đường dẫn tương đối của recipes.json (tùy chọn). */
+  recipesFile?: string;
 };
 
 /** Project 1.0 đã nạp và qua kiểm tra: như 0.5/0.6 cộng logic và template (theo đường dẫn). */

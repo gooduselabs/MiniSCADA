@@ -27,7 +27,9 @@ export type PageRoute =
   | { kind: 'history'; params: URLSearchParams }
   | { kind: 'report'; id: string; params: URLSearchParams }
   /** Feature 013: trang Quản trị `#/quan-tri[/<tab>]` (chỉ administrator; máy chủ tự từ chối API quản trị). */
-  | { kind: 'admin'; tab: string | null; params: URLSearchParams };
+  | { kind: 'admin'; tab: string | null; params: URLSearchParams }
+  /** Feature 024: trang Recipe `#/recipes[/<loại>]`. */
+  | { kind: 'recipes'; type: string | null; params: URLSearchParams };
 
 const REPORT_ID = /^[a-z0-9][a-z0-9-]{0,47}$/;
 const ADMIN_TAB = /^[a-z][a-z-]{0,31}$/;
@@ -41,6 +43,17 @@ export function parsePageHash(hash: string): PageRoute | null {
   const params = new URLSearchParams(q < 0 ? '' : raw.slice(q + 1));
   if (path === 'history') return { kind: 'history', params };
   if (path === 'quan-tri') return { kind: 'admin', tab: null, params };
+  if (path === 'recipes') return { kind: 'recipes', type: null, params };
+  const rc = /^recipes\/([^/]+)$/.exec(path);
+  if (rc) {
+    let t: string;
+    try {
+      t = decodeURIComponent(rc[1]!);
+    } catch {
+      return null;
+    }
+    return REPORT_ID.test(t) ? { kind: 'recipes', type: t, params } : null;
+  }
   const a = /^quan-tri\/([^/]+)$/.exec(path);
   if (a) return ADMIN_TAB.test(a[1]!) ? { kind: 'admin', tab: a[1]!, params } : null;
   const m = /^report\/([^/]+)$/.exec(path);
@@ -56,7 +69,13 @@ export function parsePageHash(hash: string): PageRoute | null {
 
 /** Khóa mục menu của trang: `@history`, `@report/<id>` (không trùng id màn hình vì id màn hình không có `@`). */
 export const pageKey = (p: PageRoute): string =>
-  p.kind === 'history' ? '@history' : p.kind === 'admin' ? '@quan-tri' : `@report/${p.id}`;
+  p.kind === 'history'
+    ? '@history'
+    : p.kind === 'admin'
+      ? '@quan-tri'
+      : p.kind === 'recipes'
+        ? '@recipes'
+        : `@report/${p.id}`;
 
 /** `#/<id>` → id; rỗng, sai dạng hay chuỗi phần trăm hỏng → null. */
 export function parseHash(hash: string): string | null {

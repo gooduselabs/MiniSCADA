@@ -41,6 +41,7 @@
 #include "core/historian/secrets.hpp"
 #include "core/historian/status.hpp"
 #include "core/historian/write_counter_vfs.hpp"
+#include "core/notify/email_service.hpp"
 #include "core/package/manifest.hpp"
 #include "core/package/project_digest.hpp"
 #include "core/project-manager/logging_estimate.hpp"
@@ -83,6 +84,7 @@
 #include "server/http/web_contexts.hpp"
 #include "server/malloc_tuning.hpp"
 #include "server/project_glue.hpp"
+#include "server/recipe_glue.hpp"
 #include "server/runtime_engine.hpp"
 #include "server/serial_policy.hpp"
 #include "server/serial_probe.hpp"
@@ -577,6 +579,11 @@ int main(int argc, char** argv) {
         const SecretResult s = readSecret(file, id);
         return s.ok ? std::optional<std::string>(s.secret) : std::nullopt;
     };
+    // Feature 022: the passwords of the MQTT channels, from the same secrets file.
+    engineOptions.mqtt.password = [file = cfg.secretsFile](const std::string& id) {
+        const SecretResult s = readSecret(file, id);
+        return s.ok ? std::optional<std::string>(s.secret) : std::nullopt;
+    };
     // Feature 011 (logic v2, T136 to T139): logic.json of the active project in the engine's
     // round; its writes go to the coordinator (set below), its state to <dataDir>/logic-state.json.
     if (active.active && validation.project && validation.project->logic.is_object())
@@ -619,6 +626,55 @@ int main(int argc, char** argv) {
         return timesyncSynchronized(kTimesyncFlag, wallMs);
     };
     alarmOptions.audit = [&audit](const AuditEvent& e) { audit.append(e); };
+    // Feature 023 (ADR-051): alarm email. <dataDir>/notify holds email.json and the outbox; the
+    // SMTP password is the entry "smtp" of the secrets file (--set-secret smtp). The accounts of
+    // a group are read from the auth store once it exists (emailAuthStore, set below).
+    std::atomic<AuthStore*> emailAuthStore{nullptr};
+    notify::EmailServiceOptions emailOptions;
+    emailOptions.dir = cfg.dataDir + "/notify";
+    emailOptions.password = [file = cfg.secretsFile]() -> std::optional<std::string> {
+        SecretResult s = readSecret(file, notify::kSmtpSecretId);
+        if (!s.ok) return std::nullopt;
+        return std::move(s.secret);
+    };
+    emailOptions.groupEmails = [&emailAuthStore](const std::string& group) {
+        std::vector<std::string> out;
+        AuthStore* st = emailAuthStore.load();
+        if (!st) return out;
+        const AuthFiles f = st->read();
+        if (f.users.status != UsersStatus::Ok) return out;
+        for (const Account& a : f.users.file.users)
+            if (a.enabled && !a.email.empty() &&
+                std::find(a.groups.begin(), a.groups.end(), group) != a.groups.end())
+                out.push_back(a.email);
+        return out;
+    };
+    emailOptions.audit = [&audit](const notify::EmailAuditRecord& r) {
+        const auto act = parseAuditAction(r.action);
+        if (!act) return;
+        AuditEvent e(*act, r.ok ? AuditResult::Ok : AuditResult::Failed, AuditChannel::System,
+                     "system");
+        if (!r.target.empty()) e.target = r.target;
+        if (!r.code.empty()) e.code = r.code;
+        e.detail = r.detail.dump();
+        try {
+            audit.append(e);
+        } catch (const std::exception&) {
+            // the email is sent or dropped anyway; the audit log reports its own trouble
+        }
+    };
+    notify::EmailService emailService(emailOptions);
+    {
+        std::string emailError;
+        if (!emailService.start(emailError))
+            std::fprintf(stderr, "email: %s\n", emailError.c_str());
+        else if (!emailError.empty())
+            std::fprintf(stderr, "email: %s (email off until fixed on the admin page)\n",
+                         emailError.c_str());
+    }
+    alarmOptions.notices = [&emailService](std::vector<notify::AlarmNotice> n) {
+        emailService.push(std::move(n));
+    };
     AlarmGlue alarmGlue(alarmOptions);
     {
         std::string alarmError;
@@ -681,6 +737,16 @@ int main(int argc, char** argv) {
             systemWarnings.set("PULSE_STUCK", {{"tags", tags}, {"pulseRecovery", "no-project"}});
     }
 
+    // Feature 024 (ADR-052): the recipes of the running project; their writes go to the
+    // coordinator. Declared after it: the service (and a download that runs) ends first.
+    std::unique_ptr<CoordinatorRecipeWriter> recipeWriter;
+    std::unique_ptr<recipe::Service> recipes;
+    if (active.active && validation.project && rtEngine.active()) {
+        if (writes) recipeWriter = std::make_unique<CoordinatorRecipeWriter>(writes->coordinator());
+        recipes =
+            makeRecipeService(*validation.project, cfg.dataDir, store, audit, recipeWriter.get());
+    }
+
     // Step 5: the sign-in service (its hash thread starts here, after the device commands above
     // have returned), with the sessions and lockouts carried across execv (read, then deleted).
     // Feature 013 (ADR-042): the accounts and the access rules live in <dataDir>/auth (the runtime
@@ -692,6 +758,12 @@ int main(int argc, char** argv) {
     authStoreOptions.dir = cfg.authDir;
     authStoreOptions.seedUsersFile = cfg.usersFile;
     AuthStore authStore(authStoreOptions);
+    emailAuthStore.store(&authStore);  // feature 023: the group lookup of the email rules
+    // On every way out, the email thread ends before authStore goes (it reads the groups).
+    struct EmailStop {
+        notify::EmailService& s;
+        ~EmailStop() { s.stop(); }
+    } emailStop{emailService};
     const AuditFn auditAppend = [&audit](const AuditEvent& e) { audit.append(e); };
     AuthOptions authOptions;
     authOptions.usersFile = prepareAuthStore(authStore, cfg.usersFile, auditAppend, stderrLog);
@@ -998,6 +1070,7 @@ int main(int argc, char** argv) {
         o.tls = r.tls;
         return viewerGate.check(FilteredPath::ProjectsActive, o).allow;
     };
+    adminBackend.email = &emailService;  // feature 023
     AdminApi adminApi(adminBackend);
     engineering.setAdmin(&adminApi);
     engineering.setAccess(&accessService);
@@ -1139,7 +1212,8 @@ int main(int argc, char** argv) {
     if (writes) engineering.setTags({&writes->coordinator()});  // device-api-1.1 §3
     engineering.setAlarms({&alarmGlue, monoMs});                // device-api-1.3 §3 (feature 009)
     engineering.setLogic({[&rtEngine] { return rtEngine.logic(); }});  // device-api-011 §4
-    engineering.setUpdate({updateService.get()});                      // device-api-011 §3
+    if (recipes) engineering.setRecipes({[&recipes] { return recipes.get(); }});  // feature 024
+    engineering.setUpdate({updateService.get()});  // device-api-011 §3
     // GET /api/v1/history/* (feature 010): reads of history.db on connections of their own.
     if (historian) {
         HistoryApi::Options hq;
@@ -1376,8 +1450,9 @@ int main(int argc, char** argv) {
     parts.writes.store(nullptr);
     parts.alarms.store(nullptr);
     if (writes) writes->coordinator().waitAuditIdle();
-    rtEngine.stop();   // the retained values first, then the drivers (device-config §7)
-    alarmGlue.stop();  // what alarm.db still queues is written, the file closed clean
+    rtEngine.stop();      // the retained values first, then the drivers (device-config §7)
+    alarmGlue.stop();     // what alarm.db still queues is written, the file closed clean
+    emailService.stop();  // feature 023: the outbox stays on disk for the next start
     discoveryForDiag.store(nullptr);
     discoveryServer.stop();            // device discovery (T060)
     if (historian) historian->stop();  // commits the buffered rows

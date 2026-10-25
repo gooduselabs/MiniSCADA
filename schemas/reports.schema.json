@@ -22,6 +22,11 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 80
+    },
+    "logo": {
+      "description": "Định dạng 1.1 (feature 024): ảnh logo của đơn vị trên dải tiêu đề (SVG hoặc PNG trong graphics/, tối đa 256 KiB: luật E_RPT_LOGO).",
+      "type": "string",
+      "pattern": "^graphics/[A-Za-z0-9][A-Za-z0-9._-]{0,63}\\.(svg|png)$"
     }
   },
   "definitions": {

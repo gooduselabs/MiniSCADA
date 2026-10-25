@@ -183,6 +183,11 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
           "group.delete", "access.rule", "access.cleanup", "access.restore", "access.reset",
           "access.store-invalid", "admin.read", "admin.view-as"})
         expected.push_back(a);  // feature 013 (contracts/admin-api.md)
+    for (const char* a : {"recipe.download", "recipe.save", "recipe.delete", "recipe.capture"})
+        expected.push_back(a);  // feature 024 (specs/024-recipes/plan.md)
+    for (const char* a : {"account.email", "email.sent", "email.failed", "email.dropped",
+                          "email.config", "email.test"})
+        expected.push_back(a);  // feature 023 (alarm email)
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));

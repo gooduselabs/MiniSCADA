@@ -606,6 +606,14 @@ int EngineeringApi::driversTest(mg_connection* c, const GateRequest& r, const Ga
                               {"code", "NOT_SUPPORTED"},
                               {"message", "Kênh OPC UA: dùng Lấy chứng chỉ / Duyệt node."}}),
                     close);
+    // Feature 022: an MQTT channel has no request to try; its diagnostics show the broker.
+    if (j.is_object() && j.contains("channel") && j["channel"].is_object() &&
+        j["channel"].value("kind", "") == "mqtt")
+        return send(c, 200,
+                    jsonText({{"ok", false},
+                              {"code", "NOT_SUPPORTED"},
+                              {"message", "Kênh MQTT: xem Chẩn đoán driver."}}),
+                    close);
     ProbeSpec spec;
     std::vector<ProbeIssue> issues;
     if (!parseProbeRequest(j, spec, issues)) {

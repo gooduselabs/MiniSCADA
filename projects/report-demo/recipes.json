@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "1.1.0",
+  "types": [
+    {
+      "id": "lo-say",
+      "name": "Lò sấy",
+      "description": "Thông số mẻ sấy theo sản phẩm",
+      "security": {
+        "operate": "operator",
+        "edit": "engineer"
+      },
+      "params": [
+        {
+          "tagId": "DRYER.TEMP_SP",
+          "label": "Nhiệt độ đặt",
+          "unit": "°C",
+          "min": 60,
+          "max": 180,
+          "decimals": 1
+        },
+        {
+          "tagId": "DRYER.TIME_MIN",
+          "label": "Thời gian sấy",
+          "unit": "phút",
+          "min": 5,
+          "max": 240
+        },
+        {
+          "tagId": "DRYER.FAN_PCT",
+          "label": "Tốc độ quạt",
+          "unit": "%",
+          "min": 20,
+          "max": 100,
+          "decimals": 0
+        },
+        {
+          "tagId": "DRYER.STEAM",
+          "label": "Bật hơi"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "mi-soi",
+          "name": "Mì sợi",
+          "values": {
+            "DRYER.TEMP_SP": 85,
+            "DRYER.TIME_MIN": 45,
+            "DRYER.FAN_PCT": 60,
+            "DRYER.STEAM": true
+          }
+        },
+        {
+          "id": "banh-quy",
+          "name": "Bánh quy",
+          "values": {
+            "DRYER.TEMP_SP": 150,
+            "DRYER.TIME_MIN": 18,
+            "DRYER.FAN_PCT": 80,
+            "DRYER.STEAM": false
+          }
+        },
+        {
+          "id": "hat-dieu",
+          "name": "Hạt điều",
+          "values": {
+            "DRYER.TEMP_SP": 110,
+            "DRYER.TIME_MIN": 90,
+            "DRYER.FAN_PCT": 55,
+            "DRYER.STEAM": false
+          }
+        },
+        {
+          "id": "rau-say",
+          "name": "Rau sấy",
+          "values": {
+            "DRYER.TEMP_SP": 65,
+            "DRYER.TIME_MIN": 180,
+            "DRYER.FAN_PCT": 40,
+            "DRYER.STEAM": true
+          }
+        }
+      ]
+    }
+  ]
+}

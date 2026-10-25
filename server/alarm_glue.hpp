@@ -29,6 +29,7 @@
 #include "core/alarm/alarm_history.hpp"
 #include "core/alarm/alarm_service.hpp"
 #include "core/audit/audit_log.hpp"
+#include "core/notify/email_rules.hpp"
 #include "core/project-manager/project_validator.hpp"
 #include "core/tag-engine/tag_store.hpp"
 #include "nlohmann/json.hpp"
@@ -79,6 +80,9 @@ struct AlarmGlueOptions {
     std::function<void(const AuditEvent&)> audit;
     int commandWaitMs = 1500;  // how long a request waits for the engine to apply (a tick + margin)
     alarm::HistoryOptions history;
+    // Feature 023 (alarm email): the alarm events of a round as notices, on the tick thread (the
+    // receiver only queues them). Empty: no email.
+    std::function<void(std::vector<notify::AlarmNotice>)> notices;
 };
 
 class AlarmGlue : public AlarmLiveSource {

@@ -6,7 +6,7 @@ import { PW_MAX, PW_MIN, passwordHint } from '../password-dialog.ts';
 import { viAdmin } from '../i18n/vi-admin.ts';
 import type { AdminCtx, AdminTab } from './admin-page.ts';
 import { ROLES, type AdminUser, type Role } from './api.ts';
-import { USER_NAME, fmtTime, relativeTime, userEditPlan } from './model.ts';
+import { USER_NAME, fmtTime, relativeTime, userEditPlan, validEmail } from './model.ts';
 import {
   Modal,
   button,
@@ -289,6 +289,7 @@ export class UsersTab implements AdminTab {
       autocapitalize: 'none',
     });
     const role = this.#roleSelect('operator');
+    const email = input('email', { autocomplete: 'off', maxlength: '254', spellcheck: 'false' });
     const groups = new Set<string>();
     const gen = input('radio', { name: 'ad-pwmode', value: 'gen' });
     gen.checked = true;
@@ -301,6 +302,7 @@ export class UsersTab implements AdminTab {
     m.body.append(
       field(F.name, name, F.nameHint),
       field(F.role, role),
+      field(F.email, email, F.emailHint),
       h(
         'div',
         { class: 'ad-field' },
@@ -325,6 +327,12 @@ export class UsersTab implements AdminTab {
         name.focus();
         return;
       }
+      const mail = email.value.trim();
+      if (mail && !validEmail(mail)) {
+        m.showError(F.emailBad);
+        email.focus();
+        return;
+      }
       if (own.checked) {
         const err = pw.error();
         if (err) {
@@ -341,6 +349,7 @@ export class UsersTab implements AdminTab {
           name: n,
           role: role.value as Role,
           groups: [...groups],
+          ...(mail ? { email: mail } : {}),
           ...(own.checked ? { password: pw.value() ?? '' } : { generate: true as const }),
         });
         m.close();
@@ -381,6 +390,8 @@ export class UsersTab implements AdminTab {
     const groups = new Set(u.groups);
     const enabled = input('checkbox');
     enabled.checked = u.enabled;
+    const email = input('email', { autocomplete: 'off', maxlength: '254', spellcheck: 'false' });
+    email.value = u.email ?? '';
     const self = u.name === c.me;
     m.body.append(
       h(
@@ -397,6 +408,7 @@ export class UsersTab implements AdminTab {
         h('span', { class: 'ad-label', text: F.groups }),
         this.#groupPicker(groups),
       ),
+      field(F.email, email, F.emailHint),
       h('label', { class: 'ad-check' }, enabled, h('span', { text: F.enabled })),
       h('p', { class: 'ad-hint', text: self ? F.selfNote : F.sessionsNote }),
     );
@@ -437,10 +449,16 @@ export class UsersTab implements AdminTab {
     );
     m.body.append(more);
     const save = async () => {
+      if (email.value.trim() && !validEmail(email.value.trim())) {
+        m.showError(F.emailBad);
+        email.focus();
+        return;
+      }
       const plan = userEditPlan(u, {
         role: role.value as Role,
         groups: [...groups],
         enabled: enabled.checked,
+        email: email.value,
       });
       if (plan.empty) {
         m.showError(F.noChange);

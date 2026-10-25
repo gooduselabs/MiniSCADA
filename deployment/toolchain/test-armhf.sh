@@ -28,7 +28,9 @@ logic_schedule_test logic_rules_test logic_skip_test rules_logic_test logic_writ
 update_envelope_test update_signature_test update_fuzz_test
 access_model_test access_vectors_test access_catalog_test access_store_test account_store_test
 fins_frame_test fins_udp_link_test fins_driver_test fins_fuzz_test fins_factory_test
-mc_address_test mc_frame_test mc_driver_test mc_fuzz_test"
+mc_address_test mc_frame_test mc_driver_test mc_fuzz_test
+notify_test smtp_client_test mbedtls_config_test
+mqtt_address_test mqtt_packet_test mqtt_payload_test mqtt_driver_test mqtt_factory_test"
 TESTS=${*:-$DEFAULT}
 cmake -S . -B "$B" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=deployment/toolchain/armhf.cmake \
   -DMAT_ARMHF_TESTS=ON > /dev/null || { echo "armhf tests: configure failed"; exit 1; }

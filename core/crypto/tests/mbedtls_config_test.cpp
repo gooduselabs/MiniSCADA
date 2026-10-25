@@ -74,9 +74,12 @@ static_assert(MBEDTLS_VERSION_NUMBER == 0x03060700, "R4/R19: the vendored Mbed T
 #error "R4: MBEDTLS_THREADING_C and MBEDTLS_THREADING_PTHREAD must be on"
 #endif
 
-// --- Off: client side, DTLS, renegotiation, RSA key exchange, CBC, debug.
-#if defined(MBEDTLS_SSL_CLI_C)
-#error "R4: MBEDTLS_SSL_CLI_C must be off (server only)"
+// --- Off: DTLS, renegotiation, RSA key exchange, CBC, debug. The client side is on since feature
+// 023 (ADR-051, alarm email over STARTTLS/SMTPS) and used by the MQTT driver (022, ADR-050), with
+// SNI.
+#if !defined(MBEDTLS_SSL_CLI_C) || !defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+#error \
+    "feature 023: MBEDTLS_SSL_CLI_C and MBEDTLS_SSL_SERVER_NAME_INDICATION must be on (SMTP client)"
 #endif
 #if defined(MBEDTLS_SSL_PROTO_DTLS)
 #error "R4: MBEDTLS_SSL_PROTO_DTLS must be off"
@@ -98,8 +101,12 @@ static_assert(MBEDTLS_VERSION_NUMBER == 0x03060700, "R4/R19: the vendored Mbed T
 
 namespace {
 
-// The cipher suites the server may negotiate: AEAD only, (EC)DHE only, certificates ECDSA only.
+// The cipher suites: AEAD only, (EC)DHE only. ECDHE-RSA only for the SMTP client (feature 023):
+// the server's certificate is ECDSA, so it never picks them.
 const std::set<int> kSuites = {
+    MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+    MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+    MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS1_3_AES_128_GCM_SHA256,
     MBEDTLS_TLS1_3_AES_256_GCM_SHA384,
     MBEDTLS_TLS1_3_CHACHA20_POLY1305_SHA256,
@@ -127,12 +134,13 @@ TEST(MbedtlsConfig, OnlyAeadSuitesWithEcdheAndEcdsa) {
     EXPECT_EQ(offered, kSuites);
 }
 
-TEST(MbedtlsConfig, OnlyX25519AndSecp256r1) {
+TEST(MbedtlsConfig, OnlyX25519Secp256r1AndSecp384r1) {
     std::set<std::string> curves;
     for (const mbedtls_ecp_curve_info* c = mbedtls_ecp_curve_list();
          c->grp_id != MBEDTLS_ECP_DP_NONE; ++c)
         curves.insert(c->name);
-    EXPECT_EQ(curves, (std::set<std::string>{"x25519", "secp256r1"}));
+    EXPECT_EQ(curves,
+              (std::set<std::string>{"x25519", "secp256r1", "secp384r1"}));  // 384: feature 023
 }
 
 // PSA Crypto starts (entropy from the OS) and hands out random bytes.
@@ -153,7 +161,7 @@ TEST(MbedtlsConfig, PsaCryptoStartsAndGivesRandomBytes) {
 TEST(MbedtlsConfig, ChaCha20ComesFirstInEachVersion) {
     std::vector<int> order;
     for (const int* id = mbedtls_ssl_list_ciphersuites(); *id != 0; ++id) order.push_back(*id);
-    ASSERT_EQ(order.size(), 6u);
+    ASSERT_EQ(order.size(), 9u);  // + 3 ECDHE-RSA of the SMTP client (feature 023), last
     EXPECT_EQ(order[0], MBEDTLS_TLS1_3_CHACHA20_POLY1305_SHA256);
     EXPECT_EQ(order[3], MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256);
 }

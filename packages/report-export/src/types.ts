@@ -37,6 +37,11 @@ export interface ExportMeta {
    * foreignObject, ảnh hay tham chiếu ngoài. Giá trị khác bị bỏ qua.
    */
   logo?: string;
+  /**
+   * Logo ở góc trên bên phải XLSX (feature 024): byte PNG (trang chuyển SVG sang PNG trước). Byte không phải PNG bị bỏ
+   * qua.
+   */
+  logoPng?: Uint8Array;
   /** Vẽ biểu đồ ở trang đầu PDF (mặc định có, khi bảng có từ hai hàng). */
   chart?: boolean;
 }

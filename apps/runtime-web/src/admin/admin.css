@@ -1170,3 +1170,67 @@
 .ad-comp-head .ad-sub {
   margin-bottom: 10px;
 }
+
+/* Feature 023: tab Thông báo email */
+.ad-email-form {
+  display: grid;
+  gap: 16px;
+}
+.ad-email-card {
+  border: 1px solid var(--ad-line, #d0d7de);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+.ad-email-card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.ad-email-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px 16px;
+  align-items: start;
+}
+.ad-email-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.ad-email-rule {
+  border: 1px dashed var(--ad-line, #d0d7de);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 0 0 12px;
+  display: grid;
+  gap: 8px;
+}
+.ad-email-rule legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+.ad-email-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+.ad-email-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.ad-email-status {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0;
+}
+.ad-email-status dt {
+  font-weight: 600;
+}
+.ad-email-status dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.ad-email-pw {
+  margin: 8px 0 0;
+}

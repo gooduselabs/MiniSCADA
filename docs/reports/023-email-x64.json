@@ -1,0 +1,131 @@
+{
+  "scenario": "email",
+  "checks": [
+    {
+      "name": "GET /admin/email: chưa bật, mật khẩu đã đặt",
+      "pass": true,
+      "detail": "{\"configError\":null,\"dropped\":0,\"enabled\":false,\"failed\":0,\"lastError\":null,\"lastOkAt\":null,\"nextAttemptInS\":0,\"noRecipient\":0,\"pendingEvents\":0,\"queue\":{\"bytes\":0,\"count\":0},\"quietSkipped\":0,\"reminders\":0,\"sent\":0}"
+    },
+    {
+      "name": "mật khẩu qua API bị từ chối (400)",
+      "pass": true,
+      "detail": "400"
+    },
+    {
+      "name": "lưu cấu hình (200, rev + 1)",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "gửi thử: ok",
+      "pass": true,
+      "detail": "{\"code\":250,\"error\":\"\",\"message\":\"Đã gửi.\",\"ok\":true,\"peerSha256\":\"5eadd650f450a01f42988087cc934da7db4ec0c2443ae0b8953deb969405cb7f\",\"stage\":\"done\"}"
+    },
+    {
+      "name": "máy chủ giả nhận email thử qua STARTTLS + AUTH",
+      "pass": true,
+      "detail": "{\"tls\":true,\"auth\":\"mat\"}"
+    },
+    {
+      "name": "tiêu đề email thử tiếng Việt",
+      "pass": true,
+      "detail": "[Trạm thử IT] Email thử"
+    },
+    {
+      "name": "alarm → email trong batchSeconds + 10 s (SC-001)",
+      "pass": true,
+      "detail": "6034"
+    },
+    {
+      "name": "tiêu đề: trạm, mức, tên alarm",
+      "pass": true,
+      "detail": "[Trạm thử IT] Khẩn cấp: Bơm IT lỗi"
+    },
+    {
+      "name": "người nhận: cả hai địa chỉ của quy tắc",
+      "pass": true,
+      "detail": "ky.su@example.com,truc.ca@example.com"
+    },
+    {
+      "name": "nội dung text: Tag, trạng thái, liên kết trang Alarm",
+      "pass": true,
+      "detail": "Trạm: Trạm thử IT\r\n1 sự kiện alarm (1 Khẩn cấp)\r\n\r\n- Xuất hiện | Khẩn cấp | 2026-10-25 02:18:39 (UTC+00:00)\r\n  Alarm: Bơm IT lỗi (IT_FAULT)\r\n  Tag: IT.FAULT = 1\r\n  Khu: Bơm\r\n  Lớp: Khẩn cấp\r\n  Thông điệp: Bơm IT lỗi\r\n  Trạng thái: Đang có, chưa xác nhận\r\n\r\nTrang Alarm: https://192.0.2.10:8443/alarms"
+    },
+    {
+      "name": "nội dung HTML có liên kết, không có thẻ lạ",
+      "pass": true
+    },
+    {
+      "name": "bão 3 alarm → đúng 1 email (gom)",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "tiêu đề gom: số sự kiện theo mức",
+      "pass": true,
+      "detail": "[Trạm thử IT] 3 sự kiện alarm (1 Khẩn cấp, 2 Quan trọng)"
+    },
+    {
+      "name": "alarm hết → email",
+      "pass": true,
+      "detail": "[Trạm thử IT] 4 sự kiện alarm (2 Khẩn cấp, 2 Quan trọng)"
+    },
+    {
+      "name": "mất mạng: email nằm trong hàng đợi, có lỗi cuối CONNECT",
+      "pass": true,
+      "detail": "{\"configError\":null,\"dropped\":0,\"enabled\":true,\"failed\":1,\"lastError\":{\"at\":1792894758851,\"code\":0,\"error\":\"CONNECT\",\"message\":\"Không kết nối được smtp:2525 (mạng, tường lửa, cổng).\",\"stage\":\"connect\"},\"lastOkAt\":1792894744851,\"nextAttemptInS\":30,\"noRecipient\":0,\"pendingEvents\":0,\"queue\":{\"bytes\":3399,\"count\":1},\"quietSkipped\":0,\"reminders\":0,\"sent\":3}"
+    },
+    {
+      "name": "sau khởi động lại: hàng đợi còn trên đĩa",
+      "pass": true,
+      "detail": "{\"bytes\":3399,\"count\":1}"
+    },
+    {
+      "name": "mạng về: email được gửi bù",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "gửi bù không trùng (1 email, không gửi lại alarm khôi phục lúc khởi động)",
+      "pass": true,
+      "detail": "[Trạm thử IT] Khẩn cấp: Bơm IT lỗi"
+    },
+    {
+      "name": "đặt maxPerHour = 1",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "giới hạn 1 email/giờ: email thứ hai bị giữ, không mất",
+      "pass": true,
+      "detail": "1 mails, pending 2"
+    },
+    {
+      "name": "audit: email.sent, email.failed, email.config, email.test",
+      "pass": true,
+      "detail": "email.sent/ok,email.config/ok,email.failed/failed,email.test/ok"
+    },
+    {
+      "name": "audit không chứa mật khẩu SMTP",
+      "pass": true
+    },
+    {
+      "name": "log runtime không chứa mật khẩu SMTP",
+      "pass": true
+    },
+    {
+      "name": "RSS tăng ≤ 1 MiB khi bật email (SC-004, tham khảo)",
+      "pass": true,
+      "detail": "504"
+    }
+  ],
+  "measures": {
+    "rssKiBEmailOff": 14636,
+    "cpuIdlePctEmailOff": 0.1,
+    "alarmToEmailMs": 6034,
+    "rssKiBEmailOn": 15140,
+    "cpuIdlePctEmailOn": 0.1,
+    "rssDeltaKiB": 504
+  },
+  "pass": true
+}

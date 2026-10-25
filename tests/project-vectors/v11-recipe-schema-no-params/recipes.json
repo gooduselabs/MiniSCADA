@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.1.0",
+  "types": [
+    {
+      "id": "lo-say",
+      "name": "Lò sấy",
+      "description": "Thông số mẻ sấy",
+      "security": {
+        "view": "viewer",
+        "operate": "operator",
+        "edit": "engineer"
+      },
+      "params": [],
+      "recipes": [
+        {
+          "id": "mua-he",
+          "name": "Mùa hè",
+          "values": {
+            "TANK01.SP": 55.5,
+            "PUMP01.RUN_CMD": true,
+            "NOTE.TEXT": "he",
+            "CNT.U16": 12,
+            "DEMO.SET": -40
+          }
+        },
+        {
+          "id": "mua-dong",
+          "name": "Mùa đông",
+          "values": {
+            "TANK01.SP": 70,
+            "PUMP01.RUN_CMD": false,
+            "NOTE.TEXT": "",
+            "CNT.U16": 0,
+            "DEMO.SET": 100
+          }
+        }
+      ]
+    }
+  ]
+}

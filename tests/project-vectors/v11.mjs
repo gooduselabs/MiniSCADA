@@ -9,6 +9,8 @@ import { finsCases } from './v11-fins.mjs';
 import { mcCases } from './v11-mc.mjs';
 import { bacnetCases } from './v11-bacnet.mjs';
 import { opcuaCases } from './v11-opcua.mjs';
+import { recipeCases } from './v11-recipes.mjs';
+import { mqttCases } from './v11-mqtt.mjs';
 import { reportCases } from './v11-reports.mjs';
 import { s7Cases } from './v11-s7.mjs';
 
@@ -393,6 +395,8 @@ export function cases11() {
   mcCases(ok, bad, to10); // feature 017 (README-017.md)
   bacnetCases(ok, bad, to10); // feature 020 (README-020.md)
   opcuaCases(ok, bad, to10, base11); // feature 019 (README-019.md)
+  recipeCases(ok, bad, to10); // feature 024 (README-024.md)
+  mqttCases(ok, bad, to10, base11); // feature 022 (README-022.md)
   return C;
 }
 

@@ -8,6 +8,7 @@ import type {
   WatchTableDoc,
 } from './types-02.ts';
 import type { ReportsConfig } from './reports.ts';
+import type { RecipesConfig } from './recipes.ts';
 import type { LoggingConfig, Project } from './types.ts';
 
 export type ScreenKind = 'screen' | 'popup';
@@ -117,4 +118,6 @@ export interface LoadedProject03 {
   logging?: LoggingConfig;
   /** Định dạng 0.6 (feature 010). */
   reports?: ReportsConfig;
+  /** Định dạng 1.1 (feature 024). */
+  recipes?: RecipesConfig;
 }

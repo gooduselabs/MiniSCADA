@@ -91,6 +91,53 @@
       "access": "RW",
       "description": "Bơm 1 chế độ tự động",
       "initial": false
+    },
+    {
+      "id": "DRYER.TEMP_SP",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "access": "RW",
+      "description": "Nhiệt độ đặt lò sấy",
+      "unit": "°C",
+      "limits": {
+        "min": 40,
+        "max": 200
+      },
+      "initial": 80
+    },
+    {
+      "id": "DRYER.TIME_MIN",
+      "kind": "internal",
+      "type": "UINT16",
+      "access": "RW",
+      "description": "Thời gian sấy",
+      "unit": "phút",
+      "limits": {
+        "min": 1,
+        "max": 600
+      },
+      "initial": 30
+    },
+    {
+      "id": "DRYER.FAN_PCT",
+      "kind": "internal",
+      "type": "FLOAT32",
+      "access": "RW",
+      "description": "Tốc độ quạt",
+      "unit": "%",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "initial": 50
+    },
+    {
+      "id": "DRYER.STEAM",
+      "kind": "internal",
+      "type": "BOOL",
+      "access": "RW",
+      "description": "Bật hơi",
+      "initial": false
     }
   ]
 }

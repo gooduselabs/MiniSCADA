@@ -122,6 +122,7 @@ Trang chỉ dùng được qua HTTPS. Thao tác trên trang có hiệu lực nga
 - Mật khẩu sinh ngẫu nhiên hiện trong hộp "Mật khẩu của <tên>" **đúng một lần**: bấm **Chép mật khẩu**, trao tận tay người dùng, rồi **Tôi đã chép, đóng**. Thiết bị không lưu bản rõ; mất thì đặt lại.
 - **Sửa** (cuối hàng): đổi vai trò, nhóm, bỏ chọn **Tài khoản đang bật (đăng nhập được)** để tắt (người nghỉ việc), bấm **Lưu thay đổi**. **Thao tác khác** có **Đặt lại mật khẩu…** và **Xóa người dùng…**.
 - **Mở khóa** (cột Khóa tạm, khi tài khoản đang bị khóa do nhập sai): gỡ khóa ngay.
+- **Email (nhận cảnh báo alarm)** (hộp Thêm và Sửa): địa chỉ nhận email alarm khi quy tắc email gửi cho nhóm của người này (mục 4.5). Để trống nếu không nhận. Đổi email **không** đăng xuất người đó.
 - Ô **Tìm theo tên hoặc nhóm** và lọc **Mọi vai trò** để tìm nhanh. Cột **Phiên** là số phiên đang mở.
 
 Đổi vai trò, nhóm, trạng thái hay mật khẩu của một người **đăng xuất mọi phiên** của người đó ngay (hộp Sửa nhắc "Đổi vai trò, nhóm, trạng thái hay mật khẩu sẽ đăng xuất mọi phiên của người này."). Sửa chính tài khoản của mình thì chính bạn bị đăng xuất.
@@ -297,6 +298,53 @@ Không có bản trước dùng được: khôi phục thư mục `auth/` từ s
 Mỗi người tự đổi mật khẩu trên trang vận hành: nút tài khoản ở thanh trên > **Đổi mật khẩu của tôi** (nhập mật khẩu hiện tại; các phiên khác của người đó bị đăng xuất). Không có đăng ký hay "quên mật khẩu" trên web: quên thì quản trị viên **Đặt lại mật khẩu…** (mục 4.1).
 
 **Phiên:** hết sau 30 phút rảnh (`webSessionIdleMin`, 5–480; trạm 24/7 có thể đặt 480), tối đa 12 giờ (`webSessionMaxHours`). Tối đa 12 phiên web cùng lúc (`webMaxSessions`).
+
+### 4.5. Thông báo email alarm
+
+Thiết bị gửi email khi alarm **xuất hiện**, **hết** hoặc **chưa được xác nhận sau N phút** (nhắc lại). Chỉ có email (không SMS, Zalo, Telegram). Cấu hình nằm trên thiết bị (`/var/lib/mat-runtime/notify/email.json`), không nằm trong project: đổi người nhận không cần nạp lại project.
+
+**Bước 1: mật khẩu SMTP trên thiết bị** (qua SSH, không bao giờ nhập trên web):
+
+```sh
+sudo mat-runtime --set-secret smtp
+```
+
+Gõ mật khẩu (không hiện ra màn hình), Enter. Mật khẩu nằm trong file bí mật của thiết bị (`root:matscada`, `0640`), cùng chỗ với mật khẩu DB ngoài và OPC UA. Đổi mật khẩu: chạy lại lệnh; không cần khởi động lại runtime.
+
+**Bước 2: trang Quản trị > tab Thông báo email** (chỉ administrator):
+
+- **Máy chủ SMTP:** **Máy chủ**, **Cổng**, **Bảo mật**: **STARTTLS (thường cổng 587)**, **SMTPS, TLS ngay (cổng 465)** hoặc **Không mã hóa** (chỉ relay nội bộ không đăng nhập: thiết bị **không bao giờ** gửi mật khẩu qua kết nối không mã hóa). **Tài khoản đăng nhập SMTP**, **Địa chỉ gửi**, **Tên người gửi**. Dòng **Mật khẩu SMTP trên thiết bị** hiện "đã đặt" hoặc "chưa đặt".
+- **Chứng chỉ máy chủ:** mặc định kiểm theo CA hệ thống (`/etc/ssl/certs/ca-certificates.crt`) và đúng tên máy chủ. Máy chủ nội bộ có chứng chỉ tự ký: dán SHA-256 của chứng chỉ vào **Ghim SHA-256 chứng chỉ** (lấy bằng `openssl s_client -starttls smtp -connect mail.example.com:587 </dev/null | openssl x509 -noout -fingerprint -sha256`). Không có tùy chọn "bỏ qua kiểm chứng chỉ". Thiết bị không kiểm ngày hết hạn của chứng chỉ (đồng hồ có thể sai khi chưa đồng bộ).
+- **Tên trạm** (hiện trong tiêu đề email) và **Địa chỉ trang web của thiết bị** (ví dụ `https://192.0.2.10:8443`: email có liên kết tới trang Alarm).
+- **Quy tắc gửi** (tối đa 20): **Mức alarm** (Khẩn cấp, Quan trọng, Nhỏ, Thông tin; để trống = mọi mức), **Sự kiện** (Xuất hiện, Hết, Nhắc lại khi chưa xác nhận), **Nhắc lại sau (phút)** (5–1440), **Lớp alarm** và **Khu** (mã, cách nhau dấu phẩy; `-` là khu Chung), **Gửi tới địa chỉ** và/hoặc **Gửi tới nhóm người dùng** (email lấy từ tài khoản đang bật trong nhóm, mục 4.1; bên cạnh nhóm hiện "x/y người có email"). Alarm khớp nhiều quy tắc: mỗi người nhận một lần.
+- **Chống bão email:** **Gom alarm trong (giây)** (mặc định 30: mọi alarm trong khoảng này vào **một** email), **Tối đa email mỗi giờ** (mặc định 20: vượt thì alarm được gom tiếp và gửi khi có suất, không mất), **Số lần nhắc lại tối đa** (mặc định 3), **Giờ yên lặng** (giờ thiết bị): trong khoảng này chỉ gửi mức đã chọn (mặc định chỉ Khẩn cấp).
+- Bấm **Lưu cấu hình email**, rồi nhập **Địa chỉ nhận thử** và bấm **Gửi thử**. Kết quả hiện ngay ("Đã gửi email thử…" hoặc "Gửi thử thất bại: …" kèm lý do).
+
+**Trạng thái** (đầu tab): **Email đang chờ gửi**, **Sự kiện đang gom**, **Gửi thành công lần cuối**, **Lỗi cuối** (kèm "thử lại sau … giây"), số đã gửi/thất bại/bỏ.
+
+**Khi mất mạng:** email nằm trong hàng đợi trên thiết bị (`notify/outbox`, tối đa 100 email, 4 MiB), gửi lại sau 30 giây, 1, 2, 5, 10 rồi mỗi 15 phút; khởi động lại runtime không mất email. Email chưa gửi được sau 24 giờ bị bỏ (nhật ký `email.dropped`). Máy chủ từ chối hẳn (mã 5xx, ví dụ địa chỉ không tồn tại) thì không thử lại. Alarm đã có sẵn khi runtime khởi động (kể cả mất kết nối thiết bị lúc khởi động) không gửi lại.
+
+**Nhật ký:** `email.sent`, `email.failed` (mã lỗi, ví dụ `CONNECT`, `TIMEOUT`, `CERT`, `AUTH`), `email.dropped`, `email.config`, `email.test`, `account.email` (tab Nhật ký, loại **Email alarm**). Không ghi nội dung email hay mật khẩu.
+
+**Gmail và Office 365:**
+
+| Dịch vụ | Máy chủ | Cổng, bảo mật | Tài khoản | Mật khẩu (`--set-secret smtp`) |
+|---|---|---|---|---|
+| Gmail / Google Workspace | `smtp.gmail.com` | 587 STARTTLS hoặc 465 SMTPS | địa chỉ Gmail | **mật khẩu ứng dụng** 16 ký tự (Tài khoản Google > Bảo mật > Xác minh 2 bước > Mật khẩu ứng dụng); mật khẩu thường bị từ chối (`AUTH`, mã 535) |
+| Microsoft 365 / Outlook | `smtp.office365.com` | 587 STARTTLS | địa chỉ hộp thư | mật khẩu ứng dụng (khi bật xác thực đa yếu tố); quản trị viên Microsoft 365 phải bật **Authenticated SMTP** cho hộp thư |
+
+**Địa chỉ gửi** phải là chính hộp thư đăng nhập (hoặc bí danh được phép), nếu không máy chủ từ chối. Thiết bị cần ra Internet cổng 587/465 và phân giải DNS; trong mạng điều khiển cách ly, dùng relay SMTP nội bộ.
+
+**Sự cố:**
+
+| Lỗi cuối | Nguyên nhân thường gặp | Cách xử lý |
+|---|---|---|
+| `DNS`, `CONNECT`, `TIMEOUT` | thiết bị không ra được Internet, tường lửa chặn 587/465, sai máy chủ/cổng | kiểm DNS, cổng; dùng relay nội bộ |
+| `CERT` | CA hệ thống thiếu, máy chủ tự ký, sai tên máy chủ | cập nhật CA, ghim SHA-256, dùng đúng tên trong chứng chỉ |
+| `AUTH` (535) | sai tài khoản/mật khẩu, chưa dùng mật khẩu ứng dụng | đặt lại `--set-secret smtp` |
+| `NO_PASSWORD` | chưa đặt mật khẩu trên thiết bị | `sudo mat-runtime --set-secret smtp` |
+| `STARTTLS_UNSUPPORTED` | cổng 465 mà chọn STARTTLS | chọn SMTPS hoặc cổng 587 |
+| `REJECTED` (5xx) | địa chỉ gửi không được phép, người nhận không tồn tại | sửa địa chỉ |
 
 ## 5. Cấu hình mạng và gia cố
 

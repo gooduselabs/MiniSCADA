@@ -50,6 +50,8 @@ export function issueText(issue: { code: string; message: string }): string {
   if (s7) return t(s7);
   const ua = opcuaIssueKey(code, message);
   if (ua) return t(ua);
+  const mq = mqttIssueKey(code, message);
+  if (mq) return t(mq);
   const key = lookup('issue', code);
   return key ? t(key) : message;
 }
@@ -77,6 +79,18 @@ function opcuaIssueKey(code: string, message: string): MessageKey | null {
     return lookup('issue', `${code}.opcua`);
   if (code === 'E_SCHEMA' && /does not apply to OPC UA tags/.test(message))
     return 'issue.E_SCHEMA.opcuaByteOrder';
+  return null;
+}
+
+/**
+ * Lỗi của Tag MQTT dùng chung mã với Modbus (E_ADDR_*, E_SCHEMA): nhận ra theo câu tiếng Anh của bộ kiểm tra
+ * (packages/project-schema/src/rules-mqtt.ts) để câu tiếng Việt nói topic thay vì địa chỉ Modbus (feature 022).
+ */
+function mqttIssueKey(code: string, message: string): MessageKey | null {
+  if ((code === 'E_ADDR_SYNTAX' || code === 'E_ADDR_RANGE') && message.startsWith('MQTT address'))
+    return lookup('issue', `${code}.mqtt`);
+  if (code === 'E_SCHEMA' && /does not apply to MQTT tags/.test(message))
+    return 'issue.E_SCHEMA.mqttByteOrder';
   return null;
 }
 

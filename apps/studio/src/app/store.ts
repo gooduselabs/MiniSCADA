@@ -334,6 +334,7 @@ export class StudioStore {
     await read(outline.tagFile);
     await read(outline.loggingFile);
     await read(outline.reportsFile);
+    await read(outline.recipesFile);
     await read(outline.connectionFile);
     await read(outline.alarmFile);
     await read(outline.alarmClassFile);

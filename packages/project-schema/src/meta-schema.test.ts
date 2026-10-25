@@ -47,7 +47,7 @@ const FROZEN_10: Record<string, string> = {
 
 describe('schemas/*.schema.json theo meta-schema draft-07', () => {
   // Feature 005 (T087): manifest của gói .matscada, chỉ bản C++ và Rust dùng; cũng phải đúng draft-07.
-  it('đủ 14 schema (1.0: tập file của 0.6 cộng logic.schema.json, template.schema.json)', () => {
+  it('đủ 15 schema (1.0: tập file của 0.6 cộng logic.schema.json, template.schema.json; 1.1: recipes.schema.json)', () => {
     expect([...files].sort()).toEqual([
       'alarm-classes.schema.json',
       'alarms.schema.json',
@@ -57,6 +57,7 @@ describe('schemas/*.schema.json theo meta-schema draft-07', () => {
       'logic.schema.json',
       'package-manifest.schema.json',
       'project.schema.json',
+      'recipes.schema.json',
       'reports.schema.json',
       'screen.schema.json',
       'tag.schema.json',

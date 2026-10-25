@@ -337,10 +337,15 @@ struct AdminApi::Impl {
 
     AdminReply usersList(const AdminCaller& who) {
         const std::vector<AccountSummary> list = b.auth->accountSummaries();
+        const AuthFiles f = b.store->read();
         json users = json::array();
-        for (const AccountSummary& a : list)
+        for (const AccountSummary& a : list) {
+            // feature 023: the email address of the account (alarm email to its groups)
+            const Account* acc =
+                f.users.status == UsersStatus::Ok ? f.users.file.find(a.name) : nullptr;
             users.push_back(
                 {{"name", a.name},
+                 {"email", acc && !acc->email.empty() ? json(acc->email) : json(nullptr)},
                  {"role", roleName(a.role)},
                  {"groups", a.groups},
                  {"enabled", a.enabled},
@@ -349,7 +354,7 @@ struct AdminApi::Impl {
                  {"createdAt", msOrNull(a.createdAt)},
                  {"updatedAt", msOrNull(a.updatedAt)},
                  {"sessions", a.sessions}});
-        const AuthFiles f = b.store->read();
+        }
         bool write = false;
         {
             const int64_t t = mono();
@@ -403,6 +408,10 @@ struct AdminApi::Impl {
                           "đầu bằng chữ thường."}});
         const auto role = parseRole(body["role"].get<std::string>());
         if (!role) return error(400, "BAD_REQUEST", {{"message", "role không hợp lệ."}});
+        if (body.contains("email") && !body["email"].is_null() &&
+            !(body["email"].is_string() && (body["email"].get<std::string>().empty() ||
+                                            validAccountEmail(body["email"].get<std::string>()))))
+            return error(400, "BAD_REQUEST", {{"message", "email không phải địa chỉ hợp lệ."}});
         std::string pw;
         bool generated = false;
         if (auto refused = newPassword(body, name, who, act, pw, generated)) return *refused;
@@ -430,6 +439,8 @@ struct AdminApi::Impl {
                                 {{"message", "Đã đủ 200 tài khoản."}});
                 if (e != AccountEditError::None) return error(400, "BAD_REQUEST");
                 t.users.find(name)->groups = groups;
+                if (body.contains("email") && body["email"].is_string())
+                    t.users.find(name)->email = body["email"].get<std::string>();
                 AuditEvent ev = event(act, AuditResult::Ok, who);
                 ev.target = name;
                 ev.detail = jsonText(
@@ -456,7 +467,8 @@ struct AdminApi::Impl {
         if (!body.contains("rev") || !isRev(body["rev"])) return error(400, "BAD_REQUEST");
         for (auto it = body.begin(); it != body.end(); ++it)
             if (it.key() != "rev" && it.key() != "role" && it.key() != "groups" &&
-                it.key() != "enabled" && it.key() != "unlock" && it.key() != "reauth")
+                it.key() != "enabled" && it.key() != "unlock" && it.key() != "reauth" &&
+                it.key() != "email")
                 return error(400, "BAD_REQUEST", {{"message", "Khóa lạ: " + it.key()}});
         std::optional<Role> role;
         if (body.contains("role")) {
@@ -468,8 +480,18 @@ struct AdminApi::Impl {
             return error(400, "BAD_REQUEST");
         if (body.contains("unlock") && !(body["unlock"].is_boolean() && body["unlock"].get<bool>()))
             return error(400, "BAD_REQUEST");
+        std::optional<std::string> email;  // feature 023: "" or null removes it
+        if (body.contains("email")) {
+            const json& v = body["email"];
+            if (v.is_null() || (v.is_string() && v.get<std::string>().empty()))
+                email = "";
+            else if (v.is_string() && validAccountEmail(v.get<std::string>()))
+                email = v.get<std::string>();
+            else
+                return error(400, "BAD_REQUEST", {{"message", "email không phải địa chỉ hợp lệ."}});
+        }
         if (!role && !body.contains("groups") && !body.contains("enabled") &&
-            !body.contains("unlock"))
+            !body.contains("unlock") && !email)
             return error(400, "BAD_REQUEST", {{"message", "Không có gì để đổi."}});
         const int64_t rev = body["rev"].get<int64_t>();
         // The account as it is now decides whether the password is asked again (demotion or
@@ -533,6 +555,15 @@ struct AdminApi::Impl {
                 if (body.contains("unlock")) {
                     unlockAccount(t.users, name, nowIso);
                     row(AuditAction::AccountUnlock, {{"scope", "account"}});
+                }
+                if (email && *email != before->email) {  // rev kept: no sign-out (feature 023)
+                    Account* acc = t.users.find(name);
+                    acc->email = *email;
+                    acc->updatedAt = nowIso;
+                    row(AuditAction::AccountEmail,
+                        {{"before",
+                          {{"email", before->email.empty() ? json(nullptr) : json(before->email)}}},
+                         {"after", {{"email", email->empty() ? json(nullptr) : json(*email)}}}});
                 }
                 if (rows.empty()) return std::nullopt;  // nothing changes: nothing written
                 for (const auto& e : rows)
@@ -1041,6 +1072,106 @@ struct AdminApi::Impl {
         out["enabled"] = a->enabled;
         return reply(200, std::move(out));
     }
+
+    // ---- alarm email (feature 023, device-api 1.6.0 mở rộng, apiVersion không đổi)
+
+    AdminReply emailGet() {
+        const notify::EmailConfig c = b.email->config();
+        // The groups of access.json with how many enabled accounts in them have an address.
+        const AuthFiles f = b.store->read();
+        json groups = json::array();
+        for (const auto& g : f.access.groups) {
+            int members = 0, withEmail = 0;
+            if (f.users.status == UsersStatus::Ok)
+                for (const Account& a : f.users.file.users)
+                    if (a.enabled &&
+                        std::find(a.groups.begin(), a.groups.end(), g.id) != a.groups.end()) {
+                        ++members;
+                        withEmail += a.email.empty() ? 0 : 1;
+                    }
+            groups.push_back(
+                {{"id", g.id}, {"name", g.name}, {"members", members}, {"withEmail", withEmail}});
+        }
+        return reply(200, {{"rev", c.rev},
+                           {"config", notify::emailConfigJson(c)},
+                           {"passwordSet", b.email->passwordSet()},
+                           {"status", b.email->statusJson()},
+                           {"groups", groups}});
+    }
+
+    AdminReply emailSet(const json& body, const AdminCaller& who) {
+        const AuditAction act = AuditAction::EmailConfig;
+        if (!body.contains("rev") || !isRev(body["rev"]) || !body.contains("config") ||
+            !body["config"].is_object())
+            return error(400, "BAD_REQUEST", {{"message", "Cần rev và config."}});
+        notify::EmailConfig c;
+        std::string err;
+        json cfg = body["config"];
+        cfg.erase("rev");
+        if (!notify::parseEmailConfig(cfg, c, err))
+            return error(400, "BAD_REQUEST", {{"message", err}});
+        const AuthFiles f = b.store->read();
+        for (const auto& r : c.rules)
+            for (const auto& g : r.groups)
+                if (!f.access.group(g))
+                    return error(400, "NOT_FOUND",
+                                 {{"group", g}, {"message", "Không có nhóm " + g + "."}});
+        const int64_t rev = body["rev"].get<int64_t>();
+        const notify::EmailConfig before = b.email->config();
+        if (before.rev != rev)
+            return deny(act, who, "email.json", 409, "CONFLICT", {{"rev", before.rev}});
+        const auto summary = [](const notify::EmailConfig& x) {
+            return json{{"enabled", x.enabled},
+                        {"host", x.smtp.host},
+                        {"port", x.smtp.port},
+                        {"security", notify::smtpSecurityName(x.smtp.security)},
+                        {"username", x.smtp.username},
+                        {"from", x.smtp.from},
+                        {"pinned", !x.smtp.pinSha256.empty()},
+                        {"rules", x.rules.size()},
+                        {"maxPerHour", x.maxPerHour}};
+        };
+        AuditEvent e = event(act, AuditResult::Ok, who);
+        e.target = "email.json";
+        e.detail = jsonText({{"before", summary(before)}, {"after", summary(c)}});
+        if (!audit(e)) return error(503, "AUDIT_UNAVAILABLE");
+        int64_t newRev = 0;
+        switch (b.email->saveConfig(c, rev, newRev, err)) {
+            case notify::SaveStatus::Ok:
+                return reply(200, {{"rev", newRev}});
+            case notify::SaveStatus::Conflict:
+                return deny(act, who, "email.json", 409, "CONFLICT", {{"rev", newRev}});
+            case notify::SaveStatus::Invalid:
+                return error(400, "BAD_REQUEST", {{"message", err}});
+            case notify::SaveStatus::IoError:
+                break;
+        }
+        AuditEvent fe = event(act, AuditResult::Failed, who);
+        fe.target = "email.json";
+        fe.code = "STORE_IO";
+        audit(fe);
+        return error(503, "STORE_IO", {{"message", "Không ghi được email.json: " + err}});
+    }
+
+    AdminReply emailTest(const json& body, const AdminCaller& who) {
+        if (!body.contains("to") || !body["to"].is_string() ||
+            !validAccountEmail(body["to"].get<std::string>()))
+            return error(400, "BAD_REQUEST", {{"message", "Địa chỉ nhận thử không hợp lệ."}});
+        const std::string to = body["to"].get<std::string>();
+        const notify::SmtpResult r = b.email->sendTest(to);
+        AuditEvent e =
+            event(AuditAction::EmailTest, r.ok ? AuditResult::Ok : AuditResult::Failed, who);
+        e.target = to;
+        if (!r.ok) e.code = r.error;
+        e.detail = jsonText({{"stage", r.stage}, {"smtpCode", r.code}});
+        audit(e);
+        return reply(200, {{"ok", r.ok},
+                           {"stage", r.stage},
+                           {"error", r.error},
+                           {"code", r.code},
+                           {"message", r.message},
+                           {"peerSha256", r.peerSha256}});
+    }
 };
 
 AdminApi::AdminApi(AdminBackend backend) : impl_(std::make_shared<Impl>()) {
@@ -1115,6 +1246,11 @@ AdminReply AdminApi::call(const std::string& method, const std::string& path,
     if (path == "/api/v1/admin/access/cleanup") return s.accessCleanup(body, who);
     if (path == "/api/v1/admin/access/restore") return s.accessRestore(body, who);
     if (path == "/api/v1/admin/effective") return s.effective(query, who);
+    if (path == "/api/v1/admin/email" || path == "/api/v1/admin/email/test") {
+        if (!s.b.email) return error(501, "NOT_IMPLEMENTED");
+        if (path == "/api/v1/admin/email/test") return s.emailTest(body, who);
+        return method == "GET" ? s.emailGet() : s.emailSet(body, who);
+    }
     return error(404, "NOT_FOUND");
 }
 

@@ -77,6 +77,17 @@ describe('<mat-report-view>', () => {
     expect(tiles[2]!.querySelector('.unit')!.textContent).toBe('%');
   });
 
+  it('logo (feature 024): ảnh trên dải tiêu đề khi có, alt rỗng; không có logo thì không có ảnh', async () => {
+    fakeECharts();
+    const el = await mount(table());
+    expect(el.shadowRoot!.querySelector('img.logo')).toBeNull();
+    el.logo = '/project/graphics/logo.svg';
+    await el.updateComplete;
+    const img = el.shadowRoot!.querySelector('.band img.logo')!;
+    expect(img.getAttribute('src')).toBe('/project/graphics/logo.svg');
+    expect(img.getAttribute('alt')).toBe('');
+  });
+
   it('bảng: tiêu đề cột có hàm, hàng chưa tới, ô thiếu dữ liệu, hàng tổng nổi bật', async () => {
     fakeECharts();
     const el = await mount(table());

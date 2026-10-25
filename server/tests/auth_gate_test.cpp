@@ -384,6 +384,18 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"POST /api/v1/admin/access/restore", true},
         {"GET /api/v1/admin/effective", true},
         {"GET /api/v1/admin/audit", true},
+        // feature 024: the reads of recipes are polls, the four changes a person's requests
+        {"GET /api/v1/recipes", false},
+        {"GET /api/v1/recipes/current", false},
+        {"GET /api/v1/recipes/jobs/j1", false},
+        {"POST /api/v1/recipes/save", true},
+        {"POST /api/v1/recipes/delete", true},
+        {"POST /api/v1/recipes/capture", true},
+        {"POST /api/v1/recipes/download", true},
+        // feature 023: alarm email
+        {"GET /api/v1/admin/email", true},
+        {"POST /api/v1/admin/email", true},
+        {"POST /api/v1/admin/email/test", true},
     };
     for (const auto& kv : expected) {
         const size_t space = kv.first.find(' ');

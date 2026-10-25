@@ -206,6 +206,52 @@ export function makeAccess(seed, deps) {
   const rate = new Map(); // phiên → [thời điểm]
   const cfg = { rateLimit: seed.rateLimit ?? 30, viewerLogin: seed.viewerLogin ?? 'required' };
   const log = { reauth: [], posts: [], effective: [] };
+  // feature 023: cấu hình email alarm giả (không có mật khẩu: chỉ passwordSet)
+  const email = {
+    rev: 0,
+    passwordSet: seed.emailPasswordSet ?? true,
+    tests: [],
+    config: {
+      enabled: false,
+      siteName: '',
+      baseUrl: '',
+      smtp: {
+        host: '',
+        port: 587,
+        security: 'starttls',
+        username: '',
+        auth: 'auto',
+        from: '',
+        fromName: '',
+        caFile: '',
+        pinSha256: '',
+        timeoutS: 20,
+      },
+      rules: [],
+      quietHours: { enabled: false, from: '22:00', to: '06:00', minPriority: 1 },
+      batchSeconds: 30,
+      maxPerHour: 20,
+      reminderMax: 3,
+    },
+    status: {
+      enabled: false,
+      queue: { count: 1, bytes: 2048 },
+      pendingEvents: 0,
+      lastOkAt: null,
+      lastError: {
+        at: now() - 60_000,
+        stage: 'connect',
+        error: 'CONNECT',
+        code: 0,
+        message: 'Không kết nối được smtp.example.com:587',
+      },
+      nextAttemptInS: 25,
+      sent: 4,
+      failed: 1,
+      dropped: 0,
+      configError: null,
+    },
+  };
 
   const record = (s, action, target, result, detail = null, code = null) => {
     audit.unshift({
@@ -261,6 +307,7 @@ export function makeAccess(seed, deps) {
       createdAt: u.createdAt,
       updatedAt: u.updatedAt,
       sessions: [...deps.sessions.values()].filter((x) => x.user === u.name).length,
+      email: u.email ?? null,
     })),
   });
   const groupsBody = () => ({
@@ -497,6 +544,13 @@ export function makeAccess(seed, deps) {
       const before = { role: u.role, groups: [...u.groups], enabled: u.enabled };
       if (body.role !== undefined) u.role = body.role;
       if (body.groups !== undefined) u.groups = [...body.groups];
+      // feature 023: email của tài khoản (không làm hết phiên)
+      if (body.email !== undefined) {
+        if (body.email !== null && !/^[^s@]+@[^s@]+.[^s@]+$/.test(body.email))
+          return err(res, 400, 'BAD_REQUEST', { field: 'email' });
+        u.email = body.email || null;
+        record(s, 'account.email', name, 'ok', { after: { email: u.email } });
+      }
       if (body.enabled !== undefined) u.enabled = body.enabled;
       if (body.unlock === true) u.locked = null;
       u.updatedAt = now();
@@ -651,6 +705,48 @@ export function makeAccess(seed, deps) {
         computeAccess(cat(), store, { user: u.name, role: u.role, groups: u.groups }).effective,
       );
     }
+    // ---- email alarm (feature 023) ----
+    if (path === '/api/v1/admin/email' && m === 'GET')
+      return json(res, 200, {
+        rev: email.rev,
+        config: email.config,
+        passwordSet: email.passwordSet,
+        status: email.status,
+        groups: store.groups.map((g) => {
+          const mem = [...users.values()].filter((u) => u.enabled && u.groups.includes(g.id));
+          return {
+            id: g.id,
+            name: g.name,
+            members: mem.length,
+            withEmail: mem.filter((u) => u.email).length,
+          };
+        }),
+      });
+    if (path === '/api/v1/admin/email' && m === 'POST') {
+      if (body.rev !== email.rev) return err(res, 409, 'CONFLICT', { rev: email.rev });
+      const c = body.config;
+      if (!c || typeof c !== 'object' || 'password' in (c.smtp ?? {}))
+        return err(res, 400, 'BAD_REQUEST');
+      if (c.enabled && (!c.smtp?.host || !c.smtp?.from)) return err(res, 400, 'BAD_REQUEST');
+      email.config = c;
+      email.rev++;
+      email.status.enabled = c.enabled === true;
+      record(s, 'email.config', 'email.json', 'ok');
+      return json(res, 200, { rev: email.rev });
+    }
+    if (path === '/api/v1/admin/email/test' && m === 'POST') {
+      const ok = typeof body.to === 'string' && body.to.endsWith('@example.com');
+      email.tests.push(body.to);
+      record(s, 'email.test', body.to, ok ? 'ok' : 'failed');
+      if (ok) email.status.lastOkAt = now();
+      return json(res, 200, {
+        ok,
+        stage: ok ? 'done' : 'rcpt',
+        error: ok ? '' : 'REJECTED',
+        code: ok ? 250 : 550,
+        message: ok ? 'Đã gửi.' : 'Mọi người nhận bị từ chối',
+      });
+    }
     if (path === '/api/v1/admin/audit' && m === 'GET') {
       const p = url.searchParams;
       const limit = Math.min(200, Math.max(1, Number(p.get('limit') ?? 100)));
@@ -691,6 +787,7 @@ export function makeAccess(seed, deps) {
     store,
     audit,
     log,
+    email,
     cfg,
     /** Admin khác vừa sửa: tăng rev (lần lưu kế tiếp của trang nhận 409). */
     bumpRev(kind = 'access') {

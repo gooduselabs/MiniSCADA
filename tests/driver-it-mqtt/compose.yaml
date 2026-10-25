@@ -1,0 +1,60 @@
+# Rig of the MQTT driver integration tests (feature 022), started by tools/driver-it-mqtt.ps1: the x64 runtime under
+# the supervision loop of tests/device-it (supervise.sh), the broker of tools/mqtt-sim (mat-mqtt-sim of the same
+# build: 1883 plain, 8883 TLS, control on 1880), and a Node client that runs the scenarios
+# (tests/driver-it-mqtt/mqtt-it.mjs). Its own compose project name (mat-mqtt-it) and network (172.30.22.0/24), so it
+# runs beside the rigs of the other drivers. No third-party broker image: the test broker is ours.
+#
+# lan 172.30.22.0/24: rt .10, sim .20, client .50
+name: mat-mqtt-it
+
+services:
+  sim:
+    image: mat-armhf
+    working_dir: /
+    command:
+      - sh
+      - -c
+      - exec /build/x64/bin/mat-mqtt-sim --bind 0.0.0.0 --port 1883 --tls-port 8883 --control-port 1880 --user site7 --password "$$MAT_IT_MQTT_PW" --deny secret/
+    environment:
+      MAT_IT_MQTT_PW: ${MAT_IT_MQTT_PW:?MAT_IT_MQTT_PW}
+    init: true
+    volumes:
+      - ${MAT_IT_BUILD:?MAT_IT_BUILD}:/build:ro
+    networks:
+      lan: { ipv4_address: 172.30.22.20 }
+
+  rt:
+    image: mat-armhf
+    working_dir: /
+    hostname: rt
+    command: ["sh", "/src/tests/device-it/supervise.sh", "--no-sim-load", "--no-discovery", "--max-live-clients-per-source", "10"]
+    environment:
+      MAT_IT_PROJECT: ${MAT_IT_PROJECT:-/build/mqtt-it/mqtt-it}
+    volumes:
+      - ../..:/src:ro
+      - ${MAT_IT_BUILD:?MAT_IT_BUILD}:/build:ro
+      - rt-data:/data
+    stop_grace_period: 5s
+    depends_on: [sim]
+    networks:
+      lan: { ipv4_address: 172.30.22.10 }
+
+  client:
+    image: node:22.23.3-alpine
+    command: ["sleep", "infinity"]
+    init: true
+    pid: "service:rt"
+    volumes:
+      - ../..:/src:ro
+    networks:
+      lan: { ipv4_address: 172.30.22.50 }
+
+networks:
+  lan:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.22.0/24
+
+volumes:
+  rt-data:

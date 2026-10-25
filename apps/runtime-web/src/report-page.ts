@@ -40,6 +40,8 @@ export interface ReportTemplateDoc extends ReportTemplate {
 }
 export interface ReportsFile {
   org?: string;
+  /** Logo của đơn vị (feature 024): tệp `graphics/*.svg|png` của project. */
+  logo?: string;
   reports: ReportTemplateDoc[];
 }
 
@@ -65,6 +67,12 @@ export interface ReportPageOptions {
   events?: ReportEventSource;
   /** Tên project: tên đơn vị mặc định khi reports.json không có `org`. */
   projectName?: () => string;
+  /** URL của một tệp project (logo trên dải tiêu đề); mặc định `/project/<rel>`. */
+  projectUrl?: (rel: string) => string;
+  /** Byte của một tệp project (logo khi xuất PDF/XLSX); mặc định fetch `projectUrl`. */
+  loadFile?: (rel: string) => Promise<Uint8Array>;
+  /** SVG -> PNG cho XLSX (Excel không đọc SVG không có ảnh thay); mặc định vẽ lên canvas. null: không được. */
+  svgToPng?: (svg: string) => Promise<Uint8Array | null>;
 }
 
 const el = <K extends keyof HTMLElementTagNameMap>(
@@ -101,6 +109,7 @@ export class ReportPage {
   readonly #exp: ReportExporter;
   #tpl: ReportTemplateDoc | null = null;
   #org = '';
+  #logo = '';
   #group: HistoryCatalogGroup | null = null;
   #tz = '+07:00';
   #sel: ReportSelection = {};
@@ -171,6 +180,7 @@ export class ReportPage {
     if (!tpl) return this.#message(viHist.report.notFound(id));
     this.#tpl = tpl;
     this.#org = file.org ?? this.#o.projectName?.() ?? '';
+    this.#logo = file.logo ?? '';
     const events = tpl.kind === 'alarm' || tpl.kind === 'logic';
     let cat;
     try {
@@ -399,6 +409,7 @@ export class ReportPage {
     const view = document.createElement('mat-report-view');
     view.labels = viewLabels;
     view.table = t;
+    if (this.#logo) view.logo = this.#projectUrl(this.#logo);
     out.replaceChildren(view);
   }
 
@@ -415,6 +426,7 @@ export class ReportPage {
       sheetName: tpl.name,
     };
     if (tpl.paper) meta.paper = tpl.paper;
+    if (this.#logo && (kind === 'xlsx' || kind === 'pdf')) await this.#addLogo(meta, kind);
     // Màu báo cáo theo chủ đề của project (main.ts đặt data-mat-theme, feature 012 FR-038).
     const theme = document.documentElement.dataset.matTheme;
     if (theme === 'vivid' || theme === 'industrial' || theme === 'dark') meta.theme = theme;
@@ -439,4 +451,63 @@ export class ReportPage {
       this.#setExport(this.#table !== null);
     }
   }
+
+  // ---- logo (feature 024) ------------------------------------------------------------------------------------
+
+  #projectUrl(rel: string): string {
+    return this.#o.projectUrl ? this.#o.projectUrl(rel) : `/project/${rel}`;
+  }
+
+  /**
+   * Logo vào `meta`: PDF nhận chuỗi SVG (safeLogo của report-export kiểm lại) hoặc data URL PNG; XLSX nhận byte PNG (SVG
+   * được vẽ sang PNG). Tệp không đọc được: xuất không có logo.
+   */
+  async #addLogo(meta: ExportMeta, kind: 'xlsx' | 'pdf'): Promise<void> {
+    const rel = this.#logo;
+    let bytes: Uint8Array;
+    try {
+      bytes = this.#o.loadFile
+        ? await this.#o.loadFile(rel)
+        : new Uint8Array(
+            await (await fetch(this.#projectUrl(rel), { cache: 'no-store' })).arrayBuffer(),
+          );
+    } catch {
+      return;
+    }
+    if (rel.endsWith('.svg')) {
+      const svg = new TextDecoder().decode(bytes);
+      if (kind === 'pdf') meta.logo = svg;
+      else {
+        const png = await (this.#o.svgToPng ?? svgToPng)(svg).catch(() => null);
+        if (png) meta.logoPng = png;
+      }
+      return;
+    }
+    if (kind === 'xlsx') meta.logoPng = bytes;
+    else meta.logo = `data:image/png;base64,${base64(bytes)}`;
+  }
+}
+
+function base64(b: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < b.length; i += 0x8000)
+    s += String.fromCharCode(...b.subarray(i, Math.min(b.length, i + 0x8000)));
+  return btoa(s);
+}
+
+/** SVG -> PNG qua canvas (data URL: CSP img-src 'self' data:), cao 96 px giữ tỉ lệ. */
+async function svgToPng(svg: string): Promise<Uint8Array | null> {
+  const img = new Image();
+  img.src = `data:image/svg+xml;base64,${base64(new TextEncoder().encode(svg))}`;
+  await img.decode();
+  const h = 96;
+  const w = Math.max(1, Math.round((img.naturalWidth / Math.max(1, img.naturalHeight)) * h)) || h;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.min(w, 480);
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, 'image/png'));
+  return blob ? new Uint8Array(await blob.arrayBuffer()) : null;
 }

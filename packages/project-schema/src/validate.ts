@@ -52,6 +52,7 @@ import connectionsSchema10 from '../../../schemas/connections.schema.json' with 
 import loggingSchema10 from '../../../schemas/logging.schema.json' with { type: 'json' };
 import logicSchema10 from '../../../schemas/logic.schema.json' with { type: 'json' };
 import projectSchema10 from '../../../schemas/project.schema.json' with { type: 'json' };
+import recipesSchema11 from '../../../schemas/recipes.schema.json' with { type: 'json' };
 import reportsSchema10 from '../../../schemas/reports.schema.json' with { type: 'json' };
 import screenSchema10 from '../../../schemas/screen.schema.json' with { type: 'json' };
 import tagSchema10 from '../../../schemas/tag.schema.json' with { type: 'json' };
@@ -63,6 +64,7 @@ import {
   MAX_JSON_DEPTH,
   MAX_STRING_BYTES,
   RUNTIME_VERSION,
+  SUPPORTED_SCHEMA_11,
   SUPPORTED_SCHEMA_02,
   SUPPORTED_SCHEMA_03,
   SUPPORTED_SCHEMA_04,
@@ -74,6 +76,8 @@ import {
 } from './codes.ts';
 import { findSecretKey, findUrlCredentials } from './logging.ts';
 import type { ReportsConfig } from './reports.ts';
+import { REPORT_LOGO_MAX_BYTES, type RecipesConfig } from './recipes.ts';
+import { recipeRules } from './rules-recipes.ts';
 import { runRules, type RuleInput } from './rules.ts';
 import { runRules02, type Rule02Input } from './rules-02.ts';
 import { runRules03, type Rule03Screen } from './rules-03.ts';
@@ -156,7 +160,9 @@ type Kind =
   | 'reports'
   /** Định dạng 1.0 (feature 011). */
   | 'logic'
-  | 'template';
+  | 'template'
+  /** Định dạng 1.1 (feature 024). */
+  | 'recipes';
 /**
  * Bộ schema theo phiên bản: 0.1 đến 0.5 ở schemas/0.1 .. schemas/0.5 (đóng băng) và 0.6 ở schemas/ (hiện hành: 0.5 của
  * features 008 và 009 cộng lưu trữ nâng cao, báo cáo của feature 010).
@@ -236,6 +242,7 @@ const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
     reports: make(reportsSchema10),
     logic: make(logicSchema10),
     template: make(templateSchema10),
+    recipes: make(recipesSchema11),
   },
 };
 
@@ -537,6 +544,7 @@ async function validateProject03(
   let connections: ConnectionsConfig | undefined;
   let logging: LoggingConfig | undefined;
   let reports: ReportsConfig | undefined;
+  let recipes: RecipesConfig | undefined;
   const valueTables: Rule02Input['valueTables'] = {};
   const watchTables: Rule02Input['watchTables'] = {};
   const screens: Record<string, Rule03Screen> = idMap();
@@ -593,6 +601,30 @@ async function validateProject03(
       if (!isSafeRelPath(project.reportsFile))
         unsafe('project.json', '/reportsFile', project.reportsFile);
       else reports = await loadJson<ReportsConfig>(src, project.reportsFile, 'reports', out, set);
+      // Feature 024: logo của đơn vị (1.1; tệp có và không quá 256 KiB; nội dung SVG kiểm ở dưới)
+      if (reports?.logo !== undefined) {
+        const logo = reports.logo;
+        const bad = (m: string) => out.add('E_RPT_LOGO', project.reportsFile!, '/logo', m);
+        if (!SUPPORTED_SCHEMA_11.test(project.schemaVersion)) bad('logo cần định dạng 1.1');
+        else {
+          const r = await src.read(logo);
+          const size = 'text' in r ? utf8Length(r.text) : src.size ? await src.size(logo) : null;
+          if ('error' in r && (r.error === 'missing' || r.error === 'bad-path'))
+            bad(`Không tìm thấy '${logo}'`);
+          else if (
+            ('error' in r && r.error === 'too-large') ||
+            (size !== null && size > REPORT_LOGO_MAX_BYTES)
+          )
+            bad(`'${logo}' lớn hơn 256 KiB`);
+          else if ('text' in r && logo.endsWith('.svg')) imageSvgs.set(logo, stripBom(r.text));
+        }
+      }
+    }
+    // Định dạng 1.1 (feature 024): recipes.json (ở project 1.0: E_RECIPE_VERSION, không đọc)
+    const p11 = project as Project10 & { recipesFile?: string };
+    if (p11.recipesFile !== undefined && SUPPORTED_SCHEMA_11.test(project.schemaVersion)) {
+      if (!isSafeRelPath(p11.recipesFile)) unsafe('project.json', '/recipesFile', p11.recipesFile);
+      else recipes = await loadJson<RecipesConfig>(src, p11.recipesFile, 'recipes', out, set);
     }
     // Định dạng 1.0 (feature 011): logic.json (chỉ khung; luật E_LOGIC_* ở T135) và template
     if (set === '1.0') {
@@ -722,8 +754,10 @@ async function validateProject03(
       // rules-bacnet.ts) chỉ từ 1.1
       const rf = finsVersionRules({ project, connections, tags });
       const rb = bacnetVersionRules({ project, connections });
+      // recipe (feature 024, rules-recipes.ts)
+      const rr = recipeRules({ project: project as Project10, recipes, tags: tags?.tags });
       r = {
-        errors: [...r.errors, ...r11.errors, ...rf.errors, ...rb.errors],
+        errors: [...r.errors, ...r11.errors, ...rf.errors, ...rb.errors, ...rr],
         warnings: [...r.warnings, ...r11.warnings],
       };
     } else if (set === '0.5' || set === '0.6') {
@@ -775,6 +809,7 @@ async function validateProject03(
     if (connections) loadedProject.connections = connections;
     if (logging) loadedProject.logging = logging;
     if (reports) loadedProject.reports = reports;
+    if (recipes) loadedProject.recipes = recipes;
     for (const [id, s] of Object.entries(screens)) {
       const bindings: LoadedProject03['screens'][string]['bindings'] = {};
       s.screen.items.forEach((item, i) => {

@@ -131,6 +131,7 @@ export class ReportPreview extends LitElement {
     exporter: { attribute: false },
     theme: { attribute: false },
     org: { attribute: false },
+    logo: { attribute: false },
     selected: { attribute: false },
     table: { state: true },
     msg: { state: true },
@@ -156,6 +157,8 @@ export class ReportPreview extends LitElement {
   declare theme: ReportTheme | undefined;
   /** Tên đơn vị trên dải tiêu đề (reports.json `org` hoặc tên project). */
   declare org: string;
+  /** Feature 024: URL (data URL) của logo trên dải tiêu đề; rỗng: không có. */
+  declare logo: string;
   /** Phần đang chọn ở trình thiết kế (viền nhấn trong xem trước). */
   declare selected: string;
   declare table: ReportTable | null;
@@ -178,6 +181,7 @@ export class ReportPreview extends LitElement {
     this.now = () => Date.now();
     this.userName = '';
     this.org = '';
+    this.logo = '';
     this.selected = '';
     this.table = null;
     this.msg = null;
@@ -513,6 +517,7 @@ export class ReportPreview extends LitElement {
               .selected=${this.selected}
               .labels=${viewLabels()}
               .table=${this.table}
+              .logo=${this.logo}
             ></mat-report-view>`
           : nothing
       }

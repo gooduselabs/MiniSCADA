@@ -1,0 +1,1 @@
+{"valid":false,"errors":["E_MQTT_GROUP_TAG"],"runtimeVersion":"1.1.0","issues":[{"code":"E_MQTT_GROUP_TAG","file":"connections.json","path":"/channels/2/mqtt/publishGroups/0/tags/1"}]}

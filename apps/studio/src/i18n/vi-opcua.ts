@@ -146,7 +146,7 @@ export const viOpcUa = {
 
   // ---- Lỗi của bộ kiểm tra ----
   'issue.E_DRIVER_VERSION':
-    'kênh của driver mới (OPC UA) cần project định dạng 1.1 (nâng cấp project trước khi thêm kênh)',
+    'kênh của driver mới (OPC UA, MQTT) cần project định dạng 1.1 (nâng cấp project trước khi thêm kênh)',
   'issue.E_OPCUA_SECURITY':
     'kênh OPC UA: chế độ bảo mật và policy không khớp (None với None; Sign, SignAndEncrypt với Basic256Sha256)',
   'issue.E_OPCUA_AUTH':

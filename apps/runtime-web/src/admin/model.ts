@@ -145,16 +145,21 @@ export class RuleDraft {
 /** Kế hoạch lưu khi sửa người dùng: thân yêu cầu (chỉ trường đổi) và có cần `reauth` không (hạ vai trò, tắt). */
 export function userEditPlan(
   before: AdminUser,
-  after: { role: Role; groups: string[]; enabled: boolean },
+  after: { role: Role; groups: string[]; enabled: boolean; email?: string },
 ): {
-  body: { role?: Role; groups?: string[]; enabled?: boolean };
+  body: { role?: Role; groups?: string[]; enabled?: boolean; email?: string | null };
   reauth: boolean;
   empty: boolean;
 } {
-  const body: { role?: Role; groups?: string[]; enabled?: boolean } = {};
+  const body: { role?: Role; groups?: string[]; enabled?: boolean; email?: string | null } = {};
   if (after.role !== before.role) body.role = after.role;
   if (!sameSet(after.groups, before.groups)) body.groups = [...after.groups];
   if (after.enabled !== before.enabled) body.enabled = after.enabled;
+  // Feature 023: email của tài khoản (rỗng = xóa); không làm hết phiên.
+  if (after.email !== undefined) {
+    const e = after.email.trim();
+    if (e !== (before.email ?? '')) body.email = e === '' ? null : e;
+  }
   const reauth =
     (body.role !== undefined && RANK[body.role] < RANK[before.role]) || body.enabled === false;
   return { body, reauth, empty: Object.keys(body).length === 0 };
@@ -178,6 +183,10 @@ export function slugify(name: string): string {
 
 export const GROUP_ID = /^[a-z][a-z0-9-]{1,31}$/;
 export const USER_NAME = /^[a-z][a-z0-9._-]{2,31}$/;
+/** Địa chỉ email như máy chủ nhận (validAccountEmail): ASCII in được, một '@', miền có dấu chấm. */
+export const EMAIL = /^[^\s@"<>,;:()[\]\\]+@[^\s@"<>,;:()[\]\\.]+(\.[^\s@"<>,;:()[\]\\.]+)+$/;
+export const validEmail = (s: string): boolean =>
+  s.length >= 3 && s.length <= 254 && /^[\x21-\x7e]+$/.test(s) && EMAIL.test(s);
 
 export function relativeTime(ms: number | null, now: number): string {
   if (ms === null) return viAdmin.users.never;

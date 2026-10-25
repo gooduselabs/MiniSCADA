@@ -1,0 +1,51 @@
+{
+  "scenario": "write",
+  "checks": [
+    {
+      "name": "write MQ.SP: NO_READBACK",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-24T18:31:46.333Z\",\"receivedAt\":\"2026-10-24T18:31:46.202Z\",\"requestId\":\"3a61aeb0-b9c0-4975-81a1-a4d526771248\",\"status\":\"CONFIRMED\",\"tag\":\"MQ.SP\",\"value\":42.5}"
+    },
+    {
+      "name": "write MQ.MODE: NO_READBACK",
+      "pass": true,
+      "detail": "{\"clockOk\":false,\"code\":\"NO_READBACK\",\"finishedAt\":\"2026-10-24T18:31:46.583Z\",\"receivedAt\":\"2026-10-24T18:31:46.424Z\",\"requestId\":\"a6b282a1-f6a7-44e8-87a6-1f8135af1f80\",\"status\":\"CONFIRMED\",\"tag\":\"MQ.MODE\",\"value\":2}"
+    },
+    {
+      "name": "the broker got {\"data\":{\"sp\":42.5}} QoS 1 retained on plant/cmd/sp",
+      "pass": true,
+      "detail": "{\"payload\":\"{\\\"data\\\":{\\\"sp\\\":42.5}}\",\"qos\":1,\"retain\":true,\"topic\":\"plant/cmd/sp\"}"
+    },
+    {
+      "name": "the broker got 2 on plant/mode",
+      "pass": true
+    },
+    {
+      "name": "a pub Tag shows the written value",
+      "pass": true
+    },
+    {
+      "name": "a both Tag gets its own message back",
+      "pass": true
+    },
+    {
+      "name": "a write out of limits is refused",
+      "pass": true,
+      "detail": "{\"message\":\"Giá trị ngoài giới hạn nhập của Tag.\",\"reason\":\"OUT_OF_LIMITS\",\"requestId\":\"4a2716f8-b1ff-44e7-8dd8-740270690a45\",\"status\":\"REJECTED\"}"
+    },
+    {
+      "name": "group mat/rt/state: JSON of MQ.LEVEL, MQ.RUN, MQ.SP with quality",
+      "pass": true,
+      "detail": "{\"quality\":{\"MQ.LEVEL\":\"GOOD\",\"MQ.RUN\":\"GOOD\",\"MQ.SP\":\"GOOD\"},\"ts\":1792866706901,\"values\":{\"MQ.LEVEL\":77.25,\"MQ.RUN\":true,\"MQ.SP\":42.5}} | {\"quality\":{\"MQ.LEVEL\":\"GOOD\",\"MQ.RUN\":\"GOOD\",\"MQ.SP\":\"GOOD\"},\"ts\":1792866707903,\"values\":{\"MQ.LEVEL\":77.25,\"MQ.RUN\":true,\"MQ.SP\":42.5}} | {\"quality\":{\"MQ.LEVEL\":\"GOOD\",\"MQ.RUN\":\"UNCERTAIN\",\"MQ.SP\":\"GOOD\"},\"ts\":1792866708454,\"values\":{\"MQ.LEVEL\":77.25,\"MQ.RUN\":true,\"MQ.SP\":42.5}} | {\"quality\":{\"MQ.LEVEL\":\"GOOD\",\"MQ.RUN\":\"UNCERTAIN\",\"MQ.SP\":\"GOOD\"},\"ts\":1792866708905,\"values\":{\"MQ.LEVEL\":77.25,\"MQ.RUN\":true,\"MQ.SP\":42.5}}"
+    },
+    {
+      "name": "the writes are in the audit log",
+      "pass": true,
+      "detail": "200"
+    }
+  ],
+  "measures": {
+    "writeMs": 260
+  },
+  "pass": true
+}

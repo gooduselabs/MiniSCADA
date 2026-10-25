@@ -15,6 +15,7 @@ import { ReportPage } from './report-page.ts';
 import { fetchEventSources } from './report-sources.ts';
 import { HttpHistorySource } from './history-source.ts';
 import { viHist } from './i18n/vi-history.ts';
+import { viRecipe } from './i18n/vi-recipe.ts';
 import { LiveTagSource } from './live-source.ts';
 import { LoginDialog } from './login-dialog.ts';
 import { buildMenu, type AlarmMenuOptions } from './menu.ts';
@@ -318,6 +319,16 @@ async function main(): Promise<void> {
   accessPanel.className = 'access-panel';
   accessPanel.hidden = true;
   shell.screenHost.append(adminRoot, accessPanel);
+  // Feature 024: trang Recipe (tải lười, chunk riêng).
+  const recipeRoot = document.createElement('div');
+  recipeRoot.className = 'page-pane';
+  recipeRoot.hidden = true;
+  shell.screenHost.append(recipeRoot);
+  let recipePage: { show(type: string | null): Promise<void>; hide(): void } | null = null;
+  const hideRecipes = () => {
+    recipeRoot.hidden = true;
+    recipePage?.hide();
+  };
   const tagById = new Map(summary.tags.map((t) => [t.id, t]));
   const reportPage = new ReportPage({
     container: reportRoot,
@@ -391,6 +402,7 @@ async function main(): Promise<void> {
         reports: access.page('reports') ? reportList : [],
         canView: (id) => access.canView(id),
         admin: access.admin,
+        recipes: https && !!summary.recipesFile && session.info !== null,
       }),
       currentId,
     );
@@ -466,6 +478,7 @@ async function main(): Promise<void> {
     adminRoot.hidden = true;
     accessPanel.hidden = true;
     adminPage?.hide();
+    hideRecipes();
   };
 
   let routeSeq = 0;
@@ -541,6 +554,32 @@ async function main(): Promise<void> {
     if (p.kind !== 'admin') {
       adminRoot.hidden = true;
       adminPage?.hide();
+    }
+    if (p.kind !== 'recipes') hideRecipes();
+    if (p.kind === 'recipes') {
+      histRoot.hidden = true;
+      reportRoot.hidden = true;
+      adminRoot.hidden = true;
+      shell.setScreenName(viRecipe.title);
+      document.title = `${viRecipe.title} — ${vi.appName}`;
+      recipeRoot.hidden = false;
+      if (!recipePage) {
+        const [{ RecipePage }, { RecipeApi }] = await Promise.all([
+          import('./recipe/recipe-page.ts'),
+          import('./recipe/model.ts'),
+        ]);
+        if (seq !== routeSeq && recipePage) return;
+        recipePage ??= new RecipePage({
+          container: recipeRoot,
+          api: new RecipeApi({ csrfHeaders: () => session.csrfHeaders(), onUnauthorized }),
+          signedIn: () => session.info !== null,
+          onLogin: () => loginDialog?.open(),
+          onUrl: (h) => window.history.replaceState(window.history.state, '', h),
+        });
+      }
+      if (seq !== routeSeq) return;
+      await recipePage.show(p.type);
+      return;
     }
     const allowed =
       p.kind === 'admin' ? access.admin : access.page(p.kind === 'history' ? 'history' : 'reports');

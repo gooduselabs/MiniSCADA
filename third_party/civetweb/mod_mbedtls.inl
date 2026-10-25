@@ -157,6 +157,17 @@ mbed_sslctx_init(SSL_CTX *ctx, const char *crt)
 
 	mbedtls_ssl_conf_rng(conf, mbedtls_ctr_drbg_random, &ctx->ctr);
 
+	/* mAT patch (feature 023, ADR-051): the build enables secp384r1 for the SMTP client
+	 * (certificate chains of mail servers); the HTTPS server keeps X25519 and P-256 only for
+	 * the key exchange (feature 005, research R4). */
+	{
+		static const uint16_t mat_server_groups[] = {
+		    MBEDTLS_SSL_IANA_TLS_GROUP_X25519,
+		    MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1,
+		    MBEDTLS_SSL_IANA_TLS_GROUP_NONE};
+		mbedtls_ssl_conf_groups(conf, mat_server_groups);
+	}
+
 	/* Set auth mode if peer cert should be verified */
 	mbedtls_ssl_conf_authmode(conf, MBEDTLS_SSL_VERIFY_NONE);
 	mbedtls_ssl_conf_ca_chain(conf, NULL, NULL);

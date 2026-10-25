@@ -146,6 +146,21 @@ const std::vector<EndpointRule>& endpointRules() {
         {"POST", "/api/v1/admin/access/restore", true, Role::Administrator, true, true, true},
         {"GET", "/api/v1/admin/effective", true, Role::Administrator, true, false, true},
         {"GET", "/api/v1/admin/audit", true, Role::Administrator, true, false, true},
+        // feature 024 (specs/024-recipes/plan.md): recipes for the page (cookie) and the tools.
+        // Reads: viewer, polls (no idle restart); changes: operator at least (the role of each
+        // recipe type is checked by the service), audited first.
+        {"GET", "/api/v1/recipes", true, Role::Viewer, false, false, true},
+        {"GET", "/api/v1/recipes/current", true, Role::Viewer, false, false, true},
+        {"GET", "/api/v1/recipes/jobs/{id}", true, Role::Viewer, false, false, true},
+        {"POST", "/api/v1/recipes/save", true, Role::Operator, true, true, true},
+        {"POST", "/api/v1/recipes/delete", true, Role::Operator, true, true, true},
+        {"POST", "/api/v1/recipes/capture", true, Role::Operator, true, true, true},
+        {"POST", "/api/v1/recipes/download", true, Role::Operator, true, true, true},
+        // device-api 1.6.0 mở rộng, apiVersion không đổi (feature 023): the alarm email settings,
+        // the test email.
+        {"GET", "/api/v1/admin/email", true, Role::Administrator, true, false, true},
+        {"POST", "/api/v1/admin/email", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/email/test", true, Role::Administrator, true, true, true},
     };
     return rules;
 }

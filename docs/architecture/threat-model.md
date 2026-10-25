@@ -150,6 +150,13 @@ Cột "Rủi ro còn lại" là thứ chấp nhận ở bản 1.0; mục 5 gom l
 - **Biện pháp:** allowlist IP/CIDR kiểm trước khi đọc byte nào (mặc định chỉ `127.0.0.1`, `allow` rỗng bị từ chối); chỉ item `access: RW` ghi được, còn lại ngoại lệ 0x02; bộ phân tích khung viết bằng Rust (an toàn bộ nhớ), độ dài MBAP ≤ 254, số lượng theo giới hạn chuẩn, khung sai → đóng kết nối, fuzz test; tối đa `maxConnections` (8) kết nối, timeout rỗi 60 s; COM chỉ `CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER` (không DCOM ra mạng); `CoInitializeSecurity` mức NONE chỉ để callback cục bộ của OPC server về được; dịch vụ dưới `LocalService`; tường lửa giới hạn theo IP BL335; `config.json` trong `ProgramData` khóa ACL chỉ Administrators sửa (dịch vụ chỉ ghi thư mục `logs`); log không ghi giá trị ghi ở mức info.
 - **Rủi ro còn lại:** RR-16.
 
+### I-17. Email alarm ra ngoài (feature 023, ADR-051)
+
+- **Giao diện mới:** kết nối ra từ runtime tới máy chủ SMTP (587 STARTTLS, 465 SMTPS, hoặc relay nội bộ không mã hóa) qua mạng nhà máy hoặc Internet; API quản trị `/api/v1/admin/email`, `/api/v1/admin/email/test`; file `notify/email.json` và hàng đợi `notify/outbox/`; bí mật `smtp` trong file bí mật thiết bị; trường `email` của tài khoản.
+- **Đe dọa:** lộ mật khẩu SMTP (qua project, API, log, audit, kết nối không mã hóa, hạ cấp STARTTLS); máy chủ giả (DNS/ARP) nhận mật khẩu và nội dung; chèn lệnh SMTP sau STARTTLS ("STARTTLS injection"); chèn header qua tên trạm, tên alarm, địa chỉ (CR LF); XSS trong phần HTML ở trình đọc thư; bão alarm thành bão email (máy chủ khóa tài khoản, hộp thư ngập); dùng thiết bị gửi thư rác qua **Gửi thử**; máy chủ SMTP chậm/độc làm treo runtime; hàng đợi làm đầy eMMC; lộ dữ liệu vận hành trong email.
+- **Biện pháp:** mật khẩu chỉ trong file bí mật root (`--set-secret smtp`), API từ chối khóa `password`, không trả, không log, không audit, xóa bộ đệm sau khi dùng; không bao giờ AUTH khi không có TLS (`AUTH_INSECURE`); STARTTLS bắt buộc khi đã chọn (máy chủ không quảng bá → lỗi, không hạ xuống clear text); dữ liệu thừa sau 220 của STARTTLS → hủy phiên; kiểm chứng chỉ theo CA + tên máy (SNI), hoặc ghim SHA-256, không có tùy chọn bỏ qua; mọi header 7-bit, chữ tiếng Việt mã hóa RFC 2047, địa chỉ kiểm chặt (không CR LF, `<>`, dấu phẩy…); HTML escape mọi giá trị, liên kết chỉ `http(s)`; gom + `maxPerHour` + giờ yên lặng; **Gửi thử** chỉ administrator, HTTPS + CSRF, 30 yêu cầu/phút, audit; SMTP chạy trên luồng riêng với hạn mỗi bước (mặc định 20 s), không bao giờ trên luồng tick; hàng đợi ≤ 100 email / 4 MiB, ghi 1 lần mỗi email, hết hạn 24 h; email chỉ có tên alarm, Tag, giá trị, thông điệp. Mbed TLS bật phía client (ADR-051): bộ ECDHE-RSA chỉ dùng được khi có chứng chỉ RSA, máy chủ HTTPS của thiết bị chỉ có ECDSA nên không thương lượng chúng.
+- **Rủi ro còn lại:** RR-17.
+
 ## 5. Rủi ro còn lại được chấp nhận ở bản 1.0
 
 | # | Rủi ro | Vì sao chấp nhận | Giảm nhẹ |
@@ -165,6 +172,7 @@ Cột "Rủi ro còn lại" là thứ chấp nhận ở bản 1.0; mục 5 gom l
 | RR-9 | Gia cố thiết bị chưa áp dụng trên BL335 của dự án | đổi `sshd` có thể mất truy cập | T064 ⚠️🔌, cảnh báo `SSH_ROOT_PASSWORD` |
 | RR-10 | Lộ khóa phát hành OTA | gốc tin cậy phải ở đâu đó | khóa ngoại tuyến, hai khóa, OTA mặc định tắt |
 | RR-11 | Kho tài khoản do runtime ghi được (`/var/lib/mat-runtime/auth`, 013) | người dùng yêu cầu quản lý tài khoản trên web (D22); runtime vốn đã giữ quyền ghi PLC | API hẹp, xác nhận lại, audit, systemd `ProtectSystem=strict`, CLI root phục hồi |
+| RR-17 | Email đi qua máy chủ thư bên ngoài (Gmail, Office 365); thiết bị không kiểm hạn chứng chỉ theo ngày (023) | người dùng cần báo ra ngoài nhà máy; đồng hồ BL335 có thể sai khi chưa đồng bộ | TLS bắt buộc + kiểm CA/tên hoặc ghim; relay nội bộ khi cần; nội dung email tối thiểu; mật khẩu ứng dụng riêng, thu hồi được |
 | RR-16 | Modbus TCP của OPC DA Bridge không mã hóa, không xác thực (021) | runtime chỉ có driver Modbus khi làm 021; cùng mức với driver Modbus sẵn có | allowlist IP, chỉ item `RW` ghi được, tường lửa theo IP BL335, mạng điều khiển cách ly; sau: mặt OPC UA có TLS (ADR-049) |
 
 ## 6. Ánh xạ phát hiện Medium trở lên

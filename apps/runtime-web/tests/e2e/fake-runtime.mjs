@@ -18,6 +18,7 @@ import { animDemo } from './anim-fixture.mjs';
 import { TAGS, alarmBoard, dashboard, legacyTank } from './fixture-project.mjs';
 import { historyProject, makeHistory } from './history-fake.mjs';
 import { history10Project, reportsProject } from './history-projects.mjs';
+import { makeRecipes } from './recipes-fake.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -139,6 +140,8 @@ export async function startFakeRuntime(opts = {}) {
   let proj = opts.fixture?.() ?? projectOf(opts.project);
   // Lịch sử (feature 010): API /api/v1/history/* giả, chỉ khi kịch bản bật.
   const hist = opts.history ? makeHistory(opts.history) : null;
+  // Feature 024: API recipe giả (recipes-fake.mjs) và recipesFile trong project, chỉ khi kịch bản bật.
+  if (opts.recipes) proj.active.project.recipesFile = 'recipes.json';
   const cfg = {
     noProject: false,
     viewerLogin: 'off',
@@ -189,6 +192,13 @@ export async function startFakeRuntime(opts = {}) {
   const sockets = new Set();
   let tick = 0;
   // Feature 013: phân quyền giả (access-fake.mjs), chỉ khi kịch bản bật `options.access`.
+  const rcp = opts.recipes
+    ? makeRecipes(opts.recipes, {
+        json: (...a) => json(...a),
+        err: (...a) => err(...a),
+        readBody: (req) => readBody(req),
+      })
+    : null;
   const acc = opts.access
     ? makeAccess(opts.access, {
         proj: () => proj,
@@ -782,7 +792,8 @@ export async function startFakeRuntime(opts = {}) {
       path.startsWith('/api/v1/alarms/') ||
       path.startsWith('/api/v1/web/') ||
       path.startsWith('/api/v1/admin/') ||
-      path.startsWith('/api/v1/tags/write')
+      path.startsWith('/api/v1/tags/write') ||
+      (rcp && path.startsWith('/api/v1/recipes'))
     )
       return cookieApi(req, res, secure, path, url);
     return err(res, 404, 'NOT_FOUND');
@@ -896,6 +907,7 @@ export async function startFakeRuntime(opts = {}) {
     if (acc && (path === '/api/v1/web/password' || path.startsWith('/api/v1/admin/')))
       return acc.handle(req, res, s, path, url);
     if (path.startsWith('/api/v1/alarms/') && m === 'POST') return alarmApi(req, res, s, path);
+    if (rcp && path.startsWith('/api/v1/recipes')) return rcp.handle(req, res, s, path, url);
     if (path === '/api/v1/tags/write' && m === 'POST') return write(req, res, s);
     if (path.startsWith('/api/v1/tags/write/') && m === 'GET') {
       const id = decodeURIComponent(path.slice('/api/v1/tags/write/'.length));
@@ -1132,6 +1144,7 @@ export async function startFakeRuntime(opts = {}) {
 
   const rt = {
     httpUrl: `http://127.0.0.1:${http.address().port}`,
+    recipes: rcp,
     httpsUrl: https ? `https://127.0.0.1:${https.address().port}` : null,
     log,
     cfg,

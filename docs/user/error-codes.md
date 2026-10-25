@@ -12,27 +12,28 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 534 mã.
+Tổng cộng 572 mã.
 
 ## Mục lục
 
 - [Định dạng và phiên bản project](#format) (15)
-- [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (38)
+- [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (43)
 - [Biểu thức của Tag tính toán](#expression) (10)
 - [Màn hình, widget, binding và điều hướng](#screens) (49)
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (32)
-- [Alarm](#alarm) (46)
-- [Lưu trữ, lịch sử và báo cáo](#history) (42)
+- [Alarm](#alarm) (53)
+- [Lưu trữ, lịch sử và báo cáo](#history) (43)
 - [Gói project (.matscada)](#package) (16)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
 - [Đăng nhập, phiên và truy cập HTTP](#auth) (37)
 - [Ghi Tag](#write) (39)
-- [Lý do quality của Tag](#quality) (62)
-- [Kết nối PLC, cổng serial và Thử kết nối](#driver) (26)
+- [Lý do quality của Tag](#quality) (65)
+- [Kết nối PLC, cổng serial và Thử kết nối](#driver) (32)
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
 - [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (31)
 - [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (21)
 - [Cập nhật runtime qua mạng (OTA) và chữ ký phát hành](#update) (40)
+- [Recipe (công thức)](#recipe) (16)
 
 <a id="format"></a>
 
@@ -63,15 +64,18 @@ Tổng cộng 534 mã.
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
 | `E_ADDR_AREA` | — | Vùng địa chỉ không hợp với kiểu hoặc quyền của Tag | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/s7`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
-| `E_ADDR_RANGE` | — | Địa chỉ ngoài khoảng 0–65535 | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
+| `E_ADDR_RANGE` | — | Địa chỉ ngoài khoảng 0–65535 | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/mqtt`, `drivers/opcua`, `drivers/s7`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
 | `E_ADDR_READ_LIMIT` | — | Tag dài hơn giới hạn một lần đọc của thiết bị trường | `core/project-manager`, `drivers/sdk`, `packages/project-schema` |
-| `E_ADDR_SYNTAX` | — | Địa chỉ Modbus không đúng cú pháp (ví dụ HR100, 40101, HR100.3) | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
+| `E_ADDR_SYNTAX` | — | Địa chỉ Modbus không đúng cú pháp (ví dụ HR100, 40101, HR100.3) | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/mqtt`, `drivers/opcua`, `drivers/s7`, `packages/project-schema`, `packages/tag-codec`, `server/http` |
 | `E_ADDR_WRITE_LIMIT` | — | Tag ghi được dài hơn một lần ghi (tối đa 123 thanh ghi) | `core/project-manager`, `packages/project-schema` |
 | `E_BIT_WRITE` | — | Ghi bit trong thanh ghi cần chọn cách ghi bit (mặt nạ hoặc đọc-sửa-ghi) ở thiết bị trường | `core/project-manager`, `packages/project-schema` |
 | `E_DEADBAND` | — | Vùng chết chỉ cho Tag số và không âm | `core/project-manager`, `packages/project-schema` |
 | `E_DUP_TAG` | — | Tag bị trùng id | `core/project-manager`, `packages/project-schema` |
 | `E_INITIAL` | — | Giá trị đầu sai kiểu, ngoài khoảng hoặc chuỗi quá dài | `core/project-manager`, `packages/project-schema` |
 | `E_LIMITS` | — | Giới hạn ghi sai (cần Tag số, nhỏ nhất ≤ lớn nhất, trong khoảng của kiểu) | `core/project-manager`, `packages/project-schema` |
+| `E_MQTT_DIRECTION` | — | Tag MQTT: hướng của địa chỉ không khớp quyền (ghi được thì cần pub: hoặc both:; pub: cần quyền RW) | `core/project-manager`, `packages/project-schema` |
+| `E_MQTT_GROUP_TAG` | — | Nhóm publish MQTT có Tag không tồn tại | `core/project-manager`, `packages/project-schema` |
+| `E_MQTT_TLS` | — | Kênh MQTT: serverCertSha256, caCertPem hoặc serverName chỉ dùng khi tls.enabled là true | `core/project-manager`, `packages/project-schema` |
 | `E_OPCUA_AUTH` | — | Kênh OPC UA: xác thực username cần username và secretId; anonymous thì bỏ cả hai | `core/project-manager`, `packages/project-schema` |
 | `E_OPCUA_SECURITY` | — | Kênh OPC UA: securityMode và securityPolicy không khớp (None đi với None; Sign, SignAndEncrypt đi với Basic256Sha256) | `core/project-manager`, `packages/project-schema` |
 | `E_REF_DEVICE` | — | Thiết bị trường không có trong Kết nối | `core/project-manager`, `packages/project-schema` |
@@ -95,6 +99,8 @@ Tổng cộng 534 mã.
 | `W_ADDR_MODICON_BASE0` | — | Địa chỉ dạng Modicon trên thiết bị trường có địa chỉ gốc 0: số 40001 là offset 1 | `drivers/modbus`, `packages/project-schema`, `packages/tag-codec` |
 | `W_BIT_RMW` | — | Ghi bit kiểu đọc-sửa-ghi có thể đè lên thay đổi của chương trình PLC | `core/project-manager`, `packages/project-schema` |
 | `W_DETECT_SLOW` | — | Thời gian phát hiện mất kết nối dài hơn chu kỳ quét của nhóm | `core/project-manager`, `packages/project-schema` |
+| `W_MQTT_PLAIN_PASSWORD` | — | Kênh MQTT dùng tài khoản/mật khẩu trên kết nối không TLS | `core/project-manager`, `packages/project-schema` |
+| `W_MQTT_TLS_NOT_PINNED` | — | Kênh MQTT bật TLS nhưng chưa ghim chứng chỉ broker (serverCertSha256) hoặc CA (caCertPem): runtime sẽ không kết nối | `core/project-manager`, `packages/project-schema` |
 | `W_OPCUA_CERT_NOT_PINNED` | — | Kênh OPC UA có mã hóa nhưng chưa tin chứng chỉ server (serverCertSha256): runtime sẽ không kết nối | `core/project-manager`, `packages/project-schema` |
 | `W_OPCUA_PLAIN_PASSWORD` | — | Kênh OPC UA dùng username/mật khẩu trên kết nối không mã hóa (securityMode None) | `core/project-manager`, `packages/project-schema` |
 | `W_RTU_SCAN_TIME` | — | Vòng quét RTU ước tính dài hơn chu kỳ của nhóm | `core/project-manager`, `packages/project-schema` |
@@ -229,6 +235,8 @@ Tổng cộng 534 mã.
 | `ALARM_TIMEOUT` | — | Động cơ alarm chưa áp dụng kịp. Hãy tải lại danh sách rồi kiểm tra. | `server` |
 | `ALREADY_ACKED` | — | Alarm đã được xác nhận từ trước | `core/alarm`, `server` |
 | `ALREADY_DISABLED` | — | Alarm đã bị vô hiệu từ trước | `core/alarm` |
+| `AUTH_INSECURE` | — | Không gửi mật khẩu SMTP qua kết nối không mã hóa: chọn STARTTLS hoặc SMTPS (email alarm). | `core/notify` |
+| `AUTH_UNSUPPORTED` | — | Máy chủ SMTP không hỗ trợ AUTH PLAIN hay LOGIN (email alarm). | `core/notify` |
 | `BAD_QUERY` | 400 | Bộ lọc không hợp lệ, kiểm tra lại khoảng thời gian và chữ tìm | `server`, `server/http` |
 | `DB_CORRUPT` | — | Kho lịch sử alarm bị hỏng: đã đổi tên file hỏng và tạo kho mới | `core/alarm` |
 | `E_ALARM_AREA_COUNT` | — | Quá 64 khu vực | `core/project-manager`, `packages/project-schema` |
@@ -259,7 +267,12 @@ Tổng cộng 534 mã.
 | `NOT_DISABLED` | — | Alarm không bị vô hiệu nên không cần bật lại | `core/alarm` |
 | `NOT_SHELVED` | — | Alarm không đang tạm ẩn | `core/alarm` |
 | `NO_DATA` | — | Tag chưa có dữ liệu cho động cơ alarm | `server` |
+| `NO_PASSWORD` | — | Chưa đặt mật khẩu SMTP trên thiết bị: sudo mat-runtime --set-secret smtp (email alarm). | `core/notify` |
+| `OUTBOX_DAMAGED` | — | Một email trong hàng đợi trên đĩa bị hỏng và đã bị bỏ (email.dropped). | `core/notify` |
+| `OUTBOX_FULL` | — | Hàng đợi email đầy (100 email hoặc 4 MiB): email cũ nhất bị bỏ (email.dropped). | `core/notify` |
+| `OUTBOX_IO` | — | Không ghi được email vào hàng đợi trên đĩa (đĩa đầy hoặc lỗi ghi). | `core/notify` |
 | `SHELVE_RANGE` | 422 | Lý do 1 đến 120 ký tự; thời gian từ 1 phút đến 8 giờ; tối đa 50 alarm tạm ẩn | `core/alarm`, `server` |
+| `STARTTLS_UNSUPPORTED` | — | Máy chủ SMTP không hỗ trợ STARTTLS trên cổng này: chọn SMTPS (cổng 465) hoặc cổng 587. | `core/notify` |
 | `W_ALARM_CHATTER_RISK` | — | Không có deadband và trễ: alarm có thể chập chờn | `core/project-manager`, `packages/project-schema` |
 | `W_ALARM_COUNT_HIGH` | — | Hơn 200 instance: cân nhắc gọn lại | `core/project-manager`, `packages/project-schema` |
 | `W_ALARM_DEVICE_EMPTY` | — | Thiết bị không có Tag đọc từ nó | `core/project-manager`, `packages/project-schema` |
@@ -294,6 +307,7 @@ Tổng cộng 534 mã.
 | `E_RPT_FN` | — | Hàm tổng hợp lặp trong một cột của báo cáo | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_KIND` | — | Khóa báo cáo của định dạng 1.1 (org, kind, week/range, tiles, chart, onTime/starts) ở project cũ, hoặc không hợp với loại báo cáo (alarm/logic có group/columns; equipment chỉ Tag BOOL và onTime/starts; starts ngoài equipment) | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_LIMIT` | — | Quá 24 cột (Tag × hàm) hoặc quá 24 Tag | `core/project-manager`, `packages/project-schema` |
+| `E_RPT_LOGO` | — | Logo báo cáo (reports.json logo) ở project dưới 1.1, tệp không có hoặc lớn hơn 256 KiB | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_NO_AGG` | — | Nhóm không có `aggregates`, hoặc Tag có `aggregate:false`, hoặc Tag kiểu chuỗi | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_PERIOD` | — | `shifts` với `day` hoặc `month`; thiếu `shifts` khi `shift`; `rowMinutes` với kỳ khác `day` | `core/project-manager`, `packages/project-schema` |
 | `E_RPT_REF_GROUP` | — | `group` không có trong `logging.json` (hoặc project không có `loggingFile`) | `core/project-manager`, `packages/project-schema` |
@@ -372,11 +386,11 @@ Tổng cộng 534 mã.
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
 | `ACCESS_DENIED` | 403 | Bạn không có quyền với trang hoặc component này. | `server`, `server/http` |
-| `AUDIT_UNAVAILABLE` | 503 | Thiết bị không ghi được nhật ký kiểm toán nên chưa thực hiện | `core/auth`, `core/project-store`, `core/tag-engine`, `server`, `server/http` |
+| `AUDIT_UNAVAILABLE` | 503 | Thiết bị không ghi được nhật ký kiểm toán nên chưa thực hiện | `core/auth`, `core/project-store`, `core/recipe`, `core/tag-engine`, `server`, `server/http` |
 | `AUTH_FAILED` | 401 | Sai tên đăng nhập hoặc mật khẩu. | `core/auth`, `server/http` |
 | `AUTH_LOCKED` | 429 | Đăng nhập đang bị khóa tạm do sai nhiều lần. Hãy thử lại sau. | `core/auth`, `server/http` |
 | `AUTH_REQUIRED` | 401 | Cần đăng nhập. | `server/http` |
-| `BAD_REQUEST` | 400 | Yêu cầu không hợp lệ. | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `server`, `server/http` |
+| `BAD_REQUEST` | 400 | Yêu cầu không hợp lệ. | `core/recipe`, `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `server`, `server/http` |
 | `BODY_TOO_LARGE` | 413 | Nội dung yêu cầu quá lớn. | `server/http` |
 | `CONFLICT` | 409 | Dữ liệu đã đổi bởi người khác, tải lại rồi thử lại. | `server/http` |
 | `CONTAINS_NAME` | 400 | Mật khẩu chứa tên tài khoản (lý do của WEAK_PASSWORD). | `server/http` |
@@ -392,7 +406,7 @@ Tổng cộng 534 mã.
 | `LENGTH_REQUIRED` | 411 | Yêu cầu cần có Content-Length. | `server/http` |
 | `LOGIN_BUSY` | 429 | Thiết bị đang bận kiểm tra các đăng nhập khác. Hãy thử lại sau giây lát. | `core/auth`, `server/http` |
 | `METHOD_NOT_ALLOWED` | 405 | Phương thức không được hỗ trợ cho đường dẫn này. | `server/http` |
-| `NOT_FOUND` | 404 | Không có chức năng này. | `core/alarm`, `server`, `server/http` |
+| `NOT_FOUND` | 404 | Không có chức năng này. | `core/alarm`, `core/recipe`, `server`, `server/http` |
 | `NOT_IMPLEMENTED` | 501 | Phiên bản runtime này chưa có chức năng này. | `server/http` |
 | `NO_BACKUP` | 404 | Không có bản sao trước để khôi phục. | `server/http` |
 | `ORIGIN_MISMATCH` | 403 | Yêu cầu không xuất phát từ trang của thiết bị này. | `server/http` |
@@ -422,14 +436,14 @@ Tổng cộng 534 mã.
 | `EXPECT_NOT_BOOL` | — | Chỉ Tag BOOL mới có giá trị mong đợi (expect). | `core/tag-engine` |
 | `LIVE_WRITE_NOT_ALLOWED` | — | Không ghi qua kênh dữ liệu sống | `server` |
 | `NOT_FINITE` | — | Giá trị phải là số hữu hạn. | `core/tag-engine` |
-| `NOT_SENT_DEADLINE` | — | Chưa gửi: lệnh ghi quá hạn writeDeadlineMs trong hàng đợi | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
+| `NOT_SENT_DEADLINE` | — | Chưa gửi: lệnh ghi quá hạn writeDeadlineMs trong hàng đợi | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/mqtt`, `drivers/opcua`, `drivers/s7` |
 | `NOT_SENT_DEVICE_SUSPENDED` | — | Chưa gửi: thiết bị trường đang tạm ngưng | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus` |
-| `NOT_SENT_DISCONNECTED` | — | Chưa gửi: mất kết nối tới thiết bị trường | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
+| `NOT_SENT_DISCONNECTED` | — | Chưa gửi: mất kết nối tới thiết bị trường | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/mqtt`, `drivers/opcua`, `drivers/s7` |
 | `NOT_SENT_PROJECT_CHANGE` | — | Chưa gửi: thiết bị đổi project | `core/tag-engine` |
 | `NOT_SENT_QUEUE_FULL` | — | Chưa gửi: hàng đợi ghi của kênh đã đầy | `core/tag-engine` |
 | `NOT_SENT_READ_FAILED` | — | Chưa gửi: đọc trước khi ghi lỗi | `drivers/mc`, `drivers/modbus` |
 | `NOT_SENT_UNSUPPORTED` | — | Chưa gửi: thiết bị trường không hỗ trợ kiểu ghi này | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
-| `NO_READBACK` | — | Thiết bị xác nhận, không đọc lại | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
+| `NO_READBACK` | — | Thiết bị xác nhận, không đọc lại | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/mqtt`, `drivers/opcua`, `drivers/s7` |
 | `NO_SUCH_REQUEST` | 404 | Không có lệnh ghi với mã yêu cầu này (quá 15 phút hoặc của tài khoản khác) | `server/http` |
 | `NO_SUCH_TAG` | — | Không có Tag này trên thiết bị. | `core/tag-engine` |
 | `OUT_OF_LIMITS` | — | Giá trị ngoài giới hạn nhập của Tag. | `core/logic`, `core/tag-engine` |
@@ -444,7 +458,7 @@ Tổng cộng 534 mã.
 | `PULSE_RANGE` | — | Độ dài xung phải từ 100 đến 10.000 ms. | `core/tag-engine` |
 | `PULSE_RELEASE_FAILED` | — | Đã ghi bật nhưng không ghi được giá trị trả về: bit lệnh có thể đang bật. | `core/tag-engine` |
 | `QUEUE_FULL` | — | Hàng đợi ghi đã đầy. | `core/tag-engine` |
-| `RATE_LIMITED` | 429 | Thao tác quá nhanh: hãy thử lại sau giây lát | `core/logic`, `core/tag-engine`, `server`, `server/http` |
+| `RATE_LIMITED` | 429 | Thao tác quá nhanh: hãy thử lại sau giây lát | `core/logic`, `core/recipe`, `core/tag-engine`, `server`, `server/http` |
 | `READBACK_ERROR` | — | Lỗi khi đọc lại sau khi ghi | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
 | `READBACK_MISMATCH` | — | Đọc lại khác giá trị đã ghi | `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
 | `READBACK_TIMEOUT` | — | Đã ghi nhưng không đọc lại được: không chắc kết quả. | `core/tag-engine`, `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
@@ -453,7 +467,7 @@ Tổng cộng 534 mã.
 | `STALE_EXPECTATION` | — | Giá trị của Tag đã đổi so với lúc bạn xem: không ghi gì. | `core/tag-engine` |
 | `STRING_TOO_LONG` | — | Chuỗi dài hơn mức cho phép. | `core/tag-engine`, `drivers/modbus` |
 | `UNKNOWN_OUTCOME` | — | Runtime dừng giữa chừng: không rõ lệnh đã ghi chưa. | `core/audit`, `core/tag-engine` |
-| `WRITE_TIMEOUT` | — | Thiết bị trường không trả lời: không chắc đã ghi. | `core/tag-engine`, `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/opcua`, `drivers/s7` |
+| `WRITE_TIMEOUT` | — | Thiết bị trường không trả lời: không chắc đã ghi. | `core/tag-engine`, `drivers/bacnet`, `drivers/fins`, `drivers/mc`, `drivers/modbus`, `drivers/mqtt`, `drivers/opcua`, `drivers/s7` |
 
 <a id="quality"></a>
 
@@ -502,9 +516,12 @@ Tổng cộng 534 mã.
 | `MC_END_OTHER` | — | PLC Mitsubishi trả end code lỗi khác (mã cụ thể ở Chẩn đoán driver) | `drivers/mc` |
 | `MC_END_RANGE` | — | PLC Mitsubishi báo địa chỉ hoặc số điểm ngoài vùng (end code C051–C054, C056, 4030, 4031) | `drivers/mc` |
 | `MOD_ZERO` | — | Chia lấy dư cho 0 | `core/expression` |
+| `MQTT_PAYLOAD` | — | Tin MQTT không đổi được thành giá trị của Tag (không phải số, ngoài miền, JSON hỏng hoặc thiếu trường theo đường dẫn) | `drivers/mqtt` |
+| `MQTT_STALE` | — | Quá staleAfterMs không có tin MQTT mới cho Tag: giữ giá trị cuối với quality UNCERTAIN | `drivers/mqtt` |
+| `MQTT_SUBSCRIBE_REFUSED` | — | Broker MQTT từ chối subscribe topic của Tag (SUBACK 0x80, thường do ACL) | `drivers/mqtt` |
 | `NOT_A_NUMBER` | — | Kết quả không phải số | `core/expression`, `core/tag-engine` |
 | `NO_SIGNAL` | — | Tín hiệu mô phỏng không có | `drivers/simulation` |
-| `NO_VALUE` | — | Chưa có giá trị | `core/expression`, `core/logic`, `core/tag-engine`, `server` |
+| `NO_VALUE` | — | Chưa có giá trị | `core/expression`, `core/logic`, `core/tag-engine`, `drivers/mqtt`, `server` |
 | `OPCUA_ACCESS_DENIED` | — | Server OPC UA không cho đọc node này (BadNotReadable, BadUserAccessDenied) | `drivers/opcua` |
 | `OPCUA_BAD_STATUS` | — | Server OPC UA trả StatusCode Bad cho node (tên mã ở Chẩn đoán driver) | `drivers/opcua` |
 | `OPCUA_NODE_UNKNOWN` | — | Server OPC UA không có node này (BadNodeIdUnknown) | `drivers/opcua` |
@@ -536,7 +553,13 @@ Tổng cộng 534 mã.
 | `E_FIELD_VALUE` | — | Giá trị của trường trong yêu cầu Thử kết nối không hợp lệ | `server/http` |
 | `E_PROBE_COUNT` | — | Số lượng cần đọc khi Thử kết nối ngoài khoảng cho phép | `server/http` |
 | `FINS_TCP_REFUSED` | — | PLC Omron từ chối bắt tay FINS/TCP: hết kết nối, nút trùng hoặc ngoài tầm | `drivers/fins` |
-| `NOT_SUPPORTED` | — | Loại kênh này chưa hỗ trợ Thử kết nối | `drivers/opcua`, `drivers/s7`, `server/http` |
+| `MQTT_AUTH_FAILED` | — | Broker MQTT từ chối đăng nhập (CONNACK 4/5: sai tài khoản/mật khẩu hoặc không được phép) | `drivers/mqtt` |
+| `MQTT_CERT_UNTRUSTED` | — | Chứng chỉ broker MQTT khác chứng chỉ đã ghim, không do CA đã cấu hình ký, hoặc chưa ghim/chưa có CA | `drivers/mqtt` |
+| `MQTT_CONNECT_REFUSED` | — | Broker MQTT từ chối kết nối (CONNACK 1-3: phiên bản giao thức, client id, broker không sẵn sàng) | `drivers/mqtt` |
+| `MQTT_PROTOCOL` | — | Broker gửi dữ liệu không đúng MQTT 3.1.1 (gói hỏng hoặc quá 256 KiB): kết nối bị đóng và mở lại | `drivers/mqtt` |
+| `MQTT_SECRET_MISSING` | — | Chưa có mật khẩu của kênh MQTT trên thiết bị: đặt bằng mat-runtime --set-secret <secretId> | `drivers/mqtt` |
+| `MQTT_TLS_FAILED` | — | Bắt tay TLS với broker MQTT thất bại (phiên bản, bộ mã hoặc broker không dùng TLS) | `drivers/mqtt` |
+| `NOT_SUPPORTED` | — | Loại kênh này chưa hỗ trợ Thử kết nối | `drivers/mqtt`, `drivers/opcua`, `drivers/s7`, `server/http` |
 | `OPCUA_AUTH_FAILED` | — | Server OPC UA từ chối đăng nhập (sai username/mật khẩu hoặc không cho anonymous) | `drivers/opcua`, `server/http` |
 | `OPCUA_BROWSE_FAILED` | — | Không duyệt được node trên server OPC UA | `drivers/opcua`, `server/http` |
 | `OPCUA_CERT_UNTRUSTED` | — | Chứng chỉ server OPC UA chưa được tin hoặc khác chứng chỉ đã ghim (serverCertSha256) | `drivers/opcua`, `server/http` |
@@ -686,3 +709,26 @@ Tổng cộng 534 mã.
 | `UPDATE_RECEIVE_ABORTED` | 408 | Nhận gói cập nhật bị dừng giữa chừng (chậm, đứt hoặc thiếu byte): gửi lại | `server` |
 | `UPDATE_SIGNATURE_INVALID` | 403 | Chữ ký của gói cập nhật không đúng với khóa tin cậy nào của thiết bị | `core/update`, `server`, `server/updater` |
 | `UPDATE_TOO_LARGE` | 413 | Gói cập nhật lớn hơn update.maxPackageMiB | `core/update`, `server` |
+
+<a id="recipe"></a>
+
+## Recipe (công thức)
+
+| Mã | HTTP | Thông điệp | Nơi dùng |
+| --- | --- | --- | --- |
+| `E_RECIPE_DUP_ID` | — | Id loại recipe, Tag tham số hoặc id bản recipe bị trùng | `core/project-manager`, `packages/project-schema` |
+| `E_RECIPE_LIMIT` | — | Giới hạn recipe sai (min lớn hơn max, min/max trên Tag BOOL/STRING) hoặc giá trị ngoài giới hạn tham số hay Tag | `core/project-manager`, `core/recipe`, `packages/project-schema` |
+| `E_RECIPE_TAG` | — | Tag tham số của recipe không có trong tags.json | `core/project-manager`, `packages/project-schema` |
+| `E_RECIPE_TAG_RW` | — | Tag tham số của recipe không ghi được (không RW, Tag tính toán, mô phỏng không thủ công) | `core/project-manager`, `packages/project-schema` |
+| `E_RECIPE_VALUE` | — | Giá trị recipe thiếu, thừa hoặc sai kiểu Tag | `core/project-manager`, `core/recipe`, `packages/project-schema` |
+| `E_RECIPE_VERSION` | — | recipesFile chỉ dùng ở project định dạng 1.1 | `core/project-manager`, `packages/project-schema` |
+| `NO_RECIPES` | 404 | Project đang chạy không có recipe | `server/http` |
+| `RECIPE_BAD_QUALITY` | 409 | Đọc từ PLC: có Tag không có giá trị tốt | `core/recipe` |
+| `RECIPE_BUSY` | 409 | Một recipe khác đang được tải xuống | `core/recipe` |
+| `RECIPE_FULL` | 409 | Loại recipe đã có 200 bản | `core/recipe` |
+| `RECIPE_INVALID` | 400 | Giá trị recipe không hợp lệ; không ghi Tag nào | `core/recipe` |
+| `RECIPE_NOT_FOUND` | 404 | Không có loại hoặc bản recipe này (hoặc không được xem) | `core/recipe` |
+| `RECIPE_READONLY` | 409 | Bản recipe của project chỉ đọc trên thiết bị | `core/recipe` |
+| `RECIPE_STORE_FAILED` | 500 | Không ghi được kho recipe trên thiết bị | `core/recipe` |
+| `RECIPE_WRITE_TIMEOUT` | — | Ghi một tham số recipe không có kết quả trong thời hạn | `core/recipe` |
+| `WRITES_UNAVAILABLE` | 503 | Runtime không ghi được Tag lúc này (không có write coordinator) | `core/recipe` |

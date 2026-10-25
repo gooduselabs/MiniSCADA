@@ -1,0 +1,39 @@
+{
+  "scenario": "reconnect",
+  "checks": [
+    {
+      "name": "the link killed without DISCONNECT: the broker sends the will (retained)",
+      "pass": true,
+      "detail": "[{\"payload\":\"offline\",\"qos\":1,\"retain\":true,\"topic\":\"mat/rt/status\"}]"
+    },
+    {
+      "name": "broker down: BAD DISCONNECTED",
+      "pass": true,
+      "detail": "{\"value\":1.5,\"quality\":\"BAD\",\"reason\":\"DISCONNECTED\"}"
+    },
+    {
+      "name": "a write while down: refused (CONNECTION_BAD) or NOT_SENT_DISCONNECTED",
+      "pass": true,
+      "detail": "{\"message\":\"Kết nối tới PLC đang mất.\",\"reason\":\"CONNECTION_BAD\",\"requestId\":\"e1b85d31-8a4b-441d-8ff2-a9a0bd5e6366\",\"status\":\"REJECTED\"}"
+    },
+    {
+      "name": "broker back: GOOD within reconnectMaxS + 2 s (5 s)",
+      "pass": true,
+      "detail": "1233 ms"
+    },
+    {
+      "name": "the runtime never restarted",
+      "pass": true,
+      "detail": "9 -> 9"
+    },
+    {
+      "name": "reconnects counted",
+      "pass": true,
+      "detail": "1"
+    }
+  ],
+  "measures": {
+    "reconnectMs": 1233
+  },
+  "pass": true
+}

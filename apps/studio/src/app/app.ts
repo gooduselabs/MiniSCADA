@@ -13,6 +13,7 @@ import {
   openCreateTemplate,
   openUpdateAll,
 } from './template-actions.ts';
+import { recipeAddType } from './recipe-actions.ts';
 import { t, type MessageKey } from '../i18n/index.ts';
 import { monitorFetch, monitorSocket } from '../model/device-adapters.ts';
 import { DeviceSession, type SessionState } from '../model/device-session.ts';
@@ -1210,6 +1211,8 @@ export class StudioApp {
       case 'connections.addMc':
         this.openEditor('connections');
         return treeAddChannel(this, 'mc');
+      case 'recipe.add':
+        return recipeAddType(this);
       case 'report.add':
         this.openEditor('reports');
         return;
@@ -1699,7 +1702,9 @@ export class StudioApp {
             ? `vt:${loc.name}`
             : loc.editor === 'report'
               ? `report:${loc.id}`
-              : loc.editor;
+              : loc.editor === 'recipe'
+                ? `recipe:${loc.id}`
+                : loc.editor;
     this.openEditor(editor);
     return true;
   }

@@ -90,7 +90,14 @@
       "http": 503,
       "group": "auth",
       "message": "Thiết bị không ghi được nhật ký kiểm toán nên chưa thực hiện",
-      "usedIn": ["core/auth", "core/project-store", "core/tag-engine", "server", "server/http"]
+      "usedIn": [
+        "core/auth",
+        "core/project-store",
+        "core/recipe",
+        "core/tag-engine",
+        "server",
+        "server/http"
+      ]
     },
     {
       "code": "AUTH_FAILED",
@@ -98,6 +105,13 @@
       "group": "auth",
       "message": "Sai tên đăng nhập hoặc mật khẩu.",
       "usedIn": ["core/auth", "server/http"]
+    },
+    {
+      "code": "AUTH_INSECURE",
+      "http": null,
+      "group": "alarm",
+      "message": "Không gửi mật khẩu SMTP qua kết nối không mã hóa: chọn STARTTLS hoặc SMTPS (email alarm).",
+      "usedIn": ["core/notify"]
     },
     {
       "code": "AUTH_LOCKED",
@@ -112,6 +126,13 @@
       "group": "auth",
       "message": "Cần đăng nhập.",
       "usedIn": ["server/http"]
+    },
+    {
+      "code": "AUTH_UNSUPPORTED",
+      "http": null,
+      "group": "alarm",
+      "message": "Máy chủ SMTP không hỗ trợ AUTH PLAIN hay LOGIN (email alarm).",
+      "usedIn": ["core/notify"]
     },
     {
       "code": "BACNET_ABORT",
@@ -245,6 +266,7 @@
       "group": "auth",
       "message": "Yêu cầu không hợp lệ.",
       "usedIn": [
+        "core/recipe",
         "drivers/bacnet",
         "drivers/fins",
         "drivers/mc",
@@ -560,6 +582,7 @@
         "drivers/fins",
         "drivers/mc",
         "drivers/modbus",
+        "drivers/mqtt",
         "drivers/opcua",
         "drivers/s7",
         "packages/project-schema",
@@ -584,6 +607,7 @@
         "drivers/fins",
         "drivers/mc",
         "drivers/modbus",
+        "drivers/mqtt",
         "drivers/opcua",
         "drivers/s7",
         "packages/project-schema",
@@ -1373,6 +1397,27 @@
       "usedIn": ["server"]
     },
     {
+      "code": "E_MQTT_DIRECTION",
+      "http": null,
+      "group": "tags",
+      "message": "Tag MQTT: hướng của địa chỉ không khớp quyền (ghi được thì cần pub: hoặc both:; pub: cần quyền RW)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_MQTT_GROUP_TAG",
+      "http": null,
+      "group": "tags",
+      "message": "Nhóm publish MQTT có Tag không tồn tại",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_MQTT_TLS",
+      "http": null,
+      "group": "tags",
+      "message": "Kênh MQTT: serverCertSha256, caCertPem hoặc serverName chỉ dùng khi tls.enabled là true",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
       "code": "E_NAV",
       "http": null,
       "group": "screens",
@@ -1548,6 +1593,48 @@
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
+      "code": "E_RECIPE_DUP_ID",
+      "http": null,
+      "group": "recipe",
+      "message": "Id loại recipe, Tag tham số hoặc id bản recipe bị trùng",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RECIPE_LIMIT",
+      "http": null,
+      "group": "recipe",
+      "message": "Giới hạn recipe sai (min lớn hơn max, min/max trên Tag BOOL/STRING) hoặc giá trị ngoài giới hạn tham số hay Tag",
+      "usedIn": ["core/project-manager", "core/recipe", "packages/project-schema"]
+    },
+    {
+      "code": "E_RECIPE_TAG",
+      "http": null,
+      "group": "recipe",
+      "message": "Tag tham số của recipe không có trong tags.json",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RECIPE_TAG_RW",
+      "http": null,
+      "group": "recipe",
+      "message": "Tag tham số của recipe không ghi được (không RW, Tag tính toán, mô phỏng không thủ công)",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RECIPE_VALUE",
+      "http": null,
+      "group": "recipe",
+      "message": "Giá trị recipe thiếu, thừa hoặc sai kiểu Tag",
+      "usedIn": ["core/project-manager", "core/recipe", "packages/project-schema"]
+    },
+    {
+      "code": "E_RECIPE_VERSION",
+      "http": null,
+      "group": "recipe",
+      "message": "recipesFile chỉ dùng ở project định dạng 1.1",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
       "code": "E_REF_DEVICE",
       "http": null,
       "group": "tags",
@@ -1636,6 +1723,13 @@
       "http": null,
       "group": "history",
       "message": "Quá 24 cột (Tag × hàm) hoặc quá 24 Tag",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "E_RPT_LOGO",
+      "http": null,
+      "group": "history",
+      "message": "Logo báo cáo (reports.json logo) ở project dưới 1.1, tệp không có hoặc lớn hơn 256 KiB",
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
@@ -2406,6 +2500,69 @@
       "usedIn": ["core/expression"]
     },
     {
+      "code": "MQTT_AUTH_FAILED",
+      "http": null,
+      "group": "driver",
+      "message": "Broker MQTT từ chối đăng nhập (CONNACK 4/5: sai tài khoản/mật khẩu hoặc không được phép)",
+      "usedIn": ["drivers/mqtt"]
+    },
+    {
+      "code": "MQTT_CERT_UNTRUSTED",
+      "http": null,
+      "group": "driver",
+      "message": "Chứng chỉ broker MQTT khác chứng chỉ đã ghim, không do CA đã cấu hình ký, hoặc chưa ghim/chưa có CA",
+      "usedIn": ["drivers/mqtt"]
+    },
+    {
+      "code": "MQTT_CONNECT_REFUSED",
+      "http": null,
+      "group": "driver",
+      "message": "Broker MQTT từ chối kết nối (CONNACK 1-3: phiên bản giao thức, client id, broker không sẵn sàng)",
+      "usedIn": ["drivers/mqtt"]
+    },
+    {
+      "code": "MQTT_PAYLOAD",
+      "http": null,
+      "group": "quality",
+      "message": "Tin MQTT không đổi được thành giá trị của Tag (không phải số, ngoài miền, JSON hỏng hoặc thiếu trường theo đường dẫn)",
+      "usedIn": ["drivers/mqtt"]
+    },
+    {
+      "code": "MQTT_PROTOCOL",
+      "http": null,
+      "group": "driver",
+      "message": "Broker gửi dữ liệu không đúng MQTT 3.1.1 (gói hỏng hoặc quá 256 KiB): kết nối bị đóng và mở lại",
+      "usedIn": ["drivers/mqtt"]
+    },
+    {
+      "code": "MQTT_SECRET_MISSING",
+      "http": null,
+      "group": "driver",
+      "message": "Chưa có mật khẩu của kênh MQTT trên thiết bị: đặt bằng mat-runtime --set-secret <secretId>",
+      "usedIn": ["drivers/mqtt"]
+    },
+    {
+      "code": "MQTT_STALE",
+      "http": null,
+      "group": "quality",
+      "message": "Quá staleAfterMs không có tin MQTT mới cho Tag: giữ giá trị cuối với quality UNCERTAIN",
+      "usedIn": ["drivers/mqtt"]
+    },
+    {
+      "code": "MQTT_SUBSCRIBE_REFUSED",
+      "http": null,
+      "group": "quality",
+      "message": "Broker MQTT từ chối subscribe topic của Tag (SUBACK 0x80, thường do ACL)",
+      "usedIn": ["drivers/mqtt"]
+    },
+    {
+      "code": "MQTT_TLS_FAILED",
+      "http": null,
+      "group": "driver",
+      "message": "Bắt tay TLS với broker MQTT thất bại (phiên bản, bộ mã hoặc broker không dùng TLS)",
+      "usedIn": ["drivers/mqtt"]
+    },
+    {
       "code": "NOT_ACTIVE",
       "http": null,
       "group": "alarm",
@@ -2438,7 +2595,7 @@
       "http": 404,
       "group": "auth",
       "message": "Không có chức năng này.",
-      "usedIn": ["core/alarm", "server", "server/http"]
+      "usedIn": ["core/alarm", "core/recipe", "server", "server/http"]
     },
     {
       "code": "NOT_IMPLEMENTED",
@@ -2464,6 +2621,7 @@
         "drivers/fins",
         "drivers/mc",
         "drivers/modbus",
+        "drivers/mqtt",
         "drivers/opcua",
         "drivers/s7"
       ]
@@ -2485,6 +2643,7 @@
         "drivers/fins",
         "drivers/mc",
         "drivers/modbus",
+        "drivers/mqtt",
         "drivers/opcua",
         "drivers/s7"
       ]
@@ -2536,7 +2695,7 @@
       "http": null,
       "group": "driver",
       "message": "Loại kênh này chưa hỗ trợ Thử kết nối",
-      "usedIn": ["drivers/opcua", "drivers/s7", "server/http"]
+      "usedIn": ["drivers/mqtt", "drivers/opcua", "drivers/s7", "server/http"]
     },
     {
       "code": "NO_AGGREGATES",
@@ -2574,6 +2733,13 @@
       "usedIn": ["server/http"]
     },
     {
+      "code": "NO_PASSWORD",
+      "http": null,
+      "group": "alarm",
+      "message": "Chưa đặt mật khẩu SMTP trên thiết bị: sudo mat-runtime --set-secret smtp (email alarm).",
+      "usedIn": ["core/notify"]
+    },
+    {
       "code": "NO_PROJECT_PACKAGE",
       "http": 404,
       "group": "deploy",
@@ -2590,9 +2756,17 @@
         "drivers/fins",
         "drivers/mc",
         "drivers/modbus",
+        "drivers/mqtt",
         "drivers/opcua",
         "drivers/s7"
       ]
+    },
+    {
+      "code": "NO_RECIPES",
+      "http": 404,
+      "group": "recipe",
+      "message": "Project đang chạy không có recipe",
+      "usedIn": ["server/http"]
     },
     {
       "code": "NO_SIGNAL",
@@ -2662,7 +2836,7 @@
       "http": null,
       "group": "quality",
       "message": "Chưa có giá trị",
-      "usedIn": ["core/expression", "core/logic", "core/tag-engine", "server"]
+      "usedIn": ["core/expression", "core/logic", "core/tag-engine", "drivers/mqtt", "server"]
     },
     {
       "code": "OPCUA_ACCESS_DENIED",
@@ -2761,6 +2935,27 @@
       "group": "auth",
       "message": "Yêu cầu không xuất phát từ trang của thiết bị này.",
       "usedIn": ["server/http"]
+    },
+    {
+      "code": "OUTBOX_DAMAGED",
+      "http": null,
+      "group": "alarm",
+      "message": "Một email trong hàng đợi trên đĩa bị hỏng và đã bị bỏ (email.dropped).",
+      "usedIn": ["core/notify"]
+    },
+    {
+      "code": "OUTBOX_FULL",
+      "http": null,
+      "group": "alarm",
+      "message": "Hàng đợi email đầy (100 email hoặc 4 MiB): email cũ nhất bị bỏ (email.dropped).",
+      "usedIn": ["core/notify"]
+    },
+    {
+      "code": "OUTBOX_IO",
+      "http": null,
+      "group": "alarm",
+      "message": "Không ghi được email vào hàng đợi trên đĩa (đĩa đầy hoặc lỗi ghi).",
+      "usedIn": ["core/notify"]
     },
     {
       "code": "OUT_OF_LIMITS",
@@ -2970,7 +3165,7 @@
       "http": 429,
       "group": "write",
       "message": "Thao tác quá nhanh: hãy thử lại sau giây lát",
-      "usedIn": ["core/logic", "core/tag-engine", "server", "server/http"]
+      "usedIn": ["core/logic", "core/recipe", "core/tag-engine", "server", "server/http"]
     },
     {
       "code": "RATIO_TOO_HIGH",
@@ -3056,6 +3251,62 @@
       "group": "deploy",
       "message": "Không nhận xong gói trong 10 phút.",
       "usedIn": ["core/project-store", "server/http"]
+    },
+    {
+      "code": "RECIPE_BAD_QUALITY",
+      "http": 409,
+      "group": "recipe",
+      "message": "Đọc từ PLC: có Tag không có giá trị tốt",
+      "usedIn": ["core/recipe"]
+    },
+    {
+      "code": "RECIPE_BUSY",
+      "http": 409,
+      "group": "recipe",
+      "message": "Một recipe khác đang được tải xuống",
+      "usedIn": ["core/recipe"]
+    },
+    {
+      "code": "RECIPE_FULL",
+      "http": 409,
+      "group": "recipe",
+      "message": "Loại recipe đã có 200 bản",
+      "usedIn": ["core/recipe"]
+    },
+    {
+      "code": "RECIPE_INVALID",
+      "http": 400,
+      "group": "recipe",
+      "message": "Giá trị recipe không hợp lệ; không ghi Tag nào",
+      "usedIn": ["core/recipe"]
+    },
+    {
+      "code": "RECIPE_NOT_FOUND",
+      "http": 404,
+      "group": "recipe",
+      "message": "Không có loại hoặc bản recipe này (hoặc không được xem)",
+      "usedIn": ["core/recipe"]
+    },
+    {
+      "code": "RECIPE_READONLY",
+      "http": 409,
+      "group": "recipe",
+      "message": "Bản recipe của project chỉ đọc trên thiết bị",
+      "usedIn": ["core/recipe"]
+    },
+    {
+      "code": "RECIPE_STORE_FAILED",
+      "http": 500,
+      "group": "recipe",
+      "message": "Không ghi được kho recipe trên thiết bị",
+      "usedIn": ["core/recipe"]
+    },
+    {
+      "code": "RECIPE_WRITE_TIMEOUT",
+      "http": null,
+      "group": "recipe",
+      "message": "Ghi một tham số recipe không có kết quả trong thời hạn",
+      "usedIn": ["core/recipe"]
     },
     {
       "code": "REQUEST_ID_CONFLICT",
@@ -3259,6 +3510,13 @@
       "group": "write",
       "message": "Giá trị của Tag đã đổi so với lúc bạn xem: không ghi gì.",
       "usedIn": ["core/tag-engine"]
+    },
+    {
+      "code": "STARTTLS_UNSUPPORTED",
+      "http": null,
+      "group": "alarm",
+      "message": "Máy chủ SMTP không hỗ trợ STARTTLS trên cổng này: chọn SMTPS (cổng 465) hoặc cổng 587.",
+      "usedIn": ["core/notify"]
     },
     {
       "code": "STATE_UNREADABLE",
@@ -3541,6 +3799,13 @@
       "usedIn": ["server/http"]
     },
     {
+      "code": "WRITES_UNAVAILABLE",
+      "http": 503,
+      "group": "recipe",
+      "message": "Runtime không ghi được Tag lúc này (không có write coordinator)",
+      "usedIn": ["core/recipe"]
+    },
+    {
       "code": "WRITE_TIMEOUT",
       "http": null,
       "group": "write",
@@ -3551,6 +3816,7 @@
         "drivers/fins",
         "drivers/mc",
         "drivers/modbus",
+        "drivers/mqtt",
         "drivers/opcua",
         "drivers/s7"
       ]
@@ -3791,6 +4057,20 @@
       "http": null,
       "group": "history",
       "message": "Ước tính ghi > 8 GiB/ngày (4 lần ngân sách): Studio cần xác nhận mạnh hơn khi nạp xuống",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_MQTT_PLAIN_PASSWORD",
+      "http": null,
+      "group": "tags",
+      "message": "Kênh MQTT dùng tài khoản/mật khẩu trên kết nối không TLS",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
+      "code": "W_MQTT_TLS_NOT_PINNED",
+      "http": null,
+      "group": "tags",
+      "message": "Kênh MQTT bật TLS nhưng chưa ghim chứng chỉ broker (serverCertSha256) hoặc CA (caCertPem): runtime sẽ không kết nối",
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
