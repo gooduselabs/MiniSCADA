@@ -3,6 +3,7 @@
 // TagSource.now(); BAD/STALE/UNKNOWN thành khoảng đứt; tab ẩn thì ngừng vẽ nhưng vẫn lấy mẫu theo giờ thật, hiện lại
 // thì vẽ một lần. Mỗi lần lấy mẫu vẽ tối đa một lần mỗi khung hình.
 import { css, html, nothing, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import { safeColor } from '../format/color.ts';
 import uplotCss from 'uplot/dist/uPlot.min.css?raw';
 import {
   autoYRange,
@@ -224,6 +225,12 @@ export class MatLine extends MatWidget {
   }
 
   /** Ngưỡng cao, thấp (feature 014): số hữu hạn ở props. */
+  /** Feature 029: màu riêng của chuỗi `i` (prop `colors`); `auto` hoặc thiếu thì undefined. */
+  #ownColor(i: number): string | undefined {
+    const own = this.item?.props?.['colors'];
+    return Array.isArray(own) ? safeColor(own[i]) : undefined;
+  }
+
   #limits(): Array<Omit<PlotLimit, 'color'>> {
     const out: Array<Omit<PlotLimit, 'color'>> = [];
     for (const [kind, name] of [
@@ -350,7 +357,8 @@ export class MatLine extends MatWidget {
         const fixed = this.#yFixed();
         const series = ids.map((id, i) => ({
           label: this.#labelOf(i),
-          color: this.#cssColor(`--mat-chart-${i + 1}`, FALLBACK_SERIES_COLORS[i]!),
+          color:
+            this.#ownColor(i) ?? this.#cssColor(`--mat-chart-${i + 1}`, FALLBACK_SERIES_COLORS[i]!),
           dash: SERIES_DASHES[i]!,
           width: 2,
           show: this.source.info(id) !== undefined,

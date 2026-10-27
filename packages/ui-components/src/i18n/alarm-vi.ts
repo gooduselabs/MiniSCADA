@@ -8,6 +8,10 @@ import type {
 } from '../host/types.ts';
 
 export const alarmVi = {
+  // feature 029: tìm kiếm và xuất CSV của widget alarm-list
+  listSearch: 'Tìm alarm',
+  listExportCsv: 'Xuất CSV',
+  csvHead: ['Thời điểm', 'Ưu tiên', 'Khu vực', 'Tên', 'Nội dung', 'Giá trị', 'Trạng thái'],
   priority: {
     critical: 'Khẩn cấp',
     major: 'Quan trọng',

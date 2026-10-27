@@ -151,11 +151,11 @@ describe('XLSX', () => {
     Array.from(sheet.getElementsByTagName('col')).map((c) => Number(c.getAttribute('width')));
   const headerIdx = () => rows.findIndex((r) => r[0]!.text === LABELS.rowHeader);
 
-  it('hàng tiêu đề cột có nền màu nhấn của chủ đề (mặc định vivid), chữ trắng đậm, xuống dòng', () => {
+  it('hàng tiêu đề cột có nền màu nhấn của chủ đề (atscada; chủ đề cũ bị bỏ qua), chữ trắng đậm, xuống dòng', () => {
     const styles = xml('xl/styles.xml');
     for (const c of rows[headerIdx()]!) {
       const s = styleOf(styles, c.style);
-      expect(s.fill, c.text).toBe('FF3E63DD');
+      expect(s.fill, c.text).toBe('FF007272');
       expect(s.fontColor).toBe('FFFFFFFF');
       expect(s.bold).toBe(true);
       expect(s.wrap).toBe(true);
@@ -163,14 +163,14 @@ describe('XLSX', () => {
     const ind = readSheet(buildXlsx(t, { ...META, theme: 'industrial' }, LABELS));
     const st = ind.xml('xl/styles.xml');
     const hi = ind.rows.findIndex((r) => r[0]!.text === LABELS.rowHeader);
-    expect(styleOf(st, ind.rows[hi]![0]!.style).fill).toBe('FF0B7285');
+    expect(styleOf(st, ind.rows[hi]![0]!.style).fill).toBe('FF007272');
   });
 
   it('tiêu đề báo cáo chữ lớn đậm màu nhấn', () => {
     const s = styleOf(xml('xl/styles.xml'), rows[0]![0]!.style);
     expect(s.bold).toBe(true);
     expect(s.size).toBeGreaterThanOrEqual(14);
-    expect(s.fontColor).toBe('FF3E63DD');
+    expect(s.fontColor).toBe('FF007272');
   });
 
   it('độ rộng cột số theo số dài nhất kèm đơn vị, tiêu đề dài thì xuống dòng thay vì kéo rộng cột', () => {

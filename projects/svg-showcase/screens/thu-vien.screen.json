@@ -262,229 +262,240 @@
       },
       {
         "id": "r14",
-        "height": 36,
+        "height": 84,
         "cells": [
           {
             "id": "c35",
+            "span": 6,
+            "item": "w_time_range"
+          }
+        ]
+      },
+      {
+        "id": "r15",
+        "height": 36,
+        "cells": [
+          {
+            "id": "c36",
             "span": 12,
             "item": "muc_6"
           }
         ]
       },
       {
-        "id": "r15",
+        "id": "r16",
         "height": 24,
         "cells": [
           {
-            "id": "c36",
+            "id": "c37",
             "span": 6,
             "item": "ten_w_h_trend"
           },
           {
-            "id": "c37",
+            "id": "c38",
             "span": 6,
             "item": "ten_w_h_table"
           }
         ]
       },
       {
-        "id": "r16",
+        "id": "r17",
         "height": 300,
         "cells": [
           {
-            "id": "c38",
+            "id": "c39",
             "span": 6,
             "item": "w_h_trend"
           },
           {
-            "id": "c39",
+            "id": "c40",
             "span": 6,
             "item": "w_h_table"
           }
         ]
       },
       {
-        "id": "r17",
+        "id": "r18",
         "height": 24,
         "cells": [
           {
-            "id": "c40",
+            "id": "c41",
             "span": 8,
             "item": "ten_w_h_bar"
           },
           {
-            "id": "c41",
+            "id": "c42",
             "span": 4,
             "item": "ten_w_h_pie"
           }
         ]
       },
       {
-        "id": "r18",
+        "id": "r19",
         "height": 280,
         "cells": [
           {
-            "id": "c42",
+            "id": "c43",
             "span": 8,
             "item": "w_h_bar"
           },
           {
-            "id": "c43",
+            "id": "c44",
             "span": 4,
             "item": "w_h_pie"
           }
         ]
       },
       {
-        "id": "r19",
+        "id": "r20",
         "height": 36,
         "cells": [
           {
-            "id": "c44",
+            "id": "c45",
             "span": 12,
             "item": "muc_ky_hieu"
           }
         ]
       },
       {
-        "id": "r20",
+        "id": "r21",
         "height": 150,
         "cells": [
           {
-            "id": "c45",
+            "id": "c46",
             "span": 2,
             "item": "kh_tank_vertical"
           },
           {
-            "id": "c46",
+            "id": "c47",
             "span": 2,
             "item": "kh_tank_horizontal"
           },
           {
-            "id": "c47",
+            "id": "c48",
             "span": 2,
             "item": "kh_pump_centrifugal"
           },
           {
-            "id": "c48",
+            "id": "c49",
             "span": 2,
             "item": "kh_pump_dosing"
           },
           {
-            "id": "c49",
+            "id": "c50",
             "span": 2,
             "item": "kh_valve_gate"
           },
           {
-            "id": "c50",
+            "id": "c51",
             "span": 2,
             "item": "kh_valve_control"
           }
         ]
       },
       {
-        "id": "r21",
+        "id": "r22",
         "height": 28,
         "cells": [
           {
-            "id": "c51",
+            "id": "c52",
             "span": 2,
             "item": "ten_kh_tank_vertical"
           },
           {
-            "id": "c52",
+            "id": "c53",
             "span": 2,
             "item": "ten_kh_tank_horizontal"
           },
           {
-            "id": "c53",
+            "id": "c54",
             "span": 2,
             "item": "ten_kh_pump_centrifugal"
           },
           {
-            "id": "c54",
+            "id": "c55",
             "span": 2,
             "item": "ten_kh_pump_dosing"
           },
           {
-            "id": "c55",
+            "id": "c56",
             "span": 2,
             "item": "ten_kh_valve_gate"
           },
           {
-            "id": "c56",
+            "id": "c57",
             "span": 2,
             "item": "ten_kh_valve_control"
           }
         ]
       },
       {
-        "id": "r22",
+        "id": "r23",
         "height": 150,
         "cells": [
           {
-            "id": "c57",
+            "id": "c58",
             "span": 2,
             "item": "kh_valve_check"
           },
           {
-            "id": "c58",
+            "id": "c59",
             "span": 2,
             "item": "kh_motor_ac"
           },
           {
-            "id": "c59",
+            "id": "c60",
             "span": 2,
             "item": "kh_fan"
           },
           {
-            "id": "c60",
+            "id": "c61",
             "span": 2,
             "item": "kh_pipe_h"
           },
           {
-            "id": "c61",
+            "id": "c62",
             "span": 2,
             "item": "kh_pipe_v"
           },
           {
-            "id": "c62",
+            "id": "c63",
             "span": 2,
             "item": "kh_pipe_elbow"
           }
         ]
       },
       {
-        "id": "r23",
+        "id": "r24",
         "height": 28,
         "cells": [
           {
-            "id": "c63",
+            "id": "c64",
             "span": 2,
             "item": "ten_kh_valve_check"
           },
           {
-            "id": "c64",
+            "id": "c65",
             "span": 2,
             "item": "ten_kh_motor_ac"
           },
           {
-            "id": "c65",
+            "id": "c66",
             "span": 2,
             "item": "ten_kh_fan"
           },
           {
-            "id": "c66",
+            "id": "c67",
             "span": 2,
             "item": "ten_kh_pipe_h"
           },
           {
-            "id": "c67",
+            "id": "c68",
             "span": 2,
             "item": "ten_kh_pipe_v"
           },
           {
-            "id": "c68",
+            "id": "c69",
             "span": 2,
             "item": "ten_kh_pipe_elbow"
           }
@@ -993,7 +1004,7 @@
       "widget": "lamp",
       "props": {
         "label": "Đèn (lamp): thiết bị mẫu chạy",
-        "onColor": "#22c55e"
+        "onColor": "#1fa34a"
       },
       "tags": {
         "state": "DEMO.RUN"
@@ -1320,6 +1331,19 @@
       },
       "tags": {
         "target": "DEMO.MODE"
+      }
+    },
+    {
+      "id": "w_time_range",
+      "type": "widget",
+      "widget": "time-range",
+      "props": {
+        "label": "Hẹn giờ chạy (time-range)",
+        "format": "minutes"
+      },
+      "tags": {
+        "start": "DEMO.T_START",
+        "end": "DEMO.T_END"
       }
     },
     {

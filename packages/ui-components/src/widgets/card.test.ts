@@ -166,7 +166,7 @@ describe('mat-w-card (FR-026)', () => {
 });
 
 // Feature 012 (T046, FR-035): đường xu hướng nhỏ (60 điểm gần nhất từ giá trị sống) và mũi tên tăng/giảm, mặc định tắt;
-// bo góc và bóng theo token (--mat-radius-lg, --mat-shadow-card; industrial giữ 4px, không bóng).
+// bo góc và bóng theo token (--mat-radius-lg, --mat-shadow-card; atscada 4px, bóng nhẹ).
 describe('mat-w-card: sparkline, trend (feature 012)', () => {
   const feed = async (
     el: Element & { updateComplete: Promise<boolean> },

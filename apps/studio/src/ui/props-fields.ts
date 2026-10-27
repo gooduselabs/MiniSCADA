@@ -295,6 +295,7 @@ function listField(f: FieldModel, env: FieldEnv) {
       )}
     </span>`;
   }
+  if (items?.kind === 'color') return colorListField(f, env, cur.map(String));
   // Danh sách chữ (nhãn đường, cột): mỗi dòng một mục.
   const text = cur.map(String).join('\n');
   return html`<textarea
@@ -314,6 +315,59 @@ function listField(f: FieldModel, env: FieldEnv) {
     }}
   ></textarea>`;
 }
+
+/** Feature 029: màu riêng từng chuỗi (line, history-trend): mỗi chuỗi một ô màu, thêm/bớt ngay tại chỗ. */
+function colorListField(f: FieldModel, env: FieldEnv, cur: string[]) {
+  const max = f.maxItems ?? 8;
+  const set = (next: string[]) => env.commit(next.length ? next : undefined);
+  return html`<div class="pf-colors" id=${fieldId(f.name)} role="group" aria-label=${propLabel(f)}>
+    ${cur.map(
+      (c, i) =>
+        html`<span class="pf-color-item">
+          <input
+            type="color"
+            .value=${/^#[0-9a-fA-F]{6}$/.test(c) ? c : '#348fe2'}
+            aria-label=${t('pf.seriesColor', { n: i + 1 })}
+            @change=${(e: Event) =>
+              set(cur.map((x, k) => (k === i ? (e.target as HTMLInputElement).value : x)))}
+          />
+          <button
+            type="button"
+            class="btn sm icon"
+            title=${t('pf.removeItem')}
+            aria-label=${t('pf.removeItem')}
+            @click=${() => set(cur.filter((_, k) => k !== i))}
+          >
+            ${icon('x')}
+          </button>
+        </span>`,
+    )}
+    ${
+      cur.length < max
+        ? html`<button
+            type="button"
+            class="btn sm"
+            data-act="add-color"
+            @click=${() => set([...cur, SERIES_DEFAULTS[cur.length % SERIES_DEFAULTS.length]!])}
+          >
+            + ${t('pf.addColor')}
+          </button>`
+        : nothing
+    }
+  </div>`;
+}
+
+/** Màu gợi ý khi thêm chuỗi: thứ tự màu biểu đồ của giao diện atscada (feature 029). */
+const SERIES_DEFAULTS = [
+  '#348fe2',
+  '#00a5a5',
+  '#d08416',
+  '#ff5b57',
+  '#727cb6',
+  '#709e3a',
+  '#3d9bb5',
+  '#8753de',
+];
 
 function zonesField(f: FieldModel, env: FieldEnv) {
   const zones = (Array.isArray(env.value) ? env.value : []) as Array<{
@@ -510,7 +564,8 @@ export function renderField(
       (f.kind === 'array' &&
         f.name !== 'zones' &&
         f.items &&
-        (f.items as { kind: string }).kind !== 'enum')
+        (f.items as { kind: string }).kind !== 'enum' &&
+        (f.items as { kind: string }).kind !== 'color')
         ? html`<div class="pf-hint" id="${fieldId(f.name)}-hint">
             ${hint ?? t('pf.linesHint', { max: f.maxItems ?? 0 })}
           </div>`

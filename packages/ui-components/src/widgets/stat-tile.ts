@@ -85,6 +85,10 @@ export class MatStatTile extends MatWidget {
       }
       .label,
       .main,
+      .status2 {
+        color: inherit;
+        opacity: 0.95;
+      }
       .status {
         position: relative;
         z-index: 1;
@@ -241,7 +245,10 @@ export class MatStatTile extends MatWidget {
       }
       ${label ? html`<div class="label ellipsis">${label}</div>` : nothing}
       <div class="main">
-        <span class="value ${qv.dim ? 'dim' : ''}">${fmt.text}</span>
+        <span
+          class="value ${qv.dim ? 'dim' : ''} ${this.blinking(state.value, state.quality) ? 'blink' : ''}"
+          >${fmt.text}</span
+        >
         ${fmt.unit ? html`<span class="unit">${fmt.unit}</span>` : nothing}
         ${
           dir
@@ -259,6 +266,7 @@ export class MatStatTile extends MatWidget {
             </div>`
           : nothing
       }
+      ${this.statusLine()}
     </div>`;
   }
 }

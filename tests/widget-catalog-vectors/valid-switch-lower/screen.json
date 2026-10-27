@@ -19,11 +19,13 @@
         "label": "",
         "onText": "",
         "offText": "",
+        "onColor": "auto",
+        "offColor": "auto",
         "confirm": "always",
         "confirmText": ""
       },
       "tags": {
-        "target": "L.CMD"
+        "target": "L.SP"
       },
       "security": {
         "minRole": "operator"

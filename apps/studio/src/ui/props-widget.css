@@ -275,3 +275,24 @@ mat-widget-props .wi-param {
 mat-widget-props .wi-note {
   margin: 10px 12px 0;
 }
+
+/* Feature 029: màu riêng từng chuỗi (line, history-trend). */
+mat-widget-props .pf-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+mat-widget-props .pf-color-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+mat-widget-props .pf-color-item input[type='color'] {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border-2);
+  border-radius: 3px;
+  background: none;
+}

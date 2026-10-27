@@ -43,7 +43,7 @@
       "height": 40,
       "props": {
         "label": "Đang chạy",
-        "onColor": "#22c55e"
+        "onColor": "#1fa34a"
       },
       "tags": {
         "state": "{prefix}.RUN"
@@ -60,7 +60,7 @@
       "height": 40,
       "props": {
         "label": "Lỗi",
-        "onColor": "#ef4444"
+        "onColor": "#e5403b"
       },
       "tags": {
         "state": "{prefix}.FAULT"

@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect data-mat-uid="el_aaa" x="10" y="10" width="30" height="80" fill="#38bdf8"/>
-  <circle data-mat-uid="el_bbb" cx="70" cy="50" r="20" fill="#64748b"/>
-  <text data-mat-uid="el_ccc" x="10" y="98">--</text>
-</svg>

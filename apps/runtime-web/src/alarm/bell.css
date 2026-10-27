@@ -1,5 +1,5 @@
 /* Chuông cảnh báo, bảng thông báo, toast khẩn cấp (feature 026; thay banner ngang của 009).
-   Token --mat-* và --mat-alarm-<màu>[-soft|-ink] từ @mat/ui-components (vivid, industrial, dark). */
+   Token --mat-* và --mat-alarm-<màu>[-soft|-ink] từ @mat/ui-components (giao diện atscada). */
 .al-bell-slot {
   display: inline-flex;
 }

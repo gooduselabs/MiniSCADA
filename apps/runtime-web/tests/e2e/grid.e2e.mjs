@@ -1,6 +1,6 @@
 /* global document, window */
 // e2e bố cục lưới trên trang vận hành (feature 012, T022; US2, FR-025 đến FR-028, SC-002): hàng và cột đúng tỷ lệ 12 cột ở
-// 1920 và 1366 px, widget điền đầy ô, có giá trị sống; dưới 768 px các ô xếp chồng, không cuộn ngang; chủ đề vivid đặt
+// 1920 và 1366 px, widget điền đầy ô, có giá trị sống; dưới 768 px các ô xếp chồng, không cuộn ngang; giao diện atscada (theme cũ bỏ qua) đặt
 // trên :root. Ảnh chụp: tests/e2e/out/grid-*.png.
 import { deepEval, sleep, until, waitDeep } from './util.mjs';
 import { gridDemo } from './grid-fixture.mjs';
@@ -64,7 +64,8 @@ export default async function run(ctx) {
   );
   ctx.check('thẻ Mức bồn có giá trị sống', /62[,.]5/.test(text), text);
   const theme = await page.evaluate(() => document.documentElement.dataset.matTheme);
-  ctx.check('chủ đề vivid trên :root', theme === 'vivid', theme);
+  // feature 029: một giao diện, theme cũ của project bị bỏ qua (không đặt data-mat-theme)
+  ctx.check('không còn data-mat-theme trên :root', theme === undefined, theme);
 
   await open(ctx, 600);
   const n = await cellBoxes(page);

@@ -1,5 +1,5 @@
 // Sinh project mẫu projects/svg-showcase (feature 026): sơ đồ công nghệ trạm bơm nước sạch vẽ tay bằng SVG (viewBox
-// 1600 × 900, chủ đề tối kiểu HMI hiệu năng cao ISA-101), Tag mô phỏng, binding hoạt ảnh, màn hình SVG toàn trang,
+// 1600 × 900, nền sáng kiểu giao diện ATSCADA FastWeb (feature 029), màu chỉ cho trạng thái và môi chất), Tag mô phỏng, binding hoạt ảnh, màn hình SVG toàn trang,
 // màn hình lưới kết hợp và popup faceplate của bơm. Toạ độ, uid và binding sinh cùng một chỗ nên luôn khớp nhau.
 //
 // Dùng:   node tools/svg-showcase/generate.mjs        (ghi đè các tệp của project; tệp khác trong thư mục giữ nguyên)
@@ -12,28 +12,28 @@ const DIR = join(ROOT, 'projects/svg-showcase');
 const SVG_FILE = 'graphics/so-do-cong-nghe.svg';
 const VERSION = '1.1.0';
 
-// ---- Bảng màu (nền tối xanh than; màu chỉ dùng cho trạng thái và loại môi chất) ----------------------------------
+// ---- Bảng màu (feature 029: nền sáng hợp giao diện ATSCADA; màu chỉ dùng cho trạng thái và loại môi chất) ----------------------------------
 const C = {
-  bg: '#0b1520',
-  grid: '#0f1d2a',
-  panel: '#0e1a26',
-  panelStroke: '#1b2d3d',
-  zoneLabel: '#7f9ab1',
-  accent: '#38bdf8',
-  text: '#e3edf5',
-  muted: '#8ca3b8',
-  dim: '#5f768b',
-  box: '#08121b',
-  boxStroke: '#24394c',
-  metalStroke: '#9db0c2',
-  run: '#22c55e',
-  stop: '#64748b',
-  fault: '#ef4444',
-  warn: '#f59e0b',
-  pillRun: '#15803d',
-  pillStop: '#334155',
-  pillFault: '#b91c1c',
-  outline: '#04090e',
+  bg: '#f4f6f8',
+  grid: '#e9edf0',
+  panel: '#ffffff',
+  panelStroke: '#d5dbe0',
+  zoneLabel: '#56616b',
+  accent: '#008181',
+  text: '#2d353c',
+  muted: '#56616b',
+  dim: '#6d757a',
+  box: '#f2f3f4',
+  boxStroke: '#c5ced5',
+  metalStroke: '#56616b',
+  run: '#1fa34a',
+  stop: '#929ba1',
+  fault: '#e5403b',
+  warn: '#f59c1a',
+  pillRun: '#007272',
+  pillStop: '#6d757a',
+  pillFault: '#b13f3c',
+  outline: '#2d353c',
 };
 const PIPE = {
   raw: { core: '#a7825a', flow: '#f4e2c8' },
@@ -345,7 +345,7 @@ function checkValve(cx, cy) {
     'equip',
     tag('path', {
       d: bowtie(cx, cy),
-      fill: '#16222d',
+      fill: '#e9edf0',
       stroke: C.metalStroke,
       'stroke-width': 1.2,
       'stroke-linejoin': 'round',
@@ -406,7 +406,7 @@ function motorValve(cx, cy, id, label, openTag) {
       'stroke-width': 1.2,
     }),
   );
-  text('equip', cx, cy - 17.5, 'M', { size: 9, weight: 700, anchor: 'middle', fill: '#0b1520' });
+  text('equip', cx, cy - 17.5, 'M', { size: 9, weight: 700, anchor: 'middle', fill: '#2d353c' });
   put('equip', '</g>');
   text('text', cx, cy + 25, label, { size: 10, weight: 600, anchor: 'middle', fill: C.muted });
   B.boolFill(body, openTag, C.run, C.stop);
@@ -500,8 +500,8 @@ function pump(cx, cy, p, title, opts = {}) {
     'equip',
     tag('path', {
       d: `M${cx - 15} ${cy + r - 4} L${cx + 15} ${cy + r - 4} L${cx + 23} ${cy + r + 8} H${cx - 23} Z`,
-      fill: '#223140',
-      stroke: '#3c5163',
+      fill: '#e9edf0',
+      stroke: '#b6c2c9',
       'stroke-width': 1.2,
       'stroke-linejoin': 'round',
     }),
@@ -537,10 +537,10 @@ function pump(cx, cy, p, title, opts = {}) {
     .join('');
   put(
     'equip',
-    `<g${attrs({ ...imp, fill: 'none', stroke: '#d3dee8', 'stroke-width': 2.6, 'stroke-linecap': 'round' })}>` +
+    `<g${attrs({ ...imp, fill: 'none', stroke: '#56616b', 'stroke-width': 2.6, 'stroke-linecap': 'round' })}>` +
       tag('circle', { cx, cy, r: r * 0.62, 'stroke-opacity': 0.18, 'stroke-width': 1.2 }) +
       blades +
-      tag('circle', { cx, cy, r: 4, fill: '#d3dee8', stroke: 'none' }) +
+      tag('circle', { cx, cy, r: 4, fill: '#56616b', stroke: 'none' }) +
       '</g>',
   );
   put('equip', '</g>');
@@ -602,7 +602,7 @@ function tank(x, y, w, h, id, name, levelTag, liquid, marks) {
       height: h,
       rx: 14,
       fill: 'url(#g-tank)',
-      stroke: '#4a6074',
+      stroke: '#b6c2c9',
       'stroke-width': 2,
     }),
   );
@@ -628,7 +628,7 @@ function tank(x, y, w, h, id, name, levelTag, liquid, marks) {
       height: h,
       rx: 14,
       fill: 'none',
-      stroke: '#5b7286',
+      stroke: '#929ba1',
       'stroke-width': 2,
     }),
   );
@@ -684,7 +684,7 @@ put('bg', tag('rect', { width: W, height: H, fill: 'url(#p-grid)' }));
 
 // Tiêu đề
 put('bg', tag('rect', { width: W, height: 64, fill: 'url(#g-header)' }));
-put('bg', tag('path', { d: `M0 64.5 H${W}`, stroke: '#1f3448', 'stroke-width': 1 }));
+put('bg', tag('path', { d: `M0 64.5 H${W}`, stroke: '#d5dbe0', 'stroke-width': 1 }));
 put('bg', tag('rect', { x: 20, y: 14, width: 36, height: 36, rx: 9, fill: 'url(#g-logo)' }));
 put(
   'bg',
@@ -711,8 +711,8 @@ function chip(x, w, label, id, name, tagId, decimals, suffix, fillBinding) {
       width: w,
       height: 38,
       rx: 8,
-      fill: '#0f2131',
-      stroke: '#26405a',
+      fill: '#ffffff',
+      stroke: '#d5dbe0',
     }),
   );
   if (fillBinding) fillBinding(r);
@@ -729,7 +729,7 @@ chip(1262, 120, 'Cảnh báo', 'hdr_canh_bao', 'Số cảnh báo', 'ALARM.COUNT'
     transform: {
       kind: 'rangeMap',
       ranges: [
-        { to: 1, value: '#0f2131' },
+        { to: 1, value: '#ffffff' },
         { from: 1, value: '#7c2d12' },
       ],
     },
@@ -882,7 +882,7 @@ text('text', 95, 316, 'Hồ chứa nước thô', {
     tag('path', {
       d: `M36 330 L52 600 H140 L156 330`,
       fill: 'none',
-      stroke: '#6b7f90',
+      stroke: '#929ba1',
       'stroke-width': 4,
       'stroke-linejoin': 'round',
       'stroke-linecap': 'round',
@@ -957,7 +957,7 @@ warnIcon(822, 186, 'lit101_cao', 'Cảnh báo mức cao bể lắng', 'LIT101.HI
       height: 306,
       rx: 41,
       fill: 'url(#g-tank)',
-      stroke: '#5b7286',
+      stroke: '#929ba1',
       'stroke-width': 2,
     }),
   );
@@ -973,7 +973,7 @@ warnIcon(822, 186, 'lit101_cao', 'Cảnh báo mức cao bể lắng', 'LIT101.HI
     'equip',
     tag('path', {
       d: 'M904 416 H978 M904 486 H978 M904 512 H978',
-      stroke: '#0b1520',
+      stroke: '#2d353c',
       'stroke-opacity': 0.5,
       'stroke-width': 1,
     }),
@@ -1011,7 +1011,7 @@ warnIcon(822, 186, 'lit101_cao', 'Cảnh báo mức cao bể lắng', 'LIT101.HI
       height: 306,
       rx: 41,
       fill: 'none',
-      stroke: '#5b7286',
+      stroke: '#929ba1',
       'stroke-width': 2,
     }),
   );
@@ -1090,7 +1090,7 @@ text('text', 1578, 202, 'Ra mạng', { size: 10.5, weight: 600, anchor: 'end', f
       height: h,
       rx: 8,
       fill: 'url(#g-tank)',
-      stroke: '#5b7286',
+      stroke: '#929ba1',
       'stroke-width': 2,
     }),
   );
@@ -1121,7 +1121,7 @@ text('text', 1578, 202, 'Ra mạng', { size: 10.5, weight: 600, anchor: 'end', f
       height: h,
       rx: 8,
       fill: 'none',
-      stroke: '#5b7286',
+      stroke: '#929ba1',
       'stroke-width': 2,
     }),
   );
@@ -1178,8 +1178,8 @@ text('text', 1578, 202, 'Ra mạng', { size: 10.5, weight: 600, anchor: 'end', f
       width: 272,
       height: 126,
       rx: 6,
-      fill: '#101d29',
-      stroke: '#2a3f52',
+      fill: '#ffffff',
+      stroke: '#d5dbe0',
     }),
   );
   const FEEDERS = ['P-101', 'P-102', 'P-103', 'P-201', 'P-202', 'P-301'];
@@ -1298,7 +1298,7 @@ text('text', 1578, 202, 'Ra mạng', { size: 10.5, weight: 600, anchor: 'end', f
       'equip',
       tag('path', {
         d: `M${sx} ${y} q 4 -1 5 -5 M${sx} ${y} q -1 4 -5 5`,
-        stroke: '#d3dee8',
+        stroke: '#56616b',
         'stroke-width': 1.6,
         'stroke-linecap': 'round',
         fill: 'none',
@@ -1321,7 +1321,7 @@ text('text', 1578, 202, 'Ra mạng', { size: 10.5, weight: 600, anchor: 'end', f
       'equip',
       tag('path', {
         d: bowtie(sx + 14, y, 9, 7),
-        fill: '#16222d',
+        fill: '#e9edf0',
         stroke: C.metalStroke,
         'stroke-width': 1,
       }),
@@ -1385,15 +1385,15 @@ text('text', 1578, 202, 'Ra mạng', { size: 10.5, weight: 600, anchor: 'end', f
 // ---- Ghép tệp ----
 const defs = `<defs>
 <pattern id="p-grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="${C.grid}" stroke-width="1"/></pattern>
-<linearGradient id="g-header" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#11263a"/><stop offset="1" stop-color="#0c1826"/></linearGradient>
-<linearGradient id="g-logo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient>
-<linearGradient id="g-tank" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#16222d"/><stop offset="0.42" stop-color="#2a3b4b"/><stop offset="1" stop-color="#111b24"/></linearGradient>
+<linearGradient id="g-header" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f2f3f4"/></linearGradient>
+<linearGradient id="g-logo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00acac"/><stop offset="1" stop-color="#348fe2"/></linearGradient>
+<linearGradient id="g-tank" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e9edf0"/><stop offset="0.42" stop-color="#ffffff"/><stop offset="1" stop-color="#dde3e8"/></linearGradient>
 <linearGradient id="g-shade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000000" stop-opacity="0.38"/><stop offset="0.3" stop-color="#ffffff" stop-opacity="0.10"/><stop offset="0.55" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity="0.42"/></linearGradient>
 <linearGradient id="g-raw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b48d5f"/><stop offset="1" stop-color="#6a4c2e"/></linearGradient>
 <linearGradient id="g-clean" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4cb4f2"/><stop offset="1" stop-color="#0f4f8a"/></linearGradient>
 <linearGradient id="g-chem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3d34e"/><stop offset="1" stop-color="#a27c0b"/></linearGradient>
-<linearGradient id="g-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a9bab"/><stop offset="0.5" stop-color="#4f5f6d"/><stop offset="1" stop-color="#2b3742"/></linearGradient>
-<radialGradient id="g-pump" cx="0.38" cy="0.32" r="0.75"><stop offset="0" stop-color="#6f8293"/><stop offset="0.6" stop-color="#34444f"/><stop offset="1" stop-color="#1b2630"/></radialGradient>
+<linearGradient id="g-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef1f4"/><stop offset="0.5" stop-color="#c5ced5"/><stop offset="1" stop-color="#9aa6b0"/></linearGradient>
+<radialGradient id="g-pump" cx="0.38" cy="0.32" r="0.75"><stop offset="0" stop-color="#ffffff"/><stop offset="0.6" stop-color="#d5dbe0"/><stop offset="1" stop-color="#aab5be"/></radialGradient>
 <filter id="f-shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.55"/></filter>
 </defs>`;
 
@@ -2016,6 +2016,21 @@ tags.push(
     { kind: 'manual', initial: 1 },
     { access: 'RW', limits: { min: 0, max: 1 }, valueTable: 'CheDo' },
   ),
+  // feature 029: hẹn giờ Từ–Đến (phút trong ngày)
+  sim(
+    'DEMO.T_START',
+    'INT16',
+    'Giờ bắt đầu mẫu (phút trong ngày)',
+    { kind: 'manual', initial: 360 },
+    { access: 'RW', limits: { min: 0, max: 1439 } },
+  ),
+  sim(
+    'DEMO.T_END',
+    'INT16',
+    'Giờ kết thúc mẫu (phút trong ngày)',
+    { kind: 'manual', initial: 1080 },
+    { access: 'RW', limits: { min: 0, max: 1439 } },
+  ),
 );
 
 const LIB = 'thu-vien';
@@ -2511,6 +2526,20 @@ const SECTIONS = [
           [2, w('w_select', 'select', { label: 'Chọn chế độ (select)' }, { target: 'DEMO.MODE' })],
         ],
       },
+      {
+        height: 84,
+        cells: [
+          [
+            6,
+            w(
+              'w_time_range',
+              'time-range',
+              { label: 'Hẹn giờ chạy (time-range)', format: 'minutes' },
+              { start: 'DEMO.T_START', end: 'DEMO.T_END' },
+            ),
+          ],
+        ],
+      },
     ],
   ],
   [
@@ -2782,7 +2811,6 @@ files['project.json'] = json({
     ],
   },
   maxClients: 10,
-  theme: 'dark',
 });
 
 for (const [rel, content] of Object.entries(files)) {

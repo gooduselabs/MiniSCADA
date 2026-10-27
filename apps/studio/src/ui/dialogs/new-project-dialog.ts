@@ -8,14 +8,11 @@ import type { MessageKey } from '../../i18n/index.ts';
 import { t } from '../../i18n/index.ts';
 import {
   NEW_PROJECT_TEMPLATES,
-  NEW_PROJECT_THEMES,
   PROJECT_ID_MAX,
   PROJECT_NAME_MAX,
   isValidProjectId,
   projectIdFromName,
-  TEMPLATE_THEME,
   type NewProjectTemplate,
-  type NewProjectTheme,
 } from '../../model/new-project.ts';
 import type { CreateFailure, NewTargetState } from '../../platform/types.ts';
 import { icon } from '../base.ts';
@@ -28,11 +25,6 @@ const TEMPLATE_TEXT: Readonly<Record<NewProjectTemplate, readonly [MessageKey, M
   dashboard: ['np.tpl.dashboard', 'np.tpl.dashboardText'],
   diagram: ['np.tpl.diagram', 'np.tpl.diagramText'],
 };
-const THEME_TEXT: Readonly<Record<NewProjectTheme, MessageKey>> = {
-  vivid: 'np.theme.vivid',
-  industrial: 'np.theme.industrial',
-  dark: 'np.theme.dark',
-};
 
 interface Draft {
   name: string;
@@ -40,10 +32,9 @@ interface Draft {
   /** Người dùng đã tự sửa mã: không sinh lại theo tên nữa. */
   idTouched: boolean;
   template: NewProjectTemplate;
-  theme: NewProjectTheme;
 }
 
-const EMPTY: Draft = { name: '', id: '', idTouched: false, template: 'blank', theme: 'vivid' };
+const EMPTY: Draft = { name: '', id: '', idTouched: false, template: 'blank' };
 
 export class MatNewProjectDialog extends OnlineDialog {
   static override properties = {
@@ -194,7 +185,6 @@ export class MatNewProjectDialog extends OnlineDialog {
       name: d.name,
       id: d.id,
       template: d.template,
-      theme: d.theme,
     });
     this.busy = false;
     if (r !== true) {
@@ -243,10 +233,7 @@ export class MatNewProjectDialog extends OnlineDialog {
         name="np-template"
         value=${tpl}
         .checked=${on}
-        @change=${() =>
-          this.patch(
-            TEMPLATE_THEME[tpl] ? { template: tpl, theme: TEMPLATE_THEME[tpl] } : { template: tpl },
-          )}
+        @change=${() => this.patch({ template: tpl })}
       />
       <span class="np-tpl-thumb ${tpl}" aria-hidden="true">
         ${
@@ -256,21 +243,6 @@ export class MatNewProjectDialog extends OnlineDialog {
         }
       </span>
       <span class="np-card-t"><b>${t(title)}</b><small>${t(text)}</small></span>
-    </label>`;
-  }
-
-  private themeCard(theme: NewProjectTheme) {
-    const on = this.draft.theme === theme;
-    return html`<label class="np-theme ${on ? 'on' : ''}" data-theme=${theme}>
-      <input
-        type="radio"
-        name="np-theme"
-        value=${theme}
-        .checked=${on}
-        @change=${() => this.patch({ theme })}
-      />
-      <span class="np-swatch ${theme}" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span>${t(THEME_TEXT[theme])}</span>
     </label>`;
   }
 
@@ -360,11 +332,6 @@ export class MatNewProjectDialog extends OnlineDialog {
           <fieldset class="np-set">
             <legend>${t('np.template')}</legend>
             ${NEW_PROJECT_TEMPLATES.map((x) => this.templateCard(x))}
-          </fieldset>
-          <fieldset class="np-set">
-            <legend>${t('np.theme')}</legend>
-            <div class="np-themes">${NEW_PROJECT_THEMES.map((x) => this.themeCard(x))}</div>
-            <p class="help">${t('np.themeHelp')}</p>
           </fieldset>
         </div>
       </div>

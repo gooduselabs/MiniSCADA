@@ -107,7 +107,7 @@ Mỗi giá trị có một dấu ở góc khi dữ liệu không tốt. Không c
 
 Rê chuột lên dấu để xem lý do, ví dụ "Lỗi: Mất kết nối thiết bị".
 
-**Màn hình bố cục lưới** (project 1.1): các ô xếp theo hàng và cột; trang cuộn dọc khi dài. Trên máy tính bảng dọc hoặc điện thoại (màn hình hẹp dưới 768 điểm ảnh) các ô xếp chồng thành một cột theo thứ tự từ trên xuống, trái sang phải. Màu sắc theo **chủ đề** kỹ sư chọn cho project (Sáng đa sắc, Công nghiệp trầm hoặc Tối).
+**Màn hình bố cục lưới** (project 1.1): các ô xếp theo hàng và cột; trang cuộn dọc khi dài. Trên máy tính bảng dọc hoặc điện thoại (màn hình hẹp dưới 768 điểm ảnh) các ô xếp chồng thành một cột theo thứ tự từ trên xuống, trái sang phải. Màu sắc theo giao diện ATSCADA chung của trang vận hành.
 
 ![Màn hình bố cục lưới: hàng bốn thẻ giá trị Mức bồn, Lưu lượng vào, Tốc độ bơm, Bơm chạy; hàng biểu đồ xu hướng và đồng hồ kim; hàng bảng Tag sống có Nhiệt độ chất lượng BAD](img/op-bo-cuc-luoi.png)
 

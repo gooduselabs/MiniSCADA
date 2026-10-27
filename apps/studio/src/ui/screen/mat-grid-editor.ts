@@ -56,6 +56,11 @@ interface CellAt {
 
 const WIDGET_TYPE = 'application/x-mat-widget-';
 const TAG_TYPE = 'application/x-mat-tag';
+/** Feature 029: kéo thả ô và hàng trong trình soạn lưới. */
+const CELL_TYPE = 'application/x-mat-grid-cell';
+const ROW_TYPE = 'application/x-mat-grid-row';
+/** Chiều cao hàng chọn nhanh (feature 029). */
+const QUICK_HEIGHTS = ['auto', 120, 240, 360] as const;
 
 export class MatGridEditor extends AppElement {
   static override properties = {
@@ -65,6 +70,7 @@ export class MatGridEditor extends AppElement {
     presetsOpen: { state: true },
     previewWidth: { state: true },
     stageWidth: { state: true },
+    dragging: { state: true },
   };
   declare screenId: string;
   declare selCell: string | null;
@@ -73,6 +79,8 @@ export class MatGridEditor extends AppElement {
   declare previewWidth: number;
   /** Chiều rộng vùng làm việc (đo bằng ResizeObserver); 0 khi chưa đo (jsdom). */
   declare stageWidth: number;
+  /** Feature 029: đang kéo (đường chia, cạnh ô, ô, hàng): hiện đường lưới 12 cột rõ. */
+  declare dragging: boolean;
 
   #ro: ResizeObserver | null = null;
 
@@ -89,6 +97,7 @@ export class MatGridEditor extends AppElement {
     this.presetsOpen = false;
     this.previewWidth = 1366;
     this.stageWidth = 0;
+    this.dragging = false;
   }
 
   protected override attached(): void {
@@ -283,6 +292,11 @@ export class MatGridEditor extends AppElement {
     } else if (e.key === 'Enter' || e.key === ' ') {
       stop();
       this.select(cellId);
+    } else if (e.key === '+' || e.key === '=' || e.key === '-') {
+      // Feature 029: + / − đổi số cột của ô (một chạm, không cần mở ô nhập)
+      stop();
+      this.edit((x) => setCellProps(x, cellId, { span: at.cell.span + (e.key === '-' ? -1 : 1) }));
+      this.focusCell(cellId);
     } else if (e.key === 'Delete' || e.key === 'Backspace') {
       stop();
       this.removeSelectedItem(cellId);
@@ -299,8 +313,15 @@ export class MatGridEditor extends AppElement {
 
   private onDragOver(e: DragEvent, cellId: string): void {
     if (this.app.screens.previewMode !== 'off' || this.app.store.state.readOnly) return;
+    const types = e.dataTransfer?.types ?? [];
+    if (types.includes(CELL_TYPE) || types.includes(ROW_TYPE)) {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      if (this.overCell !== cellId) this.overCell = cellId;
+      return;
+    }
     const widget = this.typeOf(e, WIDGET_TYPE);
-    const tag = (e.dataTransfer?.types ?? []).includes(TAG_TYPE);
+    const tag = types.includes(TAG_TYPE);
     if (widget === null && !(tag && this.find(cellId)?.cell.item !== undefined)) return;
     e.preventDefault();
     if (e.dataTransfer) e.dataTransfer.dropEffect = widget !== null ? 'copy' : 'link';
@@ -309,7 +330,9 @@ export class MatGridEditor extends AppElement {
 
   private onDrop(e: DragEvent, cellId: string): void {
     this.overCell = null;
+    this.dragging = false;
     if (this.app.screens.previewMode !== 'off') return;
+    if (this.onMoveDrop(e, cellId)) return;
     const widget =
       e.dataTransfer?.getData('application/x-mat-widget') || this.typeOf(e, WIDGET_TYPE);
     if (widget) {
@@ -328,6 +351,83 @@ export class MatGridEditor extends AppElement {
     }
   }
 
+  /** Bước kéo theo cột (px màn hình) của một hàng. */
+  private colStep(rowId: string): number {
+    const d = this.doc();
+    const row = d?.layout.rows.find((r) => r.id === rowId);
+    const pad = d?.layout.padding ?? 16;
+    const gap = row?.gap ?? d?.layout.gap ?? 12;
+    const col = (this.previewWidth - 2 * pad - (GRID_COLUMNS - 1) * gap) / GRID_COLUMNS;
+    return Math.max(1, (col + gap) * this.zoom());
+  }
+
+  /**
+   * Feature 029: kéo cạnh phải của ô cuối hàng (nơi không có đường chia) để đổi số cột. Mỗi bước một cột, cả lần kéo là
+   * một bước hoàn tác.
+   */
+  private onEdgeDown(e: PointerEvent, cellId: string, rowId: string): void {
+    e.preventDefault();
+    e.stopPropagation();
+    const start = this.find(cellId)?.cell.span;
+    if (start === undefined) return;
+    const step = this.colStep(rowId);
+    const x0 = e.clientX;
+    const key = `grid-edge-${Date.now()}`;
+    let applied = 0;
+    this.dragging = true;
+    const move = (ev: PointerEvent) => {
+      const want = Math.round((ev.clientX - x0) / step);
+      if (want === applied) return;
+      const r = this.edit((x) => setCellProps(x, cellId, { span: start + want }), key);
+      if (r && !r.rejected) applied = want;
+    };
+    const up = () => {
+      this.dragging = false;
+      globalThis.removeEventListener('pointermove', move);
+      globalThis.removeEventListener('pointerup', up);
+    };
+    globalThis.addEventListener('pointermove', move);
+    globalThis.addEventListener('pointerup', up);
+  }
+
+  /** Áp nhiều bước dời trong một lần sửa (một bước hoàn tác). */
+  private shift(
+    fn: (d: ScreenModel, dir: -1 | 1) => ReturnType<typeof moveCell>,
+    steps: number,
+  ): void {
+    if (steps === 0) return;
+    const dir: -1 | 1 = steps < 0 ? -1 : 1;
+    this.edit((d) => {
+      let r = fn(d, dir);
+      for (let i = 1; i < Math.abs(steps) && !r.rejected; i++) r = fn(r.doc, dir);
+      return r;
+    });
+  }
+
+  /** Feature 029: thả ô (kéo bằng tay nắm) lên ô khác cùng hàng để đổi chỗ; thả hàng lên hàng khác để dời hàng. */
+  private onMoveDrop(e: DragEvent, targetCell: string): boolean {
+    const cellSrc = e.dataTransfer?.getData(CELL_TYPE) ?? '';
+    const rowSrc = e.dataTransfer?.getData(ROW_TYPE) ?? '';
+    if (!cellSrc && !rowSrc) return false;
+    e.preventDefault();
+    const to = this.find(targetCell);
+    if (!to) return true;
+    if (cellSrc) {
+      const from = this.find(cellSrc);
+      if (!from) return true;
+      if (from.row.id !== to.row.id) {
+        this.app.toast(t('lay.moveSameRow'));
+        return true;
+      }
+      this.shift((d, dir) => moveCell(d, cellSrc, dir), to.c - from.c);
+      this.select(cellSrc);
+    } else {
+      const fr = this.doc()?.layout.rows.findIndex((r) => r.id === rowSrc) ?? -1;
+      if (fr >= 0) this.shift((x, dir) => moveRow(x, rowSrc, dir), to.r - fr);
+    }
+    return true;
+  }
+
   /** Kéo đường chia: mỗi bước một cột; cả lần kéo gộp thành một bước hoàn tác (mergeKey). */
   private onDividerDown(e: PointerEvent, rowId: string, index: number): void {
     e.preventDefault();
@@ -338,6 +438,7 @@ export class MatGridEditor extends AppElement {
     const pad = d.layout.padding ?? 16;
     const gap = row?.gap ?? d.layout.gap ?? 12;
     const col = (this.previewWidth - 2 * pad - (GRID_COLUMNS - 1) * gap) / GRID_COLUMNS;
+    this.dragging = true;
     this.#drag = {
       row: rowId,
       index,
@@ -357,6 +458,7 @@ export class MatGridEditor extends AppElement {
     };
     const up = () => {
       this.#drag = null;
+      this.dragging = false;
       globalThis.removeEventListener('pointermove', move);
       globalThis.removeEventListener('pointerup', up);
     };
@@ -461,6 +563,22 @@ export class MatGridEditor extends AppElement {
               </div>`
             : nothing
         }
+      </span>
+      <span class="ge-quick" role="group" aria-label=${t('lay.quickRow')}>
+        ${GRID_PRESETS.slice(0, 6).map(
+          (p) =>
+            html`<button
+              type="button"
+              class="btn seg ge-qp"
+              data-quick=${p.join('+')}
+              title=${t('lay.quickRowTip', { spans: p.join(' + ') })}
+              aria-label=${t('lay.quickRowTip', { spans: p.join(' + ') })}
+              ?disabled=${ro}
+              @click=${() => this.addRowPreset(p)}
+            >
+              <span class="ge-preview">${p.map((s) => html`<i style=${`flex:${s}`}></i>`)}</span>
+            </button>`,
+        )}
       </span>
       ${at ? this.cellProps(at, ro) : nothing} ${at ? this.rowProps(at, ro, d) : nothing}
       <span class="ge-sep"></span>
@@ -633,6 +751,21 @@ export class MatGridEditor extends AppElement {
               ro,
             )
       }
+      <span class="ge-group" role="group" aria-label=${t('lay.quickHeight')}>
+        ${QUICK_HEIGHTS.map(
+          (h) =>
+            html`<button
+              type="button"
+              class="btn seg"
+              data-height=${String(h)}
+              aria-pressed=${row.height === h ? 'true' : 'false'}
+              ?disabled=${ro}
+              @click=${() => this.setRow({ height: h })}
+            >
+              ${h === 'auto' ? t('lay.heightAutoShort') : h}
+            </button>`,
+        )}
+      </span>
       ${this.num('gap', 'lay.gap', row.gap ?? d.layout.gap ?? 12, 0, 64, (v) => this.setRow({ gap: v }), ro)}
       <button
         type="button"
@@ -673,58 +806,147 @@ export class MatGridEditor extends AppElement {
     </span>`;
   }
 
+  /** Feature 029: thanh nhỏ ngay trên ô đang chọn: kéo đổi chỗ, −/+ cột, thêm ô, xóa ô. */
+  private miniBar(row: GridRow, cell: GridCell): TemplateResult {
+    const ro = this.app.store.state.readOnly;
+    const b = (act: string, label: MessageKey, body: unknown, fn: () => void, dis = false) =>
+      html`<button
+        type="button"
+        data-act=${act}
+        title=${t(label)}
+        aria-label=${t(label)}
+        ?disabled=${ro || dis}
+        @click=${(e: Event) => {
+          e.stopPropagation();
+          fn();
+        }}
+      >
+        ${body}
+      </button>`;
+    const span = (v: number) => () => this.edit((d) => setCellProps(d, cell.id, { span: v }));
+    return html`<span class="ge-mini" role="toolbar" aria-label=${t('lay.cell')}>
+      <span
+        class="ge-grip"
+        draggable=${ro ? 'false' : 'true'}
+        title=${t('lay.dragCell')}
+        @dragstart=${(e: DragEvent) => {
+          e.stopPropagation();
+          e.dataTransfer?.setData(CELL_TYPE, cell.id);
+          this.dragging = true;
+        }}
+        @dragend=${() => (this.dragging = false)}
+        >⠿</span
+      >
+      ${b('mini-narrow', 'lay.spanLess', '−', span(cell.span - 1), cell.span <= 1)}
+      <b class="ge-mini-n">${cell.span}/12</b>
+      ${b('mini-wide', 'lay.spanMore', '+', span(cell.span + 1), cell.span >= 12)}
+      ${b('mini-add', 'lay.cellAdd', icon('plus'), () => this.edit((d) => addCell(d, row.id)))}
+      ${b('mini-remove', 'lay.cellRemove', icon('trash'), () => {
+        this.edit((d) => removeCell(d, cell.id));
+        this.selCell = null;
+      })}
+    </span>`;
+  }
+
   private overlays(d: GridDoc, edit: boolean): TemplateResult[] {
     if (!edit) return [];
-    return d.layout.rows.flatMap((row) =>
-      row.cells.map((cell, c) => {
-        const empty = cell.item === undefined;
-        const next = row.cells[c + 1];
-        const label = t('lay.cellLabel', {
-          cell: cell.id,
-          span: cell.span,
-          content: this.nameOfItem(cell.item),
-        });
-        return html`<div
-          class="ge-cell ${this.selCell === cell.id ? 'sel' : ''} ${
-            this.overCell === cell.id ? 'over' : ''
-          } ${empty ? 'empty' : ''}"
-          slot=${`cell-${cell.id}`}
-          data-cell=${cell.id}
-          tabindex="0"
-          role="button"
-          aria-pressed=${this.selCell === cell.id ? 'true' : 'false'}
-          aria-label=${label}
-          title=${label}
-          @click=${() => this.select(cell.id)}
-          @keydown=${(e: KeyboardEvent) => this.onCellKey(e, cell.id)}
-          @dragover=${(e: DragEvent) => this.onDragOver(e, cell.id)}
-          @dragleave=${() => {
-            if (this.overCell === cell.id) this.overCell = null;
-          }}
-          @drop=${(e: DragEvent) => this.onDrop(e, cell.id)}
-        >
-          ${
-            empty
-              ? html`<span class="ge-drop" title=${t('lay.dropHint')}
-                  >${icon('plus')} ${t('lay.drop')}</span
-                >`
-              : nothing
-          }
-          <span class="ge-tag">${cell.span}</span>
-          ${
-            next
-              ? html`<span
-                  class="ge-divider"
-                  role="separator"
-                  aria-orientation="vertical"
-                  aria-label=${t('lay.divider', { a: cell.id, b: next.id })}
-                  @pointerdown=${(e: PointerEvent) => this.onDividerDown(e, row.id, c)}
-                ></span>`
-              : nothing
-          }
-        </div>`;
-      }),
-    );
+    return d.layout.rows
+      .flatMap((row) =>
+        row.cells.map((cell, c) => {
+          const empty = cell.item === undefined;
+          const next = row.cells[c + 1];
+          const label = t('lay.cellLabel', {
+            cell: cell.id,
+            span: cell.span,
+            content: this.nameOfItem(cell.item),
+          });
+          return html`<div
+            class="ge-cell ${this.selCell === cell.id ? 'sel' : ''} ${
+              this.overCell === cell.id ? 'over' : ''
+            } ${empty ? 'empty' : ''}"
+            slot=${`cell-${cell.id}`}
+            data-cell=${cell.id}
+            tabindex="0"
+            role="button"
+            aria-pressed=${this.selCell === cell.id ? 'true' : 'false'}
+            aria-label=${label}
+            title=${label}
+            @click=${() => this.select(cell.id)}
+            @keydown=${(e: KeyboardEvent) => this.onCellKey(e, cell.id)}
+            @dragover=${(e: DragEvent) => this.onDragOver(e, cell.id)}
+            @dragleave=${() => {
+              if (this.overCell === cell.id) this.overCell = null;
+            }}
+            @drop=${(e: DragEvent) => this.onDrop(e, cell.id)}
+          >
+            ${
+              empty
+                ? html`<span class="ge-drop" title=${t('lay.dropHint')}
+                    >${icon('plus')} ${t('lay.drop')}</span
+                  >`
+                : nothing
+            }
+            <span class="ge-tag">${cell.span}</span>
+            ${
+              c === 0
+                ? html`<span
+                    class="ge-rowgrip"
+                    draggable="true"
+                    title=${t('lay.dragRow')}
+                    aria-hidden="true"
+                    @dragstart=${(e: DragEvent) => {
+                      e.stopPropagation();
+                      e.dataTransfer?.setData(ROW_TYPE, row.id);
+                      this.dragging = true;
+                    }}
+                    @dragend=${() => (this.dragging = false)}
+                    >⋮⋮</span
+                  >`
+                : nothing
+            }
+            ${
+              next
+                ? nothing
+                : html`<span
+                    class="ge-edge"
+                    role="separator"
+                    aria-orientation="vertical"
+                    title=${t('lay.edge')}
+                    aria-label=${t('lay.edge')}
+                    @pointerdown=${(e: PointerEvent) => this.onEdgeDown(e, cell.id, row.id)}
+                  ></span>`
+            }
+            ${
+              next
+                ? html`<span
+                    class="ge-divider"
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label=${t('lay.divider', { a: cell.id, b: next.id })}
+                    @pointerdown=${(e: PointerEvent) => this.onDividerDown(e, row.id, c)}
+                  ></span>`
+                : nothing
+            }
+          </div>`;
+        }),
+      )
+      .concat(this.miniHost(d));
+  }
+
+  /**
+   * Thanh nhỏ của ô đang chọn: phần tử anh em cùng slot (nút không lồng trong ô role=button, axe nested-interactive),
+   * đặt cuối danh sách để chọn hay dời ô không làm dịch các lớp phủ khác (giữ nhanh khi di chuyển ô).
+   */
+  private miniHost(d: GridDoc): TemplateResult<1>[] {
+    for (const row of d.layout.rows)
+      for (const cell of row.cells)
+        if (cell.id === this.selCell)
+          return [
+            html`<div class="ge-mini-host" slot=${`cell-${cell.id}`}>
+              ${this.miniBar(row, cell)}
+            </div>`,
+          ];
+    return [];
   }
 
   protected override render() {
@@ -732,7 +954,7 @@ export class MatGridEditor extends AppElement {
     if (!d) return nothing;
     const edit = this.app.screens.previewMode === 'off';
     const src = this.source();
-    return html`<div class="ge">
+    return html`<div class="ge ${this.dragging ? 'dragging' : ''}">
       ${this.toolbar(d)}
       ${
         d.layout.rows.length === 0

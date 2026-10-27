@@ -102,6 +102,11 @@ export abstract class ControlWidget extends MatWidget {
     return this.tagOf('target');
   }
 
+  /** Feature 029: khe Tag ghi của widget ghi nhiều Tag; vắng thì `target`. */
+  protected controlSlots(): readonly string[] | undefined {
+    return undefined;
+  }
+
   /** Trạng thái điều khiển; `null` ở chế độ edit hoặc khi không có controller. */
   protected get cstate(): ControlState | null {
     return this.mode === 'run' && this.ctl ? this.ctl.state : null;
@@ -176,6 +181,7 @@ export abstract class ControlWidget extends MatWidget {
       uuid,
       modal: this.modal ?? defaultModalRegistry,
       context: this.context ?? { screen: '', widget: item.id },
+      ...(this.controlSlots() ? { slots: this.controlSlots()! } : {}),
     });
     c.onChange = () => this.requestUpdate();
     this.ctl = c;

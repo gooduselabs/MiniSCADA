@@ -206,6 +206,8 @@ const propValue = (w, p, hi) => {
           color: '#FF0000',
         }));
       if (p.items.options) return p.items.options.slice(0, lo ? (p.minItems ?? 0) : n);
+      // danh mục 0.7.0 (feature 029): mảng màu (colors của line, history-trend)
+      if (p.items.kind === 'color') return Array.from({ length: n }, () => '#FFFFFF');
       return Array.from({ length: n }, () => (lo ? '' : 'ằ'.repeat(p.items.maxLength)));
     }
     case 'object':
@@ -257,6 +259,7 @@ for (const w of catalog.widgets) {
         warnings.push(E('W_CONFIRM_NONE', '/items/0/props/confirm'));
       }
     } else if (w.id === 'switch' && hi) {
+      item.tags = { target: 'L.CMD' }; // confirm = none chỉ hợp lệ với Tag BOOL (switch nhận cả Tag số từ 029)
       warnings.push(E('W_CONFIRM_NONE', '/items/0/props/confirm'));
       item.security = { minRole: 'engineer' };
     } else if (w.group === 'control' && hi) item.security = { minRole: 'administrator' };
@@ -424,8 +427,8 @@ add(
   [e0('E_WIDGET_TAG_TYPE', '/tags/series/0')],
 );
 add(
-  'type-switch-number',
-  [W('s1', 'switch', { tags: { target: 'L.SP' } })],
+  'type-switch-string',
+  [W('s1', 'switch', { tags: { target: 'L.TXT' } })],
   [e0('E_WIDGET_TAG_TYPE', '/tags/target')],
 );
 add(

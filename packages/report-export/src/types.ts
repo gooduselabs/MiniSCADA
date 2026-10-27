@@ -30,7 +30,7 @@ export interface ExportMeta {
   paper?: { size?: 'A4' | 'A3'; orientation?: 'portrait' | 'landscape' };
   /** Tên trang tính XLSX (làm sạch và cắt 31 ký tự). */
   sheetName?: string;
-  /** Chủ đề màu của PDF và XLSX (feature 012); không đặt: vivid. `dark` in trên giấy trắng như vivid. */
+  /** Chủ đề cũ (feature 012): còn nhận để tương thích nhưng bị bỏ qua, báo cáo luôn theo màu atscada (feature 029). */
   theme?: ReportTheme;
   /**
    * Logo ở dải tiêu đề PDF (tùy chọn): data URL `data:image/png|jpeg;base64,…` hoặc chuỗi SVG không có script,
@@ -46,7 +46,7 @@ export interface ExportMeta {
   chart?: boolean;
 }
 
-/** Chủ đề giao diện của project (contracts/ui-theme.md §1). */
+/** Chủ đề cũ của project (feature 012); feature 029 bỏ qua giá trị này. */
 export type ReportTheme = 'vivid' | 'industrial' | 'dark';
 
 export type CsvStyle = 'standard' | 'excel-vi';

@@ -49,6 +49,12 @@ export class MatWSetpoint extends ControlWidget {
     this.#text = null;
   }
 
+  /** Feature 029: Tag chuỗi thì ô nhập là chuỗi tự do (giới hạn độ dài của Tag), không kiểm bước số. */
+  #isString(): boolean {
+    const id = this.tagId;
+    return !!id && this.source?.info(id)?.type === 'STRING';
+  }
+
   #decimals(): number {
     return this.decimals(this.tagId ? this.source.info(this.tagId) : undefined);
   }
@@ -59,6 +65,7 @@ export class MatWSetpoint extends ControlWidget {
     if (!id) return '';
     const st = this.source.get(id);
     if (st.value === null || st.value === undefined) return '';
+    if (this.#isString()) return String(st.value);
     return formatValue(st, this.source.info(id), { decimals: this.#decimals(), unit: null }).text;
   }
 
@@ -78,6 +85,10 @@ export class MatWSetpoint extends ControlWidget {
   #submit = (): void => {
     const c = this.ctl;
     if (!c || !this.ready || this.#text === null) return;
+    if (this.#isString()) {
+      c.propose('write', this.#text);
+      return;
+    }
     const text = this.#text.trim();
     if (!text.includes(',') && NUM_RE.test(text)) {
       const step = this.optNum('step') ?? 10 ** -this.#decimals();
@@ -109,7 +120,8 @@ export class MatWSetpoint extends ControlWidget {
         <div class="row">
           <input
             type="text"
-            inputmode="decimal"
+            inputmode=${this.#isString() ? 'text' : 'decimal'}
+            maxlength=${info?.limits?.maxLength ?? nothing}
             autocomplete="off"
             data-main
             aria-label=${this.nameOf(id)}

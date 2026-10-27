@@ -1,0 +1,125 @@
+/* Giao diện ATSCADA (feature 029): giao diện duy nhất của trang vận hành và widget, kiểu ATSCADA FastWeb.
+   Không còn nhiều chủ đề; trường theme cũ của project được đọc nhưng bỏ qua.
+   SINH TỰ ĐỘNG bởi tools/gen-theme-tokens.mjs (feature 012 R3, feature 029): không sửa tay, sửa script rồi chạy lại. */
+
+:where(:root) {
+  --mat-bg: #e4e9ed;
+  --mat-surface: #ffffff;
+  --mat-surface-2: #f2f3f4;
+  --mat-text: #2d353c;
+  --mat-text-muted: #56616b;
+  --mat-accent: #007272;
+  --mat-accent-ink: #ffffff;
+  --mat-border: #d5dbe0;
+  --mat-border-strong: #b6c2c9;
+  --mat-good: #007272;
+  --mat-good-soft: #d6f2f2;
+  --mat-warn: #905c0d;
+  --mat-warn-soft: #fdefda;
+  --mat-bad: #b13f3c;
+  --mat-bad-soft: #ffe5e4;
+  --mat-info: #266caa;
+  --mat-online: #d08416;
+  --mat-offline: #6d757a;
+  --mat-scrim: rgba(45, 53, 60, 0.45);
+  --mat-shadow: 0 10px 30px rgba(45, 53, 60, 0.2), 0 2px 6px rgba(45, 53, 60, 0.1);
+  --mat-shadow-card: 0 1px 2px rgba(45, 53, 60, 0.12);
+  --mat-radius: 3px;
+  --mat-radius-lg: 4px;
+  --mat-font:
+    'Inter Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --mat-font-mono: 'Cascadia Mono', 'Cascadia Code', Consolas, ui-monospace, Menlo, monospace;
+  --mat-motion: 150ms;
+  --mat-chart-1: #348fe2;
+  --mat-chart-1-soft: #e3effb;
+  --mat-chart-2: #00a5a5;
+  --mat-chart-2-soft: #dbf3f3;
+  --mat-chart-3: #d08416;
+  --mat-chart-3-soft: #fef1df;
+  --mat-chart-4: #ff5b57;
+  --mat-chart-4-soft: #ffe8e7;
+  --mat-chart-5: #727cb6;
+  --mat-chart-5-soft: #ebedf5;
+  --mat-chart-6: #709e3a;
+  --mat-chart-6-soft: #eff8e6;
+  --mat-chart-7: #3d9bb5;
+  --mat-chart-7-soft: #e6f5f9;
+  --mat-chart-8: #8753de;
+  --mat-chart-8-soft: #eee7fa;
+  --mat-chart-9: #2d353c;
+  --mat-chart-9-soft: #e2e3e4;
+  --mat-chart-10: #fb5597;
+  --mat-chart-10-soft: #fee7f0;
+  --mat-chart-11: #8a6d3b;
+  --mat-chart-11-soft: #efebe4;
+  --mat-chart-12: #b29100;
+  --mat-chart-12-soft: #f7f2db;
+  --mat-seq-1: #ebf4f4;
+  --mat-seq-2: #cde5e5;
+  --mat-seq-3: #b0d6d6;
+  --mat-seq-4: #93c6c6;
+  --mat-seq-5: #75b7b7;
+  --mat-seq-6: #58a8a8;
+  --mat-seq-7: #3b9999;
+  --mat-seq-8: #1d8989;
+  --mat-seq-9: #007a7a;
+  --mat-div-1: #c9302c;
+  --mat-div-2: #ff7470;
+  --mat-div-3: #ffadab;
+  --mat-div-4: #ffd6d5;
+  --mat-div-5: #f2f3f4;
+  --mat-div-6: #cce3f8;
+  --mat-div-7: #9ac7f1;
+  --mat-div-8: #52a0e6;
+  --mat-div-9: #1f5f99;
+  --mat-alarm-red: #c84845;
+  --mat-alarm-red-soft: #ffe5e4;
+  --mat-alarm-red-ink: #ffffff;
+  --mat-alarm-orange: #b85d13;
+  --mat-alarm-orange-soft: #fdeada;
+  --mat-alarm-orange-ink: #ffffff;
+  --mat-alarm-amber: #966c0e;
+  --mat-alarm-amber-soft: #fdf2da;
+  --mat-alarm-amber-ink: #ffffff;
+  --mat-alarm-blue: #2c7ac0;
+  --mat-alarm-blue-soft: #dfedfa;
+  --mat-alarm-blue-ink: #ffffff;
+  --mat-alarm-purple: #6972a8;
+  --mat-alarm-purple-soft: #e8eaf3;
+  --mat-alarm-purple-ink: #ffffff;
+  --mat-alarm-teal: #008181;
+  --mat-alarm-teal-soft: #d6f2f2;
+  --mat-alarm-teal-ink: #ffffff;
+  --mat-alarm-gray: #6d757a;
+  --mat-alarm-gray-soft: #eeeff0;
+  --mat-alarm-gray-ink: #ffffff;
+  --mat-alarm-green: #5c8130;
+  --mat-alarm-green-soft: #edf7e2;
+  --mat-alarm-green-ink: #ffffff;
+  --mat-tile-teal: #008181;
+  --mat-tile-blue: #2c7ac0;
+  --mat-tile-rose: #c84845;
+  --mat-tile-violet: #6972a8;
+  --mat-tile-olive: #5c8130;
+  --mat-tile-indigo: #8753de;
+  --mat-tile-orange: #a36810;
+  --mat-tile-cyan: #337f94;
+  --mat-tile-green: #268426;
+  --mat-tile-slate: #2d353c;
+  --mat-tile-ink: #ffffff;
+  --mat-nav-bg: #2d353c;
+  --mat-nav-text: #e8ecf0;
+  --mat-nav-active: #007272;
+  --mat-header-bg: #ffffff;
+  --mat-card-head-bg: #f2f3f4;
+  --mat-table-head-bg: #f2f3f4;
+  --mat-table-stripe: #f9fafb;
+  --mat-switch-on: #007272;
+  --mat-switch-off: #b6c2c9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(:root) {
+    --mat-motion: 0ms;
+  }
+}

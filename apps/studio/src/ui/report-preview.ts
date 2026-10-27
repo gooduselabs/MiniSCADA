@@ -51,12 +51,10 @@ export type SaveResult = 'saved' | 'cancelled' | 'error';
 export type ExportKind = 'csv' | 'csv-excel' | 'xlsx' | 'pdf';
 export type ReportPeriodSel = ReportSelection;
 
-/**
- * Chủ đề báo cáo từ `project.json` (cùng quy ước với trang vận hành: không đặt hoặc lạ là industrial, contracts/ui-theme.md §1).
- */
-export function projectTheme(project: unknown): ReportTheme {
-  const theme = (project as { theme?: unknown } | null | undefined)?.theme;
-  return theme === 'vivid' || theme === 'dark' ? theme : 'industrial';
+/** Chủ đề báo cáo: feature 029 bỏ cơ chế nhiều chủ đề, trường `theme` cũ của project bị bỏ qua (luôn undefined). */
+export function projectTheme(project: unknown): ReportTheme | undefined {
+  void project;
+  return undefined;
 }
 
 const p2 = (n: number) => String(n).padStart(2, '0');

@@ -144,12 +144,13 @@ describe('reports-doc (015)', () => {
 });
 
 describe('mẫu có sẵn (015)', () => {
-  it('7 mẫu; mẫu 1.1 bị khóa ở project cũ', () => {
+  it('8 mẫu (029 thêm điện năng tháng); mẫu 1.1 bị khóa ở project cũ', () => {
     expect(REPORT_PRESETS.map((p) => p.id)).toEqual([
       'shift',
       'day',
       'month',
       'energy',
+      'energyMonth',
       'alarm',
       'equipment',
       'logic',
@@ -168,6 +169,16 @@ describe('mẫu có sẵn (015)', () => {
       { tagId: 'KW', label: 'Công suất', unit: 'kW', decimals: 1, functions: ['avg', 'max'] },
     ]);
     expect(t.chart).toBe('bar');
+  });
+
+  it('điện năng tháng (029): kỳ tháng, hiệu số kWh, tổng, biểu đồ cột', () => {
+    const t = presetTemplate('energyMonth', ctx())!;
+    expect(t.id).toBe('dien-nang-thang');
+    expect(t.period).toBe('month');
+    expect(t.rowMinutes).toBeUndefined();
+    expect(t.totals).toBe(true);
+    expect(t.chart).toBe('bar');
+    expect(t.columns![0]!.functions).toEqual(['delta']);
   });
 
   it('thiết bị: Tag BOOL, ca, giờ chạy và số lần bật; ca/ngày/tháng có kỳ đúng', () => {

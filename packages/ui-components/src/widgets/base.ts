@@ -11,6 +11,7 @@ import {
 } from 'lit';
 import type { WidgetItem } from '@mat/project-schema';
 import { safeColor } from '../format/color.ts';
+import { formatValue, numberOf } from '../format/format-value.ts';
 import { qualityView, type QualityView } from '../format/quality.ts';
 import type { ActionHost, TagInfo, TagSource } from '../host/types.ts';
 import { itemTagIds } from '../screen/layers.ts';
@@ -95,6 +96,44 @@ export class MatWidget extends LitElement {
   }
 
   /** Số lẻ: thuộc tính `decimals` nếu có, vắng thì 0 cho kiểu nguyên và 1 cho kiểu thực (mặc định của danh mục). */
+  /** Màu do project đặt (`#rrggbb` …); `auto`, rỗng hoặc không an toàn thì undefined (feature 029). */
+  protected colorProp(name: string): string | undefined {
+    return safeColor(this.item?.props?.[name]);
+  }
+
+  /**
+   * Feature 029: nhấp nháy theo ngưỡng. Số `v` > `blinkAbove` hoặc < `blinkBelow` (prop tùy chọn) thì nhấp nháy;
+   * chất lượng xấu không nhấp nháy (đã có dấu chất lượng riêng).
+   */
+  protected blinking(v: unknown, quality?: string): boolean {
+    if (quality && quality !== 'GOOD' && quality !== 'UNCERTAIN') return false;
+    const n = numberOf(v as Parameters<typeof numberOf>[0]);
+    if (v === null || v === undefined || Number.isNaN(n)) return false;
+    const hi = this.item?.props?.['blinkAbove'];
+    const lo = this.item?.props?.['blinkBelow'];
+    return (typeof hi === 'number' && n > hi) || (typeof lo === 'number' && n < lo);
+  }
+
+  /**
+   * Feature 029: dòng trạng thái thứ hai từ khe `status` (tùy chọn), hiện qua bảng giá trị của Tag (vd. Chạy/Dừng/Lỗi) kèm
+   * màu của bảng. Không gắn thì `nothing`.
+   */
+  protected statusLine(): TemplateResult | typeof nothing {
+    const id = this.tagOf('status');
+    if (!id || !this.source) return nothing;
+    const info = this.source.info(id);
+    const table = info?.valueTable ? this.source.valueTable(info.valueTable) : undefined;
+    const f = formatValue(this.source.get(id), info, { decimals: 0, ...(table ? { table } : {}) });
+    const color = safeColor(f.color);
+    return html`<div
+      class="status2 ellipsis"
+      data-slot="status"
+      style=${color ? `color:${color}` : nothing}
+    >
+      ${f.text}${f.unit ? ` ${f.unit}` : ''}
+    </div>`;
+  }
+
   protected decimals(info: TagInfo | undefined, name = 'decimals'): number {
     const v = this.item?.props?.[name];
     if (typeof v === 'number' && Number.isInteger(v)) return Math.max(0, Math.min(6, v));

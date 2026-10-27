@@ -12,7 +12,8 @@ import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
 import { eligibleGroups, eligibleTags } from './reports-doc.ts';
 
-export type PresetId = 'shift' | 'day' | 'month' | 'energy' | 'alarm' | 'equipment' | 'logic';
+export type PresetId =
+  'shift' | 'day' | 'month' | 'energy' | 'energyMonth' | 'alarm' | 'equipment' | 'logic';
 
 export interface ReportPreset {
   id: PresetId;
@@ -27,6 +28,8 @@ export const REPORT_PRESETS: readonly ReportPreset[] = [
   { id: 'day', kind: 'table', needs11: false, icon: 'report' },
   { id: 'month', kind: 'table', needs11: false, icon: 'cal' },
   { id: 'energy', kind: 'table', needs11: false, icon: 'bar' },
+  // Feature 029: điện năng theo tháng (mỗi hàng một ngày, hiệu số, tổng, biểu đồ cột)
+  { id: 'energyMonth', kind: 'table', needs11: false, icon: 'bar' },
   { id: 'alarm', kind: 'alarm', needs11: true, icon: 'bell' },
   { id: 'equipment', kind: 'equipment', needs11: true, icon: 'pump' },
   { id: 'logic', kind: 'logic', needs11: true, icon: 'logic' },
@@ -45,6 +48,7 @@ const NAME: Record<PresetId, MessageKey> = {
   day: 'rpt.preset.nameDay',
   month: 'rpt.preset.nameMonth',
   energy: 'rpt.preset.nameEnergy',
+  energyMonth: 'rpt.preset.nameEnergyMonth',
   alarm: 'rpt.preset.nameAlarm',
   equipment: 'rpt.preset.nameEquipment',
   logic: 'rpt.preset.nameLogic',
@@ -54,6 +58,7 @@ const ID: Record<PresetId, string> = {
   day: 'bao-cao-ngay',
   month: 'bao-cao-thang',
   energy: 'nang-luong-ngay',
+  energyMonth: 'dien-nang-thang',
   alarm: 'alarm-ngay',
   equipment: 'van-hanh-thiet-bi',
   logic: 'logic-ngay',
@@ -123,7 +128,8 @@ export function presetTemplate(id: PresetId, ctx: PresetContext): ReportTemplate
         })),
       };
     }
-    case 'energy': {
+    case 'energy':
+    case 'energyMonth': {
       const g = pick(ctx, numeric)!;
       const energy = g.tags.filter((x) => ENERGY.test(ctx.info(x)?.unit ?? ''));
       const power = g.tags.filter((x) => POWER.test(ctx.info(x)?.unit ?? ''));
@@ -136,8 +142,9 @@ export function presetTemplate(id: PresetId, ctx: PresetContext): ReportTemplate
       return {
         ...base,
         group: g.group,
-        period: 'day',
-        rowMinutes: 60,
+        ...(id === 'energyMonth'
+          ? { period: 'month' as const }
+          : { period: 'day' as const, rowMinutes: 60 as const }),
         totals: true,
         ...(ctx.format11 ? { chart: 'bar' as const } : {}),
         columns,

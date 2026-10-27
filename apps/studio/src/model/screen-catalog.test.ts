@@ -112,7 +112,7 @@ describe('canBind', () => {
     });
   });
   it('kiểu được xét trước quyền ghi', () => {
-    expect(canBind(tag({ type: 'INT16', access: 'R' }), sw)).toEqual({
+    expect(canBind(tag({ type: 'STRING', access: 'R' }), sw)).toEqual({
       ok: false,
       reason: 'type-mismatch',
     });
@@ -206,6 +206,8 @@ describe('inspectorModelOf', () => {
       'trend',
       'valueColor',
       'background',
+      'blinkAbove',
+      'blinkBelow',
     ]);
     expect(m.groups.general).toEqual([]);
     expect(m.groups.security).toEqual([]);
@@ -217,6 +219,14 @@ describe('inspectorModelOf', () => {
         types: ['number', 'bool', 'string'],
         needsWrite: false,
         i18nKey: 'widget.card.slot.value',
+      },
+      {
+        name: 'status',
+        required: false,
+        multi: false,
+        types: ['number', 'bool', 'string'],
+        needsWrite: false,
+        i18nKey: 'widget.card.slot.status',
       },
     ]);
     expect(m.events).toEqual([]);
@@ -254,8 +264,8 @@ describe('inspectorModelOf', () => {
     expect(inspectorModelOf('line')!.slots[0]).toMatchObject({ multi: true, max: 8 });
     expect(inspectorModelOf('nope')).toBeUndefined();
   });
-  it('dựng được cho cả 28 loại (15 của 007, 2 alarm, 4 lịch sử, 7 dashboard của 014), mọi trường có nhóm và khóa i18n', () => {
-    expect(WIDGET_CATALOG.widgets).toHaveLength(28);
+  it('dựng được cho cả 29 loại (15 của 007, 2 alarm, 4 lịch sử, 7 dashboard của 014, time-range của 029), mọi trường có nhóm và khóa i18n', () => {
+    expect(WIDGET_CATALOG.widgets).toHaveLength(29);
     for (const spec of WIDGET_CATALOG.widgets) {
       const m = inspectorModelOf(spec.id)!;
       const all = [...m.groups.general, ...m.groups.display, ...m.groups.security];
@@ -365,7 +375,11 @@ describe('firstFreeSlot (thả Tag lên widget)', () => {
     expect(firstFreeSlot(two, item, tag({ type: 'BOOL' }))).toEqual({ slot: 'a', mode: 'replace' });
     expect(firstFreeSlot(two, item, tag())).toBeNull();
     expect(
-      firstFreeSlot(spec('card'), wi({ widget: 'card', tags: { value: 'q.r' } }), tag()),
+      firstFreeSlot(
+        spec('card'),
+        wi({ widget: 'card', tags: { value: 'q.r', status: 'q.s' } }),
+        tag(),
+      ),
     ).toEqual({
       slot: 'value',
       mode: 'replace',

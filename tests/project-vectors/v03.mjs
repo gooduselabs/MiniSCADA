@@ -1369,9 +1369,9 @@ export function cases03() {
     '/tags/series/0',
   );
   tagc(
-    'v03-invalid-tagtype-switch-number',
+    'v03-invalid-tagtype-switch-string', // feature 029: switch nhận Tag số, chuỗi vẫn sai kiểu
     'switch',
-    { target: 'TANK01.SP' },
+    { target: 'NOTE.TEXT' },
     ['E_WIDGET_TAG_TYPE'],
     '/tags/target',
   );
@@ -1382,13 +1382,7 @@ export function cases03() {
     ['E_WIDGET_TAG_TYPE'],
     '/tags/target',
   );
-  tagc(
-    'v03-invalid-tagtype-setpoint-string',
-    'setpoint',
-    { target: 'NOTE.TEXT' },
-    ['E_WIDGET_TAG_TYPE'],
-    '/tags/target',
-  );
+  // feature 029: setpoint nhận Tag chuỗi (chế độ chuỗi), bỏ ca v03-invalid-tagtype-setpoint-string
   tagc(
     'v03-invalid-tagtype-select-string',
     'select',

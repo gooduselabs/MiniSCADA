@@ -238,3 +238,74 @@ describe('mat-grid-editor', () => {
     expect(el.querySelector('[data-width="600"]')!.getAttribute('aria-pressed')).toBe('true');
   });
 });
+
+// Feature 029: thao tác lưới ít bấm: thêm hàng một chạm, thanh nhỏ trên ô (−/+ cột, thêm, xóa), phím + / −, kéo thả đổi
+// chỗ ô và hàng, chiều cao hàng nhanh, đường lưới khi kéo; mọi thao tác hoàn tác được.
+describe('mat-grid-editor: thao tác nhanh (feature 029)', () => {
+  it('thêm hàng một chạm từ thanh công cụ (không mở menu)', async () => {
+    const { app, el } = await open();
+    const quick = [...el.querySelectorAll<HTMLElement>('[data-quick]')].map((b) => b.dataset.quick);
+    expect(quick).toEqual(['12', '6+6', '4+4+4', '3+3+3+3', '8+4', '4+8']);
+    el.querySelector<HTMLButtonElement>('[data-quick="8+4"]')!.click();
+    await settled(el);
+    expect(spans(app, 3)).toEqual([8, 4]);
+    await app.run('edit.undo');
+    expect(model(app).layout.rows).toHaveLength(3);
+  });
+
+  it('thanh nhỏ trên ô chọn: −/+ cột, thêm ô; phím + và −', async () => {
+    const { app, el } = await open();
+    cellEl(el, 'c6').click();
+    await settled(el);
+    const mini = el.querySelector('.ge-mini-host[slot="cell-c6"] .ge-mini')!;
+    expect(text(mini)).toContain('12/12');
+    mini.querySelector<HTMLButtonElement>('[data-act="mini-narrow"]')!.click();
+    await settled(el);
+    expect(spans(app, 2)).toEqual([11]);
+    press(cellEl(el, 'c6'), '-');
+    await settled(el);
+    expect(spans(app, 2)).toEqual([10]);
+    press(cellEl(el, 'c6'), '+');
+    await settled(el);
+    expect(spans(app, 2)).toEqual([11]);
+    el.querySelector<HTMLButtonElement>('.ge-mini [data-act="mini-add"]')!.click();
+    await settled(el);
+    expect(model(app).layout.rows[2]!.cells.length).toBe(2);
+    await app.run('edit.undo');
+    expect(model(app).layout.rows[2]!.cells.length).toBe(1);
+  });
+
+  it('kéo tay nắm ô thả lên ô khác cùng hàng: đổi chỗ trong một bước hoàn tác', async () => {
+    const { app, el } = await open();
+    const types = ['application/x-mat-grid-cell'];
+    const data = { 'application/x-mat-grid-cell': 'c1' };
+    const over = drag('dragover', types, data);
+    cellEl(el, 'c3').dispatchEvent(over);
+    expect(over.defaultPrevented).toBe(true);
+    cellEl(el, 'c3').dispatchEvent(drag('drop', types, data));
+    await settled(el);
+    expect(model(app).layout.rows[0]!.cells.map((c) => c.id)).toEqual(['c2', 'c3', 'c1']);
+    await app.run('edit.undo');
+    expect(model(app).layout.rows[0]!.cells.map((c) => c.id)).toEqual(['c1', 'c2', 'c3']);
+  });
+
+  it('kéo tay nắm hàng thả lên hàng khác: dời hàng', async () => {
+    const { app, el } = await open();
+    expect(cellEl(el, 'c1').querySelector('.ge-rowgrip')).not.toBeNull();
+    const types = ['application/x-mat-grid-row'];
+    cellEl(el, 'c6').dispatchEvent(drag('drop', types, { 'application/x-mat-grid-row': 'r1' }));
+    await settled(el);
+    expect(model(app).layout.rows.map((r) => r.id)).toEqual(['r2', 'r3', 'r1']);
+  });
+
+  it('chiều cao hàng nhanh; ô cuối hàng có cạnh kéo đổi số cột', async () => {
+    const { app, el } = await open();
+    cellEl(el, 'c1').click();
+    await settled(el);
+    el.querySelector<HTMLButtonElement>('[data-height="120"]')!.click();
+    await settled(el);
+    expect(model(app).layout.rows[0]!.height).toBe(120);
+    expect(cellEl(el, 'c3').querySelector('.ge-edge')).not.toBeNull();
+    expect(cellEl(el, 'c1').querySelector('.ge-edge')).toBeNull();
+  });
+});

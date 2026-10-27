@@ -427,9 +427,7 @@ export class ReportPage {
     };
     if (tpl.paper) meta.paper = tpl.paper;
     if (this.#logo && (kind === 'xlsx' || kind === 'pdf')) await this.#addLogo(meta, kind);
-    // Màu báo cáo theo chủ đề của project (main.ts đặt data-mat-theme, feature 012 FR-038).
-    const theme = document.documentElement.dataset.matTheme;
-    if (theme === 'vivid' || theme === 'industrial' || theme === 'dark') meta.theme = theme;
+    // Màu báo cáo: giao diện atscada duy nhất (feature 029), không truyền chủ đề.
     this.#out?.querySelector('[role="alert"]')?.remove();
     this.#setExport(false);
     try {

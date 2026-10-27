@@ -1,6 +1,5 @@
-// Ba chủ đề vivid, industrial, dark (feature 012, contracts/ui-theme.md, FR-029, FR-032, FR-036, SC-007): đủ token ở mọi
-// chủ đề, mọi cặp chữ/nền ≥ 4,5:1, nét biểu đồ và màu alarm trên bề mặt ≥ 3:1, industrial giữ đúng giá trị cũ (và khớp
-// token của Studio), Inter tự chứa, `--mat-motion` = 0ms khi giảm chuyển động.
+// Giao diện duy nhất atscada (feature 029, thay ba chủ đề của feature 012): đủ token, mọi cặp chữ/nền ≥ 4,5:1, nét biểu
+// đồ và màu alarm trên bề mặt ≥ 3:1, Inter tự chứa, `--mat-motion` = 0ms khi giảm chuyển động, không còn data-mat-theme.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -9,13 +8,8 @@ import { TOKENS_CSS } from './tokens.ts';
 
 const read = (p: string): string =>
   readFileSync(resolve(__dirname, p), 'utf8').replace(/"/g, "'").replace(/\r\n/g, '\n');
-const THEMES = {
-  industrial: read('themes/industrial.css'),
-  vivid: read('themes/vivid.css'),
-  dark: read('themes/dark.css'),
-};
+const THEMES = { atscada: read('themes/atscada.css') };
 const TOKENS_FILE = read('tokens.css');
-const STUDIO = read('../../../../apps/studio/src/theme/tokens.css');
 
 /** Khối khai báo đầu tiên có bộ chọn `selector` (tính cả ngoặc lồng), từ vị trí `from`. */
 function block(css: string, selector: string, from = 0): Record<string, string> {
@@ -64,7 +58,7 @@ const TILE_NAMES = [
   'slate',
 ];
 
-/** Token màu (giá trị #rrggbb) mọi chủ đề, cả biến thể tối của industrial, phải khai. */
+/** Token màu (giá trị #rrggbb) giao diện phải khai. */
 const COLOR_TOKENS = [
   ...[
     'bg',
@@ -90,7 +84,7 @@ const COLOR_TOKENS = [
   ...N9.flatMap((i) => [`seq-${i}`, `div-${i}`]),
   ...ALARMS.flatMap((c) => [`alarm-${c}`, `alarm-${c}-soft`, `alarm-${c}-ink`]),
 ].map((t) => `--mat-${t}`);
-/** Token khác màu; vivid và dark khai lại toàn bộ (chủ đề độc lập), industrial tối kế thừa từ khối sáng. */
+/** Token khác màu; khai đủ. */
 const OTHER_TOKENS = [
   'scrim',
   'shadow',
@@ -133,10 +127,7 @@ const GRAPHIC_PAIRS: Array<[string, string]> = [
 ];
 
 const VARIANTS: Array<[string, Record<string, string>, boolean]> = [
-  ['industrial sáng', block(THEMES.industrial, ':where(:root) {'), true],
-  ['industrial tối', block(THEMES.industrial, ":where(:root[data-theme='dark']) {"), false],
-  ['vivid', block(THEMES.vivid, ":where(:root[data-mat-theme='vivid']) {"), true],
-  ['dark', block(THEMES.dark, ":where(:root[data-mat-theme='dark']) {"), true],
+  ['atscada', block(THEMES.atscada, ':where(:root) {'), true],
 ];
 
 describe('chủ đề: đủ token và tương phản (FR-032, SC-007)', () => {
@@ -188,60 +179,12 @@ describe('chủ đề: đủ token và tương phản (FR-032, SC-007)', () => {
     }
   });
 
-  it('dark: nền xám xanh như dashboard tham khảo (feature 014), khung sáng hơn nền, tiêu đề khung sáng hơn khung', () => {
-    const t = VARIANTS[3]![1];
-    expect(t['--mat-bg']).toBe('#1f2a33');
-    expect(t['--mat-surface']).toBe('#2b3640');
-    expect(lum(t['--mat-surface-2']!)).toBeGreaterThan(lum(t['--mat-surface']!));
-    expect(lum(t['--mat-surface']!)).toBeGreaterThan(lum(t['--mat-bg']!));
-  });
-
-  it('vivid: bo góc card 10px, phông Inter trước, dự phòng Segoe UI và system-ui', () => {
-    const t = VARIANTS[2]![1];
-    expect(t['--mat-radius-lg']).toBe('10px');
-    expect(t['--mat-font']).toMatch(/^'Inter Variable', 'Segoe UI', system-ui/);
-  });
-
-  it('industrial giữ đúng giá trị cũ (nền, chữ, nhấn, 8 màu chuỗi) và khớp token của Studio', () => {
-    const light = VARIANTS[0]![1];
-    const dark = VARIANTS[1]![1];
-    expect(light['--mat-bg']).toBe('#edf0f1');
-    expect(light['--mat-accent']).toBe('#0b7285');
-    expect(light['--mat-chart-1']).toBe('#0b7285');
-    expect(light['--mat-chart-8']).toBe('#56646a');
-    expect(light['--mat-radius']).toBe('4px');
-    expect(light['--mat-font']).toMatch(/^'Segoe UI Variable Text'/);
-    expect(dark['--mat-bg']).toBe('#131718');
-    // Studio (apps/studio/src/theme/tokens.css) dùng tên riêng, cùng giá trị.
-    const map: Array<[string, string]> = [
-      ['bg', 'bg'],
-      ['surface', 'panel'],
-      ['surface-2', 'panel-2'],
-      ['text', 'fg'],
-      ['text-muted', 'muted'],
-      ['accent', 'accent'],
-      ['accent-ink', 'accent-ink'],
-      ['border', 'border'],
-      ['border-strong', 'border-2'],
-      ['good', 'ok'],
-      ['warn', 'warn'],
-      ['bad', 'err'],
-      ['info', 'info'],
-    ];
-    const sLight = block(STUDIO, ':root {');
-    const sDark = block(STUDIO, ":root[data-theme='dark'] {");
-    for (const [m, s] of map) {
-      expect(light[`--mat-${m}`], m).toBe(sLight[`--${s}`]);
-      expect(dark[`--mat-${m}`], m).toBe(sDark[`--${s}`]);
-    }
-  });
-
-  it('industrial: khối tối theo prefers-color-scheme giống [data-theme=dark]', () => {
-    const media = block(
-      THEMES.industrial.slice(THEMES.industrial.indexOf('@media (prefers-color-scheme: dark)')),
-      ":where(:root:not([data-theme='light'])) {",
-    );
-    expect(media).toEqual(VARIANTS[1]![1]);
+  it('atscada: màu chủ đạo teal và thanh điều hướng kiểu FastWeb', () => {
+    const t = VARIANTS[0]![1];
+    expect(t['--mat-nav-bg']).toBe('#2d353c');
+    expect(t['--mat-surface']).toBe('#ffffff');
+    expect(contrast(t['--mat-nav-text']!, t['--mat-nav-bg']!)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast('#ffffff', t['--mat-switch-on']!)).toBeGreaterThanOrEqual(3);
   });
 });
 
@@ -253,19 +196,14 @@ describe('chọn chủ đề và nạp (contracts/ui-theme.md §1)', () => {
     ).not.toThrow();
   });
 
-  it('vivid và dark chỉ áp khi đặt data-mat-theme; industrial là mặc định (:where(:root))', () => {
-    expect(THEMES.industrial).toContain(':where(:root) {');
-    expect(THEMES.vivid).not.toContain(':where(:root) {');
-    expect(THEMES.dark).not.toContain(':where(:root) {');
-    expect(THEMES.dark).not.toContain('prefers-color-scheme');
+  it('chỉ một giao diện: áp lên :where(:root), không còn data-mat-theme hay biến thể tối', () => {
+    expect(THEMES.atscada).toContain(':where(:root) {');
+    expect(THEMES.atscada).not.toContain('data-mat-theme');
+    expect(THEMES.atscada).not.toContain('prefers-color-scheme');
   });
 
-  it('--mat-motion = 0ms khi prefers-reduced-motion: reduce, ở cả ba chủ đề', () => {
-    const sel = {
-      industrial: ':where(:root) {',
-      vivid: ":where(:root[data-mat-theme='vivid']) {",
-      dark: ":where(:root[data-mat-theme='dark']) {",
-    } as const;
+  it('--mat-motion = 0ms khi prefers-reduced-motion: reduce, ', () => {
+    const sel = { atscada: ':where(:root) {' } as const;
     for (const [name, css] of Object.entries(THEMES)) {
       const at = css.indexOf('@media (prefers-reduced-motion: reduce)');
       expect(at, name).toBeGreaterThan(0);
@@ -275,12 +213,9 @@ describe('chọn chủ đề và nạp (contracts/ui-theme.md §1)', () => {
     }
   });
 
-  it('tokens.css nạp industrial, vivid, dark theo thứ tự đó', () => {
-    const order = ['industrial', 'vivid', 'dark'].map((n) =>
-      TOKENS_FILE.indexOf(`@import './themes/${n}.css';`),
-    );
-    expect(order.every((i) => i >= 0)).toBe(true);
-    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  it('tokens.css nạp đúng một tệp giao diện atscada', () => {
+    expect(TOKENS_FILE.match(/^@import/gm)).toHaveLength(1);
+    expect(TOKENS_FILE).toContain("@import './themes/atscada.css';");
   });
 
   // latin-ext của Inter thiếu U+1EA0-1EF1 (ạ, ả, ấ, …): cần thêm tập vietnamese thì mới đủ dấu (FR-036).
@@ -304,14 +239,9 @@ describe('chọn chủ đề và nạp (contracts/ui-theme.md §1)', () => {
     }
   });
 
-  it('TOKENS_CSS (nạp bằng installTokens) có đủ ba chủ đề theo thứ tự và không có @import', () => {
-    const at = [
-      ':where(:root) {',
-      ":where(:root[data-mat-theme='vivid']) {",
-      ":where(:root[data-mat-theme='dark']) {",
-    ].map((s) => TOKENS_CSS.replace(/"/g, "'").indexOf(s));
-    expect(at.every((i) => i >= 0)).toBe(true);
-    expect([...at].sort((a, b) => a - b)).toEqual(at);
+  it('TOKENS_CSS (nạp bằng installTokens) có giao diện atscada và không có @import', () => {
+    expect(TOKENS_CSS.replace(/"/g, "'")).toContain(':where(:root) {');
+    expect(TOKENS_CSS).not.toContain('data-mat-theme');
     expect(TOKENS_CSS).not.toContain('@import');
   });
 });

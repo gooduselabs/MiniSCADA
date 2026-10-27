@@ -10,7 +10,7 @@ import { t } from '../i18n/index.ts';
 
 /** Mẫu của project mới. */
 export type NewProjectTemplate = 'blank' | 'pump' | 'dashboard' | 'diagram';
-/** Chủ đề giao diện trang vận hành (`theme` của project.json 1.1). */
+/** Chủ đề cũ (feature 012): feature 029 chỉ còn một giao diện, giá trị này bị bỏ qua và không ghi vào project.json. */
 export type NewProjectTheme = 'vivid' | 'industrial' | 'dark';
 
 export const NEW_PROJECT_TEMPLATES: readonly NewProjectTemplate[] = [
@@ -19,18 +19,13 @@ export const NEW_PROJECT_TEMPLATES: readonly NewProjectTemplate[] = [
   'dashboard',
   'diagram',
 ];
-/** Chủ đề gợi ý khi chọn mẫu (người dùng đổi lại được). */
-export const TEMPLATE_THEME: Readonly<Partial<Record<NewProjectTemplate, NewProjectTheme>>> = {
-  dashboard: 'dark',
-  diagram: 'dark',
-};
-export const NEW_PROJECT_THEMES: readonly NewProjectTheme[] = ['vivid', 'industrial', 'dark'];
 
 export interface NewProjectOptions {
   name: string;
   id: string;
   template: NewProjectTemplate;
-  theme: NewProjectTheme;
+  /** Bỏ qua (feature 029). */
+  theme?: NewProjectTheme;
 }
 
 export interface NewProjectFiles {
@@ -96,7 +91,6 @@ function blankFiles(o: NewProjectOptions, name: string): Record<string, string> 
         items: [{ label: t('np.blank.screen'), screen: BLANK_SCREEN, icon: 'home' }],
       },
       maxClients: 10,
-      theme: o.theme,
     }),
     'tags.json': text({ schemaVersion: '1.1.0', tags: [] }),
     [`screens/${BLANK_SCREEN}.screen.json`]: text({
@@ -139,7 +133,8 @@ function pumpFiles(o: NewProjectOptions, name: string): Record<string, string> {
   const files: Record<string, string> = {};
   for (const [k, v] of Object.entries(PUMP_RAW)) files[k.slice(PUMP_PREFIX.length)] = v;
   const project = JSON.parse(files['project.json']) as Record<string, unknown>;
-  files['project.json'] = text({ ...project, projectId: o.id, projectName: name, theme: o.theme });
+  delete project.theme;
+  files['project.json'] = text({ ...project, projectId: o.id, projectName: name });
   return files;
 }
 
@@ -187,7 +182,8 @@ function diagramFiles(o: NewProjectOptions, name: string): Record<string, string
   const files: Record<string, string> = {};
   for (const [k, v] of Object.entries(DIAGRAM_RAW)) files[k.slice(DIAGRAM_PREFIX.length)] = v;
   const project = JSON.parse(files['project.json']) as Record<string, unknown>;
-  files['project.json'] = text({ ...project, projectId: o.id, projectName: name, theme: o.theme });
+  delete project.theme;
+  files['project.json'] = text({ ...project, projectId: o.id, projectName: name });
   return files;
 }
 

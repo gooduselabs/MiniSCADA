@@ -34,6 +34,7 @@ export const widgetStyles = css`
     background: var(--mat-surface, #fff);
     border: 1px solid var(--mat-border, #d2d9dc);
     border-radius: var(--mat-radius, 4px);
+    box-shadow: var(--mat-shadow-card, none);
     overflow: hidden;
   }
   /* Khung có thanh tiêu đề (feature 014): biểu đồ, đồng hồ, panel kiểu card, ghi chú, danh sách trạng thái. */
@@ -53,7 +54,7 @@ export const widgetStyles = css`
     line-height: 18px;
     font-weight: 600;
     color: var(--mat-text, #1a2225);
-    background: var(--mat-surface-2, #f5f7f8);
+    background: var(--mat-card-head-bg, var(--mat-surface-2, #f5f7f8));
     border-bottom: 1px solid var(--mat-border, #d2d9dc);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -66,6 +67,27 @@ export const widgetStyles = css`
     display: flex;
     flex-direction: column;
     padding: 8px 10px;
+  }
+  /* Feature 029: nhấp nháy theo ngưỡng; giảm chuyển động thì viền đỏ đứng yên thay cho nhấp nháy. */
+  .blink {
+    animation: mat-blink 1s steps(2, start) infinite;
+  }
+  @keyframes mat-blink {
+    to {
+      visibility: hidden;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .blink {
+      animation: none;
+      outline: 2px solid var(--mat-bad, #c42b2b);
+      outline-offset: 1px;
+    }
+  }
+  .status2 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mat-text-muted, #56646a);
   }
   .w.flat {
     background: transparent;

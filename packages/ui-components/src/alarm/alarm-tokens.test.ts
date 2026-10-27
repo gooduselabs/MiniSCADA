@@ -1,9 +1,8 @@
-// Tương phản của tám màu alarm ở cả hai theme (contracts/ui-alarm.md §5.3, §10: chữ ≥ 4,5:1, SC-012).
+// Tương phản của tám màu alarm (giao diện atscada, feature 029) (contracts/ui-alarm.md §5.3, §10: chữ ≥ 4,5:1, SC-012).
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-// Giá trị industrial (mặc định) nằm ở themes/industrial.css từ feature 012 (tokens.css chỉ còn @import).
-const TOKENS_CSS = readFileSync(resolve(__dirname, '../styles/themes/industrial.css'), 'utf8');
+const TOKENS_CSS = readFileSync(resolve(__dirname, '../styles/themes/atscada.css'), 'utf8');
 
 const COLORS = ['red', 'orange', 'amber', 'blue', 'purple', 'teal', 'gray', 'green'] as const;
 
@@ -35,7 +34,6 @@ export function contrast(a: string, b: string): number {
 describe('token màu alarm', () => {
   const themes: Array<[string, Record<string, string>]> = [
     ['sáng', block(TOKENS_CSS, ':where(:root) {')],
-    ['tối', block(TOKENS_CSS, ":where(:root[data-theme='dark']) {")],
   ];
   it('contrast() đúng ở hai đầu', () => {
     expect(contrast('#000000', '#ffffff')).toBeCloseTo(21, 0);
@@ -62,14 +60,4 @@ describe('token màu alarm', () => {
       }
     });
   }
-  it('khối theme tối theo prefers-color-scheme giống [data-theme=dark]', () => {
-    const dark = themes[1]![1];
-    const media = block(
-      TOKENS_CSS.slice(TOKENS_CSS.indexOf('@media (prefers-color-scheme: dark)')),
-      ":where(:root:not([data-theme='light'])) {",
-    );
-    for (const c of COLORS)
-      for (const suf of ['', '-soft', '-ink'])
-        expect(media[`--mat-alarm-${c}${suf}`]).toBe(dark[`--mat-alarm-${c}${suf}`]);
-  });
 });

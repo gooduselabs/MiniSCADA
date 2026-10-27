@@ -33,11 +33,6 @@ export const viNewProject = {
   'np.tpl.diagram': 'Mẫu sơ đồ công nghệ (SVG)',
   'np.tpl.diagramText':
     'Sơ đồ trạm bơm nước sạch vẽ bằng SVG: bồn có mức, bơm quay, dòng chảy trên ống, cảnh báo, faceplate bơm; chủ đề Tối.',
-  'np.theme': 'Chủ đề giao diện',
-  'np.themeHelp': 'Chủ đề của trang vận hành trên thiết bị; đổi lại được trong Thiết lập project.',
-  'np.theme.vivid': 'Sáng đa sắc',
-  'np.theme.industrial': 'Công nghiệp trầm',
-  'np.theme.dark': 'Tối',
   'np.format': 'Định dạng project 1.1 · runtime tối thiểu 1.1.0 · thiết bị BL335',
   'np.do': 'Tạo project',
   'np.creating': 'Đang tạo…',

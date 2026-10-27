@@ -14,7 +14,7 @@ import {
 } from './line-chart.ts';
 
 describe('bảng màu và kiểu nét chuỗi', () => {
-  it('12 màu dự phòng = 12 token --mat-chart-N của industrial (cùng nguồn với ECharts lite)', () => {
+  it('12 màu dự phòng = 12 token --mat-chart-N của atscada (cùng nguồn với ECharts lite)', () => {
     expect(FALLBACK_SERIES_COLORS).toHaveLength(12);
     expect(new Set(FALLBACK_SERIES_COLORS).size).toBe(12);
     expect(readChartTheme(document.body).colors).toEqual(FALLBACK_SERIES_COLORS);

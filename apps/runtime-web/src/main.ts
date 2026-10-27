@@ -125,8 +125,6 @@ async function main(): Promise<void> {
   if (v === null || v < MIN_CHROME) $('app-browser').textContent = vi.chromeTooOld(MIN_CHROME, v);
 
   const query = new URLSearchParams(location.search);
-  const theme = query.get('theme');
-  if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
   const debug = query.get('debug') === '1';
   const https = location.protocol === 'https:';
 
@@ -211,8 +209,7 @@ async function main(): Promise<void> {
     return;
   }
   const summary = opened.summary;
-  // chủ đề của project (feature 012, FR-030): token --mat-* theo :root[data-mat-theme]
-  document.documentElement.dataset.matTheme = summary.theme ?? 'industrial';
+  // Feature 029: một giao diện duy nhất (atscada); trường theme cũ của project bị bỏ qua.
 
   // ---- Nguồn dữ liệu, phiên, hành động ----
   const proto = https ? 'wss' : 'ws';

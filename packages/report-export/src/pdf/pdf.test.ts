@@ -138,7 +138,7 @@ const LOGO_SVG =
 
 describe('PDF mẫu mới: định nghĩa tài liệu (T048)', () => {
   const t = tableFromVector('report-shift-3-0600');
-  const vivid = REPORT_PALETTES.vivid;
+  const vivid = REPORT_PALETTES.atscada;
 
   // T054 (ảnh trước/sau 012): bảng gần đủ rộng thì trải hết bề rộng trang, thẳng mép phải với dải tiêu đề và thẻ số liệu;
   // bảng ít cột vẫn gọn (không kéo cột số quá rộng).
@@ -165,7 +165,7 @@ describe('PDF mẫu mới: định nghĩa tài liệu (T048)', () => {
     expect(JSON.stringify(def)).not.toContain('Roboto');
   });
 
-  it('dải tiêu đề màu nhấn của chủ đề, chữ tiêu đề và kỳ nằm trong dải; mặc định là vivid', () => {
+  it('dải tiêu đề màu nhấn của chủ đề, chữ tiêu đề và kỳ nằm trong dải; giao diện atscada', () => {
     const def = pdfDefinition(t, META, LABELS);
     const band = nodes(def.content).find((n) => n.fillColor === vivid.accent);
     expect(band, 'ô có nền màu nhấn vivid').toBeDefined();
@@ -175,11 +175,10 @@ describe('PDF mẫu mới: định nghĩa tài liệu (T048)', () => {
     expect(title.color).toBe(vivid.accentInk);
   });
 
-  it('chủ đề industrial lấy màu industrial; dark in trên giấy trắng như vivid', () => {
+  it('chủ đề cũ (industrial, dark) bị bỏ qua: luôn màu atscada (feature 029)', () => {
     const ind = pdfDefinition(t, { ...META, theme: 'industrial' }, LABELS);
     const fills = nodes(ind.content).map((n) => n.fillColor);
-    expect(fills).toContain(REPORT_PALETTES.industrial.accent);
-    expect(fills).not.toContain(vivid.accent);
+    expect(fills).toContain(vivid.accent);
     expect(reportPalette('dark')).toEqual(vivid);
   });
 

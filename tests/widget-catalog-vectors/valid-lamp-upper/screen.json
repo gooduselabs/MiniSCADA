@@ -22,7 +22,8 @@
         "offColor": "#FFFFFF",
         "invert": true,
         "useValueTable": true,
-        "showText": true
+        "showText": true,
+        "blinkOn": true
       },
       "tags": {
         "state": "L.LEVEL"

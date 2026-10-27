@@ -294,21 +294,15 @@ describe('ReportPage: xuất file', () => {
     );
   });
 
-  it('XLSX và PDF nhận chủ đề của trang (data-mat-theme, feature 012 T049); giá trị lạ thì bỏ', async () => {
-    for (const [theme, want] of [
-      ['industrial', 'industrial'],
-      ['dark', 'dark'],
-      ['la', undefined],
-    ] as const) {
-      document.documentElement.dataset.matTheme = theme;
-      const { root, exported } = await ready();
-      for (const k of ['xlsx', 'pdf']) {
-        btn(root, k).click();
-        await flush();
-      }
-      expect(exported.map((e) => e.meta?.theme)).toEqual([want, want]);
-      root.remove();
+  it('XLSX và PDF không nhận chủ đề nữa (feature 029: một giao diện), kể cả khi trang còn data-mat-theme cũ', async () => {
+    document.documentElement.dataset.matTheme = 'dark';
+    const { root, exported } = await ready();
+    for (const k of ['xlsx', 'pdf']) {
+      btn(root, k).click();
+      await flush();
     }
+    expect(exported.map((e) => e.meta?.theme)).toEqual([undefined, undefined]);
+    root.remove();
     delete document.documentElement.dataset.matTheme;
   });
 

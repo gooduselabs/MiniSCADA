@@ -1,6 +1,6 @@
 // E2E Project mới (2026-10-20): tab Bắt đầu khi chưa mở project có hai nút lớn và danh sách gần đây; Ctrl+N mở hộp thoại
 // Project mới, gõ tên thì mã tự sinh, tạo từ mẫu Trống thì cây đầy đủ và màn hình lưới Tổng quan mở sẵn (3 ô trống); tạo lần
-// hai từ bảng lệnh với mẫu Trạm bơm, chủ đề Tối; trùng thư mục thì báo ngay. axe 0 critical/serious ở hai theme. Lớp Tauri
+// hai từ bảng lệnh với mẫu Trạm bơm; trùng thư mục thì báo ngay. axe 0 critical/serious ở hai theme. Lớp Tauri
 // giả, Chrome headless. Ảnh chụp: tests/e2e/out/new-project-*.png.
 import { axeBoth, press, runCommand, setTheme, sleep, text, waitFor } from './util.mjs';
 
@@ -97,7 +97,6 @@ export default async function newProject({ page, check, shot, axe }) {
   );
   await typeName(page, 'Trạm A');
   await page.click('mat-new-project-dialog .np-card[data-template="pump"]');
-  await page.click('mat-new-project-dialog .np-theme[data-theme="dark"]');
   await sleep(100);
   await shot('4-mau-tram-bom');
   await page.click('mat-new-project-dialog [data-role="ok"]');
@@ -110,8 +109,10 @@ export default async function newProject({ page, check, shot, axe }) {
   await page.waitForSelector('mat-grid-editor .ge-cell');
   const project = await page.evaluate(() => JSON.parse(window.__matMock.fileText('project.json')));
   check(
-    'mẫu Trạm bơm: mã, tên, chủ đề Tối',
-    project.projectId === 'tram-a' && project.projectName === 'Trạm A' && project.theme === 'dark',
+    'mẫu Trạm bơm: mã, tên, không ghi chủ đề (feature 029)',
+    project.projectId === 'tram-a' &&
+      project.projectName === 'Trạm A' &&
+      project.theme === undefined,
     JSON.stringify({ id: project.projectId, theme: project.theme }),
   );
   check(

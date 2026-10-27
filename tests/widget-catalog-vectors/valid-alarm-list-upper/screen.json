@@ -116,7 +116,9 @@
           "ackUser"
         ],
         "maxRows": 50,
-        "showAck": true
+        "showAck": true,
+        "search": true,
+        "exportCsv": true
       }
     }
   ]

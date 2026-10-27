@@ -27,7 +27,8 @@
       },
       "tags": {
         "value": "L.LEVEL",
-        "alarm": "L.FLAG"
+        "alarm": "L.FLAG",
+        "status": "L.LEVEL"
       }
     }
   ]

@@ -40,6 +40,5 @@
       }
     ]
   },
-  "maxClients": 10,
-  "theme": "dark"
+  "maxClients": 10
 }

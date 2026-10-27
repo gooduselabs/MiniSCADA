@@ -167,7 +167,7 @@
     },
     "theme": {
       "enum": ["vivid", "industrial", "dark"],
-      "description": "Định dạng 1.1 (feature 012): chủ đề giao diện của trang vận hành; thiếu = industrial."
+      "description": "Định dạng 1.1 (feature 012), lỗi thời từ feature 029: vẫn được đọc để project cũ hợp lệ nhưng bị bỏ qua; trang vận hành và widget chỉ dùng một giao diện ATSCADA."
     }
   },
   "definitions": {

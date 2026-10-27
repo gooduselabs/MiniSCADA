@@ -32,6 +32,9 @@ export class MatWButton extends ControlWidget {
         border-color: var(--mat-accent, #0b7285);
         color: var(--mat-accent-ink, #fff);
       }
+      .btn.active {
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+      }
       .btn.danger {
         background: var(--mat-bad, #c42b2b);
         border-color: var(--mat-bad, #c42b2b);
@@ -53,6 +56,20 @@ export class MatWButton extends ControlWidget {
   #popupLock(): Lock | null {
     const a = this.#action();
     return a?.action === 'popup' && this.mode === 'run' ? popupLock(this.host, a.screen) : null;
+  }
+
+  /**
+   * Feature 029: trạng thái phản hồi từ Tag `feedback` (tùy chọn): đang tác động khi giá trị bằng `activeValue` (so dạng chữ;
+   * rỗng: Tag bool `true` hoặc số khác 0). null khi không gắn Tag phản hồi hoặc chưa có giá trị.
+   */
+  #active(): boolean | null {
+    const id = this.tagOf('feedback');
+    if (!id || !this.source) return null;
+    const v = this.source.get(id).value;
+    if (v === null || v === undefined) return null;
+    const want = this.prop('activeValue', '');
+    if (want === '') return v === true || (typeof v === 'number' && v !== 0);
+    return String(v) === want;
   }
 
   #click = (): void => {
@@ -89,12 +106,17 @@ export class MatWButton extends ControlWidget {
     const label = this.prop('label', '') || name;
     const write = !!a && WRITE.has(a.action);
     const plock = this.#popupLock();
+    const active = this.#active();
+    const bg =
+      active === null ? undefined : this.colorProp(active ? 'activeColor' : 'inactiveColor');
     const disabled = this.mode !== 'run' || !a || (write && !this.ready) || plock !== null;
     return this.frame(
       html`<button
           type="button"
           data-main
-          class="btn ${variant}"
+          class="btn ${variant} ${active === null ? '' : active ? 'active' : 'inactive'}"
+          style=${bg ? `background:${bg};border-color:${bg};color:#fff` : nothing}
+          aria-pressed=${active === null ? nothing : active ? 'true' : 'false'}
           aria-label=${name}
           aria-describedby=${plock ? 'lock' : (this.describedBy() ?? nothing)}
           ?disabled=${disabled}

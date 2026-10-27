@@ -16,7 +16,7 @@ import { AppElement, icon } from '../base.ts';
 import { registerEditor } from '../registry.ts';
 import './tag-grid.css';
 
-type FieldKey = ProjectField | 'projectId' | 'minRuntimeVersion';
+type FieldKey = Exclude<ProjectField, 'theme'> | 'projectId' | 'minRuntimeVersion';
 
 const FIELDS: Readonly<Record<FieldKey, { label: MessageKey; help: MessageKey }>> = {
   projectName: { label: 'settings.projectName', help: 'settings.projectName.help' },
@@ -24,7 +24,6 @@ const FIELDS: Readonly<Record<FieldKey, { label: MessageKey; help: MessageKey }>
   projectVersion: { label: 'settings.projectVersion', help: 'settings.projectVersion.help' },
   entryScreen: { label: 'settings.entryScreen', help: 'settings.entryScreen.help' },
   maxClients: { label: 'settings.maxClients', help: 'settings.maxClients.help' },
-  theme: { label: 'settings.theme', help: 'settings.theme.help' },
   minRuntimeVersion: {
     label: 'settings.minRuntimeVersion',
     help: 'settings.minRuntimeVersion.help',
@@ -176,30 +175,12 @@ export class SettingsEditor extends AppElement {
     );
   }
 
-  /** Chủ đề giao diện của trang vận hành và xem trước (định dạng 1.1, feature 012); thiếu = Công nghiệp trầm. */
-  private themeField(value: string, issues: IssuesByField) {
-    const spec = FIELDS.theme;
-    const cur = value || 'industrial';
-    return this.field(
-      'theme',
-      spec.label,
-      spec.help,
-      issues.get('theme'),
-      (describedBy, bad) =>
-        html`<select
-          class="select ${bad ? 'bad' : ''}"
-          id="set-theme"
-          aria-describedby=${describedBy}
-          @change=${(e: Event) => this.edit('theme', (e.currentTarget as HTMLSelectElement).value)}
-        >
-          ${(['vivid', 'industrial', 'dark'] as const).map(
-            (v) =>
-              html`<option value=${v} .selected=${live(v === cur)}>
-                ${t(`settings.theme.${v}` as MessageKey)}
-              </option>`,
-          )}
-        </select>`,
-    );
+  /** Feature 029: không còn chọn chủ đề; project cũ có `theme` thì chỉ báo nhẹ là trường này bị bỏ qua. */
+  private themeNote(value: string) {
+    if (!value) return nothing;
+    return html`<p class="help" id="set-theme-note" role="note">
+      ${t('settings.theme.ignored', { v: value })}
+    </p>`;
   }
 
   private clientsField(value: string, issues: IssuesByField) {
@@ -307,8 +288,7 @@ export class SettingsEditor extends AppElement {
         <fieldset>
           <legend>${t('settings.runtime')}</legend>
           ${this.entryField(asText(p.entryScreen), s.outline.screens, byField)}
-          ${this.clientsField(asText(p.maxClients), byField)}
-          ${s.outline.format11 ? this.themeField(asText(p.theme), byField) : nothing}
+          ${this.clientsField(asText(p.maxClients), byField)} ${this.themeNote(asText(p.theme))}
           ${this.readonlyField('minRuntimeVersion', asText(p.minRuntimeVersion), byField)}
         </fieldset>
         ${

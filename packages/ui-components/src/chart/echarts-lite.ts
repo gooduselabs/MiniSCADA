@@ -59,7 +59,7 @@ export interface ChartTheme {
   motionMs: number;
 }
 
-// Giá trị industrial sáng (themes/industrial.css): dùng khi nơi chứa chưa nạp token.
+// Giá trị atscada (themes/atscada.css): dùng khi nơi chứa chưa nạp token.
 const FALLBACK_CHART = FALLBACK_SERIES_COLORS;
 
 export function readChartTheme(el: Element): ChartTheme {
@@ -71,16 +71,16 @@ export function readChartTheme(el: Element): ChartTheme {
   const motion = /^(\d+(?:\.\d+)?)(ms|s)$/.exec(tok('motion', '120ms'));
   return {
     colors: FALLBACK_CHART.map((fb, i) => color(`chart-${i + 1}`, fb)),
-    text: color('text', '#1a2225'),
-    muted: color('text-muted', '#56646a'),
-    border: color('border', '#d2d9dc'),
-    borderStrong: color('border-strong', '#b3bec3'),
+    text: color('text', '#2d353c'),
+    muted: color('text-muted', '#56616b'),
+    border: color('border', '#d5dbe0'),
+    borderStrong: color('border-strong', '#b6c2c9'),
     surface: color('surface', '#ffffff'),
-    surface2: color('surface-2', '#f5f7f8'),
-    bad: color('bad', '#c42b2b'),
-    warn: color('warn', '#8f5e00'),
+    surface2: color('surface-2', '#f2f3f4'),
+    bad: color('bad', '#b13f3c'),
+    warn: color('warn', '#905c0d'),
     font: tok('font', "'Segoe UI', system-ui, sans-serif"),
-    radius: parseFloat(tok('radius', '4px')) || 4,
+    radius: parseFloat(tok('radius', '3px')) || 3,
     shadow: tok('shadow', '0 2px 6px rgba(0, 0, 0, 0.15)'),
     motionMs: motion ? Number(motion[1]) * (motion[2] === 's' ? 1000 : 1) : 120,
   };

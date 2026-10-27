@@ -44,8 +44,8 @@ describe('mat-screen-editor: bố cục lưới', () => {
       const grid = await open('tong-quan');
       expect(grid.el.querySelector('mat-grid-editor')).not.toBeNull();
       expect(grid.el.querySelector('mat-screen-canvas')).toBeNull();
-      // xem trước theo chủ đề của project (FR-030): token --mat-* của widget đổi theo
-      expect(document.documentElement.dataset.matTheme).toBe('vivid');
+      // feature 029: một giao diện, không đặt data-mat-theme theo project
+      expect(document.documentElement.dataset.matTheme).toBeUndefined();
       cleanup();
       const free = await open('main');
       expect(free.el.querySelector('mat-screen-canvas')).not.toBeNull();

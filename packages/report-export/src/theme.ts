@@ -1,6 +1,6 @@
-// Bảng màu báo cáo theo chủ đề (feature 012, FR-038, contracts/ui-theme.md). Giá trị chép từ khối sáng của
-// packages/ui-components/src/styles/themes/*.css (theme.test.ts kiểm khớp) để gói này không phụ thuộc ui-components.
-// Báo cáo luôn in trên giấy trắng: chủ đề `dark` dùng bảng màu vivid (nền tối tốn mực và khó đọc khi in).
+// Bảng màu báo cáo (feature 012 FR-038; feature 029: một giao diện duy nhất atscada). Giá trị chép từ
+// packages/ui-components/src/styles/themes/atscada.css (theme.test.ts kiểm khớp) để gói này không phụ thuộc ui-components.
+// Trường `theme` cũ của meta vẫn nhận nhưng bị bỏ qua.
 
 import type { ReportTheme } from './types.ts';
 
@@ -21,97 +21,61 @@ export interface ReportPalette {
   chartSoft: string[];
 }
 
-const vivid: ReportPalette = {
-  accent: '#3e63dd',
+const atscada: ReportPalette = {
+  accent: '#007272',
   accentInk: '#ffffff',
-  text: '#1c2024',
-  muted: '#60646c',
-  border: '#d9d9e0',
-  zebra: '#f0f0f3',
+  text: '#2d353c',
+  muted: '#56616b',
+  border: '#d5dbe0',
+  zebra: '#f2f3f4',
   chart: [
-    '#0090ff',
-    '#12a594',
-    '#30a46c',
-    '#ab6400',
-    '#ef5f00',
-    '#e5484d',
-    '#e93d82',
-    '#d6409f',
-    '#6e56cf',
-    '#3e63dd',
-    '#00a2c7',
-    '#5c7c2f',
+    '#348fe2',
+    '#00a5a5',
+    '#d08416',
+    '#ff5b57',
+    '#727cb6',
+    '#709e3a',
+    '#3d9bb5',
+    '#8753de',
+    '#2d353c',
+    '#fb5597',
+    '#8a6d3b',
+    '#b29100',
   ],
   chartSoft: [
-    '#e6f4fe',
-    '#e0f8f3',
-    '#e6f6eb',
-    '#fff7c2',
-    '#ffefd6',
-    '#feebec',
-    '#ffe9f0',
-    '#fee9f5',
-    '#f4f0fe',
-    '#edf2fe',
-    '#def7f9',
-    '#eef6d6',
+    '#e3effb',
+    '#dbf3f3',
+    '#fef1df',
+    '#ffe8e7',
+    '#ebedf5',
+    '#eff8e6',
+    '#e6f5f9',
+    '#eee7fa',
+    '#e2e3e4',
+    '#fee7f0',
+    '#efebe4',
+    '#f7f2db',
   ],
 };
 
-const industrial: ReportPalette = {
-  accent: '#0b7285',
-  accentInk: '#ffffff',
-  text: '#1a2225',
-  muted: '#56646a',
-  border: '#d2d9dc',
-  zebra: '#f5f7f8',
-  chart: [
-    '#0b7285',
-    '#c2410c',
-    '#6f42c1',
-    '#15703a',
-    '#b4234a',
-    '#1c64c4',
-    '#8f5e00',
-    '#56646a',
-    '#3a5bc7',
-    '#815e46',
-    '#953ea3',
-    '#5c7c2f',
-  ],
-  chartSoft: [
-    '#ddebee',
-    '#f6e4dd',
-    '#ebe5f6',
-    '#deebe3',
-    '#f5e0e6',
-    '#dfe9f7',
-    '#efe8db',
-    '#e7e9ea',
-    '#e3e8f7',
-    '#ede8e5',
-    '#f0e4f2',
-    '#e8ede2',
-  ],
-};
+export const REPORT_PALETTES: Record<'atscada', ReportPalette> = { atscada };
 
-export const REPORT_PALETTES: Record<'vivid' | 'industrial', ReportPalette> = { vivid, industrial };
-
-/** Bảng màu của chủ đề; không đặt hoặc lạ thì vivid (mẫu mới, mặc định của project mới). */
-export function reportPalette(theme: ReportTheme | undefined): ReportPalette {
-  return theme === 'industrial' ? industrial : vivid;
+/** Bảng màu báo cáo: luôn là atscada; tham số chủ đề cũ bị bỏ qua (feature 029). */
+export function reportPalette(theme?: ReportTheme): ReportPalette {
+  void theme;
+  return atscada;
 }
 
-/** Màu nền thẻ chỉ số (feature 014/015): cùng giá trị `--mat-tile-*` ở mọi chủ đề, chữ trắng ≥ 4,5:1. */
+/** Màu nền thẻ chỉ số (feature 014/015): cùng giá trị `--mat-tile-*`, chữ trắng ≥ 4,5:1. */
 export const TILE_HEX: Record<string, string> = {
-  teal: '#0f7f75',
-  blue: '#2563eb',
-  rose: '#e11d48',
-  violet: '#7c3aed',
-  olive: '#4d7c0f',
-  indigo: '#4f46e5',
-  orange: '#c2410c',
-  cyan: '#0e7490',
-  green: '#15803d',
-  slate: '#475569',
+  teal: '#008181',
+  blue: '#2c7ac0',
+  rose: '#c84845',
+  violet: '#6972a8',
+  olive: '#5c8130',
+  indigo: '#8753de',
+  orange: '#a36810',
+  cyan: '#337f94',
+  green: '#268426',
+  slate: '#2d353c',
 };

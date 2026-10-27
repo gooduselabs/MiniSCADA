@@ -23,6 +23,8 @@ export interface Draft {
   current: TagState;
   confirm: 'always' | 'none';
   text?: string;
+  /** Feature 029: các lệnh ghi kèm theo (widget ghi nhiều Tag, vd. time-range), gửi lần lượt sau `spec` một lần xác nhận. */
+  more?: WriteSpec[];
 }
 
 export type ControlState =
@@ -46,6 +48,11 @@ export interface ControlDeps {
    * là `elementUid`, quyền theo item `svg` chứa nó.
    */
   accessItem?: string;
+  /**
+   * Feature 029: khe Tag ghi của widget ghi nhiều Tag (vd. time-range); vắng thì `target`. Tag chính (`tag`) là Tag đầu
+   * tiên có gắn theo thứ tự này.
+   */
+  slots?: readonly string[];
 }
 
 const TYPE_RANGE: Partial<Record<TagInfo['type'], [number, number]>> = {
@@ -101,8 +108,12 @@ export class ControlController {
   }
 
   get tag(): string | undefined {
-    const t = this.#d.item.tags?.['target'];
-    return Array.isArray(t) ? t[0] : t;
+    for (const slot of this.#d.slots ?? ['target']) {
+      const t = this.#d.item.tags?.[slot];
+      const id = Array.isArray(t) ? t[0] : t;
+      if (id) return id;
+    }
+    return undefined;
   }
 
   get state(): ControlState {
@@ -170,6 +181,45 @@ export class ControlController {
     }
     if (!this.#modal.acquire(this)) return false;
     this.#draft = draft;
+    this.#phase = 'confirming';
+    this.#emit();
+    return true;
+  }
+
+  /**
+   * Feature 029: ghi nhiều Tag (số) với một lần xác nhận, kiểm từng giá trị như `propose('write', …)`; gửi lần lượt,
+   * dừng ở lệnh đầu tiên không thành công. Trả false khi bị khóa hoặc giá trị lỗi (`error`).
+   */
+  proposeMany(entries: ReadonlyArray<{ tag: string; value: number }>, text?: string): boolean {
+    this.error = null;
+    if (this.#phase !== 'idle' || entries.length === 0) return false;
+    if (this.#lock()) {
+      this.#emit();
+      return false;
+    }
+    const specs: WriteSpec[] = [];
+    let firstInfo: TagInfo | undefined;
+    for (const e of entries) {
+      const info = this.#d.source.info(e.tag);
+      if (!info || info.access !== 'RW' || info.kind === 'calculated') return false;
+      firstInfo ??= info;
+      const built = this.#build('write', e.value, undefined, info, this.#d.source.get(e.tag));
+      if (typeof built === 'string') {
+        this.error = built;
+        this.#emit();
+        return false;
+      }
+      specs.push(built);
+    }
+    if (!this.#modal.acquire(this)) return false;
+    this.#draft = {
+      spec: specs[0]!,
+      info: firstInfo!,
+      current: this.#d.source.get(specs[0]!.tag),
+      confirm: 'always',
+      ...(text ? { text } : {}),
+      more: specs.slice(1),
+    };
     this.#phase = 'confirming';
     this.#emit();
     return true;
@@ -261,14 +311,26 @@ export class ControlController {
     const spec: WriteSpec & { requestId: string } = { ...draft.spec, requestId };
     const live = () =>
       !this.#disposed && this.#phase === 'sending' && this.#requestId === requestId;
+    const progress = (o: WriteOutcome) => {
+      if (live() && o.status === 'ACCEPTED') {
+        this.#accepted = true;
+        this.#emit();
+      }
+    };
     let p: Promise<WriteOutcome>;
     try {
-      p = this.#d.host.write(spec, (o) => {
-        if (live() && o.status === 'ACCEPTED') {
-          this.#accepted = true;
-          this.#emit();
-        }
-      });
+      p = this.#d.host.write(spec, progress);
+      // Feature 029: lệnh kèm theo gửi lần lượt, mỗi lệnh một requestId; dừng ở lệnh đầu không thành công.
+      for (const extra of draft.more ?? []) {
+        p = p.then((o) =>
+          live() && (o.status === 'CONFIRMED' || o.status === 'ACCEPTED')
+            ? this.#d.host.write(
+                { ...extra, requestId: this.#d.uuid() } as WriteSpec & { requestId: string },
+                progress,
+              )
+            : o,
+        );
+      }
     } catch (e) {
       p = Promise.reject(e instanceof Error ? e : new Error(String(e)));
     }
@@ -349,7 +411,7 @@ export class ControlController {
     }
     if (!Number.isFinite(n)) return VALUE_ERR.notNumber;
     if (INTEGER_TYPES.has(info.type) && !Number.isInteger(n)) return VALUE_ERR.notInteger;
-    const lim = this.limits();
+    const lim = effectiveLimits(this.#d.item, info);
     if ((lim.min !== undefined && n < lim.min) || (lim.max !== undefined && n > lim.max)) {
       return VALUE_ERR.range(lim.min, lim.max);
     }

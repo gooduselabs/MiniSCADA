@@ -95,7 +95,7 @@ describe('mat-w-pie (FR-030)', () => {
     src.set('a', { value: 1, quality: 'GOOD' });
     src.set('b', { value: 3, quality: 'GOOD' });
     const el = await mount(pie(['a', 'b'], { labels: ['<b>X</b>', 'Y'], decimals: 0 }), src);
-    expect(slices(el).map((x) => x.itemStyle.color)).toEqual(['#0b7285', '#c2410c']);
+    expect(slices(el).map((x) => x.itemStyle.color)).toEqual(['#348fe2', '#00a5a5']);
     const sw = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.legend .sw')];
     expect(sw[1]!.getAttribute('style')).toContain('--mat-chart-2');
     const tip = callFormatter((ec.option().tooltip as { formatter: unknown }).formatter, {

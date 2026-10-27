@@ -2,13 +2,9 @@
 // như vi.ts.
 export const viLayout = {
   'lay.toolbar': 'Bố cục lưới',
-  // chủ đề (Thiết lập project)
-  'settings.theme': 'Chủ đề giao diện',
-  'settings.theme.help':
-    'Màu, phông, bo góc của trang vận hành và xem trước màn hình. Công nghiệp trầm là giao diện cũ.',
-  'settings.theme.vivid': 'Sáng đa sắc',
-  'settings.theme.industrial': 'Công nghiệp trầm',
-  'settings.theme.dark': 'Tối',
+  // chủ đề cũ (Thiết lập project): feature 029 chỉ còn một giao diện ATSCADA
+  'settings.theme.ignored':
+    'Trường theme cũ ({v}) của project được bỏ qua: trang vận hành và xem trước dùng một giao diện ATSCADA duy nhất.',
   'lay.addRow': 'Thêm hàng',
   'lay.addRowTitle': 'Thêm hàng chia theo mẫu cột (lưới 12 cột)',
   'lay.presetMenu': 'Mẫu chia cột',

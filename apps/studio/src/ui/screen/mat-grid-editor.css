@@ -241,3 +241,106 @@ mat-grid-editor .ge-divider {
 mat-grid-editor .ge-divider:hover {
   background: var(--accent);
 }
+
+/* ---- Feature 029: thao tác ít bấm ---- */
+/* thêm hàng một chạm */
+mat-grid-editor .ge-quick {
+  display: inline-flex;
+  gap: 2px;
+}
+mat-grid-editor .ge-qp {
+  padding: 0 4px;
+}
+mat-grid-editor .ge-qp .ge-preview {
+  width: 40px;
+}
+/* thanh nhỏ trên ô đang chọn */
+mat-grid-editor .ge-mini {
+  position: absolute;
+  top: -14px;
+  right: 6px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 1px 2px;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-size: var(--fs-xs);
+}
+mat-grid-editor .ge-mini button {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+mat-grid-editor .ge-mini button:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+mat-grid-editor .ge-mini button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+mat-grid-editor .ge-mini-n {
+  padding: 0 3px;
+  font-family: var(--mono);
+}
+mat-grid-editor .ge-grip,
+mat-grid-editor .ge-rowgrip {
+  cursor: grab;
+  color: var(--muted);
+  padding: 0 3px;
+  user-select: none;
+}
+mat-grid-editor .ge-rowgrip {
+  position: absolute;
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  letter-spacing: -3px;
+}
+mat-grid-editor .ge-rowgrip:hover,
+mat-grid-editor .ge-grip:hover {
+  color: var(--accent);
+}
+/* cạnh phải của ô cuối hàng: kéo đổi số cột */
+mat-grid-editor .ge-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -3px;
+  width: 6px;
+  cursor: ew-resize;
+  border-radius: 3px;
+}
+mat-grid-editor .ge-edge:hover,
+mat-grid-editor .ge-cell.sel .ge-edge {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+/* đường lưới 12 cột hiện rõ khi kéo */
+mat-grid-editor .ge.dragging .ge-cell {
+  border: 1px dashed var(--accent);
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 12%, transparent) 0 1px,
+    transparent 1px calc(100% / 12)
+  );
+}
+mat-grid-editor .ge.dragging .ge-divider {
+  background: var(--accent);
+}
+mat-grid-editor .ge-mini-host {
+  pointer-events: none;
+}
+mat-grid-editor .ge-mini-host .ge-mini {
+  pointer-events: auto;
+}

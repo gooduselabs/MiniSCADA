@@ -840,6 +840,36 @@
         "kind": "manual",
         "initial": 1
       }
+    },
+    {
+      "id": "DEMO.T_START",
+      "kind": "simulation",
+      "type": "INT16",
+      "description": "Giờ bắt đầu mẫu (phút trong ngày)",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 1439
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 360
+      }
+    },
+    {
+      "id": "DEMO.T_END",
+      "kind": "simulation",
+      "type": "INT16",
+      "description": "Giờ kết thúc mẫu (phút trong ngày)",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 1439
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 1080
+      }
     }
   ]
 }

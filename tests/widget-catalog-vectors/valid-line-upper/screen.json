@@ -33,6 +33,16 @@
         ],
         "xLabel": "ằằằằằằằằằằằằằằằằằằằằằằằằ",
         "yLabel": "ằằằằằằằằằằằằằằằằằằằằằằằằ",
+        "colors": [
+          "#FFFFFF",
+          "#FFFFFF",
+          "#FFFFFF",
+          "#FFFFFF",
+          "#FFFFFF",
+          "#FFFFFF",
+          "#FFFFFF",
+          "#FFFFFF"
+        ],
         "yMin": -1000,
         "yMax": 1000
       },

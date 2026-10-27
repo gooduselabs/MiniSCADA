@@ -83,20 +83,20 @@ export const SERIES_DASHES: number[][] = [
   [14, 3, 2, 3, 2, 3],
 ];
 
-/** Màu dự phòng khi token --mat-chart-N chưa có (jsdom, trang chưa nạp token): 12 màu của chủ đề industrial. */
+/** Màu dự phòng khi token --mat-chart-N chưa có (jsdom, trang chưa nạp token): 12 màu của giao diện atscada. */
 export const FALLBACK_SERIES_COLORS = [
-  '#0b7285',
-  '#c2410c',
-  '#6f42c1',
-  '#15703a',
-  '#b4234a',
-  '#1c64c4',
-  '#8f5e00',
-  '#56646a',
-  '#3a5bc7',
-  '#815e46',
-  '#953ea3',
-  '#5c7c2f',
+  '#348fe2',
+  '#00a5a5',
+  '#d08416',
+  '#ff5b57',
+  '#727cb6',
+  '#709e3a',
+  '#3d9bb5',
+  '#8753de',
+  '#2d353c',
+  '#fb5597',
+  '#8a6d3b',
+  '#b29100',
 ];
 
 // ---- giao diện uPlot dùng chung (feature 012, T045): line và history-trend ----

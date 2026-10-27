@@ -18,11 +18,11 @@
             "ranges": [
               {
                 "to": 50,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "from": 50,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               }
             ]
           }

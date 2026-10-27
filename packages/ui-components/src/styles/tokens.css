@@ -1,15 +1,10 @@
-/* Token --mat-* của thư viện widget (contracts/ui-components-api.md §8, feature 012 contracts/ui-theme.md). Ba chủ đề sinh
-   bởi tools/gen-theme-tokens.mjs (themes/*.css, không sửa tay):
-   - industrial (Công nghiệp trầm): mặc định khi :root không có data-mat-theme; giá trị cũ, cùng giá trị với token của
-     Studio (apps/studio/src/theme/tokens.css, studio-ux.md §7); sáng và tối theo :root[data-theme] và prefers-color-scheme;
-   - vivid (Sáng đa sắc) và dark (Tối): :root[data-mat-theme='vivid' | 'dark'].
-   Mọi bộ chọn bọc :where() (độ ưu tiên 0): trang chủ đặt lại token trên :root luôn thắng; giữa các chủ đề, thứ tự nạp dưới
-   đây quyết định. Widget không dùng mã màu cứng ngoài màu do project đặt. Trang nạp tệp này qua Vite (@import được gộp);
-   installTokens() (tokens.ts) nạp cùng nội dung cho nơi chứa chưa nạp. Đổi @font-face ở đây thì đổi cả FONT_FACES ở tokens.ts. */
+/* Token --mat-* của thư viện widget (contracts/ui-components-api.md §8). Feature 029: một giao diện duy nhất kiểu ATSCADA
+   FastWeb, sinh bởi tools/gen-theme-tokens.mjs (themes/atscada.css, không sửa tay). Không còn nhiều chủ đề và không còn
+   data-mat-theme. Bộ chọn bọc :where() (độ ưu tiên 0): trang chủ đặt lại token trên :root luôn thắng. Widget không dùng mã
+   màu cứng ngoài màu do project đặt. Trang nạp tệp này qua Vite (@import được gộp); installTokens() (tokens.ts) nạp cùng nội
+   dung cho nơi chứa chưa nạp. Đổi @font-face ở đây thì đổi cả FONT_FACES ở tokens.ts. */
 
-@import './themes/industrial.css';
-@import './themes/vivid.css';
-@import './themes/dark.css';
+@import './themes/atscada.css';
 
 /* Inter Variable (OFL-1.1, fonts/LICENSE-Inter.txt): đi kèm sản phẩm, không tải từ Internet (FR-036). latin-ext của Inter
    thiếu U+1EA0-1EF1 nên cần thêm tập vietnamese mới đủ dấu tiếng Việt. Trình duyệt chỉ tải tệp khi chữ cần đến phông. */

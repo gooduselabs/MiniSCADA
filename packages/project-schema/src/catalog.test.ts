@@ -40,11 +40,13 @@ const IDS = [
   'history-bar',
   'history-pie',
 ];
+// danh mục 0.7.0 (feature 029): hẹn giờ Từ–Đến (sau select)
+IDS.splice(IDS.indexOf('select') + 1, 0, 'time-range');
 
 describe('danh mục widget', () => {
-  it('có đúng 28 id theo contract (15 của 007, 2 của 009, 4 của 010, 7 của 014)', () => {
+  it('có đúng 29 id theo contract (15 của 007, 2 của 009, 4 của 010, 7 của 014, 1 của 029)', () => {
     expect(WIDGET_CATALOG.widgets.map((w) => w.id)).toEqual(IDS);
-    expect(WIDGET_CATALOG.catalogVersion).toBe('0.6.0');
+    expect(WIDGET_CATALOG.catalogVersion).toBe('0.7.0');
   });
 
   it('id đúng dạng, nhóm hợp lệ, minSize <= defaultSize', () => {
@@ -203,6 +205,7 @@ describe('danh mục widget', () => {
     expect(catalogWidget('stat-tile')!.slots.map((s) => [s.name, s.required])).toEqual([
       ['value', true],
       ['alarm', false],
+      ['status', false],
     ]);
     expect(catalogWidget('status-list')!.slots[0]).toMatchObject({ multi: true, max: 16 });
     expect(catalogWidget('clock')!.slots).toEqual([]);

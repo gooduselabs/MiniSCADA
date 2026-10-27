@@ -3,6 +3,7 @@
 // con trỏ (±25 %), Shift+kéo = dịch, bấm đúp = về khoảng ban đầu, bàn phím (mũi tên, +/-, Home). Khoảng đổi → sau
 // 250 ms hủy yêu cầu cũ và hỏi lại với maxPoints = min(2000, 2 × bề rộng vùng vẽ); giữ hình cũ khi chờ.
 import { css, html, nothing, unsafeCSS, type TemplateResult } from 'lit';
+import { safeColor } from '../format/color.ts';
 import { styleMap } from 'lit/directives/style-map.js';
 import uplotCss from 'uplot/dist/uPlot.min.css?raw';
 import { axisTime, localTime } from '../chart/history-fmt.ts';
@@ -325,8 +326,12 @@ export class MatHistoryTrend extends MatHistoryWidget {
   }
 
   #colors(): string[] {
-    return this.#tags().map((_, i) =>
-      cssVar(this, `--mat-chart-${i + 1}`, FALLBACK_SERIES_COLORS[i]!),
+    // Feature 029: màu riêng từng chuỗi (prop `colors`, `auto` hoặc thiếu thì theo token).
+    const own = this.item?.props?.['colors'];
+    return this.#tags().map(
+      (_, i) =>
+        (Array.isArray(own) ? safeColor(own[i]) : undefined) ??
+        cssVar(this, `--mat-chart-${i + 1}`, FALLBACK_SERIES_COLORS[i]!),
     );
   }
 

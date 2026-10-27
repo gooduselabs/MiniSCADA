@@ -1,5 +1,5 @@
-/* Trang /login: khung hai cột (thương hiệu + biểu mẫu), token --mat-* của chủ đề vivid (sáng) hoặc dark (tối theo hệ
-   thống; login-main.ts đặt data-mat-theme). Cửa sổ hẹp: hai khối xếp chồng. Không ảnh, không phông ngoài. */
+/* Trang /login: khung hai cột (thương hiệu + biểu mẫu), token --mat-* của giao diện atscada (feature 029,
+   một giao diện). Cửa sổ hẹp: hai khối xếp chồng. Không ảnh, không phông ngoài. */
 * {
   box-sizing: border-box;
 }

@@ -38,7 +38,7 @@
             "ranges": [
               {
                 "to": 1,
-                "value": "#0f2131"
+                "value": "#ffffff"
               },
               {
                 "from": 1,
@@ -922,18 +922,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         },
         {
@@ -1012,18 +1012,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#334155"
+                "value": "#6d757a"
               },
               {
                 "equals": 1,
-                "value": "#15803d"
+                "value": "#007272"
               },
               {
                 "equals": 2,
-                "value": "#b91c1c"
+                "value": "#b13f3c"
               }
             ],
-            "default": "#334155"
+            "default": "#6d757a"
           }
         }
       ]
@@ -1107,18 +1107,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         },
         {
@@ -1197,18 +1197,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#334155"
+                "value": "#6d757a"
               },
               {
                 "equals": 1,
-                "value": "#15803d"
+                "value": "#007272"
               },
               {
                 "equals": 2,
-                "value": "#b91c1c"
+                "value": "#b13f3c"
               }
             ],
-            "default": "#334155"
+            "default": "#6d757a"
           }
         }
       ]
@@ -1292,18 +1292,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         },
         {
@@ -1382,18 +1382,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#334155"
+                "value": "#6d757a"
               },
               {
                 "equals": 1,
-                "value": "#15803d"
+                "value": "#007272"
               },
               {
                 "equals": 2,
-                "value": "#b91c1c"
+                "value": "#b13f3c"
               }
             ],
-            "default": "#334155"
+            "default": "#6d757a"
           }
         }
       ]
@@ -1497,11 +1497,11 @@
             "cases": [
               {
                 "equals": true,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": false,
-                "value": "#64748b"
+                "value": "#929ba1"
               }
             ]
           }
@@ -1707,18 +1707,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         },
         {
@@ -1797,18 +1797,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#334155"
+                "value": "#6d757a"
               },
               {
                 "equals": 1,
-                "value": "#15803d"
+                "value": "#007272"
               },
               {
                 "equals": 2,
-                "value": "#b91c1c"
+                "value": "#b13f3c"
               }
             ],
-            "default": "#334155"
+            "default": "#6d757a"
           }
         }
       ]
@@ -1892,18 +1892,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         },
         {
@@ -1982,18 +1982,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#334155"
+                "value": "#6d757a"
               },
               {
                 "equals": 1,
-                "value": "#15803d"
+                "value": "#007272"
               },
               {
                 "equals": 2,
-                "value": "#b91c1c"
+                "value": "#b13f3c"
               }
             ],
-            "default": "#334155"
+            "default": "#6d757a"
           }
         }
       ]
@@ -2133,18 +2133,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         },
         {
@@ -2335,18 +2335,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         }
       ]
@@ -2386,18 +2386,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         }
       ]
@@ -2437,18 +2437,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         }
       ]
@@ -2488,18 +2488,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         }
       ]
@@ -2539,18 +2539,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         }
       ]
@@ -2590,18 +2590,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         }
       ]

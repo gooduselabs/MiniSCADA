@@ -578,7 +578,7 @@ export default async function reports({ page, check, shot, axe, url }) {
     'mat-reports-list [data-preset]',
     (b) => b.filter((x) => x.getAttribute('aria-disabled') !== 'true').length,
   );
-  check('1.1: cả 7 mẫu có sẵn dùng được', cards === 7, String(cards));
+  check('1.1: cả 8 mẫu có sẵn dùng được (029: điện năng tháng)', cards === 8, String(cards));
   await axeBoth(page, axe, 'thư viện mẫu báo cáo');
 
   // ---------- Tóm tắt ----------  mkdirSync(dirname(SMOKE), { recursive: true });

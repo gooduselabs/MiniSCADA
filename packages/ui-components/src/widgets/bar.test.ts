@@ -98,7 +98,7 @@ describe('mat-w-bar (FR-030, FR-033)', () => {
     src.set('t1', { value: 2, quality: 'UNCERTAIN' });
     await mountChart(bar(ids), src);
     const s = series(ec.option());
-    expect(s.data[0]!.itemStyle.color).toBe('#0b7285'); // --mat-chart-1 industrial
+    expect(s.data[0]!.itemStyle.color).toBe('#348fe2'); // --mat-chart-1 atscada
     expect(new Set(s.data.map((d) => d.itemStyle.color)).size).toBe(12);
     expect(s.data[1]!.value).toBe(2);
     expect(s.data[1]!.itemStyle.opacity).toBe(1);

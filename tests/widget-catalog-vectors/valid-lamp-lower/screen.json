@@ -22,7 +22,8 @@
         "offColor": "auto",
         "invert": false,
         "useValueTable": false,
-        "showText": false
+        "showText": false,
+        "blinkOn": false
       },
       "tags": {
         "state": "L.LEVEL"

@@ -43,6 +43,7 @@ export const viHistory = {
   table: {
     empty: 'Không có dòng nào trong khoảng này',
     exportCsv: 'Xuất CSV',
+    search: 'Tìm trong trang',
     older: 'Trang cũ hơn',
     newer: 'Trang mới hơn',
     first: 'Về đầu',

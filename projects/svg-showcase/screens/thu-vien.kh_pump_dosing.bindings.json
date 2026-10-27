@@ -39,18 +39,18 @@
             "cases": [
               {
                 "equals": 0,
-                "value": "#64748b"
+                "value": "#929ba1"
               },
               {
                 "equals": 1,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": 2,
-                "value": "#ef4444"
+                "value": "#e5403b"
               }
             ],
-            "default": "#64748b"
+            "default": "#929ba1"
           }
         }
       ]

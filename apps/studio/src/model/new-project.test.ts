@@ -6,7 +6,6 @@ import {
   buildNewProject,
   isValidProjectId,
   projectIdFromName,
-  TEMPLATE_THEME,
   type NewProjectTemplate,
   type NewProjectTheme,
 } from './new-project.ts';
@@ -83,7 +82,7 @@ describe('buildNewProject', () => {
     expect(p.schemaVersion).toBe('1.1.0');
     expect(p.projectId).toBe('tram-bom-so-1');
     expect(p.projectName).toBe('Trạm bơm Số 1');
-    expect(p.theme).toBe(theme);
+    expect(p.theme, theme).toBeUndefined(); // feature 029: không ghi chủ đề
     expect(p.entryScreen).toBe(r.entryScreen);
     // Mọi file đều có đường dẫn tương đối an toàn, không có thư mục ẩn.
     for (const rel of Object.keys(r.files)) {
@@ -152,7 +151,6 @@ describe('buildNewProject', () => {
     const s = r.files['screens/bang-dieu-khien.screen.json']!;
     expect(s).toMatch(/"widget":s*"stat-tile"/);
     expect(s).toMatch(/"highLimit"/);
-    expect(TEMPLATE_THEME.dashboard).toBe('dark');
   });
 
   it('tên được cắt khoảng trắng hai đầu', () => {

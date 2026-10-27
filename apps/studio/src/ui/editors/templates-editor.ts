@@ -196,13 +196,6 @@ export class TemplatesEditor extends AppElement {
     this.requestUpdate();
   }
 
-  protected override updated(): void {
-    // Chủ đề của project (feature 012): token --mat-* của báo cáo xem trước theo nó, như trang vận hành.
-    const theme = (this.app.store.state.outline.project as { theme?: unknown } | null)?.theme;
-    document.documentElement.dataset.matTheme =
-      theme === 'vivid' || theme === 'dark' ? theme : 'industrial';
-  }
-
   protected override shouldUpdate(changed: PropertyValues): boolean {
     return this.isConnected && super.shouldUpdate(changed);
   }

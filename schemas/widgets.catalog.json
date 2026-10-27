@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.6.0",
+  "catalogVersion": "0.7.0",
   "actions": {
     "popup": {
       "keys": ["screen", "args"],
@@ -65,6 +65,13 @@
           "multi": false,
           "types": ["number", "bool", "string"],
           "needsWrite": false
+        },
+        {
+          "name": "status",
+          "required": false,
+          "multi": false,
+          "types": ["number", "bool", "string"],
+          "needsWrite": false
         }
       ],
       "props": [
@@ -127,6 +134,16 @@
           "kind": "color",
           "allowAuto": true,
           "default": "auto",
+          "group": "display"
+        },
+        {
+          "name": "blinkAbove",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "blinkBelow",
+          "kind": "number",
           "group": "display"
         }
       ],
@@ -260,6 +277,12 @@
           "name": "showText",
           "kind": "bool",
           "default": true,
+          "group": "display"
+        },
+        {
+          "name": "blinkOn",
+          "kind": "bool",
+          "default": false,
           "group": "display"
         }
       ],
@@ -515,6 +538,13 @@
           "multi": false,
           "types": ["bool"],
           "needsWrite": false
+        },
+        {
+          "name": "status",
+          "required": false,
+          "multi": false,
+          "types": ["number", "bool", "string"],
+          "needsWrite": false
         }
       ],
       "props": [
@@ -604,6 +634,16 @@
           "name": "trend",
           "kind": "bool",
           "default": false,
+          "group": "display"
+        },
+        {
+          "name": "blinkAbove",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "blinkBelow",
+          "kind": "number",
           "group": "display"
         }
       ],
@@ -1032,6 +1072,17 @@
           "maxLength": 24,
           "default": "",
           "group": "display"
+        },
+        {
+          "name": "colors",
+          "kind": "array",
+          "items": {
+            "kind": "color",
+            "allowAuto": true
+          },
+          "maxItems": 8,
+          "default": [],
+          "group": "display"
         }
       ],
       "events": []
@@ -1244,6 +1295,13 @@
           "multi": false,
           "types": ["number", "bool", "string"],
           "needsWrite": true
+        },
+        {
+          "name": "feedback",
+          "required": false,
+          "multi": false,
+          "types": ["bool", "number", "string"],
+          "needsWrite": false
         }
       ],
       "props": [
@@ -1259,6 +1317,27 @@
           "kind": "enum",
           "options": ["primary", "neutral", "danger"],
           "default": "primary",
+          "group": "display"
+        },
+        {
+          "name": "activeValue",
+          "kind": "string",
+          "maxLength": 40,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "activeColor",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
+          "group": "display"
+        },
+        {
+          "name": "inactiveColor",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
           "group": "display"
         },
         {
@@ -1298,7 +1377,7 @@
           "name": "target",
           "required": true,
           "multi": false,
-          "types": ["bool"],
+          "types": ["bool", "number"],
           "needsWrite": true
         }
       ],
@@ -1322,6 +1401,32 @@
           "kind": "string",
           "maxLength": 16,
           "default": "Tắt",
+          "group": "display"
+        },
+        {
+          "name": "onValue",
+          "kind": "number",
+          "default": 1,
+          "group": "general"
+        },
+        {
+          "name": "offValue",
+          "kind": "number",
+          "default": 0,
+          "group": "general"
+        },
+        {
+          "name": "onColor",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
+          "group": "display"
+        },
+        {
+          "name": "offColor",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
           "group": "display"
         },
         {
@@ -1356,7 +1461,7 @@
           "name": "target",
           "required": true,
           "multi": false,
-          "types": ["number"],
+          "types": ["number", "string"],
           "needsWrite": true
         }
       ],
@@ -1536,6 +1641,99 @@
       }
     },
     {
+      "id": "time-range",
+      "group": "control",
+      "label": "widget.time-range",
+      "defaultSize": [300, 64],
+      "minSize": [200, 48],
+      "slots": [
+        {
+          "name": "startHour",
+          "required": false,
+          "multi": false,
+          "types": ["number"],
+          "needsWrite": true
+        },
+        {
+          "name": "startMinute",
+          "required": false,
+          "multi": false,
+          "types": ["number"],
+          "needsWrite": true
+        },
+        {
+          "name": "endHour",
+          "required": false,
+          "multi": false,
+          "types": ["number"],
+          "needsWrite": true
+        },
+        {
+          "name": "endMinute",
+          "required": false,
+          "multi": false,
+          "types": ["number"],
+          "needsWrite": true
+        },
+        {
+          "name": "start",
+          "required": false,
+          "multi": false,
+          "types": ["number"],
+          "needsWrite": true
+        },
+        {
+          "name": "end",
+          "required": false,
+          "multi": false,
+          "types": ["number"],
+          "needsWrite": true
+        }
+      ],
+      "props": [
+        {
+          "name": "label",
+          "kind": "string",
+          "maxLength": 40,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "format",
+          "kind": "enum",
+          "options": ["hourMinute", "minutes"],
+          "default": "hourMinute",
+          "group": "general"
+        },
+        {
+          "name": "fromText",
+          "kind": "string",
+          "maxLength": 16,
+          "default": "Từ",
+          "group": "display"
+        },
+        {
+          "name": "toText",
+          "kind": "string",
+          "maxLength": 16,
+          "default": "Đến",
+          "group": "display"
+        },
+        {
+          "name": "confirmText",
+          "kind": "string",
+          "maxLength": 200,
+          "default": "",
+          "group": "security"
+        }
+      ],
+      "events": [],
+      "security": {
+        "minRole": ["operator", "engineer", "administrator"],
+        "default": "operator"
+      }
+    },
+    {
       "id": "alarm-list",
       "group": "alarm",
       "label": "widget.alarm-list",
@@ -1608,6 +1806,18 @@
         },
         {
           "name": "showAck",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "search",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "exportCsv",
           "kind": "bool",
           "default": true,
           "group": "display"
@@ -1773,6 +1983,17 @@
           "name": "yMax",
           "kind": "number",
           "group": "display"
+        },
+        {
+          "name": "colors",
+          "kind": "array",
+          "items": {
+            "kind": "color",
+            "allowAuto": true
+          },
+          "maxItems": 8,
+          "default": [],
+          "group": "display"
         }
       ],
       "events": []
@@ -1837,6 +2058,12 @@
           },
           "maxItems": 32,
           "default": [],
+          "group": "display"
+        },
+        {
+          "name": "search",
+          "kind": "bool",
+          "default": true,
           "group": "display"
         }
       ],

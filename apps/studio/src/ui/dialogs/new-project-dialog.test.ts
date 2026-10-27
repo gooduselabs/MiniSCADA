@@ -38,9 +38,8 @@ describe('mat-new-project-dialog', () => {
     expect(el.querySelector<HTMLInputElement>('input[name="np-template"]:checked')!.value).toBe(
       'blank',
     );
-    expect(el.querySelector<HTMLInputElement>('input[name="np-theme"]:checked')!.value).toBe(
-      'vivid',
-    );
+    // feature 029: không còn chọn chủ đề
+    expect(el.querySelector('input[name="np-theme"]')).toBeNull();
   });
 
   it('gõ tên: mã tự sinh không dấu, đích hiện <cha>\\<mã>; sửa mã thì thôi sinh theo tên, nút sinh lại trả về', async () => {
@@ -93,7 +92,6 @@ describe('mat-new-project-dialog', () => {
     );
     await type(el, 'np-name', 'Trạm A');
     el.querySelector<HTMLInputElement>('input[value="pump"]')!.click();
-    el.querySelector<HTMLInputElement>('input[value="dark"]')!.click();
     await settled();
     el.querySelector<HTMLButtonElement>('[data-role="ok"]')!.click();
     await vi.waitFor(() => expect(app.ui.dialog).toBeNull());
@@ -105,7 +103,8 @@ describe('mat-new-project-dialog', () => {
       string,
       unknown
     >;
-    expect(project).toMatchObject({ projectId: 'tram-a', projectName: 'Trạm A', theme: 'dark' });
+    expect(project).toMatchObject({ projectId: 'tram-a', projectName: 'Trạm A' });
+    expect(project.theme).toBeUndefined();
     expect(app.store.state.project?.display).toBe('D:\\Projects\\tram-a');
   });
 

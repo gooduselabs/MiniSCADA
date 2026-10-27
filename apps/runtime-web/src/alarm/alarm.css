@@ -330,3 +330,7 @@
 }
 
 /* Hàng alarm đang nhấp nháy/nền đặc trong bảng dùng chung: nút phụ trong suốt để chữ luôn đủ tương phản. */
+/* feature 029: menu trái nền tối (--mat-nav-bg): ghi chú dùng màu chữ của menu cho đủ tương phản */
+.app-nav .nnote {
+  color: var(--mat-nav-text, var(--mat-text-muted));
+}

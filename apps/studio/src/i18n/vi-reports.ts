@@ -78,6 +78,9 @@ export const viReports = {
   'rpt.preset.energy': 'Báo cáo năng lượng',
   'rpt.preset.energy.d':
     'Điện năng tiêu thụ (chênh lệch kWh) và công suất trung bình, lớn nhất theo giờ.',
+  'rpt.preset.energyMonth': 'Báo cáo điện năng tháng',
+  'rpt.preset.energyMonth.d':
+    'Mỗi ngày một hàng: điện năng tiêu thụ (hiệu số kWh), tổng tháng, biểu đồ cột.',
   'rpt.preset.alarm': 'Báo cáo alarm',
   'rpt.preset.alarm.d': 'Sự kiện alarm trong ngày, thống kê theo mức, khu, top 10.',
   'rpt.preset.equipment': 'Vận hành thiết bị',
@@ -88,6 +91,7 @@ export const viReports = {
   'rpt.preset.nameDay': 'Báo cáo ngày',
   'rpt.preset.nameMonth': 'Báo cáo tháng',
   'rpt.preset.nameEnergy': 'Năng lượng theo ngày',
+  'rpt.preset.nameEnergyMonth': 'Điện năng theo tháng',
   'rpt.preset.nameAlarm': 'Alarm theo ngày',
   'rpt.preset.nameEquipment': 'Vận hành thiết bị theo ca',
   'rpt.preset.nameLogic': 'Ghi PLC của logic',

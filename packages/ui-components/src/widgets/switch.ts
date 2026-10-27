@@ -24,7 +24,7 @@ export class MatWSwitch extends ControlWidget {
         width: 34px;
         height: 18px;
         border-radius: 9px;
-        background: var(--mat-border-strong, #b3bec3);
+        background: var(--mat-switch-off, var(--mat-border-strong, #b3bec3));
         position: relative;
         transition: background 0.15s;
       }
@@ -39,7 +39,7 @@ export class MatWSwitch extends ControlWidget {
         transition: left 0.15s;
       }
       .sw[aria-checked='true'] .track {
-        background: var(--mat-good, #15703a);
+        background: var(--mat-switch-on, var(--mat-good, #15703a));
       }
       .sw[aria-checked='true'] .thumb {
         left: 18px;
@@ -68,7 +68,7 @@ export class MatWSwitch extends ControlWidget {
     const id = this.tagId;
     const value = id ? this.source?.get(id).value : null;
     if (st?.phase === 'sending') {
-      this.#pending = st.draft.spec.value === true;
+      this.#pending = this.#isOn(st.draft.spec.value);
       if (!this.#timer) {
         this.#timer = setTimeout(() => {
           this.#timer = null;
@@ -83,7 +83,7 @@ export class MatWSwitch extends ControlWidget {
     ) {
       this.#clear();
     }
-    if (this.#pending !== null && value === this.#pending) this.#clear();
+    if (this.#pending !== null && this.#isOn(value) === this.#pending) this.#clear();
   }
 
   override disconnectedCallback(): void {
@@ -95,11 +95,33 @@ export class MatWSwitch extends ControlWidget {
     return this.#pending !== null;
   }
 
+  /** Tag số (feature 029): bật khi giá trị bằng `onValue` (mặc định 1), ghi `onValue`/`offValue` (mặc định 0). */
+  #numeric(): boolean {
+    const id = this.tagId;
+    const type = id ? this.source?.info(id)?.type : undefined;
+    return type !== undefined && type !== 'BOOL' && type !== 'STRING';
+  }
+
+  #onValue(): number {
+    return this.optNum('onValue') ?? 1;
+  }
+
+  #offValue(): number {
+    return this.optNum('offValue') ?? 0;
+  }
+
+  #isOn(v: unknown): boolean {
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'number') return v === this.#onValue();
+    return false;
+  }
+
   #toggle = (): void => {
     const id = this.tagId;
     if (!this.ctl || !this.ready || this.#switching || !id) return;
-    const cur = this.source.get(id).value === true;
-    this.ctl.propose('toggle', !cur);
+    const cur = this.#isOn(this.source.get(id).value);
+    if (this.#numeric()) this.ctl.propose('write', cur ? this.#offValue() : this.#onValue());
+    else this.ctl.propose('toggle', !cur);
   };
 
   #key = (e: KeyboardEvent): void => {
@@ -111,7 +133,8 @@ export class MatWSwitch extends ControlWidget {
 
   protected override renderWidget(): TemplateResult | typeof nothing {
     const id = this.tagId;
-    const on = id ? this.source.get(id).value === true : false;
+    const on = id ? this.#isOn(this.source.get(id).value) : false;
+    const color = this.colorProp(on ? 'onColor' : 'offColor');
     const label = this.prop('label', '');
     const name = this.nameOf(id);
     const text = this.#switching
@@ -134,7 +157,9 @@ export class MatWSwitch extends ControlWidget {
         @click=${this.#toggle}
         @keydown=${this.#key}
       >
-        <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+        <span class="track" aria-hidden="true" style=${color ? `background:${color}` : nothing}
+          ><span class="thumb"></span
+        ></span>
         <span class="txt"
           >${label ? html`<span class="muted">${label}: </span>` : nothing}${text}</span
         >

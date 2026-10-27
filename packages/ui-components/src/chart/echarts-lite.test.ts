@@ -69,7 +69,7 @@ describe('loadECharts', () => {
 });
 
 describe('theme từ token', () => {
-  it('đọc --mat-chart-1..12, chữ, nền, phông, chuyển động từ CSS; thiếu thì dùng giá trị industrial', () => {
+  it('đọc --mat-chart-1..12, chữ, nền, phông, chuyển động từ CSS; thiếu thì dùng giá trị atscada', () => {
     const el = document.createElement('div');
     el.style.setProperty('--mat-chart-1', '#123456');
     el.style.setProperty('--mat-text', '#010203');
@@ -78,7 +78,7 @@ describe('theme từ token', () => {
     const t = readChartTheme(el);
     expect(t.colors).toHaveLength(12);
     expect(t.colors[0]).toBe('#123456');
-    expect(t.colors[1]).toBe('#c2410c'); // mặc định industrial
+    expect(t.colors[1]).toBe('#00a5a5'); // mặc định atscada
     expect(t.text).toBe('#010203');
     expect(t.motionMs).toBe(200);
   });

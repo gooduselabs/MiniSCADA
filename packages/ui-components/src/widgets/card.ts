@@ -1,7 +1,7 @@
 // Widget `card` (FR-026): nhãn, giá trị (số lẻ, đơn vị), chấm quality, nền; màu giá trị theo bảng giá trị hoặc đặt tay.
 // Feature 012 (T046, FR-035): `sparkline` (đường nhỏ 60 điểm gần nhất từ giá trị sống, mặc định tắt) và `trend` (mũi
-// tên tăng/giảm so với điểm trước, mặc định tắt; màu trung tính vì tăng không nhất thiết là tốt); bo góc, bóng theo token --mat-radius-lg, --mat-shadow-card (industrial:
-// 4px, không bóng, giữ giao diện cũ). Bộ đệm là của widget: một điểm mỗi lần giá trị (hoặc giờ cập nhật) đổi; BAD,
+// tên tăng/giảm so với điểm trước, mặc định tắt; màu trung tính vì tăng không nhất thiết là tốt); bo góc, bóng theo token --mat-radius-lg, --mat-shadow-card (atscada:
+// 4px, bóng nhẹ kiểu FastWeb). Bộ đệm là của widget: một điểm mỗi lần giá trị (hoặc giờ cập nhật) đổi; BAD,
 // STALE, UNKNOWN và giá trị không phải số làm đứt đường.
 import { css, html, nothing, svg, type PropertyValues, type TemplateResult } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -200,7 +200,11 @@ export class MatCard extends MatWidget {
     >
       ${label ? html`<div class="label ellipsis">${label}</div>` : nothing}
       <div class="main">
-        <span class="value ${qv.dim ? 'dim' : ''}" style=${styleMap({ color })}>${fmt.text}</span>
+        <span
+          class="value ${qv.dim ? 'dim' : ''} ${this.blinking(state.value, state.quality) ? 'blink' : ''}"
+          style=${styleMap({ color })}
+          >${fmt.text}</span
+        >
         ${fmt.unit ? html`<span class="unit">${fmt.unit}</span>` : nothing}
         ${
           dir
@@ -224,7 +228,7 @@ export class MatCard extends MatWidget {
             </svg>`
           : nothing
       }
-      ${showBadge ? this.badge(qv) : nothing}
+      ${this.statusLine()} ${showBadge ? this.badge(qv) : nothing}
     </div>`;
   }
 }

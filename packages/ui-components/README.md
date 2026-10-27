@@ -2,7 +2,7 @@
 
 <!-- Sinh bởi tools/gen-widget-docs.mjs từ schemas/widgets.catalog.json. Không sửa tay: sửa danh mục rồi chạy lại. -->
 
-Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 28 widget (phiên bản danh mục 0.6.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
+Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 29 widget (phiên bản danh mục 0.7.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
 
 ## Nhúng
 
@@ -36,6 +36,7 @@ Nhóm: Hiển thị. Cỡ mặc định 220 × 110, nhỏ nhất 96 × 56.
 | Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
 |---|---|---|---|---|
 | `value` | có | không | number, bool, string | không |
+| `status` | không | không | number, bool, string | không |
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
@@ -48,6 +49,8 @@ Nhóm: Hiển thị. Cỡ mặc định 220 × 110, nhỏ nhất 96 × 56.
 | `trend` | bool | `false` |  |
 | `valueColor` | color | `"auto"` |  |
 | `background` | color | `"auto"` |  |
+| `blinkAbove` | number |  |  |
+| `blinkBelow` | number |  |  |
 
 ### `label` (`<mat-w-label>`)
 
@@ -84,6 +87,7 @@ Nhóm: Hiển thị. Cỡ mặc định 140 × 40, nhỏ nhất 24 × 24.
 | `invert` | bool | `false` |  |
 | `useValueTable` | bool | `true` |  |
 | `showText` | bool | `true` |  |
+| `blinkOn` | bool | `false` |  |
 
 ### `gauge` (`<mat-w-gauge>`)
 
@@ -143,6 +147,7 @@ Nhóm: Hiển thị. Cỡ mặc định 280 × 116, nhỏ nhất 160 × 96.
 |---|---|---|---|---|
 | `value` | có | không | number, bool, string | không |
 | `alarm` | không | không | bool | không |
+| `status` | không | không | number, bool, string | không |
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
@@ -154,6 +159,8 @@ Nhóm: Hiển thị. Cỡ mặc định 280 × 116, nhỏ nhất 160 × 96.
 | `statusText` | bool | `true` |  |
 | `sparkline` | bool | `false` |  |
 | `trend` | bool | `false` |  |
+| `blinkAbove` | number |  |  |
+| `blinkBelow` | number |  |  |
 
 ### `kpi` (`<mat-w-kpi>`)
 
@@ -266,6 +273,7 @@ Nhóm: Biểu đồ. Cỡ mặc định 600 × 300, nhỏ nhất 240 × 140.
 | `lowLimit` | number |  |  |
 | `xLabel` | string | `""` | ≤ 24 ký tự |
 | `yLabel` | string | `""` | ≤ 24 ký tự |
+| `colors` | array | `[]` | ≤ 8 phần tử |
 
 ### `bar` (`<mat-w-bar>`)
 
@@ -329,11 +337,15 @@ Nhóm: Điều khiển. Cỡ mặc định 160 × 48, nhỏ nhất 64 × 32.
 | Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
 |---|---|---|---|---|
 | `target` | không | không | number, bool, string | có |
+| `feedback` | không | không | bool, number, string | không |
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
 | `label` | string | `""` | ≤ 40 ký tự |
 | `variant` | enum | `"primary"` | `primary`, `neutral`, `danger` |
+| `activeValue` | string | `""` | ≤ 40 ký tự |
+| `activeColor` | color | `"auto"` |  |
+| `inactiveColor` | color | `"auto"` |  |
 | `confirm` | enum | `"always"` | `always`, `none` |
 | `confirmText` | string | `""` | ≤ 200 ký tự |
 
@@ -345,13 +357,17 @@ Nhóm: Điều khiển. Cỡ mặc định 160 × 48, nhỏ nhất 64 × 32.
 
 | Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
 |---|---|---|---|---|
-| `target` | có | không | bool | có |
+| `target` | có | không | bool, number | có |
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
 | `label` | string | `""` | ≤ 40 ký tự |
 | `onText` | string | `"Bật"` | ≤ 16 ký tự |
 | `offText` | string | `"Tắt"` | ≤ 16 ký tự |
+| `onValue` | number | `1` |  |
+| `offValue` | number | `0` |  |
+| `onColor` | color | `"auto"` |  |
+| `offColor` | color | `"auto"` |  |
 | `confirm` | enum | `"always"` | `always`, `none` |
 | `confirmText` | string | `""` | ≤ 200 ký tự |
 
@@ -361,7 +377,7 @@ Nhóm: Điều khiển. Cỡ mặc định 220 × 72, nhỏ nhất 120 × 48.
 
 | Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
 |---|---|---|---|---|
-| `target` | có | không | number | có |
+| `target` | có | không | number, string | có |
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
@@ -406,6 +422,27 @@ Nhóm: Điều khiển. Cỡ mặc định 220 × 72, nhỏ nhất 120 × 48.
 | `table` | tableRef | theo Tag (`valueTable`) |  |
 | `confirmText` | string | `""` | ≤ 200 ký tự |
 
+### `time-range` (`<mat-w-time-range>`)
+
+Nhóm: Điều khiển. Cỡ mặc định 300 × 64, nhỏ nhất 200 × 48.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `startHour` | không | không | number | có |
+| `startMinute` | không | không | number | có |
+| `endHour` | không | không | number | có |
+| `endMinute` | không | không | number | có |
+| `start` | không | không | number | có |
+| `end` | không | không | number | có |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `format` | enum | `"hourMinute"` | `hourMinute`, `minutes` |
+| `fromText` | string | `"Từ"` | ≤ 16 ký tự |
+| `toText` | string | `"Đến"` | ≤ 16 ký tự |
+| `confirmText` | string | `""` | ≤ 200 ký tự |
+
 ## Nhóm Alarm
 
 ### `alarm-list` (`<mat-w-alarm-list>`)
@@ -421,6 +458,8 @@ Nhóm: Alarm. Cỡ mặc định 640 × 260, nhỏ nhất 320 × 120.
 | `columns` | array | `["time","priority","text","value","state"]` | ≥ 1 phần tử, ≤ 7 phần tử, không trùng; phần tử: `time`, `priority`, `area`, `text`, `value`, `state`, `ackUser` |
 | `maxRows` | int | `8` | ≥ 1, ≤ 50 |
 | `showAck` | bool | `true` |  |
+| `search` | bool | `true` |  |
+| `exportCsv` | bool | `true` |  |
 
 ### `alarm-count` (`<mat-w-alarm-count>`)
 
@@ -457,6 +496,7 @@ Nhóm: Lịch sử. Cỡ mặc định 640 × 320, nhỏ nhất 280 × 160.
 | `axes` | array | `[]` | ≤ 8 phần tử; phần tử: `left`, `right` |
 | `yMin` | number |  |  |
 | `yMax` | number |  |  |
+| `colors` | array | `[]` | ≤ 8 phần tử |
 
 ### `history-table` (`<mat-w-history-table>`)
 
@@ -474,6 +514,7 @@ Nhóm: Lịch sử. Cỡ mặc định 640 × 320, nhỏ nhất 280 × 160.
 | `order` | enum | `"desc"` | `asc`, `desc` |
 | `controls` | bool | `true` |  |
 | `labels` | array | `[]` | ≤ 32 phần tử |
+| `search` | bool | `true` |  |
 
 ### `history-bar` (`<mat-w-history-bar>`)
 

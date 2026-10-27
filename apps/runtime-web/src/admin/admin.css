@@ -1,4 +1,4 @@
-/* Trang Quản trị (feature 013): bảng điều khiển sáng, đa sắc theo token --mat-* (chủ đề vivid, industrial, dark của 012;
+/* Trang Quản trị (feature 013): bảng điều khiển sáng, đa sắc theo token --mat-* (giao diện atscada của 029;
    màu nhấn lấy từ bảng --mat-chart-1..12 và bản -soft). Chunk CSS riêng, tải cùng trang Quản trị. */
 .admin-pane {
   overflow: auto;

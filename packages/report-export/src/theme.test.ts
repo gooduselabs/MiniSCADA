@@ -1,5 +1,5 @@
 // T048 (feature 012, FR-038): màu báo cáo PDF lấy đúng giá trị token của chủ đề (contracts/ui-theme.md), không lệch
-// khi tools/gen-theme-tokens.mjs sinh lại CSS. Đọc khối sáng đầu tiên của từng tệp chủ đề.
+// khi tools/gen-theme-tokens.mjs sinh lại CSS. Đọc khối sáng đầu tiên của themes/atscada.css.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -16,7 +16,7 @@ function lightTokens(name: string): Map<string, string> {
 }
 
 describe('bảng màu báo cáo theo chủ đề', () => {
-  for (const name of ['vivid', 'industrial'] as const) {
+  for (const name of ['atscada'] as const) {
     it(`${name}: khớp token sáng của themes/${name}.css`, () => {
       const tok = lightTokens(name);
       const p = REPORT_PALETTES[name];

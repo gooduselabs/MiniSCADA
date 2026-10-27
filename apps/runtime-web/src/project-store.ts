@@ -45,11 +45,7 @@ export interface ProjectSummary {
   reportsFile?: string;
   /** Project 1.1 (feature 024): có recipe (`recipesFile`); trang Recipe đọc qua API, không qua /project/. */
   recipesFile?: string;
-  /** Project 1.1 (feature 012): chủ đề giao diện; vắng = industrial (giao diện cũ). */
-  theme?: 'vivid' | 'industrial' | 'dark';
 }
-
-const THEMES = new Set(['vivid', 'industrial', 'dark']);
 
 export type OpenResult =
   | { status: 'ok'; summary: ProjectSummary }
@@ -227,9 +223,6 @@ export class ProjectStore {
       stamp: activeStamp(200, body),
       ...(typeof project.reportsFile === 'string' ? { reportsFile: project.reportsFile } : {}),
       ...(typeof project.recipesFile === 'string' ? { recipesFile: project.recipesFile } : {}),
-      ...(typeof project.theme === 'string' && THEMES.has(project.theme)
-        ? { theme: project.theme as NonNullable<ProjectSummary['theme']> }
-        : {}),
     };
   }
 

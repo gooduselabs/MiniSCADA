@@ -48,7 +48,7 @@ Studio bố trí như một công cụ kỹ thuật: cây project bên trái, v�
 - **Mã project**: tự sinh từ tên, bỏ dấu, chữ thường, gạch nối (`Trạm bơm Số 1` → `tram-bom-so-1`); sửa được, 2–48 ký tự. Mã là `projectId` và là tên thư mục project. Nút mũi tên vòng sinh lại mã từ tên.
 - **Thư mục chứa**: mặc định `Documents\mAT SCADA`; **Chọn…** để chọn thư mục khác, **Mặc định** để quay về. Studio tạo thư mục con theo mã project trong thư mục chứa; dòng **Project sẽ nằm ở** hiện đường dẫn đầy đủ và báo ngay nếu thư mục đó đã có project hoặc có tệp khác (khi đó không tạo được, đổi mã hoặc thư mục chứa).
 - **Mẫu**: **Trống** (một màn hình lưới **Tổng quan** với một hàng ba ô trống, chưa có Tag và kết nối), **Mẫu trạm bơm** (Tag mô phỏng, màn hình lưới **Bảng điều khiển** kiểu dashboard: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, đồng hồ, trạng thái bơm, bảng Tag, faceplate bơm; chạy được ngay ở chế độ **Mô phỏng**) **Dashboard tối** (chỉ màn hình dashboard đó cùng Tag của nó; chọn mẫu này thì chủ đề tự chuyển sang **Tối**, đổi lại được) hoặc **Mẫu sơ đồ công nghệ (SVG)** (sơ đồ trạm bơm nước sạch vẽ bằng SVG có hoạt ảnh, chủ đề **Tối**; mục 7.3).
-- **Chủ đề giao diện** của trang vận hành: **Sáng đa sắc** (mặc định), **Công nghiệp trầm**, **Tối**; đổi lại được trong **Thiết lập project**.
+- Trang vận hành dùng **một giao diện ATSCADA** duy nhất (không còn chọn chủ đề).
  **Tạo project**: Studio ghi project định dạng 1.1, mở nó (cây project đầy đủ) và mở sẵn màn hình đầu. Đang có thay đổi chưa lưu thì Studio hỏi Lưu, Không lưu hay Hủy trước khi mở hộp thoại, như khi mở project khác. Project vừa tạo lên đầu danh sách **Mở gần đây** (tab **Bắt đầu** và menu **Project**).
  cách khác:
 
@@ -345,13 +345,15 @@ Lỗi thường gặp: `E_LAYOUT_SPAN` (tổng các ô của hàng quá 12 cột
 
 Lỗi thường gặp: `E_FILE_MISSING` ở `props/src` (tệp ảnh của widget **Ảnh** không có trong project), `E_WIDGET_PROP` (đường dẫn ảnh không nằm trong `graphics/` hoặc không phải `.svg`, múi giờ không đúng dạng `±HH:MM`).
 
-![Dashboard của Mẫu trạm bơm trên trang vận hành, chủ đề Sáng đa sắc: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, cột, đồng hồ, trạng thái bơm](img/op-bo-cuc-luoi.png)
+![Dashboard của Mẫu trạm bơm trên trang vận hành, giao diện ATSCADA: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, cột, đồng hồ, trạng thái bơm](img/op-bo-cuc-luoi.png)
 
 ![Cùng dashboard ở chủ đề Tối (mẫu Dashboard tối): nền xám xanh, khung biểu đồ sáng hơn nền, thẻ chỉ số giữ màu](img/op-dashboard-toi.png)
 
 ### 6.2. Chủ đề giao diện
 
-**Thiết lập project** → **Chủ đề giao diện**: **Sáng đa sắc** (mặc định của project mới), **Công nghiệp trầm** (giao diện cũ, mặc định của project nâng cấp), **Tối**. Trang vận hành và xem trước màn hình đổi theo; màu đặt riêng cho widget vẫn giữ.
+Từ bản này trang vận hành, widget và xem trước màn hình dùng **một giao diện ATSCADA** duy nhất, giống giao diện ATSCADA FastWeb: nền xám xanh nhạt, khung trắng có thanh tiêu đề, menu trái nền tối, màu chủ đạo xanh ngọc. Không còn ô chọn chủ đề. Project cũ có trường `theme` vẫn mở và tải xuống bình thường; **Thiết lập project** chỉ ghi chú nhẹ rằng trường này được bỏ qua. Màu đặt riêng cho widget vẫn giữ.
+
+**Trình soạn lưới thao tác nhanh:** nút mẫu cột một chạm (12, 6+6, 4+4+4, 3×4, 8+4, 4+8) cạnh **Thêm hàng**; chọn ô thì hiện thanh nhỏ trên ô (−/+ cột, thêm ô, xóa ô, tay nắm kéo đổi chỗ); kéo cạnh phải ô cuối hàng hoặc đường chia giữa hai ô để đổi số cột (đường lưới 12 cột hiện rõ khi kéo); kéo tay nắm ⋮⋮ ở đầu hàng để dời hàng; chiều cao hàng chọn nhanh Tự động/120/240/360; phím `+`/`−` đổi số cột, Alt+mũi tên đổi chỗ; mọi thao tác hoàn tác được (Ctrl+Z).
 
 <a id="help-security"></a>
 

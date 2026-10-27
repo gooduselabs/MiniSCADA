@@ -21,11 +21,23 @@ export class MatHistoryTable extends MatHistoryWidget {
     _page: { state: true },
     _order: { state: true },
     _rangeKey: { state: true },
+    _query: { state: true },
   };
   static override styles = [
     MatHistoryWidget.styles,
     historyBaseStyles,
     css`
+      .hsearch {
+        width: 140px;
+        min-width: 80px;
+        height: 26px;
+        padding: 0 6px;
+        font: inherit;
+        color: inherit;
+        background: var(--mat-surface, #fff);
+        border: 1px solid var(--mat-border-strong, #b3bec3);
+        border-radius: var(--mat-radius, 4px);
+      }
       .controls,
       .exportbar,
       .pager {
@@ -85,6 +97,8 @@ export class MatHistoryTable extends MatHistoryWidget {
   declare _page: number;
   declare _order: 'asc' | 'desc';
   declare _rangeKey: RangeKey;
+  /** Feature 029: ô tìm trong trang đang xem (lọc theo chữ đã định dạng, không phân biệt hoa thường). */
+  declare _query: string;
 
   /** `after` của từng trang đã đi qua (trang 0 không có). */
   #afters: (number | undefined)[] = [undefined];
@@ -96,6 +110,7 @@ export class MatHistoryTable extends MatHistoryWidget {
     this._page = 0;
     this._order = 'desc';
     this._rangeKey = '24h';
+    this._query = '';
   }
 
   // ---- cấu hình ----------------------------------------------------------------------------------------------
@@ -220,6 +235,21 @@ export class MatHistoryTable extends MatHistoryWidget {
     const tags = this.#tags();
     const cols = rows ? rows.columns.map((c) => c.tagId) : tags;
     const pageNo = this._page + 1;
+    const q = this._query.trim().toLowerCase();
+    const shown = (rows?.rows ?? [])
+      .map((r) => ({
+        r,
+        cells: cols.map((id, i) =>
+          this.#cell(this.#infoOf(id), (r[2 + i] ?? null) as number | string | boolean | null),
+        ),
+        time: localTimeMs(Number(r[1]), tz),
+      }))
+      .filter(
+        (x) =>
+          !q ||
+          x.time.toLowerCase().includes(q) ||
+          x.cells.some((c) => c.text.toLowerCase().includes(q)),
+      );
     const hasNext = !!rows && rows.next !== null;
     const exportHref =
       this.group && this.history
@@ -248,6 +278,18 @@ export class MatHistoryTable extends MatHistoryWidget {
                   </button>`,
               )}
               <span class="sp"></span>
+              ${
+                this.prop('search', true)
+                  ? html`<input
+                      type="search"
+                      class="hsearch"
+                      placeholder=${viHistory.table.search}
+                      aria-label=${viHistory.table.search}
+                      .value=${this._query}
+                      @input=${(e: Event) => (this._query = (e.target as HTMLInputElement).value)}
+                    />`
+                  : nothing
+              }
               <button type="button" class="hbtn order" @click=${() => this.#toggleOrder()}>
                 ${this._order === 'desc' ? viHistory.table.desc : viHistory.table.asc}
               </button>
@@ -279,17 +321,11 @@ export class MatHistoryTable extends MatHistoryWidget {
             </tr>
           </thead>
           <tbody>
-            ${(rows?.rows ?? []).map(
-              (r) =>
-                html`<tr data-seq=${String(r[0])}>
-                  <td>${localTimeMs(Number(r[1]), tz)}</td>
-                  ${cols.map((id, i) => {
-                    const c = this.#cell(
-                      this.#infoOf(id),
-                      (r[2 + i] ?? null) as number | string | boolean | null,
-                    );
-                    return html`<td class=${c.num ? 'num' : ''}>${c.text}</td>`;
-                  })}
+            ${shown.map(
+              (x) =>
+                html`<tr data-seq=${String(x.r[0])}>
+                  <td>${x.time}</td>
+                  ${x.cells.map((c) => html`<td class=${c.num ? 'num' : ''}>${c.text}</td>`)}
                 </tr>`,
             )}
           </tbody>

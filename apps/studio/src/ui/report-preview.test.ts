@@ -236,10 +236,11 @@ describe('mat-report-preview', () => {
     el.querySelector<HTMLButtonElement>('[data-act="pdf"]')!.click();
     await el.whenIdle();
     expect(metas).toEqual(['vivid', 'vivid', undefined]);
+    // feature 029: chủ đề cũ của project bị bỏ qua
     expect([projectTheme({ theme: 'dark' }), projectTheme({}), projectTheme(null)]).toEqual([
-      'dark',
-      'industrial',
-      'industrial',
+      undefined,
+      undefined,
+      undefined,
     ]);
   });
 

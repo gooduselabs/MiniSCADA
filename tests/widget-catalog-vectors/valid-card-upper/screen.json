@@ -27,7 +27,8 @@
         "background": "#FFFFFF"
       },
       "tags": {
-        "value": "L.LEVEL"
+        "value": "L.LEVEL",
+        "status": "L.LEVEL"
       }
     }
   ]

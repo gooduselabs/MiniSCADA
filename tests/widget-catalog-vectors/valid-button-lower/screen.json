@@ -18,6 +18,9 @@
       "props": {
         "label": "",
         "variant": "primary",
+        "activeValue": "",
+        "activeColor": "auto",
+        "inactiveColor": "auto",
         "confirm": "always",
         "confirmText": ""
       },

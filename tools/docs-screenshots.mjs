@@ -1118,7 +1118,7 @@ const webScenes = [
     },
   },
   {
-    // feature 026: sơ đồ công nghệ SVG của projects/svg-showcase (chủ đề tối), lúc P-101, P-102, P-201 chạy có dòng chảy;
+    // feature 026: sơ đồ công nghệ SVG của projects/svg-showcase (giao diện ATSCADA sáng), lúc P-101, P-102, P-201 chạy có dòng chảy;
     // khung 1920 × 1080 và 1366 × 768, rồi popup faceplate khi nhấp bơm P-101.
     name: 'web-so-do',
     options: { fixture: () => svgShowcaseProject() },

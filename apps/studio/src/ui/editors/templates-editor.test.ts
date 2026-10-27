@@ -348,12 +348,12 @@ describe('thư viện mẫu (trang Báo cáo, lệnh Thêm báo cáo)', () => {
     return host;
   }
 
-  it('7 mẫu; ở project 0.6 mẫu alarm/thiết bị/logic bị khóa; thêm mẫu ngày mở trình thiết kế', async () => {
+  it('8 mẫu (029: điện năng tháng); ở project 0.6 mẫu alarm/thiết bị/logic bị khóa; thêm mẫu ngày mở trình thiết kế', async () => {
     const { app } = await newHistoryApp();
     await app.run('report.add');
     expect(app.store.state.active).toBe('reports');
     const host = await mountList(app);
-    expect(host.querySelectorAll('[data-preset]')).toHaveLength(7);
+    expect(host.querySelectorAll('[data-preset]')).toHaveLength(8);
     expect(host.querySelector('[data-preset="alarm"]')!.getAttribute('aria-disabled')).toBe('true');
     expect(host.querySelectorAll('[data-report]')).toHaveLength(3);
     host.querySelector<HTMLButtonElement>('[data-preset="day"]')!.click();

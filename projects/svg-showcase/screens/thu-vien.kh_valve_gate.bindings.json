@@ -18,11 +18,11 @@
             "cases": [
               {
                 "equals": true,
-                "value": "#22c55e"
+                "value": "#1fa34a"
               },
               {
                 "equals": false,
-                "value": "#64748b"
+                "value": "#929ba1"
               }
             ]
           }

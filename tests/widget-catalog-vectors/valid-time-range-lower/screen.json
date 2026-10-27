@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "timerange1",
+      "type": "widget",
+      "widget": "time-range",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 64,
+      "props": {
+        "label": "",
+        "format": "hourMinute",
+        "fromText": "",
+        "toText": "",
+        "confirmText": ""
+      },
+      "security": {
+        "minRole": "operator"
+      }
+    }
+  ]
+}

@@ -40,7 +40,7 @@ describe('Project mới', () => {
       name: 'Trạm bơm Số 1',
       id: 'tram-bom-so-1',
       template: 'blank',
-      theme: 'dark',
+      theme: 'dark', // bỏ qua (feature 029)
     });
     expect(r).toBe(true);
     expect(app.ui.dialog).toBeNull();
@@ -69,7 +69,7 @@ describe('Project mới', () => {
       name: 'Trạm A',
       id: 'tram-a',
       template: 'pump',
-      theme: 'vivid',
+      theme: 'vivid', // bỏ qua (feature 029)
     });
     expect(r).toBe(true);
     await app.store.idle();
@@ -87,7 +87,7 @@ describe('Project mới', () => {
       name: 'Cũ',
       id: 'cu',
       template: 'blank',
-      theme: 'vivid',
+      theme: 'vivid', // bỏ qua (feature 029)
     });
     expect(r).toEqual({ error: 'exists-project' });
     expect(app.ui.dialog).toEqual({ kind: 'newProject' });
