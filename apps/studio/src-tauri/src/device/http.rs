@@ -74,6 +74,8 @@ pub fn allowed_path(path: &str) -> bool {
         "/api/v1/history/series",
         "/api/v1/history/aggregate",
         "/api/v1/history/rows",
+        // Feature 027 (ADR-054): thiết lập thiết bị và chứng chỉ (administrator).
+        "/api/v1/admin/device-settings",
     ];
     FIXED.contains(&path)
         || path
@@ -91,11 +93,18 @@ pub const POST_TIMEOUT_WRITE: Duration = Duration::from_secs(10);
 /// Hạn request `POST /api/v1/drivers/test` (lần thử có thể tới 35 s).
 pub const POST_TIMEOUT_TEST: Duration = Duration::from_secs(40);
 
-/// Đường dẫn `device_post` được gọi: chỉ ghi Tag, Thử kết nối và Lấy chứng chỉ / Duyệt node OPC UA (feature 019).
+/// Đường dẫn `device_post` được gọi: ghi Tag, Thử kết nối, Lấy chứng chỉ / Duyệt node OPC UA (feature 019), và
+/// thiết lập thiết bị, chứng chỉ HTTPS (feature 027, administrator; thiết bị kiểm lại vai trò và `reauth`).
 pub fn allowed_post_path(path: &str) -> bool {
     matches!(
         path,
-        "/api/v1/tags/write" | "/api/v1/drivers/test" | "/api/v1/drivers/opcua/browse"
+        "/api/v1/tags/write"
+            | "/api/v1/drivers/test"
+            | "/api/v1/drivers/opcua/browse"
+            | "/api/v1/admin/device-settings"
+            | "/api/v1/admin/cert/regen"
+            | "/api/v1/admin/cert/csr"
+            | "/api/v1/admin/cert/import"
     )
 }
 
@@ -105,6 +114,36 @@ pub fn post_timeout(path: &str) -> Duration {
         POST_TIMEOUT_TEST
     } else {
         POST_TIMEOUT_WRITE
+    }
+}
+
+/// Thân `device_admin` lớn nhất sau khi tuần tự hóa (feature 027): một lần lưu quy tắc tới 500 dòng.
+pub const MAX_ADMIN_BODY: usize = 256 * 1024;
+/// Hạn request `POST /api/v1/admin/email/test` (máy chủ chờ SMTP tới hạn `timeoutS` của cấu hình, ≤ 60 s).
+pub const ADMIN_TIMEOUT_EMAIL_TEST: Duration = Duration::from_secs(75);
+
+/// Đường dẫn `device_admin` được gọi (feature 027): API quản trị `/api/v1/admin/...` của 013, 023, 025. Chỉ chữ, số,
+/// `-._~%/`; không `..`, không `//`, không query (query đi riêng), tối đa 256 byte.
+pub fn allowed_admin_path(path: &str) -> bool {
+    let Some(rest) = path.strip_prefix("/api/v1/admin/") else {
+        return false;
+    };
+    !rest.is_empty()
+        && path.len() <= 256
+        && !rest.starts_with('/')
+        && !rest.contains("//")
+        && !rest.split('/').any(|s| s == "." || s == "..")
+        && rest
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"-._~%/".contains(&b))
+}
+
+/// Hạn request của `device_admin` theo đường dẫn.
+pub fn admin_timeout(path: &str) -> Duration {
+    if path == "/api/v1/admin/email/test" {
+        ADMIN_TIMEOUT_EMAIL_TEST
+    } else {
+        REQUEST_TIMEOUT
     }
 }
 
@@ -808,6 +847,18 @@ mod tests {
         assert!(allowed_post_path("/api/v1/tags/write"));
         assert!(allowed_post_path("/api/v1/drivers/test"));
         assert!(allowed_post_path("/api/v1/drivers/opcua/browse"));
+        for ok in [
+            "/api/v1/admin/device-settings",
+            "/api/v1/admin/cert/regen",
+            "/api/v1/admin/cert/csr",
+            "/api/v1/admin/cert/import",
+        ] {
+            assert!(allowed_post_path(ok), "{ok}");
+        }
+        assert!(allowed_path("/api/v1/admin/device-settings"));
+        assert!(!allowed_path("/api/v1/admin/users"));
+        assert!(!allowed_post_path("/api/v1/admin/users"));
+        assert!(!allowed_post_path("/api/v1/admin/cert"));
         for bad in [
             "/api/v1/drivers/opcua",
             "/api/v1/drivers/opcua/browse/",
@@ -1044,5 +1095,128 @@ mod tests {
             o.manager.post(&o.id, path, &json!({})).await,
             Err(DeviceError::CertUnpinned)
         );
+    }
+
+    /// Feature 027: `device_admin` chỉ nhận `/api/v1/admin/...` (không `..`, `//`, ký tự lạ), method GET/POST.
+    #[test]
+    fn admin_paths() {
+        for ok in [
+            "/api/v1/admin/users",
+            "/api/v1/admin/users/vh.1/delete",
+            "/api/v1/admin/groups/ca-a",
+            "/api/v1/admin/apikeys/0123456789ab/revoke",
+            "/api/v1/admin/email/test",
+            "/api/v1/admin/users/ky%20su",
+        ] {
+            assert!(allowed_admin_path(ok), "{ok}");
+        }
+        for bad in [
+            "/api/v1/admin/",
+            "/api/v1/admin",
+            "/api/v1/adminx/users",
+            "/api/v1/auth/login",
+            "/api/v1/admin//users",
+            "/api/v1/admin/../project/deployments",
+            "/api/v1/admin/users/..",
+            "/api/v1/admin/users?x=1",
+            "/api/v1/admin/users#a",
+            "/api/v1/admin/us ers",
+        ] {
+            assert!(!allowed_admin_path(bad), "{bad}");
+        }
+        assert_eq!(
+            admin_timeout("/api/v1/admin/email/test"),
+            ADMIN_TIMEOUT_EMAIL_TEST
+        );
+        assert_eq!(admin_timeout("/api/v1/admin/users"), REQUEST_TIMEOUT);
+    }
+
+    /// Feature 027: GET kèm token và query; POST gửi thân JSON; mọi mã HTTP trả `{ status, body }` (409 CONFLICT,
+    /// 403 REAUTH_REQUIRED giữ phiên); 401 SESSION_* trả thân và bỏ token; đường hoặc method khác → `bad-path`.
+    #[tokio::test]
+    async fn device_admin_forwards_and_returns_every_status() {
+        let reply = Arc::new(std::sync::Mutex::new((
+            200u16,
+            json!({ "rev": 1, "users": [] }),
+        )));
+        let r = reply.clone();
+        let o = online_with("admin-api", move |req| {
+            req.path().starts_with("/api/v1/admin/").then(|| {
+                let (status, body) = r.lock().unwrap().clone();
+                Resp::json(status, body)
+            })
+        })
+        .await;
+        o.login().await;
+        let mut q = BTreeMap::new();
+        q.insert("users".to_string(), "a,b".to_string());
+        let got = o
+            .manager
+            .admin(&o.id, "GET", "/api/v1/admin/effective", Some(&q), None)
+            .await
+            .unwrap();
+        assert_eq!(got.status, 200);
+        let last = o.server.requests().last().unwrap().clone();
+        assert_eq!(last.method, "GET");
+        assert_eq!(last.query(), Some("users=a%2Cb"));
+        assert_eq!(last.bearer(), Some(o.device_token().unwrap().as_str()));
+
+        let set = |status: u16, body: Value| *reply.lock().unwrap() = (status, body);
+        for (status, body) in [
+            (201, json!({ "rev": 2 })),
+            (409, json!({ "error": "CONFLICT", "rev": 7 })),
+            (403, json!({ "error": "REAUTH_REQUIRED" })),
+            (
+                400,
+                json!({ "error": "WEAK_PASSWORD", "reason": "TOO_SHORT" }),
+            ),
+            (429, json!({ "error": "RATE_LIMITED", "retryAfterS": 30 })),
+        ] {
+            set(status, body.clone());
+            let sent = json!({ "rev": 1, "name": "vh3", "role": "viewer", "generate": true });
+            let got = o
+                .manager
+                .admin(&o.id, "POST", "/api/v1/admin/users", None, Some(&sent))
+                .await
+                .unwrap();
+            assert_eq!(got, ApiResult { status, body });
+            let last = o.server.requests().last().unwrap().clone();
+            assert_eq!(last.method, "POST");
+            assert_eq!(serde_json::from_slice::<Value>(&last.body).unwrap(), sent);
+            assert!(
+                o.manager.sessions().info(&o.id).is_some(),
+                "{status} giữ phiên"
+            );
+        }
+
+        set(401, json!({ "error": "SESSION_EXPIRED" }));
+        let got = o
+            .manager
+            .admin(&o.id, "GET", "/api/v1/admin/users", None, None)
+            .await
+            .unwrap();
+        assert_eq!(got.status, 401);
+        assert!(o.manager.sessions().info(&o.id).is_none(), "401 bỏ token");
+
+        let before = o.server.requests().len();
+        for (method, path) in [
+            ("GET", "/api/v1/project/versions"),
+            ("PUT", "/api/v1/admin/users"),
+            ("POST", "/api/v1/admin/../tags/write"),
+        ] {
+            assert_eq!(
+                o.manager.admin(&o.id, method, path, None, None).await,
+                Err(DeviceError::BadPath),
+                "{method} {path}"
+            );
+        }
+        let big = json!({ "x": "a".repeat(MAX_ADMIN_BODY) });
+        assert_eq!(
+            o.manager
+                .admin(&o.id, "POST", "/api/v1/admin/access", None, Some(&big))
+                .await,
+            Err(DeviceError::TooLarge)
+        );
+        assert_eq!(o.server.requests().len(), before, "không gửi gì");
     }
 }

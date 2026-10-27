@@ -80,8 +80,8 @@ Thiết bị tự sinh chứng chỉ ở lần chạy đầu. Studio và Chrome 
 
 - Đưa fingerprint cho kỹ sư qua kênh tin cậy (đọc trực tiếp, giấy) để họ so khi ghim trong Studio.
 - **Chrome trên máy vận hành:** mở `https://<địa chỉ>:8443/device.crt` để tải chứng chỉ, so fingerprint, rồi cài vào "Trusted Root Certification Authorities" của Windows (`certmgr.msc`, hoặc `certutil -addstore -f Root mat-device.crt` với quyền quản trị; nhiều máy: Group Policy). Khởi động lại Chrome.
-- Đặt **IP tĩnh** cho BL335: chứng chỉ ghi IP của thiết bị. Đổi IP thì chạy `mat-runtime --regen-cert` (fingerprint đổi: Studio phải ghim lại, máy vận hành phải cài lại chứng chỉ).
-- Dùng CA của công ty: `mat-runtime --make-csr --san <IP>,<tên miền>` → gửi CSR cho CA → `mat-runtime --import-cert chain.pem` → `systemctl restart mat-runtime`. CA phải ký bằng **ECDSA**; chứng chỉ ký RSA bị từ chối.
+- Đặt **IP tĩnh** cho BL335: chứng chỉ ghi IP của thiết bị. Đổi IP thì **Sinh lại chứng chỉ…** trong Studio › Thiết lập thiết bị › Chứng chỉ (mục 5.0; Studio ghim lại sau khi bạn so vân tay, máy vận hành phải cài lại chứng chỉ). Dòng lệnh `mat-runtime --regen-cert` chỉ còn cho phục hồi (mục 5.4).
+- Dùng CA của công ty: Studio › Thiết lập thiết bị › Chứng chỉ › **Tạo CSR** (thêm IP/tên miền) → gửi CSR cho CA → **Nhập chứng chỉ…** (dán chuỗi PEM; runtime tự khởi động lại). Dòng lệnh tương đương (`--make-csr`, `--import-cert`) vẫn dùng được qua SSH. CA phải ký bằng **ECDSA**; chứng chỉ ký RSA bị từ chối.
 
 ## 4. Tài khoản
 
@@ -352,10 +352,73 @@ ERP, MES, BI hay script đọc giá trị, lịch sử, alarm và (nếu đượ
 
 Kho key là `/var/lib/mat-runtime/auth/api-keys.json` (chỉ có băm SHA-256 của key). Kho hỏng: mọi key bị từ chối (`APIKEY_STORE`), tab báo lỗi; lưu lại một thay đổi bất kỳ (hoặc thu hồi rồi tạo lại) để ghi lại kho.
 
+<a id="quan-tri-studio"></a>
+
+### 4.7. Quản lý người dùng từ mAT Studio
+
+Mọi việc của trang Quản trị web (mục 4.1, 4.5, 4.6) làm được ngay trong mAT Studio, trên cây project ở mục **Người dùng và quyền** của thiết bị. Dữ liệu vẫn nằm trên thiết bị như trên (Studio không ghi gì vào project, nạp xuống không đổi người dùng); Studio gọi đúng API quản trị của thiết bị bằng phiên Online của mình (HTTPS có ghim chứng chỉ), nên mọi kiểm tra, xác nhận lại mật khẩu và nhật ký giống hệt trang web (nhật ký ghi kênh `https`).
+
+**Điều kiện:** Studio **Online** với thiết bị (Ctrl+K) bằng tài khoản **administrator**. Chưa Online, editor báo "Kết nối thiết bị với tài khoản quản trị để quản lý người dùng" kèm nút **Online…**; đăng nhập bằng tài khoản khác thì báo chỉ administrator quản lý được, kèm nút **Đăng xuất để đổi tài khoản**.
+
+| Mục trên cây | Làm gì | Ở đâu sửa |
+|---|---|---|
+| Người dùng | Danh sách, tìm, lọc theo vai trò; **Thêm người dùng** (mật khẩu sinh hiện một lần hoặc tự nhập) | Chọn một dòng: Inspector sửa vai trò, bật/tắt, email, nhóm, **Mở khóa**, **Đặt lại mật khẩu…**, **Xóa người dùng…** |
+| Nhóm | **Thêm nhóm** (mã gợi ý từ tên) | Inspector: đổi tên, đánh dấu thành viên, **Xóa nhóm…** (chỉ khi không còn dùng) |
+| Quyền theo trang | Ma trận màn hình, popup, trang hệ thống × Xem/Thao tác | Chọn dòng, bật/tắt người nhận ở Inspector; dải "N thay đổi quyền chưa lưu" → **Lưu lên thiết bị** |
+| Quyền theo component | Xem trước màn hình **của project đang mở** trong Studio; bấm (hoặc Tab rồi Enter) một component | Inspector: quyền xem, thao tác và bảng "Ai thấy, ai thao tác" |
+| Xem với tư cách | Chọn người dùng, màn hình: xem đúng như người đó thấy (chỉ đọc) | Inspector tóm tắt quyền hiệu lực |
+| Email cảnh báo | SMTP, quy tắc gửi, hàng đợi; **Gửi thử…** | Quy tắc chọn ở lưới, sửa ở Inspector; **Lưu lên thiết bị** |
+| API key | **Tạo API key** (token hiện một lần), lần dùng cuối, số gọi | Inspector: sửa, **Thu hồi…** |
+| Nhật ký | Nhật ký kiểm toán của thiết bị (lọc, tải thêm) | Chỉ đọc |
+
+Các lệnh cũng có trong bảng lệnh (Ctrl+Shift+P): "Người dùng và quyền", "Quản trị: Thêm người dùng…", "Quản trị: Thêm nhóm…", "Quản trị: Lưu thay đổi quyền lên thiết bị", "Quản trị: Tạo API key…", "Quản trị: Gửi thử email cảnh báo…", "Quản trị: Tải lại từ thiết bị".
+
+**Lưu ý:**
+
+- Hạ vai trò, tắt tài khoản, đặt lại mật khẩu, xóa người dùng hay nhóm, tạo key ghi được Tag: hộp thoại hỏi **mật khẩu của chính bạn**; sai thì báo "Mật khẩu xác nhận không đúng." và giữ hộp thoại.
+- Có người khác vừa sửa trên thiết bị (trang web hay Studio khác): lần lưu nhận xung đột, Studio tải lại và báo "Dữ liệu trên thiết bị vừa đổi"; thay đổi quyền chưa lưu vẫn còn, xem lại rồi lưu.
+- **Quyền theo component** dùng màn hình của project đang mở. Project đang mở khác project đang chạy trên thiết bị (digest khác) hoặc còn thay đổi chưa lưu thì editor báo; component chưa có trên thiết bị thì Inspector nói cần nạp xuống trước.
+- Mật khẩu SMTP vẫn đặt trên thiết bị bằng `sudo mat-runtime --set-secret smtp` (mục 4.5); Studio chỉ cho biết đã đặt hay chưa.
+- Kho quyền hỏng: khôi phục bản trước ở trang Quản trị web (mục 4.3).
+
 ## 5. Cấu hình mạng và gia cố
 
-Cấu hình ở `/etc/mat-runtime/runtime.json`. Sửa xong: `systemctl restart mat-runtime`, rồi xem cảnh báo bằng `journalctl -u mat-runtime -n 50 --no-pager`. Sai kiểu hoặc ngoài khoảng: runtime không chạy và in tên khóa sai. Khóa lạ: bỏ qua kèm `warning: bỏ qua khóa không hỗ trợ` (gõ sai tên khóa thì runtime dùng mặc định: luôn đọc cảnh báo).
+Các khóa của mục 5.0 đổi từ Studio hoặc trang Quản trị (không cần SSH). Các khóa hạ tầng khác (cổng, luồng, `hostCheck`, …) vẫn ở `/etc/mat-runtime/runtime.json`. Sửa xong: `systemctl restart mat-runtime`, rồi xem cảnh báo bằng `journalctl -u mat-runtime -n 50 --no-pager`. Sai kiểu hoặc ngoài khoảng: runtime không chạy và in tên khóa sai. Khóa lạ: bỏ qua kèm `warning: bỏ qua khóa không hỗ trợ` (gõ sai tên khóa thì runtime dùng mặc định: luôn đọc cảnh báo).
 
+
+<a id="device-settings"></a>
+
+### 5.0. Thiết lập thiết bị từ Studio (không cần SSH)
+
+Từ bản 027, mọi thiết lập quản trị hay đổi làm từ **mAT Studio** (Online bằng tài khoản administrator, cây project › thiết bị › **Thiết lập thiết bị**) hoặc trang **Quản trị › Thiết bị** của trang web. SSH chỉ còn là **đường phục hồi khẩn cấp** (mục 5.4).
+
+| Thiết lập | Khóa | Giảm bảo vệ (hỏi lại mật khẩu) |
+|---|---|---|
+| Bắt buộc đăng nhập trang vận hành | `viewerLogin` | tắt (`required` → `off`) |
+| Xem không đăng nhập từ | `viewerAccess` | mở rộng (`off` → `private` → `any`) |
+| Tên miền cho phép | `allowedHosts` | thêm tên |
+| Kết nối live tối đa mỗi địa chỉ | `maxLiveClientsPerSource` | không |
+| Cho phép cập nhật runtime qua mạng (OTA) | `update.enabled` | bật |
+| Tên thiết bị | `deviceName` | không |
+
+- Thiết lập lưu trên thiết bị ở `/var/lib/mat-runtime/settings.json` (của `matscada`, ghi nguyên tử, bản trước ở `settings.json.bak`), **đè lên** `runtime.json` cho đúng các khóa trên. Thứ tự: mặc định < `runtime.json` < `settings.json`. Lưới thiết lập hiện **nguồn** của từng giá trị (runtime.json hay Thiết lập thiết bị); để một khóa về theo `runtime.json`, đặt lại đúng giá trị của `runtime.json` rồi lưu.
+- Lưu xong, runtime **tự khởi động lại có kiểm soát** sau khoảng 1 s (như khi nạp project: trang vận hành tự kết nối lại, phiên đăng nhập được giữ). Lưu mà giá trị đang chạy không đổi thì không khởi động lại.
+- Mỗi lần lưu ghi audit `device.settings` kèm giá trị trước/sau. Hai người cùng sửa: người lưu sau nhận "đã có người khác đổi" (`CONFLICT`), đọc lại rồi sửa.
+- **Chứng chỉ** (tab Chứng chỉ): xem vân tay, hạn, tên và IP trong chứng chỉ, cảnh báo `TLS_NO_IP_SAN`; **Sinh lại chứng chỉ…** (luôn gồm IP mọi card, thêm tên hoặc IP ở ô bên trên), **Tạo CSR** (gửi CA ký), **Nhập chứng chỉ…** (dán PEM chứng chỉ máy chủ rồi chuỗi CA; thiết bị từ chối tệp có khóa riêng `CERT_FILE_INVALID`, chứng chỉ không khớp khóa `CERT_KEY_MISMATCH`, hết hạn hoặc chưa tới hạn `CERT_EXPIRED`). Sinh lại và nhập cần mật khẩu, ghi audit `cert.regenerate`/`tls.import`, rồi runtime khởi động lại với chứng chỉ mới. Studio chờ thiết bị chạy lại, hiện **vân tay thiết bị vừa trả** cạnh **vân tay Studio đang thấy**: chỉ khi hai giá trị giống nhau mới có nút **Ghim chứng chỉ mới**; khác nhau thì Studio không ghim và báo có thể có thiết bị giả danh. Máy vận hành đã cài chứng chỉ tự ký cũ phải cài lại (mục 3).
+
+<a id="ssh-recovery"></a>
+
+### 5.4. Phục hồi khẩn cấp qua SSH
+
+Chỉ khi không vào được Studio hay trang web (ví dụ lỡ đặt `allowedHosts`/`viewerAccess` khóa chính mình ngoài, hoặc chứng chỉ hỏng):
+
+```sh
+sudo rm /var/lib/mat-runtime/settings.json     # về đúng runtime.json; bản trước vẫn ở settings.json.bak
+sudo systemctl restart mat-runtime
+sudo -u matscada /opt/mat-runtime/bin/mat-runtime --regen-cert   # chứng chỉ hỏng
+```
+
+`settings.json` hỏng thì runtime dùng `settings.json.bak`, cả hai hỏng thì bỏ qua kèm cảnh báo trong `journalctl -u mat-runtime`: thiết bị luôn khởi động được với `runtime.json`.
 ### 5.1. Tên truy cập (`allowedHosts`)
 
 Thiết bị kiểm tiêu đề `Host` của mọi yêu cầu (chống DNS rebinding). Luôn nhận: mọi địa chỉ IP, `localhost`, tên máy của thiết bị và `<tên máy>.local`. Truy cập bằng tên khác (DNS nội bộ, DDNS) bị trả 421 `HOST_NOT_ALLOWED`. Thêm tên:
@@ -383,7 +446,7 @@ Mỗi lần từ chối có audit `access.denied` kèm tên đã gõ (cắt còn
 
 - **Bản cài mới:** `runtime.json` mẫu đặt `"viewerLogin": "required"`. Mở bất kỳ địa chỉ nào của trang vận hành khi chưa đăng nhập đưa tới trang đăng nhập; đăng nhập xong về đúng trang đã định mở. Không có phiên thì máy chủ không trả cấu hình màn hình, dữ liệu sống, lịch sử, báo cáo, alarm. Mở bằng `http://` chỉ hiện "Cần mở bằng HTTPS để đăng nhập" kèm liên kết **Mở trang đăng nhập (HTTPS)**.
 - **Thiết bị đang chạy khi nâng cấp:** giữ nguyên `runtime.json`. Không có khóa `viewerLogin` thì runtime dùng `off` như trước. `deploy.sh` in dòng "viewerLogin: off: XEM KHÔNG CẦN ĐĂNG NHẬP…" để nhắc.
-- **Đổi:** root sửa `/etc/mat-runtime/runtime.json` thành `"viewerLogin": "required"` (hoặc `"off"`), rồi `systemctl restart mat-runtime`. Trước khi bật `required`: mỗi người vận hành phải có tài khoản (mục 4.1), máy vận hành mở bằng `https://` và đã cài chứng chỉ (mục 3).
+- **Đổi:** Studio › Thiết lập thiết bị (hoặc Quản trị › Thiết bị), ô **Bắt buộc đăng nhập** (mục 5.0); tắt cần nhập lại mật khẩu. Trước khi bật `required`: mỗi người vận hành phải có tài khoản (mục 4.1), máy vận hành mở bằng `https://` và đã cài chứng chỉ (mục 3).
 - **Khi `off`:** ai mở được địa chỉ thiết bị cũng xem được. Người chưa đăng nhập được tính như vai trò Người xem không thuộc nhóm nào: thấy trang và component **chưa có quy tắc** (khi mặc định project cho Người xem) hoặc có quy tắc tích **Người xem+**; ô **Mọi người**, nhóm, người dùng không tính cho họ. Trang Quản trị hiện dải cảnh báo "Xem không cần đăng nhập". Chỉ để `off` cho màn hình kiosk trong phòng điều khiển kín, không mở ra ngoài LAN. Trạm 24/7 muốn bắt buộc đăng nhập: dùng tài khoản Người xem riêng cho trạm và `webSessionIdleMin` 480 (mục 4.4).
 
 Giới hạn theo IP được tính ở hai mức:
@@ -480,13 +543,15 @@ Cập nhật runtime qua mạng dùng gói `.matupdate` do nhà phát hành ký 
 | `mat-update-verify` | ai cũng chạy được | kiểm chữ ký và từng tệp của gói (mục 7.3) |
 | `/etc/mat-runtime/trusted-keys/*.pem` | root, `0644` | khóa công khai tin cậy (tối đa 4), nằm ngoài phần được cập nhật |
 
+Gói runtime đóng trên Windows (`deployment/package-runtime.ps1`) luôn có thư mục `updater/`; `deploy.sh` tự đặt lại quyền thực thi (tar của Windows không giữ bit này: trước bản 027 lần cài báo nhầm "gói không có mat-updater"). Gói `.matupdate` phát hành thật phải ký bằng **khóa phát hành thật của công ty** (giữ ngoại tuyến); khóa thử của `tools/update-it.ps1` chỉ dùng trong bàn thử.
+
 Chính `mat-updater` không bao giờ được thay qua OTA: gói có thư mục `updater/` bị từ chối `UPDATER_MANUAL_ONLY`, phải cài bằng `deploy.sh` (mục 7.1).
 
-**Bật OTA** (root, trên thiết bị):
+**Bật OTA** (administrator, từ Studio; bước 1 chỉ khi chưa có khóa):
 
 1. Kiểm có khóa tin cậy: `ls -l /etc/mat-runtime/trusted-keys/` (ít nhất một tệp `.pem`) và `mat-runtime --trust-key list` (keyId và nhãn từng khóa). `deploy.sh` chỉ cài khóa đi kèm gói khi thư mục chưa có khóa nào; không bao giờ ghi đè khóa đã có.
-2. Sửa `runtime.json`: `"update": {"enabled": true}` (khóa phụ: `maxPackageMiB`, mặc định 64, khoảng 8–256; `trustedKeysDir`, mặc định `/etc/mat-runtime/trusted-keys`). Rồi `systemctl restart mat-runtime` và kiểm `systemctl status mat-updater.path` báo `active (waiting)`.
-3. Bật mà chưa có khóa: cảnh báo `UPDATE_KEYS_MISSING`, mọi gói bị từ chối. Tắt lại: `"enabled": false` rồi khởi động lại dịch vụ (Studio hiện "OTA đang tắt: root bật update.enabled trong runtime.json").
+2. Studio › Thiết lập thiết bị: tích **Cho phép cập nhật runtime qua mạng (OTA)** rồi lưu (nhập lại mật khẩu; mục 5.0). Tương đương trong `runtime.json`: `"update": {"enabled": true}` (khóa phụ: `maxPackageMiB`, mặc định 64, khoảng 8–256; `trustedKeysDir`, mặc định `/etc/mat-runtime/trusted-keys`). Rồi `systemctl restart mat-runtime` và kiểm `systemctl status mat-updater.path` báo `active (waiting)`.
+3. Bật mà chưa có khóa: cảnh báo `UPDATE_KEYS_MISSING`, mọi gói bị từ chối. Tắt lại: bỏ tích trong Thiết lập thiết bị (Studio hiện "OTA đang tắt: bật trong Thiết bị › Thiết lập thiết bị").
 
 **Khóa tin cậy** (root):
 
@@ -536,7 +601,7 @@ Studio mất liên lạc quá 120 s thì báo "Mất kết nối với thiết b
 
 | Mã | Nghĩa | Việc cần làm |
 |---|---|---|
-| `UPDATE_DISABLED` | OTA đang tắt | root bật `update.enabled` (trên) |
+| `UPDATE_DISABLED` | OTA đang tắt | bật trong Studio › Thiết lập thiết bị (mục 5.0) |
 | `UPDATE_KEYS_MISSING` | thiết bị chưa có khóa tin cậy | `--trust-key add` hoặc `deploy.sh` |
 | `UPDATE_SIGNATURE_INVALID` | chữ ký không đúng với khóa tin cậy nào | không cài; lấy gói từ kênh chính thức |
 | `UPDATE_PACKAGE_INVALID` | gói hỏng hoặc sai định dạng (chi tiết trong `detail.code`) | tải lại gói |
@@ -593,7 +658,7 @@ Ngưỡng tham khảo: RSS ≤ 150 MB, CPU trung bình ≤ 30 %, `liveLagP95Ms` 
 |---|---|---|
 | `VIEWER_PUBLIC` | trang vận hành mở cho mọi địa chỉ (`viewerAccess` = `any`) | về `private` sau khi demo (mục 5.2) |
 | `HTTPS_DOWN` | cổng HTTPS không chạy: trang mở qua HTTP không điều khiển được | `journalctl`; lỗi chứng chỉ thì `--cert-info`, `--regen-cert` (mục 3) |
-| `TLS_NO_IP_SAN` | chứng chỉ không có IP của thiết bị: Chrome báo lỗi tên | đặt IP tĩnh rồi `mat-runtime --regen-cert` (mục 3) |
+| `TLS_NO_IP_SAN` | chứng chỉ không có IP của thiết bị: Chrome báo lỗi tên | đặt IP tĩnh rồi Studio › Thiết lập thiết bị › Chứng chỉ › Sinh lại (mục 5.0) |
 | `TLS_SAN_MISMATCH` | chứng chỉ ghi IP khác IP hiện tại của thiết bị | như trên |
 | `HOST_CHECK_OFF` | kiểm `Host` đang tắt (`hostCheck` = `off`) | bật lại sau khi gỡ rối (mục 5.1) |
 | `SSH_ROOT_PASSWORD` | root đăng nhập SSH được bằng mật khẩu | chuyển sang khóa SSH (mục 5.3); cảnh báo hết sau tối đa 10 phút |
@@ -658,7 +723,7 @@ Modbus TCP không mã hóa, không xác thực: đặt máy cầu nối và BL33
 |---|---|---|
 | Trang không mở | `systemctl status mat-runtime`; `ss -ltnp` | xem `journalctl`; lỗi cấu hình thì sửa khóa được nêu tên |
 | Chrome `NET::ERR_CERT_AUTHORITY_INVALID` | | cài chứng chỉ (mục 3) |
-| Chrome `NET::ERR_CERT_COMMON_NAME_INVALID` | cảnh báo `TLS_NO_IP_SAN` hoặc `TLS_SAN_MISMATCH` | `mat-runtime --regen-cert` sau khi đặt IP tĩnh |
+| Chrome `NET::ERR_CERT_COMMON_NAME_INVALID` | cảnh báo `TLS_NO_IP_SAN` hoặc `TLS_SAN_MISMATCH` | sinh lại chứng chỉ từ Studio (mục 5.0) sau khi đặt IP tĩnh |
 | 421 `HOST_NOT_ALLOWED` | mở bằng tên miền chưa khai | thêm vào `allowedHosts` (mục 5.1) |
 | Người dùng báo bị khóa | audit `auth.lockout` | **Mở khóa** ở tab Người dùng, hoặc `mat-runtime --user-unlock <tên>`; nếu thấy `auth.distributed_attack`: kiểm mạng |
 | Người vận hành báo "Không có quyền xem trang này" hoặc nút khóa "Cần quyền thao tác" | **Xem với tư cách** người đó (mục 4.1) | cấp quyền ở tab Quyền theo trang hoặc Quyền theo component, hoặc gán đúng nhóm |

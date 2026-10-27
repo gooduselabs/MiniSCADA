@@ -816,3 +816,69 @@ TEST(Config011, UnknownKeysAreSkippedWithAWarningAtTopLevelAndInsideObjects) {
     EXPECT_NE(all.find("update.enabld"), std::string::npos) << all;
     EXPECT_NE(all.find("logic.writez"), std::string::npos) << all;
 }
+
+// Feature 027 (FR-001, FR-002): <dataDir>/settings.json over runtime.json and the command line,
+// only for the keys the Studio may change; a damaged file never stops the runtime.
+TEST(DeviceSettings, OverlayWinsOverRuntimeJsonForTheAllowedKeys) {
+    Args a{"--config", "/c.json"};
+    auto r = loadConfig(
+        a.argc(), a.argv(),
+        files({{"/c.json",
+                R"({"dataDir":"/d","viewerLogin":"off","update":{"enabled":false},"port":8081})"},
+               {"/d/settings.json",
+                R"({"rev":4,"values":{"viewerLogin":"required","viewerAccess":"any",
+                    "allowedHosts":["scada.local"],"maxLiveClientsPerSource":3,
+                    "updateEnabled":true,"deviceName":"Trạm bơm 1"}})"}}));
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.viewerLogin, "required");
+    EXPECT_EQ(r.cfg.viewerAccess, "any");
+    ASSERT_EQ(r.cfg.allowedHosts.size(), 1u);
+    EXPECT_EQ(r.cfg.allowedHosts[0], "scada.local");
+    EXPECT_EQ(r.cfg.maxLiveClientsPerSource, 3);
+    EXPECT_TRUE(r.cfg.updateEnabled);
+    EXPECT_EQ(r.cfg.deviceName, "Trạm bơm 1");
+    EXPECT_EQ(r.cfg.port, 8081);
+    EXPECT_EQ(r.settingsRev, 4);
+    EXPECT_EQ(r.base.viewerLogin, "off") << "base: runtime.json without the overlay";
+    EXPECT_FALSE(r.base.updateEnabled);
+}
+
+TEST(DeviceSettings, DamagedFileFallsBackToBakThenIsIgnoredWithAWarning) {
+    Args a{"--data-dir", "/d"};
+    auto r = loadConfig(
+        a.argc(), a.argv(),
+        files({{"/d/settings.json", "{not json"},
+               {"/d/settings.json.bak", R"({"rev":2,"values":{"viewerLogin":"required"}})"}}));
+    ASSERT_TRUE(r.ok) << r.error;
+    EXPECT_EQ(r.cfg.viewerLogin, "required");
+    EXPECT_EQ(r.settingsRev, 2);
+    EXPECT_FALSE(r.warnings.empty());
+
+    auto bad = loadConfig(a.argc(), a.argv(),
+                          files({{"/d/settings.json", R"({"rev":1,"values":{"port":1}})"}}));
+    ASSERT_TRUE(bad.ok) << "never stops the start: " << bad.error;
+    EXPECT_EQ(bad.cfg.port, 8080) << "a key outside the list is not applied";
+    EXPECT_EQ(bad.settingsRev, 0);
+    EXPECT_FALSE(bad.warnings.empty());
+}
+
+TEST(DeviceSettings, ApplyChecksEveryValueAndRefusesOtherKeys) {
+    RuntimeConfig c;
+    std::string err;
+    EXPECT_TRUE(applyDeviceSettings(nlohmann::json::object(), c, err)) << err;
+    EXPECT_FALSE(applyDeviceSettings({{"viewerLogin", "maybe"}}, c, err));
+    EXPECT_FALSE(applyDeviceSettings({{"viewerAccess", "all"}}, c, err));
+    EXPECT_FALSE(applyDeviceSettings({{"maxLiveClientsPerSource", 11}}, c, err));
+    EXPECT_FALSE(applyDeviceSettings({{"updateEnabled", "yes"}}, c, err));
+    EXPECT_FALSE(applyDeviceSettings({{"deviceName", ""}}, c, err));
+    EXPECT_FALSE(applyDeviceSettings({{"allowedHosts", "x"}}, c, err));
+    EXPECT_FALSE(applyDeviceSettings({{"httpsPort", 9443}}, c, err));
+    EXPECT_NE(err.find("httpsPort"), std::string::npos);
+    EXPECT_TRUE(
+        applyDeviceSettings({{"updateEnabled", true}, {"allowedHosts", {"a", "b"}}}, c, err));
+    EXPECT_TRUE(c.updateEnabled);
+    const nlohmann::json v = deviceSettingsOf(c);
+    EXPECT_EQ(v["updateEnabled"], true);
+    EXPECT_EQ(v["allowedHosts"].size(), 2u);
+    EXPECT_EQ(v.size(), 6u);
+}

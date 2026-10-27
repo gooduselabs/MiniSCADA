@@ -90,7 +90,9 @@ import {
   treeRemove,
   treeRename,
 } from './tree-commands.ts';
+import { AdminWorkspace } from './admin-workspace.ts';
 import { DeviceBindings } from './device-binding.ts';
+import { DeviceSettingsFlow } from '../model/device-settings-flow.ts';
 import { saveNotice } from './save-policy.ts';
 import { StudioStore, type SaveResult, type Selection, type UiContext } from './store.ts';
 import {
@@ -172,6 +174,8 @@ export type OnlineDialogSpec =
   | { kind: 'svgDelete'; rel: string }
   | { kind: 'svgPasteReport'; rel: string }
   | { kind: 'svgLayerDelete'; rel: string; layer: string }
+  // Feature 027: hộp thoại của nhóm editor Người dùng và quyền (nội dung theo `app.admin.dialog`).
+  | { kind: 'admin' }
   // Project mới… (2026-10-20, ui/dialogs/new-project-dialog.ts).
   | { kind: 'newProject' };
 
@@ -234,9 +238,19 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'svgDelete' ||
   d?.kind === 'svgPasteReport' ||
   d?.kind === 'svgLayerDelete' ||
+  d?.kind === 'admin' ||
   d?.kind === 'newProject';
 
 /** Việc làm tiếp sau khi Online và đăng nhập xong (nút "Đọc lên…" của hộp thoại Thiết bị trong mạng). */
+/** Lệnh của Người dùng và quyền chạy qua `adminCommand` (feature 027). */
+type AdminCommand =
+  | 'admin.reload'
+  | 'admin.addUser'
+  | 'admin.addGroup'
+  | 'admin.saveRules'
+  | 'admin.addKey'
+  | 'admin.testEmail';
+
 export type OnlineIntent = 'upload-new' | 'compare';
 
 /** Kết quả Thêm theo địa chỉ: mã lỗi của `normalizeHttps`, `http-port` (cổng HTTP sai), hoặc của `device_add`. */
@@ -408,6 +422,10 @@ export class StudioApp {
   readonly driverDiag: DriverDiagFeed | null;
   /** Audit của thiết bị cho editor Audit (administrator); `null` khi không có lớp thiết bị. */
   readonly audit: AuditFeed | null;
+  /** Thiết lập thiết bị (feature 027, administrator); `null` khi không có lớp thiết bị. */
+  readonly deviceSettings: DeviceSettingsFlow | null;
+  /** Người dùng và quyền của thiết bị đang Online (feature 027); `null` khi không có lớp thiết bị. */
+  readonly admin: AdminWorkspace | null;
   /** Thiết bị mà `diag` và `audit` đang giữ số liệu: đổi thiết bị hay Offline thì bỏ. */
   private feedDevice: string | null = null;
   /** Việc chờ Online xong (Đọc lên từ hộp thoại Thiết bị trong mạng). */
@@ -563,6 +581,62 @@ export class StudioApp {
           onChange: () => this.emit(),
         })
       : null;
+    // Feature 027: thiết lập thiết bị và chứng chỉ qua phiên Online có sẵn; sau khi đổi chứng chỉ ghim lại có xác nhận.
+    this.deviceSettings = link
+      ? new DeviceSettingsFlow({
+          get: async (path) => {
+            const id = this.session.deviceId;
+            return id ? link.get(id, path) : { error: 'no-such-device' };
+          },
+          post: async (path, body) => {
+            const id = this.session.deviceId;
+            return id ? link.post(id, path, body) : { error: 'no-such-device' };
+          },
+          probe: async () => {
+            const id = this.session.deviceId;
+            return id ? link.probe(id) : { error: 'no-such-device' };
+          },
+          pin: async (fp) => {
+            const id = this.session.deviceId;
+            return id ? link.pin(id, fp) : { error: 'no-such-device' };
+          },
+          unpin: async (fp) => {
+            const id = this.session.deviceId;
+            return id ? link.unpin(id, fp) : { error: 'no-such-device' };
+          },
+          reconnect: () => {
+            const id = this.session.deviceId;
+            if (!id) return;
+            void link.devices().then((list) => {
+              const k = list.find((d) => d.id === id);
+              if (k) this.session.goOnline(k);
+            });
+          },
+          onChange: () => this.emit(),
+        })
+      : null;
+    this.admin = link
+      ? new AdminWorkspace({
+          link,
+          deviceId: () => this.session.deviceId,
+          gate: () => {
+            const s = this.session;
+            if (s.mode !== 'online' || s.auth === null || !sessionActive(s.state)) return 'offline';
+            return s.auth.role === 'administrator' ? 'ready' : 'notAdmin';
+          },
+          me: () => this.session.auth?.user ?? null,
+          onChange: () => this.emit(),
+          openDialog: () => this.openDialog({ kind: 'admin' }),
+          closeDialog: () => {
+            if (this.u.dialog?.kind === 'admin') this.closeOnlineDialog();
+          },
+          toast: (text) => this.toast(text),
+          relogin: () => {
+            this.showOnline('login');
+            this.emit();
+          },
+        })
+      : null;
     this.bindings = new DeviceBindings(this.storage);
     this.columnPref = loadColumnChoice(this.storage);
     const width = deps.windowWidth ?? 1360;
@@ -702,6 +776,7 @@ export class StudioApp {
       this.opcua.reset();
       if (this.audit && this.audit.state.status !== 'idle') this.audit.reset();
     }
+    this.admin?.sync();
     const want = device !== null && this.u?.inspectorTab === 'diag';
     if (!this.diag) return;
     if (want && !this.diag.active) this.diag.start();
@@ -869,7 +944,13 @@ export class StudioApp {
     return buildTree({
       folderName: s.project ? basename(s.project.display) : '',
       outline: s.outline,
-      device: { name: d?.name ?? bound?.name ?? null, address, state: this.session.state },
+      device: {
+        name: d?.name ?? bound?.name ?? null,
+        address,
+        state: this.session.state,
+        admin:
+          active && this.session.mode === 'online' && this.session.auth?.role === 'administrator',
+      },
       compare: this.session.compare.info?.result ?? null,
       issues: s.issues,
       svgFiles: this.svg.files(),
@@ -1173,6 +1254,15 @@ export class StudioApp {
         return this.showOnlineNow('upload');
       case 'online.audit':
         return this.openEditor('audit');
+      case 'admin.open':
+        return this.openEditor('admin:users');
+      case 'admin.reload':
+      case 'admin.addUser':
+      case 'admin.addGroup':
+      case 'admin.saveRules':
+      case 'admin.addKey':
+      case 'admin.testEmail':
+        return this.adminCommand(id as AdminCommand);
       case 'tools.validate':
         return this.validateNow();
       case 'help.shortcuts':
@@ -1557,7 +1647,14 @@ export class StudioApp {
   /** Mở editor trong tab (tab có sẵn thì chuyển tới); `reveal` mở đường tới mục trên cây. */
   openEditor(id: EditorId, reveal = true): void {
     // Trang Thiết bị mở được cả khi chưa mở project (Online › Thiết bị… luôn bật, contracts/commands.md).
-    if (id !== 'start' && id !== 'device' && id !== 'audit' && !this.store.state.project) return;
+    if (
+      id !== 'start' &&
+      id !== 'device' &&
+      id !== 'audit' &&
+      id !== 'deviceSettings' &&
+      !this.store.state.project
+    )
+      return;
     this.store.openTab(id);
     this.afterActivate(id, reveal);
   }
@@ -1599,6 +1696,7 @@ export class StudioApp {
     if (id === 'device') return t('cmd.online.device').replace(/…$/, '');
     if (id === 'compare') return t('compare.tab');
     if (id === 'audit') return t('audit.tab');
+    if (id === 'deviceSettings') return t('devset.tab');
     if (id === 'alarmTest') return t('alarm.test.title');
     if (id === 'svgnew') return t('svgd.new.tab');
     const node = findByEditor(this.tree(), id);
@@ -2429,6 +2527,31 @@ export class StudioApp {
       this.syncSessionTags();
       s.goOnline(k);
     } else await this.openDevices();
+  }
+
+  /** Lệnh của Người dùng và quyền (feature 027): mở editor hợp lệnh rồi làm; chưa đủ quyền thì editor nói lý do. */
+  private adminCommand(id: AdminCommand): void {
+    const a = this.admin;
+    const page: Record<typeof id, EditorId | null> = {
+      'admin.reload': null,
+      'admin.addUser': 'admin:users',
+      'admin.addGroup': 'admin:groups',
+      'admin.saveRules': null,
+      'admin.addKey': 'admin:apikeys',
+      'admin.testEmail': 'admin:email',
+    };
+    const target = page[id];
+    if (target && this.store.state.active !== target) this.openEditor(target);
+    if (!a || a.gate !== 'ready') {
+      this.toast(t(a?.gate === 'notAdmin' ? 'admin.gate.notAdmin' : 'admin.gate.offline'));
+      return;
+    }
+    if (id === 'admin.reload') void a.load();
+    else if (id === 'admin.addUser') a.openDialog({ kind: 'createUser' });
+    else if (id === 'admin.addGroup') a.openDialog({ kind: 'createGroup' });
+    else if (id === 'admin.saveRules') void a.saveRules();
+    else if (id === 'admin.addKey') a.openDialog({ kind: 'createKey' });
+    else a.openDialog({ kind: 'emailTest' });
   }
 
   /** Online › Đăng xuất: về Offline, Rust xóa token, thiết bị ghi audit. */

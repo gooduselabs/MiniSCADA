@@ -1,0 +1,1469 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "thu-vien",
+  "name": "Thư viện component",
+  "size": {
+    "width": 1920,
+    "height": 2304
+  },
+  "layout": {
+    "mode": "grid",
+    "columns": 12,
+    "gap": 12,
+    "padding": 16,
+    "rows": [
+      {
+        "id": "r1",
+        "height": 36,
+        "cells": [
+          {
+            "id": "c1",
+            "span": 12,
+            "item": "muc_1"
+          }
+        ]
+      },
+      {
+        "id": "r2",
+        "height": 240,
+        "cells": [
+          {
+            "id": "c2",
+            "span": 3,
+            "item": "w_gauge"
+          },
+          {
+            "id": "c3",
+            "span": 2,
+            "item": "w_level"
+          },
+          {
+            "id": "c4",
+            "span": 2,
+            "item": "w_progress_ring"
+          },
+          {
+            "id": "c5",
+            "span": 3,
+            "item": "w_status"
+          },
+          {
+            "id": "c6",
+            "span": 2,
+            "item": "w_image"
+          }
+        ]
+      },
+      {
+        "id": "r3",
+        "height": 116,
+        "cells": [
+          {
+            "id": "c7",
+            "span": 3,
+            "item": "w_card"
+          },
+          {
+            "id": "c8",
+            "span": 3,
+            "item": "w_label"
+          },
+          {
+            "id": "c9",
+            "span": 3,
+            "item": "w_lamp"
+          },
+          {
+            "id": "c10",
+            "span": 3,
+            "item": "w_clock"
+          }
+        ]
+      },
+      {
+        "id": "r4",
+        "height": 140,
+        "cells": [
+          {
+            "id": "c11",
+            "span": 4,
+            "item": "w_panel"
+          },
+          {
+            "id": "c12",
+            "span": 8,
+            "item": "w_text"
+          }
+        ]
+      },
+      {
+        "id": "r5",
+        "height": 36,
+        "cells": [
+          {
+            "id": "c13",
+            "span": 12,
+            "item": "muc_2"
+          }
+        ]
+      },
+      {
+        "id": "r6",
+        "height": 116,
+        "cells": [
+          {
+            "id": "c14",
+            "span": 3,
+            "item": "w_tile1"
+          },
+          {
+            "id": "c15",
+            "span": 3,
+            "item": "w_tile2"
+          },
+          {
+            "id": "c16",
+            "span": 3,
+            "item": "w_kpi"
+          },
+          {
+            "id": "c17",
+            "span": 3,
+            "item": "w_progress_bar"
+          }
+        ]
+      },
+      {
+        "id": "r7",
+        "height": 36,
+        "cells": [
+          {
+            "id": "c18",
+            "span": 12,
+            "item": "muc_3"
+          }
+        ]
+      },
+      {
+        "id": "r8",
+        "height": 280,
+        "cells": [
+          {
+            "id": "c19",
+            "span": 5,
+            "item": "w_line"
+          },
+          {
+            "id": "c20",
+            "span": 4,
+            "item": "w_bar"
+          },
+          {
+            "id": "c21",
+            "span": 3,
+            "item": "w_pie"
+          }
+        ]
+      },
+      {
+        "id": "r9",
+        "height": 36,
+        "cells": [
+          {
+            "id": "c22",
+            "span": 12,
+            "item": "muc_4"
+          }
+        ]
+      },
+      {
+        "id": "r10",
+        "height": 24,
+        "cells": [
+          {
+            "id": "c23",
+            "span": 5,
+            "item": "ten_w_table"
+          },
+          {
+            "id": "c24",
+            "span": 5,
+            "item": "ten_w_alarm_list"
+          },
+          {
+            "id": "c25",
+            "span": 2,
+            "item": "ten_w_alarm_count"
+          }
+        ]
+      },
+      {
+        "id": "r11",
+        "height": 260,
+        "cells": [
+          {
+            "id": "c26",
+            "span": 5,
+            "item": "w_table"
+          },
+          {
+            "id": "c27",
+            "span": 5,
+            "item": "w_alarm_list"
+          },
+          {
+            "id": "c28",
+            "span": 2,
+            "item": "w_alarm_count"
+          }
+        ]
+      },
+      {
+        "id": "r12",
+        "height": 36,
+        "cells": [
+          {
+            "id": "c29",
+            "span": 12,
+            "item": "muc_5"
+          }
+        ]
+      },
+      {
+        "id": "r13",
+        "height": 84,
+        "cells": [
+          {
+            "id": "c30",
+            "span": 2,
+            "item": "w_button"
+          },
+          {
+            "id": "c31",
+            "span": 2,
+            "item": "w_switch"
+          },
+          {
+            "id": "c32",
+            "span": 3,
+            "item": "w_setpoint"
+          },
+          {
+            "id": "c33",
+            "span": 3,
+            "item": "w_slider"
+          },
+          {
+            "id": "c34",
+            "span": 2,
+            "item": "w_select"
+          }
+        ]
+      },
+      {
+        "id": "r14",
+        "height": 36,
+        "cells": [
+          {
+            "id": "c35",
+            "span": 12,
+            "item": "muc_6"
+          }
+        ]
+      },
+      {
+        "id": "r15",
+        "height": 24,
+        "cells": [
+          {
+            "id": "c36",
+            "span": 6,
+            "item": "ten_w_h_trend"
+          },
+          {
+            "id": "c37",
+            "span": 6,
+            "item": "ten_w_h_table"
+          }
+        ]
+      },
+      {
+        "id": "r16",
+        "height": 300,
+        "cells": [
+          {
+            "id": "c38",
+            "span": 6,
+            "item": "w_h_trend"
+          },
+          {
+            "id": "c39",
+            "span": 6,
+            "item": "w_h_table"
+          }
+        ]
+      },
+      {
+        "id": "r17",
+        "height": 24,
+        "cells": [
+          {
+            "id": "c40",
+            "span": 8,
+            "item": "ten_w_h_bar"
+          },
+          {
+            "id": "c41",
+            "span": 4,
+            "item": "ten_w_h_pie"
+          }
+        ]
+      },
+      {
+        "id": "r18",
+        "height": 280,
+        "cells": [
+          {
+            "id": "c42",
+            "span": 8,
+            "item": "w_h_bar"
+          },
+          {
+            "id": "c43",
+            "span": 4,
+            "item": "w_h_pie"
+          }
+        ]
+      },
+      {
+        "id": "r19",
+        "height": 36,
+        "cells": [
+          {
+            "id": "c44",
+            "span": 12,
+            "item": "muc_ky_hieu"
+          }
+        ]
+      },
+      {
+        "id": "r20",
+        "height": 150,
+        "cells": [
+          {
+            "id": "c45",
+            "span": 2,
+            "item": "kh_tank_vertical"
+          },
+          {
+            "id": "c46",
+            "span": 2,
+            "item": "kh_tank_horizontal"
+          },
+          {
+            "id": "c47",
+            "span": 2,
+            "item": "kh_pump_centrifugal"
+          },
+          {
+            "id": "c48",
+            "span": 2,
+            "item": "kh_pump_dosing"
+          },
+          {
+            "id": "c49",
+            "span": 2,
+            "item": "kh_valve_gate"
+          },
+          {
+            "id": "c50",
+            "span": 2,
+            "item": "kh_valve_control"
+          }
+        ]
+      },
+      {
+        "id": "r21",
+        "height": 28,
+        "cells": [
+          {
+            "id": "c51",
+            "span": 2,
+            "item": "ten_kh_tank_vertical"
+          },
+          {
+            "id": "c52",
+            "span": 2,
+            "item": "ten_kh_tank_horizontal"
+          },
+          {
+            "id": "c53",
+            "span": 2,
+            "item": "ten_kh_pump_centrifugal"
+          },
+          {
+            "id": "c54",
+            "span": 2,
+            "item": "ten_kh_pump_dosing"
+          },
+          {
+            "id": "c55",
+            "span": 2,
+            "item": "ten_kh_valve_gate"
+          },
+          {
+            "id": "c56",
+            "span": 2,
+            "item": "ten_kh_valve_control"
+          }
+        ]
+      },
+      {
+        "id": "r22",
+        "height": 150,
+        "cells": [
+          {
+            "id": "c57",
+            "span": 2,
+            "item": "kh_valve_check"
+          },
+          {
+            "id": "c58",
+            "span": 2,
+            "item": "kh_motor_ac"
+          },
+          {
+            "id": "c59",
+            "span": 2,
+            "item": "kh_fan"
+          },
+          {
+            "id": "c60",
+            "span": 2,
+            "item": "kh_pipe_h"
+          },
+          {
+            "id": "c61",
+            "span": 2,
+            "item": "kh_pipe_v"
+          },
+          {
+            "id": "c62",
+            "span": 2,
+            "item": "kh_pipe_elbow"
+          }
+        ]
+      },
+      {
+        "id": "r23",
+        "height": 28,
+        "cells": [
+          {
+            "id": "c63",
+            "span": 2,
+            "item": "ten_kh_valve_check"
+          },
+          {
+            "id": "c64",
+            "span": 2,
+            "item": "ten_kh_motor_ac"
+          },
+          {
+            "id": "c65",
+            "span": 2,
+            "item": "ten_kh_fan"
+          },
+          {
+            "id": "c66",
+            "span": 2,
+            "item": "ten_kh_pipe_h"
+          },
+          {
+            "id": "c67",
+            "span": 2,
+            "item": "ten_kh_pipe_v"
+          },
+          {
+            "id": "c68",
+            "span": 2,
+            "item": "ten_kh_pipe_elbow"
+          }
+        ]
+      }
+    ]
+  },
+  "items": [
+    {
+      "id": "kh_tank_vertical",
+      "name": "Bồn đứng",
+      "type": "svg",
+      "svgFile": "graphics/symbols/tank-vertical.svg",
+      "bindingFile": "screens/thu-vien.kh_tank_vertical.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        160
+      ],
+      "elements": [
+        {
+          "elementUid": "el_tank_vertical_liquid",
+          "name": "Chất lỏng"
+        },
+        {
+          "elementUid": "el_tank_vertical_text",
+          "name": "Giá trị mức"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_tank_vertical",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Bồn đứng",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_tank_horizontal",
+      "name": "Bồn nằm",
+      "type": "svg",
+      "svgFile": "graphics/symbols/tank-horizontal.svg",
+      "bindingFile": "screens/thu-vien.kh_tank_horizontal.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        160,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_tank_horizontal_liquid",
+          "name": "Chất lỏng"
+        },
+        {
+          "elementUid": "el_tank_horizontal_text",
+          "name": "Giá trị mức"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_tank_horizontal",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Bồn nằm",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_pump_centrifugal",
+      "name": "Bơm ly tâm",
+      "type": "svg",
+      "svgFile": "graphics/symbols/pump-centrifugal.svg",
+      "bindingFile": "screens/thu-vien.kh_pump_centrifugal.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_pump_centrifugal_impeller",
+          "name": "Cánh bơm"
+        },
+        {
+          "elementUid": "el_pump_centrifugal_lamp",
+          "name": "Đèn trạng thái"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_pump_centrifugal",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Bơm ly tâm",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_pump_dosing",
+      "name": "Bơm định lượng",
+      "type": "svg",
+      "svgFile": "graphics/symbols/pump-dosing.svg",
+      "bindingFile": "screens/thu-vien.kh_pump_dosing.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_pump_dosing_plunger",
+          "name": "Piston"
+        },
+        {
+          "elementUid": "el_pump_dosing_lamp",
+          "name": "Đèn trạng thái"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_pump_dosing",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Bơm định lượng",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_valve_gate",
+      "name": "Van cổng",
+      "type": "svg",
+      "svgFile": "graphics/symbols/valve-gate.svg",
+      "bindingFile": "screens/thu-vien.kh_valve_gate.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        60,
+        60
+      ],
+      "elements": [
+        {
+          "elementUid": "el_valve_gate_body",
+          "name": "Thân van"
+        },
+        {
+          "elementUid": "el_valve_gate_handwheel",
+          "name": "Tay quay"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_valve_gate",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Van cổng",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_valve_control",
+      "name": "Van điều khiển",
+      "type": "svg",
+      "svgFile": "graphics/symbols/valve-control.svg",
+      "bindingFile": "screens/thu-vien.kh_valve_control.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        60,
+        80
+      ],
+      "elements": [
+        {
+          "elementUid": "el_valve_control_actuator",
+          "name": "Cơ cấu chấp hành"
+        },
+        {
+          "elementUid": "el_valve_control_stem",
+          "name": "Trục van"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_valve_control",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Van điều khiển",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_valve_check",
+      "name": "Van một chiều",
+      "type": "svg",
+      "svgFile": "graphics/symbols/valve-check.svg",
+      "bindingFile": "screens/thu-vien.kh_valve_check.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        60,
+        60
+      ],
+      "elements": [
+        {
+          "elementUid": "el_valve_check_body",
+          "name": "Thân van"
+        },
+        {
+          "elementUid": "el_valve_check_arrow",
+          "name": "Mũi tên chiều chảy"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_valve_check",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Van một chiều",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_motor_ac",
+      "name": "Motor AC",
+      "type": "svg",
+      "svgFile": "graphics/symbols/motor-ac.svg",
+      "bindingFile": "screens/thu-vien.kh_motor_ac.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        120,
+        90
+      ],
+      "elements": [
+        {
+          "elementUid": "el_motor_ac_rotor",
+          "name": "Rô-to"
+        },
+        {
+          "elementUid": "el_motor_ac_lamp",
+          "name": "Đèn trạng thái"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_motor_ac",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Motor AC",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_fan",
+      "name": "Quạt",
+      "type": "svg",
+      "svgFile": "graphics/symbols/fan.svg",
+      "bindingFile": "screens/thu-vien.kh_fan.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_fan_blades",
+          "name": "Cánh quạt"
+        },
+        {
+          "elementUid": "el_fan_lamp",
+          "name": "Đèn trạng thái"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_fan",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Quạt",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_pipe_h",
+      "name": "Ống ngang",
+      "type": "svg",
+      "svgFile": "graphics/symbols/pipe-h.svg",
+      "bindingFile": "screens/thu-vien.kh_pipe_h.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        100,
+        20
+      ],
+      "elements": [
+        {
+          "elementUid": "el_pipe_h_flow",
+          "name": "Dòng chảy"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_pipe_h",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Ống ngang",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_pipe_v",
+      "name": "Ống đứng",
+      "type": "svg",
+      "svgFile": "graphics/symbols/pipe-v.svg",
+      "bindingFile": "screens/thu-vien.kh_pipe_v.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        20,
+        100
+      ],
+      "elements": [
+        {
+          "elementUid": "el_pipe_v_flow",
+          "name": "Dòng chảy"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_pipe_v",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Ống đứng",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "kh_pipe_elbow",
+      "name": "Cút",
+      "type": "svg",
+      "svgFile": "graphics/symbols/pipe-elbow.svg",
+      "bindingFile": "screens/thu-vien.kh_pipe_elbow.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        40,
+        40
+      ],
+      "elements": [
+        {
+          "elementUid": "el_pipe_elbow_flow",
+          "name": "Dòng chảy"
+        }
+      ]
+    },
+    {
+      "id": "ten_kh_pipe_elbow",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Cút",
+        "fontSize": 14,
+        "align": "center"
+      }
+    },
+    {
+      "id": "muc_1",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Hiển thị",
+        "fontSize": 20,
+        "bold": true
+      }
+    },
+    {
+      "id": "w_gauge",
+      "type": "widget",
+      "widget": "gauge",
+      "props": {
+        "title": "Đồng hồ (gauge)",
+        "label": "Nhiệt độ",
+        "decimals": 1
+      },
+      "tags": {
+        "value": "DEMO.TEMP"
+      }
+    },
+    {
+      "id": "w_level",
+      "type": "widget",
+      "widget": "level",
+      "props": {
+        "label": "Mức (level)",
+        "decimals": 0
+      },
+      "tags": {
+        "value": "DEMO.LEVEL"
+      }
+    },
+    {
+      "id": "w_progress_ring",
+      "type": "widget",
+      "widget": "progress",
+      "props": {
+        "label": "Tiến độ",
+        "shape": "ring",
+        "decimals": 0
+      },
+      "tags": {
+        "value": "DEMO.POS"
+      }
+    },
+    {
+      "id": "w_status",
+      "type": "widget",
+      "widget": "status-list",
+      "props": {
+        "title": "Danh sách trạng thái",
+        "labels": [
+          "Bơm cấp P-101",
+          "Bơm cấp P-102",
+          "Bơm đẩy P-201",
+          "Thiết bị mẫu",
+          "Quạt mẫu"
+        ],
+        "onText": "Chạy",
+        "offText": "Dừng"
+      },
+      "tags": {
+        "items": [
+          "P101.RUN",
+          "P102.RUN",
+          "P201.RUN",
+          "DEMO.RUN",
+          "DEMO.FAN"
+        ]
+      }
+    },
+    {
+      "id": "w_image",
+      "type": "widget",
+      "widget": "image",
+      "props": {
+        "title": "Hình ảnh (image)",
+        "src": "graphics/so-do-cong-nghe.svg",
+        "fit": "contain",
+        "alt": "Sơ đồ công nghệ thu nhỏ"
+      }
+    },
+    {
+      "id": "w_card",
+      "type": "widget",
+      "widget": "card",
+      "props": {
+        "label": "Thẻ giá trị (card)",
+        "decimals": 2
+      },
+      "tags": {
+        "value": "DEMO.PRESS"
+      }
+    },
+    {
+      "id": "w_label",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Nhãn (label): ",
+        "fontSize": 18,
+        "decimals": 1
+      },
+      "tags": {
+        "value": "DEMO.TEMP"
+      }
+    },
+    {
+      "id": "w_lamp",
+      "type": "widget",
+      "widget": "lamp",
+      "props": {
+        "label": "Đèn (lamp): thiết bị mẫu chạy",
+        "onColor": "#22c55e"
+      },
+      "tags": {
+        "state": "DEMO.RUN"
+      }
+    },
+    {
+      "id": "w_clock",
+      "type": "widget",
+      "widget": "clock",
+      "props": {
+        "label": "Đồng hồ thời gian (clock)",
+        "format": "datetime"
+      }
+    },
+    {
+      "id": "w_panel",
+      "type": "widget",
+      "widget": "panel",
+      "props": {
+        "title": "Khung (panel)",
+        "variant": "card"
+      }
+    },
+    {
+      "id": "w_text",
+      "type": "widget",
+      "widget": "text",
+      "props": {
+        "title": "Văn bản (text)",
+        "text": "Trang này trưng bày mọi loại component của mAT Studio: hiển thị, thẻ chỉ số, biểu đồ, bảng, điều khiển, alarm, lịch sử và thư viện ký hiệu SVG. Mọi giá trị lấy từ Tag mô phỏng; widget điều khiển chỉ ghi vào Tag nội bộ."
+      }
+    },
+    {
+      "id": "muc_2",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Thẻ & KPI",
+        "fontSize": 20,
+        "bold": true
+      }
+    },
+    {
+      "id": "w_tile1",
+      "type": "widget",
+      "widget": "stat-tile",
+      "props": {
+        "label": "Thẻ chỉ số (stat-tile)",
+        "color": "orange",
+        "icon": "thermometer",
+        "trend": true
+      },
+      "tags": {
+        "value": "DEMO.TEMP"
+      }
+    },
+    {
+      "id": "w_tile2",
+      "type": "widget",
+      "widget": "stat-tile",
+      "props": {
+        "label": "Thẻ chỉ số có cảnh báo",
+        "decimals": 2,
+        "color": "violet",
+        "icon": "pressure",
+        "sparkline": true
+      },
+      "tags": {
+        "value": "DEMO.PRESS",
+        "alarm": "LIT101.HI"
+      }
+    },
+    {
+      "id": "w_kpi",
+      "type": "widget",
+      "widget": "kpi",
+      "props": {
+        "label": "KPI sản lượng hôm nay",
+        "decimals": 0,
+        "goal": 3000
+      },
+      "tags": {
+        "value": "TOTAL.TODAY"
+      }
+    },
+    {
+      "id": "w_progress_bar",
+      "type": "widget",
+      "widget": "progress",
+      "props": {
+        "label": "Thanh tiến độ (progress)",
+        "shape": "bar",
+        "decimals": 0
+      },
+      "tags": {
+        "value": "DEMO.LEVEL"
+      }
+    },
+    {
+      "id": "muc_3",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Biểu đồ",
+        "fontSize": 20,
+        "bold": true
+      }
+    },
+    {
+      "id": "w_line",
+      "type": "widget",
+      "widget": "line",
+      "props": {
+        "title": "Biểu đồ đường (line)",
+        "windowSec": 60,
+        "labels": [
+          "Nhiệt độ",
+          "Mức"
+        ],
+        "yMin": 0,
+        "yMax": 100,
+        "highLimit": 85
+      },
+      "tags": {
+        "series": [
+          "DEMO.TEMP",
+          "DEMO.LEVEL"
+        ]
+      }
+    },
+    {
+      "id": "w_bar",
+      "type": "widget",
+      "widget": "bar",
+      "props": {
+        "title": "Biểu đồ cột (bar)",
+        "labels": [
+          "P-101",
+          "P-102",
+          "P-103",
+          "P-201",
+          "P-202"
+        ],
+        "decimals": 1,
+        "showValues": true
+      },
+      "tags": {
+        "series": [
+          "P101.CURRENT",
+          "P102.CURRENT",
+          "P103.CURRENT",
+          "P201.CURRENT",
+          "P202.CURRENT"
+        ]
+      }
+    },
+    {
+      "id": "w_pie",
+      "type": "widget",
+      "widget": "pie",
+      "props": {
+        "title": "Biểu đồ tròn (pie)",
+        "labels": [
+          "Nước thô vào",
+          "Nước sạch ra"
+        ],
+        "decimals": 0
+      },
+      "tags": {
+        "series": [
+          "FIT101.FLOW",
+          "FIT201.FLOW"
+        ]
+      }
+    },
+    {
+      "id": "muc_4",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Bảng và Alarm",
+        "fontSize": 20,
+        "bold": true
+      }
+    },
+    {
+      "id": "ten_w_table",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Bảng Tag (tag-table)",
+        "fontSize": 14,
+        "bold": true
+      }
+    },
+    {
+      "id": "ten_w_alarm_list",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Danh sách alarm (alarm-list)",
+        "fontSize": 14,
+        "bold": true
+      }
+    },
+    {
+      "id": "ten_w_alarm_count",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Số alarm (alarm-count)",
+        "fontSize": 14,
+        "bold": true
+      }
+    },
+    {
+      "id": "w_table",
+      "type": "widget",
+      "widget": "tag-table",
+      "props": {
+        "dense": true
+      },
+      "tags": {
+        "rows": [
+          "DEMO.TEMP",
+          "DEMO.PRESS",
+          "DEMO.LEVEL",
+          "FIT101.FLOW",
+          "FIT201.FLOW",
+          "AIT301.CL"
+        ]
+      }
+    },
+    {
+      "id": "w_alarm_list",
+      "type": "widget",
+      "widget": "alarm-list",
+      "props": {
+        "maxRows": 6
+      }
+    },
+    {
+      "id": "w_alarm_count",
+      "type": "widget",
+      "widget": "alarm-count",
+      "props": {
+        "mode": "active"
+      }
+    },
+    {
+      "id": "muc_5",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Điều khiển",
+        "fontSize": 20,
+        "bold": true
+      }
+    },
+    {
+      "id": "w_button",
+      "type": "widget",
+      "widget": "button",
+      "props": {
+        "label": "Nút bấm: đảo lệnh",
+        "variant": "primary",
+        "confirm": "none"
+      },
+      "tags": {
+        "target": "DEMO.CMD"
+      },
+      "events": {
+        "click": {
+          "action": "toggle"
+        }
+      }
+    },
+    {
+      "id": "w_switch",
+      "type": "widget",
+      "widget": "switch",
+      "props": {
+        "label": "Công tắc (switch)",
+        "onText": "Bật",
+        "offText": "Tắt",
+        "confirm": "none"
+      },
+      "tags": {
+        "target": "DEMO.CMD"
+      }
+    },
+    {
+      "id": "w_setpoint",
+      "type": "widget",
+      "widget": "setpoint",
+      "props": {
+        "label": "Giá trị đặt (setpoint)",
+        "step": 0.5,
+        "decimals": 1
+      },
+      "tags": {
+        "target": "DEMO.SP"
+      }
+    },
+    {
+      "id": "w_slider",
+      "type": "widget",
+      "widget": "slider",
+      "props": {
+        "label": "Thanh trượt (slider)",
+        "step": 5,
+        "decimals": 0
+      },
+      "tags": {
+        "target": "DEMO.SPEED"
+      }
+    },
+    {
+      "id": "w_select",
+      "type": "widget",
+      "widget": "select",
+      "props": {
+        "label": "Chọn chế độ (select)"
+      },
+      "tags": {
+        "target": "DEMO.MODE"
+      }
+    },
+    {
+      "id": "muc_6",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Lịch sử",
+        "fontSize": 20,
+        "bold": true
+      }
+    },
+    {
+      "id": "ten_w_h_trend",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Xu hướng lịch sử (history-trend)",
+        "fontSize": 14,
+        "bold": true
+      }
+    },
+    {
+      "id": "ten_w_h_table",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Bảng lịch sử (history-table)",
+        "fontSize": 14,
+        "bold": true
+      }
+    },
+    {
+      "id": "w_h_trend",
+      "type": "widget",
+      "widget": "history-trend",
+      "props": {
+        "group": "thu-vien",
+        "range": "1h",
+        "labels": [
+          "Nhiệt độ",
+          "Áp suất"
+        ]
+      },
+      "tags": {
+        "series": [
+          "DEMO.TEMP",
+          "DEMO.PRESS"
+        ]
+      }
+    },
+    {
+      "id": "w_h_table",
+      "type": "widget",
+      "widget": "history-table",
+      "props": {
+        "group": "thu-vien",
+        "range": "1h",
+        "pageSize": 50,
+        "labels": [
+          "Nhiệt độ",
+          "Áp suất",
+          "Lưu lượng vào"
+        ]
+      },
+      "tags": {
+        "columns": [
+          "DEMO.TEMP",
+          "DEMO.PRESS",
+          "FIT101.FLOW"
+        ]
+      }
+    },
+    {
+      "id": "ten_w_h_bar",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Cột lịch sử theo giờ (history-bar)",
+        "fontSize": 14,
+        "bold": true
+      }
+    },
+    {
+      "id": "ten_w_h_pie",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Tròn lịch sử hôm nay (history-pie)",
+        "fontSize": 14,
+        "bold": true
+      }
+    },
+    {
+      "id": "w_h_bar",
+      "type": "widget",
+      "widget": "history-bar",
+      "props": {
+        "group": "thu-vien",
+        "fn": "avg",
+        "bucket": "hour",
+        "period": "today",
+        "decimals": 1,
+        "showValues": true,
+        "labels": [
+          "Nhiệt độ trung bình"
+        ]
+      },
+      "tags": {
+        "series": [
+          "DEMO.TEMP"
+        ]
+      }
+    },
+    {
+      "id": "w_h_pie",
+      "type": "widget",
+      "widget": "history-pie",
+      "props": {
+        "group": "thu-vien",
+        "fn": "avg",
+        "period": "today",
+        "decimals": 0,
+        "labels": [
+          "Nước thô vào",
+          "Nước sạch ra"
+        ]
+      },
+      "tags": {
+        "series": [
+          "FIT101.FLOW",
+          "FIT201.FLOW"
+        ]
+      }
+    },
+    {
+      "id": "muc_ky_hieu",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Ký hiệu SVG",
+        "fontSize": 20,
+        "bold": true
+      }
+    }
+  ]
+}

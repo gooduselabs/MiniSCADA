@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "faceplate-bom",
+  "name": "Bảng điều khiển bơm",
+  "kind": "popup",
+  "size": {
+    "width": 560,
+    "height": 400
+  },
+  "params": [
+    {
+      "name": "prefix",
+      "kind": "tagPrefix"
+    },
+    {
+      "name": "title",
+      "kind": "string",
+      "default": "Bơm"
+    }
+  ],
+  "items": [
+    {
+      "id": "khung",
+      "name": "Khung",
+      "type": "widget",
+      "widget": "panel",
+      "x": 0,
+      "y": 0,
+      "width": 560,
+      "height": 400,
+      "props": {
+        "title": "{title}"
+      }
+    },
+    {
+      "id": "den_chay",
+      "name": "Đèn chạy",
+      "type": "widget",
+      "widget": "lamp",
+      "x": 20,
+      "y": 60,
+      "width": 250,
+      "height": 40,
+      "props": {
+        "label": "Đang chạy",
+        "onColor": "#22c55e"
+      },
+      "tags": {
+        "state": "{prefix}.RUN"
+      }
+    },
+    {
+      "id": "den_loi",
+      "name": "Đèn lỗi",
+      "type": "widget",
+      "widget": "lamp",
+      "x": 290,
+      "y": 60,
+      "width": 250,
+      "height": 40,
+      "props": {
+        "label": "Lỗi",
+        "onColor": "#ef4444"
+      },
+      "tags": {
+        "state": "{prefix}.FAULT"
+      }
+    },
+    {
+      "id": "dong_dien",
+      "name": "Dòng điện",
+      "type": "widget",
+      "widget": "card",
+      "x": 20,
+      "y": 116,
+      "width": 250,
+      "height": 100,
+      "props": {
+        "label": "Dòng điện động cơ",
+        "decimals": 1
+      },
+      "tags": {
+        "value": "{prefix}.CURRENT"
+      }
+    },
+    {
+      "id": "gio_chay",
+      "name": "Giờ chạy",
+      "type": "widget",
+      "widget": "card",
+      "x": 290,
+      "y": 116,
+      "width": 250,
+      "height": 100,
+      "props": {
+        "label": "Giờ chạy tích lũy",
+        "decimals": 0
+      },
+      "tags": {
+        "value": "{prefix}.HOURS"
+      }
+    },
+    {
+      "id": "che_do",
+      "name": "Chế độ",
+      "type": "widget",
+      "widget": "select",
+      "x": 20,
+      "y": 232,
+      "width": 250,
+      "height": 72,
+      "props": {
+        "label": "Chế độ"
+      },
+      "tags": {
+        "target": "{prefix}.MODE"
+      }
+    },
+    {
+      "id": "lenh_chay",
+      "name": "Lệnh chạy",
+      "type": "widget",
+      "widget": "switch",
+      "x": 290,
+      "y": 244,
+      "width": 250,
+      "height": 48,
+      "props": {
+        "label": "Lệnh chạy (chế độ tay)",
+        "onText": "Chạy",
+        "offText": "Dừng"
+      },
+      "tags": {
+        "target": "{prefix}.CMD"
+      }
+    },
+    {
+      "id": "dong",
+      "name": "Đóng",
+      "type": "widget",
+      "widget": "button",
+      "x": 360,
+      "y": 330,
+      "width": 180,
+      "height": 48,
+      "props": {
+        "label": "Đóng",
+        "variant": "neutral"
+      },
+      "events": {
+        "click": {
+          "action": "closePopup"
+        }
+      }
+    }
+  ]
+}

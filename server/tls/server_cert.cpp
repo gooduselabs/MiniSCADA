@@ -1170,6 +1170,11 @@ ImportResult importServerCert(const ImportOptions& o, const std::string& pemText
             r.warnings.push_back(
                 "SAN của chứng chỉ không có IP nào của card hiện tại (hay tên máy đã khai): Chrome "
                 "sẽ báo lỗi tên khi mở bằng địa chỉ đó");
+        if (o.rejectExpired && mbedtls_x509_time_is_past(&chain.crt.valid_to))
+            return fail(5, "chứng chỉ đã hết hạn theo đồng hồ của thiết bị (" + d.notAfter + ")");
+        if (o.rejectExpired && mbedtls_x509_time_is_future(&chain.crt.valid_from))
+            return fail(5, "chứng chỉ chưa tới ngày hiệu lực theo đồng hồ của thiết bị (" +
+                               d.notBefore + "); kiểm đồng hồ");
         if (mbedtls_x509_time_is_past(&chain.crt.valid_to))
             r.warnings.push_back("chứng chỉ đã hết hạn theo đồng hồ của thiết bị");
         else if (mbedtls_x509_time_is_future(&chain.crt.valid_from))

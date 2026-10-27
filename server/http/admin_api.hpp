@@ -45,6 +45,7 @@ namespace mat {
 
 struct GateRequest;
 struct GateDecision;
+class DeviceAdmin;
 
 constexpr size_t kAdminBodyMaxBytes = 64 * 1024;
 constexpr int kAdminChangesPerMinute = 30;
@@ -67,6 +68,9 @@ struct AdminBackend {
     notify::EmailService* email = nullptr;
     // Feature 025: the API keys of the data API (null: /admin/apikeys answers 501).
     ApiKeyService* keys = nullptr;
+    // Feature 027: settings.json and the certificate (null: /admin/device-settings and
+    // /admin/cert/* answer 501).
+    DeviceAdmin* device = nullptr;
 };
 
 // The person of a request, as the gate saw it.

@@ -214,6 +214,6 @@ Kỹ sư nạp xuống phiên bản project mới; quy tắc của trang và com
 
 - Số người dùng trên một thiết bị nhỏ (≤ 200), số nhóm ≤ 50, số quy tắc ≤ 5.000.
 - Quyền tính theo Tag mà component dùng trực tiếp (binding); Tag nội bộ của logic không lộ ra trang.
-- Bản đầu không phân alarm theo nhóm (D21) và không làm giao diện quản trị trong Studio (D22, 8.6 sau).
+- Bản đầu không phân alarm theo nhóm (D21) và không làm giao diện quản trị trong Studio (D22, 8.6 sau). **8.6 đã làm (2026-10-26, feature 027, `specs/027-studio-admin/`):** Studio có nhóm editor "Người dùng và quyền" gọi đúng API quản trị của spec này bằng Bearer của phiên Online (mọi route `/api/v1/admin/*` vốn nhận Bearer administrator, có test); dữ liệu vẫn ở thiết bị (ADR-042); mô hình và lớp gọi API dùng chung với trang Quản trị web qua gói `@mat/admin-model`.
 - Hiệu lực ngay = hủy phiên của người bị đổi; người khác giữ phiên, quyền mới áp ở lần tải trang kế.
 - Thử trên runtime x64 (Docker) và Chrome; BL335 thật do người dùng chạy (không reboot, không cắt điện).

@@ -24,7 +24,7 @@ export const PHASE_LABEL: Readonly<Record<Phase, MessageKey>> = {
 export const phaseLabel = (phase: Phase): string => t(PHASE_LABEL[phase]);
 
 export type PhasePageKey =
-  'connections' | 'calc' | 'valueTables' | 'driverDiag' | 'reports' | 'users' | 'library';
+  'connections' | 'calc' | 'valueTables' | 'driverDiag' | 'reports' | 'library';
 
 /** Nội dung trang giai đoạn (editor `phase:{key}`); tiêu đề dùng lại nhãn trên cây. */
 export interface PhasePage {
@@ -55,7 +55,6 @@ export const PHASE_PAGES: Readonly<Record<PhasePageKey, PhasePage>> = {
     icon: 'list',
   },
   reports: { title: 'tree.reports', text: 'phasePage.reports', phase: 'p5', icon: 'report' },
-  users: { title: 'tree.users', text: 'phasePage.users', phase: 'f005', icon: 'users' },
   library: { title: 'tree.library', text: 'phasePage.library', phase: 'p3b', icon: 'library' },
 };
 
@@ -69,6 +68,8 @@ export type EditorId =
   | 'device'
   | 'compare'
   | 'audit'
+  /** Thiết lập thiết bị (feature 027): khi Online bằng administrator. */
+  | 'deviceSettings'
   /** Tag tính toán và Chẩn đoán driver (feature 006, bỏ nhãn giai đoạn ở project 0.2). */
   | 'calc'
   | 'driverDiag'
@@ -97,6 +98,8 @@ export type EditorId =
   /** Trình vẽ SVG (feature 011, FR-097): một tệp `.svg` của project, và tab "Mới: SVG trống". */
   | `svgdraw:${string}`
   | 'svgnew'
+  /** Người dùng và quyền của thiết bị Online (feature 027): `admin:users`, `admin:groups`, … (app/admin-workspace.ts). */
+  | `admin:${string}`
   | `phase:${PhasePageKey}`;
 
 /** Trạng thái phiên thiết bị (data-model §9), dùng chung với `device-session.ts`. */
@@ -152,6 +155,8 @@ export interface TreeInput {
     /** Địa chỉ người dùng đã nhập (chuỗi gốc); null hoặc rỗng nếu chưa nhập. */
     address: string | null;
     state: DeviceSessionState;
+    /** Online bằng administrator (feature 027): nút con "Thiết lập thiết bị". */
+    admin?: boolean;
   };
   /** Kết quả So sánh gần nhất; chỉ hiện ký hiệu khi phiên đang Online (`monitoring`, `relogin`). */
   compare?: CompareResult | null;
@@ -233,6 +238,37 @@ function alarmNode(input: TreeInput): TreeNode {
   };
   if (errors || warnings) node.issues = { errors, warnings };
   return node;
+}
+
+/**
+ * Người dùng và quyền (feature 027): editor quản trị của thiết bị đang Online (dữ liệu ở thiết bị, ADR-042), và Nhật ký là
+ * editor Audit của thiết bị.
+ */
+function usersNode(): TreeNode {
+  const kids: Array<[string, MessageKey, IconName]> = [
+    ['users', 'tree.admin.users', 'users'],
+    ['groups', 'tree.admin.groups', 'group'],
+    ['pages', 'tree.admin.pages', 'table'],
+    ['components', 'tree.admin.components', 'screen'],
+    ['viewAs', 'tree.admin.viewAs', 'eye'],
+    ['email', 'tree.admin.email', 'bell'],
+    ['apikeys', 'tree.admin.apikeys', 'lock'],
+  ];
+  return {
+    id: 'users',
+    label: t('tree.users'),
+    icon: 'users',
+    editor: null,
+    children: [
+      ...kids.map(([k, label, icon]): TreeNode => ({
+        id: `admin:${k}`,
+        label: t(label),
+        icon,
+        editor: `admin:${k}`,
+      })),
+      { id: 'adminAudit', label: t('tree.admin.audit'), icon: 'list', editor: 'audit' },
+    ],
+  };
 }
 
 function phaseNode(id: string, key: PhasePageKey, label: MessageKey, icon?: IconName): TreeNode {
@@ -549,8 +585,18 @@ function deviceChildren02(
     ...(outline.format10 ? [templatesNode(outline)] : []),
     outline.format06 ? reportsNode(outline) : phaseNode('reports', 'reports', 'tree.reports'),
     ...(outline.format10 ? [recipesNode(outline)] : []),
-    phaseNode('users', 'users', 'tree.users'),
+    usersNode(),
   ];
+}
+
+/** Feature 027: "Thiết lập thiết bị" (Online bằng administrator), con đầu tiên của nút thiết bị. */
+function deviceSettingsNode(): TreeNode {
+  return {
+    id: 'deviceSettings',
+    label: t('tree.deviceSettings'),
+    icon: 'gear',
+    editor: 'deviceSettings',
+  };
 }
 
 function buildNodes(input: TreeInput): TreeNode {
@@ -611,8 +657,9 @@ function buildNodes(input: TreeInput): TreeNode {
     icon: 'device',
     editor: 'device',
     deviceState: deviceNodeState(device.state),
-    children:
-      outline.version === '0.2'
+    children: [
+      ...(device.admin ? [deviceSettingsNode()] : []),
+      ...((outline.version === '0.2'
         ? deviceChildren02(
             alarmNode(input),
             outline,
@@ -642,8 +689,9 @@ function buildNodes(input: TreeInput): TreeNode {
               children: screens,
             },
             phaseNode('reports', 'reports', 'tree.reports'),
-            phaseNode('users', 'users', 'tree.users'),
-          ],
+            usersNode(),
+          ]) as TreeNode[]),
+    ],
   };
 
   return {

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "thu-vien",
+  "itemId": "kh_valve_control",
+  "elements": [
+    {
+      "elementUid": "el_valve_control_actuator",
+      "bindings": [
+        {
+          "id": "fill_12",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.POS"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 50,
+                "value": "#64748b"
+              },
+              {
+                "from": 50,
+                "value": "#22c55e"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_valve_control_stem",
+      "bindings": [
+        {
+          "id": "translateY_13",
+          "target": "transform.translateY",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.POS"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": 0,
+            "outMax": -10,
+            "clamp": true
+          }
+        }
+      ]
+    }
+  ]
+}

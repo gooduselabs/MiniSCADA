@@ -123,6 +123,9 @@ struct ImportOptions {
     std::string dataDir;
     std::string hostname;                  // the host name the SAN should hold (may be empty)
     std::vector<std::string> ipAddresses;  // the cards now
+    // Feature 027 (the admin API): a certificate out of its dates (by the device clock) is refused
+    // with code 5 before anything is written. --import-cert only warns.
+    bool rejectExpired = false;
     // A test hook: called after each step ("new-written", "prev-linked"); false stops the
     // import there, as a power cut would, with code 4.
     std::function<bool(const char* step)> afterStep;

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.1.0",
+  "timeZone": "+07:00",
+  "groups": [
+    {
+      "id": "thu-vien",
+      "name": "Thư viện component",
+      "mode": "cyclic",
+      "periodMs": 60000,
+      "retentionDays": 30,
+      "tags": [
+        {
+          "tagId": "DEMO.TEMP"
+        },
+        {
+          "tagId": "DEMO.PRESS"
+        },
+        {
+          "tagId": "FIT101.FLOW"
+        },
+        {
+          "tagId": "FIT201.FLOW"
+        }
+      ],
+      "aggregates": {}
+    }
+  ]
+}

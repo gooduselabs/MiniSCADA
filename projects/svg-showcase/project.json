@@ -1,0 +1,45 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "1.1.0",
+  "projectId": "svg-showcase",
+  "projectName": "Trạm bơm nước sạch – Sơ đồ công nghệ",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "1.1.0",
+  "entryScreen": "so-do-cong-nghe",
+  "screens": [
+    "so-do-cong-nghe",
+    "tong-quan",
+    "thu-vien",
+    "faceplate-bom"
+  ],
+  "tagFile": "tags.json",
+  "valueTables": [
+    "TrangThaiBom",
+    "CheDo"
+  ],
+  "alarmFile": "alarms.json",
+  "alarmClassFile": "alarm-classes.json",
+  "loggingFile": "logging.json",
+  "navigation": {
+    "position": "left",
+    "items": [
+      {
+        "label": "Sơ đồ công nghệ",
+        "screen": "so-do-cong-nghe",
+        "icon": "pump"
+      },
+      {
+        "label": "Tổng quan",
+        "screen": "tong-quan",
+        "icon": "home"
+      },
+      {
+        "label": "Thư viện component",
+        "screen": "thu-vien",
+        "icon": "list"
+      }
+    ]
+  },
+  "maxClients": 10,
+  "theme": "dark"
+}

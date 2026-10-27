@@ -73,7 +73,12 @@ export class AuditTab implements AdminTab {
       form,
       h(
         'div',
-        { class: 'ad-tablewrap' },
+        // Bảng chỉ đọc, không có phần tử nhận focus: vùng cuộn tự nhận focus để cuộn bằng bàn phím (axe
+        // scrollable-region-focusable).
+        {
+          class: 'ad-tablewrap',
+          attrs: { tabindex: '0', role: 'region', 'aria-label': A.caption },
+        },
         h(
           'table',
           { class: 'ad-table ad-audit' },

@@ -208,6 +208,26 @@ export function makeAccess(seed, deps) {
   const log = { reauth: [], posts: [], effective: [] };
   // feature 025: API key giả (token chỉ trả một lần, không giữ)
   const apikeys = { rev: 0, keys: [], seq: 0, tokens: [] };
+  // feature 027: thiết lập thiết bị và chứng chỉ giả
+  const devBase = {
+    viewerLogin: 'required',
+    viewerAccess: 'private',
+    allowedHosts: [],
+    maxLiveClientsPerSource: 0,
+    updateEnabled: false,
+    deviceName: 'BL335-demo',
+  };
+  const device = {
+    rev: 0,
+    settings: {},
+    restarts: 0,
+    fingerprint: 'ab'.repeat(32),
+    sanIps: [],
+    csr: 0,
+    imports: 0,
+  };
+  const devEffective = () => ({ ...devBase, ...device.settings });
+  const fpColons = (h) => h.toUpperCase().match(/.{2}/g).join(':');
   // feature 023: cấu hình email alarm giả (không có mật khẩu: chỉ passwordSet)
   const email = {
     rev: 0,
@@ -707,6 +727,75 @@ export function makeAccess(seed, deps) {
         computeAccess(cat(), store, { user: u.name, role: u.role, groups: u.groups }).effective,
       );
     }
+    // ---- thiết lập thiết bị (feature 027) ----
+    if (path === '/api/v1/admin/device-settings' && m === 'GET')
+      return json(res, 200, {
+        rev: device.rev,
+        settings: device.settings,
+        base: devBase,
+        effective: devEffective(),
+        running: devEffective(),
+        restartPending: false,
+        cert: {
+          ok: true,
+          fingerprint: device.fingerprint,
+          fingerprintColons: fpColons(device.fingerprint),
+          subject: 'CN=mAT BL335-demo',
+          issuer: 'CN=mAT BL335-demo',
+          selfSigned: true,
+          sanDns: ['bl335'],
+          sanIps: device.sanIps,
+          notBefore: '2026-10-01 00:00:00',
+          notAfter: '2036-10-01 00:00:00',
+          chainLength: 1,
+          warnings: device.sanIps.length ? [] : ['TLS_NO_IP_SAN'],
+          cardIps: ['192.0.2.10'],
+        },
+        update: { enabled: devEffective().updateEnabled, updaterInstalled: true },
+      });
+    if (path === '/api/v1/admin/device-settings' && m === 'POST') {
+      if (body.rev !== device.rev) return err(res, 409, 'CONFLICT', { rev: device.rev });
+      const next = { ...devBase, ...(body.settings ?? {}) };
+      const before = devEffective();
+      const lowered =
+        (before.viewerLogin === 'required' && next.viewerLogin !== 'required') ||
+        (!before.updateEnabled && next.updateEnabled);
+      if (lowered && !reauthOk(s, body)) return err(res, 403, 'REAUTH_REQUIRED');
+      device.settings = body.settings ?? {};
+      device.rev++;
+      device.restarts++;
+      record(s, 'device.settings', 'settings.json', 'ok', { before, after: next });
+      return json(res, 200, { rev: device.rev, effective: next, restart: true, restartInMs: 1000 });
+    }
+    if (path === '/api/v1/admin/cert/regen' && m === 'POST') {
+      if (!reauthOk(s, body)) return err(res, 403, 'REAUTH_REQUIRED');
+      device.fingerprint = 'cd'.repeat(32);
+      device.sanIps = ['192.0.2.10', ...(body.san ?? []).filter((x) => /^[\d.]+$/.test(x))];
+      record(s, 'cert.regenerate', device.fingerprint, 'ok');
+      return json(res, 200, {
+        fingerprint: device.fingerprint,
+        fingerprintColons: fpColons(device.fingerprint),
+        sanIps: device.sanIps,
+        sanDns: ['bl335'],
+        restart: true,
+        restartInMs: 1000,
+      });
+    }
+    if (path === '/api/v1/admin/cert/csr' && m === 'POST') {
+      device.csr++;
+      return json(res, 200, {
+        csrPem: '-----BEGIN CERTIFICATE REQUEST-----\nMIIB\n-----END CERTIFICATE REQUEST-----\n',
+      });
+    }
+    if (path === '/api/v1/admin/cert/import' && m === 'POST') {
+      if (!reauthOk(s, body)) return err(res, 403, 'REAUTH_REQUIRED');
+      device.imports++;
+      if (!String(body.pem).includes('BEGIN CERTIFICATE'))
+        return err(res, 400, 'CERT_FILE_INVALID', { message: 'tệp không có khối CERTIFICATE' });
+      return err(res, 400, 'CERT_KEY_MISMATCH', {
+        message: 'chứng chỉ không khớp khóa riêng nào của thiết bị',
+      });
+    }
     // ---- email alarm (feature 023) ----
     if (path === '/api/v1/admin/email' && m === 'GET')
       return json(res, 200, {
@@ -865,6 +954,7 @@ export function makeAccess(seed, deps) {
     log,
     email,
     apikeys,
+    device,
     cfg,
     /** Admin khác vừa sửa: tăng rev (lần lưu kế tiếp của trang nhận 409). */
     bumpRev(kind = 'access') {

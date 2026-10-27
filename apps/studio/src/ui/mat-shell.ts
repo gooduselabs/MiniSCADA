@@ -40,6 +40,7 @@ import './dialogs/args-dialog.ts';
 import './dialogs/grid-convert-dialog.ts';
 import './logic/stop-dialog.ts';
 import './dialogs/update-wizard.ts';
+import './dialogs/admin-dialog.ts';
 import './svg/svg-dialogs.ts';
 import './mat-inspector.ts';
 import './mat-menubar.ts';
@@ -443,6 +444,7 @@ export class MatShell extends AppElement {
       <mat-grid-convert-dialog .app=${app}></mat-grid-convert-dialog>
       <mat-logic-stop-dialog .app=${app}></mat-logic-stop-dialog>
       <mat-update-wizard .app=${app}></mat-update-wizard>
+      <mat-admin-dialog .app=${app}></mat-admin-dialog>
       <mat-toast .app=${app}></mat-toast>`;
   }
 }

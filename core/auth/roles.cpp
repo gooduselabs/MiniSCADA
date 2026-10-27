@@ -168,6 +168,12 @@ const std::vector<EndpointRule>& endpointRules() {
         {"POST", "/api/v1/admin/apikeys", true, Role::Administrator, true, true, true},
         {"POST", "/api/v1/admin/apikeys/{id}", true, Role::Administrator, true, true, true},
         {"POST", "/api/v1/admin/apikeys/{id}/revoke", true, Role::Administrator, true, true, true},
+        // feature 027 (specs/027-device-settings, ADR-054): settings.json and the certificate
+        {"GET", "/api/v1/admin/device-settings", true, Role::Administrator, true, false, true},
+        {"POST", "/api/v1/admin/device-settings", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/cert/regen", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/cert/csr", true, Role::Administrator, true, true, true},
+        {"POST", "/api/v1/admin/cert/import", true, Role::Administrator, true, true, true},
         {"GET", "/api/v1/data/key", false, Role::Viewer, false, false},
         {"GET", "/api/v1/data/tags", false, Role::Viewer, false, false},
         {"GET", "/api/v1/data/values", false, Role::Viewer, false, false},

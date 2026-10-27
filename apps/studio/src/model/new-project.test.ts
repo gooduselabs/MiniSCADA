@@ -70,6 +70,7 @@ describe('buildNewProject', () => {
     ['pump', 'dark'],
     ['dashboard', 'dark'],
     ['dashboard', 'vivid'],
+    ['diagram', 'dark'],
   ];
 
   it.each(cases)('mẫu %s, chủ đề %s: hợp lệ 1.1, 0 lỗi', async (template, theme) => {

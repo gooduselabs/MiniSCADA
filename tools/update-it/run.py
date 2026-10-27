@@ -503,8 +503,45 @@ def sc_kill(lab, per_step=5):
             'newVersion': sum(1 for r in rows if r['running'] == r['to']), 'rows': rows}
 
 
+def sc_settings(lab):
+    """Feature 027: OTA turned off and on again by the device settings (the API of the Studio), then one whole
+    update with the test key; the settings go back to runtime.json at the end."""
+    rows = []
+
+    def settings(values, reauth=None):
+        token = lab.login()
+        s, b = lab.req('GET', '/api/v1/admin/device-settings', None, token)
+        if s != 200:
+            return s, b
+        body = {'rev': b['rev'], 'settings': values}
+        if reauth:
+            body['reauth'] = reauth
+        s, b = lab.req('POST', '/api/v1/admin/device-settings', body, token)
+        if s == 200 and b.get('restart'):
+            time.sleep(2.5)  # the runtime restarts itself (execv) about 1 s after the answer
+            lab.wait_up(30)
+        return s, b
+
+    s, b = settings({'updateEnabled': False})
+    rows.append({'step': 'disable', 'ok': s == 200 and b.get('restart') is True, 'status': s})
+    token = lab.login()
+    s, b = lab.req('GET', '/api/v1/system/update', None, token)
+    rows.append({'step': 'update API while off', 'ok': s == 404 and b.get('error') == 'UPDATE_DISABLED',
+                 'status': s, 'code': b.get('error')})
+    s, b = settings({})
+    rows.append({'step': 'enable without password', 'ok': s == 403 and b.get('error') == 'REAUTH_REQUIRED',
+                 'status': s, 'code': b.get('error')})
+    s, b = settings({}, lab.pw['admin'])
+    rows.append({'step': 'enable', 'ok': s == 200 and b.get('effective', {}).get('updateEnabled') is True,
+                 'status': s})
+    r = lab.update(lab.take_seq())
+    rows.append({'step': 'update after enable', 'ok': r['ok'], 'detail': r})
+    return {'passed': all(x['ok'] for x in rows), 'rows': rows}
+
+
 SCENARIOS = {'ok': sc_ok, 'bad': sc_bad, 'downgrade': sc_downgrade, 'busy': sc_busy, 'health': sc_health,
-             'keyset': sc_keyset, 'manual-rollback': sc_manual_rollback, 'auth': sc_auth, 'kill': sc_kill}
+             'keyset': sc_keyset, 'manual-rollback': sc_manual_rollback, 'auth': sc_auth, 'kill': sc_kill,
+             'settings': sc_settings}
 
 
 def main():

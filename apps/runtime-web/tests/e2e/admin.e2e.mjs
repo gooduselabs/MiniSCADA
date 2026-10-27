@@ -568,7 +568,8 @@ export default async function run(ctx) {
   ctx.check('Tải thêm (beforeId) nối thêm dòng', true);
   const selects = await page.$$('.ad-filters select');
   await selects[1].select('account.');
-  await press(page, '[data-filter]');
+  // Chuông cảnh báo (026) cũng có [data-filter]: chỉ bấm nút Lọc của tab Nhật ký.
+  await press(page, '.ad-filters [data-filter]');
   await sleep(400);
   const actions = await page.$$eval('[data-audit]', (r) => r.map((x) => x.dataset.action));
   ctx.check(

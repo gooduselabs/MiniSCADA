@@ -46,7 +46,7 @@ Studio bố trí như một công cụ kỹ thuật: cây project bên trái, v�
 - **Tên project** (bắt buộc, tối đa 80 ký tự).
 - **Mã project**: tự sinh từ tên, bỏ dấu, chữ thường, gạch nối (`Trạm bơm Số 1` → `tram-bom-so-1`); sửa được, 2–48 ký tự. Mã là `projectId` và là tên thư mục project. Nút mũi tên vòng sinh lại mã từ tên.
 - **Thư mục chứa**: mặc định `Documents\mAT SCADA`; **Chọn…** để chọn thư mục khác, **Mặc định** để quay về. Studio tạo thư mục con theo mã project trong thư mục chứa; dòng **Project sẽ nằm ở** hiện đường dẫn đầy đủ và báo ngay nếu thư mục đó đã có project hoặc có tệp khác (khi đó không tạo được, đổi mã hoặc thư mục chứa).
-- **Mẫu**: **Trống** (một màn hình lưới **Tổng quan** với một hàng ba ô trống, chưa có Tag và kết nối), **Mẫu trạm bơm** (Tag mô phỏng, màn hình lưới **Bảng điều khiển** kiểu dashboard: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, đồng hồ, trạng thái bơm, bảng Tag, faceplate bơm; chạy được ngay ở chế độ **Mô phỏng**) hoặc **Dashboard tối** (chỉ màn hình dashboard đó cùng Tag của nó; chọn mẫu này thì chủ đề tự chuyển sang **Tối**, đổi lại được).
+- **Mẫu**: **Trống** (một màn hình lưới **Tổng quan** với một hàng ba ô trống, chưa có Tag và kết nối), **Mẫu trạm bơm** (Tag mô phỏng, màn hình lưới **Bảng điều khiển** kiểu dashboard: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, đồng hồ, trạng thái bơm, bảng Tag, faceplate bơm; chạy được ngay ở chế độ **Mô phỏng**) **Dashboard tối** (chỉ màn hình dashboard đó cùng Tag của nó; chọn mẫu này thì chủ đề tự chuyển sang **Tối**, đổi lại được) hoặc **Mẫu sơ đồ công nghệ (SVG)** (sơ đồ trạm bơm nước sạch vẽ bằng SVG có hoạt ảnh, chủ đề **Tối**; mục 7.4).
 - **Chủ đề giao diện** của trang vận hành: **Sáng đa sắc** (mặc định), **Công nghiệp trầm**, **Tối**; đổi lại được trong **Thiết lập project**.
  **Tạo project**: Studio ghi project định dạng 1.1, mở nó (cây project đầy đủ) và mở sẵn màn hình đầu. Đang có thay đổi chưa lưu thì Studio hỏi Lưu, Không lưu hay Hủy trước khi mở hộp thoại, như khi mở project khác. Project vừa tạo lên đầu danh sách **Mở gần đây** (tab **Bắt đầu** và menu **Project**).
  cách khác:
@@ -357,7 +357,7 @@ Lỗi thường gặp: `E_FILE_MISSING` ở `props/src` (tệp ảnh của widge
 
 ### 6.3. Bảo mật: vai trò tối thiểu và phân quyền trên thiết bị
 
-Project định dạng 1.1. Kỹ sư chỉ đặt **mặc định theo vai trò** trong project; quyền theo từng người dùng và nhóm do quản trị viên đặt **trên thiết bị** (trang Quản trị của trang vận hành, [admin-guide.md](admin-guide.md#quan-tri-web)), **không** nằm trong project và không đi theo gói `.matscada`. Nạp xuống project mới không xóa quy tắc của quản trị viên.
+Project định dạng 1.1. Kỹ sư chỉ đặt **mặc định theo vai trò** trong project; quyền theo từng người dùng và nhóm do quản trị viên đặt **trên thiết bị** (trang Quản trị của trang vận hành, [admin-guide.md](admin-guide.md#quan-tri-web), hoặc ngay trong Studio ở mục **Người dùng và quyền** của cây khi Online bằng tài khoản administrator, [admin-guide.md](admin-guide.md#quan-tri-studio)), **không** nằm trong project và không đi theo gói `.matscada`. Nạp xuống project mới không xóa quy tắc của quản trị viên.
 
 **Component:** chọn component, Inspector, tab **Bảo mật**:
 
@@ -471,6 +471,29 @@ Mọi lệnh của trình vẽ có trong **Bảng lệnh** (Ctrl+Shift+P), tìm 
 - Studio kiểm tệp trên đĩa khi cửa sổ lấy focus và mỗi 5 s (so mtime và băm). Chưa sửa gì thì tự nạp lại và báo. Đang có thay đổi thì hộp **Tệp đã đổi bên ngoài**: **Nạp lại từ đĩa** (bỏ thay đổi, xóa lịch sử hoàn tác), **Giữ bản đang sửa** (lần Lưu sau sẽ hỏi Ghi đè / Tải lại / Hủy) hoặc **So sánh** (số nút, cỡ, binding sẽ mồ côi). Studio không bao giờ ghi đè im lặng.
 
 **Giới hạn có chủ ý** (nút ⓘ cuối Toolbox): không có bút Bézier tự do, phép toán boolean, bộ lọc (filter), mặt nạ (mask), sửa gradient, văn bản theo đường, văn bản nhiều dòng. Đường có đoạn cong (C, S, Q, T, A) chỉ di chuyển, đổi cỡ, xoay, đổi màu; Sửa nút báo "Đường có đoạn cong… sửa nút trong Inkscape". `mask`, `filter`, `pattern` và `svg` lồng giữ nguyên, chỉ biến đổi như một khối. Tệp tối đa 5 MB, 20.000 phần tử, độ sâu 32. Cần các tính năng trên thì vẽ bằng Inkscape rồi **Nhập lại SVG…** (mục 7.1) để giữ binding.
+
+### 7.4. Project mẫu sơ đồ công nghệ
+
+`projects/svg-showcase/` (hoặc **Project mới…**, mẫu **Mẫu sơ đồ công nghệ (SVG)**) là sơ đồ trạm bơm nước sạch vẽ tay bằng SVG theo kiểu HMI hiệu năng cao: nền tối, thiết bị xám, màu chỉ cho trạng thái (chạy xanh lá, dừng xám, lỗi đỏ, cảnh báo cam) và loại môi chất (nước thô nâu nhạt, nước sạch xanh dương, hóa chất vàng). Hồ chứa → 3 bơm cấp → bể lắng → bể lọc → bồn nước sạch → 2 bơm đẩy → mạng cấp nước, có trạm châm Clo và tủ MCC. Mọi Tag là Tag mô phỏng hoặc tính toán: bơm chạy luân phiên, P-102 thỉnh thoảng lỗi, lưu lượng theo số bơm chạy.
+
+![Sơ đồ công nghệ trên trang vận hành: bơm chạy viền xanh, dòng chảy trên ống, mức bể lắng và bồn sạch, ô số liệu gắn liền thiết bị](img/op-so-do-cong-nghe.png)
+
+- Màn hình **Sơ đồ công nghệ**: một item SVG phủ toàn màn hình. Dùng Mức chất lỏng (bồn; hồ chứa hình thang dùng đích `geometry.clipLevel`), Quay liên tục (cánh bơm), Màu viền và Màu nền rời rạc theo Tag trạng thái 0/1/2, Dòng chảy (tốc độ theo lưu lượng, kèm Độ mờ để ẩn vạch khi lưu lượng bằng 0), Nhấp nháy (vỏ bơm khi lỗi), Chữ hiển thị giá trị (mức %, m³/h, bar, mg/L, A) và Ẩn/hiện (biểu tượng cảnh báo).
+- Nhấp một bơm mở popup faceplate `faceplate-bom` (đèn chạy, lỗi, dòng điện, giờ chạy, chế độ, lệnh chạy tay) với `prefix` là mã bơm.
+
+![Popup Bảng điều khiển bơm của P-101: đèn Đang chạy và Lỗi, dòng điện động cơ, giờ chạy tích lũy, chế độ, lệnh chạy tay](img/op-so-do-faceplate.png)
+
+![Cùng sơ đồ lúc bơm P-102 lỗi: viền đỏ nhấp nháy, ô trạng thái Lỗi, biểu tượng lỗi; P-103 chạy thay; bể lắng vượt mức H có biểu tượng cảnh báo](img/op-so-do-cong-nghe-loi.png)
+
+- Màn hình **Tổng quan** (lưới): hàng 4 thẻ chỉ số màu, hàng sơ đồ SVG 8 cột cạnh biểu đồ xu hướng mức 4 cột, hàng dòng điện động cơ và bảng giá trị.
+
+![Màn hình lưới Tổng quan: bốn thẻ chỉ số màu, sơ đồ SVG cạnh biểu đồ xu hướng mức bồn có đường ngưỡng](img/op-so-do-luoi.png)
+
+Trong Studio, vào đồ họa (Enter) rồi chọn phần tử để xem binding ở tab **Gắn Tag**; bấm **Mô phỏng** để xem sơ đồ chạy với Tag mô phỏng.
+
+![Studio: vào đồ họa sơ đồ công nghệ, chọn vỏ bơm P-101, tab Gắn Tag có Màu viền theo P101.STATE (Rời rạc), xem trước Mô phỏng](img/eng-so-do-gan-tag.png)
+
+Bản vẽ, binding và Tag sinh từ `tools/svg-showcase/generate.mjs`; cách sửa: `projects/svg-showcase/README.md`.
 
 <a id="help-templates"></a>
 
@@ -600,9 +623,13 @@ Nạp xuống nên làm ngoài giờ cao điểm và báo trước cho người 
 - **Đọc lên…** > **Thành project mới**: lấy project đang chạy trên thiết bị về máy (dùng khi mất bản trên máy, hoặc tiếp quản từ người khác).
 - **So sánh với thiết bị**: bảng `=` giống, `≠` khác, `+` chỉ có trên máy, `-` chỉ có trên thiết bị; **Đọc lên phần chọn** hoặc **Nạp xuống phần khác**. Thanh trạng thái hiện "project … khớp thiết bị" hoặc "khác thiết bị".
 
+### 10.4a. Thiết lập thiết bị (administrator)
+
+Online bằng tài khoản administrator, cây project › thiết bị có thêm nút **Thiết lập thiết bị**: tab **Chung** (bắt buộc đăng nhập, phạm vi xem, tên miền cho phép, kết nối live mỗi địa chỉ, OTA, tên thiết bị; cột Nguồn cho biết giá trị theo `runtime.json` hay đã đặt ở đây) và tab **Chứng chỉ** (vân tay, hạn, SAN; sinh lại có IP, tạo CSR, nhập chứng chỉ CA ký). Lưu làm runtime khởi động lại vài giây; đổi chứng chỉ thì Studio chờ thiết bị chạy lại, cho so vân tay rồi mới ghim lại. Mọi việc trước đây cần SSH đều làm ở đây; chi tiết: [admin-guide.md](admin-guide.md#device-settings).
+
 ### 10.5. Cập nhật runtime
 
-Kỹ sư không cập nhật runtime: việc này cần tài khoản administrator và thiết bị đã bật OTA ([admin-guide.md](admin-guide.md) mục 7.2). Khi cần runtime mới (ví dụ nạp xuống bị chặn `E_RUNTIME_TOO_OLD` vì project 1.0.0), báo quản trị viên. Trong lúc thiết bị đang cập nhật, nạp xuống bị từ chối `DEVICE_BUSY`; ngược lại, đang nạp xuống thì không cập nhật được. Sau cập nhật, project đang chạy giữ nguyên; nếu bản mới không chạy được project thì thiết bị từ chối gói trước khi cài (`UPDATE_PROJECT_INCOMPATIBLE`).
+Kỹ sư không cập nhật runtime: việc này cần tài khoản administrator và thiết bị đã bật OTA (administrator bật trong **Thiết bị › Thiết lập thiết bị**, [admin-guide.md](admin-guide.md) mục 5.0 và 7.2). Khi cần runtime mới (ví dụ nạp xuống bị chặn `E_RUNTIME_TOO_OLD` vì project 1.0.0), báo quản trị viên. Trong lúc thiết bị đang cập nhật, nạp xuống bị từ chối `DEVICE_BUSY`; ngược lại, đang nạp xuống thì không cập nhật được. Sau cập nhật, project đang chạy giữ nguyên; nếu bản mới không chạy được project thì thiết bị từ chối gói trước khi cài (`UPDATE_PROJECT_INCOMPATIBLE`).
 
 <a id="help-diagnostics"></a>
 

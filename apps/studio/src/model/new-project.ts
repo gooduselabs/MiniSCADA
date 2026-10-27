@@ -4,18 +4,25 @@
 // Ba mẫu: "Trống" (một màn hình lưới `tong-quan` có một hàng ba ô trống, chưa có Tag), "Trạm bơm" dựng từ
 // projects/grid-demo nhúng vào bản build lúc build (bộ cài không có thư mục projects/), chỉ đổi mã, tên và chủ đề, và
 // "Dashboard" (feature 014): chỉ màn hình Bảng điều khiển của grid-demo (thẻ chỉ số màu, biểu đồ có tiêu đề và ngưỡng)
-// cùng Tag, kết nối, bảng giá trị của nó; hộp thoại gợi ý chủ đề Tối cho mẫu này.
+// cùng Tag, kết nối, bảng giá trị của nó; hộp thoại gợi ý chủ đề Tối cho mẫu này. "Sơ đồ công nghệ (SVG)" (feature 026):
+// projects/svg-showcase nhúng lúc build (sơ đồ SVG vẽ tay có hoạt ảnh, màn hình lưới kết hợp, faceplate bơm).
 import { t } from '../i18n/index.ts';
 
 /** Mẫu của project mới. */
-export type NewProjectTemplate = 'blank' | 'pump' | 'dashboard';
+export type NewProjectTemplate = 'blank' | 'pump' | 'dashboard' | 'diagram';
 /** Chủ đề giao diện trang vận hành (`theme` của project.json 1.1). */
 export type NewProjectTheme = 'vivid' | 'industrial' | 'dark';
 
-export const NEW_PROJECT_TEMPLATES: readonly NewProjectTemplate[] = ['blank', 'pump', 'dashboard'];
+export const NEW_PROJECT_TEMPLATES: readonly NewProjectTemplate[] = [
+  'blank',
+  'pump',
+  'dashboard',
+  'diagram',
+];
 /** Chủ đề gợi ý khi chọn mẫu (người dùng đổi lại được). */
 export const TEMPLATE_THEME: Readonly<Partial<Record<NewProjectTemplate, NewProjectTheme>>> = {
   dashboard: 'dark',
+  diagram: 'dark',
 };
 export const NEW_PROJECT_THEMES: readonly NewProjectTheme[] = ['vivid', 'industrial', 'dark'];
 
@@ -167,6 +174,23 @@ function dashboardFiles(o: NewProjectOptions, name: string): Record<string, stri
   return files;
 }
 
+// ---- Mẫu sơ đồ công nghệ SVG (feature 026, projects/svg-showcase nhúng lúc build) ----
+
+const DIAGRAM_RAW = import.meta.glob('../../../../projects/svg-showcase/**/*.{json,svg}', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+const DIAGRAM_PREFIX = '../../../../projects/svg-showcase/';
+
+function diagramFiles(o: NewProjectOptions, name: string): Record<string, string> {
+  const files: Record<string, string> = {};
+  for (const [k, v] of Object.entries(DIAGRAM_RAW)) files[k.slice(DIAGRAM_PREFIX.length)] = v;
+  const project = JSON.parse(files['project.json']) as Record<string, unknown>;
+  files['project.json'] = text({ ...project, projectId: o.id, projectName: name, theme: o.theme });
+  return files;
+}
+
 /** Bộ file của project mới. Tên cắt khoảng trắng hai đầu; mã phải đã hợp lệ (`isValidProjectId`). */
 export function buildNewProject(o: NewProjectOptions): NewProjectFiles {
   const name = o.name.trim();
@@ -175,7 +199,9 @@ export function buildNewProject(o: NewProjectOptions): NewProjectFiles {
       ? pumpFiles(o, name)
       : o.template === 'dashboard'
         ? dashboardFiles(o, name)
-        : blankFiles(o, name);
+        : o.template === 'diagram'
+          ? diagramFiles(o, name)
+          : blankFiles(o, name);
   const entry = (JSON.parse(files['project.json']) as { entryScreen: string }).entryScreen;
   return { files, entryScreen: entry };
 }

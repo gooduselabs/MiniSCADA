@@ -15,6 +15,8 @@
 
 #include "core/auth/tests/auth_test_support.hpp"
 #include "core/crypto/random.hpp"
+#include "server/device_admin.hpp"
+#include "server/tls/server_cert.hpp"
 
 namespace mat {
 namespace {
@@ -37,6 +39,7 @@ struct Rig {
     std::unique_ptr<AccessService> access;
     std::unique_ptr<AdminApi> api;
     std::string viewerLogin = "required";
+    DeviceAdmin* device = nullptr;  // feature 027
 
     TestAccount account(const std::string& name, const std::string& role) {
         pw[name] = mat::test::randomPassword();
@@ -100,6 +103,7 @@ struct Rig {
             events.push_back(e);
         };
         b.viewerLogin = viewerLogin;
+        b.device = device;
         b.monoMs = [this] { return now; };
         b.hash = [](const std::string& p) { return mat::test::fakePhc(p); };
         api = std::make_unique<AdminApi>(b);
@@ -121,6 +125,25 @@ struct Rig {
         c.viaCookie = true;
         c.webToken = r.token;
         c.sessionKey = "key-" + name + "-" + std::to_string(port);
+        return c;
+    }
+    // Feature 027: the Bearer session of Studio (POST /api/v1/auth/login) and the caller the gate
+    // makes of it: no cookie, no web token; the session key is the hash of the Bearer token.
+    AdminCaller bearer(const std::string& name, int port = 41000) {
+        std::string p = pw.at(name);
+        const LoginResult r = auth->login(name, p, {kIp, port});
+        EXPECT_EQ(r.status, LoginStatus::Ok) << name;
+        const Access a = auth->authorize(r.token, {kIp, port}, Role::Viewer, true);
+        EXPECT_EQ(a.status, AccessStatus::Ok) << name;
+        AdminCaller c;
+        c.user = a.user;
+        c.role = a.role.value_or(Role::Viewer);
+        c.groups = a.groups;
+        c.accountRev = a.accountRev;
+        c.usersRev = a.usersRev;
+        c.from = {kIp, port};
+        c.viaCookie = false;
+        c.sessionKey = "bearer-" + name;
         return c;
     }
     bool alive(const AdminCaller& c) {
@@ -706,6 +729,219 @@ TEST(AdminApi, AlarmEmailSettingsAndAccountEmail) {
     a = r.post("/api/v1/admin/users/vh1", {{"rev", r.usersRev()}, {"email", nullptr}}, admin);
     ASSERT_EQ(a.status, 200) << a.body.dump();
     EXPECT_EQ(r.store->read().users.file.find("vh1")->email, "");
+}
+
+// ---- feature 027 (specs/027-device-settings): settings.json and the certificate from the API
+
+struct DeviceRig {
+    Rig r;
+    std::string dataDir = r.dir.file("data");
+    int restarts = 0;
+    std::unique_ptr<DeviceAdmin> dev;
+    AdminCaller admin;
+
+    DeviceRig() {
+        DeviceAdminOptions o;
+        o.dataDir = dataDir;
+        o.base.viewerLogin = "required";
+        o.base.deviceName = "BL335-01";
+        o.running = o.base;
+        o.hostname = [] { return std::string("bl335"); };
+        o.cardIps = [] { return std::vector<std::string>{"192.0.2.10"}; };
+        o.nowIso = [] { return std::string("2026-10-26T03:00:00Z"); };
+        o.requestRestart = [this] { ++restarts; };
+        o.updaterPath = dataDir + "/no-updater";
+        dev = std::make_unique<DeviceAdmin>(o);
+        r.device = dev.get();
+        r.build();
+        admin = r.signIn("admin");
+    }
+    AdminReply set(const json& settings, int64_t rev, const std::string& reauth = "") {
+        json b = {{"rev", rev}, {"settings", settings}};
+        if (!reauth.empty()) b["reauth"] = reauth;
+        return r.post("/api/v1/admin/device-settings", b, admin);
+    }
+};
+
+TEST(AdminDevice, GetShowsLayersAndCertificate) {
+    DeviceRig d;
+    EXPECT_EQ(d.r.get("/api/v1/admin/device-settings", d.r.signIn("vh1")).status, 403);
+    const AdminReply g = d.r.get("/api/v1/admin/device-settings", d.admin);
+    ASSERT_EQ(g.status, 200) << g.body.dump();
+    EXPECT_EQ(g.body["rev"], 0);
+    EXPECT_EQ(g.body["settings"], json::object());
+    EXPECT_EQ(g.body["effective"]["viewerLogin"], "required");
+    EXPECT_EQ(g.body["base"]["deviceName"], "BL335-01");
+    EXPECT_FALSE(g.body["restartPending"].get<bool>());
+    EXPECT_FALSE(g.body["update"]["updaterInstalled"].get<bool>());
+    EXPECT_FALSE(g.body["cert"]["ok"].get<bool>()) << "no server.pem yet";
+}
+
+TEST(AdminDevice, SaveMergesKeepsBakAndAsksARestart) {
+    DeviceRig d;
+    AdminReply a = d.set({{"deviceName", "Trạm 1"}, {"maxLiveClientsPerSource", 4}}, 0);
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    EXPECT_EQ(a.body["rev"], 1);
+    EXPECT_TRUE(a.body["restart"].get<bool>());
+    EXPECT_EQ(a.body["effective"]["deviceName"], "Trạm 1");
+    EXPECT_EQ(d.restarts, 1);
+    // the file is what loadConfig reads at the next start
+    const auto text = readTextFile(deviceSettingsPath(d.dataDir));
+    ASSERT_TRUE(text);
+    const json f = json::parse(*text);
+    EXPECT_EQ(f["rev"], 1);
+    EXPECT_EQ(f["values"]["deviceName"], "Trạm 1");
+    EXPECT_EQ(f["updatedBy"], "admin");
+    // the second save keeps the first as .bak; a stale rev is 409
+    EXPECT_EQ(d.set({{"deviceName", "Trạm 2"}}, 0).status, 409);
+    ASSERT_EQ(d.set({{"deviceName", "Trạm 2"}}, 1).status, 200);
+    const auto bak = readTextFile(deviceSettingsPath(d.dataDir) + ".bak");
+    ASSERT_TRUE(bak);
+    EXPECT_EQ(json::parse(*bak)["rev"], 1);
+    // back to what runs: no restart
+    const int before = d.restarts;
+    a = d.set(json::object(), 2);
+    ASSERT_EQ(a.status, 200);
+    EXPECT_FALSE(a.body["restart"].get<bool>());
+    EXPECT_EQ(d.restarts, before);
+    // audit: before/after, never the password
+    const auto rows = d.r.audit(AuditAction::DeviceSettings);
+    ASSERT_EQ(rows.size(), 3u);
+    const json detail = json::parse(rows[0].detail);
+    EXPECT_EQ(detail["before"]["deviceName"], "BL335-01");
+    EXPECT_EQ(detail["after"]["deviceName"], "Trạm 1");
+}
+
+TEST(AdminDevice, BadValuesAndOtherKeysAre400) {
+    DeviceRig d;
+    EXPECT_EQ(d.set({{"viewerLogin", "maybe"}}, 0).status, 400);
+    EXPECT_EQ(d.set({{"httpsPort", 9443}}, 0).status, 400);
+    EXPECT_EQ(d.r.post("/api/v1/admin/device-settings", {{"rev", 0}}, d.admin).status, 400);
+    EXPECT_EQ(d.r.post("/api/v1/admin/device-settings",
+                       {{"rev", 0}, {"settings", json::object()}, {"x", 1}}, d.admin)
+                  .status,
+              400);
+    EXPECT_EQ(d.restarts, 0);
+}
+
+TEST(AdminDevice, LoweringTheProtectionNeedsTheReenteredPassword) {
+    DeviceRig d;
+    for (const json& s : {json{{"viewerLogin", "off"}}, json{{"viewerAccess", "any"}},
+                          json{{"updateEnabled", true}}, json{{"allowedHosts", {"scada.local"}}}}) {
+        const AdminReply a = d.set(s, 0);
+        EXPECT_EQ(a.status, 403) << s.dump();
+        EXPECT_EQ(a.body["error"], "REAUTH_REQUIRED");
+        EXPECT_FALSE(a.body["lowered"].empty());
+    }
+    EXPECT_EQ(d.set({{"viewerLogin", "off"}}, 0, "wrong-password").status, 403);
+    const AdminReply ok = d.set({{"viewerLogin", "off"}}, 0, d.r.pw.at("admin"));
+    ASSERT_EQ(ok.status, 200) << ok.body.dump();
+    // raising it again needs no password
+    EXPECT_EQ(d.set({{"viewerLogin", "required"}}, 1).status, 200);
+    EXPECT_EQ(d.r.transcript().find(d.r.pw.at("admin")), std::string::npos);
+}
+
+TEST(AdminDevice, RegenerateAddsTheCardAddressesAndExtraNames) {
+    DeviceRig d;
+    EXPECT_EQ(d.r.post("/api/v1/admin/cert/regen", json::object(), d.admin).status, 403);
+    EXPECT_EQ(d.r.post("/api/v1/admin/cert/regen",
+                       {{"reauth", d.r.pw.at("admin")}, {"san", {"*.bad"}}}, d.admin)
+                  .status,
+              400);
+    const AdminReply a =
+        d.r.post("/api/v1/admin/cert/regen",
+                 {{"reauth", d.r.pw.at("admin")}, {"san", {"10.0.0.5", "scada.local"}}}, d.admin);
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    EXPECT_EQ(a.body["fingerprint"].get<std::string>().size(), 64u);
+    const json ips = a.body["sanIps"];
+    EXPECT_NE(std::find(ips.begin(), ips.end(), "192.0.2.10"), ips.end());
+    EXPECT_NE(std::find(ips.begin(), ips.end(), "10.0.0.5"), ips.end());
+    const json dns = a.body["sanDns"];
+    EXPECT_NE(std::find(dns.begin(), dns.end(), "scada.local"), dns.end());
+    EXPECT_TRUE(a.body["restart"].get<bool>());
+    EXPECT_EQ(d.restarts, 1);
+    const AdminReply g = d.r.get("/api/v1/admin/device-settings", d.admin);
+    EXPECT_EQ(g.body["cert"]["fingerprint"], a.body["fingerprint"]);
+    EXPECT_TRUE(g.body["cert"]["warnings"].empty()) << "no TLS_NO_IP_SAN";
+    EXPECT_FALSE(d.r.audit(AuditAction::CertRegenerate).empty());
+    // a second one changes the fingerprint
+    const AdminReply b =
+        d.r.post("/api/v1/admin/cert/regen", {{"reauth", d.r.pw.at("admin")}}, d.admin);
+    ASSERT_EQ(b.status, 200);
+    EXPECT_NE(b.body["fingerprint"], a.body["fingerprint"]);
+}
+
+TEST(AdminDevice, CsrAndImportRefuseAForeignKeyOrAPrivateKey) {
+    DeviceRig d;
+    const std::string pw = d.r.pw.at("admin");
+    ASSERT_EQ(d.r.post("/api/v1/admin/cert/regen", {{"reauth", pw}}, d.admin).status, 200);
+    const AdminReply c = d.r.post("/api/v1/admin/cert/csr", {{"san", {"scada.local"}}}, d.admin);
+    ASSERT_EQ(c.status, 200) << c.body.dump();
+    EXPECT_NE(c.body["csrPem"].get<std::string>().find("CERTIFICATE REQUEST"), std::string::npos);
+    // a certificate of another device: no key of this one fits
+    mat::test::TempDir other;
+    const ServerCert foreign = loadOrCreateServerCert({other.file("d"), "X"});
+    ASSERT_TRUE(foreign.ok) << foreign.error;
+    const std::string foreignPem =
+        publicCertificatePem(*readTextFile(serverCertPath(other.file("d"))));
+    AdminReply a = d.r.post("/api/v1/admin/cert/import", {{"pem", foreignPem}}, d.admin);
+    EXPECT_EQ(a.status, 403) << "re-entered password first";
+    a = d.r.post("/api/v1/admin/cert/import", {{"pem", foreignPem}, {"reauth", pw}}, d.admin);
+    EXPECT_EQ(a.status, 400);
+    EXPECT_EQ(a.body["error"], "CERT_KEY_MISMATCH");
+    a = d.r.post("/api/v1/admin/cert/import",
+                 {{"pem", *readTextFile(serverCertPath(other.file("d")))}, {"reauth", pw}},
+                 d.admin);
+    EXPECT_EQ(a.body["error"], "CERT_FILE_INVALID") << "a private key is never sent";
+    a = d.r.post("/api/v1/admin/cert/import", {{"pem", "garbage"}, {"reauth", pw}}, d.admin);
+    EXPECT_EQ(a.body["error"], "CERT_FILE_INVALID");
+    // its own certificate again: accepted, fingerprint back
+    const std::string own = publicCertificatePem(*readTextFile(serverCertPath(d.dataDir)));
+    a = d.r.post("/api/v1/admin/cert/import", {{"pem", own}, {"reauth", pw}}, d.admin);
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    EXPECT_EQ(a.body["fingerprint"].get<std::string>().size(), 64u);
+    EXPECT_EQ(d.r.audit(AuditAction::TlsImport).size(), 8u) << "started + result, four times";
+}
+
+// Feature 027: Studio manages users with its Bearer session (no cookie, no CSRF): an administrator
+// creates a user and a group, sets a rule, re-enters the password to demote; a wrong re-entered
+// password is 403 REAUTH_REQUIRED; another role is 403 FORBIDDEN; the audit says channel https.
+TEST(AdminApi, StudioManagesUsersWithItsBearerSession) {
+    Rig r;
+    const AdminCaller op = r.bearer("vh1", 41001);
+    EXPECT_EQ(r.get("/api/v1/admin/users", op).status, 403);
+    const AdminCaller admin = r.bearer("admin");
+    ASSERT_EQ(r.get("/api/v1/admin/users", admin).status, 200);
+    ASSERT_EQ(r.makeGroup("ca-a", admin).status, 201);
+    AdminReply a = r.post("/api/v1/admin/users",
+                          {{"rev", r.usersRev()},
+                           {"name", "vh3"},
+                           {"role", "operator"},
+                           {"groups", {"ca-a"}},
+                           {"generate", true}},
+                          admin);
+    ASSERT_EQ(a.status, 201) << a.body.dump();
+    EXPECT_TRUE(a.body["password"].is_string());
+    a = r.post(
+        "/api/v1/admin/access",
+        {{"rev", r.accessRev()},
+         {"set",
+          {{{"resource", "screen:bao-tri"}, {"level", "view"}, {"grantees", {"group:ca-a"}}}}}},
+        admin);
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    a = r.post("/api/v1/admin/users/vh3",
+               {{"rev", r.usersRev()}, {"role", "viewer"}, {"reauth", "sai-mat-khau-dai-15"}},
+               admin);
+    EXPECT_EQ(a.status, 403);
+    EXPECT_EQ(a.body["error"], "REAUTH_REQUIRED");
+    a = r.post("/api/v1/admin/users/vh3",
+               {{"rev", r.usersRev()}, {"role", "viewer"}, {"reauth", r.pw.at("admin")}}, admin);
+    ASSERT_EQ(a.status, 200) << a.body.dump();
+    EXPECT_EQ(r.store->read().users.file.find("vh3")->role, Role::Viewer);
+    const auto created = r.audit(AuditAction::AccountCreate);
+    ASSERT_EQ(created.size(), 1u);
+    EXPECT_EQ(created[0].channel, AuditChannel::Https);
+    EXPECT_EQ(created[0].user, std::optional<std::string>("admin"));
 }
 
 }  // namespace

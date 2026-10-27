@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "thu-vien",
+  "itemId": "kh_pipe_elbow",
+  "elements": [
+    {
+      "elementUid": "el_pipe_elbow_flow",
+      "bindings": [
+        {
+          "id": "flow_24",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT101.FLOW"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 150,
+            "outMin": 0,
+            "outMax": 80,
+            "clamp": true
+          }
+        },
+        {
+          "id": "opacity_25",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT101.FLOW"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 0.5,
+                "value": 0.15
+              },
+              {
+                "from": 0.5,
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

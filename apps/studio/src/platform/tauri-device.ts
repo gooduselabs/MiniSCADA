@@ -87,6 +87,14 @@ export const tauriDevice: DeviceLink = {
   session: (id) => must<SessionInfo | null>('device_session', { id }),
   get: (id, path, query) => call<ApiResult>('device_get', defined({ id, path, query })),
   post: (id, path, body) => call<ApiResult>('device_post', { id, path, body }),
+  admin: (id, method, path, query, body) =>
+    call<ApiResult>('device_admin', {
+      id,
+      method,
+      path,
+      ...(query ? { query } : {}),
+      ...(body !== undefined ? { body } : {}),
+    }),
   monitorGet: (address) => call<ApiResult>('monitor_get', { address }),
   openLive: (target) => liveSocket(liveIpc, target),
   // US2 (tauri-commands §8). Tên tham số JS là camelCase của tham số Rust (`package_id` → `packageId`).

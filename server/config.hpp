@@ -2,10 +2,13 @@
 // defaults < /etc/mat-runtime/runtime.json (or --config) < command line.
 #pragma once
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
 #include <vector>
+
+#include "nlohmann/json.hpp"
 
 namespace mat {
 
@@ -114,6 +117,11 @@ struct RuntimeConfig {
 struct ConfigResult {
     bool ok = false;
     RuntimeConfig cfg;
+    // Feature 027: the configuration before <dataDir>/settings.json (runtime.json and the command
+    // line), the rev of the settings applied (0: none) and their values.
+    RuntimeConfig base;
+    int64_t settingsRev = 0;
+    nlohmann::json settings = nlohmann::json::object();
     std::vector<std::string> warnings;
     std::string error;
 };
@@ -130,5 +138,23 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
 bool isValidSerialPortPattern(const std::string& s);
 
 std::optional<std::string> readTextFile(const std::string& path, size_t maxBytes = 1 << 20);
+
+}  // namespace mat
+
+namespace mat {
+
+// Feature 027 (specs/027-device-settings, ADR-054): the settings the Studio and the admin page may
+// change, kept by the runtime in <dataDir>/settings.json ({"rev","values","updatedAt","updatedBy"},
+// the previous one in settings.json.bak). Order: defaults < runtime.json < command line <
+// settings.json. Keys (flat): viewerLogin, viewerAccess, allowedHosts, maxLiveClientsPerSource,
+// updateEnabled (update.enabled), deviceName.
+inline constexpr const char* kDeviceSettingsFile = "settings.json";
+std::string deviceSettingsPath(const std::string& dataDir);
+const std::vector<std::string>& deviceSettingKeys();
+// Checks every value as runtime.json does and applies it; another key or a wrong value: false and
+// `err` (Vietnamese) naming the key. `cfg` may be changed in part when false.
+bool applyDeviceSettings(const nlohmann::json& values, RuntimeConfig& cfg, std::string& err);
+// The six keys of `cfg`, as settings.json writes them.
+nlohmann::json deviceSettingsOf(const RuntimeConfig& cfg);
 
 }  // namespace mat

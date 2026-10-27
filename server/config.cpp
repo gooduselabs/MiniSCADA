@@ -457,6 +457,79 @@ bool parseIntArg(const char* s, int& out) {
 
 }  // namespace
 
+std::string deviceSettingsPath(const std::string& dataDir) {
+    return dataDir + (!dataDir.empty() && dataDir.back() == '/' ? "" : "/") + kDeviceSettingsFile;
+}
+
+const std::vector<std::string>& deviceSettingKeys() {
+    static const std::vector<std::string> keys{"viewerLogin",   "viewerAccess",
+                                               "allowedHosts",  "maxLiveClientsPerSource",
+                                               "updateEnabled", "deviceName"};
+    return keys;
+}
+
+bool applyDeviceSettings(const json& values, RuntimeConfig& cfg, std::string& err) {
+    if (!values.is_object()) {
+        err = "settings phải là JSON object";
+        return false;
+    }
+    const auto& keys = deviceSettingKeys();
+    json mapped = json::object();
+    for (auto it = values.begin(); it != values.end(); ++it) {
+        if (std::find(keys.begin(), keys.end(), it.key()) == keys.end()) {
+            err = "khóa '" + it.key() + "' không đổi được từ Studio (chỉ runtime.json)";
+            return false;
+        }
+        if (it.key() == "updateEnabled")
+            mapped["update"] = {{"enabled", it.value()}};
+        else
+            mapped[it.key()] = it.value();
+    }
+    std::vector<std::string> warnings;
+    return applyJson(mapped, cfg, err, warnings);
+}
+
+json deviceSettingsOf(const RuntimeConfig& c) {
+    return {
+        {"viewerLogin", c.viewerLogin},     {"viewerAccess", c.viewerAccess},
+        {"allowedHosts", c.allowedHosts},   {"maxLiveClientsPerSource", c.maxLiveClientsPerSource},
+        {"updateEnabled", c.updateEnabled}, {"deviceName", c.deviceName}};
+}
+
+namespace {
+
+// settings.json, else its .bak: {"rev": n >= 1, "values": {...}}. What cannot be used is left out
+// with a warning (the runtime starts with runtime.json alone).
+void applySettingsFile(const FileReader& readFile, RuntimeConfig& c, ConfigResult& r) {
+    if (c.dataDir.empty()) return;
+    const std::string path = deviceSettingsPath(c.dataDir);
+    for (const std::string& p : {path, path + ".bak"}) {
+        const auto text = readFile(p);
+        if (!text) continue;
+        const json j = json::parse(*text, nullptr, false);
+        std::string err;
+        RuntimeConfig next = c;
+        if (j.is_discarded() || !j.is_object())
+            err = "JSON không hợp lệ";
+        else if (!j.contains("rev") || !j["rev"].is_number_integer() || j["rev"].get<int64_t>() < 1)
+            err = "thiếu rev";
+        else if (!j.contains("values"))
+            err = "thiếu values";
+        else
+            applyDeviceSettings(j["values"], next, err);
+        if (err.empty()) {
+            c = next;
+            r.settingsRev = j["rev"].get<int64_t>();
+            r.settings = j["values"];
+            if (p != path) r.warnings.push_back(path + " hỏng: dùng bản trước " + p);
+            return;
+        }
+        r.warnings.push_back(p + ": " + err + "; bỏ qua (xóa tệp để dùng runtime.json)");
+    }
+}
+
+}  // namespace
+
 ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
                         const HostnameFn& hostname) {
     ConfigResult r;
@@ -609,6 +682,11 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
         if (!ok) return r;
     }
 
+    // Feature 027 (FR-002): settings.json over runtime.json and the command line; a damaged file
+    // (then its .bak) is skipped with a warning, never an error.
+    const RuntimeConfig beforeSettings = c;
+    applySettingsFile(readFile, c, r);
+
     if (c.port < 1024 || c.port > 65535) {
         r.error = "port phải trong 1024–65535 (chạy bằng user không đặc quyền)";
         return r;
@@ -716,6 +794,10 @@ ConfigResult loadConfig(int argc, char** argv, const FileReader& readFile,
     }
     if (c.deviceName.empty())
         c.deviceName = defaultDeviceName(hostname ? hostname() : systemHostname(), c.deviceModel);
+    r.base = beforeSettings;
+    if (r.base.deviceName.empty())
+        r.base.deviceName =
+            defaultDeviceName(hostname ? hostname() : systemHostname(), r.base.deviceModel);
     if (c.projectStoreDir.empty())
         c.projectStoreDir = c.dataDir + (c.dataDir.back() == '/' ? "projects" : "/projects");
     if (c.retainDir.empty())

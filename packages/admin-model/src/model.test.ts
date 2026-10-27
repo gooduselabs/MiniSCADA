@@ -1,6 +1,6 @@
 // Logic thuần của trang Quản trị (feature 013): bản nháp quy tắc, kế hoạch sửa người dùng, mã nhóm, ô "ai thấy".
 import { describe, expect, it, vi } from 'vitest';
-import type { EffectiveAccess } from '../access.ts';
+import type { EffectiveAccess } from './access.ts';
 import type { AdminUser } from './api.ts';
 import {
   RuleDraft,

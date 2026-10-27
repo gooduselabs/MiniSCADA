@@ -133,12 +133,12 @@ describe('ai thấy "Cập nhật runtime"', () => {
     expect(env.host.querySelector('[data-role="ota"]')).toBeNull();
   });
 
-  it('OTA tắt trên thiết bị: hiện nhưng khóa, kèm gợi ý update.enabled', async () => {
+  it('OTA tắt trên thiết bị: hiện nhưng khóa, kèm gợi ý Thiết lập thiết bị', async () => {
     const env = await setup({ update: { enabled: false } });
     const card = env.host.querySelector('[data-role="ota"]')!;
     const b = card.querySelector<HTMLButtonElement>('[data-act="ota-open"]')!;
     expect(b.getAttribute('aria-disabled')).toBe('true');
-    expect(text(card)).toContain('update.enabled');
+    expect(text(card)).toContain('Thiết lập thiết bị');
     b.click();
     await env.again(100);
     expect(env.app.ui.dialog).toBeNull();

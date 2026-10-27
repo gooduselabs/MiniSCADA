@@ -259,6 +259,18 @@ export interface DeviceLink {
   ): Promise<DiscoverSummary>;
   devices(): Promise<KnownDevice[]>;
   addDevice(input: AddDeviceInput): Promise<KnownDevice | DeviceError>;
+  /**
+   * `device_admin` (feature 027): API quản trị `/api/v1/admin/...` (013, 023, 025) bằng Bearer của phiên Studio, qua HTTPS có
+   * ghim. Mọi mã HTTP đều trả `{ status, body }` (giao diện đọc `CONFLICT`, `REAUTH_REQUIRED`, `LAST_ADMIN`…); 401 `SESSION_*`
+   * bỏ token phía Rust. Thân ≤ 256 KiB. Không tự gửi lại khi lỗi mạng.
+   */
+  admin(
+    id: string,
+    method: 'GET' | 'POST',
+    path: string,
+    query?: Record<string, string>,
+    body?: unknown,
+  ): Promise<ApiResult | DeviceError>;
   updateDevice(input: UpdateDeviceInput): Promise<KnownDevice | DeviceError>;
   forgetDevice(id: string): Promise<void>;
   probe(id: string): Promise<ProbeResult | DeviceError>;

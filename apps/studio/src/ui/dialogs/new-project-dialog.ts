@@ -26,6 +26,7 @@ const TEMPLATE_TEXT: Readonly<Record<NewProjectTemplate, readonly [MessageKey, M
   blank: ['np.tpl.blank', 'np.tpl.blankText'],
   pump: ['np.tpl.pump', 'np.tpl.pumpText'],
   dashboard: ['np.tpl.dashboard', 'np.tpl.dashboardText'],
+  diagram: ['np.tpl.diagram', 'np.tpl.diagramText'],
 };
 const THEME_TEXT: Readonly<Record<NewProjectTheme, MessageKey>> = {
   vivid: 'np.theme.vivid',

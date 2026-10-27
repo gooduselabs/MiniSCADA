@@ -11,6 +11,7 @@ import type { WebSession } from '../session.ts';
 import {
   AdminApi,
   AdminApiError,
+  fetchTransport,
   type AccessStore,
   type AdminGroup,
   type AdminUser,
@@ -20,6 +21,7 @@ import { ApiKeysTab } from './tab-apikeys.ts';
 import { AuditTab } from './tab-audit.ts';
 import { ComponentsTab } from './tab-components.ts';
 import { EmailTab } from './tab-email.ts';
+import { DeviceTab } from './tab-device.ts';
 import { GroupsTab } from './tab-groups.ts';
 import { PagesTab } from './tab-pages.ts';
 import { UsersTab } from './tab-users.ts';
@@ -35,6 +37,7 @@ export const TABS = [
   'xem-voi-tu-cach',
   'thong-bao-email',
   'api-key',
+  'thiet-bi',
   'nhat-ky',
 ] as const;
 export type TabId = (typeof TABS)[number];
@@ -114,8 +117,10 @@ export class AdminPage implements AdminCtx {
   constructor(deps: AdminPageDeps) {
     this.deps = deps;
     this.api = new AdminApi({
-      ...(deps.fetch ? { fetch: deps.fetch } : {}),
-      csrf: () => deps.session.csrfHeaders(),
+      transport: fetchTransport({
+        ...(deps.fetch ? { fetch: deps.fetch } : {}),
+        csrf: () => deps.session.csrfHeaders(),
+      }),
       onUnauthorized: deps.onUnauthorized,
     });
     this.#root = h('section', { class: 'ad-page', attrs: { 'aria-labelledby': 'ad-title' } });
@@ -493,7 +498,9 @@ export class AdminPage implements AdminCtx {
                     ? new EmailTab(this)
                     : t === 'api-key'
                       ? new ApiKeysTab(this)
-                      : new AuditTab(this);
+                      : t === 'thiet-bi'
+                        ? new DeviceTab(this)
+                        : new AuditTab(this);
       this.#tabs.set(t, tab);
     }
     return tab;

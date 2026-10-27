@@ -1,15 +1,92 @@
 // Lớp API quản trị (feature 013; admin-api §2–§5): đường, CSRF, rev, reauth trong thân; lỗi thành AdminApiError có mã và
-// trường thêm; 401 gọi onUnauthorized; đọc thân phòng thủ.
+// trường thêm; 401 gọi onUnauthorized; đọc thân phòng thủ. Kênh web (`fetchTransport`) và kênh tùy ý (Studio, 027).
 import { describe, expect, it, vi } from 'vitest';
-import { fakeFetch } from '../testing.ts';
-import { AdminApi, AdminApiError, parseAccessStore, parseApiKeys, parseUsers } from './api.ts';
+import {
+  AdminApi,
+  AdminApiError,
+  fetchTransport,
+  parseAccessStore,
+  parseApiKeys,
+  parseUsers,
+  type AdminTransport,
+} from './api.ts';
 
-function mk(routes: Parameters<typeof fakeFetch>[0]) {
+type Reply = { status?: number; json?: unknown } | Error;
+interface Call {
+  method: string;
+  url: string;
+  headers: Record<string, string>;
+  body: unknown;
+}
+
+/** `fetch` giả tối thiểu: tuyến `"METHOD /đường"` → trả lời; không có tuyến → 404; `Error` → lỗi mạng. */
+function fakeFetch(routes: Record<string, Reply> = {}) {
+  const table = new Map(Object.entries(routes));
+  const calls: Call[] = [];
+  const fn = (async (input: string, init: RequestInit = {}) => {
+    const headers: Record<string, string> = {};
+    new Headers(init.headers).forEach((v, k) => (headers[k.toLowerCase()] = v));
+    const method = (init.method ?? 'GET').toUpperCase();
+    const body = typeof init.body === 'string' ? JSON.parse(init.body) : init.body;
+    calls.push({ method, url: String(input), headers, body });
+    const h = table.get(`${method} ${String(input)}`) ?? { status: 404 };
+    if (h instanceof Error) throw h;
+    const status = h.status ?? 200;
+    return {
+      ok: status >= 200 && status < 300,
+      status,
+      json: async () => {
+        if (h.json === undefined) throw new Error('không phải JSON');
+        return h.json;
+      },
+    };
+  }) as unknown as typeof fetch;
+  return { fn, calls, set: (k: string, h: Reply) => void table.set(k, h) };
+}
+
+function mk(routes: Record<string, Reply>) {
   const f = fakeFetch(routes);
   const onUnauthorized = vi.fn();
-  const api = new AdminApi({ fetch: f.fn, csrf: () => ({ 'X-MAT-CSRF': 'T' }), onUnauthorized });
+  const api = new AdminApi({
+    transport: fetchTransport({ fetch: f.fn, csrf: () => ({ 'X-MAT-CSRF': 'T' }) }),
+    onUnauthorized,
+  });
   return { f, api, onUnauthorized };
 }
+
+describe('AdminApi qua kênh tùy ý (Studio, feature 027)', () => {
+  it('gửi method, đường kèm query, thân; GET không có thân', async () => {
+    const seen: [string, string, unknown][] = [];
+    const transport: AdminTransport = async (m, p, b) => {
+      seen.push([m, p, b]);
+      return m === 'GET'
+        ? { status: 200, body: { rev: 2, groups: [{ id: 'ca-a', name: 'Ca A' }] } }
+        : { status: 201, body: { rev: 3 } };
+    };
+    const api = new AdminApi({ transport, onUnauthorized: () => {} });
+    expect((await api.groups()).groups[0]).toMatchObject({ id: 'ca-a', name: 'Ca A' });
+    expect(await api.createGroup({ rev: 2, id: 'ca-b', name: 'Ca B' })).toEqual({ rev: 3 });
+    expect(seen).toEqual([
+      ['GET', '/api/v1/admin/groups', undefined],
+      ['POST', '/api/v1/admin/groups', { rev: 2, id: 'ca-b', name: 'Ca B' }],
+    ]);
+  });
+
+  it('409 CONFLICT mang rev mới; AdminApiError do kênh ném giữ nguyên mã', async () => {
+    const api = new AdminApi({
+      transport: async (_m, p) => {
+        if (p.endsWith('/users')) return { status: 409, body: { error: 'CONFLICT', rev: 9 } };
+        throw new AdminApiError(0, 'PIN_MISMATCH', {});
+      },
+      onUnauthorized: () => {},
+    });
+    const e = (await api
+      .createUser({ rev: 1, name: 'abc', role: 'viewer', groups: [] })
+      .catch((x) => x)) as AdminApiError;
+    expect([e.status, e.code, e.body.rev]).toEqual([409, 'CONFLICT', 9]);
+    await expect(api.groups()).rejects.toMatchObject({ code: 'PIN_MISMATCH' });
+  });
+});
 
 describe('AdminApi: API key (feature 025)', () => {
   it('đọc danh sách phòng thủ, không có token', () => {

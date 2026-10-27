@@ -438,4 +438,16 @@ if sh "$SRC/deployment/device/deploy.sh" "$S/u2.tar.gz" --expect-key-id sha256:0
     cat "$W/log"; fail "trusted-keys rỗng: --expect-key-id sai mà deploy vẫn đạt"
 fi
 has "khác khóa ghim --expect-key-id" "trusted-keys rỗng: phải áp --expect-key-id"
+# Feature 027 (T010): gói đóng trên Windows không giữ bit thực thi: updater/* và bin/ ở 0644 vẫn phải cài được
+# (lần deploy trước báo "gói không có mat-updater").
+fresh
+rm -rf /usr/lib/mat-updater /var/lib/mat-updater
+pkgu u7
+chmod 644 "$W/pkg-u7/updater/"* "$W/pkg-u7/bin/mat-runtime"
+tar -czf "$W/u7.tar.gz" -C "$W/pkg-u7" . && (cd "$W" && sha256sum "u7.tar.gz" > "u7.tar.gz.sha256")
+deploy u7 < /dev/null
+hasnt "gói không có mat-updater" "gói 0644: mat-updater phải được cài"
+for f in mat-update-verify mat-updater mat-updater-recover; do
+    [ "$(stat -c %a /usr/lib/mat-updater/$f 2>/dev/null)" = 755 ] || fail "gói 0644: /usr/lib/mat-updater/$f phải 0755"
+done
 echo "deploy/rollback: OK"

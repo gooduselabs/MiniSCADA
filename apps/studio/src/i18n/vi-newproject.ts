@@ -30,6 +30,9 @@ export const viNewProject = {
   'np.tpl.dashboard': 'Dashboard tối',
   'np.tpl.dashboardText':
     'Một màn hình dashboard: thẻ chỉ số màu, biểu đồ có tiêu đề và đường ngưỡng, trạng thái bơm; chủ đề Tối.',
+  'np.tpl.diagram': 'Mẫu sơ đồ công nghệ (SVG)',
+  'np.tpl.diagramText':
+    'Sơ đồ trạm bơm nước sạch vẽ bằng SVG: bồn có mức, bơm quay, dòng chảy trên ống, cảnh báo, faceplate bơm; chủ đề Tối.',
   'np.theme': 'Chủ đề giao diện',
   'np.themeHelp': 'Chủ đề của trang vận hành trên thiết bị; đổi lại được trong Thiết lập project.',
   'np.theme.vivid': 'Sáng đa sắc',

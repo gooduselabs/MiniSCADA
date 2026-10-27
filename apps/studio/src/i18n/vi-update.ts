@@ -7,7 +7,7 @@ export const viUpdate = {
   'ota.card.text':
     'Tải gói .matupdate đã ký lên thiết bị, xem kế hoạch rồi áp dụng. Kiểm tra sức khỏe không đạt thì thiết bị tự quay về bản trước.',
   'ota.card.open': 'Cập nhật runtime…',
-  'ota.card.disabled': 'OTA đang tắt: root bật update.enabled trong runtime.json',
+  'ota.card.disabled': 'OTA đang tắt: bật trong Thiết bị › Thiết lập thiết bị (administrator)',
 
   // ---- Hộp thoại ----
   'ota.title': 'Cập nhật runtime: {name}',
@@ -97,7 +97,7 @@ export const viUpdate = {
   'ota.code.UPDATE_SIGNATURE_INVALID': 'Chữ ký của gói không hợp lệ',
   'ota.code.UPDATE_KEY_UNKNOWN': 'Gói được ký bằng khóa thiết bị không tin cậy',
   'ota.code.UPDATE_DISABLED':
-    'OTA đang tắt trên thiết bị (root bật update.enabled trong runtime.json)',
+    'OTA đang tắt trên thiết bị (administrator bật trong Thiết bị › Thiết lập thiết bị)',
   'ota.code.UPDATE_DOWNGRADE': 'Gói không mới hơn bản đang chạy (không cho hạ cấp)',
   'ota.code.UPDATE_PROJECT_INCOMPATIBLE': 'Project đang chạy không tương thích với runtime mới',
   'ota.code.UPDATE_TOO_LARGE': 'Gói vượt cỡ tối đa của thiết bị (update.maxPackageMiB)',

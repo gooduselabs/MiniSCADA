@@ -60,9 +60,10 @@ int EngineeringApi::updateRoute(mg_connection* c, const GateRequest& r, const Ga
     const bool upload = path == kUpdatePath && r.method == "POST";
     if (!svc.enabled()) {
         if (upload) mg_disable_connection_keep_alive(c);  // the package is not read
-        return sendError(
-            c, 404, "UPDATE_DISABLED", upload || close, "",
-            {{"message", "Cập nhật qua mạng đang tắt (update.enabled trong runtime.json)."}});
+        return sendError(c, 404, "UPDATE_DISABLED", upload || close, "",
+                         {{"message",
+                           "Cập nhật qua mạng đang tắt: bật trong Thiết bị › Thiết lập thiết bị "
+                           "(Studio hoặc trang Quản trị)."}});
     }
     UpdateCaller who;
     who.user = d.access.user;

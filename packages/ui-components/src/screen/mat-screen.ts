@@ -208,13 +208,18 @@ export class MatScreen extends LitElement {
       display: grid;
       box-sizing: border-box;
     }
+    /* min-height 0: ô không giãn theo nội dung (SVG, biểu đồ lịch sử cao theo tỉ lệ), hàng giữ đúng chiều cao */
     .grid .cell {
       position: relative;
       min-width: 0;
+      min-height: 0;
       display: flex;
     }
     .grid .cell > .item {
       flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
     }
     /* lớp phủ của trình soạn lưới (Studio) đặt vào ô qua slot, phủ trên widget */
     .grid .cell ::slotted(*) {

@@ -360,6 +360,7 @@ pub fn run() {
             device::deploy::device_fetch_package,
             // Feature 006 (tauri-commands-006): ghi Tag và Thử kết nối, sao lưu khi nâng cấp, CSV.
             device::device_post,
+            device::device_admin,
             device::logic::logic_get,
             device::logic::logic_writes_stop,
             device::logic::logic_reset,

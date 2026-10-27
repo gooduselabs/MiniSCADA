@@ -143,6 +143,14 @@ const std::vector<Expected> kContract025Admin = {
     {"POST", "/api/v1/admin/apikeys/{id}", true, Role::Administrator, true, true},
     {"POST", "/api/v1/admin/apikeys/{id}/revoke", true, Role::Administrator, true, true},
 };
+// feature 027 (ADR-054): the device settings and the certificate
+const std::vector<Expected> kContract027 = {
+    {"GET", "/api/v1/admin/device-settings", true, Role::Administrator, true, false},
+    {"POST", "/api/v1/admin/device-settings", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/cert/regen", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/cert/csr", true, Role::Administrator, true, true},
+    {"POST", "/api/v1/admin/cert/import", true, Role::Administrator, true, true},
+};
 const std::vector<Expected> kContract025Data = {
     {"GET", "/api/v1/data/key", false, Role::Viewer, false, false},
     {"GET", "/api/v1/data/tags", false, Role::Viewer, false, false},
@@ -216,13 +224,14 @@ TEST(Roles, TheTableIsTheContract) {
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
     for (const auto& e : kContract024)
         contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
-    for (const auto& list : {kContract025Admin, kContract025Data})
+    for (const auto& list : {kContract025Admin, kContract025Data, kContract027})
         for (const auto& e : list)
             contract.emplace(e.method, e.path, e.needsSession, e.minRole, e.refreshes, e.changes);
-    EXPECT_EQ(endpointRules().size(),
-              kContract.size() + kContract11.size() + kContract12.size() + kContract13.size() +
-                  kContract14.size() + kContract011.size() + kContract16.size() +
-                  kContract024.size() + kContract025Admin.size() + kContract025Data.size());
+    EXPECT_EQ(endpointRules().size(), kContract.size() + kContract11.size() + kContract12.size() +
+                                          kContract13.size() + kContract14.size() +
+                                          kContract011.size() + kContract16.size() +
+                                          kContract024.size() + kContract025Admin.size() +
+                                          kContract025Data.size() + kContract027.size());
     EXPECT_EQ(table, contract);
 }
 
@@ -350,6 +359,8 @@ TEST(Roles, TheCookieReachesOnlyTheEndpointsOfThePage) {
     for (const auto& e : kContract024) cookie.insert(e.method + " " + e.path);
     // feature 025: the API keys of the admin page (the data API itself: never a cookie)
     for (const auto& e : kContract025Admin) cookie.insert(e.method + " " + e.path);
+    // feature 027: the device settings and the certificate (tab Thiết bị of the admin page)
+    for (const auto& e : kContract027) cookie.insert(e.method + " " + e.path);
     std::set<std::string> seen;
     for (const auto& r : endpointRules()) {
         const std::string key = std::string(r.method) + " " + r.path;

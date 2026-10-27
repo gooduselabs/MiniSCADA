@@ -15,6 +15,7 @@
 #include "core/crypto/hex.hpp"
 #include "core/crypto/random.hpp"
 #include "core/crypto/sha256.hpp"
+#include "server/device_admin.hpp"
 #include "server/http/auth_gate.hpp"
 #include "server/http/engineering_api_internal.hpp"
 
@@ -27,6 +28,7 @@ using nlohmann::json;
 constexpr int kMaxBodyDepth = 8;
 constexpr int64_t kAdminReadQuietMs = 60000;  // admin.read: not again within 60 s
 constexpr size_t kMaxSetItems = 500;
+constexpr int kDeviceRestartDelayMs = 1000;  // feature 027: the answer leaves before the restart
 
 std::string isoNow() {
     const time_t t = std::time(nullptr);
@@ -1426,6 +1428,139 @@ struct AdminApi::Impl {
         }
         return reply(200, {{"rev", newRev}});
     }
+
+    // ---- device settings and certificate (feature 027, ADR-054)
+
+    AdminReply deviceGet() { return reply(200, b.device->info()); }
+
+    AdminReply deviceSet(const json& body, const AdminCaller& who) {
+        const AuditAction act = AuditAction::DeviceSettings;
+        for (auto it = body.begin(); it != body.end(); ++it)
+            if (it.key() != "rev" && it.key() != "settings" && it.key() != "reauth")
+                return error(400, "BAD_REQUEST", {{"message", "Khóa lạ: " + it.key() + "."}});
+        if (!body.contains("rev") || !isRev(body["rev"]) || !body.contains("settings") ||
+            !body["settings"].is_object())
+            return error(400, "BAD_REQUEST", {{"message", "Cần rev và settings."}});
+        const json& values = body["settings"];
+        json after;
+        std::string err;
+        if (!b.device->effectiveWith(values, after, err))
+            return error(400, "BAD_REQUEST", {{"message", err}});
+        const int64_t rev = body["rev"].get<int64_t>();
+        if (const int64_t now = b.device->rev(); now != rev)
+            return deny(act, who, "settings.json", 409, "CONFLICT", {{"rev", now}});
+        const json before = b.device->effectiveStored();
+        const std::vector<std::string> lowered = securityLowered(before, after);
+        if (!lowered.empty())
+            if (auto refused = reauth(body, who, act, "settings.json")) {
+                refused->body["lowered"] = lowered;
+                return *refused;
+            }
+        AuditEvent e = event(act, AuditResult::Ok, who);
+        e.target = "settings.json";
+        e.detail = jsonText({{"before", before}, {"after", after}});
+        if (!audit(e)) return error(503, "AUDIT_UNAVAILABLE");
+        const DeviceSaveResult r = b.device->save(values, rev, who.user);
+        switch (r.status) {
+            case DeviceSaveStatus::Ok:
+                return reply(200, {{"rev", r.rev},
+                                   {"effective", after},
+                                   {"restart", r.restart},
+                                   {"restartInMs", r.restart ? kDeviceRestartDelayMs : 0}});
+            case DeviceSaveStatus::Conflict:
+                return deny(act, who, "settings.json", 409, "CONFLICT", {{"rev", r.rev}});
+            case DeviceSaveStatus::Invalid:
+                return error(400, "BAD_REQUEST", {{"message", r.error}});
+            case DeviceSaveStatus::IoError:
+                break;
+        }
+        AuditEvent fe = event(act, AuditResult::Failed, who);
+        fe.target = "settings.json";
+        fe.code = "STORE_IO";
+        audit(fe);
+        return error(503, "STORE_IO", {{"message", "Không ghi được settings.json: " + r.error}});
+    }
+
+    // san: [IPv4 | host name] (at most 16), as --san.
+    std::optional<AdminReply> sanOf(const json& body, std::vector<SanEntry>& out) {
+        if (!body.contains("san")) return std::nullopt;
+        if (!body["san"].is_array() || body["san"].size() > 16)
+            return error(400, "BAD_REQUEST", {{"message", "san phải là mảng tối đa 16 tên."}});
+        std::string text;
+        for (const json& s : body["san"]) {
+            if (!s.is_string() || s.get<std::string>().empty() ||
+                s.get<std::string>().find(',') != std::string::npos)
+                return error(400, "BAD_REQUEST", {{"message", "san có mục không hợp lệ."}});
+            text += (text.empty() ? "" : ",") + s.get<std::string>();
+        }
+        std::string err;
+        if (!text.empty() && !parseSanList(text, out, err))
+            return error(400, "BAD_REQUEST", {{"message", err}});
+        return std::nullopt;
+    }
+
+    AdminReply certRegen(const json& body, const AdminCaller& who) {
+        const AuditAction act = AuditAction::CertRegenerate;
+        std::vector<SanEntry> san;
+        if (auto bad = sanOf(body, san)) return *bad;
+        if (auto refused = reauth(body, who, act, "server.pem")) return *refused;
+        AuditEvent e = event(act, AuditResult::Started, who);
+        e.target = "server.pem";
+        if (!audit(e)) return error(503, "AUDIT_UNAVAILABLE");
+        const ServerCert c = b.device->regenerate(san);
+        AuditEvent done = event(act, c.ok ? AuditResult::Ok : AuditResult::Failed, who);
+        done.target = c.ok ? c.fingerprint : "server.pem";
+        if (!c.ok) done.code = "STORE_IO";
+        audit(done);
+        if (!c.ok) return error(503, "STORE_IO", {{"message", c.error}});
+        b.device->scheduleRestart();
+        return reply(200, {{"fingerprint", c.fingerprint},
+                           {"fingerprintColons", c.fingerprintColons},
+                           {"sanDns", c.cert.sanDns},
+                           {"sanIps", c.cert.sanIps},
+                           {"notAfter", c.cert.notAfter},
+                           {"restart", true},
+                           {"restartInMs", kDeviceRestartDelayMs}});
+    }
+
+    AdminReply certCsr(const json& body, const AdminCaller& who) {
+        const AuditAction act = AuditAction::TlsCsr;
+        std::vector<SanEntry> san;
+        if (auto bad = sanOf(body, san)) return *bad;
+        const CsrResult c = b.device->makeCsr(san);
+        AuditEvent e = event(act, c.ok ? AuditResult::Ok : AuditResult::Failed, who);
+        e.target = c.ok ? c.csrPath : "pending-key.pem";
+        if (!c.ok) e.code = "STORE_IO";
+        if (!audit(e)) return error(503, "AUDIT_UNAVAILABLE");
+        if (!c.ok) return error(503, "STORE_IO", {{"message", c.error}});
+        return reply(200, {{"csrPem", c.csrPem}});
+    }
+
+    AdminReply certImport(const json& body, const AdminCaller& who) {
+        const AuditAction act = AuditAction::TlsImport;
+        if (!body.contains("pem") || !body["pem"].is_string() ||
+            body["pem"].get<std::string>().empty())
+            return error(400, "BAD_REQUEST", {{"message", "Cần pem (chứng chỉ, rồi chuỗi CA)."}});
+        if (auto refused = reauth(body, who, act, "server.pem")) return *refused;
+        AuditEvent e = event(act, AuditResult::Started, who);
+        e.target = "server.pem";
+        if (!audit(e)) return error(503, "AUDIT_UNAVAILABLE");
+        const ImportResult r = b.device->importCert(body["pem"].get<std::string>());
+        static const char* const kCodes[] = {
+            "", "", "CERT_FILE_INVALID", "CERT_KEY_MISMATCH", "STORE_IO", "CERT_EXPIRED"};
+        const char* code = r.code >= 0 && r.code <= 5 ? kCodes[r.code] : "STORE_IO";
+        AuditEvent done = event(act, r.code == 0 ? AuditResult::Ok : AuditResult::Failed, who);
+        done.target = r.code == 0 ? r.fingerprint : "server.pem";
+        if (r.code != 0) done.code = code;
+        audit(done);
+        if (r.code != 0) return error(r.code == 4 ? 503 : 400, code, {{"message", r.error}});
+        b.device->scheduleRestart();
+        return reply(200, {{"fingerprint", r.fingerprint},
+                           {"fingerprintColons", r.fingerprintColons},
+                           {"warnings", r.warnings},
+                           {"restart", true},
+                           {"restartInMs", kDeviceRestartDelayMs}});
+    }
 };
 
 AdminApi::AdminApi(AdminBackend backend) : impl_(std::make_shared<Impl>()) {
@@ -1508,6 +1643,15 @@ AdminReply AdminApi::call(const std::string& method, const std::string& path,
             if (rest.empty()) return s.apikeysUpdate(id, body, who);
             if (rest == "/revoke") return s.apikeysRevoke(id, body, who);
         }
+        return error(404, "NOT_FOUND");
+    }
+    if (path == "/api/v1/admin/device-settings" || path.rfind("/api/v1/admin/cert/", 0) == 0) {
+        if (!s.b.device) return error(501, "NOT_IMPLEMENTED");
+        if (path == "/api/v1/admin/device-settings")
+            return method == "GET" ? s.deviceGet() : s.deviceSet(body, who);
+        if (path == "/api/v1/admin/cert/regen") return s.certRegen(body, who);
+        if (path == "/api/v1/admin/cert/csr") return s.certCsr(body, who);
+        if (path == "/api/v1/admin/cert/import") return s.certImport(body, who);
         return error(404, "NOT_FOUND");
     }
     if (path == "/api/v1/admin/email" || path == "/api/v1/admin/email/test") {

@@ -114,6 +114,8 @@ enum class AuditAction {
     ApiKeyUpdate,  // apikey.update: its rights, sources, expiry or rate changed
     ApiKeyRevoke,  // apikey.revoke: the key removed
     ApiKeyDenied,  // apikey.denied: a call of /api/v1/data/* refused (limited like access.denied)
+    // Feature 027 (ADR-054).
+    DeviceSettings,  // device.settings: settings.json changed (Studio or the admin page)
 };
 
 enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
@@ -124,7 +126,7 @@ enum class AuditResult { Ok, Failed, Denied, Started, RolledBack, Interrupted };
 enum class AuditChannel { Https, Http, Cli, System, Web, Logic };
 
 // clang-format off
-inline constexpr std::array<AuditAction, 80> kAuditActions = {
+inline constexpr std::array<AuditAction, 81> kAuditActions = {
     AuditAction::AuthLogin,          AuditAction::AuthLocked,
     AuditAction::AuthLockout,        AuditAction::AuthLogout,
     AuditAction::AuthSessionRevoked, AuditAction::AccessDenied,
@@ -167,6 +169,7 @@ inline constexpr std::array<AuditAction, 80> kAuditActions = {
     AuditAction::EmailConfig,           AuditAction::EmailTest,
     AuditAction::ApiKeyCreate,          AuditAction::ApiKeyUpdate,
     AuditAction::ApiKeyRevoke,          AuditAction::ApiKeyDenied,
+    AuditAction::DeviceSettings,
 };
 // clang-format on
 
@@ -332,6 +335,8 @@ constexpr const char* auditActionName(AuditAction a) {
             return "apikey.revoke";
         case AuditAction::ApiKeyDenied:
             return "apikey.denied";
+        case AuditAction::DeviceSettings:
+            return "device.settings";
     }
     return "";
 }

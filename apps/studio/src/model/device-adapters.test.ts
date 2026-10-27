@@ -80,6 +80,7 @@ function fakeLink(over: Partial<DeviceLink> = {}): DeviceLink {
     session: no,
     get: no,
     post: no,
+    admin: no,
     monitorGet: no,
     openLive: no,
     buildPackage: no,

@@ -18,6 +18,7 @@
 //   lọc, phân trang, mỗi lần đọc ghi audit.read) trên nhật ký giả có sẵn đăng nhập thất bại và truy cập bị từ chối.
 // - T085b: cổng đã lưu trả lời HTTP thường (cổng HTTP của thiết bị giả, hoặc runtime thật đã khai) → `not-tls`;
 //   runtime < 0.4.0 thì cổng đó thành `httpPort` của thiết bị đã lưu, như `adopt_old_http_port` của Rust.
+import { createMockAdmin, type MockAdmin, type MockAdminControl } from './mock-admin.ts';
 import {
   compareSemver,
   compareUtf8,
@@ -53,6 +54,7 @@ import type {
 } from './device-types.ts';
 import * as m6 from './mock-device-006.ts';
 import * as mlogic from './mock-device-logic.ts';
+import * as mdevice from './mock-device-settings.ts';
 import * as mupdate from './mock-device-update.ts';
 import { platform as mockPlatform, sha256Sync, type MockPlatform } from './mock.ts';
 import type { ReadOutcome } from './types.ts';
@@ -396,6 +398,8 @@ export interface FakeDeviceView {
 }
 
 export interface MockDeviceControl {
+  /** API quản trị giả của thiết bị (feature 027): danh mục tài nguyên, rev, yêu cầu đã nhận. */
+  admin(name: string): MockAdminControl;
   /** Thời gian một lượt quét (ms); mặc định 2500 như Rust. */
   scanMs: number;
   /** Đặt mật khẩu cho tài khoản giả trên mọi thiết bị giả có tài khoản đó. */
@@ -971,8 +975,19 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
   let extractMode: 'empty' | 'not-empty' | 'cancel' = 'empty';
   /** Gói tạm (tối đa 4), theo thứ tự tạo. */
   const packages = new Map<string, { info: PackageInfo; files: Record<string, string> }>();
+  /** API quản trị giả theo thiết bị (feature 027), dựng khi cần. */
+  const admins = new Map<FakeDev, MockAdmin>();
+  const adminOf = (f: FakeDev): MockAdmin => {
+    let a = admins.get(f);
+    if (!a) {
+      a = createMockAdmin(f.accounts);
+      admins.set(f, a);
+    }
+    return a;
+  };
 
   const control: MockDeviceControl = {
+    admin: (name) => adminOf(byName(name)).control,
     scanMs: 2500,
     deployStepMs: 150,
     calls: [],
@@ -1302,6 +1317,22 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
   }
 
   /** Thiết bị đã ghim, TLS khớp, có phiên còn hạn (như Rust trước khi gửi yêu cầu có token). */
+  /** Feature 027: ngữ cảnh của thiết lập thiết bị giả (mật khẩu so như `reauth`, đổi chứng chỉ như runtime). */
+  function adminCtx(f: FakeDev, user: string): mdevice.MockDeviceAdminCtx {
+    return {
+      name: f.name,
+      ip: f.ip,
+      fingerprint: f.fingerprint ?? '',
+      updateEnabled: mupdate.systemInfoBlock(f)?.enabled ?? false,
+      passwordOk: (typed) => typeof typed === 'string' && reauthOk(f, user, typed),
+      rotate: () => {
+        f.certGen++;
+        f.fingerprint = rotateHex(f.fingerprint ?? '0'.repeat(64), f.certGen);
+        return f.fingerprint;
+      },
+    };
+  }
+
   function logicAuth(id: string): { f: FakeDev; t: Token } | DeviceError {
     const k = findKnown(id);
     if (!k) return { error: 'no-such-device' };
@@ -1858,6 +1889,12 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
 
     async get(id, path, query) {
       record('device_get', { id, path, ...(query ? { query } : {}) });
+      // Feature 027: thiết lập thiết bị (administrator; mock-device-settings.ts).
+      if (path === '/api/v1/admin/device-settings') {
+        const a = logicAuth(id);
+        if ('error' in a) return a;
+        return mdevice.get(a.f, a.t.role, adminCtx(a.f, a.t.user));
+      }
       if (!ALLOWED.some((re) => re.test(path))) return { error: 'bad-path' };
       const k = findKnown(id);
       if (!k) return { error: 'no-such-device' };
@@ -2025,8 +2062,41 @@ export function createMockDevice(opts: MockDeviceOptions = {}): MockDevice {
       return { error: 'http', detail: 404 };
     },
 
+    async admin(id, method, path, query, body) {
+      record('device_admin', { id, method, path });
+      if (!/^\/api\/v1\/admin\/[a-z0-9._~%/-]+$/i.test(path) || path.includes('..'))
+        return { error: 'bad-path' };
+      if (JSON.stringify(body ?? {}).length > 256 * 1024) return { error: 'too-large' };
+      const k = findKnown(id);
+      if (!k) return { error: 'no-such-device' };
+      const f = tls(k, fakeFor(k));
+      if ('error' in f) return f;
+      const t = tokens.get(id);
+      if (!t) return later(40, { status: 401, body: { error: 'AUTH_REQUIRED' } });
+      if (t.device !== 'ok') {
+        tokens.delete(id);
+        return later(40, {
+          status: 401,
+          body: { error: t.device === 'expired' ? 'SESSION_EXPIRED' : 'SESSION_INVALID' },
+        });
+      }
+      return later(40, adminOf(f).handle(t.user, method, path, query, body));
+    },
+
     async post(id, path, body) {
       record('device_post', { id, path, body });
+      if (mdevice.DEVICE_ADMIN_POST.includes(path)) {
+        if (JSON.stringify(body).length > 16 * 1024) return { error: 'too-large' };
+        const a = logicAuth(id);
+        if ('error' in a) return a;
+        return mdevice.post(
+          a.f,
+          a.t.role,
+          path,
+          body as Record<string, unknown>,
+          adminCtx(a.f, a.t.user),
+        );
+      }
       if (!ALLOWED_POST.includes(path)) return { error: 'bad-path' };
       if (JSON.stringify(body).length > 16 * 1024) return { error: 'too-large' };
       const k = findKnown(id);

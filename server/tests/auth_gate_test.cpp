@@ -401,6 +401,12 @@ TEST(GateRefresh, OnlyTheEndpointsOfSection13RestartTheIdleTime) {
         {"POST /api/v1/admin/apikeys", true},
         {"POST /api/v1/admin/apikeys/k1", true},
         {"POST /api/v1/admin/apikeys/k1/revoke", true},
+        // feature 027: device settings and certificate
+        {"GET /api/v1/admin/device-settings", true},
+        {"POST /api/v1/admin/device-settings", true},
+        {"POST /api/v1/admin/cert/regen", true},
+        {"POST /api/v1/admin/cert/csr", true},
+        {"POST /api/v1/admin/cert/import", true},
     };
     for (const auto& kv : expected) {
         const size_t space = kv.first.find(' ');

@@ -1,0 +1,845 @@
+{
+  "schemaVersion": "1.1.0",
+  "tags": [
+    {
+      "id": "SIM.NOISE",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Nhiễu đo nhỏ (mô phỏng)",
+      "sim": {
+        "kind": "sine",
+        "center": 0,
+        "amplitude": 1,
+        "periodMs": 7000
+      }
+    },
+    {
+      "id": "SIM.NOISE2",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Nhiễu đo nhỏ thứ hai (mô phỏng)",
+      "sim": {
+        "kind": "sine",
+        "center": 0,
+        "amplitude": 1,
+        "periodMs": 11000,
+        "phase": 0.3
+      }
+    },
+    {
+      "id": "P101.RUN",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm cấp 1 đang chạy (mô phỏng luân phiên)",
+      "sim": {
+        "kind": "square",
+        "periodMs": 240000,
+        "duty": 0.8
+      }
+    },
+    {
+      "id": "P101.FAULT",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm cấp 1 lỗi",
+      "sim": {
+        "kind": "const",
+        "value": false
+      }
+    },
+    {
+      "id": "P101.STATE",
+      "kind": "calculated",
+      "type": "INT16",
+      "description": "Trạng thái Bơm cấp 1: 0 dừng, 1 chạy, 2 lỗi",
+      "valueTable": "TrangThaiBom",
+      "expression": "P101.FAULT ? 2 : (P101.RUN ? 1 : 0)"
+    },
+    {
+      "id": "P101.CURRENT",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Dòng điện động cơ Bơm cấp 1",
+      "unit": "A",
+      "expression": "P101.STATE == 1 ? 24.5 + 0.8 * SIM.NOISE : 0"
+    },
+    {
+      "id": "P101.HOURS",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Giờ chạy tích lũy Bơm cấp 1",
+      "unit": "h",
+      "sim": {
+        "kind": "ramp",
+        "from": 1242,
+        "to": 1266,
+        "periodMs": 86400000
+      }
+    },
+    {
+      "id": "P101.MODE",
+      "kind": "simulation",
+      "type": "INT16",
+      "description": "Chế độ Bơm cấp 1",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 1
+      },
+      "valueTable": "CheDo",
+      "sim": {
+        "kind": "manual",
+        "initial": 1
+      }
+    },
+    {
+      "id": "P101.CMD",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Lệnh chạy tay Bơm cấp 1",
+      "access": "RW",
+      "sim": {
+        "kind": "manual",
+        "initial": false
+      }
+    },
+    {
+      "id": "P102.RUN",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm cấp 2 đang chạy (mô phỏng luân phiên)",
+      "sim": {
+        "kind": "square",
+        "periodMs": 240000,
+        "duty": 0.7,
+        "phase": 0.35
+      }
+    },
+    {
+      "id": "P102.FAULT",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm cấp 2 lỗi (mô phỏng, thỉnh thoảng)",
+      "sim": {
+        "kind": "square",
+        "periodMs": 150000,
+        "duty": 0.12,
+        "phase": 0.5
+      }
+    },
+    {
+      "id": "P102.STATE",
+      "kind": "calculated",
+      "type": "INT16",
+      "description": "Trạng thái Bơm cấp 2: 0 dừng, 1 chạy, 2 lỗi",
+      "valueTable": "TrangThaiBom",
+      "expression": "P102.FAULT ? 2 : (P102.RUN ? 1 : 0)"
+    },
+    {
+      "id": "P102.CURRENT",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Dòng điện động cơ Bơm cấp 2",
+      "unit": "A",
+      "expression": "P102.STATE == 1 ? 24.5 + 0.8 * SIM.NOISE : 0"
+    },
+    {
+      "id": "P102.HOURS",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Giờ chạy tích lũy Bơm cấp 2",
+      "unit": "h",
+      "sim": {
+        "kind": "ramp",
+        "from": 1187,
+        "to": 1211,
+        "periodMs": 86400000
+      }
+    },
+    {
+      "id": "P102.MODE",
+      "kind": "simulation",
+      "type": "INT16",
+      "description": "Chế độ Bơm cấp 2",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 1
+      },
+      "valueTable": "CheDo",
+      "sim": {
+        "kind": "manual",
+        "initial": 1
+      }
+    },
+    {
+      "id": "P102.CMD",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Lệnh chạy tay Bơm cấp 2",
+      "access": "RW",
+      "sim": {
+        "kind": "manual",
+        "initial": false
+      }
+    },
+    {
+      "id": "P103.RUN",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm cấp 3 đang chạy (mô phỏng luân phiên)",
+      "sim": {
+        "kind": "square",
+        "periodMs": 240000,
+        "duty": 0.45,
+        "phase": 0.6
+      }
+    },
+    {
+      "id": "P103.FAULT",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm cấp 3 lỗi",
+      "sim": {
+        "kind": "const",
+        "value": false
+      }
+    },
+    {
+      "id": "P103.STATE",
+      "kind": "calculated",
+      "type": "INT16",
+      "description": "Trạng thái Bơm cấp 3: 0 dừng, 1 chạy, 2 lỗi",
+      "valueTable": "TrangThaiBom",
+      "expression": "P103.FAULT ? 2 : (P103.RUN ? 1 : 0)"
+    },
+    {
+      "id": "P103.CURRENT",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Dòng điện động cơ Bơm cấp 3",
+      "unit": "A",
+      "expression": "P103.STATE == 1 ? 24.5 + 0.8 * SIM.NOISE : 0"
+    },
+    {
+      "id": "P103.HOURS",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Giờ chạy tích lũy Bơm cấp 3",
+      "unit": "h",
+      "sim": {
+        "kind": "ramp",
+        "from": 865,
+        "to": 889,
+        "periodMs": 86400000
+      }
+    },
+    {
+      "id": "P103.MODE",
+      "kind": "simulation",
+      "type": "INT16",
+      "description": "Chế độ Bơm cấp 3",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 1
+      },
+      "valueTable": "CheDo",
+      "sim": {
+        "kind": "manual",
+        "initial": 1
+      }
+    },
+    {
+      "id": "P103.CMD",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Lệnh chạy tay Bơm cấp 3",
+      "access": "RW",
+      "sim": {
+        "kind": "manual",
+        "initial": false
+      }
+    },
+    {
+      "id": "P201.RUN",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm đẩy 1 đang chạy (mô phỏng luân phiên)",
+      "sim": {
+        "kind": "square",
+        "periodMs": 300000,
+        "duty": 0.75
+      }
+    },
+    {
+      "id": "P201.FAULT",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm đẩy 1 lỗi",
+      "sim": {
+        "kind": "const",
+        "value": false
+      }
+    },
+    {
+      "id": "P201.STATE",
+      "kind": "calculated",
+      "type": "INT16",
+      "description": "Trạng thái Bơm đẩy 1: 0 dừng, 1 chạy, 2 lỗi",
+      "valueTable": "TrangThaiBom",
+      "expression": "P201.FAULT ? 2 : (P201.RUN ? 1 : 0)"
+    },
+    {
+      "id": "P201.CURRENT",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Dòng điện động cơ Bơm đẩy 1",
+      "unit": "A",
+      "expression": "P201.STATE == 1 ? 31.2 + 1.1 * SIM.NOISE2 : 0"
+    },
+    {
+      "id": "P201.HOURS",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Giờ chạy tích lũy Bơm đẩy 1",
+      "unit": "h",
+      "sim": {
+        "kind": "ramp",
+        "from": 2310,
+        "to": 2334,
+        "periodMs": 86400000
+      }
+    },
+    {
+      "id": "P201.MODE",
+      "kind": "simulation",
+      "type": "INT16",
+      "description": "Chế độ Bơm đẩy 1",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 1
+      },
+      "valueTable": "CheDo",
+      "sim": {
+        "kind": "manual",
+        "initial": 1
+      }
+    },
+    {
+      "id": "P201.CMD",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Lệnh chạy tay Bơm đẩy 1",
+      "access": "RW",
+      "sim": {
+        "kind": "manual",
+        "initial": false
+      }
+    },
+    {
+      "id": "P202.RUN",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm đẩy 2 đang chạy (mô phỏng luân phiên)",
+      "sim": {
+        "kind": "square",
+        "periodMs": 300000,
+        "duty": 0.5,
+        "phase": 0.5
+      }
+    },
+    {
+      "id": "P202.FAULT",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm đẩy 2 lỗi",
+      "sim": {
+        "kind": "const",
+        "value": false
+      }
+    },
+    {
+      "id": "P202.STATE",
+      "kind": "calculated",
+      "type": "INT16",
+      "description": "Trạng thái Bơm đẩy 2: 0 dừng, 1 chạy, 2 lỗi",
+      "valueTable": "TrangThaiBom",
+      "expression": "P202.FAULT ? 2 : (P202.RUN ? 1 : 0)"
+    },
+    {
+      "id": "P202.CURRENT",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Dòng điện động cơ Bơm đẩy 2",
+      "unit": "A",
+      "expression": "P202.STATE == 1 ? 31.2 + 1.1 * SIM.NOISE2 : 0"
+    },
+    {
+      "id": "P202.HOURS",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Giờ chạy tích lũy Bơm đẩy 2",
+      "unit": "h",
+      "sim": {
+        "kind": "ramp",
+        "from": 2096,
+        "to": 2120,
+        "periodMs": 86400000
+      }
+    },
+    {
+      "id": "P202.MODE",
+      "kind": "simulation",
+      "type": "INT16",
+      "description": "Chế độ Bơm đẩy 2",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 1
+      },
+      "valueTable": "CheDo",
+      "sim": {
+        "kind": "manual",
+        "initial": 1
+      }
+    },
+    {
+      "id": "P202.CMD",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Lệnh chạy tay Bơm đẩy 2",
+      "access": "RW",
+      "sim": {
+        "kind": "manual",
+        "initial": false
+      }
+    },
+    {
+      "id": "P301.RUN",
+      "kind": "calculated",
+      "type": "BOOL",
+      "description": "Bơm định lượng Clo chạy khi có nước vào",
+      "expression": "FIT101.FLOW > 1"
+    },
+    {
+      "id": "P301.FAULT",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Bơm định lượng Clo lỗi",
+      "sim": {
+        "kind": "const",
+        "value": false
+      }
+    },
+    {
+      "id": "P301.STATE",
+      "kind": "calculated",
+      "type": "INT16",
+      "description": "Trạng thái bơm định lượng Clo",
+      "valueTable": "TrangThaiBom",
+      "expression": "P301.FAULT ? 2 : (P301.RUN ? 1 : 0)"
+    },
+    {
+      "id": "P301.CURRENT",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Dòng điện bơm định lượng Clo",
+      "unit": "A",
+      "expression": "P301.STATE == 1 ? 1.6 + 0.05 * SIM.NOISE : 0"
+    },
+    {
+      "id": "P301.RATE",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Lưu lượng châm NaOCl",
+      "unit": "L/h",
+      "expression": "P301.STATE == 1 ? FIT101.FLOW * 0.042 : 0"
+    },
+    {
+      "id": "FIT101.FLOW",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Lưu lượng nước thô vào bể lắng",
+      "unit": "m³/h",
+      "min": 0,
+      "max": 160,
+      "expression": "((P101.STATE == 1 ? 1 : 0) + (P102.STATE == 1 ? 1 : 0) + (P103.STATE == 1 ? 1 : 0)) * (48 + 1.5 * SIM.NOISE)"
+    },
+    {
+      "id": "XV101.OPEN",
+      "kind": "calculated",
+      "type": "BOOL",
+      "description": "Van XV-101 mở",
+      "expression": "FIT101.FLOW > 1"
+    },
+    {
+      "id": "F101.FLOW",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Lưu lượng qua bể lọc (tự chảy)",
+      "unit": "m³/h",
+      "sim": {
+        "kind": "sine",
+        "center": 92,
+        "amplitude": 6,
+        "periodMs": 45000
+      }
+    },
+    {
+      "id": "FIT201.FLOW",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Lưu lượng ra mạng",
+      "unit": "m³/h",
+      "min": 0,
+      "max": 160,
+      "expression": "((P201.STATE == 1 ? 1 : 0) + (P202.STATE == 1 ? 1 : 0)) * (62 + 2 * SIM.NOISE2)"
+    },
+    {
+      "id": "PIT201.PRESS",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Áp suất mạng",
+      "unit": "bar",
+      "min": 0,
+      "max": 6,
+      "expression": "FIT201.FLOW > 1 ? 2.6 + 0.012 * FIT201.FLOW + 0.08 * SIM.NOISE : 0.4"
+    },
+    {
+      "id": "LIT101.LEVEL",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Mức bể lắng T-101",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "sim": {
+        "kind": "sine",
+        "center": 64,
+        "amplitude": 22,
+        "periodMs": 200000
+      }
+    },
+    {
+      "id": "LIT101.HI",
+      "kind": "calculated",
+      "type": "BOOL",
+      "description": "Mức bể lắng cao (H)",
+      "expression": "LIT101.LEVEL > 80"
+    },
+    {
+      "id": "LIT201.LEVEL",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Mức bồn nước sạch T-201",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "sim": {
+        "kind": "sine",
+        "center": 52,
+        "amplitude": 30,
+        "periodMs": 260000,
+        "phase": 0.4
+      }
+    },
+    {
+      "id": "LIT201.LO",
+      "kind": "calculated",
+      "type": "BOOL",
+      "description": "Mức bồn nước sạch thấp (L)",
+      "expression": "LIT201.LEVEL < 25"
+    },
+    {
+      "id": "LT001.LEVEL",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Mức hồ chứa nước thô (%)",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "sim": {
+        "kind": "sine",
+        "center": 70,
+        "amplitude": 6,
+        "periodMs": 600000
+      }
+    },
+    {
+      "id": "LT001.M",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Mức hồ chứa nước thô (m)",
+      "unit": "m",
+      "expression": "LT001.LEVEL * 0.05"
+    },
+    {
+      "id": "AIT001.NTU",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Độ đục nước thô",
+      "unit": "NTU",
+      "sim": {
+        "kind": "sine",
+        "center": 14,
+        "amplitude": 4,
+        "periodMs": 90000
+      }
+    },
+    {
+      "id": "AIT002.PH",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "pH nước thô",
+      "sim": {
+        "kind": "sine",
+        "center": 7.2,
+        "amplitude": 0.15,
+        "periodMs": 120000
+      }
+    },
+    {
+      "id": "FILTER.DP",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Chênh áp bể lọc F-101",
+      "unit": "bar",
+      "sim": {
+        "kind": "sine",
+        "center": 0.34,
+        "amplitude": 0.06,
+        "periodMs": 150000
+      }
+    },
+    {
+      "id": "AIT301.CL",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Clo dư sau lọc",
+      "unit": "mg/L",
+      "min": 0,
+      "max": 2,
+      "sim": {
+        "kind": "sine",
+        "center": 0.55,
+        "amplitude": 0.2,
+        "periodMs": 100000
+      }
+    },
+    {
+      "id": "AIT301.LO",
+      "kind": "calculated",
+      "type": "BOOL",
+      "description": "Clo dư thấp",
+      "expression": "AIT301.CL < 0.3"
+    },
+    {
+      "id": "LIT301.LEVEL",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Mức bồn NaOCl T-301",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "sim": {
+        "kind": "sine",
+        "center": 62,
+        "amplitude": 8,
+        "periodMs": 400000
+      }
+    },
+    {
+      "id": "MCC.U",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Điện áp thanh cái MCC-01",
+      "unit": "V",
+      "sim": {
+        "kind": "sine",
+        "center": 399,
+        "amplitude": 3,
+        "periodMs": 20000
+      }
+    },
+    {
+      "id": "MCC.P",
+      "kind": "calculated",
+      "type": "FLOAT32",
+      "description": "Công suất MCC-01",
+      "unit": "kW",
+      "expression": "(P101.CURRENT + P102.CURRENT + P103.CURRENT + P201.CURRENT + P202.CURRENT + P301.CURRENT) * 0.56"
+    },
+    {
+      "id": "RUN.COUNT",
+      "kind": "calculated",
+      "type": "INT16",
+      "description": "Số bơm đang chạy",
+      "expression": "(P101.STATE == 1 ? 1 : 0) + (P102.STATE == 1 ? 1 : 0) + (P103.STATE == 1 ? 1 : 0) + (P201.STATE == 1 ? 1 : 0) + (P202.STATE == 1 ? 1 : 0) + (P301.STATE == 1 ? 1 : 0)"
+    },
+    {
+      "id": "ALARM.COUNT",
+      "kind": "calculated",
+      "type": "INT16",
+      "description": "Số cảnh báo đang có",
+      "expression": "(P101.FAULT ? 1 : 0) + (P102.FAULT ? 1 : 0) + (P103.FAULT ? 1 : 0) + (P201.FAULT ? 1 : 0) + (P202.FAULT ? 1 : 0) + (LIT101.HI ? 1 : 0) + (LIT201.LO ? 1 : 0) + (AIT301.LO ? 1 : 0)"
+    },
+    {
+      "id": "TOTAL.TODAY",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Sản lượng nước ra mạng hôm nay",
+      "unit": "m³",
+      "sim": {
+        "kind": "ramp",
+        "from": 1180,
+        "to": 3000,
+        "periodMs": 86400000
+      }
+    },
+    {
+      "id": "DEMO.TEMP",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Nhiệt độ mẫu (mô phỏng)",
+      "unit": "°C",
+      "min": 0,
+      "max": 100,
+      "sim": {
+        "kind": "sine",
+        "center": 55,
+        "amplitude": 25,
+        "periodMs": 90000
+      }
+    },
+    {
+      "id": "DEMO.LEVEL",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Mức mẫu (mô phỏng)",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "sim": {
+        "kind": "sine",
+        "center": 55,
+        "amplitude": 35,
+        "periodMs": 60000,
+        "phase": 0.2
+      }
+    },
+    {
+      "id": "DEMO.PRESS",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Áp suất mẫu (mô phỏng)",
+      "unit": "bar",
+      "min": 0,
+      "max": 8,
+      "sim": {
+        "kind": "sine",
+        "center": 4.2,
+        "amplitude": 1.3,
+        "periodMs": 45000
+      }
+    },
+    {
+      "id": "DEMO.POS",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Vị trí mẫu 0–100 % (mô phỏng)",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "sim": {
+        "kind": "sine",
+        "center": 50,
+        "amplitude": 50,
+        "periodMs": 12000
+      }
+    },
+    {
+      "id": "DEMO.RUN",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Thiết bị mẫu đang chạy (mô phỏng)",
+      "sim": {
+        "kind": "square",
+        "periodMs": 40000,
+        "duty": 0.7
+      }
+    },
+    {
+      "id": "DEMO.FAN",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Quạt mẫu đang chạy (mô phỏng)",
+      "sim": {
+        "kind": "square",
+        "periodMs": 30000,
+        "duty": 0.6,
+        "phase": 0.3
+      }
+    },
+    {
+      "id": "DEMO.CMD",
+      "kind": "simulation",
+      "type": "BOOL",
+      "description": "Lệnh mẫu (Tag nội bộ, ghi được)",
+      "access": "RW",
+      "sim": {
+        "kind": "manual",
+        "initial": true
+      }
+    },
+    {
+      "id": "DEMO.SP",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Giá trị đặt mẫu (Tag nội bộ, ghi được)",
+      "access": "RW",
+      "unit": "°C",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 45
+      }
+    },
+    {
+      "id": "DEMO.SPEED",
+      "kind": "simulation",
+      "type": "FLOAT32",
+      "description": "Tốc độ đặt mẫu (Tag nội bộ, ghi được)",
+      "access": "RW",
+      "unit": "%",
+      "limits": {
+        "min": 0,
+        "max": 100
+      },
+      "sim": {
+        "kind": "manual",
+        "initial": 60
+      }
+    },
+    {
+      "id": "DEMO.MODE",
+      "kind": "simulation",
+      "type": "INT16",
+      "description": "Chế độ mẫu (Tag nội bộ, ghi được)",
+      "access": "RW",
+      "limits": {
+        "min": 0,
+        "max": 1
+      },
+      "valueTable": "CheDo",
+      "sim": {
+        "kind": "manual",
+        "initial": 1
+      }
+    }
+  ]
+}

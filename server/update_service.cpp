@@ -187,7 +187,9 @@ UpdateReply errorReply(int status, const std::string& code, const std::string& m
 
 std::string messageOf(const std::string& code) {
     static const std::map<std::string, std::string> kText = {
-        {"UPDATE_DISABLED", "Cập nhật qua mạng đang tắt (update.enabled trong runtime.json)."},
+        {"UPDATE_DISABLED",
+         "Cập nhật qua mạng đang tắt: bật trong Thiết bị › Thiết lập thiết bị (Studio hoặc trang "
+         "Quản trị)."},
         {"UPDATE_KEYS_MISSING", "Thiết bị chưa có khóa tin cậy: chưa nhận gói cập nhật."},
         {"UPDATE_TOO_LARGE", "Gói lớn hơn giới hạn update.maxPackageMiB."},
         {"UPDATE_PACKAGE_INVALID", "Gói cập nhật không hợp lệ."},

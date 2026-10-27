@@ -1,10 +1,5 @@
 // Chuỗi tiếng Việt của trang Quản trị (feature 013, FR-040 đến FR-044). Nằm trong chunk tải lười của trang Quản trị.
-const ROLE_NAMES: Record<string, string> = {
-  viewer: 'Người xem',
-  operator: 'Vận hành',
-  engineer: 'Kỹ sư',
-  administrator: 'Quản trị viên',
-};
+import { ROLE_NAMES, adminText } from '@mat/admin-model';
 
 export const viAdmin = {
   title: 'Quản trị',
@@ -19,6 +14,7 @@ export const viAdmin = {
     'nhat-ky': 'Nhật ký',
     'thong-bao-email': 'Thông báo email',
     'api-key': 'API key',
+    'thiet-bi': 'Thiết bị',
   } as Record<string, string>,
   loading: 'Đang tải…',
   reload: 'Tải lại',
@@ -62,24 +58,7 @@ export const viAdmin = {
     cleaned: (n: number) => `Đã xóa ${n} quy tắc mồ côi`,
   },
 
-  errors: {
-    LAST_ADMIN: 'Phải còn ít nhất một quản trị viên đang bật.',
-    REAUTH_REQUIRED: 'Mật khẩu xác nhận không đúng.',
-    RATE_LIMITED: 'Thao tác quá nhanh (tối đa 30 lần mỗi phút). Chờ một chút rồi thử lại.',
-    EXISTS: 'Tên đã có, chọn tên khác.',
-    NOT_FOUND: 'Không tìm thấy (có thể đã bị xóa bởi người khác).',
-    FORBIDDEN: 'Tài khoản của bạn không còn quyền quản trị.',
-    ACCESS_DENIED: 'Không có quyền.',
-    STORE_INVALID: 'Kho quyền bị hỏng: khôi phục bản trước rồi thử lại.',
-    BAD_REQUEST: 'Dữ liệu gửi đi không hợp lệ.',
-    NETWORK: 'Không kết nối được tới thiết bị.',
-    AUDIT_UNAVAILABLE: 'Thiết bị chưa ghi được nhật ký kiểm toán, thử lại sau.',
-    APIKEY_LIMIT: 'Đã có 32 API key: thu hồi bớt key không dùng rồi tạo lại.',
-    APIKEY_STORE: 'Kho API key trên thiết bị bị hỏng: mọi key đang bị từ chối.',
-    unknown: (code: string, message?: string) =>
-      message ? `${message} (${code})` : `Thao tác không thành công (${code})`,
-    weak: 'Mật khẩu chưa đạt quy tắc',
-  },
+  errors: adminText.errors,
   done: {
     saved: 'Đã lưu',
     created: (n: string) => `Đã thêm người dùng ${n}`,
@@ -125,7 +104,7 @@ export const viAdmin = {
     enabled: 'Đang bật',
     disabled: 'Đã tắt',
     lockedUntil: (t: string) => `đến ${t}`,
-    never: 'chưa đăng nhập',
+    never: adminText.neverLogin,
     noGroup: 'không nhóm',
     edit: 'Sửa',
     editLabel: (n: string) => `Sửa người dùng ${n}`,
@@ -217,19 +196,7 @@ export const viAdmin = {
     inUseRules: 'Quy tắc quyền',
   },
 
-  grantees: {
-    all: 'Mọi người',
-    allHint: 'mọi người đã đăng nhập',
-    role: (r: string) => `Vai trò ${ROLE_NAMES[r] ?? r}+`,
-    roleShort: (r: string) => `${ROLE_NAMES[r] ?? r}+`,
-    group: (n: string) => `Nhóm ${n}`,
-    user: (n: string) => `Người dùng ${n}`,
-    catAll: 'Chung',
-    catRoles: 'Vai trò',
-    catGroups: 'Nhóm',
-    catUsers: 'Người dùng',
-    nobody: 'Không ai (trừ quản trị viên)',
-  },
+  grantees: adminText.grantees,
   matrix: {
     filter: 'Lọc trang',
     filterPlaceholder: 'Tìm theo tên hoặc mã',
@@ -350,6 +317,61 @@ export const viAdmin = {
     anon: '(ẩn danh)',
     rangeBad: 'Thời điểm bắt đầu phải trước thời điểm kết thúc',
   },
+  device: {
+    intro:
+      'Thiết lập của thiết bị này (lưu trong settings.json trên thiết bị, đè lên runtime.json). Lưu xong, runtime tự khởi động lại khoảng vài giây để áp dụng; người đang xem trang sẽ tự kết nối lại.',
+    general: 'Thiết lập chung',
+    viewerLogin: 'Bắt buộc đăng nhập để xem trang vận hành',
+    viewerAccess: 'Phạm vi xem không cần đăng nhập',
+    accessNames: {
+      private: 'Chỉ mạng nội bộ',
+      any: 'Mọi địa chỉ',
+      off: 'Tắt (không cho xem)',
+    } as Record<string, string>,
+    allowedHosts: 'Tên miền cho phép (Host)',
+    allowedHostsHint: 'Mỗi dòng một tên; địa chỉ IP của thiết bị luôn được nhận.',
+    maxLive: 'Giới hạn kết nối live mỗi địa chỉ nguồn',
+    maxLiveHint: '1–10; để trống: một nửa số chỗ live.',
+    updateEnabled: 'Cho phép cập nhật runtime qua mạng (OTA)',
+    updaterMissing: 'Thiết bị chưa cài mat-updater: cài lại runtime bằng deploy.sh một lần.',
+    deviceName: 'Tên thiết bị',
+    source: (fromSettings: boolean) => (fromSettings ? 'đã đặt ở đây' : 'theo runtime.json'),
+    save: 'Lưu và khởi động lại',
+    saved: 'Đã lưu. Runtime đang khởi động lại để áp dụng.',
+    savedNoRestart: 'Đã lưu (không cần khởi động lại).',
+    pending: 'Có thay đổi chờ khởi động lại runtime.',
+    lowerTitle: 'Xác nhận giảm mức bảo vệ',
+    lowerBody: (keys: string) => `Thay đổi này giảm mức bảo vệ của thiết bị (${keys}).`,
+    confirm: 'Lưu',
+    cert: 'Chứng chỉ HTTPS',
+    fingerprint: 'Vân tay SHA-256',
+    validity: 'Hiệu lực',
+    san: 'Tên trong chứng chỉ (SAN)',
+    subject: 'Chủ thể',
+    selfSigned: 'tự ký',
+    caSigned: 'do CA ký',
+    noCert: 'Chưa đọc được chứng chỉ',
+    warnings: {
+      TLS_NO_IP_SAN:
+        'Chứng chỉ không có địa chỉ IP: Chrome báo lỗi khi mở bằng IP. Sinh lại để thêm.',
+      TLS_SAN_MISMATCH: 'Chứng chỉ thiếu IP hiện tại của thiết bị. Sinh lại để thêm.',
+    } as Record<string, string>,
+    extraSan: 'Tên/IP thêm vào chứng chỉ',
+    extraSanHint: 'Mỗi dòng một IP hoặc tên; IP các card của thiết bị luôn có.',
+    regen: 'Sinh lại chứng chỉ',
+    regenTitle: 'Sinh lại chứng chỉ HTTPS',
+    regenBody:
+      'Khóa và chứng chỉ mới thay bản cũ; vân tay đổi. Studio và trình duyệt đã ghim vân tay cũ phải ghim lại.',
+    regenDone: (fp: string) => `Chứng chỉ mới, vân tay ${fp}. Runtime đang khởi động lại.`,
+    csr: 'Tạo CSR',
+    csrDone: 'Đã tạo CSR. Gửi nội dung dưới đây cho CA ký, rồi nhập chứng chỉ.',
+    importLabel: 'Chứng chỉ do CA ký (PEM: chứng chỉ máy chủ rồi chuỗi CA)',
+    import: 'Nhập chứng chỉ',
+    importTitle: 'Nhập chứng chỉ',
+    importBody: 'Chứng chỉ mới thay bản đang dùng sau khi runtime khởi động lại.',
+    importDone: (fp: string) => `Đã nhập, vân tay ${fp}. Runtime đang khởi động lại.`,
+    importEmpty: 'Dán nội dung PEM của chứng chỉ trước.',
+  },
   email: {
     intro:
       'Gửi email khi alarm xuất hiện, hết hoặc chưa được xác nhận. Mật khẩu SMTP không nhập ở đây: đặt trên thiết bị bằng lệnh sudo mat-runtime --set-secret smtp.',
@@ -427,11 +449,7 @@ export const viAdmin = {
       `Đã gửi ${sent}, thất bại ${failed}, bỏ ${dropped}`,
     never: 'chưa có',
     configError: (m: string) => `email.json hỏng, email đang tắt: ${m}`,
-    bad: {
-      host: 'Cần máy chủ SMTP và địa chỉ gửi khi bật email',
-      address: (a: string) => `Địa chỉ không hợp lệ: ${a}`,
-      rule: (n: number) => `Quy tắc ${n} cần ít nhất một địa chỉ hoặc một nhóm`,
-    },
+    bad: adminText.emailBad,
   },
   apikeys: {
     intro:
@@ -506,10 +524,5 @@ export const viAdmin = {
       expires: 'Ngày hết hạn phải ở tương lai.',
     },
   },
-  time: {
-    now: 'vừa xong',
-    minutes: (n: number) => `${n} phút trước`,
-    hours: (n: number) => `${n} giờ trước`,
-    days: (n: number) => `${n} ngày trước`,
-  },
+  time: adminText.time,
 };

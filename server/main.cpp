@@ -72,6 +72,7 @@
 #include "server/cli/users.hpp"
 #include "server/cli/verify_aggregates.hpp"
 #include "server/config.hpp"
+#include "server/device_admin.hpp"
 #include "server/device_state.hpp"
 #include "server/discovery/discovery_server.hpp"
 #include "server/host_policy.hpp"
@@ -108,6 +109,8 @@ std::atomic<bool> g_run{true};
 std::atomic<bool> g_persistFailArmed{false};
 #endif
 std::atomic<int> g_exitCode{0};
+// Feature 027: the monotonic time (ms) of a controlled restart asked by the admin API (0: none).
+std::atomic<int64_t> g_restartAtMs{0};
 void onSignal(int) { g_run = false; }
 
 int64_t epochMs() {
@@ -1082,6 +1085,20 @@ int main(int argc, char** argv) {
         if (!apiKeys.load(keyError)) std::fprintf(stderr, "api-keys: %s\n", keyError.c_str());
     }
     adminBackend.keys = &apiKeys;
+    // Feature 027 (ADR-054): settings.json and the certificate from the Studio and the admin page;
+    // a change is applied by the restart of a project switch (execv), asked of the tick loop.
+    DeviceAdminOptions deviceOptions;
+    deviceOptions.dataDir = cfg.dataDir;
+    deviceOptions.base = cr.base;
+    deviceOptions.running = cfg;
+    deviceOptions.hostname = systemHostname;
+    deviceOptions.cardIps = systemIpv4Addresses;
+    deviceOptions.requestRestart = [] {
+        int64_t none = 0;
+        g_restartAtMs.compare_exchange_strong(none, systemMonoMs() + 1000);
+    };
+    DeviceAdmin deviceAdmin(deviceOptions);
+    adminBackend.device = &deviceAdmin;
     AdminApi adminApi(adminBackend);
     engineering.setAdmin(&adminApi);
     engineering.setAccess(&accessService);
@@ -1442,6 +1459,15 @@ int main(int argc, char** argv) {
         // OTA (feature 011, review T062): a verified package expires; a result of mat-updater that
         // did not restart the runtime is audited and frees the device. One small file, every
         // second.
+        // Feature 027: the settings or the certificate changed by the admin API apply now, the
+        // answer having left; a project operation in progress goes first.
+        if (const int64_t at = g_restartAtMs.load(); at != 0 && systemMonoMs() >= at) {
+            g_restartAtMs = 0;
+            std::printf("restart: device settings or certificate changed\n");
+            if (deployHooks.notifyClients) deployHooks.notifyClients();
+            std::string restartError;
+            deployHooks.restart(restartError);  // returns only when execv failed
+        }
         if (updateService && now >= nextUpdateSettle) {
             nextUpdateSettle = now + 1000;
             updateService->expire();

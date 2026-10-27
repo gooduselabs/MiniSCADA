@@ -134,10 +134,14 @@ export function makeHistory(cfg = {}) {
     seriesLog: [],
     ...cfg.state,
   };
+  // Nhóm, Tag và hàm giá trị của kịch bản (mặc định: project lịch sử mẫu ở trên).
+  const HG = cfg.groups ?? GROUPS;
+  const HT = cfg.tags ?? ALL_TAGS;
+  const val = cfg.valueAt ?? valueAt;
   const now = () => Date.now();
   const gapsNow = () => state.gaps(now());
   const inGap = (t, gaps) => gaps.some(([a, b]) => t >= a && t < b);
-  const group = (id) => GROUPS.find((g) => g.id === id);
+  const group = (id) => HG.find((g) => g.id === id);
 
   const bad = (res, error = 'BAD_REQUEST', status = 400, message = 'Tham số không hợp lệ') =>
     res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' }) ||
@@ -166,7 +170,7 @@ export function makeHistory(cfg = {}) {
         timeoutMs: 10000,
         maxScanMiB: 64,
       },
-      groups: GROUPS.map((g) => ({
+      groups: HG.map((g) => ({
         id: g.id,
         name: g.name,
         mode: g.mode,
@@ -177,7 +181,7 @@ export function makeHistory(cfg = {}) {
         raw: { from: n - 7 * DAY, to: n },
         aggregates: { minute: { from: n - 7 * DAY, to: n }, hour: { from: n - 7 * DAY, to: n } },
         tags: g.tags.map((id) => {
-          const t = ALL_TAGS.find((x) => x.id === id);
+          const t = HT.find((x) => x.id === id);
           return {
             tagId: id,
             column: id.replace('.', '_'),
@@ -264,7 +268,7 @@ export function makeHistory(cfg = {}) {
       coverage: { from: q.from, to: Math.min(q.to, now()) },
       gaps,
       series: q.tags.map((id) => {
-        const v = ts.map((t) => valueAt(id, t));
+        const v = ts.map((t) => val(id, t));
         return aggregated
           ? { tagId: id, t: ts, v, min: v.map((x) => x - 0.2), max: v.map((x) => x + 0.2) }
           : { tagId: id, t: ts, v };
@@ -304,7 +308,7 @@ export function makeHistory(cfg = {}) {
           for (const c of Object.keys(cols)) cols[c].push(c === 'n' || c === 'wms' ? 0 : null);
           continue;
         }
-        const vs = ts.map((t) => valueAt(id, t));
+        const vs = ts.map((t) => val(id, t));
         const wms = ts.length * MIN;
         const sumw = vs.reduce((s, v) => s + v * MIN, 0);
         cols.n.push(ts.length);
@@ -312,7 +316,7 @@ export function makeHistory(cfg = {}) {
         cols.max.push(Math.max(...vs));
         // `first` = tín hiệu đang giữ ngay trước đầu cửa sổ (history-db.md §6: bộ đếm chênh lệch nối liền giữa các cửa sổ).
         const carry = ts[0] === a && !inGap(a - MIN, gaps);
-        cols.first.push(carry ? valueAt(id, a - MIN) : vs[0]);
+        cols.first.push(carry ? val(id, a - MIN) : vs[0]);
         cols.last.push(vs[vs.length - 1]);
         cols.sumw.push(sumw);
         cols.wms.push(wms);
@@ -356,7 +360,7 @@ export function makeHistory(cfg = {}) {
       timeZone: '+07:00',
       order,
       columns: q.tags.map((tagId) => ({ tagId })),
-      rows: page.map(([seq, t]) => [seq, t, ...q.tags.map((id) => valueAt(id, t))]),
+      rows: page.map(([seq, t]) => [seq, t, ...q.tags.map((id) => val(id, t))]),
       next: more ? page[page.length - 1][0] : null,
     });
   }
@@ -376,11 +380,11 @@ export function makeHistory(cfg = {}) {
       lines.push(
         [
           new Date(t + TZ).toISOString().slice(0, 19).replace('T', ' '),
-          ...q.tags.map((id) => valueAt(id, t)),
+          ...q.tags.map((id) => val(id, t)),
         ].join(','),
       );
     res.end(lines.join('\r\n') + '\r\n');
   }
 
-  return { state, handle, valueAt, catalogBody };
+  return { state, handle, valueAt: val, catalogBody };
 }

@@ -54,6 +54,14 @@ export type CommandId =
   | 'online.upload'
   | 'online.compare'
   | 'online.audit'
+  // Feature 027: Người dùng và quyền của thiết bị (administrator, Online).
+  | 'admin.open'
+  | 'admin.reload'
+  | 'admin.addUser'
+  | 'admin.addGroup'
+  | 'admin.saveRules'
+  | 'admin.addKey'
+  | 'admin.testEmail'
   | 'tools.validate'
   | 'tools.simulate'
   // Feature 009: alarm (lưới, lớp, khu vực, Tạo alarm cho Tag, Thử alarm, nâng cấp 0.5).
@@ -286,6 +294,8 @@ export interface CommandSpec {
 type Check = (c: CommandContext) => Enabled;
 const always: Check = () => true;
 const needProject: Check = (c) => c.hasProject || 'reason.noProject';
+const adminOnline: Check = (c) =>
+  !c.hasProject ? 'reason.noProject' : c.onlineAuth || 'reason.notOnline';
 const editable: Check = (c) => (c.readOnly ? 'reason.readOnly' : true);
 /** Bảng Tag 0.2 đang mở: Thêm hàng loạt, Nhập và Xuất CSV. */
 const tagTable02: Check = (c) =>
@@ -583,6 +593,14 @@ export const COMMANDS: readonly CommandSpec[] = [
 
   // Audit của thiết bị (US4): mở editor Audit; chỉ administrator xem được, tài khoản khác thấy "không đủ quyền".
   cmd('online.audit', 'online', (c) => c.onlineAuth || 'reason.notOnline', { icon: 'list' }),
+  // Người dùng và quyền (feature 027, chỉ trong bảng lệnh): mở được khi chưa Online (editor nói cần kết nối); thao tác cần Online.
+  cmd('admin.open', null, needProject, { icon: 'users' }),
+  cmd('admin.reload', null, adminOnline, { icon: 'refresh' }),
+  cmd('admin.addUser', null, adminOnline, { icon: 'plus' }),
+  cmd('admin.addGroup', null, adminOnline, { icon: 'plus' }),
+  cmd('admin.saveRules', null, adminOnline, { icon: 'save' }),
+  cmd('admin.addKey', null, adminOnline, { icon: 'plus' }),
+  cmd('admin.testEmail', null, adminOnline, { icon: 'bell' }),
 
   // Ghi từ Bảng theo dõi (US2): luôn qua hộp xác nhận; khóa kèm lý do khi chưa đủ điều kiện.
   cmd('watch.write', 'online', canWrite, { shortcut: 'Ctrl+Shift+Enter', icon: 'upload' }),

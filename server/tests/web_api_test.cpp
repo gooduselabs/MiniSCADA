@@ -655,16 +655,14 @@ TEST(WebPage, ViewerLoginRequiredSendsTheVisitorToTheLoginPage) {
         EXPECT_EQ(r.status, 401) << path;
         EXPECT_EQ(bodyJson(r)["error"], "AUTH_REQUIRED") << path;
     }
-    // over HTTP: no data, and the page is a guide to HTTPS (a cookie does not travel over HTTP)
+    // over HTTP: no data, and the page goes straight to the sign-in page on HTTPS (a cookie does
+    // not travel over HTTP; the user asked 2026-10-26 for the sign-in page, not a guide page)
     EXPECT_EQ(w.callHttp(getReq("/api/v1/projects/active")).status, 401);
-    const HttpResult guide = w.callHttp(getReq("/"));
-    EXPECT_EQ(guide.status, 200);
-    EXPECT_NE(guide.body.find("https://127.0.0.1:" + std::to_string(w.web.httpsPort()) + "/"),
-              std::string::npos)
-        << guide.body;
-    EXPECT_NE(header(guide, "Content-Security-Policy").find("default-src 'none'"),
-              std::string::npos);
-    EXPECT_EQ(guide.body.find("runtime page"), std::string::npos);
+    const HttpResult toLogin = w.callHttp(getReq("/"));
+    EXPECT_EQ(toLogin.status, 302);
+    EXPECT_EQ(header(toLogin, "Location"),
+              "https://127.0.0.1:" + std::to_string(w.web.httpsPort()) + "/login");
+    EXPECT_EQ(toLogin.body.find("runtime page"), std::string::npos);
     // the login page, its bundle and the certificate stay open
     EXPECT_EQ(w.call(getReq("/login")).status, 200);
     EXPECT_EQ(w.call(getReq("/assets/login-a1.js")).status, 200);

@@ -598,10 +598,11 @@ target_compile_options(mat_viewer_gate PRIVATE ${MAT_WARN} -O2)
 add_library(mat_api_ext STATIC server/http/history_api.cpp server/http/drivers_api.cpp server/http/opcua_api.cpp server/serial_probe.cpp server/http/tags_api.cpp server/http/web_api.cpp server/http/logic_api.cpp server/write_glue.cpp
             server/write_subsystem.cpp server/http/update_api.cpp server/update_service.cpp
             server/http/admin_api.cpp server/access_glue.cpp
-            server/http/recipes_api.cpp server/recipe_glue.cpp server/http/data_api.cpp)
+            server/http/recipes_api.cpp server/recipe_glue.cpp server/http/data_api.cpp
+            server/device_admin.cpp)
 target_include_directories(mat_api_ext PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(mat_api_ext PUBLIC mat_historian_query civetweb_runtime mat_viewer_gate mat_modbus mat_tag_engine mat_audit mat_auth mat_crypto
-                      mat_runtime_engine mat_update mat_project_store mat_recipe mat_notify)
+                      mat_runtime_engine mat_update mat_project_store mat_recipe mat_notify mat_server_tls)
 target_compile_options(mat_api_ext PRIVATE ${MAT_WARN} -O2)
 # The alarm engine in the runtime and its routes (feature 009 T038, T055, T095): the glue owns the
 # engine and alarm.db, alarms_api reads the requests. Linked by whoever builds http_api.cpp, which

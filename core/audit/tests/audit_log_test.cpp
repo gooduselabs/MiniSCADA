@@ -189,7 +189,8 @@ TEST(AuditActions, CatalogueIsTheTableOfTheDataModel) {
                           "email.config", "email.test"})
         expected.push_back(a);  // feature 023 (alarm email)
     for (const char* a : {"apikey.create", "apikey.update", "apikey.revoke", "apikey.denied"})
-        expected.push_back(a);  // feature 025 (API keys)
+        expected.push_back(a);              // feature 025 (API keys)
+    expected.push_back("device.settings");  // feature 027 (device settings from the Studio)
     std::vector<std::string> names;
     for (AuditAction a : kAuditActions) {
         names.push_back(auditActionName(a));
@@ -231,12 +232,12 @@ TEST(AuditActions, OnlyFailedSignInLockedAndDeniedAreLimited) {
              {AuditResult::Ok, AuditResult::Failed, AuditResult::Denied, AuditResult::Started,
               AuditResult::RolledBack, AuditResult::Interrupted})
             limited += auditLimited(a, r) ? 1 : 0;
-    EXPECT_EQ(
-        limited, 1 + 6 + 6 + 2 + 5 + 2 + 1 +
-                     6);  // + apikey.denied: any result (feature 025)  // + auth.reauth failed
-                          // (OTA)  // auth.login failed; auth.locked, access.denied: any result;
-                          // driver.test, tag.write: denied; the five refusable alarm actions:
-                          // denied; feature 011: logic.write.suppressed, logic.throttled
+    EXPECT_EQ(limited,
+              1 + 6 + 6 + 2 + 5 + 2 + 1 +
+                  6);  // + apikey.denied: any result (feature 025)  // + auth.reauth failed
+                       // (OTA)  // auth.login failed; auth.locked, access.denied: any result;
+                       // driver.test, tag.write: denied; the five refusable alarm actions:
+                       // denied; feature 011: logic.write.suppressed, logic.throttled
     EXPECT_TRUE(auditLimited(AuditAction::LogicThrottled, AuditResult::Denied));
     EXPECT_FALSE(auditLimited(AuditAction::LogicWrite, AuditResult::Started));
     EXPECT_FALSE(auditLimited(AuditAction::LogicWritesDisabled, AuditResult::Ok));

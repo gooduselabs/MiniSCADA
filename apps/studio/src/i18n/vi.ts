@@ -4,6 +4,7 @@
 // Chuỗi của từng nhóm editor nằm ở file riêng (vi-tags.ts, vi-device.ts, vi-logging.ts) rồi gộp ở cuối.
 // Feature 005: làm việc với thiết bị (tìm thiết bị, ghim chứng chỉ, đăng nhập) ở vi-online.ts.
 import { viAudit } from './vi-audit.ts';
+import { viAdmin } from './vi-admin.ts';
 import { viFins } from './vi-fins.ts';
 import { viBacnet } from './vi-bacnet.ts';
 import { viTables } from './vi-tables.ts';
@@ -33,6 +34,7 @@ import { viLogic } from './vi-logic.ts';
 import { viLogicDiagram } from './vi-logic-diagram.ts';
 import { viSvgDraw } from './vi-svgdraw.ts';
 import { viUpdate } from './vi-update.ts';
+import { viDevset } from './vi-devset.ts';
 import { viNewProject } from './vi-newproject.ts';
 import { viDashboard } from './vi-dashboard.ts';
 import { viS7 } from './vi-s7.ts';
@@ -164,8 +166,6 @@ const viCore = {
     'Giá trị hoặc khoảng giá trị → chữ và màu, ví dụ 1 → "Normal" màu xanh, 2 → "Alarm" màu đỏ. Dùng chung cho Tag chuỗi, phần tử SVG, widget, alarm và báo cáo.',
   'phasePage.reports':
     'Mẫu báo cáo ngày, ca, tháng (min, max, avg, tổng, giá trị cuối) từ dữ liệu lưu trữ; xuất CSV, XLSX, PDF. Báo cáo sinh trên trình duyệt để không tốn CPU của BL335.',
-  'phasePage.users':
-    'Role viewer, operator, engineer, administrator. Tài khoản tạo bằng lệnh trên thiết bị lúc cài; Studio đăng nhập để kết nối, đọc lên, nạp xuống. Quản lý tài khoản ngay trong Studio làm sau.',
   'phasePage.library':
     'Ký hiệu SVG (bơm, van, bồn, motor, ống) và widget mẫu của project. Kéo vào màn hình; sửa mẫu thì mọi chỗ dùng cập nhật theo.',
 
@@ -463,6 +463,7 @@ const viCore = {
 
 export const viMessages = {
   ...viCore,
+  ...viAdmin,
   ...viNewProject,
   ...viTags,
   ...viTags2,
@@ -493,6 +494,7 @@ export const viMessages = {
   ...viLogicDiagram,
   ...viSvgDraw,
   ...viUpdate,
+  ...viDevset,
   ...viS7,
   ...viFins,
   ...viMc,

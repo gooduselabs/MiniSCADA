@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "thu-vien",
+  "itemId": "kh_pump_centrifugal",
+  "elements": [
+    {
+      "elementUid": "el_pump_centrifugal_impeller",
+      "bindings": [
+        {
+          "id": "rotate_5",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 900
+              }
+            ],
+            "default": 0
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pump_centrifugal_lamp",
+      "bindings": [
+        {
+          "id": "fill_6",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        },
+        {
+          "id": "blink_7",
+          "target": "effect.blink",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 2,
+                "value": 1
+              }
+            ],
+            "default": 0
+          },
+          "period": 800,
+          "mode": "opacity",
+          "minOpacity": 0.25
+        }
+      ]
+    }
+  ]
+}

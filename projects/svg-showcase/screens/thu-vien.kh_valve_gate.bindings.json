@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "thu-vien",
+  "itemId": "kh_valve_gate",
+  "elements": [
+    {
+      "elementUid": "el_valve_gate_body",
+      "bindings": [
+        {
+          "id": "fill_10",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "XV101.OPEN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#22c55e"
+              },
+              {
+                "equals": false,
+                "value": "#64748b"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_valve_gate_handwheel",
+      "bindings": [
+        {
+          "id": "rotate_11",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.POS"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": 0,
+            "outMax": 360,
+            "clamp": true
+          }
+        }
+      ]
+    }
+  ]
+}

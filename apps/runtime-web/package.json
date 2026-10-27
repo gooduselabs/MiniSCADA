@@ -18,6 +18,8 @@
     "vitest": "^5.0.3"
   },
   "dependencies": {
+    "@mat/access-model": "*",
+    "@mat/admin-model": "*",
     "@mat/binding-engine": "*",
     "@mat/expression": "*",
     "@mat/history-math": "*",

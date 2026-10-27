@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "thu-vien",
+  "itemId": "kh_tank_vertical",
+  "elements": [
+    {
+      "elementUid": "el_tank_vertical_liquid",
+      "bindings": [
+        {
+          "id": "levelPercent_1",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_tank_vertical_text",
+      "bindings": [
+        {
+          "id": "content_2",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 0,
+            "suffix": " %"
+          }
+        }
+      ]
+    }
+  ]
+}

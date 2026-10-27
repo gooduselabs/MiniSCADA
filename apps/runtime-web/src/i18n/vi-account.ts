@@ -1,21 +1,8 @@
 // Chuỗi tiếng Việt của "Đổi mật khẩu của tôi" và lý do WEAK_PASSWORD (feature 013). Tải lười cùng hộp đổi mật khẩu
 // và trang Quản trị: không vào gói khởi động của trang vận hành.
-/** Lý do `WEAK_PASSWORD` của máy chủ (admin-api §1) → phần đuôi câu. */
-export function weakReason(reason?: string, message?: string): string {
-  switch (reason) {
-    case 'TOO_SHORT':
-      return ': cần ít nhất 15 ký tự';
-    case 'TOO_LONG':
-      return ': tối đa 128 ký tự';
-    case 'SAME_AS_NAME':
-    case 'CONTAINS_NAME':
-      return ': không được chứa tên tài khoản';
-    case 'COMMON':
-      return ': mật khẩu quá phổ biến';
-    default:
-      return message ? `: ${message}` : reason ? ` (${reason})` : '';
-  }
-}
+// Lý do `WEAK_PASSWORD` của máy chủ (admin-api §1) → phần đuôi câu: dùng chung với Studio (feature 027).
+import { weakReason } from '@mat/admin-model';
+export { weakReason };
 
 export const viAccount = {
   pwTitle: 'Đổi mật khẩu của tôi',

@@ -1,0 +1,93 @@
+{
+  "scenario": "device-settings",
+  "checks": [
+    {
+      "name": "quản trị viên đăng nhập web được",
+      "pass": true
+    },
+    {
+      "name": "GET device-settings: 200, rev 0, cert có fingerprint đang dùng",
+      "pass": true,
+      "detail": "200 rev=0"
+    },
+    {
+      "name": "viewerLogin off: trang xem không đăng nhập được (200)",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "engineer: 403",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "name": "bật viewerLogin required: 200, restart",
+      "pass": true,
+      "detail": "200 {\"effective\":{\"allowedHosts\":[],\"deviceName\":\"Trạm thử 027\",\"maxLiveClientsPerSource\":10,\"updateEnabled\":false,\"viewerAccess\":\"private\",\"viewerLogin\":\"required\"},\"restart\":true,\"restartInMs\":1000,\"rev\":1}"
+    },
+    {
+      "name": "runtime tự khởi động lại và chạy lại",
+      "pass": true
+    },
+    {
+      "name": "sau khởi động lại: trang không đăng nhập bị chặn (401)",
+      "pass": true,
+      "detail": "401"
+    },
+    {
+      "name": "phiên web giữ qua khởi động lại; running = settings",
+      "pass": true,
+      "detail": "200 {\"allowedHosts\":[],\"deviceName\":\"Trạm thử 027\",\"maxLiveClientsPerSource\":10,\"updateEnabled\":false,\"viewerAccess\":\"private\",\"viewerLogin\":\"required\"}"
+    },
+    {
+      "name": "rev cũ: 409 CONFLICT",
+      "pass": true
+    },
+    {
+      "name": "tắt đăng nhập không có mật khẩu: 403 REAUTH_REQUIRED",
+      "pass": true,
+      "detail": "403 REAUTH_REQUIRED"
+    },
+    {
+      "name": "sinh lại chứng chỉ: 200, fingerprint mới, SAN có IP thêm",
+      "pass": true,
+      "detail": "200 ips=[\"172.30.7.10\",\"203.0.113.10\",\"10.9.8.7\"]"
+    },
+    {
+      "name": "runtime chạy lại với chứng chỉ mới",
+      "pass": true
+    },
+    {
+      "name": "cổng 8443 đưa đúng fingerprint API trả (khác bản cũ)",
+      "pass": true,
+      "detail": "11b45581 → 7601db74"
+    },
+    {
+      "name": "GET sau regen: không còn TLS_NO_IP_SAN",
+      "pass": true,
+      "detail": "[]"
+    },
+    {
+      "name": "nhập chứng chỉ hỏng: 400 CERT_FILE_INVALID, chứng chỉ cũ còn",
+      "pass": true,
+      "detail": "400 CERT_FILE_INVALID"
+    },
+    {
+      "name": "tạo CSR: 200, PEM",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "audit device.settings có before/after",
+      "pass": true,
+      "detail": "200 3"
+    },
+    {
+      "name": "audit cert.regenerate",
+      "pass": true,
+      "detail": "200"
+    }
+  ],
+  "measures": {},
+  "pass": true
+}

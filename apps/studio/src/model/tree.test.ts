@@ -101,7 +101,6 @@ describe('buildTree: project mẫu', () => {
       calc: 'GĐ 2',
       valueTables: 'GĐ 2',
       reports: 'GĐ 5',
-      users: 'feature 005',
       library: 'GĐ 3b',
     });
     expect(node(root, 'calc').editor).toBe('phase:calc');
@@ -114,7 +113,7 @@ describe('buildTree: project mẫu', () => {
 
   it('trang giai đoạn: tiêu đề, nội dung, giai đoạn cho mọi mục', () => {
     expect(Object.keys(PHASE_PAGES).sort()).toEqual(
-      ['calc', 'connections', 'driverDiag', 'library', 'reports', 'users', 'valueTables'].sort(),
+      ['calc', 'connections', 'driverDiag', 'library', 'reports', 'valueTables'].sort(),
     );
     const calc = PHASE_PAGES.calc;
     expect(t(calc.title)).toBe('Tag tính toán');
@@ -451,5 +450,27 @@ describe('buildTree: project 0.2', () => {
     // Feature 007: màn hình của project 0.3 có thao tác cây (thêm, đổi tên, nhân bản, xóa).
     expect(refOfNode('screens')).toEqual({ type: 'screens' });
     expect(refOfNode('screen:main')).toEqual({ type: 'screen', id: 'main' });
+  });
+});
+
+describe('Người dùng và quyền (feature 027)', () => {
+  it('nhóm mục quản trị của thiết bị, Nhật ký là editor Audit; không còn trang giai đoạn', () => {
+    const root = buildTree(input());
+    const users = node(root, 'users');
+    expect(users.editor).toBeNull();
+    expect(users.phase).toBeUndefined();
+    expect(ids(users)).toEqual([
+      'admin:users',
+      'admin:groups',
+      'admin:pages',
+      'admin:components',
+      'admin:viewAs',
+      'admin:email',
+      'admin:apikeys',
+      'adminAudit',
+    ]);
+    expect(node(root, 'admin:components').editor).toBe('admin:components');
+    expect(node(root, 'admin:email').label).toBe('Email cảnh báo');
+    expect(node(root, 'adminAudit').editor).toBe('audit');
   });
 });

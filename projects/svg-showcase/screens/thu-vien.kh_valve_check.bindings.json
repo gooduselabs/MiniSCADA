@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "thu-vien",
+  "itemId": "kh_valve_check",
+  "elements": [
+    {
+      "elementUid": "el_valve_check_body",
+      "bindings": [
+        {
+          "id": "fill_14",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.RUN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#22c55e"
+              },
+              {
+                "equals": false,
+                "value": "#64748b"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_valve_check_arrow",
+      "bindings": [
+        {
+          "id": "visibility_15",
+          "target": "style.visibility",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.RUN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "visible"
+              },
+              {
+                "equals": false,
+                "value": "hidden"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

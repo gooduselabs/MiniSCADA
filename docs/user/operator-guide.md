@@ -14,7 +14,7 @@ Dành cho người vận hành dùng trang mAT SCADA trên Chrome hằng ngày. 
 
 Trang mở ở màn hình đầu. Menu bên trái (hoặc trên) chứa các màn hình. Cửa sổ hẹp thì bấm nút menu ("Mở menu"). Đầu trang hiện "project · màn hình".
 
-![Trang vận hành: thanh trên có tên project, màn hình, trạng thái Trực tuyến và tài khoản; banner alarm đỏ; menu bên trái; màn hình Tổng quan với thẻ giá trị, đồng hồ kim và thẻ Nhiệt độ có dấu BAD](img/op-man-hinh.png)
+![Trang vận hành: thanh trên có tên project, màn hình, trạng thái Trực tuyến, chuông cảnh báo có số alarm chưa xác nhận và tài khoản; menu bên trái; màn hình Tổng quan với thẻ giá trị, đồng hồ kim và thẻ Nhiệt độ có dấu BAD](img/op-man-hinh.png)
 
 Một số nút mở cửa sổ chi tiết (popup) cho từng thiết bị, ví dụ bấm vào bơm P-07 mở cửa sổ chi tiết của đúng bơm P-07. Trước khi điều khiển, kiểm nhãn trên cửa sổ và tên Tag trong hộp xác nhận (mục 5) đúng thiết bị mình muốn. Đóng bằng nút **Đóng** hoặc Esc. Trang báo "tham số của cửa sổ sai (…)" thì cửa sổ không mở: báo kỹ sư.
 
@@ -142,7 +142,13 @@ Nút xung (bấm rồi tự nhả): hộp xác nhận ghi "Xung N ms rồi trả
 
 ## 6. Alarm
 
-- **Banner** dưới thanh trên hiện alarm quan trọng nhất: mức ưu tiên, nội dung, số alarm chưa xác nhận. Bấm banner để mở trang **Alarm**.
+- **Chuông cảnh báo** ở thanh trên (cạnh "Trực tuyến"): số trên chuông là số alarm **chưa xác nhận** (trên 99 hiện "99+"); màu số theo mức cao nhất đang có (đỏ: Khẩn cấp, cam: Quan trọng, vàng: Nhỏ, xanh: Lưu ý). Có alarm mới thì chuông rung nhẹ (máy bật "giảm hiệu ứng chuyển động" thì không rung; chuông có viền đỏ cố định khi có alarm Khẩn cấp).
+- Bấm chuông mở **bảng thông báo**: alarm chưa xác nhận lên đầu, Khẩn cấp và mới nhất trước. Mỗi dòng có hình mức ưu tiên, nội dung, tên alarm và giá trị lúc bật, thời gian ("2 phút trước"), trạng thái. Lọc **Chưa xác nhận** / **Tất cả**; nút **Xác nhận** trên từng dòng; **Xác nhận tất cả** ở cuối bảng (bấm hai lần để chắc chắn); **Xem tất cả alarm** mở trang **Alarm**. Đóng bảng bằng Esc, nút ✕ hoặc bấm ra ngoài. Chưa đăng nhập hay không đủ quyền thì nút Xác nhận bị khóa, bảng ghi lý do.
+- Alarm **Khẩn cấp** mới còn hiện một **thông báo nhỏ ở góc dưới phải** trong vài giây; bấm vào để mở bảng thông báo.
+- Mất kết nối: chuông có dấu "!" và bảng ghi "Mất kết nối tới thiết bị". Chế độ kiosk (`?kiosk=1`): chuông nổi ở góc trên phải.
+
+![Bảng thông báo mở dưới chuông: tiêu đề Cảnh báo có số 3, công tắc âm thanh, lọc Chưa xác nhận / Tất cả, ba alarm Khẩn cấp, Quan trọng, Nhỏ, mỗi dòng có nút Xác nhận; cuối bảng Xác nhận tất cả và Xem tất cả alarm](img/op-chuong-alarm.png)
+
 - Bốn mức ưu tiên, mỗi mức một hình: **Khẩn cấp** (tam giác có "!"), **Quan trọng** (hình thoi), **Nhỏ** (hình tròn), **Lưu ý** (hình vuông có "i").
 - Trạng thái: "Đang có, chưa xác nhận", "Đang có, đã xác nhận", "Đã hết, chưa xác nhận", "Tạm ẩn".
 
@@ -153,15 +159,15 @@ Xử lý một alarm:
 3. Bấm **Xác nhận** trên dòng alarm (hoặc phím Shift+A). Tên bạn hiện ở cột "Người xác nhận".
 4. **Xác nhận tất cả** (Ctrl+Shift+A) chỉ xác nhận các alarm đang hiện lúc bấm.
 
-**Tạm ẩn** (phím S): dùng khi alarm báo sai đã biết (ví dụ cảm biến đang sửa). Bắt buộc ghi lý do (tối đa 120 ký tự), chọn thời gian 15 phút đến 8 giờ. Alarm tạm ẩn vẫn được ghi lịch sử, không hiện ở banner, không kêu, tự hết khi hết hạn. Xem ở tab **Tạm ẩn**; gỡ sớm bằng **Gỡ tạm ẩn**.
+**Tạm ẩn** (phím S): dùng khi alarm báo sai đã biết (ví dụ cảm biến đang sửa). Bắt buộc ghi lý do (tối đa 120 ký tự), chọn thời gian 15 phút đến 8 giờ. Alarm tạm ẩn vẫn được ghi lịch sử, không hiện ở chuông và bảng thông báo, không kêu, tự hết khi hết hạn. Xem ở tab **Tạm ẩn**; gỡ sớm bằng **Gỡ tạm ẩn**.
 
-**Âm thanh** mặc định tắt. Bấm "Âm thanh: bật/tắt" ở thanh trên để bật trên máy này. **Tắt tiếng** làm im alarm hiện tại mà không xác nhận; alarm mới vẫn kêu.
+**Âm thanh** mặc định tắt. Bấm "Âm thanh: bật/tắt" ở đầu bảng thông báo (bấm chuông) để bật trên máy này. **Tắt tiếng** (nút hiện ở thanh trên khi alarm đang kêu) làm im alarm hiện tại mà không xác nhận; alarm mới vẫn kêu.
 
 Lịch sử alarm: menu **Lịch sử alarm**.
 
 **Email cảnh báo:** nếu quản trị viên đã bật (hướng dẫn quản trị mục 4.5), bạn nhận email khi alarm xuất hiện, hết hoặc chưa được xác nhận sau một khoảng thời gian. Tiêu đề có tên trạm và mức, ví dụ "[Trạm bơm số 1] Khẩn cấp: Mức bể cao"; nhiều alarm gần nhau gom vào một email "… 5 sự kiện alarm (2 Khẩn cấp, 3 Quan trọng)". Nội dung có thời gian, mức, Tag và giá trị, thông điệp, trạng thái và liên kết **Mở trang Alarm**. Email chỉ để báo: **xác nhận alarm trên trang Alarm** (trả lời email không có tác dụng). Xác nhận rồi thì không còn email nhắc lại. Muốn nhận hay thôi nhận, nhờ quản trị viên sửa **Email** trong tài khoản của bạn.
 
-![Trang Alarm: banner Khẩn cấp, tab Đang có và Tạm ẩn, bộ lọc, nút Xác nhận, Xác nhận tất cả, Tạm ẩn; bảng ba alarm mức Khẩn cấp, Quan trọng, Nhỏ đang có, chưa xác nhận](img/op-alarm.png)
+![Trang Alarm: tab Đang có và Tạm ẩn, bộ lọc, nút Xác nhận, Xác nhận tất cả, Tạm ẩn; bảng ba alarm mức Khẩn cấp, Quan trọng, Nhỏ đang có, chưa xác nhận](img/op-alarm.png)
 
 ## 7. Mất kết nối
 

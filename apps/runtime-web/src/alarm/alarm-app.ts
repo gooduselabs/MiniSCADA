@@ -1,5 +1,5 @@
 // Ghép alarm vào trang vận hành (feature 009, FR-055 đến FR-059, FR-066; contracts/ui-alarm.md §6, §9, §11): nguồn alarm trên kết nối
-// live DUY NHẤT của trang, banner đầu trang (kiosk vẫn hiện), huy hiệu menu, tiền tố tiêu đề tab, vùng đọc, âm thanh, trang Alarm
+// live DUY NHẤT của trang, chuông và bảng thông báo ở thanh trên (feature 026; kiosk: chuông nổi ở góc), huy hiệu menu, tiền tố tiêu đề tab, vùng đọc, âm thanh, trang Alarm
 // và trang Lịch sử. main.ts chỉ tạo `AlarmApp` và gọi `showSystem`/`hideSystem` theo route.
 import type { AlarmSource, ActionHost } from '@mat/ui-components';
 import type { ConnState, LiveConnection } from '@mat/live-client';
@@ -8,7 +8,8 @@ import type { AlarmMenuOptions } from '../menu.ts';
 import { AlarmPage } from './alarm-page.ts';
 import { LiveAlarmSource } from './alarm-client.ts';
 import { TabTitle, applyBadge, badgeModel } from './badge.ts';
-import { AlarmAnnouncer, AlarmBanner } from './banner.ts';
+import { AlarmAnnouncer } from './announcer.ts';
+import { AlarmBell } from './bell.ts';
 import { HistoryPage } from './history-page.ts';
 import { AlarmSound } from './sound.ts';
 
@@ -19,8 +20,8 @@ export interface AlarmAppDeps {
   host: ActionHost;
   /** Nơi đặt trang Alarm và Lịch sử (vùng màn hình). */
   pageHost: HTMLElement;
-  /** Nơi đặt banner (dưới thanh trạng thái, trên màn hình). */
-  bannerHost: HTMLElement;
+  /** Nơi đặt chuông cảnh báo (thanh trên). */
+  bellHost: HTMLElement;
   /** Khung menu: tìm huy hiệu `[data-badge="alarms"]` mỗi lần cập nhật. */
   navHost: HTMLElement;
   /** Menu cần dựng lại vì có/không có mục alarm (status đổi giữa none, unsupported, còn lại). */
@@ -38,7 +39,7 @@ const must = <T extends HTMLElement>(doc: Document, id: string): T => {
 
 export class AlarmApp {
   readonly alarms: LiveAlarmSource;
-  readonly banner: AlarmBanner;
+  readonly bell: AlarmBell;
   readonly sound: AlarmSound;
   readonly page: AlarmPage;
   readonly history: HistoryPage;
@@ -49,6 +50,7 @@ export class AlarmApp {
   readonly #soundBtn: HTMLButtonElement;
   readonly #soundHint: HTMLElement;
   readonly #muteBtn: HTMLButtonElement;
+  readonly #float: HTMLElement;
   #menuKey = '';
 
   constructor(d: AlarmAppDeps) {
@@ -56,14 +58,7 @@ export class AlarmApp {
     const doc = d.doc ?? document;
     this.alarms = new LiveAlarmSource({ conn: d.conn, onState: d.onState, now: d.now });
     const src: AlarmSource = this.alarms;
-    this.banner = new AlarmBanner({
-      source: src,
-      host: d.host,
-      navigate: () => {
-        location.hash = '#/alarms';
-      },
-    });
-    d.bannerHost.append(this.banner.el);
+
     this.page = new AlarmPage({ source: src, host: d.host });
     this.history = new HistoryPage({ source: src });
     d.pageHost.append(this.page.el, this.history.el);
@@ -80,6 +75,20 @@ export class AlarmApp {
     this.#soundBtn = must<HTMLButtonElement>(doc, 'app-sound-btn');
     this.#soundHint = must(doc, 'app-sound-hint');
     this.#muteBtn = must<HTMLButtonElement>(doc, 'app-sound-mute');
+    this.bell = new AlarmBell({
+      source: src,
+      host: d.host,
+      soundEl: this.#soundBox,
+      navigate: () => {
+        location.hash = '#/alarms';
+      },
+      doc,
+    });
+    d.bellHost.append(this.bell.el);
+    this.#float = doc.createElement('div');
+    this.#float.className = 'al-bell-float';
+    this.#float.hidden = true;
+    doc.body.append(this.#float);
     this.#soundBtn.addEventListener('click', () => void this.sound.toggle());
     this.#muteBtn.addEventListener('click', () => this.sound.mute());
     this.#muteBtn.textContent = vi.alarm.sound.mute;
@@ -101,9 +110,15 @@ export class AlarmApp {
 
   /** Gọi khi phiên đổi: khóa nút tính lại. */
   refreshSession(): void {
-    this.banner.refresh();
+    this.bell.refresh();
     this.page.refresh();
     this.alarms.refresh();
+  }
+
+  /** Kiosk (?kiosk=1): thanh trên ẩn nên chuông nổi ở góc trên phải. */
+  setKiosk(on: boolean): void {
+    this.#float.hidden = !on;
+    (on ? this.#float : this.#d.bellHost).append(this.bell.el);
   }
 
   showSystem(id: SystemPage): void {
@@ -123,7 +138,7 @@ export class AlarmApp {
   #update(): void {
     const snap = this.alarms.snapshot();
     const status = this.alarms.status();
-    this.banner.refresh();
+    this.bell.refresh();
     this.#announcer.update(snap, status);
     this.sound.update(snap, status);
     this.#applyBadge();

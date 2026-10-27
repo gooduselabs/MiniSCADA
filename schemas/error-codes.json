@@ -360,18 +360,25 @@
       "usedIn": ["server/http"]
     },
     {
+      "code": "CERT_EXPIRED",
+      "http": 400,
+      "group": "system",
+      "message": "Chứng chỉ nhập vào đã hết hạn hoặc chưa tới ngày hiệu lực theo đồng hồ của thiết bị",
+      "usedIn": ["server/http"]
+    },
+    {
       "code": "CERT_FILE_INVALID",
-      "http": null,
+      "http": 400,
       "group": "system",
       "message": "File chứng chỉ hoặc khóa nhập vào không hợp lệ",
-      "usedIn": ["server/cli"]
+      "usedIn": ["server/cli", "server/http"]
     },
     {
       "code": "CERT_KEY_MISMATCH",
-      "http": null,
+      "http": 400,
       "group": "system",
       "message": "Chứng chỉ không khớp với khóa riêng",
-      "usedIn": ["server/cli"]
+      "usedIn": ["server/cli", "server/http"]
     },
     {
       "code": "CERT_WRITE_FAILED",
@@ -3746,7 +3753,7 @@
       "code": "UPDATE_DISABLED",
       "http": 404,
       "group": "update",
-      "message": "Cập nhật qua mạng đang tắt (update.enabled trong runtime.json)",
+      "message": "Cập nhật qua mạng đang tắt: bật trong Thiết bị › Thiết lập thiết bị",
       "usedIn": ["server", "server/http"]
     },
     {

@@ -214,6 +214,16 @@ int HttpApi::filtered(mg_connection* c, FilterOutcome* outcome) const {
         std::string url = "https://";
         const DeviceFacts f = opt_.device ? opt_.device->facts() : DeviceFacts{};
         const std::string host = safeHostOf(mg_get_header(c, "Host"));
+        // HTTPS up: straight to its sign-in page (a cookie needs HTTPS); the guide page only when
+        // HTTPS cannot be reached or the Host is not usable in a link.
+        if (f.https == HttpsState::Ok && f.httpsPort > 0 && !host.empty()) {
+            mg_printf(c,
+                      "HTTP/1.1 302 Found\r\nLocation: https://%s:%d/login\r\nContent-Length: 0\r\n"
+                      "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n"
+                      "Referrer-Policy: no-referrer\r\n%s\r\n",
+                      host.c_str(), f.httpsPort, connectionClose(c));
+            return 302;
+        }
         url += host.empty() ? "<địa chỉ thiết bị>" : host;
         if (f.httpsPort > 0) url += ":" + std::to_string(f.httpsPort);
         url += "/";

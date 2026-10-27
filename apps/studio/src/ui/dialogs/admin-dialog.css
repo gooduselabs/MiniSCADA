@@ -1,0 +1,66 @@
+/* Hộp thoại của Người dùng và quyền (feature 027). Khung .dlg của shell.css; chỉ token của theme/tokens.css. */
+mat-admin-dialog .dlg {
+  width: min(520px, 100%);
+}
+mat-admin-dialog .ad-dlg {
+  display: grid;
+  gap: 12px;
+}
+mat-admin-dialog .ad-dlg > p {
+  margin: 0;
+}
+mat-admin-dialog .ad-f .input,
+mat-admin-dialog .ad-f .select {
+  width: 100%;
+}
+mat-admin-dialog fieldset {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+mat-admin-dialog legend {
+  font-size: var(--fs-s);
+  color: var(--muted);
+  padding: 0 4px;
+}
+mat-admin-dialog fieldset label,
+mat-admin-dialog .ad-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-s);
+}
+mat-admin-dialog .ad-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+mat-admin-dialog .ad-secret {
+  display: flex;
+  gap: 6px;
+}
+mat-admin-dialog .ad-secret .input {
+  flex: 1;
+  font-size: 12.5px;
+}
+mat-admin-dialog .ad-result {
+  margin: 0;
+}
+mat-admin-dialog .err-text {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: var(--fs-s);
+}
+mat-admin-dialog .muted {
+  color: var(--muted);
+}
+mat-admin-dialog .btn.danger {
+  background: var(--err);
+  border-color: var(--err);
+  color: var(--panel);
+}

@@ -1,0 +1,49 @@
+{
+  "feature": "011",
+  "task": "T120",
+  "date": "2026-10-26T09:05:52",
+  "machine": "Docker mat-armhf (x86_64), real mat-runtime of that architecture, fake systemctl",
+  "note": "lab: MAT_RATE_S=0; health check 60 s, stable 5 s as on the device",
+  "scenarios": {
+    "settings": {
+      "passed": true,
+      "rows": [
+        {
+          "step": "disable",
+          "ok": true,
+          "status": 200
+        },
+        {
+          "step": "update API while off",
+          "ok": true,
+          "status": 404,
+          "code": "UPDATE_DISABLED"
+        },
+        {
+          "step": "enable without password",
+          "ok": true,
+          "status": 403,
+          "code": "REAUTH_REQUIRED"
+        },
+        {
+          "step": "enable",
+          "ok": true,
+          "status": 200
+        },
+        {
+          "step": "update after enable",
+          "ok": true,
+          "detail": {
+            "seq": 11,
+            "ok": true,
+            "result": "committed",
+            "downtimeS": 9.38,
+            "totalS": 22.98
+          }
+        }
+      ],
+      "seconds": 29.5
+    }
+  },
+  "passed": true
+}

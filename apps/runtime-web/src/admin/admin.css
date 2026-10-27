@@ -1259,3 +1259,39 @@
   margin: 8px 0 4px;
   font-weight: 600;
 }
+
+/* Feature 027: tab Thiết bị */
+.ad-dev-cert {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0 0 8px;
+}
+.ad-dev-cert dt {
+  font-weight: 600;
+}
+.ad-dev-cert dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono, monospace);
+}
+.ad-dev-csr:empty {
+  display: none;
+}
+.ad-dev-csr {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 12em;
+  overflow: auto;
+}
+.ad-device textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-mono, monospace);
+}
+
+/* Vùng cuộn nhận focus (bảng Nhật ký chỉ đọc): viền focus như nút. */
+.ad-tablewrap:focus-visible {
+  outline: 2px solid var(--mat-focus, var(--mat-accent));
+  outline-offset: 2px;
+}

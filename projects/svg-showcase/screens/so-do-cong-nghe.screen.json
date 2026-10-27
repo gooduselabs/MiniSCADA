@@ -1,0 +1,411 @@
+{
+  "schemaVersion": "1.1.0",
+  "id": "so-do-cong-nghe",
+  "name": "Sơ đồ công nghệ",
+  "size": {
+    "width": 1920,
+    "height": 1080
+  },
+  "background": "#0b1520",
+  "items": [
+    {
+      "id": "so_do",
+      "name": "Sơ đồ công nghệ",
+      "type": "svg",
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 1080,
+      "svgFile": "graphics/so-do-cong-nghe.svg",
+      "bindingFile": "screens/so-do-cong-nghe.so_do.bindings.json",
+      "viewBox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "elements": [
+        {
+          "elementUid": "el_hdr_bom_chay",
+          "name": "Số bơm đang chạy"
+        },
+        {
+          "elementUid": "el_hdr_canh_bao_nen",
+          "name": "Nền Số cảnh báo"
+        },
+        {
+          "elementUid": "el_hdr_canh_bao",
+          "name": "Số cảnh báo"
+        },
+        {
+          "elementUid": "el_hdr_san_luong",
+          "name": "Sản lượng hôm nay"
+        },
+        {
+          "elementUid": "el_ong_hut_chung",
+          "name": "Dòng chảy ống hút chung"
+        },
+        {
+          "elementUid": "el_ong_hut_p101",
+          "name": "Dòng chảy ống hút P-101"
+        },
+        {
+          "elementUid": "el_ong_xa_p101",
+          "name": "Dòng chảy ống xả P-101"
+        },
+        {
+          "elementUid": "el_ong_hut_p102",
+          "name": "Dòng chảy ống hút P-102"
+        },
+        {
+          "elementUid": "el_ong_xa_p102",
+          "name": "Dòng chảy ống xả P-102"
+        },
+        {
+          "elementUid": "el_ong_hut_p103",
+          "name": "Dòng chảy ống hút P-103"
+        },
+        {
+          "elementUid": "el_ong_xa_p103",
+          "name": "Dòng chảy ống xả P-103"
+        },
+        {
+          "elementUid": "el_ong_vao_be_lang",
+          "name": "Dòng chảy vào bể lắng"
+        },
+        {
+          "elementUid": "el_ong_vao_loc",
+          "name": "Dòng chảy vào bể lọc"
+        },
+        {
+          "elementUid": "el_ong_ra_loc",
+          "name": "Dòng chảy sau lọc"
+        },
+        {
+          "elementUid": "el_ong_hut_day",
+          "name": "Dòng chảy ống hút bơm đẩy"
+        },
+        {
+          "elementUid": "el_ong_hut_p201",
+          "name": "Dòng chảy ống hút P-201"
+        },
+        {
+          "elementUid": "el_ong_xa_p201",
+          "name": "Dòng chảy ống xả P-201"
+        },
+        {
+          "elementUid": "el_ong_hut_p202",
+          "name": "Dòng chảy ống hút P-202"
+        },
+        {
+          "elementUid": "el_ong_xa_p202",
+          "name": "Dòng chảy ống xả P-202"
+        },
+        {
+          "elementUid": "el_ong_ra_mang",
+          "name": "Dòng chảy ra mạng"
+        },
+        {
+          "elementUid": "el_ong_hut_clo",
+          "name": "Dòng hóa chất vào bơm định lượng"
+        },
+        {
+          "elementUid": "el_ong_chau_clo",
+          "name": "Dòng hóa chất châm vào ống"
+        },
+        {
+          "elementUid": "el_lt001_muc",
+          "name": "Mức hồ chứa"
+        },
+        {
+          "elementUid": "el_ait001_duc",
+          "name": "Độ đục nước thô"
+        },
+        {
+          "elementUid": "el_ait002_ph",
+          "name": "pH nước thô"
+        },
+        {
+          "elementUid": "el_ho_nuoc",
+          "name": "Nước hồ chứa"
+        },
+        {
+          "elementUid": "el_p101",
+          "name": "Bơm P-101"
+        },
+        {
+          "elementUid": "el_p101_vo",
+          "name": "Vỏ bơm P-101"
+        },
+        {
+          "elementUid": "el_p101_canh",
+          "name": "Cánh bơm P-101"
+        },
+        {
+          "elementUid": "el_p101_tt_nen",
+          "name": "Nền trạng thái P-101"
+        },
+        {
+          "elementUid": "el_p101_tt",
+          "name": "Trạng thái P-101"
+        },
+        {
+          "elementUid": "el_p101_dong",
+          "name": "Dòng điện P-101"
+        },
+        {
+          "elementUid": "el_p101_loi",
+          "name": "Báo lỗi P-101"
+        },
+        {
+          "elementUid": "el_p102",
+          "name": "Bơm P-102"
+        },
+        {
+          "elementUid": "el_p102_vo",
+          "name": "Vỏ bơm P-102"
+        },
+        {
+          "elementUid": "el_p102_canh",
+          "name": "Cánh bơm P-102"
+        },
+        {
+          "elementUid": "el_p102_tt_nen",
+          "name": "Nền trạng thái P-102"
+        },
+        {
+          "elementUid": "el_p102_tt",
+          "name": "Trạng thái P-102"
+        },
+        {
+          "elementUid": "el_p102_dong",
+          "name": "Dòng điện P-102"
+        },
+        {
+          "elementUid": "el_p102_loi",
+          "name": "Báo lỗi P-102"
+        },
+        {
+          "elementUid": "el_p103",
+          "name": "Bơm P-103"
+        },
+        {
+          "elementUid": "el_p103_vo",
+          "name": "Vỏ bơm P-103"
+        },
+        {
+          "elementUid": "el_p103_canh",
+          "name": "Cánh bơm P-103"
+        },
+        {
+          "elementUid": "el_p103_tt_nen",
+          "name": "Nền trạng thái P-103"
+        },
+        {
+          "elementUid": "el_p103_tt",
+          "name": "Trạng thái P-103"
+        },
+        {
+          "elementUid": "el_p103_dong",
+          "name": "Dòng điện P-103"
+        },
+        {
+          "elementUid": "el_p103_loi",
+          "name": "Báo lỗi P-103"
+        },
+        {
+          "elementUid": "el_fit101_ll",
+          "name": "Lưu lượng nước thô"
+        },
+        {
+          "elementUid": "el_xv101_than",
+          "name": "Thân van XV-101"
+        },
+        {
+          "elementUid": "el_t101_long",
+          "name": "Chất lỏng bể lắng T-101"
+        },
+        {
+          "elementUid": "el_t101_muc_lon",
+          "name": "Mức bể lắng T-101 (giữa bồn)"
+        },
+        {
+          "elementUid": "el_lit101_muc",
+          "name": "Mức bể lắng"
+        },
+        {
+          "elementUid": "el_lit101_cao",
+          "name": "Cảnh báo mức cao bể lắng"
+        },
+        {
+          "elementUid": "el_pdt101_dp",
+          "name": "Chênh áp bể lọc"
+        },
+        {
+          "elementUid": "el_t201_long",
+          "name": "Chất lỏng bồn nước sạch T-201"
+        },
+        {
+          "elementUid": "el_t201_muc_lon",
+          "name": "Mức bồn nước sạch T-201 (giữa bồn)"
+        },
+        {
+          "elementUid": "el_lit201_muc",
+          "name": "Mức bồn nước sạch"
+        },
+        {
+          "elementUid": "el_lit201_thap",
+          "name": "Cảnh báo mức thấp bồn sạch"
+        },
+        {
+          "elementUid": "el_p201",
+          "name": "Bơm P-201"
+        },
+        {
+          "elementUid": "el_p201_vo",
+          "name": "Vỏ bơm P-201"
+        },
+        {
+          "elementUid": "el_p201_canh",
+          "name": "Cánh bơm P-201"
+        },
+        {
+          "elementUid": "el_p201_tt_nen",
+          "name": "Nền trạng thái P-201"
+        },
+        {
+          "elementUid": "el_p201_tt",
+          "name": "Trạng thái P-201"
+        },
+        {
+          "elementUid": "el_p201_dong",
+          "name": "Dòng điện P-201"
+        },
+        {
+          "elementUid": "el_p201_loi",
+          "name": "Báo lỗi P-201"
+        },
+        {
+          "elementUid": "el_p202",
+          "name": "Bơm P-202"
+        },
+        {
+          "elementUid": "el_p202_vo",
+          "name": "Vỏ bơm P-202"
+        },
+        {
+          "elementUid": "el_p202_canh",
+          "name": "Cánh bơm P-202"
+        },
+        {
+          "elementUid": "el_p202_tt_nen",
+          "name": "Nền trạng thái P-202"
+        },
+        {
+          "elementUid": "el_p202_tt",
+          "name": "Trạng thái P-202"
+        },
+        {
+          "elementUid": "el_p202_dong",
+          "name": "Dòng điện P-202"
+        },
+        {
+          "elementUid": "el_p202_loi",
+          "name": "Báo lỗi P-202"
+        },
+        {
+          "elementUid": "el_fit201_ll",
+          "name": "Lưu lượng ra mạng"
+        },
+        {
+          "elementUid": "el_pit201_ap",
+          "name": "Áp suất mạng"
+        },
+        {
+          "elementUid": "el_t301_long",
+          "name": "Hóa chất trong bồn T-301"
+        },
+        {
+          "elementUid": "el_p301_vo",
+          "name": "Vỏ bơm P-301"
+        },
+        {
+          "elementUid": "el_p301_canh",
+          "name": "Cánh bơm P-301"
+        },
+        {
+          "elementUid": "el_ait301_clo",
+          "name": "Clo dư"
+        },
+        {
+          "elementUid": "el_lit301_muc",
+          "name": "Mức bồn hóa chất"
+        },
+        {
+          "elementUid": "el_p301_ll",
+          "name": "Lưu lượng châm Clo"
+        },
+        {
+          "elementUid": "el_ait301_thap",
+          "name": "Cảnh báo Clo dư thấp"
+        },
+        {
+          "elementUid": "el_mcc_u",
+          "name": "Điện áp MCC"
+        },
+        {
+          "elementUid": "el_mcc_p",
+          "name": "Công suất MCC"
+        },
+        {
+          "elementUid": "el_q1_den",
+          "name": "Đèn ngăn Q1"
+        },
+        {
+          "elementUid": "el_q1_dong",
+          "name": "Dòng điện ngăn Q1"
+        },
+        {
+          "elementUid": "el_q2_den",
+          "name": "Đèn ngăn Q2"
+        },
+        {
+          "elementUid": "el_q2_dong",
+          "name": "Dòng điện ngăn Q2"
+        },
+        {
+          "elementUid": "el_q3_den",
+          "name": "Đèn ngăn Q3"
+        },
+        {
+          "elementUid": "el_q3_dong",
+          "name": "Dòng điện ngăn Q3"
+        },
+        {
+          "elementUid": "el_q4_den",
+          "name": "Đèn ngăn Q4"
+        },
+        {
+          "elementUid": "el_q4_dong",
+          "name": "Dòng điện ngăn Q4"
+        },
+        {
+          "elementUid": "el_q5_den",
+          "name": "Đèn ngăn Q5"
+        },
+        {
+          "elementUid": "el_q5_dong",
+          "name": "Dòng điện ngăn Q5"
+        },
+        {
+          "elementUid": "el_q6_den",
+          "name": "Đèn ngăn Q6"
+        },
+        {
+          "elementUid": "el_q6_dong",
+          "name": "Dòng điện ngăn Q6"
+        }
+      ]
+    }
+  ]
+}

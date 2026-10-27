@@ -5,6 +5,7 @@
 #   kill:            5 diem x 8 buoc S1..S8 = 40: kill -9 / cat dien roi phuc hoi: ban cu hoac ban moi hoan chinh (SC-021).
 #   health:          ban moi khong chay: tu quay ve .prev <= 90 s.
 #   busy, keyset, downgrade, manual-rollback, auth (ma tran quyen, HTTP, mat khau xac nhan; SC-022).
+#   settings:        (027) tat OTA bang thiet lap thiet bi (API cua Studio) -> UPDATE_DISABLED; bat lai can mat khau; 1 cap nhat.
 # Chay trong Docker mat-armhf (runtime that cua kien truc container, mat-updater.sh that, systemctl gia khoi dong
 # va dung runtime do; mot vong lap dong vai mat-updater.path). Goi tao bang make-update.mjs --it (Node tren may
 # chay script). Phong lab: MAT_RATE_S=0 (bo gioi han 1 lan/5 phut). Ket qua: docs/reports/011-update-x64.json.

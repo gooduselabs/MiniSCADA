@@ -1,0 +1,501 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+<defs>
+<pattern id="p-grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#0f1d2a" stroke-width="1"/></pattern>
+<linearGradient id="g-header" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#11263a"/><stop offset="1" stop-color="#0c1826"/></linearGradient>
+<linearGradient id="g-logo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient>
+<linearGradient id="g-tank" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#16222d"/><stop offset="0.42" stop-color="#2a3b4b"/><stop offset="1" stop-color="#111b24"/></linearGradient>
+<linearGradient id="g-shade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000000" stop-opacity="0.38"/><stop offset="0.3" stop-color="#ffffff" stop-opacity="0.10"/><stop offset="0.55" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity="0.42"/></linearGradient>
+<linearGradient id="g-raw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b48d5f"/><stop offset="1" stop-color="#6a4c2e"/></linearGradient>
+<linearGradient id="g-clean" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4cb4f2"/><stop offset="1" stop-color="#0f4f8a"/></linearGradient>
+<linearGradient id="g-chem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3d34e"/><stop offset="1" stop-color="#a27c0b"/></linearGradient>
+<linearGradient id="g-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a9bab"/><stop offset="0.5" stop-color="#4f5f6d"/><stop offset="1" stop-color="#2b3742"/></linearGradient>
+<radialGradient id="g-pump" cx="0.38" cy="0.32" r="0.75"><stop offset="0" stop-color="#6f8293"/><stop offset="0.6" stop-color="#34444f"/><stop offset="1" stop-color="#1b2630"/></radialGradient>
+<filter id="f-shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.55"/></filter>
+</defs>
+<g data-mat-layer="Nền">
+<rect width="1600" height="900" fill="#0b1520"/>
+<rect width="1600" height="900" fill="url(#p-grid)"/>
+<rect width="1600" height="64" fill="url(#g-header)"/>
+<path d="M0 64.5 H1600" stroke="#1f3448" stroke-width="1"/>
+<rect x="20" y="14" width="36" height="36" rx="9" fill="url(#g-logo)"/>
+<path d="M38 21 C38 21 29 31.5 29 37 a9 9 0 0 0 18 0 C47 31.5 38 21 38 21 Z" fill="#ffffff" fill-opacity="0.95"/>
+<text x="68" y="33" font-family="Inter, Segoe UI, sans-serif" font-size="19" font-weight="800" letter-spacing="0.6" fill="#e3edf5">TRẠM BƠM NƯỚC SẠCH</text>
+<text x="68" y="52" font-family="Inter, Segoe UI, sans-serif" font-size="12" fill="#8ca3b8">Sơ đồ công nghệ · Công suất thiết kế 3.000 m³/ngày đêm</text>
+<rect data-mat-uid="el_hdr_bom_chay_nen" data-mat-name="Nền Số bơm đang chạy" x="1100" y="13" width="150" height="38" rx="8" fill="#0f2131" stroke="#26405a"/>
+<text x="1112" y="27" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Bơm đang chạy</text>
+<text data-mat-uid="el_hdr_bom_chay" data-mat-name="Số bơm đang chạy" x="1238" y="44" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect data-mat-uid="el_hdr_canh_bao_nen" data-mat-name="Nền Số cảnh báo" x="1262" y="13" width="120" height="38" rx="8" fill="#0f2131" stroke="#26405a"/>
+<text x="1274" y="27" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Cảnh báo</text>
+<text data-mat-uid="el_hdr_canh_bao" data-mat-name="Số cảnh báo" x="1370" y="44" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect data-mat-uid="el_hdr_san_luong_nen" data-mat-name="Nền Sản lượng hôm nay" x="1394" y="13" width="186" height="38" rx="8" fill="#0f2131" stroke="#26405a"/>
+<text x="1406" y="27" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Sản lượng hôm nay</text>
+<text data-mat-uid="el_hdr_san_luong" data-mat-name="Sản lượng hôm nay" x="1568" y="44" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="20" y="84" width="150" height="608" rx="10" fill="#0e1a26" stroke="#1b2d3d"/>
+<rect x="34" y="97" width="3" height="13" rx="1.5" fill="#38bdf8"/>
+<text x="44" y="108" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#7f9ab1">NGUỒN NƯỚC THÔ</text>
+<rect x="182" y="84" width="400" height="608" rx="10" fill="#0e1a26" stroke="#1b2d3d"/>
+<rect x="196" y="97" width="3" height="13" rx="1.5" fill="#38bdf8"/>
+<text x="206" y="108" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#7f9ab1">CỤM BƠM CẤP</text>
+<rect x="594" y="84" width="250" height="608" rx="10" fill="#0e1a26" stroke="#1b2d3d"/>
+<rect x="608" y="97" width="3" height="13" rx="1.5" fill="#38bdf8"/>
+<text x="618" y="108" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#7f9ab1">BỂ LẮNG</text>
+<rect x="856" y="84" width="170" height="608" rx="10" fill="#0e1a26" stroke="#1b2d3d"/>
+<rect x="870" y="97" width="3" height="13" rx="1.5" fill="#38bdf8"/>
+<text x="880" y="108" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#7f9ab1">LỌC</text>
+<rect x="1038" y="84" width="230" height="608" rx="10" fill="#0e1a26" stroke="#1b2d3d"/>
+<rect x="1052" y="97" width="3" height="13" rx="1.5" fill="#38bdf8"/>
+<text x="1062" y="108" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#7f9ab1">BỒN NƯỚC SẠCH</text>
+<rect x="1280" y="84" width="300" height="608" rx="10" fill="#0e1a26" stroke="#1b2d3d"/>
+<rect x="1294" y="97" width="3" height="13" rx="1.5" fill="#38bdf8"/>
+<text x="1304" y="108" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#7f9ab1">BƠM ĐẨY · MẠNG</text>
+<rect x="20" y="704" width="824" height="176" rx="10" fill="#0e1a26" stroke="#1b2d3d"/>
+<rect x="34" y="717" width="3" height="13" rx="1.5" fill="#38bdf8"/>
+<text x="44" y="728" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#7f9ab1">CHÚ THÍCH</text>
+<rect x="856" y="704" width="412" height="176" rx="10" fill="#0e1a26" stroke="#1b2d3d"/>
+<rect x="870" y="717" width="3" height="13" rx="1.5" fill="#38bdf8"/>
+<text x="880" y="728" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#7f9ab1">TRẠM CHÂM CLO</text>
+<rect x="1280" y="704" width="300" height="176" rx="10" fill="#0e1a26" stroke="#1b2d3d"/>
+<rect x="1294" y="717" width="3" height="13" rx="1.5" fill="#38bdf8"/>
+<text x="1304" y="728" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#7f9ab1">TỦ ĐIỆN MCC-01</text>
+</g>
+<g data-mat-layer="Đường ống" filter="url(#f-shadow)">
+<path d="M143 560 H206 V240" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M143 560 H206 V240" fill="none" stroke="#a7825a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M143 560 H206 V240" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M206 240 H294" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M206 240 H294" fill="none" stroke="#a7825a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M206 240 H294" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M350 220 H500" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M350 220 H500" fill="none" stroke="#a7825a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M350 220 H500" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M206 400 H294" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M206 400 H294" fill="none" stroke="#a7825a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M206 400 H294" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M350 380 H500" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M350 380 H500" fill="none" stroke="#a7825a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M350 380 H500" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M206 560 H294" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M206 560 H294" fill="none" stroke="#a7825a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M206 560 H294" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M350 540 H500" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M350 540 H500" fill="none" stroke="#a7825a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M350 540 H500" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M500 540 V160 H660 V200" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M500 540 V160 H660 V200" fill="none" stroke="#a7825a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M500 540 V160 H660 V200" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M790 610 H870 V222 H941 V252" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M790 610 H870 V222 H941 V252" fill="none" stroke="#a7825a" stroke-width="7" stroke-linejoin="round"/>
+<path d="M790 610 H870 V222 H941 V252" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M941 558 V600 H1030 V170 H1100 V200" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M941 558 V600 H1030 V170 H1100 V200" fill="none" stroke="#2b8bd3" stroke-width="7" stroke-linejoin="round"/>
+<path d="M941 558 V600 H1030 V170 H1100 V200" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M1220 600 H1300 V440" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M1220 600 H1300 V440" fill="none" stroke="#2b8bd3" stroke-width="7" stroke-linejoin="round"/>
+<path d="M1220 600 H1300 V440" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M1300 440 H1364" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M1300 440 H1364" fill="none" stroke="#2b8bd3" stroke-width="7" stroke-linejoin="round"/>
+<path d="M1300 440 H1364" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M1420 420 H1490" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M1420 420 H1490" fill="none" stroke="#2b8bd3" stroke-width="7" stroke-linejoin="round"/>
+<path d="M1420 420 H1490" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M1300 580 H1364" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M1300 580 H1364" fill="none" stroke="#2b8bd3" stroke-width="7" stroke-linejoin="round"/>
+<path d="M1300 580 H1364" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M1420 560 H1490" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M1420 560 H1490" fill="none" stroke="#2b8bd3" stroke-width="7" stroke-linejoin="round"/>
+<path d="M1420 560 H1490" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M1490 560 V170 H1572" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M1490 560 V170 H1572" fill="none" stroke="#2b8bd3" stroke-width="7" stroke-linejoin="round"/>
+<path d="M1490 560 V170 H1572" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M944 838 H994" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M944 838 H994" fill="none" stroke="#d6aa1c" stroke-width="7" stroke-linejoin="round"/>
+<path d="M944 838 H994" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+<path d="M1010 822 V606" fill="none" stroke="#04090e" stroke-width="12" stroke-linejoin="round"/>
+<path d="M1010 822 V606" fill="none" stroke="#d6aa1c" stroke-width="7" stroke-linejoin="round"/>
+<path d="M1010 822 V606" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-linejoin="round"/>
+</g>
+<g data-mat-layer="Dòng chảy">
+<path data-mat-uid="el_ong_hut_chung" data-mat-name="Dòng chảy ống hút chung" d="M143 560 H206 V240" fill="none" stroke="#f4e2c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_hut_p101" data-mat-name="Dòng chảy ống hút P-101" d="M206 240 H294" fill="none" stroke="#f4e2c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_xa_p101" data-mat-name="Dòng chảy ống xả P-101" d="M350 220 H500" fill="none" stroke="#f4e2c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_hut_p102" data-mat-name="Dòng chảy ống hút P-102" d="M206 400 H294" fill="none" stroke="#f4e2c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_xa_p102" data-mat-name="Dòng chảy ống xả P-102" d="M350 380 H500" fill="none" stroke="#f4e2c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_hut_p103" data-mat-name="Dòng chảy ống hút P-103" d="M206 560 H294" fill="none" stroke="#f4e2c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_xa_p103" data-mat-name="Dòng chảy ống xả P-103" d="M350 540 H500" fill="none" stroke="#f4e2c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_vao_be_lang" data-mat-name="Dòng chảy vào bể lắng" d="M500 540 V160 H660 V200" fill="none" stroke="#f4e2c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_vao_loc" data-mat-name="Dòng chảy vào bể lọc" d="M790 610 H870 V222 H941 V252" fill="none" stroke="#f4e2c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_ra_loc" data-mat-name="Dòng chảy sau lọc" d="M941 558 V600 H1030 V170 H1100 V200" fill="none" stroke="#dff3ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_hut_day" data-mat-name="Dòng chảy ống hút bơm đẩy" d="M1220 600 H1300 V440" fill="none" stroke="#dff3ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_hut_p201" data-mat-name="Dòng chảy ống hút P-201" d="M1300 440 H1364" fill="none" stroke="#dff3ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_xa_p201" data-mat-name="Dòng chảy ống xả P-201" d="M1420 420 H1490" fill="none" stroke="#dff3ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_hut_p202" data-mat-name="Dòng chảy ống hút P-202" d="M1300 580 H1364" fill="none" stroke="#dff3ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_xa_p202" data-mat-name="Dòng chảy ống xả P-202" d="M1420 560 H1490" fill="none" stroke="#dff3ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_ra_mang" data-mat-name="Dòng chảy ra mạng" d="M1490 560 V170 H1572" fill="none" stroke="#dff3ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_hut_clo" data-mat-name="Dòng hóa chất vào bơm định lượng" d="M944 838 H994" fill="none" stroke="#fff5c4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path data-mat-uid="el_ong_chau_clo" data-mat-name="Dòng hóa chất châm vào ống" d="M1010 822 V606" fill="none" stroke="#fff5c4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 14" opacity="0"/>
+<path d="M171 554 L182 560 L171 566 Z" fill="#f4e2c8" stroke="#04090e" stroke-width="1"/>
+<path d="M201 474 L212 480 L201 486 Z" fill="#f4e2c8" stroke="#04090e" stroke-width="1" transform="rotate(270 206 480)"/>
+<path d="M473 214 L484 220 L473 226 Z" fill="#f4e2c8" stroke="#04090e" stroke-width="1"/>
+<path d="M473 374 L484 380 L473 386 Z" fill="#f4e2c8" stroke="#04090e" stroke-width="1"/>
+<path d="M473 534 L484 540 L473 546 Z" fill="#f4e2c8" stroke="#04090e" stroke-width="1"/>
+<path d="M495 294 L506 300 L495 306 Z" fill="#f4e2c8" stroke="#04090e" stroke-width="1" transform="rotate(270 500 300)"/>
+<path d="M585 154 L596 160 L585 166 Z" fill="#f4e2c8" stroke="#04090e" stroke-width="1"/>
+<path d="M825 604 L836 610 L825 616 Z" fill="#f4e2c8" stroke="#04090e" stroke-width="1"/>
+<path d="M865 414 L876 420 L865 426 Z" fill="#f4e2c8" stroke="#04090e" stroke-width="1" transform="rotate(270 870 420)"/>
+<path d="M970 594 L981 600 L970 606 Z" fill="#dff3ff" stroke="#04090e" stroke-width="1"/>
+<path d="M1025 394 L1036 400 L1025 406 Z" fill="#dff3ff" stroke="#04090e" stroke-width="1" transform="rotate(270 1030 400)"/>
+<path d="M1061 164 L1072 170 L1061 176 Z" fill="#dff3ff" stroke="#04090e" stroke-width="1"/>
+<path d="M1257 594 L1268 600 L1257 606 Z" fill="#dff3ff" stroke="#04090e" stroke-width="1"/>
+<path d="M1295 514 L1306 520 L1295 526 Z" fill="#dff3ff" stroke="#04090e" stroke-width="1" transform="rotate(270 1300 520)"/>
+<path d="M1485 324 L1496 330 L1485 336 Z" fill="#dff3ff" stroke="#04090e" stroke-width="1" transform="rotate(270 1490 330)"/>
+<path d="M1570 158 L1590 170 L1570 182 Z" fill="#2b8bd3" stroke="#04090e" stroke-width="1.2"/>
+<path d="M1005 694 L1016 700 L1005 706 Z" fill="#fff5c4" stroke="#04090e" stroke-width="1" transform="rotate(270 1010 700)"/>
+</g>
+<g data-mat-layer="Thiết bị">
+<rect x="32" y="128" width="126" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="41" y="142" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Mức hồ</text>
+<text data-mat-uid="el_lt001_muc" data-mat-name="Mức hồ chứa" x="149" y="158" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="32" y="174" width="126" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="41" y="188" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Độ đục</text>
+<text data-mat-uid="el_ait001_duc" data-mat-name="Độ đục nước thô" x="149" y="204" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="32" y="220" width="126" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="41" y="234" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">pH</text>
+<text data-mat-uid="el_ait002_ph" data-mat-name="pH nước thô" x="149" y="250" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<path data-mat-uid="el_ho_nuoc" data-mat-name="Nước hồ chứa" d="M36.36 336 L51.76 596 H140.24 L155.64 336 Z" fill="url(#g-raw)"/>
+<path d="M36 330 L52 600 H140 L156 330" fill="none" stroke="#6b7f90" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M56 452 q 8 -5 16 0 t 16 0 t 16 0 t 16 0" fill="none" stroke="#f4e2c8" stroke-opacity="0.35" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M56 470 q 8 -5 16 0 t 16 0 t 16 0 t 16 0" fill="none" stroke="#f4e2c8" stroke-opacity="0.35" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M231 231 L257 249 V231 L231 249 Z" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M244 240 V225 M238 225 H250" stroke="#9db0c2" stroke-width="2" stroke-linecap="round" fill="none"/>
+<path d="M385 211 L411 229 V211 L385 229 Z" fill="#16222d" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M385 211 L398 220 L385 229 Z" fill="#9db0c2"/>
+<path d="M402 207 L411 207" stroke="#9db0c2" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+<path d="M435 211 L461 229 V211 L435 229 Z" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M448 220 V205 M442 205 H454" stroke="#9db0c2" stroke-width="2" stroke-linecap="round" fill="none"/>
+<g data-mat-uid="el_p101" data-mat-name="Bơm P-101" filter="url(#f-shadow)">
+<path d="M305 262 L335 262 L343 274 H297 Z" fill="#223140" stroke="#3c5163" stroke-width="1.2" stroke-linejoin="round"/>
+<rect x="320" y="214" width="30" height="12" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2"/>
+<circle data-mat-uid="el_p101_vo" data-mat-name="Vỏ bơm P-101" cx="320" cy="240" r="26" fill="url(#g-pump)" stroke="#64748b" stroke-width="3"/>
+<g data-mat-uid="el_p101_canh" data-mat-name="Cánh bơm P-101" fill="none" stroke="#d3dee8" stroke-width="2.6" stroke-linecap="round"><circle cx="320" cy="240" r="16.12" stroke-opacity="0.18" stroke-width="1.2"/><path d="M320 240 q 10.92 -2.08 13 -13.52"/><path d="M320 240 q 10.92 -2.08 13 -13.52" transform="rotate(90 320 240)"/><path d="M320 240 q 10.92 -2.08 13 -13.52" transform="rotate(180 320 240)"/><path d="M320 240 q 10.92 -2.08 13 -13.52" transform="rotate(270 320 240)"/><circle cx="320" cy="240" r="4" fill="#d3dee8" stroke="none"/></g>
+</g>
+<rect x="262" y="280" width="116" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="271" y="294" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Dòng điện</text>
+<text data-mat-uid="el_p101_dong" data-mat-name="Dòng điện P-101" x="369" y="310" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<path d="M231 391 L257 409 V391 L231 409 Z" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M244 400 V385 M238 385 H250" stroke="#9db0c2" stroke-width="2" stroke-linecap="round" fill="none"/>
+<path d="M385 371 L411 389 V371 L385 389 Z" fill="#16222d" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M385 371 L398 380 L385 389 Z" fill="#9db0c2"/>
+<path d="M402 367 L411 367" stroke="#9db0c2" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+<path d="M435 371 L461 389 V371 L435 389 Z" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M448 380 V365 M442 365 H454" stroke="#9db0c2" stroke-width="2" stroke-linecap="round" fill="none"/>
+<g data-mat-uid="el_p102" data-mat-name="Bơm P-102" filter="url(#f-shadow)">
+<path d="M305 422 L335 422 L343 434 H297 Z" fill="#223140" stroke="#3c5163" stroke-width="1.2" stroke-linejoin="round"/>
+<rect x="320" y="374" width="30" height="12" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2"/>
+<circle data-mat-uid="el_p102_vo" data-mat-name="Vỏ bơm P-102" cx="320" cy="400" r="26" fill="url(#g-pump)" stroke="#64748b" stroke-width="3"/>
+<g data-mat-uid="el_p102_canh" data-mat-name="Cánh bơm P-102" fill="none" stroke="#d3dee8" stroke-width="2.6" stroke-linecap="round"><circle cx="320" cy="400" r="16.12" stroke-opacity="0.18" stroke-width="1.2"/><path d="M320 400 q 10.92 -2.08 13 -13.52"/><path d="M320 400 q 10.92 -2.08 13 -13.52" transform="rotate(90 320 400)"/><path d="M320 400 q 10.92 -2.08 13 -13.52" transform="rotate(180 320 400)"/><path d="M320 400 q 10.92 -2.08 13 -13.52" transform="rotate(270 320 400)"/><circle cx="320" cy="400" r="4" fill="#d3dee8" stroke="none"/></g>
+</g>
+<rect x="262" y="440" width="116" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="271" y="454" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Dòng điện</text>
+<text data-mat-uid="el_p102_dong" data-mat-name="Dòng điện P-102" x="369" y="470" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<path d="M231 551 L257 569 V551 L231 569 Z" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M244 560 V545 M238 545 H250" stroke="#9db0c2" stroke-width="2" stroke-linecap="round" fill="none"/>
+<path d="M385 531 L411 549 V531 L385 549 Z" fill="#16222d" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M385 531 L398 540 L385 549 Z" fill="#9db0c2"/>
+<path d="M402 527 L411 527" stroke="#9db0c2" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+<path d="M435 531 L461 549 V531 L435 549 Z" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M448 540 V525 M442 525 H454" stroke="#9db0c2" stroke-width="2" stroke-linecap="round" fill="none"/>
+<g data-mat-uid="el_p103" data-mat-name="Bơm P-103" filter="url(#f-shadow)">
+<path d="M305 582 L335 582 L343 594 H297 Z" fill="#223140" stroke="#3c5163" stroke-width="1.2" stroke-linejoin="round"/>
+<rect x="320" y="534" width="30" height="12" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2"/>
+<circle data-mat-uid="el_p103_vo" data-mat-name="Vỏ bơm P-103" cx="320" cy="560" r="26" fill="url(#g-pump)" stroke="#64748b" stroke-width="3"/>
+<g data-mat-uid="el_p103_canh" data-mat-name="Cánh bơm P-103" fill="none" stroke="#d3dee8" stroke-width="2.6" stroke-linecap="round"><circle cx="320" cy="560" r="16.12" stroke-opacity="0.18" stroke-width="1.2"/><path d="M320 560 q 10.92 -2.08 13 -13.52"/><path d="M320 560 q 10.92 -2.08 13 -13.52" transform="rotate(90 320 560)"/><path d="M320 560 q 10.92 -2.08 13 -13.52" transform="rotate(180 320 560)"/><path d="M320 560 q 10.92 -2.08 13 -13.52" transform="rotate(270 320 560)"/><circle cx="320" cy="560" r="4" fill="#d3dee8" stroke="none"/></g>
+</g>
+<rect x="262" y="600" width="116" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="271" y="614" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Dòng điện</text>
+<text data-mat-uid="el_p103_dong" data-mat-name="Dòng điện P-103" x="369" y="630" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="527" y="149" width="26" height="22" rx="4" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2"/>
+<circle cx="540" cy="160" r="6" fill="#08121b" stroke="#9db0c2" stroke-width="1.2"/>
+<path d="M540 133 V149" stroke="#5f768b" stroke-width="1.2" stroke-dasharray="3 3" fill="none"/>
+<circle cx="540" cy="118" r="15" fill="#08121b" stroke="#9db0c2" stroke-width="1.4"/>
+<path d="M525 118 H555" stroke="#9db0c2" stroke-width="1"/>
+<text x="540" y="114.5" font-family="Inter, Segoe UI, sans-serif" font-size="8.5" font-weight="700" text-anchor="middle" fill="#e3edf5">FT</text>
+<text x="540" y="128" font-family="Inter, Segoe UI, sans-serif" font-size="8.5" font-weight="600" text-anchor="middle" fill="#8ca3b8">101</text>
+<rect x="392" y="99" width="126" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="401" y="113" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Lưu lượng vào</text>
+<text data-mat-uid="el_fit101_ll" data-mat-name="Lưu lượng nước thô" x="509" y="129" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<g data-mat-uid="el_xv101" data-mat-name="Van XV-101">
+<path data-mat-uid="el_xv101_than" data-mat-name="Thân van XV-101" d="M603 151 L629 169 V151 L603 169 Z" fill="#64748b" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M616 160 V146" stroke="#9db0c2" stroke-width="2" fill="none"/>
+<rect x="606" y="132" width="20" height="14" rx="3" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2"/>
+<text x="616" y="142.5" font-family="Inter, Segoe UI, sans-serif" font-size="9" font-weight="700" text-anchor="middle" fill="#0b1520">M</text>
+</g>
+<g filter="url(#f-shadow)">
+<rect x="640" y="200" width="150" height="440" rx="14" fill="url(#g-tank)" stroke="#4a6074" stroke-width="2"/>
+</g>
+<rect data-mat-uid="el_t101_long" data-mat-name="Chất lỏng bể lắng T-101" x="644" y="204" width="142" height="432" rx="10" fill="url(#g-raw)"/>
+<rect x="644" y="204" width="142" height="432" rx="10" fill="url(#g-shade)"/>
+<rect x="640" y="200" width="150" height="440" rx="14" fill="none" stroke="#5b7286" stroke-width="2"/>
+<path d="M644 247.2 H786" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity="0.85"/>
+<path d="M644 290.4 H786" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity="0.85"/>
+<path d="M644 549.6 H786" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity="0.85"/>
+<path d="M644 592.8 H786" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity="0.85"/>
+<path d="M798 204 V636" stroke="#5f768b" stroke-width="1"/>
+<path d="M798 636 h7M798 592.8 h4M798 549.6 h4M798 506.4 h4M798 463.2 h4M798 420 h7M798 376.8 h4M798 333.6 h4M798 290.4 h4M798 247.2 h4M798 204 h7" stroke="#5f768b" stroke-width="1"/>
+<rect x="640" y="648" width="150" height="36" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="649" y="662" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Mức bể lắng</text>
+<text data-mat-uid="el_lit101_muc" data-mat-name="Mức bể lắng" x="781" y="676" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<g filter="url(#f-shadow)">
+<rect x="900" y="252" width="82" height="306" rx="41" fill="url(#g-tank)" stroke="#5b7286" stroke-width="2"/>
+</g>
+<rect x="904" y="300" width="74" height="116" fill="#3b6e94" fill-opacity="0.55"/>
+<rect x="904" y="416" width="74" height="70" fill="#c7a46a"/>
+<rect x="904" y="486" width="74" height="26" fill="#6d7a86"/>
+<rect x="904" y="300" width="74" height="212" fill="url(#g-shade)"/>
+<path d="M904 416 H978 M904 486 H978 M904 512 H978" stroke="#0b1520" stroke-opacity="0.5" stroke-width="1"/>
+<path d="M914 290 H968" stroke="#9db0c2" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 4"/>
+<text x="941" y="455" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" font-weight="800" letter-spacing="1" text-anchor="middle" fill="#3b2a10">CÁT</text>
+<text x="941" y="503" font-family="Inter, Segoe UI, sans-serif" font-size="9" font-weight="800" letter-spacing="1" text-anchor="middle" fill="#e2e8ee">SỎI</text>
+<rect x="900" y="252" width="82" height="306" rx="41" fill="none" stroke="#5b7286" stroke-width="2"/>
+<rect x="866" y="648" width="110" height="36" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="875" y="662" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Chênh áp lọc</text>
+<text data-mat-uid="el_pdt101_dp" data-mat-name="Chênh áp bể lọc" x="967" y="676" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<g filter="url(#f-shadow)">
+<rect x="1080" y="200" width="140" height="440" rx="14" fill="url(#g-tank)" stroke="#4a6074" stroke-width="2"/>
+</g>
+<rect data-mat-uid="el_t201_long" data-mat-name="Chất lỏng bồn nước sạch T-201" x="1084" y="204" width="132" height="432" rx="10" fill="url(#g-clean)"/>
+<rect x="1084" y="204" width="132" height="432" rx="10" fill="url(#g-shade)"/>
+<rect x="1080" y="200" width="140" height="440" rx="14" fill="none" stroke="#5b7286" stroke-width="2"/>
+<path d="M1084 247.2 H1216" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity="0.85"/>
+<path d="M1084 290.4 H1216" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity="0.85"/>
+<path d="M1084 549.6 H1216" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity="0.85"/>
+<path d="M1084 592.8 H1216" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity="0.85"/>
+<path d="M1228 204 V636" stroke="#5f768b" stroke-width="1"/>
+<path d="M1228 636 h7M1228 592.8 h4M1228 549.6 h4M1228 506.4 h4M1228 463.2 h4M1228 420 h7M1228 376.8 h4M1228 333.6 h4M1228 290.4 h4M1228 247.2 h4M1228 204 h7" stroke="#5f768b" stroke-width="1"/>
+<rect x="1080" y="648" width="140" height="36" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="1089" y="662" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Mức bồn sạch</text>
+<text data-mat-uid="el_lit201_muc" data-mat-name="Mức bồn nước sạch" x="1211" y="676" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<path d="M1317 431 L1343 449 V431 L1317 449 Z" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M1330 440 V425 M1324 425 H1336" stroke="#9db0c2" stroke-width="2" stroke-linecap="round" fill="none"/>
+<path d="M1443 411 L1469 429 V411 L1443 429 Z" fill="#16222d" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M1443 411 L1456 420 L1443 429 Z" fill="#9db0c2"/>
+<path d="M1460 407 L1469 407" stroke="#9db0c2" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+<g data-mat-uid="el_p201" data-mat-name="Bơm P-201" filter="url(#f-shadow)">
+<path d="M1375 462 L1405 462 L1413 474 H1367 Z" fill="#223140" stroke="#3c5163" stroke-width="1.2" stroke-linejoin="round"/>
+<rect x="1390" y="414" width="30" height="12" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2"/>
+<circle data-mat-uid="el_p201_vo" data-mat-name="Vỏ bơm P-201" cx="1390" cy="440" r="26" fill="url(#g-pump)" stroke="#64748b" stroke-width="3"/>
+<g data-mat-uid="el_p201_canh" data-mat-name="Cánh bơm P-201" fill="none" stroke="#d3dee8" stroke-width="2.6" stroke-linecap="round"><circle cx="1390" cy="440" r="16.12" stroke-opacity="0.18" stroke-width="1.2"/><path d="M1390 440 q 10.92 -2.08 13 -13.52"/><path d="M1390 440 q 10.92 -2.08 13 -13.52" transform="rotate(90 1390 440)"/><path d="M1390 440 q 10.92 -2.08 13 -13.52" transform="rotate(180 1390 440)"/><path d="M1390 440 q 10.92 -2.08 13 -13.52" transform="rotate(270 1390 440)"/><circle cx="1390" cy="440" r="4" fill="#d3dee8" stroke="none"/></g>
+</g>
+<rect x="1332" y="480" width="116" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="1341" y="494" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Dòng điện</text>
+<text data-mat-uid="el_p201_dong" data-mat-name="Dòng điện P-201" x="1439" y="510" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<path d="M1317 571 L1343 589 V571 L1317 589 Z" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M1330 580 V565 M1324 565 H1336" stroke="#9db0c2" stroke-width="2" stroke-linecap="round" fill="none"/>
+<path d="M1443 551 L1469 569 V551 L1443 569 Z" fill="#16222d" stroke="#9db0c2" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M1443 551 L1456 560 L1443 569 Z" fill="#9db0c2"/>
+<path d="M1460 547 L1469 547" stroke="#9db0c2" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+<g data-mat-uid="el_p202" data-mat-name="Bơm P-202" filter="url(#f-shadow)">
+<path d="M1375 602 L1405 602 L1413 614 H1367 Z" fill="#223140" stroke="#3c5163" stroke-width="1.2" stroke-linejoin="round"/>
+<rect x="1390" y="554" width="30" height="12" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2"/>
+<circle data-mat-uid="el_p202_vo" data-mat-name="Vỏ bơm P-202" cx="1390" cy="580" r="26" fill="url(#g-pump)" stroke="#64748b" stroke-width="3"/>
+<g data-mat-uid="el_p202_canh" data-mat-name="Cánh bơm P-202" fill="none" stroke="#d3dee8" stroke-width="2.6" stroke-linecap="round"><circle cx="1390" cy="580" r="16.12" stroke-opacity="0.18" stroke-width="1.2"/><path d="M1390 580 q 10.92 -2.08 13 -13.52"/><path d="M1390 580 q 10.92 -2.08 13 -13.52" transform="rotate(90 1390 580)"/><path d="M1390 580 q 10.92 -2.08 13 -13.52" transform="rotate(180 1390 580)"/><path d="M1390 580 q 10.92 -2.08 13 -13.52" transform="rotate(270 1390 580)"/><circle cx="1390" cy="580" r="4" fill="#d3dee8" stroke="none"/></g>
+</g>
+<rect x="1332" y="620" width="116" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="1341" y="634" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Dòng điện</text>
+<text data-mat-uid="el_p202_dong" data-mat-name="Dòng điện P-202" x="1439" y="650" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="1296" y="118" width="160" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="1305" y="132" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Lưu lượng ra mạng</text>
+<text data-mat-uid="el_fit201_ll" data-mat-name="Lưu lượng ra mạng" x="1447" y="148" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="1296" y="164" width="160" height="38" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="1305" y="178" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Áp suất mạng</text>
+<text data-mat-uid="el_pit201_ap" data-mat-name="Áp suất mạng" x="1447" y="194" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="1519" y="159" width="26" height="22" rx="4" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2"/>
+<circle cx="1532" cy="170" r="6" fill="#08121b" stroke="#9db0c2" stroke-width="1.2"/>
+<path d="M1532 141 V159" stroke="#5f768b" stroke-width="1.2" stroke-dasharray="3 3" fill="none"/>
+<circle cx="1532" cy="126" r="15" fill="#08121b" stroke="#9db0c2" stroke-width="1.4"/>
+<path d="M1517 126 H1547" stroke="#9db0c2" stroke-width="1"/>
+<text x="1532" y="122.5" font-family="Inter, Segoe UI, sans-serif" font-size="8.5" font-weight="700" text-anchor="middle" fill="#e3edf5">FT</text>
+<text x="1532" y="136" font-family="Inter, Segoe UI, sans-serif" font-size="8.5" font-weight="600" text-anchor="middle" fill="#8ca3b8">201</text>
+<path d="M1496 262 H1525" stroke="#5f768b" stroke-width="1.2" stroke-dasharray="3 3" fill="none"/>
+<circle cx="1540" cy="262" r="15" fill="#08121b" stroke="#9db0c2" stroke-width="1.4"/>
+<path d="M1525 262 H1555" stroke="#9db0c2" stroke-width="1"/>
+<text x="1540" y="258.5" font-family="Inter, Segoe UI, sans-serif" font-size="8.5" font-weight="700" text-anchor="middle" fill="#e3edf5">PT</text>
+<text x="1540" y="272" font-family="Inter, Segoe UI, sans-serif" font-size="8.5" font-weight="600" text-anchor="middle" fill="#8ca3b8">201</text>
+<rect x="884" y="752" width="60" height="110" rx="8" fill="url(#g-tank)" stroke="#5b7286" stroke-width="2"/>
+<rect data-mat-uid="el_t301_long" data-mat-name="Hóa chất trong bồn T-301" x="887" y="755" width="54" height="104" rx="6" fill="url(#g-chem)"/>
+<rect x="887" y="755" width="54" height="104" rx="6" fill="url(#g-shade)"/>
+<rect x="884" y="752" width="60" height="110" rx="8" fill="none" stroke="#5b7286" stroke-width="2"/>
+<text x="914" y="812" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="800" text-anchor="middle" fill="#2b2203">NaOCl</text>
+<g data-mat-uid="el_p301" data-mat-name="Bơm P-301" filter="url(#f-shadow)">
+<path d="M995 850 L1025 850 L1033 862 H987 Z" fill="#223140" stroke="#3c5163" stroke-width="1.2" stroke-linejoin="round"/>
+<rect x="1010" y="822" width="20" height="12" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1.2"/>
+<circle data-mat-uid="el_p301_vo" data-mat-name="Vỏ bơm P-301" cx="1010" cy="838" r="16" fill="url(#g-pump)" stroke="#64748b" stroke-width="3"/>
+<g data-mat-uid="el_p301_canh" data-mat-name="Cánh bơm P-301" fill="none" stroke="#d3dee8" stroke-width="2.6" stroke-linecap="round"><circle cx="1010" cy="838" r="9.92" stroke-opacity="0.18" stroke-width="1.2"/><path d="M1010 838 q 6.72 -1.28 8 -8.32"/><path d="M1010 838 q 6.72 -1.28 8 -8.32" transform="rotate(90 1010 838)"/><path d="M1010 838 q 6.72 -1.28 8 -8.32" transform="rotate(180 1010 838)"/><path d="M1010 838 q 6.72 -1.28 8 -8.32" transform="rotate(270 1010 838)"/><circle cx="1010" cy="838" r="4" fill="#d3dee8" stroke="none"/></g>
+</g>
+<rect x="1050" y="732" width="128" height="36" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="1059" y="746" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Clo dư (sau lọc)</text>
+<text data-mat-uid="el_ait301_clo" data-mat-name="Clo dư" x="1169" y="760" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="1050" y="776" width="128" height="36" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="1059" y="790" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Mức NaOCl</text>
+<text data-mat-uid="el_lit301_muc" data-mat-name="Mức bồn hóa chất" x="1169" y="804" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="1050" y="820" width="128" height="36" rx="6" fill="#08121b" stroke="#24394c"/>
+<text x="1059" y="834" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="500" fill="#8ca3b8">Định lượng</text>
+<text data-mat-uid="el_p301_ll" data-mat-name="Lưu lượng châm Clo" x="1169" y="848" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<path d="M1250 607 V700 M1226 755 V704" stroke="#5f768b" stroke-width="1.2" stroke-dasharray="3 3" fill="none"/>
+<circle cx="1226" cy="770" r="15" fill="#08121b" stroke="#9db0c2" stroke-width="1.4"/>
+<path d="M1211 770 H1241" stroke="#9db0c2" stroke-width="1"/>
+<text x="1226" y="766.5" font-family="Inter, Segoe UI, sans-serif" font-size="8.5" font-weight="700" text-anchor="middle" fill="#e3edf5">AIT</text>
+<text x="1226" y="780" font-family="Inter, Segoe UI, sans-serif" font-size="8.5" font-weight="600" text-anchor="middle" fill="#8ca3b8">301</text>
+<rect x="1294" y="740" width="272" height="126" rx="6" fill="#101d29" stroke="#2a3f52"/>
+<rect x="1302" y="748" width="80" height="52" rx="4" fill="#08121b" stroke="#24394c"/>
+<circle data-mat-uid="el_q1_den" data-mat-name="Đèn ngăn Q1" cx="1315" cy="763" r="5" fill="#64748b" stroke="#04090e"/>
+<text x="1326" y="767" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="600" fill="#8ca3b8">Q1 · P-101</text>
+<text data-mat-uid="el_q1_dong" data-mat-name="Dòng điện ngăn Q1" x="1374" y="790" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="1390" y="748" width="80" height="52" rx="4" fill="#08121b" stroke="#24394c"/>
+<circle data-mat-uid="el_q2_den" data-mat-name="Đèn ngăn Q2" cx="1403" cy="763" r="5" fill="#64748b" stroke="#04090e"/>
+<text x="1414" y="767" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="600" fill="#8ca3b8">Q2 · P-102</text>
+<text data-mat-uid="el_q2_dong" data-mat-name="Dòng điện ngăn Q2" x="1462" y="790" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="1478" y="748" width="80" height="52" rx="4" fill="#08121b" stroke="#24394c"/>
+<circle data-mat-uid="el_q3_den" data-mat-name="Đèn ngăn Q3" cx="1491" cy="763" r="5" fill="#64748b" stroke="#04090e"/>
+<text x="1502" y="767" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="600" fill="#8ca3b8">Q3 · P-103</text>
+<text data-mat-uid="el_q3_dong" data-mat-name="Dòng điện ngăn Q3" x="1550" y="790" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="1302" y="808" width="80" height="52" rx="4" fill="#08121b" stroke="#24394c"/>
+<circle data-mat-uid="el_q4_den" data-mat-name="Đèn ngăn Q4" cx="1315" cy="823" r="5" fill="#64748b" stroke="#04090e"/>
+<text x="1326" y="827" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="600" fill="#8ca3b8">Q4 · P-201</text>
+<text data-mat-uid="el_q4_dong" data-mat-name="Dòng điện ngăn Q4" x="1374" y="850" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="1390" y="808" width="80" height="52" rx="4" fill="#08121b" stroke="#24394c"/>
+<circle data-mat-uid="el_q5_den" data-mat-name="Đèn ngăn Q5" cx="1403" cy="823" r="5" fill="#64748b" stroke="#04090e"/>
+<text x="1414" y="827" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="600" fill="#8ca3b8">Q5 · P-202</text>
+<text data-mat-uid="el_q5_dong" data-mat-name="Dòng điện ngăn Q5" x="1462" y="850" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<rect x="1478" y="808" width="80" height="52" rx="4" fill="#08121b" stroke="#24394c"/>
+<circle data-mat-uid="el_q6_den" data-mat-name="Đèn ngăn Q6" cx="1491" cy="823" r="5" fill="#64748b" stroke="#04090e"/>
+<text x="1502" y="827" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="600" fill="#8ca3b8">Q6 · P-301</text>
+<text data-mat-uid="el_q6_dong" data-mat-name="Dòng điện ngăn Q6" x="1550" y="850" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<path d="M40 752 H100" stroke="#04090e" stroke-width="12"/>
+<path d="M40 752 H100" stroke="#a7825a" stroke-width="7"/>
+<text x="114" y="756" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Nước thô, nước lắng</text>
+<path d="M40 784 H100" stroke="#04090e" stroke-width="12"/>
+<path d="M40 784 H100" stroke="#2b8bd3" stroke-width="7"/>
+<text x="114" y="788" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Nước sạch</text>
+<path d="M40 816 H100" stroke="#04090e" stroke-width="12"/>
+<path d="M40 816 H100" stroke="#d6aa1c" stroke-width="7"/>
+<text x="114" y="820" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Hóa chất (NaOCl)</text>
+<path d="M40 848 H100" stroke="#04090e" stroke-width="12"/>
+<path d="M40 848 H100" stroke="#2b8bd3" stroke-width="7"/>
+<path d="M40 848 H100" stroke="#dff3ff" stroke-width="3" stroke-dasharray="8 14" stroke-linecap="round" opacity="0.9"/>
+<text x="114" y="852" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Dòng chảy (khi có lưu lượng)</text>
+<rect x="316" y="743" width="52" height="18" rx="9" fill="#15803d"/>
+<text x="342" y="755.5" font-family="Inter, Segoe UI, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle" fill="#ffffff">Chạy</text>
+<text x="380" y="756" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Thiết bị đang chạy</text>
+<rect x="316" y="775" width="52" height="18" rx="9" fill="#334155"/>
+<text x="342" y="787.5" font-family="Inter, Segoe UI, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle" fill="#ffffff">Dừng</text>
+<text x="380" y="788" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Thiết bị dừng</text>
+<rect x="316" y="807" width="52" height="18" rx="9" fill="#b91c1c"/>
+<text x="342" y="819.5" font-family="Inter, Segoe UI, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle" fill="#ffffff">Lỗi</text>
+<text x="380" y="820" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Lỗi thiết bị (nhấp nháy)</text>
+<path d="M342 838 L353 857 H331 Z" fill="#f59e0b" stroke="#04090e" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M342 845 V851" stroke="#1a1204" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="342" cy="854.5" r="1.3" fill="#1a1204"/>
+<text x="380" y="852" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Cảnh báo quá trình (mức, Clo)</text>
+<circle cx="600" cy="752" r="10" fill="url(#g-pump)" stroke="#22c55e" stroke-width="2"/>
+<path d="M600 752 q 4 -1 5 -5 M600 752 q -1 4 -5 5" stroke="#d3dee8" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<text x="632" y="756" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Bơm (nhấp để mở bảng điều khiển)</text>
+<path d="M583 777 L601 791 V777 L583 791 Z" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1"/>
+<path d="M605 777 L623 791 V777 L605 791 Z" fill="#16222d" stroke="#9db0c2" stroke-width="1"/>
+<path d="M605 777 L614 784 L605 791 Z" fill="#9db0c2"/>
+<text x="632" y="788" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Van chặn · van một chiều</text>
+<path d="M591 813 L609 825 V813 L591 825 Z" fill="#22c55e" stroke="#9db0c2" stroke-width="1"/>
+<rect x="593" y="804" width="14" height="9" rx="2" fill="url(#g-metal)" stroke="#9db0c2" stroke-width="1"/>
+<text x="632" y="820" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Van điện: xanh mở, xám đóng</text>
+<circle cx="600" cy="848" r="11" fill="#08121b" stroke="#9db0c2" stroke-width="1.2"/>
+<path d="M589 848 H611" stroke="#9db0c2" stroke-width="1"/>
+<text x="632" y="852" font-family="Inter, Segoe UI, sans-serif" font-size="11.5" fill="#e3edf5">Thiết bị đo (FT, PT, AIT)</text>
+</g>
+<g data-mat-layer="Nhãn và cảnh báo">
+<text x="95" y="316" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="600" text-anchor="middle" fill="#8ca3b8">Hồ chứa nước thô</text>
+<text x="96" y="530" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="700" letter-spacing="1" text-anchor="middle" fill="#fbeedd" fill-opacity="0.75">NƯỚC THÔ</text>
+<text x="96" y="630" font-family="Inter, Segoe UI, sans-serif" font-size="10" text-anchor="middle" fill="#5f768b">Cửa thu có lưới chắn rác</text>
+<text x="314" y="202" font-family="Inter, Segoe UI, sans-serif" font-size="12" font-weight="700" text-anchor="end" fill="#e3edf5">P-101</text>
+<rect data-mat-uid="el_p101_tt_nen" data-mat-name="Nền trạng thái P-101" x="322" y="189" width="60" height="18" rx="9" fill="#334155"/>
+<text data-mat-uid="el_p101_tt" data-mat-name="Trạng thái P-101" x="352" y="201.5" font-family="Inter, Segoe UI, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle" fill="#ffffff">--</text>
+<g data-mat-uid="el_p101_loi" data-mat-name="Báo lỗi P-101" visibility="hidden">
+<path d="M362 246 L373 265 H351 Z" fill="#ef4444" stroke="#04090e" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M362 253 V259" stroke="#1a1204" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="362" cy="262.5" r="1.3" fill="#1a1204"/>
+</g>
+<text x="314" y="362" font-family="Inter, Segoe UI, sans-serif" font-size="12" font-weight="700" text-anchor="end" fill="#e3edf5">P-102</text>
+<rect data-mat-uid="el_p102_tt_nen" data-mat-name="Nền trạng thái P-102" x="322" y="349" width="60" height="18" rx="9" fill="#334155"/>
+<text data-mat-uid="el_p102_tt" data-mat-name="Trạng thái P-102" x="352" y="361.5" font-family="Inter, Segoe UI, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle" fill="#ffffff">--</text>
+<g data-mat-uid="el_p102_loi" data-mat-name="Báo lỗi P-102" visibility="hidden">
+<path d="M362 406 L373 425 H351 Z" fill="#ef4444" stroke="#04090e" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M362 413 V419" stroke="#1a1204" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="362" cy="422.5" r="1.3" fill="#1a1204"/>
+</g>
+<text x="314" y="522" font-family="Inter, Segoe UI, sans-serif" font-size="12" font-weight="700" text-anchor="end" fill="#e3edf5">P-103</text>
+<rect data-mat-uid="el_p103_tt_nen" data-mat-name="Nền trạng thái P-103" x="322" y="509" width="60" height="18" rx="9" fill="#334155"/>
+<text data-mat-uid="el_p103_tt" data-mat-name="Trạng thái P-103" x="352" y="521.5" font-family="Inter, Segoe UI, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle" fill="#ffffff">--</text>
+<g data-mat-uid="el_p103_loi" data-mat-name="Báo lỗi P-103" visibility="hidden">
+<path d="M362 566 L373 585 H351 Z" fill="#ef4444" stroke="#04090e" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M362 573 V579" stroke="#1a1204" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="362" cy="582.5" r="1.3" fill="#1a1204"/>
+</g>
+<text x="616" y="185" font-family="Inter, Segoe UI, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#8ca3b8">XV-101</text>
+<text x="634" y="250.7" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" font-weight="700" text-anchor="end" fill="#ef4444">HH</text>
+<text x="634" y="293.9" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" font-weight="700" text-anchor="end" fill="#f59e0b">H</text>
+<text x="634" y="553.1" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" font-weight="700" text-anchor="end" fill="#f59e0b">L</text>
+<text x="634" y="596.3" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" font-weight="700" text-anchor="end" fill="#ef4444">LL</text>
+<text x="808" y="639.5" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" fill="#5f768b">0</text>
+<text x="808" y="531.5" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" fill="#5f768b">25</text>
+<text x="808" y="423.5" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" fill="#5f768b">50</text>
+<text x="808" y="315.5" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" fill="#5f768b">75</text>
+<text x="808" y="207.5" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" fill="#5f768b">100</text>
+<text data-mat-uid="el_t101_muc_lon" data-mat-name="Mức bể lắng T-101 (giữa bồn)" x="715" y="430" font-family="Inter, Segoe UI, sans-serif" font-size="28" font-weight="800" text-anchor="middle" fill="#ffffff">--</text>
+<text x="676" y="190" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="600" fill="#8ca3b8">T-101 · 450 m³</text>
+<g data-mat-uid="el_lit101_cao" data-mat-name="Cảnh báo mức cao bể lắng" visibility="hidden">
+<path d="M822 176 L833 195 H811 Z" fill="#f59e0b" stroke="#04090e" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M822 183 V189" stroke="#1a1204" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="822" cy="192.5" r="1.3" fill="#1a1204"/>
+</g>
+<text x="941" y="206" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="600" text-anchor="middle" fill="#8ca3b8">F-101 · Lọc nhanh</text>
+<text x="1074" y="250.7" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" font-weight="700" text-anchor="end" fill="#ef4444">HH</text>
+<text x="1074" y="293.9" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" font-weight="700" text-anchor="end" fill="#f59e0b">H</text>
+<text x="1074" y="553.1" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" font-weight="700" text-anchor="end" fill="#f59e0b">L</text>
+<text x="1074" y="596.3" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" font-weight="700" text-anchor="end" fill="#ef4444">LL</text>
+<text x="1238" y="639.5" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" fill="#5f768b">0</text>
+<text x="1238" y="531.5" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" fill="#5f768b">25</text>
+<text x="1238" y="423.5" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" fill="#5f768b">50</text>
+<text x="1238" y="315.5" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" fill="#5f768b">75</text>
+<text x="1238" y="207.5" font-family="Inter, Segoe UI, sans-serif" font-size="9.5" fill="#5f768b">100</text>
+<text data-mat-uid="el_t201_muc_lon" data-mat-name="Mức bồn nước sạch T-201 (giữa bồn)" x="1150" y="430" font-family="Inter, Segoe UI, sans-serif" font-size="28" font-weight="800" text-anchor="middle" fill="#ffffff">--</text>
+<text x="1116" y="190" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="600" fill="#8ca3b8">T-201 · 300 m³</text>
+<g data-mat-uid="el_lit201_thap" data-mat-name="Cảnh báo mức thấp bồn sạch" visibility="hidden">
+<path d="M1252 176 L1263 195 H1241 Z" fill="#f59e0b" stroke="#04090e" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M1252 183 V189" stroke="#1a1204" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="1252" cy="192.5" r="1.3" fill="#1a1204"/>
+</g>
+<text x="1384" y="402" font-family="Inter, Segoe UI, sans-serif" font-size="12" font-weight="700" text-anchor="end" fill="#e3edf5">P-201</text>
+<rect data-mat-uid="el_p201_tt_nen" data-mat-name="Nền trạng thái P-201" x="1392" y="389" width="60" height="18" rx="9" fill="#334155"/>
+<text data-mat-uid="el_p201_tt" data-mat-name="Trạng thái P-201" x="1422" y="401.5" font-family="Inter, Segoe UI, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle" fill="#ffffff">--</text>
+<g data-mat-uid="el_p201_loi" data-mat-name="Báo lỗi P-201" visibility="hidden">
+<path d="M1432 446 L1443 465 H1421 Z" fill="#ef4444" stroke="#04090e" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M1432 453 V459" stroke="#1a1204" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="1432" cy="462.5" r="1.3" fill="#1a1204"/>
+</g>
+<text x="1384" y="542" font-family="Inter, Segoe UI, sans-serif" font-size="12" font-weight="700" text-anchor="end" fill="#e3edf5">P-202</text>
+<rect data-mat-uid="el_p202_tt_nen" data-mat-name="Nền trạng thái P-202" x="1392" y="529" width="60" height="18" rx="9" fill="#334155"/>
+<text data-mat-uid="el_p202_tt" data-mat-name="Trạng thái P-202" x="1422" y="541.5" font-family="Inter, Segoe UI, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle" fill="#ffffff">--</text>
+<g data-mat-uid="el_p202_loi" data-mat-name="Báo lỗi P-202" visibility="hidden">
+<path d="M1432 586 L1443 605 H1421 Z" fill="#ef4444" stroke="#04090e" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M1432 593 V599" stroke="#1a1204" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="1432" cy="602.5" r="1.3" fill="#1a1204"/>
+</g>
+<text x="1578" y="202" font-family="Inter, Segoe UI, sans-serif" font-size="10.5" font-weight="600" text-anchor="end" fill="#8ca3b8">Ra mạng</text>
+<text x="988" y="868" font-family="Inter, Segoe UI, sans-serif" font-size="11" font-weight="700" text-anchor="end" fill="#e3edf5">P-301</text>
+<g data-mat-uid="el_ait301_thap" data-mat-name="Cảnh báo Clo dư thấp" visibility="hidden">
+<path d="M1226 820 L1237 839 H1215 Z" fill="#f59e0b" stroke="#04090e" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M1226 827 V833" stroke="#1a1204" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="1226" cy="836.5" r="1.3" fill="#1a1204"/>
+</g>
+<text data-mat-uid="el_mcc_u" data-mat-name="Điện áp MCC" x="1470" y="728" font-family="Inter, Segoe UI, sans-serif" font-size="12" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+<text data-mat-uid="el_mcc_p" data-mat-name="Công suất MCC" x="1566" y="728" font-family="Inter, Segoe UI, sans-serif" font-size="12" font-weight="700" text-anchor="end" fill="#e3edf5">--</text>
+</g>
+</svg>

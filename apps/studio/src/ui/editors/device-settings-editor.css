@@ -1,0 +1,111 @@
+/* Editor Thiết lập thiết bị (feature 027). Lớp chung (.ed-fill, .ed-head, .btn, .input, .select, table.grid, .gridwrap,
+   .banner, .help, .btabs, .spin) ở ui/shell.css; ở đây chỉ phần riêng, phạm vi theo thẻ thành phần, chỉ token của theme. */
+mat-device-settings {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+mat-device-settings .ed-fill {
+  overflow: auto;
+}
+mat-device-settings .ds-intro {
+  padding: 6px 14px 0;
+}
+mat-device-settings .ds-tabs {
+  margin: 8px 14px 0;
+}
+mat-device-settings .ds-panel {
+  padding: 10px 14px 16px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+mat-device-settings .ds-grid th[scope='row'] {
+  text-align: left;
+  font-weight: 500;
+  white-space: nowrap;
+}
+mat-device-settings .ds-grid td .input,
+mat-device-settings .ds-grid td .select {
+  width: 100%;
+  max-width: 360px;
+  box-sizing: border-box;
+}
+mat-device-settings .ds-grid td .input.num {
+  max-width: 90px;
+}
+mat-device-settings .ds-src {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+mat-device-settings .ds-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+mat-device-settings .ds-field {
+  display: grid;
+  gap: 4px;
+  max-width: 640px;
+}
+mat-device-settings .ds-field textarea {
+  font-family: var(--font-mono, monospace);
+}
+mat-device-settings .ds-cert {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+  margin: 0;
+}
+mat-device-settings .ds-cert dt {
+  color: var(--muted);
+}
+mat-device-settings .ds-cert dd {
+  margin: 0;
+  font-family: var(--font-mono, monospace);
+  overflow-wrap: anywhere;
+}
+mat-device-settings .ds-pem {
+  max-height: 12em;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  margin: 0;
+}
+mat-device-settings .ds-reauth {
+  margin: 8px 14px 0;
+}
+mat-device-settings .help.warn {
+  color: var(--warn);
+}
+mat-device-settings .ds-tabs {
+  display: flex;
+  height: 28px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+  align-items: stretch;
+}
+mat-device-settings .ds-tabs [role='tab'] {
+  border: 0;
+  background: none;
+  padding: 0 12px;
+  color: var(--muted);
+  position: relative;
+  font: inherit;
+  cursor: pointer;
+}
+mat-device-settings .ds-tabs [role='tab'][aria-selected='true'] {
+  color: var(--fg);
+}
+mat-device-settings .ds-tabs [role='tab'][aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+}

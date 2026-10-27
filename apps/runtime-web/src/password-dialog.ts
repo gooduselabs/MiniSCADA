@@ -4,8 +4,8 @@
 import { viAccount as T } from './i18n/vi-account.ts';
 import type { PasswordResult } from './session.ts';
 
-export const PW_MIN = 15;
-export const PW_MAX = 128;
+import { PW_MAX, PW_MIN } from '@mat/admin-model';
+export { PW_MAX, PW_MIN };
 
 export interface PasswordDialogDeps {
   changePassword(oldPassword: string, newPassword: string): Promise<PasswordResult>;

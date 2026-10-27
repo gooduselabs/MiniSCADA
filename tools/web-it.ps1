@@ -46,6 +46,8 @@
 #   data-api:     (025, T042) API du lieu bang API key tren runtime x64 + gia lap Modbus: client Node (doc, ghi CONFIRMED,
 #                 requestId khong ghi hai lan, thu hoi, HTTP, audit) va curl that trong container rt (data-api-curl.sh).
 #                 Ket qua docs/reports/025-data-api-x64.json.
+#   device-settings: (027) thiet lap thiet bi qua API quan tri tren runtime x64: viewerLogin required -> runtime tu khoi dong lai ->
+#                 trang khong dang nhap 401; sinh lai chung chi co IP -> fingerprint 8443 doi dung gia tri API tra. docs/reports/027-device-settings-x64.json.
 #   login-required, access, admin-attack: (013, T013, T023, T029) viewerLogin required; moi duong du lieu khong phien
 #                 401; quy tac dat qua API quan tri, live/man hinh/menu/ghi loc theo quyen, access-changed <= 2 s; ca tan
 #                 cong API quan tri. Ket qua docs/reports/013-<ten>-x64.json.
@@ -53,7 +55,7 @@
 # Ket qua: docs/reports/007-<scenario>-x64.json. Don khi dung -Keep: docker compose -f tests/web-it/compose.yaml -p mat-web-it down -v
 # (Thong bao in ra khong dau: Windows PowerShell 5.1 doc file .ps1 khong BOM theo codepage ANSI.)
 param(
-    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank', 'history-10', 'reports', 'faceplate', 'host-rebind', 'lockout-dos', 'write-min-role', 'login-required', 'access', 'admin-attack', 'access-data', 'data-api')][string[]]$Scenario = @('control'),
+    [ValidateSet('control', 'locks', 'attack', 'attack-accounts', 'gate', 'session', 'session28', 'expect', 'pulse', 'pulse-kill', 'screens', 'widgets', 'chrome-control', 'f5x10', 'full', 'deploy-live', 'open', 'charts', 'cert', 'compat', 'bundle', 'svg', 'svg-events', 'open-svg', 'f5x10-svg', 'load-svg', 'uid-roundtrip', 'compare-tank', 'history-10', 'reports', 'faceplate', 'host-rebind', 'lockout-dos', 'write-min-role', 'login-required', 'access', 'admin-attack', 'access-data', 'data-api', 'device-settings')][string[]]$Scenario = @('control'),
     [int]$Rounds = 20,
     [int]$Seconds = 300,
     [switch]$Keep,
@@ -485,6 +487,17 @@ required
         $res = [pscustomobject]@{ scenario = 'data-api'; checks = $checks; measures = $res.measures; pass = -not (@($checks | Where-Object { -not $_.pass }).Count) }
         Write-Result 'data-api' $res '025'
         if (-not $res.pass) { $failed += 'data-api' }
+        if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
+    }
+    # feature 027: thiet lap thiet bi va chung chi qua API quan tri (runtime tu khoi dong lai bang execv)
+    if ($Scenario -contains 'device-settings') {
+        Start-Rig '/src/projects/dashboard-demo' 'modbus-demo'
+        New-Accounts
+        Restart-Runtime
+        Write-Host '--- device-settings'
+        $res = Invoke-Client @('device-settings') (Get-Fingerprint)
+        Write-Result 'device-settings' $res '027'
+        if (-not $res.pass) { $failed += 'device-settings' }
         if (-not $Keep) { docker compose -f $compose -p $project down -v *> $null }
     }
     # feature 011 (T053, T209): project tests/web-it/out/hardening (dashboard-demo, SIM.MODE writeMinRole engineer),

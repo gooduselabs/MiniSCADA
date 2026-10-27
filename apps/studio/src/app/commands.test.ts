@@ -86,6 +86,14 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
     expect(new Set(ids).size).toBe(ids.length);
     const extra = COMMANDS.filter((c) => !rows.some((r) => r.id === c.id));
     expect(extra.map((c) => c.id)).toEqual([
+      // feature 027: Người dùng và quyền (chỉ trong bảng lệnh)
+      'admin.open',
+      'admin.reload',
+      'admin.addUser',
+      'admin.addGroup',
+      'admin.saveRules',
+      'admin.addKey',
+      'admin.testEmail',
       // feature 009: alarm (lưới, lớp, khu vực, Tạo alarm cho Tag, Thử alarm, nâng cấp 0.5)
       'alarm.open',
       'alarm.classes.open',

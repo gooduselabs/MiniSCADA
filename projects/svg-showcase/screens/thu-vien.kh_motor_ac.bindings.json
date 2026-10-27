@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "thu-vien",
+  "itemId": "kh_motor_ac",
+  "elements": [
+    {
+      "elementUid": "el_motor_ac_rotor",
+      "bindings": [
+        {
+          "id": "rotate_16",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.RUN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": 900
+              }
+            ],
+            "default": 0
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_motor_ac_lamp",
+      "bindings": [
+        {
+          "id": "fill_17",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.RUN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#22c55e"
+              },
+              {
+                "equals": false,
+                "value": "#64748b"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

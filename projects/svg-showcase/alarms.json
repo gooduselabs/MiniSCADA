@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1.1.0",
+  "areas": [
+    {
+      "id": "bon",
+      "name": "Bồn"
+    },
+    {
+      "id": "bom",
+      "name": "Bơm"
+    },
+    {
+      "id": "chat-luong",
+      "name": "Chất lượng nước"
+    }
+  ],
+  "alarms": [
+    {
+      "id": "DEMO_TEMP",
+      "type": "limit",
+      "name": "Nhiệt độ mẫu",
+      "area": "bom",
+      "tag": "DEMO.TEMP",
+      "limits": {
+        "H": {
+          "value": 70,
+          "class": "minor"
+        },
+        "HH": {
+          "value": 78,
+          "class": "major"
+        }
+      },
+      "deadband": 1
+    },
+    {
+      "id": "LIT101_LEVEL",
+      "type": "limit",
+      "name": "Mức bể lắng T-101",
+      "area": "bon",
+      "tag": "LIT101.LEVEL",
+      "limits": {
+        "H": {
+          "value": 80,
+          "class": "minor"
+        }
+      },
+      "deadband": 1
+    },
+    {
+      "id": "LIT201_LEVEL",
+      "type": "limit",
+      "name": "Mức bồn nước sạch T-201",
+      "area": "bon",
+      "tag": "LIT201.LEVEL",
+      "limits": {
+        "L": {
+          "value": 25,
+          "class": "major"
+        }
+      },
+      "deadband": 1
+    },
+    {
+      "id": "AIT301_CL",
+      "type": "limit",
+      "name": "Clo dư",
+      "area": "chat-luong",
+      "tag": "AIT301.CL",
+      "limits": {
+        "L": {
+          "value": 0.3,
+          "class": "major"
+        }
+      },
+      "deadband": 0.02
+    },
+    {
+      "id": "P102_FAULT",
+      "type": "digital",
+      "name": "Bơm cấp P-102 lỗi",
+      "area": "bom",
+      "tag": "P102.FAULT",
+      "trigger": true,
+      "class": "critical"
+    }
+  ]
+}

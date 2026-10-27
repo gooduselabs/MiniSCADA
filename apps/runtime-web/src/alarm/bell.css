@@ -1,0 +1,570 @@
+/* Chuông cảnh báo, bảng thông báo, toast khẩn cấp (feature 026; thay banner ngang của 009).
+   Token --mat-* và --mat-alarm-<màu>[-soft|-ink] từ @mat/ui-components (vivid, industrial, dark). */
+.al-bell-slot {
+  display: inline-flex;
+}
+.al-bell {
+  position: relative;
+  display: inline-flex;
+}
+.al-bell[hidden] {
+  display: none;
+}
+.al-bell-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--mat-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.al-bell-btn:hover,
+.al-bell-btn[aria-expanded='true'] {
+  background: var(--mat-surface-2);
+  border-color: var(--mat-border);
+}
+.al-bell-btn:focus-visible {
+  outline: 2px solid var(--mat-accent);
+  outline-offset: 2px;
+}
+.al-bell-btn[data-priority='critical'] {
+  color: var(--mat-alarm-red);
+}
+.al-bell-badge {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 2px solid var(--mat-surface);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  background: var(--mat-alarm-gray);
+  color: var(--mat-alarm-gray-ink);
+}
+.al-bell-badge[hidden] {
+  display: none;
+}
+.al-bell-btn[data-priority='critical'] .al-bell-badge {
+  background: var(--mat-alarm-red);
+  color: var(--mat-alarm-red-ink);
+}
+.al-bell-btn[data-priority='major'] .al-bell-badge {
+  background: var(--mat-alarm-orange);
+  color: var(--mat-alarm-orange-ink);
+}
+.al-bell-btn[data-priority='minor'] .al-bell-badge {
+  background: var(--mat-alarm-amber);
+  color: var(--mat-alarm-amber-ink);
+}
+.al-bell-btn[data-priority='advisory'] .al-bell-badge {
+  background: var(--mat-alarm-blue);
+  color: var(--mat-alarm-blue-ink);
+}
+.al-bell-btn[data-kind='lost'] .al-bell-badge,
+.al-bell-btn[data-kind='unsupported'] .al-bell-badge {
+  background: var(--mat-alarm-amber);
+  color: var(--mat-alarm-amber-ink);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .al-bell-btn[data-ring] .al-bell-ic {
+    transform-origin: 50% 2px;
+    animation: al-bell-ring 1.1s ease-in-out;
+  }
+  .al-bell-btn[data-priority='critical'] .al-bell-badge {
+    animation: al-bell-pulse 2s ease-out infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Không chuyển động: vòng viền tĩnh cho khẩn cấp. */
+  .al-bell-btn[data-priority='critical'] {
+    box-shadow: 0 0 0 2px var(--mat-alarm-red);
+  }
+}
+@keyframes al-bell-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: rotate(16deg);
+  }
+  30% {
+    transform: rotate(-14deg);
+  }
+  45% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(-6deg);
+  }
+  75% {
+    transform: rotate(3deg);
+  }
+}
+@keyframes al-bell-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--mat-alarm-red) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+/* ---- bảng thông báo ---- */
+.al-panel {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 10px);
+  right: -8px;
+  display: flex;
+  flex-direction: column;
+  width: 420px;
+  max-height: min(72vh, 600px);
+  color: var(--mat-text);
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border);
+  border-radius: 14px;
+  box-shadow: var(--mat-shadow);
+  overflow: hidden;
+  text-align: left;
+  white-space: normal;
+}
+.al-panel[hidden] {
+  display: none;
+}
+.al-panel:focus {
+  outline: none;
+}
+.al-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 10px 10px 16px;
+}
+.al-panel-title {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+.al-panel-count {
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  background: var(--mat-alarm-red);
+  color: var(--mat-alarm-red-ink);
+}
+.al-panel-count[hidden] {
+  display: none;
+}
+.al-panel-sound .al-sound-btn {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.al-panel-sound .al-sound-hint {
+  display: none;
+}
+.al-panel-x,
+.al-toast-x {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--mat-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.al-panel-x:hover,
+.al-toast-x:hover {
+  background: var(--mat-surface-2);
+  color: var(--mat-text);
+}
+.al-panel-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 16px 10px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--mat-surface-2);
+}
+.al-panel-tab {
+  display: inline-flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mat-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.al-panel-tab[aria-pressed='true'] {
+  color: var(--mat-text);
+  background: var(--mat-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.al-panel-tabn {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 18px;
+  background: var(--mat-border);
+  color: var(--mat-text);
+}
+.al-panel-notice,
+.al-panel-lock,
+.al-panel-msg {
+  margin: 0 16px 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+.al-panel-notice[hidden],
+.al-panel-lock[hidden],
+.al-panel-msg[hidden],
+.al-panel-ackall[hidden] {
+  display: none;
+}
+.al-panel-notice {
+  background: var(--mat-warn-soft);
+  border-left: 3px solid var(--mat-warn);
+}
+.al-panel-notice[data-tone='bad'] {
+  background: var(--mat-bad-soft);
+  border-left-color: var(--mat-bad);
+}
+.al-panel-lock {
+  color: var(--mat-text);
+  background: var(--mat-surface-2);
+}
+.al-panel-msg {
+  background: var(--mat-surface-2);
+}
+.al-panel-msg[data-tone='bad'] {
+  background: var(--mat-bad-soft);
+}
+.al-panel-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 2px 8px 8px;
+  list-style: none;
+  overflow-y: auto;
+  border-top: 1px solid var(--mat-border);
+}
+.al-n-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  margin-top: 6px;
+  padding: 10px 10px 10px 12px;
+  border-radius: 10px;
+}
+.al-n-item:hover {
+  background: var(--mat-surface-2);
+}
+.al-n-item[data-state='ACTIVE_UNACK'],
+.al-n-item[data-state='RTN_UNACK'] {
+  background: color-mix(in srgb, var(--p) 8%, transparent);
+}
+.al-n-item[data-state='ACTIVE_UNACK']::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--p);
+}
+.al-n-item[data-priority='critical'] {
+  --p: var(--mat-alarm-red);
+  --p-soft: var(--mat-alarm-red-soft);
+}
+.al-n-item[data-priority='major'] {
+  --p: var(--mat-alarm-orange);
+  --p-soft: var(--mat-alarm-orange-soft);
+}
+.al-n-item[data-priority='minor'] {
+  --p: var(--mat-alarm-amber);
+  --p-soft: var(--mat-alarm-amber-soft);
+}
+.al-n-item[data-priority='advisory'] {
+  --p: var(--mat-alarm-blue);
+  --p-soft: var(--mat-alarm-blue-soft);
+}
+.al-n-prio {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--p);
+  background: var(--p-soft);
+}
+.al-n-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.al-n-text {
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.al-n-item[data-state='ACTIVE_ACK'] .al-n-text {
+  font-weight: 500;
+}
+.al-n-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: 12px;
+  color: var(--mat-text-muted);
+}
+.al-n-tag {
+  overflow-wrap: anywhere;
+}
+.al-n-time {
+  white-space: nowrap;
+}
+.al-n-state {
+  justify-self: start;
+  margin-top: 3px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  border: 1px solid var(--mat-border-strong);
+  color: var(--mat-text-muted);
+}
+.al-n-state[data-state='ACTIVE_UNACK'] {
+  border-color: var(--p);
+  color: var(--mat-text);
+}
+.al-n-ack,
+.al-panel-ackall {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.al-n-ack {
+  color: var(--mat-text);
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border-strong);
+}
+.al-n-ack:hover {
+  border-color: var(--mat-accent);
+}
+.al-panel-ackall {
+  color: var(--mat-accent-ink);
+  background: var(--mat-accent);
+  border: 1px solid var(--mat-accent);
+}
+.al-panel-ackall[data-confirm='true'] {
+  color: var(--mat-alarm-red-ink);
+  background: var(--mat-alarm-red);
+  border-color: var(--mat-alarm-red);
+}
+.al-n-ack[aria-disabled='true'],
+.al-panel-ackall[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.al-n-ack:focus-visible,
+.al-panel-ackall:focus-visible,
+.al-panel-tab:focus-visible,
+.al-panel-x:focus-visible,
+.al-panel-viewall:focus-visible,
+.al-toast-body:focus-visible,
+.al-toast-x:focus-visible {
+  outline: 2px solid var(--mat-accent);
+  outline-offset: 1px;
+}
+.al-panel-empty {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 36px 16px 32px;
+  text-align: center;
+  color: var(--mat-text-muted);
+}
+.al-panel-empty strong {
+  color: var(--mat-text);
+  font-size: 14px;
+}
+.al-panel-empty-ic {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 6px;
+  border-radius: 999px;
+  color: var(--mat-good);
+  background: var(--mat-surface-2);
+}
+.al-panel-more {
+  padding: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--mat-text-muted);
+}
+.al-panel-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--mat-border);
+  background: var(--mat-surface-2);
+}
+.al-panel-viewall {
+  margin-left: auto;
+  padding: 4px 2px;
+  font-weight: 600;
+  color: var(--mat-accent);
+  text-decoration: none;
+  border-radius: 4px;
+}
+.al-panel-viewall:hover {
+  text-decoration: underline;
+}
+
+/* ---- kiosk: chuông nổi ở góc trên phải ---- */
+.al-bell-float {
+  position: fixed;
+  z-index: 60;
+  top: 8px;
+  right: 12px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--mat-surface);
+  box-shadow: var(--mat-shadow);
+}
+.al-bell-float[hidden] {
+  display: none;
+}
+
+/* ---- toast khẩn cấp ---- */
+.al-toast {
+  position: fixed;
+  z-index: 70;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  width: min(380px, calc(100vw - 32px));
+  padding: 6px;
+  color: var(--mat-text);
+  background: var(--mat-surface);
+  border: 1px solid var(--mat-border);
+  border-left: 4px solid var(--mat-alarm-red);
+  border-radius: 12px;
+  box-shadow: var(--mat-shadow);
+}
+.al-toast[hidden] {
+  display: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .al-toast:not([hidden]) {
+    animation: al-toast-in 0.25s ease-out;
+  }
+}
+@keyframes al-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.al-toast-body {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.al-toast-ic {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--mat-alarm-red);
+  background: var(--mat-alarm-red-soft);
+}
+.al-toast-txt {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.al-toast-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mat-text-muted);
+}
+.al-toast-text {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+/* ---- màn hẹp: bảng thông báo toàn chiều rộng dưới thanh trên ---- */
+@media (max-width: 599px) {
+  .al-panel {
+    position: fixed;
+    top: var(--al-top, 54px);
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: calc(100dvh - var(--al-top, 54px) - 12px);
+  }
+  .al-toast {
+    left: 16px;
+    width: auto;
+  }
+}

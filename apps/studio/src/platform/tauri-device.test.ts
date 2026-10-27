@@ -174,6 +174,31 @@ describe('DeviceLink Tauri', () => {
     expect(invoke).toHaveBeenLastCalledWith('monitor_get', { address: '10.0.0.9:8080' });
   });
 
+  it('device_admin (027): method, path, query, body; lỗi thành DeviceError', async () => {
+    invoke.mockResolvedValueOnce({ status: 409, body: { error: 'CONFLICT', rev: 4 } });
+    expect(
+      await tauriDevice.admin('x', 'POST', '/api/v1/admin/users', undefined, { rev: 3 }),
+    ).toEqual({ status: 409, body: { error: 'CONFLICT', rev: 4 } });
+    expect(invoke).toHaveBeenLastCalledWith('device_admin', {
+      id: 'x',
+      method: 'POST',
+      path: '/api/v1/admin/users',
+      body: { rev: 3 },
+    });
+    invoke.mockResolvedValueOnce({ status: 200, body: { records: [] } });
+    await tauriDevice.admin('x', 'GET', '/api/v1/admin/audit', { limit: '50' });
+    expect(invoke).toHaveBeenLastCalledWith('device_admin', {
+      id: 'x',
+      method: 'GET',
+      path: '/api/v1/admin/audit',
+      query: { limit: '50' },
+    });
+    invoke.mockRejectedValueOnce('timeout');
+    expect(await tauriDevice.admin('x', 'GET', '/api/v1/admin/users')).toEqual({
+      error: 'timeout',
+    });
+  });
+
   it('openLive: live_open với target và Channel; live_send, live_close theo liveId', async () => {
     invoke.mockResolvedValueOnce({ liveId: 1 });
     const s = tauriDevice.openLive({ id: 'x' });

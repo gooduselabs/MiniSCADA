@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "thu-vien",
+  "itemId": "kh_fan",
+  "elements": [
+    {
+      "elementUid": "el_fan_blades",
+      "bindings": [
+        {
+          "id": "rotate_18",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.FAN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": 900
+              }
+            ],
+            "default": 0
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_fan_lamp",
+      "bindings": [
+        {
+          "id": "fill_19",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.FAN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#22c55e"
+              },
+              {
+                "equals": false,
+                "value": "#64748b"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

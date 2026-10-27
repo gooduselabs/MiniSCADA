@@ -59,6 +59,10 @@ tar -xzf "$TARBALL" -C "$NEW"
 chown -R root:root "$NEW"
 chmod -R u=rwX,go=rX "$NEW"
 chmod 755 "$NEW/bin/mat-runtime"
+# Feature 027: gói đóng trên Windows (bsdtar từ NTFS) không giữ bit thực thi; chương trình của updater/ cũng 0755.
+for f in mat-update-verify mat-updater mat-updater-recover; do
+    if [ -f "$NEW/updater/$f" ]; then chmod 755 "$NEW/updater/$f"; fi
+done
 
 # Feature 011 (T100, FR-067, ADR-035): chữ ký phát hành. Có SHA256SUMS và SHA256SUMS.sig cạnh gói thì
 # kiểm chữ ký (khóa tin cậy: /etc/mat-runtime/trusted-keys nếu đã có, lần đầu thì khóa công khai trong gói)
@@ -267,7 +271,7 @@ BIN=$ROOT/bin/mat-runtime
 # runtime.json và khởi động lại.
 install_updater() {
     U=$ROOT/updater
-    if [ ! -x "$U/mat-update-verify" ] || [ ! -f "$U/mat-updater" ]; then
+    if [ ! -f "$U/mat-update-verify" ] || [ ! -f "$U/mat-updater" ]; then
         log "gói không có mat-updater: bỏ qua phần cập nhật qua mạng"
         return 0
     fi

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "thu-vien",
+  "itemId": "kh_pump_dosing",
+  "elements": [
+    {
+      "elementUid": "el_pump_dosing_plunger",
+      "bindings": [
+        {
+          "id": "translateX_8",
+          "target": "transform.translateX",
+          "source": {
+            "type": "tag",
+            "tagId": "DEMO.POS"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 100,
+            "outMin": -8,
+            "outMax": 8,
+            "clamp": true
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pump_dosing_lamp",
+      "bindings": [
+        {
+          "id": "fill_9",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        }
+      ]
+    }
+  ]
+}

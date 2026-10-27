@@ -750,6 +750,78 @@ impl DeviceManager {
         Ok(ApiResult { status, body: json })
     }
 
+    /// `GET`/`POST` một đường của API quản trị (feature 027, `/api/v1/admin/...`) qua HTTPS có ghim, kèm token. Khác
+    /// `post`: mọi mã HTTP đều trả `{ status, body }` (thân JSON, `null` khi rỗng hoặc không phải JSON) để giao diện đọc
+    /// `CONFLICT`, `REAUTH_REQUIRED`, `LAST_ADMIN`, `IN_USE`… như trang Quản trị web. 401 `SESSION_*` vẫn bỏ token. Thân
+    /// 2xx không phải JSON → `bad-response`. Không tự gửi lại khi lỗi mạng.
+    pub async fn admin(
+        &self,
+        id: &str,
+        method: &str,
+        path: &str,
+        query: Option<&BTreeMap<String, String>>,
+        body: Option<&Value>,
+    ) -> Result<ApiResult, DeviceError> {
+        if !http::allowed_admin_path(path) {
+            return Err(DeviceError::BadPath);
+        }
+        let payload = match method {
+            "GET" => None,
+            "POST" => {
+                let empty = Value::Object(serde_json::Map::new());
+                let bytes = serde_json::to_vec(body.unwrap_or(&empty))
+                    .map_err(|_| DeviceError::BadResponse)?;
+                if bytes.len() > http::MAX_ADMIN_BODY {
+                    return Err(DeviceError::TooLarge);
+                }
+                Some(bytes)
+            }
+            _ => return Err(DeviceError::BadPath),
+        };
+        let device = self.registry.get(id)?;
+        let client = self.client_for(&device)?;
+        let url = device_url("https", &device.host, device.https_port, path, query)?;
+        let timeout = if self.http_timeouts == HttpTimeouts::default() {
+            http::admin_timeout(path)
+        } else {
+            self.http_timeouts.request
+        };
+        let mut request = match payload {
+            Some(bytes) => client
+                .client
+                .post(url)
+                .header(CONTENT_TYPE, "application/json")
+                .body(bytes),
+            None => client.client.get(url),
+        }
+        .timeout(timeout);
+        if let Some(h) = self.sessions.header(&device.id) {
+            request = request.header(AUTHORIZATION, h);
+        }
+        let resp = request
+            .send()
+            .await
+            .map_err(|e| http::classify(&e, Some(&client.verifier)))?;
+        let status = resp.status().as_u16();
+        let raw = http::read_body(resp, http::MAX_BODY, Some(&client.verifier)).await?;
+        if status == 401 && session::api_failure(status, &raw).1 {
+            self.sessions.remove(id);
+        }
+        let json = if raw.is_empty() {
+            Some(Value::Null)
+        } else {
+            serde_json::from_slice::<Value>(&raw).ok()
+        };
+        match json {
+            Some(body) => Ok(ApiResult { status, body }),
+            None if (200..300).contains(&status) => Err(DeviceError::BadResponse),
+            None => Ok(ApiResult {
+                status,
+                body: Value::Null,
+            }),
+        }
+    }
+
     /// Đích của `live_open`: `{ id }` → `wss` có ghim, kèm `Authorization: Bearer` khi Rust đang giữ phiên
     /// của thiết bị đó (kết nối đang mở giữ token cũ; đăng nhập lại thì lần mở sau dùng token mới);
     /// `{ address }` → `ws` của chế độ theo dõi, không bao giờ có token.
@@ -925,6 +997,22 @@ pub async fn device_post(
     devices: State<'_, DeviceManager>,
 ) -> Result<ApiResult, DeviceError> {
     devices.post(&id, &path, &body).await
+}
+
+/// `device_admin({ id, method, path, query?, body? }) → { status, body }` (feature 027): API quản trị
+/// `/api/v1/admin/...` với Bearer của phiên Studio, mọi mã HTTP đều trả thân để giao diện đọc mã lỗi.
+#[tauri::command]
+pub async fn device_admin(
+    id: String,
+    method: String,
+    path: String,
+    query: Option<BTreeMap<String, String>>,
+    body: Option<Value>,
+    devices: State<'_, DeviceManager>,
+) -> Result<ApiResult, DeviceError> {
+    devices
+        .admin(&id, &method, &path, query.as_ref(), body.as_ref())
+        .await
 }
 
 /// `monitor_get({ address }) → { status, body }`: chế độ theo dõi chỉ đọc, HTTP thường.

@@ -6,6 +6,7 @@
 import { access, accessData, adminAttack, loginRequired } from './scenarios/access.mjs';
 import { attack, attackAccounts } from './scenarios/attack.mjs';
 import { dataApi } from './scenarios/data-api.mjs';
+import { deviceSettings } from './scenarios/device-settings.mjs';
 import { gate } from './scenarios/gate.mjs';
 import { writeMinRole } from './scenarios/write-min-role.mjs';
 import { lockoutDos } from './lockout-dos.mjs';
@@ -44,6 +45,7 @@ const table = {
   'admin-attack': () => adminAttack(fp),
   // feature 025 (T042): API dữ liệu bằng API key
   'data-api': () => dataApi(fp),
+  'device-settings': () => deviceSettings(fp),
 };
 
 if (!table[scenario]) {

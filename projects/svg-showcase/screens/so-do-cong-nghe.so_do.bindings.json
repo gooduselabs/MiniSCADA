@@ -1,0 +1,2630 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "so-do-cong-nghe",
+  "itemId": "so_do",
+  "elements": [
+    {
+      "elementUid": "el_hdr_bom_chay",
+      "bindings": [
+        {
+          "id": "content_1",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "RUN.COUNT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 0,
+            "suffix": " / 6"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_hdr_canh_bao_nen",
+      "bindings": [
+        {
+          "id": "fill_2",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "ALARM.COUNT"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 1,
+                "value": "#0f2131"
+              },
+              {
+                "from": 1,
+                "value": "#7c2d12"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_hdr_canh_bao",
+      "bindings": [
+        {
+          "id": "content_3",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "ALARM.COUNT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_hdr_san_luong",
+      "bindings": [
+        {
+          "id": "content_4",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "TOTAL.TODAY"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 0,
+            "suffix": " m³"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_hut_chung",
+      "bindings": [
+        {
+          "id": "flow_5",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT101.FLOW"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 150,
+            "outMin": 0,
+            "outMax": 80,
+            "clamp": true
+          }
+        },
+        {
+          "id": "opacity_6",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT101.FLOW"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 0.5,
+                "value": 0
+              },
+              {
+                "from": 0.5,
+                "value": 0.9
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_hut_p101",
+      "bindings": [
+        {
+          "id": "flow_7",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_8",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_xa_p101",
+      "bindings": [
+        {
+          "id": "flow_9",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_10",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_hut_p102",
+      "bindings": [
+        {
+          "id": "flow_11",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_12",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_xa_p102",
+      "bindings": [
+        {
+          "id": "flow_13",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_14",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_hut_p103",
+      "bindings": [
+        {
+          "id": "flow_15",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_16",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_xa_p103",
+      "bindings": [
+        {
+          "id": "flow_17",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_18",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_vao_be_lang",
+      "bindings": [
+        {
+          "id": "flow_19",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT101.FLOW"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 150,
+            "outMin": 0,
+            "outMax": 80,
+            "clamp": true
+          }
+        },
+        {
+          "id": "opacity_20",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT101.FLOW"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 0.5,
+                "value": 0
+              },
+              {
+                "from": 0.5,
+                "value": 0.9
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_vao_loc",
+      "bindings": [
+        {
+          "id": "flow_21",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "F101.FLOW"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 150,
+            "outMin": 0,
+            "outMax": 80,
+            "clamp": true
+          }
+        },
+        {
+          "id": "opacity_22",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "F101.FLOW"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 0.5,
+                "value": 0
+              },
+              {
+                "from": 0.5,
+                "value": 0.9
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_ra_loc",
+      "bindings": [
+        {
+          "id": "flow_23",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "F101.FLOW"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 150,
+            "outMin": 0,
+            "outMax": 80,
+            "clamp": true
+          }
+        },
+        {
+          "id": "opacity_24",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "F101.FLOW"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 0.5,
+                "value": 0
+              },
+              {
+                "from": 0.5,
+                "value": 0.9
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_hut_day",
+      "bindings": [
+        {
+          "id": "flow_25",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT201.FLOW"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 150,
+            "outMin": 0,
+            "outMax": 80,
+            "clamp": true
+          }
+        },
+        {
+          "id": "opacity_26",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT201.FLOW"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 0.5,
+                "value": 0
+              },
+              {
+                "from": 0.5,
+                "value": 0.9
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_hut_p201",
+      "bindings": [
+        {
+          "id": "flow_27",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_28",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_xa_p201",
+      "bindings": [
+        {
+          "id": "flow_29",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_30",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_hut_p202",
+      "bindings": [
+        {
+          "id": "flow_31",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_32",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_xa_p202",
+      "bindings": [
+        {
+          "id": "flow_33",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_34",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_ra_mang",
+      "bindings": [
+        {
+          "id": "flow_35",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT201.FLOW"
+          },
+          "transform": {
+            "kind": "linearScale",
+            "inMin": 0,
+            "inMax": 150,
+            "outMin": 0,
+            "outMax": 80,
+            "clamp": true
+          }
+        },
+        {
+          "id": "opacity_36",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT201.FLOW"
+          },
+          "transform": {
+            "kind": "rangeMap",
+            "ranges": [
+              {
+                "to": 0.5,
+                "value": 0
+              },
+              {
+                "from": 0.5,
+                "value": 0.9
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_hut_clo",
+      "bindings": [
+        {
+          "id": "flow_37",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_38",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ong_chau_clo",
+      "bindings": [
+        {
+          "id": "flow_39",
+          "target": "effect.flow",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 45
+              }
+            ],
+            "default": 0
+          }
+        },
+        {
+          "id": "opacity_40",
+          "target": "style.opacity",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 0.9
+              }
+            ],
+            "default": 0
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_lt001_muc",
+      "bindings": [
+        {
+          "id": "content_41",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "LT001.M"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 2,
+            "suffix": " m"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ait001_duc",
+      "bindings": [
+        {
+          "id": "content_42",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "AIT001.NTU"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " NTU"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ait002_ph",
+      "bindings": [
+        {
+          "id": "content_43",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "AIT002.PH"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 2
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ho_nuoc",
+      "bindings": [
+        {
+          "id": "clipLevel_44",
+          "target": "geometry.clipLevel",
+          "source": {
+            "type": "tag",
+            "tagId": "LT001.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p101_vo",
+      "bindings": [
+        {
+          "id": "stroke_45",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        },
+        {
+          "id": "blink_47",
+          "target": "effect.blink",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 2,
+                "value": 1
+              }
+            ],
+            "default": 0
+          },
+          "period": 800,
+          "mode": "opacity",
+          "minOpacity": 0.25
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p101_canh",
+      "bindings": [
+        {
+          "id": "rotate_46",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 900
+              }
+            ],
+            "default": 0
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p101",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "faceplate-bom",
+          "args": {
+            "prefix": "P101",
+            "title": "P-101 · Bơm cấp 1"
+          },
+          "label": "Bảng điều khiển P-101"
+        }
+      }
+    },
+    {
+      "elementUid": "el_p101_tt_nen",
+      "bindings": [
+        {
+          "id": "fill_48",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#334155"
+              },
+              {
+                "equals": 1,
+                "value": "#15803d"
+              },
+              {
+                "equals": 2,
+                "value": "#b91c1c"
+              }
+            ],
+            "default": "#334155"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p101_tt",
+      "bindings": [
+        {
+          "id": "content_49",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "valueTable",
+            "table": "TrangThaiBom",
+            "output": "text"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p101_dong",
+      "bindings": [
+        {
+          "id": "content_50",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p101_loi",
+      "bindings": [
+        {
+          "id": "visibility_51",
+          "target": "style.visibility",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.FAULT"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "visible"
+              },
+              {
+                "equals": false,
+                "value": "hidden"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p102_vo",
+      "bindings": [
+        {
+          "id": "stroke_52",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        },
+        {
+          "id": "blink_54",
+          "target": "effect.blink",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 2,
+                "value": 1
+              }
+            ],
+            "default": 0
+          },
+          "period": 800,
+          "mode": "opacity",
+          "minOpacity": 0.25
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p102_canh",
+      "bindings": [
+        {
+          "id": "rotate_53",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 900
+              }
+            ],
+            "default": 0
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p102",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "faceplate-bom",
+          "args": {
+            "prefix": "P102",
+            "title": "P-102 · Bơm cấp 2"
+          },
+          "label": "Bảng điều khiển P-102"
+        }
+      }
+    },
+    {
+      "elementUid": "el_p102_tt_nen",
+      "bindings": [
+        {
+          "id": "fill_55",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#334155"
+              },
+              {
+                "equals": 1,
+                "value": "#15803d"
+              },
+              {
+                "equals": 2,
+                "value": "#b91c1c"
+              }
+            ],
+            "default": "#334155"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p102_tt",
+      "bindings": [
+        {
+          "id": "content_56",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.STATE"
+          },
+          "transform": {
+            "kind": "valueTable",
+            "table": "TrangThaiBom",
+            "output": "text"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p102_dong",
+      "bindings": [
+        {
+          "id": "content_57",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p102_loi",
+      "bindings": [
+        {
+          "id": "visibility_58",
+          "target": "style.visibility",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.FAULT"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "visible"
+              },
+              {
+                "equals": false,
+                "value": "hidden"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p103_vo",
+      "bindings": [
+        {
+          "id": "stroke_59",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        },
+        {
+          "id": "blink_61",
+          "target": "effect.blink",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 2,
+                "value": 1
+              }
+            ],
+            "default": 0
+          },
+          "period": 800,
+          "mode": "opacity",
+          "minOpacity": 0.25
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p103_canh",
+      "bindings": [
+        {
+          "id": "rotate_60",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 900
+              }
+            ],
+            "default": 0
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p103",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "faceplate-bom",
+          "args": {
+            "prefix": "P103",
+            "title": "P-103 · Bơm cấp 3"
+          },
+          "label": "Bảng điều khiển P-103"
+        }
+      }
+    },
+    {
+      "elementUid": "el_p103_tt_nen",
+      "bindings": [
+        {
+          "id": "fill_62",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#334155"
+              },
+              {
+                "equals": 1,
+                "value": "#15803d"
+              },
+              {
+                "equals": 2,
+                "value": "#b91c1c"
+              }
+            ],
+            "default": "#334155"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p103_tt",
+      "bindings": [
+        {
+          "id": "content_63",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.STATE"
+          },
+          "transform": {
+            "kind": "valueTable",
+            "table": "TrangThaiBom",
+            "output": "text"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p103_dong",
+      "bindings": [
+        {
+          "id": "content_64",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p103_loi",
+      "bindings": [
+        {
+          "id": "visibility_65",
+          "target": "style.visibility",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.FAULT"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "visible"
+              },
+              {
+                "equals": false,
+                "value": "hidden"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_fit101_ll",
+      "bindings": [
+        {
+          "id": "content_66",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT101.FLOW"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " m³/h"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_xv101_than",
+      "bindings": [
+        {
+          "id": "fill_67",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "XV101.OPEN"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "#22c55e"
+              },
+              {
+                "equals": false,
+                "value": "#64748b"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_t101_long",
+      "bindings": [
+        {
+          "id": "levelPercent_68",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT101.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_t101_muc_lon",
+      "bindings": [
+        {
+          "id": "content_69",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT101.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " %"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_lit101_muc",
+      "bindings": [
+        {
+          "id": "content_70",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT101.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " %"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_lit101_cao",
+      "bindings": [
+        {
+          "id": "visibility_71",
+          "target": "style.visibility",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT101.HI"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "visible"
+              },
+              {
+                "equals": false,
+                "value": "hidden"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pdt101_dp",
+      "bindings": [
+        {
+          "id": "content_72",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "FILTER.DP"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 2,
+            "suffix": " bar"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_t201_long",
+      "bindings": [
+        {
+          "id": "levelPercent_73",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT201.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_t201_muc_lon",
+      "bindings": [
+        {
+          "id": "content_74",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT201.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " %"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_lit201_muc",
+      "bindings": [
+        {
+          "id": "content_75",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT201.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " %"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_lit201_thap",
+      "bindings": [
+        {
+          "id": "visibility_76",
+          "target": "style.visibility",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT201.LO"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "visible"
+              },
+              {
+                "equals": false,
+                "value": "hidden"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p201_vo",
+      "bindings": [
+        {
+          "id": "stroke_77",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        },
+        {
+          "id": "blink_79",
+          "target": "effect.blink",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 2,
+                "value": 1
+              }
+            ],
+            "default": 0
+          },
+          "period": 800,
+          "mode": "opacity",
+          "minOpacity": 0.25
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p201_canh",
+      "bindings": [
+        {
+          "id": "rotate_78",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 900
+              }
+            ],
+            "default": 0
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p201",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "faceplate-bom",
+          "args": {
+            "prefix": "P201",
+            "title": "P-201 · Bơm đẩy 1"
+          },
+          "label": "Bảng điều khiển P-201"
+        }
+      }
+    },
+    {
+      "elementUid": "el_p201_tt_nen",
+      "bindings": [
+        {
+          "id": "fill_80",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#334155"
+              },
+              {
+                "equals": 1,
+                "value": "#15803d"
+              },
+              {
+                "equals": 2,
+                "value": "#b91c1c"
+              }
+            ],
+            "default": "#334155"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p201_tt",
+      "bindings": [
+        {
+          "id": "content_81",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.STATE"
+          },
+          "transform": {
+            "kind": "valueTable",
+            "table": "TrangThaiBom",
+            "output": "text"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p201_dong",
+      "bindings": [
+        {
+          "id": "content_82",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p201_loi",
+      "bindings": [
+        {
+          "id": "visibility_83",
+          "target": "style.visibility",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.FAULT"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "visible"
+              },
+              {
+                "equals": false,
+                "value": "hidden"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p202_vo",
+      "bindings": [
+        {
+          "id": "stroke_84",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        },
+        {
+          "id": "blink_86",
+          "target": "effect.blink",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 2,
+                "value": 1
+              }
+            ],
+            "default": 0
+          },
+          "period": 800,
+          "mode": "opacity",
+          "minOpacity": 0.25
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p202_canh",
+      "bindings": [
+        {
+          "id": "rotate_85",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 900
+              }
+            ],
+            "default": 0
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p202",
+      "events": {
+        "click": {
+          "action": "popup",
+          "screen": "faceplate-bom",
+          "args": {
+            "prefix": "P202",
+            "title": "P-202 · Bơm đẩy 2"
+          },
+          "label": "Bảng điều khiển P-202"
+        }
+      }
+    },
+    {
+      "elementUid": "el_p202_tt_nen",
+      "bindings": [
+        {
+          "id": "fill_87",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#334155"
+              },
+              {
+                "equals": 1,
+                "value": "#15803d"
+              },
+              {
+                "equals": 2,
+                "value": "#b91c1c"
+              }
+            ],
+            "default": "#334155"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p202_tt",
+      "bindings": [
+        {
+          "id": "content_88",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.STATE"
+          },
+          "transform": {
+            "kind": "valueTable",
+            "table": "TrangThaiBom",
+            "output": "text"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p202_dong",
+      "bindings": [
+        {
+          "id": "content_89",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p202_loi",
+      "bindings": [
+        {
+          "id": "visibility_90",
+          "target": "style.visibility",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.FAULT"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "visible"
+              },
+              {
+                "equals": false,
+                "value": "hidden"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_fit201_ll",
+      "bindings": [
+        {
+          "id": "content_91",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "FIT201.FLOW"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " m³/h"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_pit201_ap",
+      "bindings": [
+        {
+          "id": "content_92",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "PIT201.PRESS"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 2,
+            "suffix": " bar"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_t301_long",
+      "bindings": [
+        {
+          "id": "levelPercent_93",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT301.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p301_vo",
+      "bindings": [
+        {
+          "id": "stroke_94",
+          "target": "style.stroke",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        },
+        {
+          "id": "blink_96",
+          "target": "effect.blink",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 2,
+                "value": 1
+              }
+            ],
+            "default": 0
+          },
+          "period": 800,
+          "mode": "opacity",
+          "minOpacity": 0.25
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p301_canh",
+      "bindings": [
+        {
+          "id": "rotate_95",
+          "target": "transform.rotate",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 1,
+                "value": 900
+              }
+            ],
+            "default": 0
+          },
+          "animation": "spin"
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ait301_clo",
+      "bindings": [
+        {
+          "id": "content_97",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "AIT301.CL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 2,
+            "suffix": " mg/L"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_lit301_muc",
+      "bindings": [
+        {
+          "id": "content_98",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT301.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 0,
+            "suffix": " %"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_p301_ll",
+      "bindings": [
+        {
+          "id": "content_99",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.RATE"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 2,
+            "suffix": " L/h"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_ait301_thap",
+      "bindings": [
+        {
+          "id": "visibility_100",
+          "target": "style.visibility",
+          "source": {
+            "type": "tag",
+            "tagId": "AIT301.LO"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": true,
+                "value": "visible"
+              },
+              {
+                "equals": false,
+                "value": "hidden"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_mcc_u",
+      "bindings": [
+        {
+          "id": "content_101",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "MCC.U"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 0,
+            "suffix": " V"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_mcc_p",
+      "bindings": [
+        {
+          "id": "content_102",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "MCC.P"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " kW"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q1_den",
+      "bindings": [
+        {
+          "id": "fill_103",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q1_dong",
+      "bindings": [
+        {
+          "id": "content_104",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P101.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q2_den",
+      "bindings": [
+        {
+          "id": "fill_105",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q2_dong",
+      "bindings": [
+        {
+          "id": "content_106",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P102.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q3_den",
+      "bindings": [
+        {
+          "id": "fill_107",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q3_dong",
+      "bindings": [
+        {
+          "id": "content_108",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P103.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q4_den",
+      "bindings": [
+        {
+          "id": "fill_109",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q4_dong",
+      "bindings": [
+        {
+          "id": "content_110",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P201.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q5_den",
+      "bindings": [
+        {
+          "id": "fill_111",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q5_dong",
+      "bindings": [
+        {
+          "id": "content_112",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P202.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q6_den",
+      "bindings": [
+        {
+          "id": "fill_113",
+          "target": "style.fill",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.STATE"
+          },
+          "transform": {
+            "kind": "discreteMap",
+            "cases": [
+              {
+                "equals": 0,
+                "value": "#64748b"
+              },
+              {
+                "equals": 1,
+                "value": "#22c55e"
+              },
+              {
+                "equals": 2,
+                "value": "#ef4444"
+              }
+            ],
+            "default": "#64748b"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_q6_dong",
+      "bindings": [
+        {
+          "id": "content_114",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "P301.CURRENT"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 1,
+            "suffix": " A"
+          }
+        }
+      ]
+    }
+  ]
+}

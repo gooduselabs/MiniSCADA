@@ -8,6 +8,7 @@ import { AccessView, emptyForUser, fetchAccess, filterScreen, sessionEnded } fro
 import { WebActionHost } from './action-host.ts';
 import { AlarmApp } from './alarm/alarm-app.ts';
 import './alarm/alarm.css';
+import './alarm/bell.css';
 import { vi } from './i18n/vi.ts';
 import { HistoryPage } from './history-page.ts';
 import { createIcon } from './icons.ts';
@@ -385,7 +386,7 @@ async function main(): Promise<void> {
   const routable = summary.screens.filter((s) => s.kind === 'screen').map((s) => s.id);
   let entry = routable.includes(summary.entry) ? summary.entry : (routable[0] ?? summary.entry);
   shell.setProject(summary.name);
-  // Alarm (feature 009): banner, huy hiệu, trang Alarm và Lịch sử; mục menu theo trạng thái nguồn alarm.
+  // Alarm (feature 009, 026): chuông và bảng thông báo, huy hiệu, trang Alarm và Lịch sử; mục menu theo trạng thái nguồn alarm.
   let alarmMenu: AlarmMenuOptions = { show: false };
   let currentId = entry;
   // Mục Lịch sử và báo cáo (feature 010): hiện khi lưu trữ bật và có phiên (HTTPS).
@@ -412,14 +413,14 @@ async function main(): Promise<void> {
     now: () => source.now(),
     host,
     pageHost: shell.screenHost,
-    bannerHost: $('app-alarm-slot'),
+    bellHost: $('app-alarm-slot'),
     navHost: $('app-nav'),
     onMenuMode: (m) => {
       alarmMenu = m;
       rebuildMenu();
     },
   });
-  screenEl.alarms = alarmApp.alarms; // widget alarm-list, alarm-count và popup dùng cùng nguồn alarm với banner
+  screenEl.alarms = alarmApp.alarms; // widget alarm-list, alarm-count và popup dùng cùng nguồn alarm với chuông
   const probeHistory = async () => {
     historyOn = false;
     if (https && session.info) {
@@ -442,6 +443,7 @@ async function main(): Promise<void> {
   void probeHistory();
   session.subscribe(() => void probeHistory());
   shell.setKiosk(query.get('kiosk') === '1');
+  alarmApp.setKiosk(query.get('kiosk') === '1');
   const sessionChanged = () => alarmApp.refreshSession();
   session.subscribe(sessionChanged);
   host.onChange(sessionChanged);

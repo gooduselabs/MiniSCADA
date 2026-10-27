@@ -59,6 +59,9 @@ const { reportsProject, reportAlarmHistory, reportLogicEvents } = await import(
 const { gridDemoProject } = await import(
   pathToFileURL(join(WEB, 'tests/e2e/grid-demo-fixture.mjs')).href
 );
+const { svgShowcaseProject, svgShowcaseHistory } = await import(
+  pathToFileURL(join(WEB, 'tests/e2e/svg-showcase-fixture.mjs')).href
+);
 const { PASS, accessDemo, accessSeed, loginPage } = await import(
   pathToFileURL(join(WEB, 'tests/e2e/access-fixture.mjs')).href
 );
@@ -68,8 +71,17 @@ const renamed = (make, name) => () => {
   p.active.project.projectName = name;
   return p;
 };
-const { clickButton, expandNode, openAndWait, setTheme, sleep, treeItem, treeNode, waitFor } =
-  studioE2e;
+const {
+  clickButton,
+  designToPage,
+  expandNode,
+  openAndWait,
+  setTheme,
+  sleep,
+  treeItem,
+  treeNode,
+  waitFor,
+} = studioE2e;
 const { deepEval, until, waitDeep } = webE2e;
 
 /** Đọc project mẫu cho Studio; có --theme thì project.json lên định dạng 1.1 kèm `theme` (chỉ trong bộ nhớ). */
@@ -392,6 +404,7 @@ function toPalettePng(png) {
 
 const DASHBOARD_DEMO = join(ROOT, 'projects/dashboard-demo');
 const SVG_DEMO = join(ROOT, 'projects/svg-demo');
+const SVG_SHOWCASE = join(ROOT, 'projects/svg-showcase');
 const GRID_DEMO = join(ROOT, 'projects/grid-demo');
 const REPORT_DEMO = join(ROOT, 'projects/report-demo');
 const PW = 'mat-docs-screenshots';
@@ -790,6 +803,50 @@ const studioScenes = [
     },
   },
   {
+    // feature 026: vào đồ họa sơ đồ công nghệ của projects/svg-showcase, chọn vỏ bơm P-101, inspector Gắn Tag
+    name: 'studio-so-do',
+    async run({ page, shot }) {
+      await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+      await openAndWait(page, readProject(SVG_SHOWCASE), 'D:\\Projects\\svg-showcase');
+      await treeNode(page, 'screen:so-do-cong-nghe');
+      await page.waitForSelector('mat-screen-canvas .vp');
+      await sleep(800);
+      // P-101 ở (320, 240) của viewBox 1600 × 900; item phủ màn hình 1920 × 1080 (hệ số 1,2).
+      const at = await designToPage(page, 320 * 1.2, 240 * 1.2);
+      await page.mouse.click(at.x, at.y);
+      await page.mouse.click(at.x, at.y, { count: 2 });
+      await waitFor(page, () => document.querySelector('mat-screen-canvas .vp.entered') !== null);
+      await page.focus('mat-screen-canvas .vp');
+      await page.keyboard.press('=');
+      await sleep(400);
+      const r = await page.evaluate(() => {
+        const ms = document.querySelector('mat-screen-canvas mat-screen');
+        const root = ms?.shadowRoot?.querySelector(
+          '.item[data-item-id="so_do"] .svg-host',
+        )?.shadowRoot;
+        const b = root?.querySelector('[data-mat-uid="el_p101_vo"]')?.getBoundingClientRect();
+        return b ? { x: b.x + 2, y: b.y + b.height / 2 } : null;
+      });
+      if (!r) throw new Error('không thấy vỏ bơm P-101 trên canvas');
+      await page.mouse.click(r.x, r.y);
+      await waitFor(page, () => document.querySelector('mat-svg-props mat-svg-bind') !== null);
+      await page.evaluate(() =>
+        [...document.querySelectorAll('[role="tab"]')]
+          .find((t) => /Gắn Tag/.test(t.textContent))
+          ?.click(),
+      );
+      // Xem trước Mô phỏng: Tag mô phỏng và tính toán có giá trị thay vì "--".
+      await page.evaluate(() =>
+        [...document.querySelectorAll('button')]
+          .find((b) => b.textContent.trim() === 'Mô phỏng' && b.closest('mat-screen-editor'))
+          ?.click(),
+      );
+      await sleep(3000);
+      await shot('eng-so-do-gan-tag');
+      await page.setViewport(VIEWPORT);
+    },
+  },
+  {
     name: 'studio-logic',
     async run({ page, shot }) {
       await openAndWait(page, dashboardWithLogic(), 'D:\\Projects\\dashboard-demo');
@@ -1092,6 +1149,143 @@ const webScenes = [
     },
   },
   {
+    // feature 026: sơ đồ công nghệ SVG của projects/svg-showcase (chủ đề tối), lúc P-101, P-102, P-201 chạy có dòng chảy;
+    // khung 1920 × 1080 và 1366 × 768, rồi popup faceplate khi nhấp bơm P-101.
+    name: 'web-so-do',
+    options: { fixture: () => svgShowcaseProject() },
+    async run({ page, rt, shot }) {
+      await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+      await page.goto(`${rt.httpUrl}/#/so-do-cong-nghe`, { waitUntil: 'domcontentloaded' });
+      await live(page);
+      await sleep(2500);
+      await shot('op-so-do-cong-nghe-1920');
+      await page.setViewport(VIEWPORT);
+      await sleep(1500);
+      await shot('op-so-do-cong-nghe');
+      await deepEval(
+        page,
+        '[data-mat-uid="el_p101"]',
+        'els[0].dispatchEvent(new MouseEvent("click", { bubbles: true })); return true;',
+      );
+      await sleep(1500);
+      await shot('op-so-do-faceplate');
+    },
+  },
+  {
+    // feature 026: cùng sơ đồ lúc P-102 lỗi (nhấp nháy, biểu tượng lỗi), P-103 chạy thay, bể lắng mức cao
+    name: 'web-so-do-loi',
+    options: { fixture: () => svgShowcaseProject({ scenario: 'fault' }) },
+    async run({ page, rt, shot }) {
+      await page.goto(`${rt.httpUrl}/#/so-do-cong-nghe`, { waitUntil: 'domcontentloaded' });
+      await live(page);
+      await sleep(2500);
+      await shot('op-so-do-cong-nghe-loi');
+    },
+  },
+  {
+    // feature 026: màn hình lưới kết hợp: 4 thẻ chỉ số, sơ đồ SVG 8 cột cạnh xu hướng 4 cột
+    name: 'web-so-do-luoi',
+    options: { fixture: () => svgShowcaseProject() },
+    async run({ page, rt, shot }) {
+      await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+      await page.goto(`${rt.httpUrl}/#/tong-quan`, { waitUntil: 'domcontentloaded' });
+      await live(page);
+      await sleep(45000);
+      await shot('op-so-do-luoi');
+      await page.setViewport(VIEWPORT);
+    },
+  },
+  {
+    // feature 026: trang Thư viện component của projects/svg-showcase: mọi loại widget của catalog và mọi ký hiệu SVG của
+    // thư viện; khung rộng 1920, chụp toàn trang (khung cao đủ cả lưới) và từng mục (theo tiêu đề mục). Có alarm đang
+    // hoạt động và lịch sử giả cho nhóm lưu trữ thu-vien.
+    name: 'web-thu-vien',
+    options: {
+      fixture: () => svgShowcaseProject(),
+      config: { alarms: true },
+      history: svgShowcaseHistory(),
+      drift: false,
+    },
+    async run({ page, rt, shot }) {
+      rt.alarm.reset([
+        [
+          'DEMO_TEMP.H',
+          {
+            class: 'minor',
+            area: 'bom',
+            name: 'Nhiệt độ mẫu',
+            text: 'Nhiệt độ mẫu cao: 72,4 °C (ngưỡng 70)',
+            tsActive: Date.now() - 75_000,
+          },
+        ],
+        [
+          'P102_FAULT',
+          {
+            class: 'critical',
+            area: 'bom',
+            name: 'Bơm cấp P-102 lỗi',
+            text: 'Bơm cấp P-102 lỗi',
+            tsActive: Date.now() - 340_000,
+          },
+        ],
+        [
+          'LIT201_LEVEL.L',
+          {
+            class: 'major',
+            area: 'bon',
+            name: 'Mức bồn nước sạch T-201',
+            text: 'Mức bồn nước sạch T-201 thấp: 23,8 % (ngưỡng 25)',
+            tsActive: Date.now() - 820_000,
+          },
+        ],
+      ]);
+      await page.setViewport({ width: 1920, height: 3000, deviceScaleFactor: 1 });
+      // HTTPS và đăng nhập: widget điều khiển và lịch sử chỉ hoạt động qua HTTPS
+      await page.goto(`${rt.httpsUrl}/#/thu-vien`, { waitUntil: 'domcontentloaded' });
+      await live(page);
+      await login(page, 'vanhanh1', 'op-pass');
+      await submitLogin(page);
+      // Nạp lại sau đăng nhập để lưới đo lại bề rộng khung (hộp đăng nhập làm khung đo sai, rơi về một cột)
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await live(page);
+      await sleep(20000);
+      // Tiêu đề mục (item muc_*) và đáy lưới, theo toạ độ trang
+      const marks = await deepEval(
+        page,
+        '.item[data-item-id^="muc_"]',
+        'return els.map((e) => { const r = e.getBoundingClientRect(); return [e.dataset.itemId, r.left, r.top]; });',
+      );
+      const bottom = await deepEval(
+        page,
+        '.grid .cell',
+        'return Math.max(...els.map((e) => e.getBoundingClientRect().bottom));',
+      );
+      const h = Math.ceil(bottom + 16);
+      await page.setViewport({ width: 1920, height: h, deviceScaleFactor: 1 });
+      await sleep(1500);
+      await shot('thu-vien-toan-trang', { fullPage: true });
+      const left = Math.floor(Math.min(...marks.map((m) => m[1])) - 16);
+      const cuts = [...marks.map((m) => m[2] - 8), bottom + 8];
+      const NAMES = [
+        'hien-thi',
+        'the-kpi',
+        'bieu-do',
+        'bang-alarm',
+        'dieu-khien',
+        'lich-su',
+        'ky-hieu',
+      ];
+      for (let i = 0; i < marks.length; i++) {
+        const y = Math.max(0, Math.floor(cuts[i]));
+        await shot(`thu-vien-${NAMES[i] ?? i}`, {
+          clip: { x: left, y, width: 1920 - left, height: Math.ceil(cuts[i + 1]) - y },
+          captureBeyondViewport: false,
+        });
+      }
+      await page.setViewport(VIEWPORT);
+    },
+  },
+  {
     // feature 013: đăng nhập bắt buộc, component khóa do quyền, trang Quản trị. Runtime giả phân quyền của e2e
     // (apps/runtime-web/tests/e2e/access-fake.mjs), kho mẫu accessSeed: vh1 nhóm Ca A, nút Chạy bơm chỉ Quản đốc thao tác.
     name: 'web-quyen',
@@ -1229,6 +1423,15 @@ const webScenes = [
       await waitDeep(page, 'tr[data-id]', 3);
       await sleep(1000);
       await shot('op-alarm');
+      // Feature 026: chuông cảnh báo và bảng thông báo trên màn hình vận hành.
+      await page.goto('about:blank');
+      await page.goto(`${rt.httpsUrl}/#/tong-quan`, { waitUntil: 'domcontentloaded' });
+      await live(page);
+      await page.waitForSelector('#app-alarm-bell-btn');
+      await page.click('#app-alarm-bell-btn');
+      await page.waitForSelector('#app-alarm-panel:not([hidden])');
+      await sleep(600);
+      await shot('op-chuong-alarm');
     },
   },
   {
@@ -1378,16 +1581,18 @@ async function newPage() {
 const sceneFilter =
   filter && [...studioScenes, ...webScenes].some((s) => s.name.includes(filter)) ? filter : null;
 const wanted = (scene) => !sceneFilter || scene.name.includes(sceneFilter);
-const shooter = (page) => async (name) => {
-  if (filter && !sceneFilter && !name.includes(filter)) return;
-  const file = join(OUT, `${name}.png`);
-  const raw = Buffer.from(await page.screenshot({ type: 'png' }));
-  const small = toPalettePng(raw);
-  const buf = small && small.length < raw.length ? small : raw;
-  writeFileSync(file, buf);
-  written.push({ name, bytes: buf.length });
-  console.log(`  ✔ ${name}.png ${(buf.length / 1024).toFixed(0)} KB`);
-};
+const shooter =
+  (page) =>
+  async (name, opts = {}) => {
+    if (filter && !sceneFilter && !name.includes(filter)) return;
+    const file = join(OUT, `${name}.png`);
+    const raw = Buffer.from(await page.screenshot({ type: 'png', ...opts }));
+    const small = toPalettePng(raw);
+    const buf = small && small.length < raw.length ? small : raw;
+    writeFileSync(file, buf);
+    written.push({ name, bytes: buf.length });
+    console.log(`  ✔ ${name}.png ${(buf.length / 1024).toFixed(0)} KB`);
+  };
 
 const server = await serveStudio();
 const studioUrl = `http://127.0.0.1:${server.address().port}/?gate=off`;

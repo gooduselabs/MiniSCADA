@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 580 mã.
+Tổng cộng 581 mã.
 
 ## Mục lục
 
@@ -31,7 +31,7 @@ Tổng cộng 580 mã.
 - [Kết nối PLC, cổng serial và Thử kết nối](#driver) (32)
 - [Kênh dữ liệu sống (WebSocket)](#live) (10)
 - [Logic: luật, timer, counter, cộng dồn, giờ chạy, lịch và ghi PLC](#logic) (31)
-- [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (21)
+- [Cảnh báo hệ thống, chứng chỉ và công cụ dòng lệnh](#system) (22)
 - [Cập nhật runtime qua mạng (OTA) và chữ ký phát hành](#update) (40)
 - [Recipe (công thức)](#recipe) (16)
 
@@ -650,8 +650,9 @@ Tổng cộng 580 mã.
 | Mã | HTTP | Thông điệp | Nơi dùng |
 | --- | --- | --- | --- |
 | `CERT_ERROR` | 503 | Chứng chỉ HTTPS của thiết bị không đọc được | `server/http` |
-| `CERT_FILE_INVALID` | — | File chứng chỉ hoặc khóa nhập vào không hợp lệ | `server/cli` |
-| `CERT_KEY_MISMATCH` | — | Chứng chỉ không khớp với khóa riêng | `server/cli` |
+| `CERT_EXPIRED` | 400 | Chứng chỉ nhập vào đã hết hạn hoặc chưa tới ngày hiệu lực theo đồng hồ của thiết bị | `server/http` |
+| `CERT_FILE_INVALID` | 400 | File chứng chỉ hoặc khóa nhập vào không hợp lệ | `server/cli`, `server/http` |
+| `CERT_KEY_MISMATCH` | 400 | Chứng chỉ không khớp với khóa riêng | `server/cli`, `server/http` |
 | `CERT_WRITE_FAILED` | — | Không ghi được chứng chỉ hoặc khóa lên thiết bị | `server/cli` |
 | `CSR_WRITE_FAILED` | — | Không tạo hoặc ghi được yêu cầu cấp chứng chỉ (CSR) | `server/cli` |
 | `HOST_CHECK_OFF` | — | Kiểm tra tên máy (Host) đang tắt: chỉ dùng để gỡ rối. | `server` |
@@ -706,7 +707,7 @@ Tổng cộng 580 mã.
 | `UNPACKED_TOO_LARGE` | — | Payload giải nén lớn hơn 128 MiB | `core/update` |
 | `UPDATER_MANUAL_ONLY` | 422 | Gói cần mat-updater mới: chỉ cài thủ công bằng deploy.sh | `core/update`, `server` |
 | `UPDATE_ARCH_MISMATCH` | 422 | Gói cập nhật dành cho kiến trúc khác | `core/update`, `server` |
-| `UPDATE_DISABLED` | 404 | Cập nhật qua mạng đang tắt (update.enabled trong runtime.json) | `server`, `server/http` |
+| `UPDATE_DISABLED` | 404 | Cập nhật qua mạng đang tắt: bật trong Thiết bị › Thiết lập thiết bị | `server`, `server/http` |
 | `UPDATE_DOWNGRADE` | 409 | Gói cập nhật không mới hơn bản đang chạy (releaseSeq) | `core/update`, `server` |
 | `UPDATE_KEY_UNKNOWN` | 403 | Gói cập nhật được ký bằng khóa thiết bị không tin cậy | `server` |
 | `UPDATE_NOT_FOUND` | 404 | Không có gói đã kiểm với mã này (gói hết hạn sau 30 phút) | `server` |

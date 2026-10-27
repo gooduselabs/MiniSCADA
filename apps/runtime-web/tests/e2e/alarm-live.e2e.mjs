@@ -1,5 +1,5 @@
-/* global document, window, location */
-// e2e alarm trên trang vận hành (feature 009, T052; US1 kịch bản 1 đến 12; SC-003, SC-007, SC-012, SC-015): banner nhấp nháy,
+/* global document, window, location, getComputedStyle */
+// e2e alarm trên trang vận hành (feature 009, T052; US1 kịch bản 1 đến 12; SC-003, SC-007, SC-012, SC-015): chuông và bảng thông báo (026),
 // trang Alarm, huy hiệu, tiêu đề tab, Xác nhận một hàng và "tất cả", viewer khóa, âm thanh (AudioContext giả), mất kết nối,
 // hai tab, project không alarm, thiết bị 1.2.0, giảm chuyển động; axe sáng và tối. Cần HTTPS (đăng nhập operator).
 import { axeBoth, deepCount, deepEval, deepText, sleep, until, waitDeep } from './util.mjs';
@@ -20,16 +20,35 @@ const FAKE_AUDIO = `
   window.AudioContext = FakeAudioContext;
 `;
 
-const banner = (page) =>
-  page.$eval('#app-alarm-banner', (e) => ({
-    hidden: e.hidden,
-    text: (e.querySelector('.al-banner-text')?.textContent ?? e.textContent ?? '')
-      .replace(/\s+/g, ' ')
-      .trim(),
-    color: e.dataset.color,
-    blink: e.dataset.blink,
-    tone: e.dataset.tone,
-  }));
+const bell = (page) =>
+  page.$eval('#app-alarm-bell', (e) => {
+    const b = e.querySelector('#app-alarm-bell-btn');
+    const badge = e.querySelector('.al-bell-badge');
+    return {
+      hidden: e.hidden,
+      aria: b.getAttribute('aria-label'),
+      expanded: b.getAttribute('aria-expanded'),
+      n: badge.hidden ? '' : badge.textContent,
+      priority: b.dataset.priority,
+      kind: b.dataset.kind,
+      anim: getComputedStyle(badge).animationName,
+    };
+  });
+const panelOpen = (page) => page.$eval('#app-alarm-panel', (e) => !e.hidden);
+async function openPanel(page) {
+  if (!(await panelOpen(page))) await page.click('#app-alarm-bell-btn');
+  await page.waitForSelector('#app-alarm-panel:not([hidden])');
+}
+async function closePanel(page) {
+  if (await panelOpen(page)) {
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#app-alarm-panel[hidden]', { hidden: true });
+  }
+}
+const panelRows = (page) =>
+  page.$$eval('#app-alarm-panel .al-n-item', (r) =>
+    r.map((x) => ({ id: x.dataset.id, text: x.querySelector('.al-n-text').textContent })),
+  );
 const badge = (page) =>
   page.$eval('#app-nav [data-badge="alarms"]', (b) => ({
     hidden: b.hidden,
@@ -116,37 +135,44 @@ export default async function run(ctx) {
   // ---- Kịch bản 7, 2, 8, 9: khách (chưa đăng nhập) ----
   seed(rt);
   await open(ctx, https);
-  await until(async () => !(await banner(page)).hidden, 'banner hiện');
-  let b = await banner(page);
+  await until(async () => (await bell(page)).n === '3', 'chuông có badge 3');
+  let b = await bell(page);
   ctx.check(
-    'banner: mức ưu tiên · nội dung · tổng chưa xác nhận (alarm cao nhất)',
-    b.text === 'Khẩn cấp · Bồn B1 mức rất cao: 91,2 % (ngưỡng 90) · 3 chưa xác nhận',
-    b.text,
+    'không còn banner alarm ngang ở đầu trang',
+    (await page.$$('#app-alarm-banner, .al-banner')).length === 0,
   );
   ctx.check(
-    'banner đỏ theo lớp và nhấp nháy',
-    b.color === 'red' && b.blink === 'on',
+    'chuông: aria-label "Cảnh báo: 3 chưa xác nhận", aria-expanded=false, badge đỏ (khẩn cấp) nháy nhẹ',
+    b.aria === 'Cảnh báo: 3 chưa xác nhận' &&
+      b.expanded === 'false' &&
+      b.priority === 'critical' &&
+      b.anim === 'al-bell-pulse',
     JSON.stringify(b),
   );
+  ctx.check('chuông nằm trên thanh trên cùng', (await page.$('#app-bar #app-alarm-bell')) !== null);
+  await openPanel(page);
   ctx.check(
-    'banner có chip đếm theo mức',
-    (await page.$$eval('#app-alarm-banner .al-chip', (c) => c.map((x) => x.textContent))).join(
-      ',',
-    ) === '1,1,1',
+    'bảng thông báo: khẩn cấp lên đầu, đủ 3 hàng',
+    JSON.stringify((await panelRows(page)).map((r) => r.id)) ===
+      JSON.stringify(['TANK_B1_LEVEL.HH', 'PUMP1_FAULT', 'MINOR1']),
+    JSON.stringify(await panelRows(page)),
   );
   ctx.check(
-    'banner là vùng có nhãn "Alarm"',
-    (await page.$eval('#app-alarm-banner', (e) => e.getAttribute('aria-label'))) === 'Alarm',
+    'hàng có thời gian tương đối và trạng thái',
+    (await page.$eval('#app-alarm-panel .al-n-time', (e) => e.textContent)) === 'vừa xong' &&
+      (await page.$eval('#app-alarm-panel .al-n-state', (e) => e.textContent)) === 'Chưa xác nhận',
   );
-  const phases = new Set();
-  for (let i = 0; i < 14; i++) {
-    phases.add(await page.evaluate(() => document.documentElement.dataset.blinkPhase));
-    await sleep(120);
-  }
   ctx.check(
-    'nhấp nháy đổi pha trong khoảng 1,7 s (on và off), ≤ 1 Hz',
-    phases.has('on') && phases.has('off'),
-    [...phases].join(','),
+    'aria-expanded=true khi mở; focus vào bảng',
+    (await bell(page)).expanded === 'true' &&
+      (await page.evaluate(() => !!document.activeElement?.closest('#app-alarm-panel'))),
+  );
+  await axeBoth(ctx, 'bảng thông báo alarm mở');
+  await page.keyboard.press('Escape');
+  ctx.check(
+    'Esc đóng bảng, focus về chuông',
+    !(await panelOpen(page)) &&
+      (await page.evaluate(() => document.activeElement?.id)) === 'app-alarm-bell-btn',
   );
   ctx.check(
     'menu có mục Alarm và Lịch sử alarm',
@@ -165,10 +191,12 @@ export default async function run(ctx) {
     (await page.title()).startsWith('(3) '),
     await page.title(),
   );
+  await openPanel(page);
   ctx.check(
-    'viewer: nút Xác nhận ở banner khóa kèm lý do',
-    (await page.$eval('.al-banner-ack', (e) => e.getAttribute('aria-disabled'))) === 'true' &&
-      (await page.$eval('.al-banner-lock', (e) => e.textContent)) ===
+    'viewer: nút Xác nhận trong bảng thông báo khóa kèm lý do',
+    (await page.$eval('#app-alarm-panel .al-n-ack', (e) => e.getAttribute('aria-disabled'))) ===
+      'true' &&
+      (await page.$eval('#app-alarm-panel .al-panel-lock', (e) => e.textContent)) ===
         'Cần đăng nhập với role operator',
   );
   ctx.check(
@@ -181,11 +209,12 @@ export default async function run(ctx) {
     (await page.evaluate(() => window.__ac.created)) === 0,
   );
 
-  await page.click('#app-alarm-banner .al-banner-body');
+  await page.click('#app-alarm-panel .al-panel-viewall');
   await until(
     async () => (await page.evaluate(() => location.hash)) === '#/alarms',
-    'banner → #/alarms',
+    '"Xem tất cả alarm" → #/alarms',
   );
+  ctx.check('mở trang Alarm thì bảng thông báo đóng', !(await panelOpen(page)));
   await waitDeep(page, 'tr[data-id]', 3);
   ctx.check(
     'trang Alarm: đủ 3 hàng theo ưu tiên',
@@ -193,7 +222,7 @@ export default async function run(ctx) {
       JSON.stringify(['TANK_B1_LEVEL.HH', 'PUMP1_FAULT', 'MINOR1']),
     JSON.stringify(await rowIds(page)),
   );
-  ctx.check('banner vẫn hiện trên trang Alarm', !(await banner(page)).hidden);
+  ctx.check('chuông vẫn hiện trên trang Alarm', !(await bell(page)).hidden);
   ctx.check(
     'viewer: nút Xác nhận trên hàng khóa (aria-disabled)',
     (await deepEval(
@@ -220,7 +249,8 @@ export default async function run(ctx) {
   ctx.check('không có xác nhận nào lọt vào thiết bị', rt.alarm.acks.length === 0);
   await axeBoth(ctx, 'trang Alarm (alarm đang nhấp nháy)');
 
-  // ---- Kịch bản 9: âm thanh ----
+  // ---- Kịch bản 9: âm thanh (công tắc nằm trong bảng thông báo) ----
+  await openPanel(page);
   await page.click('#app-sound-btn');
   await until(
     async () => (await page.evaluate(() => window.__ac.osc)) >= 1,
@@ -235,6 +265,7 @@ export default async function run(ctx) {
     'công tắc có aria-pressed=true',
     (await page.$eval('#app-sound-btn', (e) => e.getAttribute('aria-pressed'))) === 'true',
   );
+  await closePanel(page);
   const oscBefore = await page.evaluate(() => window.__ac.osc);
   await page.click('#app-sound-mute');
   await sleep(150);
@@ -257,11 +288,13 @@ export default async function run(ctx) {
     'alarm mới bật tiếng lại',
   );
   ctx.check('alarm mới bật tiếng lại sau khi tắt tiếng', true);
-  await until(
-    async () => (await banner(page)).text.includes('4 chưa xác nhận'),
-    'banner 4 chưa xác nhận',
+  await until(async () => (await bell(page)).n === '4', 'chuông 4 chưa xác nhận');
+  console.log(`  · đổi alarm → DOM chuông: ${Date.now() - t0} ms (SC-003)`);
+  await until(async () => !(await page.$eval('#app-alarm-toast', (e) => e.hidden)), 'toast');
+  ctx.check(
+    'alarm khẩn cấp mới: toast ở góc với nội dung alarm',
+    (await page.$eval('#app-alarm-toast', (e) => e.textContent)).includes('Alarm mới'),
   );
-  console.log(`  · đổi alarm → DOM banner: ${Date.now() - t0} ms (SC-003)`);
   ctx.check(
     'SC-003: từ lúc alarm đổi tới lúc DOM đổi ≤ 1 s',
     Date.now() - t0 <= 1000,
@@ -270,30 +303,33 @@ export default async function run(ctx) {
 
   // ---- Kịch bản 3, 7: operator xác nhận ----
   await login(ctx, 'vanhanh1', 'op-pass');
+  await openPanel(page);
   await until(
     async () =>
-      (await page.$eval('.al-banner-ack', (e) => e.getAttribute('aria-disabled'))) === 'false',
+      (await page.$eval('#app-alarm-panel .al-n-ack', (e) => e.getAttribute('aria-disabled'))) ===
+      'false',
     'nút Xác nhận mở khóa',
   );
   ctx.check(
-    'operator: nút ở banner không còn khóa, không còn chú thích',
-    (await page.$$('.al-banner-lock')).length === 0,
+    'operator: nút trong bảng không còn khóa, không còn chú thích',
+    await page.$eval('#app-alarm-panel .al-panel-lock', (e) => e.hidden),
   );
-  const topBefore = (await banner(page)).text;
-  await page.click('.al-banner-ack');
+  ctx.check(
+    'alarm mới nhất mức khẩn cấp ở đầu bảng',
+    (await panelRows(page))[0]?.id === 'NEW1',
+    JSON.stringify(await panelRows(page)),
+  );
+  await page.click('#app-alarm-panel .al-n-item[data-id="NEW1"] .al-n-ack');
   await until(async () => rt.alarm.acks.length >= 1, 'POST ack');
   const a0 = rt.alarm.acks[0];
   ctx.check(
-    'Xác nhận ở banner gửi đúng MỘT {id, occurrence} của alarm đang hiện',
+    'Xác nhận một hàng gửi đúng MỘT {id, occurrence}',
     a0.items?.length === 1 && a0.items[0].id === 'NEW1',
     JSON.stringify(a0),
   );
-  await until(async () => (await banner(page)).text !== topBefore, 'banner đổi sang alarm kế tiếp');
-  ctx.check(
-    'sau xác nhận: tổng chưa xác nhận giảm còn 3',
-    (await banner(page)).text.includes('3 chưa xác nhận'),
-    (await banner(page)).text,
-  );
+  await until(async () => (await bell(page)).n === '3', 'chuông còn 3');
+  ctx.check('sau xác nhận: tổng chưa xác nhận giảm còn 3', true);
+  await closePanel(page);
   await until(async () => (await badge(page)).text === '3', 'huy hiệu 3');
   const ackedId = a0.items[0].id;
   await until(
@@ -477,17 +513,10 @@ export default async function run(ctx) {
   // ---- Kịch bản 10: mất kết nối rồi snapshot mới thay hoàn toàn ----
   rt.holdAlarmSnapshot(true);
   rt.dropLive();
-  await until(
-    async () =>
-      (await banner(page)).text.startsWith(
-        'Mất kết nối tới thiết bị: danh sách alarm có thể đã cũ',
-      ),
-    'banner mất kết nối',
-    12000,
-  );
+  await until(async () => (await bell(page)).kind === 'lost', 'chuông mất kết nối', 12000);
   ctx.check(
-    'mất kết nối: banner tông lỗi, bảng mờ (data-stale)',
-    (await banner(page)).tone === 'bad' &&
+    'mất kết nối: chuông báo "!", nhãn mất kết nối, bảng mờ (data-stale)',
+    (await bell(page)).aria === 'Cảnh báo: mất kết nối, danh sách có thể đã cũ' &&
       (await deepEval(page, '.wrap[data-stale]', 'return els.length;')) === 1,
   );
   rt.alarm.reset([
@@ -501,21 +530,17 @@ export default async function run(ctx) {
     15000,
   );
   ctx.check(
-    'có lại kết nối: hàng cũ biến mất, bảng hết mờ, banner trở lại bình thường',
+    'có lại kết nối: hàng cũ biến mất, bảng hết mờ, chuông trở lại bình thường',
     (await deepEval(page, '.wrap[data-stale]', 'return els.length;')) === 0 &&
-      (await banner(page)).tone === 'alarm',
+      (await bell(page)).kind === 'live',
   );
 
   // ---- Kịch bản 2: giảm chuyển động ----
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
   await open(ctx, https, '#/alarms');
-  await until(async () => !(await banner(page)).hidden, 'banner (giảm chuyển động)');
-  b = await banner(page);
-  ctx.check(
-    'giảm chuyển động: banner không nhấp nháy, viền đậm tĩnh',
-    b.blink === 'static',
-    JSON.stringify(b),
-  );
+  await until(async () => (await bell(page)).n !== '', 'chuông (giảm chuyển động)');
+  b = await bell(page);
+  ctx.check('giảm chuyển động: badge không nháy', b.anim === 'none', JSON.stringify(b));
   const ph = new Set();
   for (let i = 0; i < 8; i++) {
     ph.add(await page.evaluate(() => document.documentElement.dataset.blinkPhase ?? 'none'));
@@ -530,8 +555,8 @@ export default async function run(ctx) {
   await open(ctx, https);
   await sleep(500);
   ctx.check(
-    'không có alarm: không banner, không mục Alarm trên menu, không subscribeAlarms',
-    (await banner(page)).hidden &&
+    'không có alarm: không chuông, không mục Alarm trên menu, không subscribeAlarms',
+    (await bell(page)).hidden &&
       !(await menuTexts(page)).some((t) => t.startsWith('Alarm')) &&
       (rt.log.alarmSubs ?? 0) === subsBefore,
     JSON.stringify(await menuTexts(page)),
@@ -542,11 +567,13 @@ export default async function run(ctx) {
   rt.cfg.alarms = true;
   rt.cfg.protocol = '1.2.0';
   await open(ctx, https);
-  await until(async () => !(await banner(page)).hidden, 'banner chưa hỗ trợ');
+  await until(async () => (await bell(page)).kind === 'unsupported', 'chuông chưa hỗ trợ');
+  await openPanel(page);
   ctx.check(
-    'thiết bị 1.2.0: banner "chưa hỗ trợ alarm", không nút',
-    (await banner(page)).text === 'Thiết bị chưa hỗ trợ alarm (runtime < 0.8.0)' &&
-      (await page.$$('#app-alarm-banner button')).length === 0,
+    'thiết bị 1.2.0: bảng thông báo "chưa hỗ trợ alarm", không nút xác nhận',
+    (await page.$eval('#app-alarm-panel .al-panel-notice', (e) => e.textContent)) ===
+      'Thiết bị chưa hỗ trợ alarm (runtime < 0.8.0)' &&
+      (await page.$$('#app-alarm-panel .al-n-ack')).length === 0,
   );
   ctx.check(
     'thiết bị 1.2.0: mục Alarm có chú thích "chưa hỗ trợ", không huy hiệu',
@@ -555,7 +582,7 @@ export default async function run(ctx) {
     (await menuTexts(page)).join('|'),
   );
   ctx.check('thiết bị 1.2.0: không gửi subscribeAlarms', (rt.log.alarmSubs ?? 0) === subsBefore);
-  await axeBoth(ctx, 'trang với banner chưa hỗ trợ');
+  await axeBoth(ctx, 'bảng thông báo chưa hỗ trợ');
   rt.cfg.protocol = '1.3.0';
   void deepCount;
 }

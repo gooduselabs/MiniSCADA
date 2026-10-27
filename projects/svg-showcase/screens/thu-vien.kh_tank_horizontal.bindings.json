@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.1.0",
+  "screenId": "thu-vien",
+  "itemId": "kh_tank_horizontal",
+  "elements": [
+    {
+      "elementUid": "el_tank_horizontal_liquid",
+      "bindings": [
+        {
+          "id": "levelPercent_3",
+          "target": "geometry.levelPercent",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT201.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "elementUid": "el_tank_horizontal_text",
+      "bindings": [
+        {
+          "id": "content_4",
+          "target": "text.content",
+          "source": {
+            "type": "tag",
+            "tagId": "LIT201.LEVEL"
+          },
+          "transform": {
+            "kind": "direct"
+          },
+          "format": {
+            "decimals": 0,
+            "suffix": " %"
+          }
+        }
+      ]
+    }
+  ]
+}

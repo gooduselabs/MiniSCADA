@@ -3,7 +3,7 @@
 // thông báo ngắn (aria-live).
 import { createIcon } from '../icons.ts';
 import { viAdmin } from '../i18n/vi-admin.ts';
-import { weakReason } from '../i18n/vi-account.ts';
+import { adminErrorText } from '@mat/admin-model';
 import { AdminApiError } from './api.ts';
 
 type Child = Node | string | null | undefined | false;
@@ -77,16 +77,7 @@ export const groupHue = (ids: readonly string[], id: string): number =>
   (4 + Math.max(0, ids.indexOf(id))) % 12;
 
 /** Câu lỗi tiếng Việt cho lỗi của API quản trị. */
-export function errorText(e: unknown): string {
-  if (!(e instanceof AdminApiError))
-    return viAdmin.errors.unknown('ERROR', e instanceof Error ? e.message : String(e));
-  const known = (viAdmin.errors as Record<string, unknown>)[e.code];
-  if (e.code === 'WEAK_PASSWORD')
-    return `${viAdmin.errors.weak}${weakReason(e.reason, e.message !== e.code ? e.message : undefined)}`;
-  if (typeof known === 'string') return known;
-  if (e.code === 'CONFLICT') return viAdmin.banner.conflict;
-  return viAdmin.errors.unknown(e.code, e.message !== e.code ? e.message : undefined);
-}
+export const errorText = (e: unknown): string => adminErrorText(e, viAdmin.banner.conflict);
 
 let dialogSeq = 0;
 
