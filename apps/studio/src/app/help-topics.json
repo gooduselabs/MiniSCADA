@@ -21,11 +21,6 @@
     },
     { "editors": ["logic"], "page": "user/engineer-guide.html", "anchor": "help-logic" },
     {
-      "editors": ["svgdraw:", "svgnew"],
-      "page": "user/engineer-guide.html",
-      "anchor": "help-svg-editor"
-    },
-    {
       "editors": ["device", "compare", "audit"],
       "page": "user/engineer-guide.html",
       "anchor": "help-online"

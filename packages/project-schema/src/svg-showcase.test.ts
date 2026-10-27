@@ -72,7 +72,7 @@ describe('trang Thư viện component (thu-vien)', () => {
     readFileSync(resolve(__dirname, '../../../schemas/widgets.catalog.json'), 'utf8'),
   ) as { widgets: Array<{ id: string }> };
   const manifest = JSON.parse(
-    readFileSync(resolve(__dirname, '../../symbol-library/manifest.json'), 'utf8'),
+    readFileSync(resolve(__dirname, '../../../tools/symbol-data/manifest.json'), 'utf8'),
   ) as { symbols: Array<{ id: string }> };
 
   it('có mọi loại widget của catalog và mọi ký hiệu của thư viện', () => {

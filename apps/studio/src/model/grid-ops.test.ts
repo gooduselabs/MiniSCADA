@@ -179,7 +179,7 @@ describe('grid-ops', () => {
   });
 });
 
-describe('placeInGrid (nhập SVG, ký hiệu vào màn hình lưới)', () => {
+describe('placeInGrid (nhập SVG vào màn hình lưới)', () => {
   it('bỏ tọa độ của item, đặt vào ô trống đầu tiên; hết ô trống thì thêm hàng 12 cột', async () => {
     const { placeInGrid } = await import('./grid-ops.ts');
     const it = { id: 'svg_1', type: 'svg', x: 0, y: 0, width: 400, height: 300 } as never;

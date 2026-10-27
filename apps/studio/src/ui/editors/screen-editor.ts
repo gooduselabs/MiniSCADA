@@ -107,8 +107,6 @@ const setCurrent = (e: MatScreenEditor | null): void => {
 
 /** Menu ngữ cảnh của vùng chọn trên canvas (feature 011, FR-126): template và faceplate. */
 const CTX_COMMANDS: readonly CommandId[] = [
-  // Feature 011 (FR-097): item `svg` mở trong trình vẽ SVG (Ctrl+Alt+Enter).
-  'svg.editInDrawing',
   'screen.createTemplate',
   'screen.updateInstances',
   'screen.explodeInstance',

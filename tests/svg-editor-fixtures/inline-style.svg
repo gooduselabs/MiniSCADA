@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- MÔ PHỎNG: style nội tuyến viết tay có khoảng trắng và dấu ; cuối -->
-  <rect data-mat-uid="el_style_rect" x="10" y="10" width="30" height="30" style="fill: #f44336; stroke : #000 ; stroke-width:2;"/>
-  <circle data-mat-uid="el_style_circle" cx="70" cy="25" r="15" style="fill:#4caf50;opacity:0.8"/>
-  <text data-mat-uid="el_style_text" x="10" y="80" style="font-family: Arial, sans-serif; font-size: 12px; fill: #212121">Nhiệt độ</text>
-</svg>

@@ -16,10 +16,6 @@ import {
   type BackupOutcome,
   type CsvOpenOutcome,
   type CsvSaveOutcome,
-  type EditorFileInfo,
-  type EditorRemoveOutcome,
-  type Fingerprint,
-  type FingerprintOutcome,
   type SvgOpenOutcome,
   type PickResult,
   type Platform,
@@ -144,35 +140,11 @@ export const tauriPlatform: Platform = {
       return { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
     }
   },
-  async fingerprint(rel): Promise<FingerprintOutcome> {
-    try {
-      return await invoke<Fingerprint>('project_fingerprint', { rel });
-    } catch (e) {
-      return { error: asReadFailure(e) };
-    }
-  },
   async listSvg(): Promise<string[]> {
     try {
       return await invoke<string[]>('project_list_svg');
     } catch {
       return [];
-    }
-  },
-  async editorList(dir): Promise<EditorFileInfo[]> {
-    try {
-      return await invoke<EditorFileInfo[]>('editor_list', { dir });
-    } catch {
-      return [];
-    }
-  },
-  async editorRemove(rel): Promise<EditorRemoveOutcome> {
-    try {
-      await invoke('editor_remove', { rel });
-      return { ok: true };
-    } catch (e) {
-      const err = ipcError(e);
-      if (err?.code === 'bad-path' || err?.code === 'missing') return { error: err.code };
-      return { error: 'io', detail: err?.detail ?? (e instanceof Error ? e.message : String(e)) };
     }
   },
   async openDeviceWeb(url) {

@@ -16,8 +16,8 @@
 # the lint of hard-coded strings of the alarm UI, the alarm_*_tests of x64 and armhf, the alarm-it subset that runs in CI
 # (state, quality, restart, auth, attack, compat, history; the rest is by hand: killloop, storm, latency, budget).
 # Feature 007 (T142): runtime-web e2e and tools/web-it.ps1 (web login, attack cases, control, pulse, certificates, page on Chrome).
-# Feature 008 (T119): svg:inspect --import, Vitest of svg-import/symbol-library/svg-renderer (npm test covers every
-# workspace), the Studio and runtime-web e2e (all *.e2e.mjs: import, svg-bind, svg-perf, symbols, rebuild-tank,
+# Feature 008 (T119): svg:inspect --import, Vitest of svg-import/svg-renderer (npm test covers every
+# workspace), the Studio and runtime-web e2e (all *.e2e.mjs: import, svg-bind, svg-perf, rebuild-tank,
 # reimport, upgrade04; svg-events, svg-unsafe, anim), cargo test --lib, ctest (rules_04, vectors_04). -Full adds the
 # malicious set + page-path + page fuzz on Chrome, a long importer fuzz and anim-bench (about 20 minutes more).
 # Feature 009: the ASan step runs only with -Sanitize (a DEADLYSIGNAL loop filled the disk).

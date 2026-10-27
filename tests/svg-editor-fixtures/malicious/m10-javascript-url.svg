@@ -1,1 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10"><a href="javascript:alert(1)"><rect width="10" height="10" fill="#4caf50"/></a><use xlink:href="javascript:alert(2)"/><rect width="1" height="1" fill="url(javascript:alert(3))" style="fill:url(javascript:alert(4))"/></svg>

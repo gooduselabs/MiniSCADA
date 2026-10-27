@@ -62,9 +62,6 @@ export function resolveShortcut(e: KeyLike, ctx: KeyContext): ShortcutAction | n
     if (e.key === 'F10' && !e.shiftKey) return { focusMenu: true };
     return null;
   }
-  // "Sửa trong trình vẽ" (feature 011): item `svg` đang chọn ở editor Màn hình mở trong trình vẽ SVG.
-  if (e.ctrlKey && e.altKey && !e.shiftKey && e.key === 'Enter')
-    return { command: 'svg.editInDrawing' };
   if (!e.ctrlKey || e.altKey) return null;
   if (e.shiftKey) {
     if (k === 'p') return { command: 'view.palette' };

@@ -31,7 +31,8 @@ Studio bố trí như một công cụ kỹ thuật: cây project bên trái, v�
 - Thanh công cụ: **Project mới**, **Mở project**, Lưu, hoàn tác, **Kiểm tra**, **Nạp xuống**, **Đọc lên**, **So sánh**, **Online**/**Offline**, **Thiết bị**, **Mô phỏng**, **Tìm lệnh…** (Ctrl+Shift+P).
 - Thanh trạng thái: trạng thái thiết bị ("Không kết nối", "Đang theo dõi", "Online"), tài khoản, số lỗi và cảnh báo, chip so sánh với thiết bị, nhãn "MÔ PHỎNG" khi đang mô phỏng.
 - Chế độ Online có viền cam quanh cửa sổ.
-- Task card bên phải đổi theo editor đang mở: **Toolbox** (widget, ký hiệu) ở editor Màn hình, **Khối / Tag** ở editor Logic, **Công cụ vẽ** (công cụ và bảng màu tô, màu viền) ở trình vẽ SVG.
+- Task card bên phải đổi theo editor đang mở: **Toolbox** (widget) ở editor Màn hình, **Khối / Tag** ở editor Logic.
+- Studio là công cụ **cấu hình**, không vẽ: đồ họa SVG vẽ bằng phần mềm ngoài (Inkscape, Illustrator, CorelDRAW) rồi **Nhập SVG** và gắn Tag (mục 7).
 - Phím tắt: menu **Trợ giúp** > **Phím tắt**.
 - Tài liệu này: menu **Trợ giúp** > **Hướng dẫn sử dụng** (F1) mở bản HTML đi kèm bộ cài, đúng mục của editor đang mở; không cần mạng.
 
@@ -46,7 +47,7 @@ Studio bố trí như một công cụ kỹ thuật: cây project bên trái, v�
 - **Tên project** (bắt buộc, tối đa 80 ký tự).
 - **Mã project**: tự sinh từ tên, bỏ dấu, chữ thường, gạch nối (`Trạm bơm Số 1` → `tram-bom-so-1`); sửa được, 2–48 ký tự. Mã là `projectId` và là tên thư mục project. Nút mũi tên vòng sinh lại mã từ tên.
 - **Thư mục chứa**: mặc định `Documents\mAT SCADA`; **Chọn…** để chọn thư mục khác, **Mặc định** để quay về. Studio tạo thư mục con theo mã project trong thư mục chứa; dòng **Project sẽ nằm ở** hiện đường dẫn đầy đủ và báo ngay nếu thư mục đó đã có project hoặc có tệp khác (khi đó không tạo được, đổi mã hoặc thư mục chứa).
-- **Mẫu**: **Trống** (một màn hình lưới **Tổng quan** với một hàng ba ô trống, chưa có Tag và kết nối), **Mẫu trạm bơm** (Tag mô phỏng, màn hình lưới **Bảng điều khiển** kiểu dashboard: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, đồng hồ, trạng thái bơm, bảng Tag, faceplate bơm; chạy được ngay ở chế độ **Mô phỏng**) **Dashboard tối** (chỉ màn hình dashboard đó cùng Tag của nó; chọn mẫu này thì chủ đề tự chuyển sang **Tối**, đổi lại được) hoặc **Mẫu sơ đồ công nghệ (SVG)** (sơ đồ trạm bơm nước sạch vẽ bằng SVG có hoạt ảnh, chủ đề **Tối**; mục 7.4).
+- **Mẫu**: **Trống** (một màn hình lưới **Tổng quan** với một hàng ba ô trống, chưa có Tag và kết nối), **Mẫu trạm bơm** (Tag mô phỏng, màn hình lưới **Bảng điều khiển** kiểu dashboard: hai hàng thẻ chỉ số màu, ba biểu đồ có tiêu đề và đường ngưỡng, đồng hồ, trạng thái bơm, bảng Tag, faceplate bơm; chạy được ngay ở chế độ **Mô phỏng**) **Dashboard tối** (chỉ màn hình dashboard đó cùng Tag của nó; chọn mẫu này thì chủ đề tự chuyển sang **Tối**, đổi lại được) hoặc **Mẫu sơ đồ công nghệ (SVG)** (sơ đồ trạm bơm nước sạch vẽ bằng SVG có hoạt ảnh, chủ đề **Tối**; mục 7.3).
 - **Chủ đề giao diện** của trang vận hành: **Sáng đa sắc** (mặc định), **Công nghiệp trầm**, **Tối**; đổi lại được trong **Thiết lập project**.
  **Tạo project**: Studio ghi project định dạng 1.1, mở nó (cây project đầy đủ) và mở sẵn màn hình đầu. Đang có thay đổi chưa lưu thì Studio hỏi Lưu, Không lưu hay Hủy trước khi mở hộp thoại, như khi mở project khác. Project vừa tạo lên đầu danh sách **Mở gần đây** (tab **Bắt đầu** và menu **Project**).
  cách khác:
@@ -299,7 +300,6 @@ Hộp công cụ có các nhóm widget:
 - Biểu đồ: **Biểu đồ đường**, **Biểu đồ cột**, **Biểu đồ tròn**; bảng: **Bảng Tag sống**. Biểu đồ, đồng hồ kim và bảng có thuộc tính **Tiêu đề**: điền vào thì widget thành khung có thanh tiêu đề (như các khung "Biểu đồ nhiệt độ" của dashboard).
 - Điều khiển: **Nút bấm**, **Công tắc**, **Đặt giá trị**, **Thanh trượt**, **Chọn từ danh sách**.
 - Alarm: **Danh sách alarm**, **Đếm alarm**; lịch sử: **Lịch sử: biểu đồ đường**, **Lịch sử: bảng dòng**, **Lịch sử: biểu đồ cột**, **Lịch sử: biểu đồ tròn**.
-- **Ký hiệu SVG**: bơm, van, bồn… (ô tìm "Tìm bơm, van, bồn...").
 
 Inspector có các tab **Chung**, **Hiển thị**, **Gắn Tag**, **Sự kiện**, **Bảo mật**.
 
@@ -339,7 +339,7 @@ Lỗi thường gặp: `E_LAYOUT_SPAN` (tổng các ô của hàng quá 12 cột
 | **Danh sách trạng thái** (`status-list`) | Đèn trạng thái của tối đa 16 Tag (BOOL: Bật/Tắt; số: chữ của bảng giá trị) | **Tiêu đề**, **Tên từng mục**, **Chữ khi bật**, **Chữ khi tắt**, **Số cột** (1–4) |
 | **Đồng hồ ngày giờ** (`clock`) | Giờ của thiết bị | **Định dạng** (giờ và ngày, chỉ giờ, chỉ ngày), **Múi giờ** (mặc định +07:00), **Hiện giây** |
 | **Ghi chú** (`text`) | Chữ nhiều dòng (tối đa 300 ký tự), không định dạng HTML | **Tiêu đề**, **Nội dung ghi chú**, cỡ chữ, căn lề, màu |
-| **Ảnh** (`image`) | Ảnh SVG có trong project (tệp `graphics/….svg`, nhập bằng **Nhập SVG** hoặc vẽ bằng trình vẽ); không tải ảnh từ Internet | **Tệp ảnh SVG**, **Cách vừa khung**, **Mô tả ảnh** |
+| **Ảnh** (`image`) | Ảnh SVG có trong project (tệp `graphics/….svg`, nhập bằng **Nhập SVG**); không tải ảnh từ Internet | **Tệp ảnh SVG**, **Cách vừa khung**, **Mô tả ảnh** |
 
 **Biểu đồ đường** có thêm **Ngưỡng cao**, **Ngưỡng thấp** (vẽ đường nét đứt đỏ và xanh ngọc, có trong chú giải; trục giá trị tự nới để thấy ngưỡng) và **Nhãn trục thời gian**, **Nhãn trục giá trị**. **Đồng hồ kim** nay gọn trong khung (bán kính tối đa 150 px), số đọc ở dưới. **Khung nhóm** có **Kiểu khung** "Card có thanh tiêu đề".
 
@@ -395,84 +395,9 @@ Tệp SVG từ 1 MiB có cảnh báo `W_SVG_HEAVY`; từ 5 MiB là lỗi `E_SVG_
 
 ### 7.2. Gắn Tag cho phần tử SVG
 
-Chọn item SVG, Enter (hoặc nhấp đúp) để **vào đồ họa**, chọn phần tử, tab **Gắn Tag**. Có 13 loại hoạt ảnh: **Chữ hiển thị giá trị**, **Màu nền**, **Màu viền**, **Mức chất lỏng**, **Quay**, **Quay liên tục**, **Di chuyển X**, **Di chuyển Y**, **Co giãn**, **Nhấp nháy**, **Dòng chảy**, **Ẩn/hiện**, **Độ mờ**. Cách đổi giá trị: **Trực tiếp**, **Tuyến tính**, **Rời rạc**, **Bảng giá trị**, **Khoảng**. Thanh **Thử giá trị** cho xem trước. Ký hiệu có sẵn có **Gắn nhanh**.
+Chọn item SVG, Enter (hoặc nhấp đúp) để **vào đồ họa**, chọn phần tử, tab **Gắn Tag**. Có 13 loại hoạt ảnh: **Chữ hiển thị giá trị**, **Màu nền**, **Màu viền**, **Mức chất lỏng**, **Quay**, **Quay liên tục**, **Di chuyển X**, **Di chuyển Y**, **Co giãn**, **Nhấp nháy**, **Dòng chảy**, **Ẩn/hiện**, **Độ mờ**. Cách đổi giá trị: **Trực tiếp**, **Tuyến tính**, **Rời rạc**, **Bảng giá trị**, **Khoảng**. Thanh **Thử giá trị** cho xem trước. Hình ký hiệu mẫu cũ (tệp trong `graphics/symbols/` của project tạo trước đây) có thêm **Gắn nhanh** theo bộ phận.
 
-<a id="help-svg-editor"></a>
-
-### 7.3. Trình vẽ SVG
-
-Tab editor riêng để vẽ và sửa SVG đơn giản ngay trong Studio, không cần Inkscape. Có ở project định dạng 0.3 trở lên. Tệp SVG vẫn là tệp của project (`graphics/…`); binding gắn theo `data-mat-uid` nên sửa hình, di chuyển, đổi màu không làm mất Tag đã gắn.
-
-**Mở tệp**
-
-- Cây project, mục **Đồ họa SVG**: nhấp một tệp để mở tab trình vẽ. Mục cuối **Mới: SVG trống…** mở tab tạo tệp mới.
-- Trên màn hình, chọn một item svg rồi **Sửa trong trình vẽ** (menu chuột phải, Ctrl+Alt+Enter) mở đúng tệp của item. Enter hoặc nhấp đúp item svg vẫn là "vào đồ họa" để gắn Tag (mục 7.2).
-
-![Trình vẽ SVG mở tệp tram-bom.svg: Toolbox dọc bên trái canvas, panel Lớp và Thuộc tính bên phải canvas, task card Công cụ vẽ với màu tô và màu viền, dock báo phần giữ nguyên và khóa sửa nút](img/eng-trinh-ve-svg.png)
-
-- **Mới: SVG trống**: đặt tên (tệp `graphics/<tên>.svg`; trùng tên thì nút **Tạo và mở** bị khóa), chọn kích thước viewBox (Ký hiệu 100 × 100, Nhỏ 200 × 160, Vừa 400 × 300, Màn hình 1280 × 720, hoặc tự nhập W, H từ 1 đến 10.000), bước lưới, tên lớp đầu, nền trắng (lớp "Nền" khóa sẵn). Tệp mới có dấu chưa lưu; chỉ ghi xuống đĩa khi **Lưu**.
-
-**Bố cục**: thanh công cụ của trình vẽ ở trên (Lưu, Hoàn tác, Làm lại, số bước hoàn tác, nhóm, căn chỉnh, phân bố, cùng cỡ, thứ tự, bật tắt bắt dính, bước lưới, Hiện lưới, chip tự lưu); Toolbox công cụ dọc bên trái; canvas có thước, lưới, tay nắm, đường gióng; bên phải panel **Lớp** (trên) và **Thuộc tính** (dưới); dải trạng thái dưới cùng (tọa độ con trỏ, zoom, phần tử đang chọn, công cụ, kiểu bắt dính). Tab **Thuộc tính** của dock dưới cho biết viewBox, số nút / 20.000, độ sâu / 32, cỡ / 5 MB và các cảnh báo của tệp (`W_SVG_FONT`, đường cong khóa sửa nút, phần tử giữ nguyên).
-
-**Công cụ** (phím trong ngoặc; phím có tác dụng khi canvas có focus):
-
-| Công cụ | Cách dùng |
-|---|---|
-| Chọn (V) | nhấp chọn; Shift+nhấp thêm/bớt; kéo vùng trống để chọn bằng khung (lấy phần tử nằm trọn trong khung); Ctrl+nhấp chọn sâu phần tử bên trong nhóm; nhấp đúp vào nhóm để vào nhóm, Esc để ra; kéo phần tử để dời (Shift khóa trục); 8 tay nắm đổi cỡ (Shift giữ tỉ lệ, Alt đổi từ tâm), tay nắm tròn phía trên để xoay (Shift bắt bội 15°) |
-| Sửa nút (N) | với đa tuyến, đa giác, đường chỉ gồm đoạn thẳng: kéo một nút; nhấp đúp lên cạnh để thêm nút; Delete xóa nút đang chọn; lệnh **Đóng/mở đường** trong bảng lệnh |
-| Hình chữ nhật (R) | kéo; Shift vuông; Alt vẽ từ tâm |
-| Ellipse (E) | kéo; Shift ra hình tròn (`circle`) |
-| Đường thẳng (L) | kéo; Shift khóa góc theo bội 15° |
-| Đa tuyến/Đa giác (P) | nhấp từng điểm; Enter hoặc nhấp đúp để xong (đa tuyến); nhấp lại điểm đầu để đóng thành đa giác; Esc khi chưa đủ điểm thì hủy |
-| Văn bản (T) | nhấp rồi gõ trong ô nhập đặt ngay trên canvas (gõ được bằng Telex, Unikey); Enter hoặc Esc để xong; chỉ một dòng. Nhấp đúp vào chữ có sẵn (hoặc Enter khi đang chọn) để sửa |
-| Kéo canvas (H) | kéo để cuộn; cũng có thể giữ Space hoặc nhấn nút chuột giữa |
-
-Phần tử mới nhận `data-mat-uid` mới và mặc định của Studio: hình kín tô `#cfd8dc`, viền `#37474f` dày 2; đường không tô; chữ `#263238`, cỡ 16, phông `sans-serif`. Phần tử mới vẽ vào lớp đang chọn ở panel Lớp (lớp đang khóa hoặc ẩn thì không vẽ được và có lời nhắn).
-
-**Phím**
-
-| Phím | Việc |
-|---|---|
-| Tab / Shift+Tab | chọn phần tử kế / trước (theo thứ tự trong tệp, ở cấp đang làm việc) |
-| Mũi tên | dịch 1 đơn vị; Shift: 10; Ctrl: một bước lưới. Giữ phím là một bước hoàn tác |
-| Enter / Esc | vào nhóm hoặc sửa chữ / ra khỏi nhóm, hủy thao tác, bỏ chọn |
-| Delete | xóa (phần tử có binding thì hỏi trước, xem dưới) |
-| Ctrl+A, Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+D | chọn hết, sao chép, cắt, dán, nhân bản (lệch 20) |
-| Ctrl+G / Ctrl+Shift+G | nhóm / bỏ nhóm |
-| `]` `[` / Ctrl+`]` Ctrl+`[` | lên, xuống một bậc / lên trên cùng, xuống dưới cùng |
-| `+` `-` `0` | phóng to, thu nhỏ, vừa khung; Ctrl + bánh xe để thu phóng tại con trỏ |
-| F2 | đổi tên hiển thị của phần tử (`data-mat-name`) |
-| Ctrl+Z / Ctrl+Y | hoàn tác / làm lại của tệp đang mở (100 bước, mỗi tệp riêng) |
-| Ctrl+S | lưu mọi tệp chưa lưu (kể cả tệp SVG) |
-| Alt (khi kéo) | tắt bắt dính tạm thời |
-
-Mọi lệnh của trình vẽ có trong **Bảng lệnh** (Ctrl+Shift+P), tìm được không dấu (ví dụ "bo nhom").
-
-**Bắt dính và căn chỉnh**: bắt theo lưới (5, 10, 20; mặc định 10), cạnh và tâm của phần tử khác (trong 6 điểm ảnh màn hình), điểm đầu cuối của đường, góc 15° khi giữ Shift. Khi dính, đường gióng màu hồng hiện kèm nhãn ("dính cạnh", "dính tâm"…). Bốn nút trên thanh công cụ bật tắt từng kiểu. Nhấp đúp lên thước để thêm đường gióng cố định (xanh, nét đứt) làm đích bắt dính; nhấp đúp gần đường có sẵn để bỏ; đường gióng lưu ở `.mat-editor/svg-state.json` như mắt và khóa. Căn trái, giữa, phải, trên, giữa dọc, dưới (≥ 2 phần tử), phân bố đều (≥ 3), cùng rộng, cùng cao (theo phần tử chọn đầu tiên).
-
-**Lớp**: lớp là nhóm `<g data-mat-layer="tên">` ở cấp đầu của tệp; phần tử không thuộc lớp nào nằm ở "Lớp mặc định". Panel Lớp: thêm, đưa lên, đưa xuống, xóa (hỏi: **Xóa luôn nội dung** hay **Chuyển sang Lớp mặc định**); nhấp tên để chọn lớp nhận phần tử mới, nhấp đúp hoặc F2 để đổi tên; nhấp phần tử để chọn nó (chọn được cả khi lớp đang khóa). Nút mắt ẩn lớp trong editor, nút khóa làm lớp không chọn được trên canvas. Mắt và khóa chỉ lưu ở `.mat-editor/svg-state.json` trong thư mục project: không đổi tệp SVG, không vào gói nạp xuống; mất tệp này không mất gì của bản vẽ. Chuyển phần tử sang lớp khác: ô **Lớp** ở tab Chung.
-
-**Thuộc tính** (panel phải dưới):
-
-- **Chung**: thẻ, tên hiển thị, `id` (kiểm cú pháp, không trùng), lớp, uid.
-- **Hình học**: X, Y, Rộng, Cao (của hộp bao trong hệ tọa độ tệp), khóa tỉ lệ, góc, bo góc (`rect`), bán kính (`circle`). Ô số nhận dấu phẩy; nhập sai thì ô viền đỏ kèm lời nhắn và tệp không đổi. "Ghi vào" cho biết Studio ghi thẳng vào thuộc tính hình học (khi chính xác: không nghiêng, xoay bội 90°) hay vào `transform`; khi ghi `transform` có tùy chọn nét không co theo transform.
-- **Hiển thị**: tô và viền (bộ chọn màu kèm mã hex, ∅ để không tô), độ dày, nét đứt, đầu mút, độ mờ (0–1), `visibility`. Màu khai trong `style` được sửa ngay trong `style`. Tô gradient có sẵn được giữ, không sửa được.
-- **Văn bản**: nội dung, phông trong danh sách an toàn (`sans-serif`, `serif`, `monospace`, Arial, Segoe UI, Roboto; phông khác có cảnh báo `W_SVG_FONT`), cỡ, đậm, nghiêng, canh.
-- **Gắn Tag**: tóm tắt binding của phần tử (theo uid, ở mọi item svg dùng tệp này); nút **Mở Gắn Tag…** mở màn hình chứa item, vào đồ họa và chọn đúng phần tử để sửa đủ 13 loại hoạt ảnh (mục 7.2).
-
-**Xóa phần tử có binding**: Delete trên phần tử (hoặc nhóm chứa phần tử) đang gắn Tag mở hộp "Xóa …: sẽ mất N binding" liệt kê uid, màn hình, item và binding. **Xóa và bỏ N binding** xóa cả phần tử lẫn bản ghi binding; **Ctrl+Z** khôi phục cả hai.
-
-**Sao chép, dán**: sao chép giữa hai tệp đang mở giữ hình và cấp uid mới (không chép binding). Dán SVG dạng chữ từ chương trình khác: Studio kiểm cỡ ≤ 5 MB trước, lọc qua allowlist như khi nhập (mục 7.1) và hiện hộp "Đã dán SVG từ clipboard (đã lọc)" kê những gì đã loại (script, `on…`, `foreignObject`, liên kết ra ngoài).
-
-**Lưu, tự lưu, tệp đổi bên ngoài**
-
-- **Lưu** (Ctrl+S) ghi tệp chuẩn tắc: phần không sửa giữ nguyên từng byte, mọi `data-mat-uid` giữ nguyên; ghi tạm rồi đổi tên. Cây phần tử ở mục 7.2 thấy nội dung mới ngay.
-- Tự lưu mỗi 30 s khi có thay đổi vào `.mat-editor/autosave/` (tối đa 3 bản mỗi tệp, xóa khi lưu thật; không vào gói). Studio tắt đột ngột: lần mở project sau có hộp **Khôi phục bản tự lưu** (chọn bản cho từng tệp, **Khôi phục** hoặc **Bỏ**, **Xem khác biệt**); khôi phục mở tệp ở trạng thái chưa lưu, tệp trên đĩa chỉ đổi khi bấm Lưu.
-- Studio kiểm tệp trên đĩa khi cửa sổ lấy focus và mỗi 5 s (so mtime và băm). Chưa sửa gì thì tự nạp lại và báo. Đang có thay đổi thì hộp **Tệp đã đổi bên ngoài**: **Nạp lại từ đĩa** (bỏ thay đổi, xóa lịch sử hoàn tác), **Giữ bản đang sửa** (lần Lưu sau sẽ hỏi Ghi đè / Tải lại / Hủy) hoặc **So sánh** (số nút, cỡ, binding sẽ mồ côi). Studio không bao giờ ghi đè im lặng.
-
-**Giới hạn có chủ ý** (nút ⓘ cuối Toolbox): không có bút Bézier tự do, phép toán boolean, bộ lọc (filter), mặt nạ (mask), sửa gradient, văn bản theo đường, văn bản nhiều dòng. Đường có đoạn cong (C, S, Q, T, A) chỉ di chuyển, đổi cỡ, xoay, đổi màu; Sửa nút báo "Đường có đoạn cong… sửa nút trong Inkscape". `mask`, `filter`, `pattern` và `svg` lồng giữ nguyên, chỉ biến đổi như một khối. Tệp tối đa 5 MB, 20.000 phần tử, độ sâu 32. Cần các tính năng trên thì vẽ bằng Inkscape rồi **Nhập lại SVG…** (mục 7.1) để giữ binding.
-
-### 7.4. Project mẫu sơ đồ công nghệ
+### 7.3. Project mẫu sơ đồ công nghệ
 
 `projects/svg-showcase/` (hoặc **Project mới…**, mẫu **Mẫu sơ đồ công nghệ (SVG)**) là sơ đồ trạm bơm nước sạch vẽ tay bằng SVG theo kiểu HMI hiệu năng cao: nền tối, thiết bị xám, màu chỉ cho trạng thái (chạy xanh lá, dừng xám, lỗi đỏ, cảnh báo cam) và loại môi chất (nước thô nâu nhạt, nước sạch xanh dương, hóa chất vàng). Hồ chứa → 3 bơm cấp → bể lắng → bể lọc → bồn nước sạch → 2 bơm đẩy → mạng cấp nước, có trạm châm Clo và tủ MCC. Mọi Tag là Tag mô phỏng hoặc tính toán: bơm chạy luân phiên, P-102 thỉnh thoảng lỗi, lưu lượng theo số bơm chạy.
 
@@ -749,4 +674,3 @@ Mỗi tác vụ dùng `projects/training-demo` và PLC giả lập (mục 1). Gi
 | K17 | Alarm | đặt mức giả lập vượt 80 % (chờ dao động); xem trang Alarm | alarm "Mức bồn" mức Nhỏ hiện, xác nhận được |
 | K18 | Logic | project đã nâng cấp lên 1.0.0 (mục 3); thêm Tag nội bộ BOOL `BON.BAO_CAO`; **Logic** > **Tạo logic.json**; thêm luật: khi `BON.MUC > BON.NGUONG_CAO` giữ 5000 ms thì **Đặt Tag** `BON.BAO_CAO = true`; **Thử logic**, đặt tay `BON.MUC` = 90, **Chạy** | hành động phát sinh sau 5 s; "Không gửi gì tới thiết bị" |
 | K19 | Template | project 1.0.0; thêm Tag nội bộ BOOL `BOM2.LOI`, `BOM2.LENH_CHAY`; chọn đèn và công tắc ở K6, nhấp phải, **Tạo template…** id `bom`, tham số `prefix` (`tagPrefix`, mặc định `BOM`); **Thêm bản sao…** `bom2` với `prefix` = `BOM2` | 2 bản sao gắn đúng Tag; đổi màu đèn trong template rồi **Cập nhật mọi bản sao** đổi cả hai |
-| K20 | Trình vẽ SVG | **Đồ họa SVG** > **Mới: SVG trống…** tên `bom-tay`, 200 × 160; vẽ thân bơm (R), cánh quạt (E, Shift), ống (L), nhãn "P-01" (T); chọn cả bốn, Ctrl+G; Ctrl+S | tệp `graphics/bom-tay.svg` có 4 phần tử trong một nhóm, mỗi phần tử có `data-mat-uid`; Ctrl+Z bỏ nhóm |

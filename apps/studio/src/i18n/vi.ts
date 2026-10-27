@@ -21,7 +21,7 @@ import { viScreens } from './vi-screens.ts';
 import { viScreensInsp } from './vi-screens-insp.ts';
 import { viScreensNav } from './vi-screens-nav.ts';
 import { viSvg } from './vi-svg.ts';
-import { viSymbols } from './vi-symbols.ts';
+import { viQuickBind } from './vi-quickbind.ts';
 import { viTags } from './vi-tags.ts';
 import { viTags2 } from './vi-tags2.ts';
 import { viExpr } from './vi-expr.ts';
@@ -32,7 +32,6 @@ import { viRecipes } from './vi-recipes.ts';
 import { viTemplate } from './vi-template.ts';
 import { viLogic } from './vi-logic.ts';
 import { viLogicDiagram } from './vi-logic-diagram.ts';
-import { viSvgDraw } from './vi-svgdraw.ts';
 import { viUpdate } from './vi-update.ts';
 import { viDevset } from './vi-devset.ts';
 import { viNewProject } from './vi-newproject.ts';
@@ -167,7 +166,7 @@ const viCore = {
   'phasePage.reports':
     'Mẫu báo cáo ngày, ca, tháng (min, max, avg, tổng, giá trị cuối) từ dữ liệu lưu trữ; xuất CSV, XLSX, PDF. Báo cáo sinh trên trình duyệt để không tốn CPU của BL335.',
   'phasePage.library':
-    'Ký hiệu SVG (bơm, van, bồn, motor, ống) và widget mẫu của project. Kéo vào màn hình; sửa mẫu thì mọi chỗ dùng cập nhật theo.',
+    'Widget mẫu của project. Kéo vào màn hình; sửa mẫu thì mọi chỗ dùng cập nhật theo. Đồ họa SVG vẽ bằng phần mềm ngoài rồi Nhập SVG.',
 
   // ---- Bảng Tag (FR-020) ----
   'grid.col.id': 'Tên',
@@ -301,7 +300,6 @@ const viCore = {
   'tc.group.control': 'Điều khiển',
   'tc.group.chart': 'Biểu đồ',
   'tc.group.alarm': 'Alarm',
-  'tc.group.symbols': 'Ký hiệu SVG',
   'tc.tool.card': 'Card giá trị',
   'tc.tool.text': 'Nhãn chữ',
   'tc.tool.lamp': 'Đèn báo',
@@ -316,14 +314,8 @@ const viCore = {
   'tc.tool.pie': 'Tròn',
   'tc.tool.alarmTable': 'Bảng alarm',
   'tc.tool.alarmBanner': 'Banner alarm',
-  'tc.tool.pump': 'Bơm',
-  'tc.tool.valve': 'Van',
-  'tc.tool.tank': 'Bồn',
-  'tc.tool.motor': 'Motor',
-  'tc.tool.pipe': 'Ống',
   'tc.toolSoon': '{name} có ở {phase}: kéo thả widget lên màn hình làm ở giai đoạn đó.',
   'tc.lib.project': 'Thư viện project',
-  'tc.lib.common': 'Thư viện chung',
   'tc.lib.empty': 'Chưa có mục nào. Kéo phần tử từ màn hình vào đây để lưu làm mẫu.',
   'tc.online.offTitle': 'Chưa kết nối thiết bị',
   'tc.online.offText': 'Công cụ online cần kết nối theo dõi tới thiết bị.',
@@ -403,8 +395,9 @@ const viCore = {
   'road.p45.title': 'Alarm; biểu đồ lịch sử, báo cáo',
   'road.p45.text': 'ISA-18.2, alarm log; báo cáo ca/ngày/tháng, xuất CSV/XLSX/PDF',
   'road.p6': 'GĐ 6',
-  'road.p6.title': 'Trình vẽ SVG trong Studio, cập nhật runtime qua mạng',
-  'road.p6.text': 'Trước đó vẽ bằng công cụ ngoài rồi import và gắn Tag trong Studio',
+  'road.p6.title': 'Cập nhật runtime qua mạng',
+  'road.p6.text':
+    'Studio chỉ cấu hình: đồ họa vẽ bằng công cụ ngoài rồi nhập và gắn Tag trong Studio',
 
   // ---- Hộp thoại (FR-024, FR-025, FR-034) ----
   'dlg.close': 'Đóng',
@@ -484,7 +477,7 @@ export const viMessages = {
   ...viDashboard,
   ...viScreensNav,
   ...viSvg,
-  ...viSymbols,
+  ...viQuickBind,
   ...viImport,
   ...viHistory,
   ...viReports,
@@ -492,7 +485,6 @@ export const viMessages = {
   ...viTemplate,
   ...viLogic,
   ...viLogicDiagram,
-  ...viSvgDraw,
   ...viUpdate,
   ...viDevset,
   ...viS7,

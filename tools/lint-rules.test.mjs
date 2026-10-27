@@ -19,14 +19,10 @@ for (const where of [
   'apps/runtime-web/src/x.ts',
   'packages/ui-components/src/x.ts',
   'packages/svg-import/src/x.ts',
-  'packages/symbol-library/src/x.ts',
   'packages/svg-renderer/src/x.ts',
   'packages/binding-engine/src/x.ts',
-  // 011 (T014, SC-034): trình vẽ SVG và logic v2.
-  'apps/studio/src/ui/svg/x.ts',
+  // 011 (T014, SC-034): logic v2.
   'apps/studio/src/ui/logic/x.ts',
-  'apps/studio/src/model/svg/x.ts',
-  'packages/svg-edit/src/x.ts',
   'packages/logic-engine/src/x.ts',
 ]) {
   test(`bắt mẫu vi phạm ở ${where}`, async () => {

@@ -6,7 +6,6 @@
 import { t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
 import type { EditorId, NodeRef } from '../model/tree.ts';
-import { SVG_COMMANDS, SVG_KEYS, type SvgCommandId } from '../model/svg/keys.ts';
 
 export type MenuId = 'project' | 'edit' | 'view' | 'online' | 'tools' | 'help';
 
@@ -153,11 +152,7 @@ export type CommandId =
   | 'screen.updateInstances'
   | 'screen.faceplate'
   // Feature 012 (FR-040): chuyển màn hình tự do đang mở sang bố cục lưới (hộp thoại xem trước).
-  | 'screen.convertToGrid'
-  // Feature 011 (FR-097, FR-115): trình vẽ SVG. Không có menu: bảng lệnh, thanh công cụ và phím của trình vẽ.
-  | 'svg.new'
-  | 'svg.editInDrawing'
-  | SvgCommandId;
+  | 'screen.convertToGrid';
 
 /** Trạng thái mà điều kiện bật của lệnh cần; store dựng mỗi khi trạng thái đổi. */
 export interface CommandContext {
@@ -225,14 +220,6 @@ export interface CommandContext {
   screenIsGrid: boolean;
   /** Vùng chọn của editor Màn hình có item của bản sao template. */
   screenTplSel: boolean;
-  /** Vùng chọn của editor Màn hình là đúng một item `svg` (lệnh "Sửa trong trình vẽ"). */
-  screenSvgItem: boolean;
-  /** Tab đang chọn là trình vẽ SVG và tệp đã mở được. */
-  svgEditor: boolean;
-  /** Số phần tử đang chọn trong trình vẽ SVG. */
-  svgSel: number;
-  /** Clipboard của trình vẽ SVG có nội dung. */
-  svgClip: boolean;
 }
 
 export const EMPTY_CONTEXT: CommandContext = {
@@ -268,10 +255,6 @@ export const EMPTY_CONTEXT: CommandContext = {
   format11: false,
   screenIsGrid: false,
   screenTplSel: false,
-  screenSvgItem: false,
-  svgEditor: false,
-  svgSel: 0,
-  svgClip: false,
 };
 
 /** `true` hoặc khóa i18n của lý do bị khóa (tooltip, bảng lệnh). */
@@ -345,69 +328,6 @@ const format10: Check = (c) => c.format10 || 'reason.needFormat10';
 const format11: Check = (c) => c.format11 || 'reason.needFormat11';
 const tplSelected: Check = (c) => c.screenTplSel || 'reason.noInstanceSel';
 const popupOpen: Check = (c) => c.screenIsPopup || 'reason.notPopup';
-
-/** Trình vẽ SVG (feature 011): tab trình vẽ đang mở, project sửa được. */
-const svgOpen: Check = (c) =>
-  !c.hasProject ? 'reason.noProject' : !c.svgEditor ? 'reason.svgNotActive' : true;
-const svgEdit: Check = (c) => (c.readOnly ? 'reason.readOnly' : svgOpen(c));
-const svgSelected =
-  (n: number): Check =>
-  (c) =>
-    c.svgSel >= n
-      ? true
-      : n === 1
-        ? 'reason.svgNoSelection'
-        : n === 2
-          ? 'reason.svgNeed2'
-          : 'reason.svgNeed3';
-
-/** Lệnh của trình vẽ: điều kiện bật theo nhóm. */
-function svgCheck(id: SvgCommandId): Check {
-  switch (id) {
-    case 'svg.copy':
-    case 'svg.cut':
-    case 'svg.duplicate':
-    case 'svg.delete':
-    case 'svg.group':
-    case 'svg.toFront':
-    case 'svg.toBack':
-    case 'svg.forward':
-    case 'svg.backward':
-      return all(svgEdit, svgSelected(1));
-    case 'svg.ungroup':
-    case 'svg.rename':
-    case 'svg.closePath':
-      return all(svgEdit, svgSelected(1));
-    case 'svg.alignLeft':
-    case 'svg.alignCenter':
-    case 'svg.alignRight':
-    case 'svg.alignTop':
-    case 'svg.alignMiddle':
-    case 'svg.alignBottom':
-    case 'svg.sameWidth':
-    case 'svg.sameHeight':
-      return all(svgEdit, svgSelected(2));
-    case 'svg.distributeH':
-    case 'svg.distributeV':
-      return all(svgEdit, svgSelected(3));
-    case 'svg.paste':
-      return svgEdit;
-    case 'svg.zoomIn':
-    case 'svg.zoomOut':
-    case 'svg.zoomFit':
-    case 'svg.toggleGrid':
-    case 'svg.snapGrid':
-    case 'svg.snapObjects':
-    case 'svg.snapPoints':
-    case 'svg.snapAngle':
-    case 'svg.selectAll':
-    case 'svg.toolSelect':
-    case 'svg.toolHand':
-      return svgOpen;
-    default:
-      return svgEdit;
-  }
-}
 
 /** Project 0.5 (alarm, feature 009). */
 const project05: Check = (c) => c.version05 || 'reason.needVersion05';
@@ -765,18 +685,6 @@ export const COMMANDS: readonly CommandSpec[] = [
     all(screenEdit, format11, (c) => (c.screenIsGrid ? 'reason.alreadyGrid' : true)),
     { icon: 'grid' },
   ),
-  // ---- Feature 011: trình vẽ SVG ----
-  cmd('svg.new', null, all(needProject, editable, project03), { icon: 'fnew' }),
-  cmd(
-    'svg.editInDrawing',
-    null,
-    all(needProject, project03, screenOpen, (c) => c.screenSvgItem || 'reason.noSvgItem'),
-    { shortcut: 'Ctrl+Alt+Enter', icon: 'fsvg' },
-  ),
-  ...SVG_COMMANDS.map((id) => {
-    const key = SVG_KEYS[id];
-    return cmd(id, null, svgCheck(id), key ? { canvasKey: key } : {});
-  }),
 ];
 
 const BY_ID = new Map<string, CommandSpec>(COMMANDS.map((c) => [c.id, c]));

@@ -4,12 +4,13 @@
 import { html, nothing, type TemplateResult } from 'lit';
 import { bindingSetOf, elementNameOf, itemRef, type ItemRef } from '../app/svg-bind.ts';
 import { t, type MessageKey } from '../i18n/index.ts';
-import { portStatuses, quickParts, quickTarget, type QuickPart } from '../model/quick-bind.ts';
+import { quickParts, quickTarget, type QuickPart } from '../model/quick-bind.ts';
 import { elementOf, eventMinRole, setEventMinRole } from '../model/svg-binding-doc.ts';
 import { findByUid } from '../model/svg-dom.ts';
 import { commitSet, eventCtx } from '../app/svg-bind.ts';
 import { AppElement } from './base.ts';
 import { prow } from './mat-inspector.ts';
+import './quick-bind.css';
 import './props-svg-bind.ts';
 import './props-svg-events.ts';
 import './props-svg.css';
@@ -266,7 +267,6 @@ export class MatSvgQuick extends AppElement {
     if (!screen || item === undefined || ref === null) return nothing;
     const parts = quickParts(item, bindingSetOf(app, ref));
     if (parts === null) return nothing;
-    const ports = portStatuses(item, screen.items);
     return html`<div class="qb" role="region" aria-label=${t('qb.title')}>
       <div class="qb-sec"><b>${t('qb.title')}</b> · ${t('qb.hint')}</div>
       <div role="list" aria-label=${t('qb.parts')}>
@@ -299,26 +299,6 @@ export class MatSvgQuick extends AppElement {
           </div>`;
         })}
       </div>
-      ${
-        ports.length > 0
-          ? html`<div class="qb-sec">${t('qb.ports')}</div>
-              ${ports.map(
-                (p) =>
-                  html`<div class="qb-port" data-port=${p.id}>
-                    <span
-                      class="qb-dot ${p.linkedTo !== null ? 'on' : ''}"
-                      aria-hidden="true"
-                    ></span>
-                    <span class="mono">${p.id}</span>
-                    <span class="chip">${t(`qb.portDir.${p.dir}` as MessageKey)}</span>
-                    <span class="muted"
-                      >${p.linkedTo !== null ? t('qb.portLinked', { item: p.linkedTo }) : t('qb.portFree')}</span
-                    >
-                  </div>`,
-              )}
-              <p class="help pad">${t('qb.portHint')}</p>`
-          : nothing
-      }
     </div>`;
   }
 }

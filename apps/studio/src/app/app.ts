@@ -76,7 +76,6 @@ import { planSimWrite, type DeviceTagDef, type WriteRowInput } from '../model/wr
 import type { LiveValue } from '../model/device-session.ts';
 import { LiveSubscriptions, MAX_SUBSCRIBED, PRIORITY } from '../model/live-subscriptions.ts';
 import { ScreenWorkspace } from './screen-workspace.ts';
-import { SVGDRAW, SvgWorkspace, relOfEditor } from './svg-workspace.ts';
 import type { EditResult, Rejection } from '../model/screen-doc.ts';
 import type { ScreenModel } from '@mat/project-schema';
 import { loadColumnChoice, saveColumnChoice, type ColumnChoice } from '../model/tag-table.ts';
@@ -168,12 +167,6 @@ export type OnlineDialogSpec =
   // Feature 011 (FR-068): Cập nhật runtime (OTA) của thiết bị đang Online (administrator; ui/dialogs/update-wizard.ts).
   | { kind: 'runtimeUpdate' }
 
-  // Feature 011 (FR-110, FR-109, FR-112, FR-113, FR-105): trình vẽ SVG (ui/svg/svg-dialogs.ts).
-  | { kind: 'svgRestore' }
-  | { kind: 'svgExternal'; rel: string }
-  | { kind: 'svgDelete'; rel: string }
-  | { kind: 'svgPasteReport'; rel: string }
-  | { kind: 'svgLayerDelete'; rel: string; layer: string }
   // Feature 027: hộp thoại của nhóm editor Người dùng và quyền (nội dung theo `app.admin.dialog`).
   | { kind: 'admin' }
   // Project mới… (2026-10-20, ui/dialogs/new-project-dialog.ts).
@@ -195,9 +188,6 @@ export type SimpleDialogKind = Exclude<
   | { kind: 'templateDelete' }
   | { kind: 'popupArgs' }
   | { kind: 'gridConvert' }
-  | { kind: 'svgExternal' }
-  | { kind: 'svgDelete' }
-  | { kind: 'svgPasteReport' }
   | { kind: 'svgLayerDelete' }
 >['kind'];
 
@@ -233,11 +223,6 @@ export const isOnlineDialog = (d: DialogSpec | null): d is OnlineDialogSpec =>
   d?.kind === 'gridConvert' ||
   d?.kind === 'logicStop' ||
   d?.kind === 'runtimeUpdate' ||
-  d?.kind === 'svgRestore' ||
-  d?.kind === 'svgExternal' ||
-  d?.kind === 'svgDelete' ||
-  d?.kind === 'svgPasteReport' ||
-  d?.kind === 'svgLayerDelete' ||
   d?.kind === 'admin' ||
   d?.kind === 'newProject';
 
@@ -298,8 +283,6 @@ export interface AppHooks {
   commitPending?: () => void;
   /** Toolbox: thêm widget vào tâm vùng nhìn của editor Màn hình đang mở (nhấp đúp, Enter) hoặc tại điểm thả. */
   addWidget?: (type: string) => void;
-  /** Toolbox Ký hiệu SVG (feature 008, T091): thêm ký hiệu `key` vào tâm vùng nhìn (nhấp đúp, Enter). */
-  addSymbol?: (key: string) => void;
   /** Enter ở canvas: đưa focus vào ô đầu của inspector. */
   focusInspector?: () => void;
   /** F2 ở canvas khi đã vào item svg: mở ô đổi tên của phần tử đang chọn ở cây phần tử; false nếu không có gì để đổi tên. */
@@ -403,9 +386,9 @@ export class StudioApp {
   readonly simulation: SimController;
   /** Trạng thái làm việc của editor Màn hình 0.3 (feature 007): vùng nhìn, lưới, clipboard, xem trước. */
   readonly screens: ScreenWorkspace;
-  /** Trình vẽ SVG (feature 011): tệp đang mở, tự lưu, trạng thái soạn thảo. */
-  readonly svg: SvgWorkspace;
   readonly hooks: AppHooks = {};
+  /** Tệp `.svg` trên đĩa lúc mở project (`listSvg`). */
+  private diskSvg: string[] = [];
   /** Nhóm đang mở của editor Logic (feature 011): nút nhóm trên cây đổi nhóm của cùng tab `logic`. */
   logicKind = 'rule';
   /** Lớp nói chuyện với thiết bị qua Rust (feature 005); `null` trong test của 004. */
@@ -656,7 +639,6 @@ export class StudioApp {
       checkedAt: null,
     };
     this.screens = new ScreenWorkspace(this);
-    this.svg = new SvgWorkspace(this);
     this.store.subscribe(() => this.onStoreChange());
     this.session.subscribe((e) => {
       if (e.type === 'values') for (const l of [...this.valueListeners]) l(e.tags);
@@ -877,13 +859,19 @@ export class StudioApp {
     return s.project ? basename(s.project.display) : '';
   }
 
+  /** Tệp `.svg` của project: trên đĩa (lúc mở) và tài liệu của store (kể cả tệp mới nhập chưa lưu). */
+  svgFiles(): string[] {
+    const set = new Set(this.diskSvg);
+    for (const [rel, d] of Object.entries(this.store.state.docs))
+      if (rel.endsWith('.svg') && !d.removed) set.add(rel);
+    return [...set].filter((r) => !r.startsWith('.')).sort();
+  }
+
   /** File chưa lưu (nhớ theo đối tượng docs để không tuần tự hóa lại mỗi lần vẽ). */
   dirtyFiles(): string[] {
     const docs = this.store.state.docs;
     if (this.dirtyMemo?.docs !== docs) this.dirtyMemo = { docs, files: this.store.dirtyFiles() };
-    // Tệp SVG đang sửa trong trình vẽ (feature 011): chưa lưu cho tới khi Lưu.
-    const svg = this.svg.dirtyRels().filter((r) => !this.dirtyMemo!.files.includes(r));
-    return svg.length ? [...this.dirtyMemo.files, ...svg] : this.dirtyMemo.files;
+    return this.dirtyMemo.files;
   }
 
   isDirty(): boolean {
@@ -895,8 +883,6 @@ export class StudioApp {
     const files = this.dirtyFiles();
     if (editor === 'settings') return files.includes('project.json');
     if (editor === 'tags') return files.includes(this.store.state.outline.tagFile);
-    const rel = relOfEditor(editor);
-    if (rel !== null) return this.svg.dirty(rel);
     return false;
   }
 
@@ -953,7 +939,6 @@ export class StudioApp {
       },
       compare: this.session.compare.info?.result ?? null,
       issues: s.issues,
-      svgFiles: this.svg.files(),
     });
   }
 
@@ -981,34 +966,6 @@ export class StudioApp {
           s.auth?.role === 'engineer' ||
           s.auth?.role === 'administrator'),
       relogin: s.state === 'relogin',
-      ...this.svgContext(ctx),
-    };
-  }
-
-  /** Ngữ cảnh lệnh của trình vẽ SVG (feature 011): tab đang mở, vùng chọn, clipboard, hoàn tác của tệp. */
-  private svgContext(ctx: CommandContext): Partial<CommandContext> {
-    const rel = this.store.state.project ? relOfEditor(this.store.state.active) : null;
-    const scr = ctx.screenEditor ? this.store.state.active.slice('screen:'.length) : null;
-    const sel = scr !== null ? this.selectedItems(scr) : [];
-    const item =
-      scr !== null && sel.length === 1
-        ? this.screenModel(scr)?.items.find((i) => i.id === sel[0])
-        : undefined;
-    const out: Partial<CommandContext> = {
-      screenSvgItem: item?.type === 'svg',
-      // tệp SVG chưa lưu của trình vẽ cũng là "còn thay đổi chưa lưu" (Lưu bật)
-      dirty: ctx.dirty || this.svg.dirtyRels().length > 0,
-    };
-    if (rel === null) return out;
-    const sess = this.svg.session(rel);
-    const ed = this.svg.editor(rel);
-    return {
-      ...out,
-      svgEditor: sess !== undefined,
-      svgSel: ed?.selection.length ?? 0,
-      svgClip: this.svg.clip !== null,
-      canUndo: sess?.undo.canUndo ?? false,
-      canRedo: sess?.undo.canRedo ?? false,
     };
   }
 
@@ -1173,32 +1130,10 @@ export class StudioApp {
         return this.openEditor('settings');
       case 'project.close':
         return this.closeProject();
-      case 'edit.undo': {
-        // Trình vẽ SVG có ngăn hoàn tác riêng của tệp (100 bước, feature 011).
-        const rel = relOfEditor(this.store.state.active);
-        if (rel !== null && this.svg.session(rel)) {
-          this.svg.undo(rel);
-          return;
-        }
+      case 'edit.undo':
         return this.store.undo();
-      }
-      case 'edit.redo': {
-        const rel = relOfEditor(this.store.state.active);
-        if (rel !== null && this.svg.session(rel)) {
-          this.svg.redo(rel);
-          return;
-        }
+      case 'edit.redo':
         return this.store.redo();
-      }
-      case 'svg.new':
-        return this.openEditor('svgnew');
-      case 'svg.editInDrawing': {
-        const sid = currentScreenId(this);
-        const id = sid === null ? undefined : this.selectedItems(sid)[0];
-        const it = sid === null ? undefined : this.screenModel(sid)?.items.find((i) => i.id === id);
-        if (it?.type === 'svg') this.openEditor(`${SVGDRAW}${it.svgFile}` as `svgdraw:${string}`);
-        return;
-      }
       case 'edit.find':
         this.setWorkspace({ taskCard: 'find', taskCardOpen: true });
         this.hooks.focusFind?.();
@@ -1397,11 +1332,7 @@ export class StudioApp {
     const files = this.dirtyFiles();
     if (!files.length) return true;
     const choice = await this.ask({ kind: 'unsaved', files });
-    if (choice === 'discard') {
-      // Bỏ thay đổi của trình vẽ SVG: bỏ luôn bản tự lưu (lần mở sau không đề nghị khôi phục cái đã chủ ý bỏ).
-      await this.svg.discardAutosaves();
-      return true;
-    }
+    if (choice === 'discard') return true;
     if (choice !== 'save') return false;
     return (await this.save()).status === 'saved';
   }
@@ -1449,8 +1380,8 @@ export class StudioApp {
   async cancelUpgrade(): Promise<void> {
     if (this.u.dialog?.kind === 'upgrade') this.u = { ...this.u, dialog: null };
     this.session.disconnect();
-    this.svg.projectClosed();
     this.store.closeProject();
+    this.diskSvg = [];
     this.lastSelection.clear();
     this.u = { ...this.u, expanded: new Set(DEFAULT_EXPANDED), treeSel: null };
     this.pendingReveal = null;
@@ -1475,8 +1406,8 @@ export class StudioApp {
     this.syncSessionTags();
     this.checkVersionGate();
     this.emit();
-    // Trình vẽ SVG (feature 011): trạng thái soạn thảo, danh sách tệp SVG, bản tự lưu còn sót sau tắt đột ngột.
-    await this.svg.projectOpened();
+    // Tệp SVG trên đĩa (chọn logo báo cáo; tệp chưa nạp vào store cũng có).
+    this.diskSvg = await this.platform.listSvg();
     await this.refreshRecent();
     // Thiết bị gắn với project hiện trên cây, thanh trạng thái, trang Thiết bị (T085a).
     await this.refreshDevices();
@@ -1526,6 +1457,7 @@ export class StudioApp {
     if (!(await this.settleUnsaved())) return;
     this.session.disconnect();
     this.store.closeProject();
+    this.diskSvg = [];
     this.lastSelection.clear();
     this.u = { ...this.u, expanded: new Set(DEFAULT_EXPANDED), treeSel: null };
     this.pendingReveal = null;
@@ -1539,14 +1471,7 @@ export class StudioApp {
       this.toast(t('toast.nothingToSave'));
       return { status: 'saved', files: [] };
     }
-    // Tệp SVG của trình vẽ (feature 011) trước: mỗi tệp tự hỏi khi xung đột.
-    const svgSaved = await this.svg.saveAll();
-    if (svgSaved === null) return { status: 'cancelled' };
-    if (this.store.dirtyFiles().length === 0) {
-      this.toast(saveNotice(svgSaved, this.store.state.issues));
-      return { status: 'saved', files: svgSaved };
-    }
-    const written: string[] = [...svgSaved];
+    const written: string[] = [];
     const hadBackup = !!this.store.state.upgrade?.backup;
     let r = await this.store.save();
     while (r.status === 'conflict') {
@@ -1698,7 +1623,6 @@ export class StudioApp {
     if (id === 'audit') return t('audit.tab');
     if (id === 'deviceSettings') return t('devset.tab');
     if (id === 'alarmTest') return t('alarm.test.title');
-    if (id === 'svgnew') return t('svgd.new.tab');
     const node = findByEditor(this.tree(), id);
     if (node) return node.label;
     return id.startsWith('screen:') ? id.slice('screen:'.length) : id;

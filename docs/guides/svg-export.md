@@ -71,5 +71,5 @@ Nếu một mục `R_` làm hình mất thứ bạn cần (ví dụ ảnh liên 
 ## Sau khi nhập
 
 - Gắn Tag trong inspector (nhóm Gắn Tag và Sự kiện): xem mục "Nhập SVG và gắn Tag" của [apps/studio/README.md](../../apps/studio/README.md).
-- Không cần ký hiệu từ phần mềm vẽ? Dùng thư viện 15 ký hiệu của Studio: [packages/symbol-library](../../packages/symbol-library/README.md).
+- Studio không có thư viện ký hiệu và không vẽ ([ADR-055](../adr/055-studio-config-only.md)): bơm, van, bồn… vẽ hoặc lấy từ thư viện của phần mềm vẽ rồi nhập như mọi bản vẽ khác.
 - Hoạt ảnh chạy trên máy khách: mỗi màn hình tối đa 64 hoạt ảnh vô hạn không cảnh báo (`W_ANIM_MANY` ở trên 64, lỗi `E_LIMIT` ở trên 256).

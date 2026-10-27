@@ -201,5 +201,6 @@ export const viScreensInsp = {
   'wi.svg.elements': 'Số phần tử khai',
   'wi.svg.bound': 'Phần tử có binding',
   'wi.svg.bindings': 'Binding (chỉ đọc)',
-  'wi.svg.help': 'Đồ họa SVG chỉ xem ở đây: sửa binding và Thư viện ký hiệu là việc của GĐ 3b.',
+  'wi.svg.help':
+    'Đồ họa SVG chỉ xem ở đây: gắn Tag cho phần tử SVG cần project định dạng 0.4 trở lên.',
 } as const;

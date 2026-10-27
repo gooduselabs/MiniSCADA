@@ -333,7 +333,7 @@ export function removeRow(doc: ScreenModel, rowId: string): GridEditResult {
 }
 
 /**
- * Đặt một item mới vào màn hình lưới (nhập SVG, ký hiệu; feature 012, FR-014): bỏ `x`, `y`, `width`, `height` của item,
+ * Đặt một item mới vào màn hình lưới (nhập SVG; feature 012, FR-014): bỏ `x`, `y`, `width`, `height` của item,
  * trỏ ô trống đầu tiên (theo thứ tự hàng rồi ô) tới nó; hết ô trống thì thêm một hàng 12 cột ở cuối. Màn hình tự do trả
  * màn hình có item thêm nguyên trạng.
  */

@@ -1,9 +1,8 @@
-// Gắn nhanh (feature 008, T092; FR-058; contract symbol-library §2): với item `svg` dùng tệp ký hiệu của thư viện, liệt kê bộ phận
+// Gắn nhanh (feature 008, T092; FR-058): với item `svg` dùng tệp ký hiệu mẫu cũ (`graphics/symbols/`), liệt kê bộ phận
 // kèm gợi ý (`parts[].suggest`) và chỉ ra nơi mở trong inspector khi bấm. Hàm thuần; không ghi gì vào project (người dùng vẫn tự
 // chọn Tag và chấp nhận).
 import type { BindingSet04, Item } from '@mat/project-schema';
-import { portSnap, type PortRef } from '@mat/symbols';
-import { fixedPortsOf, symbolFileOf } from './symbol-flow.ts';
+import { symbolPartsOf } from '../i18n/symbol-parts.ts';
 
 export interface QuickPart {
   uid: string;
@@ -24,11 +23,11 @@ export interface QuickTarget {
   field: string;
 }
 
-/** Danh sách bộ phận của item nếu nó dùng tệp ký hiệu của thư viện; `null` khi không. */
+/** Danh sách bộ phận của item nếu nó dùng tệp ký hiệu mẫu; `null` khi không. */
 export function quickParts(item: Item, set: BindingSet04 | undefined): QuickPart[] | null {
-  const f = symbolFileOf(item);
-  if (f === undefined) return null;
-  return f.symbol.parts.map((p) => {
+  const parts = item.type === 'svg' ? symbolPartsOf(item.svgFile) : undefined;
+  if (parts === undefined) return null;
+  return parts.map((p) => {
     const entry = set?.elements.find((e) => e.elementUid === p.uid);
     return {
       uid: p.uid,
@@ -47,30 +46,4 @@ export function quickTarget(part: QuickPart): QuickTarget {
   if (first === 'click') return { tab: 'events', field: 'action' };
   if (first === undefined) return { tab: 'bind', field: 'tag' };
   return { tab: 'bind', rowId: first, field: 'tag' };
-}
-
-export interface PortStatus {
-  id: string;
-  dir: 'n' | 'e' | 's' | 'w';
-  /** Id item mà điểm gắn đang nối (trùng khít, hướng đối nhau); `null` khi chưa nối. */
-  linkedTo: string | null;
-}
-
-/** Trạng thái nối của các điểm gắn của item: nối khi trùng (≤ 1 đơn vị thiết kế) một điểm tương thích của item khác. */
-export function portStatuses(item: Item, items: readonly Item[]): PortStatus[] {
-  const f = symbolFileOf(item);
-  if (f === undefined) return [];
-  const others = fixedPortsOf(items.filter((i) => i.id !== item.id));
-  return f.ports.map((p) => {
-    const mine: PortRef = {
-      itemId: item.id,
-      portId: p.id,
-      x: item.x + p.x * item.width,
-      y: item.y + p.y * item.height,
-      dir: p.dir,
-      kind: p.kind,
-    };
-    const hit = portSnap([mine], others, 1, { thresholdPx: 1 });
-    return { id: p.id, dir: p.dir, linkedTo: hit?.pair[1].itemId ?? null };
-  });
 }

@@ -2,7 +2,7 @@
 //   node tools/svg-demo/generate.mjs [--out <thư mục>]
 //   node tools/svg-demo/generate.mjs --standard --out <thư mục>     (màn hình chuẩn 3b cho T108, không commit)
 // Mặc định: hai màn hình (Bồn nước, Tổng quan) và popup Bơm 1; đồ họa nhập từ fixture Inkscape thật bằng `importSvg`
-// (UID sinh từ hạt giống cố định), ký hiệu bơm/van/bồn/motor/ống/quạt của @mat/symbols; đủ 13 loại động hóa, 5 sự kiện.
+// (UID sinh từ hạt giống cố định), ký hiệu bơm/van/bồn/motor/ống/quạt của tools/symbol-data; đủ 13 loại động hóa, 5 sự kiện.
 // Tag, kết nối và bảng giá trị chép từ bản 0.3 đóng băng của `projects/dashboard-demo`
 // (`tests/fixtures/dashboard-demo-0.3`; project mẫu đã lên 1.0 ở feature 011) (đổi sang 0.4.0). `--standard`: một màn hình ≈ 3.000 phần tử,
 // 30 binding, 10 hoạt ảnh, 5 sự kiện và 103 Tag. Đầu ra tất định: chạy lại cho cùng từng byte (test: generate.test.mjs).
@@ -18,7 +18,7 @@ const { importSvg, makeSeededUid } = await import('../../packages/svg-import/src
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
 const V = '0.4.0';
-const LIB = join(root, 'packages/symbol-library');
+const LIB = join(root, 'tools/symbol-data');
 
 const args = process.argv.slice(2);
 const standard = args.includes('--standard');

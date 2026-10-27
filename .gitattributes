@@ -6,4 +6,3 @@
 *.gz binary
 *.zip binary
 # Fixture của trình vẽ SVG: kiểm giữ nguyên byte (có tệp CRLF), không chuẩn hóa xuống dòng
-tests/svg-editor-fixtures/**/*.svg -text

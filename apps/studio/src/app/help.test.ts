@@ -20,8 +20,6 @@ describe('helpTarget', () => {
     ['templates', 'help-templates'],
     ['template:bom', 'help-templates'],
     ['logic', 'help-logic'],
-    ['svgdraw:graphics/a.svg', 'help-svg-editor'],
-    ['svgnew', 'help-svg-editor'],
     ['device', 'help-online'],
     ['compare', 'help-online'],
     ['watch:Bảng 1', 'help-diagnostics'],

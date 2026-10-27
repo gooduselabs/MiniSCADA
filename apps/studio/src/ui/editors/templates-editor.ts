@@ -349,7 +349,7 @@ export class TemplatesEditor extends AppElement {
 
   /** Tệp ảnh của project dùng được làm logo (graphics/*.svg, PNG Studio biết). */
   private logoFiles(): string[] {
-    return this.app.svg.files().filter((f) => /^graphics\/[^/]+\.(svg|png)$/i.test(f));
+    return this.app.svgFiles().filter((f) => /^graphics\/[^/]+\.(svg|png)$/i.test(f));
   }
 
   /** Lỗi E_RPT_LOGO (mức file, `/logo`) hiện ngay dưới trường. */

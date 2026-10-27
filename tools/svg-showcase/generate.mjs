@@ -2019,8 +2019,8 @@ tags.push(
 );
 
 const LIB = 'thu-vien';
-/** Ký hiệu của packages/symbol-library: tệp SVG sao nguyên vào graphics/symbols/ như Studio làm khi thả ký hiệu. */
-const SYMBOL_DIR = join(ROOT, 'packages/symbol-library');
+/** Ký hiệu mẫu của tools/symbol-data (dữ liệu riêng của bộ sinh, Studio không có thư viện ký hiệu): tệp SVG sao nguyên vào graphics/symbols/. */
+const SYMBOL_DIR = join(ROOT, 'tools/symbol-data');
 const manifest = JSON.parse(readFileSync(join(SYMBOL_DIR, 'manifest.json'), 'utf8'));
 const lin = (inMin, inMax, outMin, outMax) => ({
   kind: 'linearScale',

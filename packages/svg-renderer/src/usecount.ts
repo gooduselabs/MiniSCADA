@@ -42,8 +42,8 @@ function hrefOf(el: Element): string | null {
 }
 
 /**
- * Cách duyệt một cây bất kỳ cho `countEffectiveTree`: DOM (trang, bộ kiểm, bộ nhập) hoặc mô hình thuần của trình vẽ SVG
- * (`@mat/svg-edit`, feature 011). `children` chỉ trả phần tử; `useTarget` trả id đích (không `#`) khi nút là `use`.
+ * Cách duyệt một cây bất kỳ cho `countEffectiveTree` (DOM của trang, bộ kiểm, bộ nhập, hoặc cây thuần khác).
+ * `children` chỉ trả phần tử; `useTarget` trả id đích (không `#`) khi nút là `use`.
  */
 export interface UseTreeAdapter<T> {
   children(node: T): readonly T[];

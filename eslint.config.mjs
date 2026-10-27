@@ -173,7 +173,6 @@ export default defineConfig([
     // nên không chèn HTML thô, không đánh giá chuỗi. (ui-components và runtime-web đã có khối của 007 ở trên.)
     files: [
       'packages/svg-import/src/**/*.ts',
-      'packages/symbol-library/src/**/*.ts',
       'packages/svg-renderer/src/**/*.ts',
       'packages/binding-engine/src/**/*.ts',
     ],
@@ -213,14 +212,8 @@ export default defineConfig([
     },
   },
   {
-    // Trình vẽ SVG và logic v2 (feature 011, T014, SC-034): cùng luật như 008, cho mã mới của Studio và hai package.
-    files: [
-      'apps/studio/src/ui/svg/**/*.ts',
-      'apps/studio/src/ui/logic/**/*.ts',
-      'apps/studio/src/model/svg/**/*.ts',
-      'packages/svg-edit/src/**/*.ts',
-      'packages/logic-engine/src/**/*.ts',
-    ],
+    // Logic v2 (feature 011, T014, SC-034): cùng luật như 008, cho mã mới của Studio và package logic-engine.
+    files: ['apps/studio/src/ui/logic/**/*.ts', 'packages/logic-engine/src/**/*.ts'],
     ignores: ['**/*.test.ts'],
     rules: {
       'no-eval': 'error',

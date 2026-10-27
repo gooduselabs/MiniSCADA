@@ -5,20 +5,16 @@
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { WIDGET_CATALOG, type WidgetGroup } from '@mat/project-schema';
-import { SYMBOL_CATEGORIES, getSymbolSvg, searchSymbols, type SymbolFile } from '@mat/symbols';
 import type { TaskCard } from '../app/workspace.ts';
 import { fold, t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
 import type { DeviceInfo } from '../model/device.ts';
-import { ALL_SYMBOL_FILES, symbolKey, symbolFileByKey } from '../model/symbol-flow.ts';
 import { phaseLabel, type Phase } from '../model/tree.ts';
 import { updateAccess } from '../model/update-flow.ts';
 import { otaButton } from './dialogs/update-wizard.ts';
 import { AppElement, icon } from './base.ts';
-import './taskcards-symbols.css';
 import './taskcards-context.css';
 import { renderLogicCard } from './logic/logic-card.ts';
-import { renderDrawCard } from './svg/draw-card.ts';
 import {
   metric,
   projectIcon,
@@ -105,40 +101,7 @@ const TOOLBOX: ReadonlyArray<{ group: MessageKey; phase: Phase; tools: readonly 
       ['pie', 'tc.tool.pie'],
     ],
   },
-  {
-    group: 'tc.group.symbols',
-    phase: 'p3b',
-    tools: [
-      ['pump', 'tc.tool.pump'],
-      ['valve', 'tc.tool.valve'],
-      ['tank', 'tc.tool.tank'],
-      ['motor', 'tc.tool.motor'],
-      ['pipe', 'tc.tool.pipe'],
-    ],
-  },
 ];
-
-/** Biểu tượng nhóm ký hiệu (id nhóm của manifest). */
-const CATEGORY_ICON: Readonly<Record<string, IconName>> = {
-  tank: 'tank',
-  pump: 'pump',
-  valve: 'valve',
-  motor: 'motor',
-  pipe: 'pipe',
-};
-
-const thumbCache = new Map<string, string>();
-
-/** Hình thu nhỏ của ký hiệu: ảnh `data:` (không chạy script, không chèn HTML) từ SVG sạch của thư viện. */
-function symbolThumb(f: SymbolFile) {
-  let url = thumbCache.get(f.file);
-  if (url === undefined) {
-    const svg = getSymbolSvg(f.file) ?? '';
-    url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-    thumbCache.set(f.file, url);
-  }
-  return html`<img src=${url} alt="" width="40" height="40" draggable="false" />`;
-}
 
 interface FindHit {
   key: string;
@@ -157,12 +120,8 @@ export class MatTaskcards extends AppElement {
     'widget.group.table',
     'widget.group.control',
     'widget.group.alarm',
-    'tc.group.symbols',
     'widget.group.history',
   ]);
-  /** Ô tìm của nhóm Ký hiệu SVG (T091). */
-  private symQuery = '';
-
   protected override attached(): void {
     this.app.hooks.focusFind = () =>
       void this.updateComplete.then(() =>
@@ -200,7 +159,7 @@ export class MatTaskcards extends AppElement {
   /** Toolbox của project 0.3: 15 widget theo nhóm của danh mục; kéo thả hoặc nhấp đúp thêm vào màn hình (FR-062). */
   private catalogToolbox() {
     const hasEditor = this.app.store.state.active.startsWith('screen:');
-    return [...this.widgetGroups(hasEditor), this.symbolToolbox(hasEditor)];
+    return this.widgetGroups(hasEditor);
   }
 
   private widgetGroups(hasEditor: boolean) {
@@ -236,101 +195,6 @@ export class MatTaskcards extends AppElement {
     });
   }
 
-  /** Nhóm Ký hiệu SVG (T091, FR-057; mockup studio-svg cảnh 4): ô tìm, lưới ký hiệu theo nhóm; kéo thả HTML5 hoặc nhấp đúp. */
-  private symbolToolbox(hasEditor: boolean) {
-    const gk: MessageKey = 'tc.group.symbols';
-    const open = this.openGroups.has(gk);
-    const hit = new Set(searchSymbols(this.symQuery).map((s) => s.id));
-    const files = ALL_SYMBOL_FILES.filter((f) => hit.has(f.symbol.id));
-    return html`<div class="acc" data-group="symbols">
-      <button
-        type="button"
-        aria-expanded=${open ? 'true' : 'false'}
-        @click=${() => {
-          if (this.openGroups.has(gk)) this.openGroups.delete(gk);
-          else this.openGroups.add(gk);
-          this.requestUpdate();
-        }}
-      >
-        ${icon(open ? 'chev-d' : 'chev-r', 'sm')}<span>${t(gk)}</span>
-        <span class="grow"></span>
-        <span class="cnt">${files.length}</span>
-      </button>
-      ${
-        open
-          ? html`<div class="sym-find">
-                <input
-                  class="input tc-sym-find"
-                  type="search"
-                  aria-label=${t('tc.sym.search')}
-                  placeholder=${t('tc.sym.placeholder')}
-                  .value=${live(this.symQuery)}
-                  @input=${(e: Event) => {
-                    this.symQuery = (e.target as HTMLInputElement).value;
-                    this.requestUpdate();
-                  }}
-                />
-              </div>
-              ${
-                files.length === 0
-                  ? html`<p class="help pad">${t('tc.sym.none')}</p>`
-                  : SYMBOL_CATEGORIES.map((c) => {
-                      const inCat = files.filter((f) => f.symbol.category === c.id);
-                      if (inCat.length === 0) return nothing;
-                      return html`<div class="sym-cat" role="group" aria-label=${c.name}>
-                        <div class="sym-cat-h">
-                          ${icon(CATEGORY_ICON[c.id] ?? 'shape', 'sm')}<span>${c.name}</span>
-                        </div>
-                        <div class="sym-grid">
-                          ${inCat.map((f) => this.symbolTile(f, hasEditor))}
-                        </div>
-                      </div>`;
-                    })
-              }
-              <p class="tc-hint" data-role="sym-origin">${t('tc.sym.origin')}</p>`
-          : nothing
-      }
-    </div>`;
-  }
-
-  private symbolTile(f: SymbolFile, hasEditor: boolean) {
-    const key = symbolKey(f);
-    const name = f.variant ? `${f.symbol.name} ${f.variant.toUpperCase()}` : f.symbol.name;
-    return html`<button
-      type="button"
-      class="sym"
-      draggable="true"
-      data-symbol=${key}
-      aria-label=${name}
-      title=${t('tc.sym.tip', { name })}
-      @dragstart=${(e: DragEvent) => {
-        if (!e.dataTransfer) return;
-        e.dataTransfer.setData('application/x-mat-symbol', key);
-        // Loại có khóa (chữ thường) để canvas biết đang kéo ký hiệu nào khi dragover.
-        e.dataTransfer.setData(`application/x-mat-symbol-${key}`, '');
-        e.dataTransfer.setData('text/plain', key);
-        e.dataTransfer.effectAllowed = 'copy';
-      }}
-      @dblclick=${() => this.addSymbol(key, hasEditor)}
-      @keydown=${(e: KeyboardEvent) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          this.addSymbol(key, hasEditor);
-        }
-      }}
-      @click=${() => {
-        if (!hasEditor) this.app.toast(t('tc.sym.openScreen'));
-      }}
-    >
-      <span class="thumb">${symbolThumb(f)}</span><span>${name}</span>
-    </button>`;
-  }
-
-  private addSymbol(key: string, hasEditor: boolean): void {
-    if (!hasEditor) return void this.app.toast(t('tc.sym.openScreen'));
-    if (symbolFileByKey(key) !== undefined) this.app.hooks.addSymbol?.(key);
-  }
-
   private widgetTool(id: string, label: MessageKey, hasEditor: boolean) {
     const name = t(label);
     return html`<button
@@ -362,18 +226,16 @@ export class MatTaskcards extends AppElement {
     </button>`;
   }
 
-  /** Nội dung của thẻ đầu theo editor đang mở: Logic → "Khối / Tag", trình vẽ SVG → "Công cụ vẽ", còn lại Toolbox widget. */
-  private toolboxMode(): 'logic' | 'draw' | 'widgets' {
+  /** Nội dung của thẻ đầu theo editor đang mở: Logic → "Khối / Tag", còn lại Toolbox widget. */
+  private toolboxMode(): 'logic' | 'widgets' {
     const active = this.app.store.state.active;
     if (active === 'logic' && this.app.store.state.outline.logic) return 'logic';
-    if (active === 'svgnew' || active.startsWith('svgdraw:')) return 'draw';
     return 'widgets';
   }
 
   private toolbox() {
     const mode = this.toolboxMode();
     if (mode === 'logic') return renderLogicCard(this.app, () => this.requestUpdate());
-    if (mode === 'draw') return renderDrawCard(this.app, () => this.requestUpdate());
     if (this.app.store.state.outline.schema === '0.3') return this.catalogToolbox();
     const phases = this.app.workspace.showPhases;
     return TOOLBOX.map(({ group, phase, tools }) => {
@@ -400,20 +262,11 @@ export class MatTaskcards extends AppElement {
   private library() {
     const phases = this.app.workspace.showPhases;
     const chip = phases ? html`<span class="phase">${phaseLabel('p3b')}</span>` : nothing;
-    const symbols: Tool[] = [
-      ['pump', 'tc.tool.pump'],
-      ['valve', 'tc.tool.valve'],
-      ['tank', 'tc.tool.tank'],
-      ['motor', 'tc.tool.motor'],
-      ['pipe', 'tc.tool.pipe'],
-    ];
     return html`<div class="tc-sec">${t('tc.lib.project')} ${chip}</div>
       <div class="empty">
         ${icon('library', 'lg')}
         <p>${t('tc.lib.empty')}</p>
-      </div>
-      <div class="tc-sec">${t('tc.lib.common')} ${chip}</div>
-      <div class="items">${symbols.map((x) => this.tool(x, 'p3b'))}</div>`;
+      </div>`;
   }
 
   /** Tóm tắt thiết bị: runtime, client trên tối đa, project trên thiết bị. */
@@ -567,8 +420,7 @@ export class MatTaskcards extends AppElement {
     const app = this.app;
     const { taskCard, taskCardOpen } = app.workspace;
     const mode = this.toolboxMode();
-    const firstLabel: MessageKey =
-      mode === 'logic' ? 'tc.logic' : mode === 'draw' ? 'svgd.toolbox' : 'tc.toolbox';
+    const firstLabel: MessageKey = mode === 'logic' ? 'tc.logic' : 'tc.toolbox';
     const labelOf = (c: (typeof CARDS)[number]): MessageKey =>
       c.id === 'toolbox' ? firstLabel : c.label;
     const card = CARDS.find((c) => c.id === taskCard) ?? CARDS[0];
@@ -623,7 +475,7 @@ export class MatTaskcards extends AppElement {
               @click=${() => app.setTaskCard(c.id)}
               @keydown=${(e: KeyboardEvent) => this.onStripKey(e, c.id)}
             >
-              ${icon(c.id === 'toolbox' && mode === 'logic' ? 'rule' : c.id === 'toolbox' && mode === 'draw' ? 'd-rect' : c.icon)}<span
+              ${icon(c.id === 'toolbox' && mode === 'logic' ? 'rule' : c.icon)}<span
                 >${t(labelOf(c))}</span
               >
             </button>`,

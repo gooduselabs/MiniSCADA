@@ -1,0 +1,27 @@
+/* Gắn nhanh trong inspector của item dùng hình ký hiệu mẫu (feature 008, T092). Màu theo token. */
+.qb-sec {
+  padding: 6px 12px 2px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.qb-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 30px;
+  padding: 2px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.qb-row:hover {
+  background: var(--hover);
+}
+.qb-row .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qb-row .chip {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}

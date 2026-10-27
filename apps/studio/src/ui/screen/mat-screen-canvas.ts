@@ -54,16 +54,9 @@ import {
   type Viewport,
 } from '../../model/screen-edit/viewport.ts';
 import { groupByItem, screenIssues, severityOfItem } from '../../model/screen-issues.ts';
-import {
-  fixedPortsOf,
-  planSymbolDrop,
-  symbolFileByKey,
-  symbolTarget,
-} from '../../model/symbol-flow.ts';
 import { AppElement, icon } from '../base.ts';
 import { resolveCanvasKey } from './keymap.ts';
 import './mat-ruler.ts';
-import type { SymbolDragView } from './mat-svg-overlay.ts';
 import './mat-svg-overlay.ts';
 import './screen-canvas.css';
 
@@ -122,7 +115,6 @@ export class MatScreenCanvas extends AppElement {
     spaceDown: { state: true },
     hoverUid: { state: true },
     dropUid: { state: true },
-    symDrag: { state: true },
   };
 
   declare screenId: string;
@@ -139,8 +131,6 @@ export class MatScreenCanvas extends AppElement {
   /** Phần tử SVG đang rê chuột và phần tử đang được rê Tag lên (item đang vào, feature 008). */
   declare hoverUid: string | null;
   declare dropUid: string | null;
-  /** Ký hiệu đang kéo từ Toolbox: khung bóng và chấm điểm gắn (T091). */
-  declare symDrag: SymbolDragView | null;
 
   private gesture: Gesture | null = null;
   private ro: ResizeObserver | null = null;
@@ -161,7 +151,6 @@ export class MatScreenCanvas extends AppElement {
     super();
     this.hoverUid = null;
     this.dropUid = null;
-    this.symDrag = null;
     this.screenId = '';
     this.preview = null;
     this.guides = [];
@@ -215,10 +204,6 @@ export class MatScreenCanvas extends AppElement {
     });
     this.app.screens.svgRootProvider = (screen, itemId) =>
       screen === this.screenId ? this.itemRoot(itemId) : null;
-    this.app.hooks.addSymbol = (key) => {
-      if (this.previewing) this.app.toast(t('reason.screenPreviewLocked'));
-      else this.addSymbol(key);
-    };
   }
 
   protected override detached(): void {
@@ -787,84 +772,6 @@ export class MatScreenCanvas extends AppElement {
     return null;
   }
 
-  /** Khóa ký hiệu SVG đang kéo (loại `application/x-mat-symbol-<khóa>`); `null` khi không kéo ký hiệu. */
-  private symbolOf(e: DragEvent): string | null {
-    for (const type of e.dataTransfer?.types ?? [])
-      if (type.startsWith('application/x-mat-symbol-'))
-        return type.slice('application/x-mat-symbol-'.length);
-    return null;
-  }
-
-  /** Kế hoạch thả ký hiệu `key` tại điểm thiết kế `at` theo lưới, zoom và Alt hiện tại. */
-  private symbolPlan(key: string, at: Pt, alt: boolean) {
-    const app = this.app;
-    const doc = this.doc;
-    if (doc === null) return null;
-    const project = app.store.state.outline.project as unknown as {
-      schemaVersion?: unknown;
-    } | null;
-    return planSymbolDrop(
-      key,
-      at,
-      symbolTarget(
-        doc,
-        Object.keys(app.store.state.docs).filter((r) => r.startsWith('graphics/')),
-        typeof project?.schemaVersion === 'string' ? project.schemaVersion : '0.3.0',
-        {
-          grid: app.screens.snap ? app.screens.gridSize : 0,
-          snap: app.screens.snap,
-          alt,
-          zoom: this.viewport.zoom,
-        },
-      ),
-    );
-  }
-
-  /** Khung bóng và chấm điểm gắn cho kế hoạch `plan` (chấm xanh là cặp đang dính). */
-  private symbolView(key: string, plan: NonNullable<ReturnType<MatScreenCanvas['symbolPlan']>>) {
-    const f = symbolFileByKey(key);
-    if (!plan.ok || f === undefined) return null;
-    const it = plan.item;
-    const hit = plan.portSnap?.pair;
-    const dots: SymbolDragView['dots'] = f.ports.map((p) => ({
-      id: `mv-${p.id}`,
-      x: it.x + p.x * it.width,
-      y: it.y + p.y * it.height,
-      hit: hit?.[0].portId === p.id,
-      moving: true,
-    }));
-    for (const p of fixedPortsOf(this.doc?.items ?? []))
-      dots.push({
-        id: `${p.itemId}-${p.portId}`,
-        x: p.x,
-        y: p.y,
-        hit: hit?.[1].itemId === p.itemId && hit[1].portId === p.portId,
-        moving: false,
-      });
-    return { ghost: { x: it.x, y: it.y, width: it.width, height: it.height }, dots };
-  }
-
-  /** Thả ký hiệu `key` (tâm ở `at`): MỘT bước hoàn tác (item, file binding, tệp SVG), chọn item mới. */
-  addSymbol(key: string, at?: Pt, alt = false): boolean {
-    const app = this.app;
-    this.symDrag = null;
-    const plan = this.symbolPlan(key, at ?? this.viewCenter(), alt);
-    if (plan === null) return false;
-    if (!plan.ok) {
-      app.toast(t(`sym.reject.${plan.reason}`, { n: this.symbolLimit() }));
-      return false;
-    }
-    app.store.applyChange(plan.change);
-    app.selectItems(this.screenId, [plan.item.id]);
-    app.toast(t('sym.added', { name: plan.item.name ?? plan.item.id }));
-    return true;
-  }
-
-  private symbolLimit(): number {
-    const doc = this.doc;
-    return doc !== null && !/^0\.[0-3]\./.test(doc.schemaVersion) ? 64 : 8;
-  }
-
   private hasTag(e: DragEvent): boolean {
     return (e.dataTransfer?.types ?? []).includes('application/x-mat-tag');
   }
@@ -873,14 +780,6 @@ export class MatScreenCanvas extends AppElement {
     if (this.previewing || !this.gesture) return;
     const screen = this.local(e);
     const point = toDesign(this.viewport, screen);
-    const symbol = this.symbolOf(e);
-    if (symbol !== null && this.entered === null) {
-      e.preventDefault();
-      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-      const plan = this.symbolPlan(symbol, point, e.altKey);
-      this.symDrag = plan === null ? null : this.symbolView(symbol, plan);
-      return;
-    }
     const widget = this.widgetOf(e);
     if (widget) {
       e.preventDefault();
@@ -947,7 +846,6 @@ export class MatScreenCanvas extends AppElement {
     if (e.relatedTarget && this.contains(e.relatedTarget as Node)) return;
     this.dropItem = null;
     this.dropUid = null;
-    this.symDrag = null;
     if (this.gesture) this.run(this.gesture.handle({ type: 'tool-leave' }));
   };
 
@@ -956,12 +854,6 @@ export class MatScreenCanvas extends AppElement {
     e.preventDefault();
     const screen = this.local(e);
     const point = toDesign(this.viewport, screen);
-    const symbol = e.dataTransfer?.getData('application/x-mat-symbol') || this.symbolOf(e);
-    if (symbol && this.entered === null) {
-      this.addSymbol(symbol, point, e.altKey);
-      this.vp()?.focus({ preventScroll: true });
-      return;
-    }
     const widget = e.dataTransfer?.getData('application/x-mat-widget') || this.widgetOf(e);
     if (widget) {
       this.run(this.gesture.handle({ type: 'tool-drop', widget, point, mods: this.mods(e) }));
@@ -1179,13 +1071,7 @@ export class MatScreenCanvas extends AppElement {
               .dropUid=${this.dropUid}
               .rev=${this.app.screens.svgRevision}
             ></mat-svg-overlay>`
-          : this.symDrag !== null
-            ? html`<mat-svg-overlay
-                .app=${this.app}
-                .viewport=${this.viewport}
-                .ports=${this.symDrag}
-              ></mat-svg-overlay>`
-            : this.selectionBoxes(doc, sel)
+          : this.selectionBoxes(doc, sel)
       }
       ${this.guides.map(
         (g) =>

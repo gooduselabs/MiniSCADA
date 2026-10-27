@@ -55,7 +55,6 @@ interface CellAt {
 }
 
 const WIDGET_TYPE = 'application/x-mat-widget-';
-const SYMBOL_TYPE = 'application/x-mat-symbol-';
 const TAG_TYPE = 'application/x-mat-tag';
 
 export class MatGridEditor extends AppElement {
@@ -311,11 +310,6 @@ export class MatGridEditor extends AppElement {
   private onDrop(e: DragEvent, cellId: string): void {
     this.overCell = null;
     if (this.app.screens.previewMode !== 'off') return;
-    if (this.typeOf(e, SYMBOL_TYPE) !== null) {
-      e.preventDefault();
-      this.app.toast(t('lay.symbolUnsupported'));
-      return;
-    }
     const widget =
       e.dataTransfer?.getData('application/x-mat-widget') || this.typeOf(e, WIDGET_TYPE);
     if (widget) {

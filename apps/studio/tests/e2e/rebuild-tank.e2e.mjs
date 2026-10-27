@@ -1,6 +1,7 @@
 // E2E dựng lại màn hình bồn nước + motor bằng giao diện (feature 008, T095, SC-004; contract studio-svg-editor §14): từ project rỗng
-// có Tag của tank-demo, dựng bằng ký hiệu (bồn, ống, motor), nhập đồ họa Inkscape thật (inkscape-02), gắn mức, chữ, đèn theo bảng giá
-// trị, quay motor, dòng chảy và sự kiện xung; `validate` không lỗi; lưu; ghi số thao tác của người dùng. Phần so với runtime x64 là
+// có Tag của tank-demo và các hình ký hiệu đã có sẵn trong project (bồn, ống, motor: như project cũ đã chèn ký hiệu; Studio không
+// còn thư viện ký hiệu, ADR-055), nhập đồ họa Inkscape thật (inkscape-02), gắn mức, chữ, đèn theo bảng giá trị, quay motor, dòng
+// chảy và sự kiện xung; `validate` không lỗi; lưu; ghi số thao tác của người dùng. Phần so với runtime x64 là
 // tools/svg-demo/compare-tank.mjs (cần Docker, chạy riêng). Lớp Tauri giả, Chrome headless.
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -83,13 +84,52 @@ TAGS.push(
   },
 );
 
-/** Project 0.4 rỗng: một màn hình `bon` không có item, Tag của tank-demo (dạng mô phỏng 0.4) cộng bảng giá trị. */
-function emptyTankProject() {
+/** Hình ký hiệu mẫu (tools/symbol-data) đặt sẵn: [khóa, id item, tâm x, tâm y]. */
+const PLACED = [
+  ['tank-vertical', 'tank_vertical_1', 190, 260],
+  ['pipe-h', 'pipe_h_1', 330, 300],
+  ['motor-ac', 'motor_ac_1', 520, 300],
+  ['pipe-h', 'pipe_h_2', 660, 300],
+];
+
+/**
+ * Project 0.4: màn hình `bon` chỉ có bốn item `svg` dùng hình ký hiệu trong `graphics/symbols/` (chưa gắn Tag), Tag của
+ * tank-demo (dạng mô phỏng 0.4) cộng bảng giá trị.
+ */
+function tankProject() {
   const files = bonProject();
   delete files['graphics/bon.svg'];
   delete files['screens/bon.svg1.bindings.json'];
   const scr = JSON.parse(files['screens/bon.screen.json']);
-  scr.items = [];
+  const LIB = resolve(REPO, 'tools/symbol-data');
+  const manifest = JSON.parse(readFileSync(join(LIB, 'manifest.json'), 'utf8'));
+  scr.items = PLACED.map(([key, id, cx, cy]) => {
+    const sym = manifest.symbols.find((x) => x.id === key);
+    const [width, height] = sym.defaultSize;
+    const svgFile = `graphics/symbols/${key}.svg`;
+    const bindingFile = `screens/bon.${id}.bindings.json`;
+    files[svgFile] = readFileSync(join(LIB, sym.file), 'utf8');
+    files[bindingFile] =
+      JSON.stringify(
+        { schemaVersion: '0.4.0', screenId: 'bon', itemId: id, elements: [] },
+        null,
+        2,
+      ) + '\n';
+    return {
+      id,
+      name: sym.name,
+      type: 'svg',
+      x: cx - width / 2,
+      y: cy - height / 2,
+      width,
+      height,
+      svgFile,
+      bindingFile,
+      viewBox: [...sym.viewBox],
+      fit: 'contain',
+      elements: sym.parts.map((x) => ({ elementUid: x.uid, name: x.label })),
+    };
+  });
   files['screens/bon.screen.json'] = JSON.stringify(scr, null, 2) + '\n';
   files['tags.json'] = JSON.stringify({ schemaVersion: '0.4.0', tags: TAGS }, null, 2) + '\n';
   return files;
@@ -117,34 +157,6 @@ const dropTag = (page, sel, tagId) =>
     sel,
     tagId,
   );
-
-async function dragSymbol(page, key, dx, dy) {
-  const p = await designToPage(page, dx, dy);
-  await page.evaluate(
-    (k, x, y) => {
-      const src = document.querySelector(`.sym[data-symbol="${k}"]`);
-      const dst = document.querySelector('mat-screen-canvas .vp');
-      const dt = new DataTransfer();
-      const o = {
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-        dataTransfer: dt,
-        clientX: x,
-        clientY: y,
-      };
-      src.dispatchEvent(new DragEvent('dragstart', o));
-      dst.dispatchEvent(new DragEvent('dragenter', o));
-      dst.dispatchEvent(new DragEvent('dragover', o));
-      dst.dispatchEvent(new DragEvent('drop', o));
-      src.dispatchEvent(new DragEvent('dragend', o));
-    },
-    key,
-    p.x,
-    p.y,
-  );
-  await sleep(250);
-}
 
 const entered = (page) => page.$('mat-screen-canvas .vp.entered').then((e) => e !== null);
 
@@ -179,19 +191,13 @@ async function bindRow(page, uid, row, tag) {
 }
 
 export default async function rebuildTank({ page, check, shot }) {
-  const files = emptyTankProject();
+  const files = tankProject();
   await openAndWait(page, files, 'D:\\Projects\\bon-nuoc-dung-lai');
   await treeItem(page, 'Bồn nước');
   await page.waitForSelector('mat-screen-canvas .vp');
   await sleep(500);
-  if (!(await page.$('.tc-panel'))) await page.click('.tc-strip [data-tc="toolbox"]');
-  await page.waitForSelector('.tc-body .sym');
 
-  // ---------- Dựng bằng ký hiệu ----------
-  await op(() => dragSymbol(page, 'tank-vertical', 190, 260));
-  await op(() => dragSymbol(page, 'pipe-h', 330, 300));
-  await op(() => dragSymbol(page, 'motor-ac', 520, 300));
-  await op(() => dragSymbol(page, 'pipe-h', 660, 300));
+  // ---------- Hình ký hiệu có sẵn trong project ----------
   const ids = await page.evaluate(() =>
     [
       ...document
@@ -199,8 +205,8 @@ export default async function rebuildTank({ page, check, shot }) {
         .shadowRoot.querySelectorAll('.item[data-item-id]'),
     ].map((e) => e.dataset.itemId),
   );
-  check('dựng bằng ký hiệu: bồn, hai ống, motor trên màn hình', ids.length === 4, ids.join());
-  await shot('1-dung-bang-ky-hieu');
+  check('hình ký hiệu có sẵn: bồn, hai ống, motor trên màn hình', ids.length === 4, ids.join());
+  await shot('1-hinh-co-san');
 
   // ---------- Bồn: mức và chữ ----------
   const item = (id) =>

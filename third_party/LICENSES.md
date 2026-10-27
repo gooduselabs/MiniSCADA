@@ -176,7 +176,7 @@ Khi đóng gói sản phẩm: kèm license của các crate trong hai bảng tr�
 ## Feature 008 (nhập SVG, binding, thư viện ký hiệu): rà lần cuối
 
 - **Không thư viện mới.** Bộ nhập SVG (`@mat/svg-import`), bộ lọc allowlist và thư viện ký hiệu `@mat/symbols` viết trong repo, không thêm package npm hay crate bên ngoài.
-- **Ký hiệu SVG do dự án tự vẽ** (15 tệp trong `packages/symbol-library/svg/`, giấy phép CC0-1.0, xem `packages/symbol-library/LICENSES.md`): không logo, hình ảnh hay phông chữ của hãng nào.
+- **Ký hiệu SVG do dự án tự vẽ** (15 tệp trong `tools/symbol-data/svg/`, chỉ dùng cho bộ sinh project mẫu, giấy phép CC0-1.0, xem `tools/symbol-data/LICENSES.md`): không logo, hình ảnh hay phông chữ của hãng nào.
 
 ## Feature 011 (GĐ 6): rà license tự động, SBOM, ghi đè license
 

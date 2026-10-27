@@ -131,16 +131,8 @@ export type MockPlatform = Platform & { readonly control: MockControl };
 
 export function createMockPlatform(): MockPlatform {
   const files = new Map<string, string>();
-  /** mtime (ms) của từng file: tăng đơn điệu, kể cả khi hai lần ghi trong cùng mili giây. */
-  const mtimes = new Map<string, number>();
-  let clock = 0;
-  const touch = (rel: string) => {
-    clock = Math.max(clock + 1, Date.now());
-    mtimes.set(rel, clock);
-  };
   const put = (rel: string, content: string) => {
     files.set(rel, content);
-    touch(rel);
   };
   let open = false;
   let closeHandler: (() => Promise<boolean>) | null = null;
@@ -186,7 +178,6 @@ export function createMockPlatform(): MockPlatform {
   ];
   const load = () => {
     files.clear();
-    mtimes.clear();
     if (override) {
       for (const [k, v] of Object.entries(override.files)) put(k, v);
       open = true;
@@ -240,7 +231,6 @@ export function createMockPlatform(): MockPlatform {
       if (state === 'exists-project' || state === 'not-empty') return { error: state };
       if (!('project.json' in next)) return { error: 'bad-path' };
       files.clear();
-      mtimes.clear();
       for (const [k, v] of Object.entries(next)) put(k, v);
       open = true;
       control.dirs[display] = 'exists-project';
@@ -291,18 +281,8 @@ export function createMockPlatform(): MockPlatform {
       if (current === undefined) return { error: 'missing' };
       if ((await sha256Hex(current)) !== hash) return { error: 'changed', detail: rel };
       files.delete(rel);
-      mtimes.delete(rel);
       control.removes.push(rel);
       return { ok: true };
-    },
-    fingerprint: async (rel) => {
-      const text = open ? files.get(rel) : undefined;
-      if (text === undefined) return { error: 'missing' };
-      return {
-        mtimeMs: mtimes.get(rel) ?? 0,
-        size: new TextEncoder().encode(text).length,
-        hash: await sha256Hex(text),
-      };
     },
     listSvg: async () =>
       open
@@ -310,26 +290,6 @@ export function createMockPlatform(): MockPlatform {
             .filter((k) => k.endsWith('.svg') && !k.split('/').some((p) => p.startsWith('.')))
             .sort()
         : [],
-    editorList: async (dir) => {
-      const prefix = `.mat-editor/${dir}/`;
-      return [...files.keys()]
-        .filter((k) => k.startsWith(prefix) && !k.slice(prefix.length).includes('/'))
-        .sort()
-        .map((k) => ({
-          name: k.slice(prefix.length),
-          mtimeMs: mtimes.get(k) ?? 0,
-          size: new TextEncoder().encode(files.get(k)!).length,
-        }));
-    },
-    editorRemove: async (rel) => {
-      const prefix = '.mat-editor/autosave/';
-      if (!rel.startsWith(prefix) || rel.slice(prefix.length).includes('/'))
-        return { error: 'bad-path' };
-      if (!files.has(rel)) return { error: 'missing' };
-      files.delete(rel);
-      mtimes.delete(rel);
-      return { ok: true };
-    },
     csvOpen: async () => control.csvOpenResult,
     svgOpen: async () => {
       if (control.svgOpenGate) await control.svgOpenGate;

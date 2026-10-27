@@ -91,7 +91,7 @@ jobs:
       - run: node --test "tools/svg-import/*.test.mjs"
       # Importer fuzz (T113): 10,000 deterministic cases in <= 3 minutes
       - run: node tools/svg-import/fuzz.mjs --cases 10000
-      # Vitest of svg-import, symbol-library and svg-renderer runs inside `npm test` (all workspaces); ctest of
+      # Vitest of svg-import and svg-renderer runs inside `npm test` (all workspaces); ctest of
       # rules_04 and vectors_04 runs in test-x64. The malicious set, anim-bench and the long fuzz are
       # `tools/ci-local.ps1 -Full` (feature 008, T119): Chrome, 20+ minutes.
       - run: npm run build:web

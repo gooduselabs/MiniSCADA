@@ -42,7 +42,6 @@ export const viLayout = {
   'lay.divider': 'Đường chia giữa ô {a} và ô {b} (Ctrl+← hoặc Ctrl+→ để đổi độ rộng)',
   'lay.noCell': 'Chọn một ô trước khi gắn widget',
   'lay.noRows': 'Màn hình chưa có hàng. Bấm Thêm hàng để bắt đầu.',
-  'lay.symbolUnsupported': 'Ký hiệu SVG chưa đặt được vào bố cục lưới: dùng Nhập SVG rồi gắn vào ô',
   'lay.freeOnly': 'Lệnh này chỉ dùng cho màn hình bố cục tự do',
   'lay.tplUnsupported':
     'Bản sao template cần tọa độ: chèn vào màn hình bố cục tự do, hoặc gắn từng widget vào ô của lưới',

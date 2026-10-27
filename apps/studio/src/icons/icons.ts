@@ -281,33 +281,15 @@ const CUSTOM = {
   square: custom('<path d="M1.5 12h3V4h5v8h5"/>'),
   step: custom('<path d="M4 3.5v9l6-4.5zM12 3.5v9"/>'),
   pause: custom('<path d="M5.5 3.5v9M10.5 3.5v9"/>'),
-  // ---- Trình vẽ SVG (feature 011, mockup studio-svg-draw cảnh 1, 2) ----
-  fsvg: custom(
-    '<path d="M3.5 1.8h6l3 3v9.4h-9z"/><path d="M9.5 1.8v3h3"/><circle cx="6.4" cy="10" r="1.6"/><path d="M8.6 11.8l2-3.2"/>',
-  ),
+  // ---- Tệp, nút sơ đồ, khóa, xóa (feature 011) ----
   fnew: custom('<path d="M3.5 1.8h6l3 3v9.4h-9z"/><path d="M9.5 1.8v3h3M8 7.5v5M5.5 10h5"/>'),
   'd-node': custom(
     '<path d="M2.5 13l4-8 6 3"/><rect x="1.4" y="11.9" width="2.2" height="2.2"/><rect x="5.4" y="3.9" width="2.2" height="2.2"/><rect x="11.4" y="6.9" width="2.2" height="2.2"/>',
   ),
-  'd-rect': custom('<rect x="2" y="4" width="12" height="8" rx="1"/>'),
-  'd-ellipse': custom('<ellipse cx="8" cy="8" rx="6" ry="4.4"/>'),
-  'd-line': custom('<path d="M2.5 13.5l11-11"/>'),
-  'd-poly': custom('<path d="M2 12l3.5-7 3.5 5 2.5-6 2.5 8"/>'),
   unlock: custom(
     '<rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V4.8a2.5 2.5 0 0 1 4.8-1"/>',
   ),
-  ungroup: custom(
-    '<rect x="1.8" y="1.8" width="6" height="6" rx=".6"/><rect x="8.2" y="8.2" width="6" height="6" rx=".6"/>',
-  ),
   trash: custom('<path d="M2.5 4h11M6 4V2.5h4V4M4 4l.8 9.5h6.4L12 4M6.6 6.5v5M9.4 6.5v5"/>'),
-  angle: custom('<path d="M2.5 13.5h11M2.5 13.5l8-8"/><path d="M7.5 13.5a5 5 0 0 0-1.5-3.6"/>'),
-  'snap-el': custom(
-    '<rect x="2" y="2" width="5" height="5"/><rect x="9" y="9" width="5" height="5"/><path d="M7 7l2 2"/>',
-  ),
-  'snap-pt': custom('<path d="M2 14L12 4"/><circle cx="12" cy="4" r="2"/>'),
-  layer: custom(
-    '<path d="M8 2l6 3.2-6 3.2-6-3.2z"/><path d="M2 8.4l6 3.2 6-3.2M2 11.4l6 3.2 6-3.2"/>',
-  ),
   // ---- Recipe (feature 024): bình chia độ ----
   recipe: custom(
     '<path d="M6 1.8h4M6.7 1.8v4.4L3 12.6a1.1 1.1 0 0 0 1 1.6h8a1.1 1.1 0 0 0 1-1.6L9.3 6.2V1.8"/><path d="M4.6 9.8h6.8"/>',

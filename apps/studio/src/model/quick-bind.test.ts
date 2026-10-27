@@ -1,32 +1,20 @@
-// Gắn nhanh (feature 008, T092; FR-058): danh sách bộ phận của ký hiệu thư viện kèm gợi ý, đích mở của từng bộ phận và
-// trạng thái nối của điểm gắn.
-import type { BindingSet04, ScreenModel, SvgItem } from '@mat/project-schema';
-import { getSymbol, symbolFiles } from '@mat/symbols';
+// Gắn nhanh (feature 008, T092; FR-058): danh sách bộ phận của hình ký hiệu mẫu cũ kèm gợi ý và đích mở của từng bộ phận.
+import type { BindingSet04, SvgItem } from '@mat/project-schema';
 import { describe, expect, it } from 'vitest';
-import { portStatuses, quickParts, quickTarget } from './quick-bind.ts';
-import { planSymbolDrop, symbolKey } from './symbol-flow.ts';
+import { quickParts, quickTarget } from './quick-bind.ts';
 
-const screen: ScreenModel = {
-  schemaVersion: '0.4.0',
-  id: 'main',
-  name: 'Chính',
-  kind: 'screen',
-  size: { width: 1280, height: 720 },
-  items: [],
-};
-
-function place(key: string, at: { x: number; y: number }, items: SvgItem[] = []): SvgItem {
-  const plan = planSymbolDrop(key, at, {
-    screen: { ...screen, items },
-    graphicsFiles: [],
-    schemaVersion: '0.4.0',
-    grid: 0,
-    snap: false,
-    alt: false,
-    zoom: 1,
-  });
-  if (!plan.ok) throw new Error('rejected');
-  return plan.item;
+/** Item `svg` dùng tệp `graphics/symbols/<key>.svg` (như project cũ đã chèn ký hiệu). */
+function place(key: string, at: { x: number; y: number }): SvgItem {
+  return {
+    id: `svg_${key}`,
+    type: 'svg',
+    x: at.x,
+    y: at.y,
+    width: 100,
+    height: 100,
+    svgFile: `graphics/symbols/${key}.svg`,
+    bindingFile: `screens/main.svg_${key}.bindings.json`,
+  } as SvgItem;
 }
 
 const set = (elements: BindingSet04['elements']): BindingSet04 => ({
@@ -37,17 +25,15 @@ const set = (elements: BindingSet04['elements']): BindingSet04 => ({
 });
 
 describe('quickParts', () => {
-  it('item không dùng tệp ký hiệu của thư viện: null', () => {
+  it('item không dùng tệp ký hiệu mẫu: null', () => {
     const it = { ...place('pump-centrifugal', { x: 100, y: 100 }), svgFile: 'graphics/bom.svg' };
     expect(quickParts(it, undefined)).toBeNull();
   });
 
-  it('liệt kê bộ phận theo manifest kèm nhãn và gợi ý', () => {
+  it('liệt kê bộ phận kèm nhãn và gợi ý', () => {
     const it = place('pump-centrifugal', { x: 100, y: 100 });
     const parts = quickParts(it, undefined)!;
-    expect(parts.map((p) => p.role)).toEqual(
-      getSymbol('pump-centrifugal')!.parts.map((p) => p.role),
-    );
+    expect(parts.map((p) => p.role)).toEqual(['body', 'impeller', 'lamp', 'hit']);
     const lamp = parts.find((p) => p.role === 'lamp')!;
     expect(lamp.uid).toBe('el_pump_centrifugal_lamp');
     expect(lamp.label).toBe('Đèn trạng thái');
@@ -81,8 +67,7 @@ describe('quickParts', () => {
   });
 
   it('biến thể (cút) dùng bộ phận của ký hiệu', () => {
-    const f = symbolFiles(getSymbol('pipe-elbow')!)[0]!;
-    const it = place(symbolKey(f), { x: 100, y: 100 });
+    const it = place('pipe-elbow-ws', { x: 100, y: 100 });
     expect(quickParts(it, undefined)!.map((p) => p.role)).toEqual(['pipe', 'flow']);
   });
 });
@@ -114,21 +99,5 @@ describe('quickTarget', () => {
         hasEvent: false,
       }),
     ).toEqual({ tab: 'bind', field: 'tag' });
-  });
-});
-
-describe('portStatuses', () => {
-  it('điểm gắn trùng khít điểm tương thích của item khác là đã nối', () => {
-    const a = place('pipe-h', { x: 150, y: 110 });
-    const b = { ...place('pipe-h', { x: 250, y: 110 }, [a]), x: a.x + a.width };
-    b.y = a.y;
-    const st = portStatuses(b, [a, b]);
-    expect(st.find((p) => p.id === 'west')).toMatchObject({ dir: 'w', linkedTo: a.id });
-    expect(st.find((p) => p.id === 'east')!.linkedTo).toBeNull();
-  });
-
-  it('item không phải ký hiệu: danh sách rỗng', () => {
-    const it = { ...place('pipe-h', { x: 150, y: 110 }), svgFile: 'graphics/a.svg' };
-    expect(portStatuses(it, [it])).toEqual([]);
   });
 });

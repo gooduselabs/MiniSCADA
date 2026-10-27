@@ -344,50 +344,6 @@ fn unchanged(path: &Path, expected: Option<&str>, limit: u64) -> Result<bool, Wr
     Ok(bytes.len() as u64 <= limit && sha256_hex(&bytes) == expected)
 }
 
-/// mtime của file theo ms từ mốc Unix (0 nếu hệ điều hành không cho).
-pub fn mtime_ms(meta: &fs::Metadata) -> u64 {
-    meta.modified()
-        .ok()
-        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-        .map(|d| d.as_millis() as u64)
-        .unwrap_or(0)
-}
-
-/// Dấu vân tay của file (feature 011, FR-113): mtime (ms), cỡ, SHA-256. Giao diện nhận
-/// `{ mtimeMs, size, hash }`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Fingerprint {
-    pub mtime_ms: u64,
-    pub size: u64,
-    pub hash: String,
-}
-
-/// Dấu vân tay của `rel` (cùng kiểm đường dẫn và trần cỡ như `read_text`): trình vẽ SVG so với bản
-/// đã nạp khi cửa sổ lấy focus và mỗi 5 s (contracts/svg-editor.md §6).
-pub fn file_fingerprint(root: &Path, rel: &str) -> Result<Fingerprint, ReadError> {
-    check_rel(rel).map_err(|_| ReadError::BadPath)?;
-    if !exact_case(root, rel) {
-        return Err(ReadError::Missing);
-    }
-    let path = resolve_in_root(root, rel).map_err(|_| ReadError::BadPath)?;
-    let meta = fs::metadata(&path).map_err(|_| ReadError::Missing)?;
-    if !meta.is_file() {
-        return Err(ReadError::Missing);
-    }
-    if meta.len() > limit_of(rel) {
-        return Err(ReadError::TooLarge);
-    }
-    let bytes = read_limited(&path, limit_of(rel))
-        .map_err(|_| ReadError::Missing)?
-        .ok_or(ReadError::TooLarge)?;
-    Ok(Fingerprint {
-        mtime_ms: mtime_ms(&meta),
-        size: bytes.len() as u64,
-        hash: sha256_hex(&bytes),
-    })
-}
-
 /// Số lần thử tên file tạm khác khi tên đã có.
 const TEMP_ATTEMPTS: usize = 16;
 
@@ -1535,27 +1491,5 @@ mod tests {
             write_text_if_unchanged(&t.root(), "big.json", &json, None, false),
             Err(WriteError::Io(_))
         ));
-    }
-
-    /// Feature 011 (FR-113): dấu vân tay của file (mtime ms, cỡ, SHA-256) để phát hiện đổi trên đĩa.
-    #[test]
-    fn fingerprint_reports_mtime_size_and_hash() {
-        let t = TempDir::new("fp");
-        let f = file_fingerprint(&t.root(), "screens/s.svg").unwrap();
-        assert_eq!(f.size, 6);
-        assert_eq!(f.hash, sha256_hex(b"<svg/>"));
-        assert!(f.mtime_ms > 1_600_000_000_000);
-        assert_eq!(
-            file_fingerprint(&t.root(), "screens/none.svg"),
-            Err(ReadError::Missing)
-        );
-        assert_eq!(
-            file_fingerprint(&t.root(), "../secret.json"),
-            Err(ReadError::BadPath)
-        );
-        assert_eq!(
-            serde_json::to_value(&f).unwrap()["mtimeMs"].as_u64(),
-            Some(f.mtime_ms)
-        );
     }
 }

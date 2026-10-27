@@ -403,7 +403,6 @@ function toPalettePng(png) {
 // ---------------------------------------------------------------- Dữ liệu tất định
 
 const DASHBOARD_DEMO = join(ROOT, 'projects/dashboard-demo');
-const SVG_DEMO = join(ROOT, 'projects/svg-demo');
 const SVG_SHOWCASE = join(ROOT, 'projects/svg-showcase');
 const GRID_DEMO = join(ROOT, 'projects/grid-demo');
 const REPORT_DEMO = join(ROOT, 'projects/report-demo');
@@ -770,36 +769,6 @@ const studioScenes = [
       await page.$eval('mat-grid-editor [data-template="tiles4"]', (b) => b.click());
       await sleep(900);
       await shot('eng-mau-hang-the-chi-so');
-    },
-  },
-  {
-    name: 'studio-svg',
-    async run({ page, shot }) {
-      await openAndWait(page, readProject(SVG_DEMO), 'D:\\Projects\\svg-demo');
-      await expandNode(page, 'graphics');
-      await treeNode(page, 'svgfile:graphics/tram-bom.svg');
-      await page.waitForSelector('mat-svg-editor mat-svg-canvas');
-      await waitFor(page, () =>
-        document.querySelector('mat-svg-canvas')?.shadowRoot?.querySelector('svg.doc'),
-      );
-      await page.evaluate(() => {
-        const app = window.__matApp;
-        if (!(app.workspace.taskCard === 'toolbox' && app.workspace.taskCardOpen))
-          app.setTaskCard('toolbox');
-      });
-      await page.waitForSelector('mat-taskcards .tc-draw [data-tool="rect"]');
-      // Chọn một phần tử để Inspector có nội dung.
-      await page.evaluate(() => {
-        const app = window.__matApp;
-        const rel = app.store.state.active.slice('svgdraw:'.length);
-        const ed = app.svg.editor(rel);
-        const n = [...ed.doc.nodes.values()].find(
-          (x) => x.attrs.get('data-mat-uid') && ['rect', 'path', 'circle'].includes(x.name),
-        );
-        if (n && typeof ed.select === 'function') ed.select([n.id]);
-      });
-      await sleep(500);
-      await shot('eng-trinh-ve-svg');
     },
   },
   {

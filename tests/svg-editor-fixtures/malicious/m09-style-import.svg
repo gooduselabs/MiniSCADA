@@ -1,1 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><style>@import url(https://evil.invalid/x.css); rect { fill: #f00 } @font-face { src: url(https://evil.invalid/f.woff) }</style><rect width="10" height="10" style="fill:#00f;background:url(https://evil.invalid/b.png)"/></svg>

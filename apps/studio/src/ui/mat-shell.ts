@@ -41,7 +41,6 @@ import './dialogs/grid-convert-dialog.ts';
 import './logic/stop-dialog.ts';
 import './dialogs/update-wizard.ts';
 import './dialogs/admin-dialog.ts';
-import './svg/svg-dialogs.ts';
 import './mat-inspector.ts';
 import './mat-menubar.ts';
 import './mat-palette.ts';

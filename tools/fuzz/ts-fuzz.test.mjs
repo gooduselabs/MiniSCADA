@@ -9,14 +9,7 @@ import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 
 const script = resolve(import.meta.dirname, 'ts-fuzz.mjs');
-const TARGETS = [
-  'project-json',
-  'expression',
-  'params',
-  'package-digest',
-  'logic-json',
-  'svg-edit-commands',
-];
+const TARGETS = ['project-json', 'expression', 'params', 'package-digest', 'logic-json'];
 
 const run = (target, cases, seed = 7) => {
   const out = join(mkdtempSync(join(tmpdir(), 'ts-fuzz-')), 'r.json');

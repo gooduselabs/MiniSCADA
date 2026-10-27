@@ -31,7 +31,4 @@ import './alarm-classes.ts';
 import './alarm-test-panel.ts';
 import './svg-element-tree.ts';
 import '../props-svg-element.ts';
-// Feature 011: trình vẽ SVG (tab `svgdraw:<tệp>`) và tab "Mới: SVG trống".
-import '../svg/svg-new.ts';
-import '../svg/svg-editor.ts';
 import './recipes-editor.ts';

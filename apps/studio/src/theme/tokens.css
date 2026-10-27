@@ -42,7 +42,6 @@
   --tpl-soft: #efe5fa;
   /* Vùng vẽ, lớp phủ, bóng */
   --canvas: #dfe5e8;
-  --symbol-bg: #eceff1; /* nền ô xem trước ký hiệu SVG: nét ký hiệu sẫm nên cần nền sáng ở cả hai theme */
   --scrim: rgba(12, 22, 26, 0.36);
   --shadow: 0 12px 32px rgba(16, 34, 42, 0.18), 0 2px 6px rgba(16, 34, 42, 0.08);
   /* Chữ, mật độ */
@@ -93,7 +92,6 @@
     --tplc: #c49bf5;
     --tpl-soft: #2a1f40;
     --canvas: #0e1214;
-    --symbol-bg: #b8c4ca;
     --scrim: rgba(0, 0, 0, 0.55);
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
     color-scheme: dark;
@@ -134,7 +132,6 @@
   --tplc: #c49bf5;
   --tpl-soft: #2a1f40;
   --canvas: #0e1214;
-  --symbol-bg: #b8c4ca;
   --scrim: rgba(0, 0, 0, 0.55);
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
   color-scheme: dark;

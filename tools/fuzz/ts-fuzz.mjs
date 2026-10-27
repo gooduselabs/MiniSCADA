@@ -1,10 +1,9 @@
-// Fuzz tất định phía TypeScript (feature 011, T058, T142, T165; FR-029, SC-009). Mỗi mục tiêu ở tools/fuzz/targets/:
+// Fuzz tất định phía TypeScript (feature 011, T058, T142; FR-029, SC-009). Mỗi mục tiêu ở tools/fuzz/targets/:
 //   project-json    validateProject (@mat/project-schema) trên project đột biến (mọi định dạng 0.1 đến 1.0)
 //   expression      compile/evaluate/tokens của @mat/expression trên biểu thức đột biến, đầu vào hữu hạn
 //   params          substituteParams/checkParamPlaces (template, faceplate) trên item và args đột biến
 //   package-digest  digestText/packageDigest (phía TS của gói .matscada: không có bộ đọc gói TS)
 //   logic-json      logic.schema.json + checkLogic + LogicHarness (@mat/logic-engine) trên logic.json đột biến
-//   svg-edit-commands  chuỗi lệnh độc của @mat/svg-edit (cùng bất biến với packages/svg-edit/src/fuzz.test.ts)
 // Ca chạy trong worker; tiến trình chính canh: một ca quá 5 giây không xong là "treo" (ghi lại, chạy tiếp từ ca sau).
 // Sự cố = ném ngoại lệ không phải lỗi kiểm tra, ca > 5 giây, hoặc vi phạm bất biến của mục tiêu.
 // Dùng:
@@ -18,14 +17,7 @@ import { cpus } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { Worker } from 'node:worker_threads';
 
-export const TARGETS = [
-  'project-json',
-  'expression',
-  'params',
-  'package-digest',
-  'logic-json',
-  'svg-edit-commands',
-];
+export const TARGETS = ['project-json', 'expression', 'params', 'package-digest', 'logic-json'];
 export const HANG_MS = 5000;
 
 const args = process.argv.slice(2);
