@@ -19,6 +19,7 @@ export class MatTestStrip extends AppElement {
   static override properties = {
     tag: { attribute: false },
     range: { attribute: false },
+    unit: { attribute: false },
     entries: { attribute: false },
     refusal: { state: true },
   };
@@ -27,6 +28,8 @@ export class MatTestStrip extends AppElement {
   /** Khoảng của thanh trượt: `inMin`/`inMax` của binding, vắng thì `min`/`max` của Tag. */
   declare range: readonly [number, number] | undefined;
   declare entries: readonly TestEntries[] | undefined;
+  /** Đơn vị hiện cạnh ô số (độ, vòng/phút, đơn vị Tag). */
+  declare unit: string;
   declare refusal: string | null;
 
   constructor() {
@@ -34,6 +37,7 @@ export class MatTestStrip extends AppElement {
     this.tag = null;
     this.range = undefined;
     this.entries = undefined;
+    this.unit = '';
     this.refusal = null;
   }
 
@@ -58,16 +62,31 @@ export class MatTestStrip extends AppElement {
     const cur = this.current(tag);
     switch (c.kind) {
       case 'switch': {
+        // Hai nút Tắt / Bật: rõ hơn công tắc trượt.
         const on = cur === true;
-        return html`<button
+        const off = cur === false;
+        return html`<span
+          class="ts-seg"
+          role="group"
+          aria-label=${t('ts.switchLabel', { tag: tag.id })}
+          ><button
             type="button"
-            class="tgl"
-            role="switch"
-            aria-checked=${on ? 'true' : 'false'}
-            aria-label=${t('ts.switchLabel', { tag: tag.id })}
-            @click=${() => this.set(tag, !on)}
-          ></button
-          ><span class="ts-val">${on ? t('svg.on') : t('svg.off')}</span>`;
+            class="btn sm ${off ? 'on' : ''}"
+            data-v="off"
+            aria-pressed=${off ? 'true' : 'false'}
+            @click=${() => this.set(tag, false)}
+          >
+            ${t('ts.btnOff')}</button
+          ><button
+            type="button"
+            class="btn sm ${on ? 'on' : ''}"
+            data-v="on"
+            aria-pressed=${on ? 'true' : 'false'}
+            @click=${() => this.set(tag, true)}
+          >
+            ${t('ts.btnOn')}
+          </button></span
+        >`;
       }
       case 'slider': {
         const v = typeof cur === 'number' ? cur : c.min;
@@ -95,7 +114,7 @@ export class MatTestStrip extends AppElement {
               }
               this.set(tag, n);
             }}
-          />`;
+          />${this.unit ? html`<span class="ts-unit">${this.unit}</span>` : nothing}`;
       }
       case 'select':
         return html`<select

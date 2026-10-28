@@ -25,6 +25,13 @@ import {
 import { t, type MessageKey } from '../i18n/index.ts';
 import {
   ANIMATION_ROWS,
+  ROW_SECTIONS,
+  recommendedRows,
+  rowUnit,
+  SPIN_PRESETS,
+  spinPresetTransform,
+  spinSpeedOf,
+  type SpinSpeed,
   defaultTransform,
   rowAcceptsKind,
   rowAcceptsTag,
@@ -257,6 +264,51 @@ export class MatSvgBind extends AppElement {
     if (kind !== 'direct') this.open = new Set([...this.open, row.id]);
   }
 
+  /** Quay khi chạy: đổi tốc độ (preset, theo Tag) bằng phép biến đổi sẵn có, không đổi schema. */
+  private changeSpinSpeed(row: AnimationRow, ref: ItemRef, b: Binding04, speed: SpinSpeed): void {
+    if (speed === 'custom') {
+      this.open = new Set([...this.open, row.id]);
+      return;
+    }
+    const tag = this.app.screens.tagInfos().get(b.source.tagId);
+    const transform: Transform04 =
+      speed === 'tag' ? { kind: 'direct' } : spinPresetTransform(speed, tag);
+    const why = patchBinding(this.app, ref, this.primary, b.id, { transform });
+    this.setErr(row.id, null);
+    if (why !== null) this.reject(row.id, why);
+  }
+
+  private spinSelect(
+    row: AnimationRow,
+    ref: ItemRef,
+    b: Binding04,
+    tag: TagInfo | undefined,
+    label: string,
+  ): TemplateResult {
+    const cur = spinSpeedOf(b, tag);
+    const isBool = tag?.type === 'BOOL';
+    const opts: SpinSpeed[] = [
+      ...(Object.keys(SPIN_PRESETS) as SpinSpeed[]),
+      ...(isBool ? [] : (['tag'] as SpinSpeed[])),
+      ...(cur === 'custom' ? (['custom'] as SpinSpeed[]) : []),
+    ];
+    return html`<select
+      class="sv-in xf spd"
+      data-field="speed"
+      aria-label=${t('svb.spin.label', { row: label })}
+      ?disabled=${this.app.store.state.readOnly}
+      @change=${(e: Event) =>
+        this.changeSpinSpeed(row, ref, b, (e.target as HTMLSelectElement).value as SpinSpeed)}
+    >
+      ${opts.map(
+        (k) =>
+          html`<option value=${k} ?selected=${cur === k}>
+            ${t(`svb.spin.${k}` as MessageKey)}
+          </option>`,
+      )}
+    </select>`;
+  }
+
   private tableNames(): string[] {
     return this.app.store.state.outline.valueTables
       .map((v) => (v.doc as { name?: string } | null)?.name)
@@ -320,6 +372,12 @@ export class MatSvgBind extends AppElement {
     const b = this.bindingOf(row, ref);
     const tag = b ? app.screens.tagInfos().get(b.source.tagId) : undefined;
     const label = t(`svg.row.${row.id}` as MessageKey);
+    const sugTag =
+      this.suggestions?.uid === this.primary
+        ? app.screens.tagInfos().get(this.suggestions.tag)
+        : undefined;
+    const fits =
+      b === undefined && sugTag !== undefined && recommendedRows(sugTag).includes(row.id);
     let block: 'element-kind' | 'tag-type' | 'group' | null = rowBlock(row, kind);
     if (block === null && b === undefined && groupHeld.has(row.group)) block = 'group';
     const rowIssues = issuesOfRow(issues, row.id);
@@ -361,7 +419,17 @@ export class MatSvgBind extends AppElement {
           ${b ? icon(expanded ? 'chev-d' : 'chev-r') : nothing}
         </button>
         <div class="nm">
-          <b>${label}</b>
+          <b>${label}</b>${fits ? html`<span class="fit">${t('svg.fitsTag')}</span>` : nothing}
+          <small class="help">${t(`svg.help.${row.id}` as MessageKey)}</small>
+          <small class="ex"
+            >${
+              b && row.id !== 'spin'
+                ? t(`svb.xfHelp.${b.transform.kind}` as MessageKey)
+                : b && row.id === 'spin' && spinSpeedOf(b, tag) === 'tag'
+                  ? t('svb.spin.tagHint')
+                  : t(`svg.ex.${row.id}` as MessageKey)
+            }</small
+          >
           <i class="mono" title=${TARGET_CODE(row, b)}>${TARGET_CODE(row, b)}</i>
         </div>
         ${
@@ -392,32 +460,36 @@ export class MatSvgBind extends AppElement {
                       : html`<span class="tg-ph">${icon('link', 'sm')}${t('svb.dropHere')}</span>`
                   }
                 </button>
-                <select
-                  class="sv-in xf"
-                  data-field="transform"
-                  aria-label=${t('svb.transformLabel', { row: label })}
-                  ?disabled=${b === undefined || disabled}
-                  aria-invalid=${rowIssues.some((i) => i.field === 'transform') ? 'true' : nothing}
-                  @change=${(e: Event) =>
-                    b &&
-                    this.changeTransform(
-                      row,
-                      ref,
-                      b,
-                      (e.target as HTMLSelectElement).value as TransformKind04,
-                    )}
-                >
-                  ${
-                    b === undefined
-                      ? html`<option>${t('svb.transformNone')}</option>`
-                      : transformChoices(row, tag, this.tableNames(), b.transform.kind).map(
-                          (k) =>
-                            html`<option value=${k} ?selected=${b.transform.kind === k}>
-                              ${t(`svg.xf.${k}` as MessageKey)}
-                            </option>`,
-                        )
-                  }
-                </select>
+                ${
+                  row.id === 'spin' && b !== undefined
+                    ? this.spinSelect(row, ref, b, tag, label)
+                    : html`<select
+                        class="sv-in xf"
+                        data-field="transform"
+                        aria-label=${t('svb.transformLabel', { row: label })}
+                        ?disabled=${b === undefined || disabled}
+                        aria-invalid=${rowIssues.some((i) => i.field === 'transform') ? 'true' : nothing}
+                        @change=${(e: Event) =>
+                          b &&
+                          this.changeTransform(
+                            row,
+                            ref,
+                            b,
+                            (e.target as HTMLSelectElement).value as TransformKind04,
+                          )}
+                      >
+                        ${
+                          b === undefined
+                            ? html`<option>${t('svb.transformNone')}</option>`
+                            : transformChoices(row, tag, this.tableNames(), b.transform.kind).map(
+                                (k) =>
+                                  html`<option value=${k} ?selected=${b.transform.kind === k}>
+                                    ${t(`svg.xf.${k}` as MessageKey)}
+                                  </option>`,
+                              )
+                        }
+                      </select>`
+                }
                 <div class="val mono">${b ? this.valueCell(b.source.tagId) : nothing}</div>
                 <button
                   type="button"
@@ -1183,6 +1255,7 @@ export class MatSvgBind extends AppElement {
       .app=${this.app}
       .tag=${tag}
       .range=${range}
+      .unit=${row && rowUnit(row.id, b) !== null ? t(`ts.unit.${rowUnit(row.id, b)}` as MessageKey) : (tag.unit ?? '')}
       .entries=${entries}
     ></mat-test-strip>`;
   }
@@ -1257,7 +1330,13 @@ export class MatSvgBind extends AppElement {
       }
       ${this.suggestView(ref)} ${this.stripView(ref)}
       <div class="brows">
-        ${ANIMATION_ROWS.map((row) => this.rowView(row, ref, issues, kind, groupHeld))}
+        ${ROW_SECTIONS.map(
+          (sec) =>
+            html`<div class="bsec" role="heading" aria-level="4" data-sec=${sec.id}>
+                ${t(`svg.sec.${sec.id}` as MessageKey)}
+              </div>
+              ${sec.rows.map((id) => this.rowView(rowById(id)!, ref, issues, kind, groupHeld))}`,
+        )}
       </div>
     </div>`;
   }

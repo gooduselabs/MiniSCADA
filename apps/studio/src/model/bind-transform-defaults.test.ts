@@ -147,7 +147,7 @@ describe('mặc định của cách đổi hợp lệ ngay khi chọn', () => {
       'fill',
     );
     expect(r).toHaveLength(1);
-    expect(r[0]!.text).toContain('Rời rạc cần ít nhất một dòng giá trị → màu');
+    expect(r[0]!.text).toContain('Theo từng giá trị cần ít nhất một dòng giá trị → màu');
     expect(r[0]!.text).not.toContain('E_SCHEMA');
   });
 });

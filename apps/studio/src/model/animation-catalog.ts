@@ -463,7 +463,80 @@ export function newBinding(
   return {
     target: targetOf(row, kind),
     source: { type: 'tag', tagId: tag.id },
-    transform: defaultTransform(row, k, tag),
+    // Quay khi chạy: mặc định tốc độ Vừa (Tag Bật → quay), không bắt người dùng nhập vòng/phút.
+    transform:
+      rowId === 'spin' && transformKind === undefined
+        ? spinPresetTransform('medium', tag)
+        : defaultTransform(row, k, tag),
     ...defaultParams(row, tag),
   };
+}
+
+// ---- Nhóm theo mục đích và tốc độ quay (033-animation-ux) ----
+
+/** Nhóm hiển thị theo mục đích (thứ tự hiển thị; kiểu phổ biến lên đầu mỗi nhóm). */
+export type RowSection = 'state' | 'number' | 'motion';
+
+export const ROW_SECTIONS: readonly { id: RowSection; rows: readonly RowId[] }[] = [
+  { id: 'state', rows: ['fill', 'visibility', 'blink', 'stroke', 'opacity'] },
+  { id: 'number', rows: ['text', 'level'] },
+  { id: 'motion', rows: ['spin', 'rotate', 'flow', 'translateX', 'translateY', 'scale'] },
+];
+
+/** Mục phù hợp với kiểu Tag (để đánh dấu "Hợp Tag này" khi chọn Tag). */
+export function recommendedRows(tag: Pick<TagInfo, 'type'>): readonly RowId[] {
+  switch (tagClassOf04(tag.type)) {
+    case 'bool':
+      return ['fill', 'visibility', 'blink', 'spin', 'flow', 'stroke'];
+    case 'string':
+      return ['text'];
+    default:
+      return ['text', 'level', 'rotate', 'fill'];
+  }
+}
+
+/**
+ * Tốc độ quay có sẵn của "Quay khi chạy" (vòng/phút ghi vào binding). Runtime hiển thị chậm lại: 600 vòng/phút = 1 vòng/giây
+ * trên màn hình (`spinRps` của binding-engine), nên số nhỏ như 10 gần như đứng yên.
+ */
+export const SPIN_PRESETS = { slow: 150, medium: 300, fast: 900 } as const;
+export type SpinPreset = keyof typeof SPIN_PRESETS;
+/** Cách đặt tốc độ: preset, theo giá trị Tag (`direct`), hoặc thiết lập tự do (giữ nguyên dữ liệu cũ). */
+export type SpinSpeed = SpinPreset | 'tag' | 'custom';
+
+/** Phép biến đổi của preset: Bật (hoặc khác 0) → quay ở tốc độ preset, Tắt/0 → đứng. Không đổi schema. */
+export function spinPresetTransform(
+  preset: SpinPreset,
+  tag: Pick<TagInfo, 'type'> | undefined,
+): Transform04 {
+  const rpm = SPIN_PRESETS[preset];
+  const c = tag === undefined ? 'number' : tagClassOf04(tag.type);
+  const cases =
+    c === 'bool'
+      ? [
+          { equals: true, value: rpm },
+          { equals: false, value: 0 },
+        ]
+      : [{ equals: 0, value: 0 }];
+  return { kind: 'discreteMap', cases, default: c === 'bool' ? 0 : rpm };
+}
+
+/** Nhận ra cách đặt tốc độ của binding quay đã có (dự án cũ: `direct`, rời rạc tự đặt... → `tag`/`custom`). */
+export function spinSpeedOf(
+  b: Pick<Binding04, 'transform'>,
+  tag: Pick<TagInfo, 'type'> | undefined,
+): SpinSpeed {
+  const tr = b.transform;
+  if (tr.kind === 'direct')
+    return tag !== undefined && tagClassOf04(tag.type) === 'bool' ? 'custom' : 'tag';
+  for (const p of Object.keys(SPIN_PRESETS) as SpinPreset[]) {
+    if (JSON.stringify(spinPresetTransform(p, tag)) === JSON.stringify(tr)) return p;
+  }
+  return 'custom';
+}
+
+/** Đơn vị của giá trị thử cho mục (nhãn thanh Thử giá trị). */
+export function rowUnit(row: RowId, b: Pick<Binding04, 'transform'>): 'deg' | 'rpm' | null {
+  if (b.transform.kind !== 'direct') return null;
+  return row === 'rotate' ? 'deg' : row === 'spin' ? 'rpm' : null;
 }

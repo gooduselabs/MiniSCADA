@@ -406,7 +406,27 @@ Tệp SVG từ 1 MiB có cảnh báo `W_SVG_HEAVY`; từ 5 MiB là lỗi `E_SVG_
 
 ### 7.2. Gắn Tag cho phần tử SVG
 
-Chọn item SVG rồi **vào đồ họa** bằng một trong các cách: nhấp đúp vào đồ họa, nhấn Enter, nút **Gắn Tag cho phần tử…** ở tab **Đồ họa** của bảng thuộc tính, hoặc mục cùng tên trong menu chuột phải. Cách làm giống nhau trên màn hình tự do và màn hình **bố cục lưới** (nhấp đúp vào ô chứa đồ họa, hoặc chọn ô rồi Enter). Khi đã vào, nhấp chọn phần tử trên hình (rê chuột thấy viền phần tử) hoặc trong tab **Phần tử** ở cột trái, rồi dùng tab **Gắn Tag**, **Sự kiện** của bảng thuộc tính; nhấn Esc để thoát. Có 13 loại hoạt ảnh: **Chữ hiển thị giá trị**, **Màu nền**, **Màu viền**, **Mức chất lỏng**, **Quay**, **Quay liên tục**, **Di chuyển X**, **Di chuyển Y**, **Co giãn**, **Nhấp nháy**, **Dòng chảy**, **Ẩn/hiện**, **Độ mờ**. Cách đổi giá trị: **Trực tiếp**, **Tuyến tính**, **Rời rạc**, **Bảng giá trị**, **Khoảng**. Thanh **Thử giá trị** cho xem trước. Hình ký hiệu mẫu cũ (tệp trong `graphics/symbols/` của project tạo trước đây) có thêm **Gắn nhanh** theo bộ phận.
+Chọn item SVG rồi **vào đồ họa** bằng một trong các cách: nhấp đúp vào đồ họa, nhấn Enter, nút **Gắn Tag cho phần tử…** ở tab **Đồ họa** của bảng thuộc tính, hoặc mục cùng tên trong menu chuột phải. Cách làm giống nhau trên màn hình tự do và màn hình **bố cục lưới** (nhấp đúp vào ô chứa đồ họa, hoặc chọn ô rồi Enter). Khi đã vào, nhấp chọn phần tử trên hình (rê chuột thấy viền phần tử) hoặc trong tab **Phần tử** ở cột trái, rồi dùng tab **Gắn Tag**, **Sự kiện** của bảng thuộc tính; nhấn Esc để thoát. Có 13 loại hoạt ảnh, xếp theo mục đích; dưới tên mỗi loại có một dòng "dùng khi nào" và một ví dụ:
+
+| Nhóm | Loại | Dùng khi nào (ví dụ) |
+|---|---|---|
+| Trạng thái (Bật/Tắt) | **Đổi màu nền** | đèn báo, motor, van: 0 = xám (dừng), 1 = xanh (chạy) |
+| | **Hiện / ẩn** | Bật → hiện biểu tượng lỗi, Tắt → ẩn |
+| | **Nhấp nháy (báo động)** | Tag lỗi = 1 → chớp |
+| | **Đổi màu viền / màu đường** | như màu nền, cho viền hoặc đường kẻ |
+| | **Làm mờ** | 0 = trong suốt, 1 = rõ |
+| Hiển thị số | **Hiện số / chữ** | Tag = 25,4 → "25.4 °C" |
+| | **Mức đầy (bồn, thanh)** | Tag 0–100 → 50 = đầy một nửa |
+| Chuyển động | **Quay khi chạy** | gắn Tag Bật/Tắt của motor, quạt, bơm; Bật → quay |
+| | **Xoay theo góc** | Tag = góc (độ): kim đồng hồ, van xoay; Tag = 90 → nghiêng 90° |
+| | **Dòng chảy trong ống** | bơm Bật → nét đứt chạy dọc ống |
+| | **Di chuyển ngang**, **Di chuyển dọc**, **Phóng to / thu nhỏ** | xe goòng, piston, thang nâng |
+
+**Quay khi chạy** chọn tốc độ **Chậm**, **Vừa** (mặc định) hoặc **Nhanh**, không cần nhập số. Người dùng nâng cao chọn **Theo giá trị Tag (vòng/phút)** (chỉ cho Tag số): màn hình quay chậm lại, 600 vòng/phút = 1 vòng/giây, nên giá trị nhỏ như 10 gần như đứng yên. Binding quay của project cũ vẫn chạy như trước (hiện là **Tùy chỉnh (nâng cao)** nếu không khớp tốc độ có sẵn).
+
+Khi bấm **Gợi ý** và chọn Tag, các loại hợp kiểu Tag được đánh dấu **Hợp Tag này** (BOOL: màu, hiện/ẩn, nhấp nháy, quay khi chạy, dòng chảy; số: hiện số, mức đầy, xoay theo góc).
+
+Cách đổi giá trị: **Trực tiếp** (lấy thẳng giá trị Tag), **Đổi tỉ lệ** (VD Tag 0–100 → 0–360°), **Theo từng giá trị** (VD 0 → xám, 1 → xanh), **Bảng giá trị**, **Theo khoảng** (VD dưới 60 → xanh, 60–85 → vàng, trên 85 → đỏ). Thanh **Thử giá trị** cho xem trước: Tag BOOL có hai nút **Tắt** / **Bật**; Tag số có thanh trượt kèm đơn vị (độ cho Xoay theo góc, vòng/phút cho Quay khi chạy theo Tag). Hình ký hiệu mẫu cũ (tệp trong `graphics/symbols/` của project tạo trước đây) có thêm **Gắn nhanh** theo bộ phận.
 
 ### 7.3. Project mẫu sơ đồ công nghệ
 
@@ -414,7 +434,7 @@ Chọn item SVG rồi **vào đồ họa** bằng một trong các cách: nhấp
 
 ![Sơ đồ công nghệ trên trang vận hành: bơm chạy viền xanh, dòng chảy trên ống, mức bể lắng và bồn sạch, ô số liệu gắn liền thiết bị](img/op-so-do-cong-nghe.png)
 
-- Màn hình **Sơ đồ công nghệ**: một item SVG phủ toàn màn hình. Dùng Mức chất lỏng (bồn; hồ chứa hình thang dùng đích `geometry.clipLevel`), Quay liên tục (cánh bơm), Màu viền và Màu nền rời rạc theo Tag trạng thái 0/1/2, Dòng chảy (tốc độ theo lưu lượng, kèm Độ mờ để ẩn vạch khi lưu lượng bằng 0), Nhấp nháy (vỏ bơm khi lỗi), Chữ hiển thị giá trị (mức %, m³/h, bar, mg/L, A) và Ẩn/hiện (biểu tượng cảnh báo).
+- Màn hình **Sơ đồ công nghệ**: một item SVG phủ toàn màn hình. Dùng Mức đầy (bồn; hồ chứa hình thang dùng đích `geometry.clipLevel`), Quay khi chạy (cánh bơm), Đổi màu viền và Đổi màu nền theo từng giá trị của Tag trạng thái 0/1/2, Dòng chảy trong ống (tốc độ theo lưu lượng, kèm Làm mờ để ẩn vạch khi lưu lượng bằng 0), Nhấp nháy (vỏ bơm khi lỗi), Hiện số / chữ (mức %, m³/h, bar, mg/L, A) và Hiện / ẩn (biểu tượng cảnh báo).
 - Nhấp một bơm mở popup faceplate `faceplate-bom` (đèn chạy, lỗi, dòng điện, giờ chạy, chế độ, lệnh chạy tay) với `prefix` là mã bơm.
 
 ![Popup Bảng điều khiển bơm của P-101: đèn Đang chạy và Lỗi, dòng điện động cơ, giờ chạy tích lũy, chế độ, lệnh chạy tay](img/op-so-do-faceplate.png)
@@ -427,7 +447,7 @@ Chọn item SVG rồi **vào đồ họa** bằng một trong các cách: nhấp
 
 Trong Studio, vào đồ họa (Enter) rồi chọn phần tử để xem binding ở tab **Gắn Tag**; bấm **Mô phỏng** để xem sơ đồ chạy với Tag mô phỏng.
 
-![Studio: vào đồ họa sơ đồ công nghệ, chọn vỏ bơm P-101, tab Gắn Tag có Màu viền theo P101.STATE (Rời rạc), xem trước Mô phỏng](img/eng-so-do-gan-tag.png)
+![Studio: vào đồ họa sơ đồ công nghệ, chọn vỏ bơm P-101, tab Gắn Tag có Màu viền theo P101.STATE (Theo từng giá trị), xem trước Mô phỏng](img/eng-so-do-gan-tag.png)
 
 Bản vẽ, binding và Tag sinh từ `tools/svg-showcase/generate.mjs`; cách sửa: `projects/svg-showcase/README.md`.
 
@@ -673,7 +693,7 @@ Mỗi tác vụ dùng `projects/training-demo` và PLC giả lập (mục 1). Gi
 | K5 | Thêm Tag tính toán | thêm `BON.PHAN_TRAM_TRONG` = `100 - BON.MUC` | **Xem trước** cho giá trị đúng |
 | K6 | Dựng màn hình | thêm màn hình "Bơm", một **Đèn báo** gắn `BOM.LOI`, một **Công tắc** gắn `BOM.LENH_CHAY` | thấy trong xem trước; mục menu mới khi thêm vào Điều hướng |
 | K7 | Bảo mật nút | đặt **Vai trò tối thiểu** `engineer` cho công tắc vừa thêm (project 1.1: **Vai trò tối thiểu để thao tác**, mục 6.3) | trên trang vận hành, tài khoản operator thấy "Cần quyền engineer" |
-| K8 | Nhập SVG | nhập một SVG bồn đơn giản, gắn **Mức chất lỏng** với `BON.MUC` | **Thử giá trị** 50 cho thấy nửa bồn |
+| K8 | Nhập SVG | nhập một SVG bồn đơn giản, gắn **Mức đầy (bồn, thanh)** với `BON.MUC` | **Thử giá trị** 50 cho thấy nửa bồn |
 | K9 | Ghim chứng chỉ, đăng nhập | **Thiết bị trong mạng…**, so fingerprint, **Ghim và tiếp tục**, **Đăng nhập…** | thanh trạng thái "Online", viền cam |
 | K10 | Nạp xuống | **Nạp xuống…**, đọc xem trước, xác nhận | kết quả thành công; trang vận hành tự tải lại project mới |
 | K11 | Thử kết nối | **Kết nối** > **Thử kết nối**, địa chỉ `HR100`, 1 thanh ghi | "Kết nối được", có giá trị thô |

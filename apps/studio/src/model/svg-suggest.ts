@@ -48,7 +48,7 @@ export function suggest(kind: ElementKind, name: string, tag: TagInfo): Suggesti
     else if (cls === 'number') push('text', 'text-number', 'direct');
   }
   if (shape && cls === 'number' && nameHas(name, 'level')) push('level', 'level', 'linearScale');
-  if (shape && nameHas(name, 'spin') && cls !== 'string') push('spin', 'spin', 'direct');
+  if (shape && nameHas(name, 'spin') && cls !== 'string') push('spin', 'spin');
   if (kind === 'line' && cls === 'bool') push('flow', 'flow', 'direct');
   if (shape && cls === 'bool' && nameHas(name, 'alarm')) {
     push('blink', 'alarm', 'direct');

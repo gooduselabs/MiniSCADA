@@ -483,7 +483,7 @@ export default async function svgBind({ page, check, shot, axe }) {
   const spinSug = await page.$eval('mat-svg-bind .sugg', (e) => e.textContent);
   check(
     'tên "Cánh quạt" + Tag BOOL: gợi ý Quay liên tục',
-    spinSug.includes('Quay liên tục'),
+    spinSug.includes('Quay khi chạy'),
     spinSug,
   );
   await clickBtn(page, 'mat-svg-bind .sugg .btn.primary');
@@ -751,7 +751,7 @@ export default async function svgBind({ page, check, shot, axe }) {
       'Màu viền (đường chỉ có nét)',
     ],
     ['rotate', UIDS.hit, 'TANK01.SP', 90, (f) => f.transform !== 'none', 'Quay (90)'],
-    ['spin', UIDS.rotor, 'PUMP01.RUN_CMD', true, (f) => f.anims > 0, 'Quay liên tục (có hoạt ảnh)'],
+    ['spin', UIDS.rotor, 'PUMP01.RUN_CMD', true, (f) => f.anims > 0, 'Quay khi chạy (có hoạt ảnh)'],
     ['translateX', UIDS.hit, 'TANK01.SP', 40, (f) => f.transform !== 'none', 'Di chuyển X'],
     ['translateY', UIDS.alarm, 'TANK01.SP', 30, (f) => f.transform !== 'none', 'Di chuyển Y'],
     ['scale', UIDS.alarm, 'TANK01.SP', 2, (f) => f.transform !== 'none', 'Co giãn (2)'],
@@ -792,8 +792,7 @@ export default async function svgBind({ page, check, shot, axe }) {
     await page.waitForSelector('mat-test-strip');
     if (typeof val === 'number') await setRange(page, val);
     else {
-      await page.click('mat-test-strip .tgl');
-      if (val === false) await page.click('mat-test-strip .tgl');
+      await page.click(`mat-test-strip .ts-seg [data-v="${val ? 'on' : 'off'}"]`);
     }
     await sleep(350);
     const f = await fx(uid);
