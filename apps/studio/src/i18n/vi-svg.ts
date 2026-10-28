@@ -137,6 +137,20 @@ export const viSvg = {
   'svb.err.value': 'Giá trị không hợp lệ',
   'svb.blink.note':
     'Nhấp nháy không được là tín hiệu duy nhất: hãy thêm màu nền, chữ hoặc biểu tượng. Khi hệ điều hành bật giảm chuyển động, phần tử không nhấp nháy mà hiện đậm ở trạng thái bật.',
+  'svb.fix.outColor': 'màu',
+  'svb.fix.outValue': 'giá trị',
+  'svb.fix.discrete':
+    'Rời rạc cần ít nhất một dòng giá trị → {out}, mỗi dòng có giá trị so sánh và {out} hợp lệ. Mở chi tiết (>) để điền.',
+  'svb.fix.range':
+    'Khoảng cần ít nhất một khoảng (từ, đến) → {out} hợp lệ. Mở chi tiết (>) để điền.',
+  'svb.fix.linear':
+    'Tuyến tính cần đủ Vào thấp, Vào cao, Ra thấp, Ra cao là số. Mở chi tiết (>) để điền.',
+  'svb.fix.table':
+    'Bảng giá trị cần chọn một bảng (Tag chưa có bảng). Mở chi tiết (>) để chọn hoặc tạo bảng.',
+  'svb.fix.scaleRange': 'Vào thấp phải khác Vào cao.',
+  'svb.fix.typeMismatch':
+    'Kiểu của Tag không dùng được với cách đổi này: chọn cách đổi khác hoặc sửa giá trị so sánh.',
+  'svb.fix.generic': 'Thiết lập của dòng này chưa đủ. Mở chi tiết (>) để điền.',
   'svb.err.rangeOrder': 'Giá trị "từ" phải nhỏ hơn "đến"',
   'svb.err.rangeOverlap': 'Khoảng chồng lên khoảng trước nó',
   'svb.xf.direct': 'Giá trị Tag đi thẳng vào đích, không biến đổi.',

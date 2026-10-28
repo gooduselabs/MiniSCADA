@@ -53,8 +53,8 @@ describe('suggest', () => {
     expect(s!.binding.transform).toMatchObject({
       kind: 'discreteMap',
       cases: [
-        { equals: true, value: '#43a047' },
-        { equals: false, value: '#9e9e9e' },
+        { equals: true, value: '#2e9e44' },
+        { equals: false, value: '#9aa5b1' },
       ],
     });
   });

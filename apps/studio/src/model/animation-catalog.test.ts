@@ -113,17 +113,24 @@ describe('tham số mặc định lấy từ Tag', () => {
     });
   });
 
-  it('rời rạc BOOL có hai dòng true/false; khoảng chia đôi khoảng của Tag', () => {
+  it('rời rạc BOOL có hai dòng true/false; khoảng màu chia ba theo khoảng của Tag, khoảng khác chia đôi', () => {
     expect(defaultTransform(rowById('fill')!, 'discreteMap', RUN)).toMatchObject({
       cases: [
-        { equals: true, value: '#43a047' },
-        { equals: false, value: '#9e9e9e' },
+        { equals: true, value: '#2e9e44' },
+        { equals: false, value: '#9aa5b1' },
       ],
     });
     expect(defaultTransform(rowById('fill')!, 'rangeMap', LEVEL)).toMatchObject({
       ranges: [
-        { to: 100, value: '#9e9e9e' },
-        { from: 100, value: '#43a047' },
+        { to: 120, value: '#2e9e44' },
+        { from: 120, to: 170, value: '#f39c12' },
+        { from: 170, value: '#d64541' },
+      ],
+    });
+    expect(defaultTransform(rowById('rotate')!, 'rangeMap', LEVEL)).toMatchObject({
+      ranges: [
+        { to: 100, value: 0 },
+        { from: 100, value: 90 },
       ],
     });
   });

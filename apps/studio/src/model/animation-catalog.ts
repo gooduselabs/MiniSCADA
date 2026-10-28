@@ -300,8 +300,10 @@ export function tagRange(
   return hi === lo ? [lo, lo + 1] : [lo, hi];
 }
 
-const COLOR_ON = '#43a047';
-const COLOR_OFF = '#9e9e9e';
+const COLOR_ON = '#2e9e44';
+const COLOR_OFF = '#9aa5b1';
+/** Ba màu của phép Khoảng cho màu: bình thường, cảnh báo, nguy hiểm. */
+const COLOR_RANGES = ['#2e9e44', '#f39c12', '#d64541'] as const;
 
 /** Giá trị ra mặc định của hai trạng thái (bật, tắt) cho phép rời rạc và khoảng. */
 function stateValues(row: AnimationRow): [Scalar, Scalar] {
@@ -333,13 +335,19 @@ function stateValues(row: AnimationRow): [Scalar, Scalar] {
   }
 }
 
-/** Phép biến đổi mặc định của `kind` cho Tag (tham số lấy từ Tag: khoảng vào, bảng giá trị, kiểu). */
+/**
+ * Phép biến đổi mặc định của `kind` cho Tag (tham số lấy từ Tag: khoảng vào, bảng giá trị, kiểu). Kết quả luôn hợp
+ * schema và luật rules-04 ngay khi chọn (không bảng rỗng): Rời rạc có sẵn các dòng giá trị, Khoảng có sẵn các khoảng,
+ * Bảng giá trị lấy bảng của Tag hoặc bảng đầu tiên của project (`tables`).
+ */
 export function defaultTransform(
   row: AnimationRow,
   kind: TransformKind04,
   tag: TagInfo | undefined,
+  tables: readonly string[] = [],
 ): Transform04 {
   const [on, off] = stateValues(row);
+  const color = row.id === 'fill' || row.id === 'stroke';
   switch (kind) {
     case 'direct':
       return { kind: 'direct' };
@@ -348,11 +356,31 @@ export function defaultTransform(
       const [outMin, outMax] = DEFAULT_OUT[row.id];
       return { kind: 'linearScale', inMin, inMax, outMin, outMax, clamp: true };
     }
-    case 'valueTable':
-      return { kind: 'valueTable', output: row.id === 'text' ? 'text' : 'color' };
+    case 'valueTable': {
+      // Tag có bảng riêng: để trống (dùng bảng của Tag); chưa có: bảng đầu tiên của project.
+      const table = tag?.valueTable === undefined ? tables[0] : undefined;
+      return {
+        kind: 'valueTable',
+        ...(table !== undefined ? { table } : {}),
+        output: row.id === 'text' ? 'text' : 'color',
+      };
+    }
     case 'rangeMap': {
       const [lo, hi] = tagRange(tag);
-      const mid = (lo + hi) / 2;
+      if (color) {
+        const a = round6(lo + (hi - lo) * 0.6);
+        const c = round6(lo + (hi - lo) * 0.85);
+        return {
+          kind: 'rangeMap',
+          ranges: [
+            { to: a, value: COLOR_RANGES[0] },
+            { from: a, to: c, value: COLOR_RANGES[1] },
+            { from: c, value: COLOR_RANGES[2] },
+          ],
+          default: COLOR_OFF,
+        };
+      }
+      const mid = round6((lo + hi) / 2);
       return {
         kind: 'rangeMap',
         ranges: [
@@ -363,19 +391,40 @@ export function defaultTransform(
       };
     }
     case 'discreteMap': {
-      const bool = tag !== undefined && tagClassOf04(tag.type) === 'bool';
-      return bool
-        ? {
-            kind: 'discreteMap',
-            cases: [
+      const c = tag === undefined ? 'number' : tagClassOf04(tag.type);
+      const cases =
+        c === 'bool'
+          ? [
               { equals: true, value: on },
               { equals: false, value: off },
-            ],
-            default: off,
-          }
-        : { kind: 'discreteMap', cases: [], default: off };
+            ]
+          : c === 'string'
+            ? [
+                { equals: 'ON', value: on },
+                { equals: 'OFF', value: off },
+              ]
+            : [
+                { equals: 0, value: off },
+                { equals: 1, value: on },
+              ];
+      return { kind: 'discreteMap', cases, default: off };
     }
   }
+}
+
+const round6 = (n: number): number => Math.round(n * 1e6) / 1e6;
+
+/** Phép biến đổi cho ô chọn: bỏ Bảng giá trị khi Tag không có bảng và project chưa có bảng nào (trừ phép đang dùng). */
+export function transformChoices(
+  row: AnimationRow,
+  tag: Pick<TagInfo, 'type' | 'valueTable'> | undefined,
+  tables: readonly string[],
+  current?: TransformKind04,
+): TransformKind04[] {
+  return transformsFor(row, tag).filter(
+    (k) =>
+      k !== 'valueTable' || k === current || tag?.valueTable !== undefined || tables.length > 0,
+  );
 }
 
 /** Tham số mặc định của mục khi gắn Tag (chỉ tham số có giá trị mặc định lấy từ Tag). */

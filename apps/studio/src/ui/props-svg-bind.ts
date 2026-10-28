@@ -32,6 +32,7 @@ import {
   rowOfBinding,
   tagClassOf04,
   tagRange,
+  transformChoices,
   transformsFor,
   type AnimationRow,
   type ParamSpec,
@@ -40,6 +41,7 @@ import {
 } from '../model/animation-catalog.ts';
 import { elementOf, type BindRejection } from '../model/svg-binding-doc.ts';
 import { findByUid } from '../model/svg-dom.ts';
+import { rowIssueTexts } from '../model/svg-issue-text.ts';
 import { groupBySvgElement, issuesOfRow, type SvgIssue } from '../model/svg-issues.ts';
 import {
   checkParam,
@@ -247,10 +249,18 @@ export class MatSvgBind extends AppElement {
   ): void {
     const tag = this.app.screens.tagInfos().get(b.source.tagId);
     const why = patchBinding(this.app, ref, this.primary, b.id, {
-      transform: defaultTransform(row, kind, tag),
+      transform: defaultTransform(row, kind, tag, this.tableNames()),
     });
     this.setErr(row.id, null);
-    if (why !== null) this.reject(row.id, why);
+    if (why !== null) return this.reject(row.id, why);
+    // Mở sẵn phần chi tiết để người dùng sửa giá trị mặc định vừa điền.
+    if (kind !== 'direct') this.open = new Set([...this.open, row.id]);
+  }
+
+  private tableNames(): string[] {
+    return this.app.store.state.outline.valueTables
+      .map((v) => (v.doc as { name?: string } | null)?.name)
+      .filter((n): n is string => typeof n === 'string' && n !== '');
   }
 
   private patch(
@@ -400,7 +410,7 @@ export class MatSvgBind extends AppElement {
                   ${
                     b === undefined
                       ? html`<option>${t('svb.transformNone')}</option>`
-                      : transformsFor(row, tag).map(
+                      : transformChoices(row, tag, this.tableNames(), b.transform.kind).map(
                           (k) =>
                             html`<option value=${k} ?selected=${b.transform.kind === k}>
                               ${t(`svg.xf.${k}` as MessageKey)}
@@ -434,10 +444,10 @@ export class MatSvgBind extends AppElement {
         err !== undefined || rowIssues.length > 0
           ? html`<ul class="berrs" id=${errId} aria-label=${t('svb.errors', { row: label })}>
               ${err !== undefined ? html`<li class="e" role="alert">${err}</li>` : nothing}
-              ${rowIssues.map(
+              ${rowIssueTexts(rowIssues, b, row.id).map(
                 (i) =>
-                  html`<li class=${i.severity === 'error' ? 'e' : 'w'}>
-                    <span class="mono">${i.issue.code}</span> ${i.issue.message}
+                  html`<li class=${i.severity === 'error' ? 'e' : 'w'} data-code=${i.code}>
+                    ${i.text}
                   </li>`,
               )}
             </ul>`
@@ -957,6 +967,7 @@ export class MatSvgBind extends AppElement {
                           type="button"
                           class="ibtn sm"
                           aria-label=${t('svb.xf.removeCase', { n: i + 1 })}
+                          ?disabled=${cases.length <= 1}
                           @click=${() => set({ ...tr, cases: cases.filter((_, j) => j !== i) })}
                         >
                           ${icon('x')}

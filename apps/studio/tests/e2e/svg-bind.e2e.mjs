@@ -739,7 +739,7 @@ export default async function svgBind({ page, check, shot, axe }) {
       UIDS.lamp,
       'SIM.FAN_ON',
       true,
-      (f) => f.fill !== 'rgb(158, 158, 158)',
+      (f) => f.fill !== 'rgb(154, 165, 177)',
       'Màu nền (rời rạc, BOOL bật)',
     ],
     [
@@ -747,7 +747,7 @@ export default async function svgBind({ page, check, shot, axe }) {
       UIDS.pipe,
       'SIM.FAN_ON',
       true,
-      (f) => f.stroke === 'rgb(67, 160, 71)',
+      (f) => f.stroke === 'rgb(46, 158, 68)',
       'Màu viền (đường chỉ có nét)',
     ],
     ['rotate', UIDS.hit, 'TANK01.SP', 90, (f) => f.transform !== 'none', 'Quay (90)'],
@@ -1047,7 +1047,7 @@ export default async function svgBind({ page, check, shot, axe }) {
   const s1 = await strokeOf(UIDS.alarm);
   check(
     'Mô phỏng: xác nhận xong, ghi vào mô phỏng và màu viền ống đổi theo SIM.FAN_ON',
-    s1 !== s0 && s1 === 'rgb(67, 160, 71)',
+    s1 !== s0 && s1 === 'rgb(46, 158, 68)',
     `${s0} -> ${s1}`,
   );
   await shot('10-xem-truoc-su-kien');
@@ -1088,6 +1088,54 @@ export default async function svgBind({ page, check, shot, axe }) {
   await sleep(200);
   await axeBoth(page, axe, 'inspector nhóm Sự kiện');
   await page.click('#svp-tab-bind');
+
+  // ---------- Feature 032: mọi đích × cách đổi hợp lệ ngay khi chọn, không lỗi schema thô ----------
+  const matrix = [
+    [UIDS.shell, 'TANK01.LEVEL'],
+    [UIDS.shell, 'PUMP01.RUN_CMD'],
+    [UIDS.value, 'TANK01.LEVEL'],
+    [UIDS.pipe, 'PUMP01.RUN_CMD'],
+  ];
+  const bad = [];
+  let combos = 0;
+  for (const [uid, tagId] of matrix) {
+    await clickEl(page, uid);
+    await waitFor(page, () => document.querySelector('mat-svg-bind [data-row]') !== null);
+    const ids = await page.$$eval('mat-svg-bind [data-row]', (rs) => rs.map((r) => r.dataset.row));
+    for (const id of ids) {
+      const dis = await page.$eval(rowSel(id), (e) => e.classList.contains('dis'));
+      if (dis) continue;
+      await dropTag(page, rowSel(id), tagId);
+      await sleep(250);
+      if (!(await bound(page, id))) continue;
+      const opts = await page.$$eval(`${rowSel(id)} select.xf option`, (os) =>
+        os.map((o) => o.value),
+      );
+      for (const k of opts) {
+        await page.select(`${rowSel(id)} select.xf`, k);
+        await sleep(450);
+        combos++;
+        const st = await page.evaluate((r) => {
+          const row = document.querySelector(`mat-svg-bind [data-row="${r}"]`);
+          const errs = row?.parentElement?.querySelector(`ul.berrs[id="svb-err-${r}"]`);
+          return {
+            err: errs ? [...errs.querySelectorAll('li.e')].map((l) => l.textContent.trim()) : [],
+            raw: (errs?.textContent ?? '').includes('E_SCHEMA'),
+            open: document.querySelector(`[data-params="${r}"]`) !== null,
+          };
+        }, id);
+        if (st.err.length > 0 || st.raw || (k !== 'direct' && !st.open))
+          bad.push(`${uid}/${tagId}/${id}/${k}: ${JSON.stringify(st)}`);
+      }
+      await page.$eval(`${rowSel(id)} .rm`, (b) => b.click());
+      await sleep(150);
+    }
+  }
+  check(
+    `đích × cách đổi (${combos} tổ hợp): chọn xong là hợp lệ, mở sẵn chi tiết, không lỗi E_SCHEMA`,
+    combos >= 30 && bad.length === 0,
+    bad.slice(0, 5).join(' | ') || String(combos),
+  );
 
   // Esc thoát item.
   await page.focus('mat-screen-canvas .vp');
