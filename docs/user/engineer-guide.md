@@ -303,11 +303,13 @@ Mở **Màn hình** trên cây. **Thêm màn hình** hoặc **Thêm popup**; **�
 - Không khai báo mục nào thì trang vận hành tự liệt kê mọi màn hình và báo cáo (không có trang hệ thống). **Vị trí menu** **Ẩn menu** thì không có menu.
 - Trang hệ thống và Chuông cảnh báo cần project định dạng 1.1. Project cũ hơn (0.5, 0.6, 1.0) giữ cách cũ: trang vận hành tự thêm Alarm, Lịch sử alarm, Lịch sử, Quản trị cuối menu; nâng cấp project lên 1.1 rồi thêm các trang hệ thống để tự quyết menu.
 
-Hộp công cụ có các nhóm widget:
+Hộp công cụ có ô **Tìm component…** ở trên cùng (gõ tên hoặc công dụng, có dấu hay không dấu đều được, ví dụ "bom", "den thap"); rê chuột lên một component để xem mô tả ngắn. Các nhóm widget:
 
-- Hiển thị: **Thẻ giá trị**, **Nhãn**, **Đèn báo**, **Đồng hồ kim**, **Mức chất lỏng**, **Khung nhóm**, và các widget dashboard: **Thẻ chỉ số màu**, **Chỉ số KPI**, **Thanh tiến độ**, **Danh sách trạng thái**, **Đồng hồ ngày giờ**, **Ghi chú**, **Ảnh** (mục 6.1.1).
+- Hiển thị: **Thẻ giá trị**, **Nhãn**, **Đèn báo**, **Đồng hồ kim**, **Mức chất lỏng** (thanh hoặc bồn chứa), **Khung nhóm**, **Nhãn đa trạng thái**, **Đèn tháp**, và các widget dashboard: **KPI so với mục tiêu**, **Thanh tiến độ**, **Danh sách trạng thái**, **Đồng hồ ngày giờ**, **Ghi chú**, **Ảnh** (mục 6.1.1, 6.1.2).
 - Biểu đồ: **Biểu đồ đường**, **Biểu đồ cột**, **Biểu đồ tròn**; bảng: **Bảng Tag sống**. Biểu đồ, đồng hồ kim và bảng có thuộc tính **Tiêu đề**: điền vào thì widget thành khung có thanh tiêu đề (như các khung "Biểu đồ nhiệt độ" của dashboard).
-- Điều khiển: **Nút bấm**, **Công tắc**, **Đặt giá trị**, **Thanh trượt**, **Chọn từ danh sách**.
+- Điều khiển: **Nút bấm**, **Công tắc**, **Đặt giá trị**, **Thanh trượt**, **Chọn từ danh sách**, **Hẹn giờ Từ–Đến**, **Thiết bị (motor, bơm, quạt, van)**.
+
+Component thả vào đã có sẵn giá trị khởi đầu (nhãn, màu, kiểu bồn, bảng trạng thái Dừng/Chạy/Lỗi…); chỉ việc kéo Tag thả lên component. Tab **Hiển thị** của Inspector chia thuộc tính theo nhóm **Dữ liệu**, **Hiển thị**, **Màu & biểu tượng**, **Ngưỡng & cảnh báo**, **Hành động**; canvas cập nhật ngay khi sửa (xem trước).
 - Alarm: **Danh sách alarm**, **Đếm alarm**; lịch sử: **Lịch sử: biểu đồ đường**, **Lịch sử: bảng dòng**, **Lịch sử: biểu đồ cột**, **Lịch sử: biểu đồ tròn**.
 
 Inspector có các tab **Chung**, **Hiển thị**, **Gắn Tag**, **Sự kiện**, **Bảo mật**.
@@ -342,13 +344,25 @@ Lỗi thường gặp: `E_LAYOUT_SPAN` (tổng các ô của hàng quá 12 cột
 
 | Widget | Dùng cho | Thuộc tính chính |
 |---|---|---|
-| **Thẻ chỉ số màu** (`stat-tile`) | Số đọc to trên nền màu đặc, biểu tượng lớn mờ ở góc phải, dòng "Trạng thái: Tốt / Không chắc / Lỗi / Mất dữ liệu" theo chất lượng của giá trị | **Nhãn**, **Đơn vị**, **Số chữ số thập phân**, **Màu thẻ** (10 màu: xanh ngọc, xanh dương, hồng đỏ, tím, xanh ô liu, chàm, cam, xanh lơ, xanh lá, xám đá; chữ trắng đọc rõ ở mọi chủ đề), **Biểu tượng** (21 hình: nhiệt độ, độ ẩm, dòng chảy, gió, ánh sáng, bóng đèn, khí CO₂, lửa, quạt, làm mát, bơm, van, điện, nguồn, áp suất, mức bồn, động cơ, bánh răng, đồng hồ, cảnh báo, ngôi sao), **Dòng trạng thái**, **Đường xu hướng nhỏ**, **Mũi tên tăng giảm**; khe **Tag cảnh báo** (BOOL) đổi dòng trạng thái thành "Cảnh báo" |
-| **Chỉ số KPI** (`kpi`) | Số đọc so với mục tiêu: "Mục tiêu: …", chênh lệch phần trăm có mũi tên, thanh mảnh | **Mục tiêu** (số) hoặc khe **Tag mục tiêu**, **Càng cao càng tốt** (đạt thì xanh, không đạt thì đỏ) |
+| **Thẻ giá trị** (`card`) | Một giá trị Tag đọc to. Một component cho mọi kiểu thẻ (từ bản này "Thẻ chỉ số màu" đã gộp vào đây) | **Kiểu nền**: nền nhạt (mặc định, vạch màu bên trái), đặc màu (chữ trắng, biểu tượng lớn mờ), viền màu, trơn (kiểu cũ); **Màu nhấn** (10 màu: xanh dương, xanh ngọc, xanh lá, cam, đỏ hồng, tím, chàm, xanh lơ, ô liu, xám đá) hoặc **Màu nhấn tự chọn**; **Biểu tượng** (21 hình: nhiệt độ, độ ẩm, dòng chảy, gió, ánh sáng, bóng đèn, khí CO₂, lửa, quạt, làm mát, bơm, van, điện, nguồn, áp suất, mức bồn, động cơ, bánh răng, đồng hồ, cảnh báo, ngôi sao); **Hiện đơn vị**, **Dòng trạng thái** ("Trạng thái: Tốt / Chú ý / Cảnh báo / Lỗi…"), **Đường xu hướng nhỏ**, **Mũi tên tăng giảm**, **Nháy nhẹ khi giá trị đổi** (mặc định bật); ngưỡng **Chú ý khi lớn/nhỏ hơn** (thẻ chuyển cam) và **Cảnh báo khi lớn/nhỏ hơn** (thẻ chuyển đỏ), khe **Tag cảnh báo** (BOOL, bật thì thẻ đỏ); **Nhấp nháy khi lớn/nhỏ hơn** |
+| **KPI so với mục tiêu** (`kpi`) | Số đọc so với mục tiêu: "Mục tiêu: …", chênh lệch phần trăm có mũi tên, thanh mảnh | **Mục tiêu** (số) hoặc khe **Tag mục tiêu**, **Càng cao càng tốt** (đạt thì xanh, không đạt thì đỏ) |
 | **Thanh tiến độ** (`progress`) | Phần trăm của giá trị trong thang Nhỏ nhất–Lớn nhất (mặc định theo Tag) | **Hướng**: thanh ngang hoặc vòng tròn, **Màu thanh** |
 | **Danh sách trạng thái** (`status-list`) | Đèn trạng thái của tối đa 16 Tag (BOOL: Bật/Tắt; số: chữ của bảng giá trị) | **Tiêu đề**, **Tên từng mục**, **Chữ khi bật**, **Chữ khi tắt**, **Số cột** (1–4) |
 | **Đồng hồ ngày giờ** (`clock`) | Giờ của thiết bị | **Định dạng** (giờ và ngày, chỉ giờ, chỉ ngày), **Múi giờ** (mặc định +07:00), **Hiện giây** |
 | **Ghi chú** (`text`) | Chữ nhiều dòng (tối đa 300 ký tự), không định dạng HTML | **Tiêu đề**, **Nội dung ghi chú**, cỡ chữ, căn lề, màu |
 | **Ảnh** (`image`) | Ảnh SVG có trong project (tệp `graphics/….svg`, nhập bằng **Nhập SVG**); không tải ảnh từ Internet | **Tệp ảnh SVG**, **Cách vừa khung**, **Mô tả ảnh** |
+
+#### 6.1.2. Component công nghiệp (bản 037)
+
+| Widget | Dùng cho | Thuộc tính chính |
+|---|---|---|
+| **Thiết bị (motor, bơm, quạt, van)** (`equipment`) | Biểu tượng thiết bị tô màu theo trạng thái: **Đang chạy** (xanh lá), **Dừng** (xám), **Lỗi** (đỏ, chữ nhấp nháy); cánh quạt, bánh công tác, đầu trục quay khi chạy; van: **Mở**/**Đóng** | Khe **Tag trạng thái chạy** (BOOL, hoặc số bằng **Giá trị "đang chạy"**), **Tag lỗi** (tùy chọn) hoặc **Giá trị "lỗi"**; **Loại thiết bị**, **Chuyển động khi chạy**; khe **Tag lệnh chạy/dừng** (tùy chọn, cần quyền ghi) cho hai nút **Chạy**/**Dừng** (BOOL ghi true/false; số ghi **Giá trị ghi khi chạy/dừng**), có hộp xác nhận và vai trò tối thiểu như nút bấm |
+| **Đèn tháp** (`stack-light`) | Đèn tháp đỏ, vàng, xanh lá, xanh dương trên cột có đế; chỉ vẽ tầng đã gắn Tag | Khe **Tầng đỏ**, **Tầng vàng**, **Tầng xanh lá**, **Tầng xanh dương** (BOOL hoặc số khác 0 = sáng); **Đỏ nhấp nháy khi sáng**; hướng dọc hoặc ngang |
+| **Nhãn đa trạng thái** (`multi-state`) | Chữ và màu theo giá trị (ví dụ 0 Dừng, 1 Chạy, 2 Lỗi), khối màu đặc hoặc nền nhạt, có biểu tượng | **Bảng trạng thái** (mỗi dòng Giá trị, Chữ, Màu, Nhấp nháy; tối đa 16); bảng trống thì dùng Bảng giá trị của Tag |
+
+**Mức chất lỏng** có **Kiểu** "Bồn chứa" (bồn bo tròn có vạch chia, gợn sóng nhẹ trên mặt chất lỏng khi chạy, tắt bằng **Gợn sóng mặt chất lỏng**) và **Màu chất lỏng**. **Đèn báo** có **Quầng sáng khi bật** (mặc định bật). **Khung nhóm** có **Màu nhấn** (vạch màu và tiêu đề màu). Mọi chuyển động là CSS nhẹ, chỉ chạy ở trang vận hành (không chạy khi thiết kế) và tự tắt khi máy đặt "giảm chuyển động".
+
+**Project cũ:** widget **Thẻ chỉ số màu** (`stat-tile`) vẫn chạy đúng trên thiết bị. Khi mở project trong Studio, mỗi thẻ tự đổi thành **Thẻ giá trị** kiểu **Đặc màu** giữ nguyên màu, biểu tượng, Tag; project được đánh dấu chưa lưu, bấm **Lưu** để ghi (không lưu thì tệp trên đĩa giữ nguyên).
 
 **Biểu đồ đường** có thêm **Ngưỡng cao**, **Ngưỡng thấp** (vẽ đường nét đứt đỏ và xanh ngọc, có trong chú giải; trục giá trị tự nới để thấy ngưỡng) và **Nhãn trục thời gian**, **Nhãn trục giá trị**. **Đồng hồ kim** nay gọn trong khung (bán kính tối đa 150 px), số đọc ở dưới. **Khung nhóm** có **Kiểu khung** "Card có thanh tiêu đề".
 
