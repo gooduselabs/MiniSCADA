@@ -30,8 +30,26 @@ function statTileToCard(it: WidgetItem): WidgetItem {
   return { ...it, widget: 'card', props };
 }
 
+/**
+ * `lamp` (Đèn báo) → `multi-state` kiểu đèn: cùng cách hiểu giá trị (bảng giá trị của Tag nếu `useValueTable`, còn lại khác 0
+ * = bật, `invert`, màu bật/tắt, nhấp nháy khi bật, quầng sáng), giữ nhãn và khe Tag (`state` → `value`).
+ */
+function lampToMultiState(it: WidgetItem): WidgetItem {
+  const src: Props = { ...(it.props ?? {}) };
+  const shape = src['shape'] === 'square' ? 'lamp-square' : 'lamp';
+  delete src['shape'];
+  const props: Props = { shape, ...src };
+  const tags = { ...(it.tags ?? {}) };
+  if (tags['state'] !== undefined) {
+    tags['value'] = tags['state'];
+    delete tags['state'];
+  }
+  return { ...it, widget: 'multi-state', props, ...(it.tags ? { tags } : {}) };
+}
+
 const ALIASES: Readonly<Record<string, (it: WidgetItem) => WidgetItem>> = {
   'stat-tile': statTileToCard,
+  lamp: lampToMultiState,
 };
 
 /** Loại widget cũ có loại thay thế. */
@@ -54,7 +72,8 @@ export function upgradeLegacyWidgets<S extends { items?: unknown }>(screen: S): 
   if (!screen || !Array.isArray(screen.items)) return null;
   let changed = false;
   const items = (screen.items as Array<{ type: string }>).map((it) => {
-    const n = it && typeof it === 'object' ? upgradeLegacyItem(it) : it;
+    // Item sinh từ template (`tpl`) giữ nguyên: đổi riêng nó sẽ lệch template (W_TEMPLATE_DRIFT); template vẫn vẽ loại cũ.
+    const n = it && typeof it === 'object' && !('tpl' in it) ? upgradeLegacyItem(it) : it;
     if (n !== it) changed = true;
     return n;
   });

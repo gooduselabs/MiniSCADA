@@ -4,7 +4,7 @@ export const viDashboard = {
   // ---- Tên widget ----
   'widget.stat-tile': 'Thẻ chỉ số màu (cũ, tự đổi thành Thẻ giá trị)',
   'widget.kpi': 'KPI so với mục tiêu',
-  'widget.progress': 'Thanh tiến độ',
+  'widget.progress': 'Vòng tiến độ (%)',
   'widget.status-list': 'Danh sách trạng thái',
   'widget.clock': 'Đồng hồ ngày giờ',
   'widget.text': 'Ghi chú',

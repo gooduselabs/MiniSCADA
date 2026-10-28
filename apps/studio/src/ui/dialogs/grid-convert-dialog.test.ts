@@ -90,7 +90,8 @@ describe('hộp thoại xem trước', () => {
     await settled();
     expect(app.ui.dialog).toBeNull();
     expect(model(app, 'main')).toBe(before);
-    expect(app.store.dirtyFiles()).toEqual([]);
+    // 037: chỉ còn các màn hình tự đổi widget kiểu cũ khi mở; Hủy không thêm gì.
+    expect(app.store.dirtyFiles().every((f) => f.startsWith('screens/'))).toBe(true);
   });
 
   it('Esc đóng như Hủy', async () => {

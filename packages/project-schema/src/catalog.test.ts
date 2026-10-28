@@ -320,8 +320,10 @@ describe('danh mục 0.8.0 (037)', () => {
   it('stat-tile còn trong danh mục nhưng đã lỗi thời, thay bằng card', () => {
     expect(catalogWidget('stat-tile')).toMatchObject({ deprecated: true, replacedBy: 'card' });
     expect(WIDGET_CATALOG.widgets.filter((w) => w.deprecated).map((w) => w.id)).toEqual([
+      'lamp',
       'stat-tile',
     ]);
+    expect(catalogWidget('lamp')).toMatchObject({ deprecated: true, replacedBy: 'multi-state' });
   });
   it('card có màu nhấn, kiểu nền, biểu tượng, ngưỡng, khe alarm', () => {
     expect(prop('card', 'accent')).toMatchObject({ kind: 'enum', default: 'blue' });

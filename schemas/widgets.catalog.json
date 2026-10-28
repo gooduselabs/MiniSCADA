@@ -399,7 +399,9 @@
           "group": "display"
         }
       ],
-      "events": []
+      "events": [],
+      "deprecated": true,
+      "replacedBy": "multi-state"
     },
     {
       "id": "gauge",
@@ -1135,7 +1137,7 @@
       "group": "display",
       "label": "widget.multi-state",
       "defaultSize": [220, 64],
-      "minSize": [96, 32],
+      "minSize": [24, 24],
       "slots": [
         {
           "name": "value",
@@ -1151,6 +1153,13 @@
           "kind": "string",
           "maxLength": 40,
           "default": "",
+          "group": "display"
+        },
+        {
+          "name": "shape",
+          "kind": "enum",
+          "options": ["text", "lamp", "lamp-square"],
+          "default": "text",
           "group": "display"
         },
         {
@@ -1219,6 +1228,64 @@
             "star"
           ],
           "default": "none",
+          "group": "display"
+        },
+        {
+          "name": "useValueTable",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "onText",
+          "kind": "string",
+          "maxLength": 16,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "offText",
+          "kind": "string",
+          "maxLength": 16,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "onColor",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
+          "group": "display"
+        },
+        {
+          "name": "offColor",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
+          "group": "display"
+        },
+        {
+          "name": "invert",
+          "kind": "bool",
+          "default": false,
+          "group": "display"
+        },
+        {
+          "name": "blinkOn",
+          "kind": "bool",
+          "default": false,
+          "group": "display"
+        },
+        {
+          "name": "glow",
+          "kind": "bool",
+          "default": false,
+          "group": "display"
+        },
+        {
+          "name": "showText",
+          "kind": "bool",
+          "default": true,
           "group": "display"
         }
       ],

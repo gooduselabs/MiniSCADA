@@ -69,7 +69,7 @@ export const viScreens = {
   'widget.group.control': 'Điều khiển',
   'widget.card': 'Thẻ giá trị',
   'widget.label': 'Nhãn',
-  'widget.lamp': 'Đèn báo',
+  'widget.lamp': 'Đèn báo (cũ, tự đổi thành Đèn / trạng thái)',
   'widget.gauge': 'Đồng hồ kim',
   'widget.level': 'Mức chất lỏng',
   'widget.panel': 'Khung nhóm',

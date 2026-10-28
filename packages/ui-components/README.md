@@ -268,7 +268,7 @@ Nhóm: Hiển thị. Cỡ mặc định 320 × 240, nhỏ nhất 48 × 48.
 
 ### `multi-state` (`<mat-w-multi-state>`)
 
-Nhóm: Hiển thị. Cỡ mặc định 220 × 64, nhỏ nhất 96 × 32.
+Nhóm: Hiển thị. Cỡ mặc định 220 × 64, nhỏ nhất 24 × 24.
 
 | Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
 |---|---|---|---|---|
@@ -277,9 +277,19 @@ Nhóm: Hiển thị. Cỡ mặc định 220 × 64, nhỏ nhất 96 × 32.
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
 | `label` | string | `""` | ≤ 40 ký tự |
+| `shape` | enum | `"text"` | `text`, `lamp`, `lamp-square` |
 | `states` | array | `[]` | ≤ 16 phần tử |
 | `fill` | enum | `"solid"` | `solid`, `soft`, `outline`, `plain` |
 | `icon` | enum | `"none"` | `none`, `thermometer`, `droplet`, `wave`, `wind`, `sun`, `lightbulb`, `gas`, `flame`, `fan`, `snowflake`, `pump`, `valve`, `bolt`, `power`, `pressure`, `tank`, `motor`, `gear`, `clock`, `alert`, `star` |
+| `useValueTable` | bool | `true` |  |
+| `onText` | string | `""` | ≤ 16 ký tự |
+| `offText` | string | `""` | ≤ 16 ký tự |
+| `onColor` | color | `"auto"` |  |
+| `offColor` | color | `"auto"` |  |
+| `invert` | bool | `false` |  |
+| `blinkOn` | bool | `false` |  |
+| `glow` | bool | `false` |  |
+| `showText` | bool | `true` |  |
 
 ### `stack-light` (`<mat-w-stack-light>`)
 

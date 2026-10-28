@@ -75,16 +75,20 @@ describe('mở project có stat-tile (StudioStore)', () => {
     platform.control.useProject(files());
     const store = new StudioStore({ platform });
     expect(await store.openProject()).toBe(true);
-    expect(store.state.legacyConverted).toBe(2);
-    expect(store.dirtyFiles().length).toBe(1);
+    // 2 thẻ thêm vào + các Đèn báo sẵn có của vector (đều kiểu cũ)
+    expect(store.state.legacyConverted).toBeGreaterThanOrEqual(2);
+    const dirty = store.dirtyFiles();
+    expect(dirty.length).toBeGreaterThanOrEqual(1);
     expect(store.commandContext().canUndo).toBe(false);
     store.undo();
-    expect(store.dirtyFiles().length).toBe(1);
+    expect(store.dirtyFiles()).toEqual(dirty);
     store.dismissLegacyNotice();
     expect(store.state.legacyConverted).toBe(0);
-    expect(store.dirtyFiles().length).toBe(1);
+    expect(store.dirtyFiles()).toEqual(dirty);
     expect((await store.save()).status).toBe('saved');
-    expect(platform.control.writes.some((w) => w.content.includes('"stat-tile"'))).toBe(false);
+    expect(
+      platform.control.writes.some((w) => /"widget": "(stat-tile|lamp)"/.test(w.content)),
+    ).toBe(false);
   });
   it('project cũ hơn 1.1 (chờ nâng cấp/chỉ đọc): không tự đổi', async () => {
     const f = files();

@@ -51,7 +51,7 @@ describe('Toolbox nhóm Lịch sử', () => {
     files['project.json'] = JSON.stringify(p);
     const { el } = await toolbox(files);
     expect(el.querySelector('.tool[data-widget="history-trend"]')).toBeNull();
-    expect(el.querySelectorAll('.tool[data-widget]').length).toBe(27);
+    expect(el.querySelectorAll('.tool[data-widget]').length).toBe(26); // vòng 2: Đèn báo gộp vào Đèn / trạng thái
     expect(el.querySelector('.tool[data-widget="stat-tile"]')).toBeNull();
   });
 });

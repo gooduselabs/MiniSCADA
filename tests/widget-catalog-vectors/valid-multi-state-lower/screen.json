@@ -17,9 +17,19 @@
       "height": 64,
       "props": {
         "label": "",
+        "shape": "text",
         "states": [],
         "fill": "solid",
-        "icon": "none"
+        "icon": "none",
+        "useValueTable": false,
+        "onText": "",
+        "offText": "",
+        "onColor": "auto",
+        "offColor": "auto",
+        "invert": false,
+        "blinkOn": false,
+        "glow": false,
+        "showText": false
       },
       "tags": {
         "value": "L.LEVEL"

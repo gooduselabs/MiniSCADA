@@ -117,8 +117,10 @@ describe('tests/project-vectors mở trong Studio (SC-006)', () => {
           .map((i) => i.code);
         expect(sortedSet(warnings)).toEqual(sortedSet(exp.warnings));
       }
-      // Mở project không làm tài liệu nào thành chưa lưu (không ghi lại file không đổi, FR-022).
-      expect(store.dirtyFiles()).toEqual([]);
+      // Mở project không làm tài liệu nào thành chưa lưu (không ghi lại file không đổi, FR-022). Ngoại lệ duy nhất (037):
+      // màn hình có widget kiểu cũ (stat-tile, lamp) được tự đổi, có dải báo "bấm Lưu để giữ".
+      const legacy = store.state.legacyConverted > 0;
+      expect(store.dirtyFiles().filter((f) => !(legacy && f.startsWith('screens/')))).toEqual([]);
     });
   }
 });

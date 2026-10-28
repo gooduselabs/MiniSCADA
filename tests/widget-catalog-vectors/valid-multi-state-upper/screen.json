@@ -17,6 +17,7 @@
       "height": 700,
       "props": {
         "label": "ằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằ",
+        "shape": "lamp-square",
         "states": [
           {
             "value": 0,
@@ -116,7 +117,16 @@
           }
         ],
         "fill": "plain",
-        "icon": "star"
+        "icon": "star",
+        "useValueTable": true,
+        "onText": "ằằằằằằằằằằằằằằằằ",
+        "offText": "ằằằằằằằằằằằằằằằằ",
+        "onColor": "#FFFFFF",
+        "offColor": "#FFFFFF",
+        "invert": true,
+        "blinkOn": true,
+        "glow": true,
+        "showText": true
       },
       "tags": {
         "value": "L.LEVEL"

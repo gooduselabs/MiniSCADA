@@ -45,6 +45,34 @@ describe('upgradeLegacyWidgets', () => {
       ],
     ).toBe('teal');
   });
+  it('lamp thành multi-state kiểu đèn: khe state → value, vuông → lamp-square, giữ thuộc tính', () => {
+    const r = upgradeLegacyItem({
+      id: 'l',
+      type: 'widget' as const,
+      widget: 'lamp',
+      props: { label: 'Bơm', shape: 'square', onColor: '#00aa00', invert: true, blinkOn: true },
+      tags: { state: 'RUN' },
+    });
+    expect(r).toEqual({
+      id: 'l',
+      type: 'widget',
+      widget: 'multi-state',
+      props: {
+        shape: 'lamp-square',
+        label: 'Bơm',
+        onColor: '#00aa00',
+        invert: true,
+        blinkOn: true,
+      },
+      tags: { value: 'RUN' },
+    });
+    expect(isLegacyWidget('lamp')).toBe(true);
+  });
+  it('item sinh từ template (tpl) không đổi', () => {
+    expect(
+      upgradeLegacyWidgets({ items: [{ ...tile, tpl: { inst: 'a', tid: 'b', rid: 'c' } }] }),
+    ).toBeNull();
+  });
   it('không có gì đổi thì trả null; item khác giữ nguyên tham chiếu', () => {
     const card = { id: 'c', type: 'widget', widget: 'card' };
     const svg = { id: 's', type: 'svg' };

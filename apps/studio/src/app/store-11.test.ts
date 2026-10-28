@@ -35,7 +35,9 @@ describe('StudioStore: định dạng 1.1', () => {
     expect(store.state.outline.format11).toBe(true);
     expect(store.state.outline.format10).toBe(true); // họ 1.x: template, logic sửa được như 1.0
     expect(errors(store)).toEqual([]);
-    expect(store.dirtyFiles()).toEqual([]);
+    // 037: chỉ màn hình có Đèn báo/Thẻ chỉ số màu kiểu cũ thành chưa lưu (tự đổi, có dải báo).
+    expect(store.state.legacyConverted).toBeGreaterThan(0);
+    expect(store.dirtyFiles().every((f) => f.startsWith('screens/'))).toBe(true);
   });
 
   it('project 1.0: đề nghị nâng cấp; Nâng cấp lên 1.1 rồi Lưu ghi 1.1.0 ở mọi tệp, runtime 1.1.0', async () => {

@@ -22,7 +22,7 @@ export const WIDGET_PRESETS: Readonly<Record<string, Props>> = {
   level: { label: '@preset.level', style: 'tank', wave: true },
   panel: { title: '@preset.panel', variant: 'header', accent: 'blue' },
   kpi: { label: '@preset.kpi' },
-  progress: { label: '@preset.progress' },
+  progress: { label: '@preset.progress', shape: 'ring' },
   'multi-state': {
     label: '@preset.multi-state',
     states: [

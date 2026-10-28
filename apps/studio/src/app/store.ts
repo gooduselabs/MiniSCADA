@@ -186,6 +186,14 @@ const SCREEN_FILE = /^screens\/[^/]+\.screen\.json$/;
  * Feature 037: chuyển item loại widget đã gộp (danh mục 0.8.0, `stat-tile` → `card`) trong mọi màn hình. Không có gì đổi
  * thì trả đúng `docs` cũ (project không bị đánh dấu đã sửa).
  */
+function sameJson(a: string, b: string): boolean {
+  try {
+    return JSON.stringify(JSON.parse(stripBom(a))) === JSON.stringify(JSON.parse(stripBom(b)));
+  } catch {
+    return false;
+  }
+}
+
 export function upgradeLegacyDocs(docs: Record<string, ProjectDoc>): Record<string, ProjectDoc> {
   return convertLegacyDocs(docs).docs;
 }
@@ -200,6 +208,9 @@ export function convertLegacyDocs(docs: Record<string, ProjectDoc>): {
   for (const [rel, doc] of Object.entries(docs)) {
     if (!SCREEN_FILE.test(rel) || !doc.editable || !doc.value || typeof doc.value !== 'object')
       continue;
+    // Chỉ đổi khi cách ghi chuẩn của Studio giữ nguyên mọi khóa của tệp: tệp có khóa lạ (lỗi E_SCHEMA…) giữ nguyên để bộ
+    // kiểm tra vẫn báo đúng lỗi trên đĩa, không bị "sửa ngầm".
+    if (!sameJson(doc.diskText, doc.cleanText)) continue;
     const next = upgradeLegacyWidgets(doc.value as { items?: unknown });
     if (next === null) continue;
     const before = (doc.value as { items?: Array<{ widget?: string }> }).items ?? [];
