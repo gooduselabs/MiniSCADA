@@ -8,7 +8,7 @@ import { installShortcuts } from '../app/shortcuts.ts';
 import { TASK_CARD_MIN_WINDOW, type Workspace } from '../app/workspace.ts';
 import { t } from '../i18n/index.ts';
 import type { StudioApp } from '../app/app.ts';
-import { AppElement } from './base.ts';
+import { AppElement, icon } from './base.ts';
 import { layersScreenId } from './screen/mat-layers.ts';
 import './dialogs/devices-dialog.ts';
 import './dialogs/login-dialog.ts';
@@ -429,7 +429,7 @@ export class MatShell extends AppElement {
                       aria-label=${t('legacy.dismiss')}
                       @click=${() => app.store.dismissLegacyNotice()}
                     >
-                      ×
+                      ${icon('x', 'sm')}
                     </button>
                   </div>`
                 : nothing
