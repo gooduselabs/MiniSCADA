@@ -180,6 +180,28 @@ export class MatScreenEditor extends AppElement {
   /** Thi hành lệnh của bảng lệnh trên màn hình đang mở. */
   exec(id: CommandId): void {
     const app = this.app;
+    // Feature 035: trình soạn lưới có sao chép, dán, nhân bản ô và zoom riêng (cùng lệnh, cùng phím).
+    const gridEd = this.isGrid() ? this.gridEditor() : null;
+    if (gridEd) {
+      switch (id) {
+        case 'screen.copy':
+          return gridEd.copySelected();
+        case 'screen.paste':
+          return gridEd.pasteSelected();
+        case 'screen.duplicate':
+          return gridEd.duplicateSelected();
+        case 'screen.zoomIn':
+          return gridEd.zoomBy(1);
+        case 'screen.zoomOut':
+          return gridEd.zoomBy(-1);
+        case 'screen.zoomFit':
+          return gridEd.zoomFit();
+        case 'screen.zoom100':
+          return gridEd.zoom100();
+        default:
+          break;
+      }
+    }
     if (FREE_ONLY.has(id) && this.isGrid()) {
       app.toast(t('lay.freeOnly'));
       return;
@@ -333,7 +355,8 @@ export class MatScreenEditor extends AppElement {
     const doc = app.screenModel(this.screenId);
     app.setUiContext({
       screenSel: this.sel().length,
-      screenClip: app.screens.clipboard.get() !== null,
+      screenClip:
+        app.screens.clipboard.get() !== null || (this.isGrid() && app.screens.gridClip !== null),
       screenPreview: app.screens.previewMode,
       screenIsPopup: doc?.kind === 'popup',
       screenTplSel: selectedInstances(app, this.screenId).length > 0,
@@ -423,6 +446,7 @@ export class MatScreenEditor extends AppElement {
             this.closeMenu();
         }}
       >
+        ${this.gridMenu()}
         ${CTX_COMMANDS.map((id) => {
           const why = this.app.enabled(id);
           const on = why === true;
@@ -444,6 +468,30 @@ export class MatScreenEditor extends AppElement {
         })}
       </div>
     </div>`;
+  }
+
+  /** Feature 035: mục sao chép, dán, nhân bản ô và hàng của trình soạn lưới, đặt đầu menu ngữ cảnh. */
+  private gridMenu() {
+    const entries = this.isGrid() ? (this.gridEditor()?.menuEntries() ?? []) : [];
+    if (entries.length === 0) return nothing;
+    return html`${entries.map(
+        (m) =>
+          html`<button
+            class="ctx-item"
+            type="button"
+            role="menuitem"
+            data-cmd=${m.id}
+            aria-disabled=${m.enabled ? 'false' : 'true'}
+            @click=${() => {
+              if (!m.enabled) return;
+              this.closeMenu();
+              m.run();
+            }}
+          >
+            <span class="lbl">${m.label}</span><span class="sc">${m.key}</span>
+          </button>`,
+      )}
+      <div class="ctx-sep" role="separator"></div>`;
   }
 
   private readOnlyBanner() {

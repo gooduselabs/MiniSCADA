@@ -20,9 +20,17 @@ import {
   addRow,
   addTemplateRow,
   attachWidget,
+  copyCell,
+  copyRow,
+  duplicateCell,
+  duplicateRow,
   GRID_PRESETS,
   moveCell,
+  moveCellTo,
+  moveItemToCell,
   moveRow,
+  moveRowTo,
+  pasteGrid,
   removeCell,
   removeRow,
   replaceWidget,
@@ -35,6 +43,7 @@ import {
   type TemplateNameKind,
 } from '../../model/grid-ops.ts';
 import { hostTagInfo } from '../../model/preview-hosts.ts';
+import { clampZoom, WHEEL_STEP, ZOOM_STEP } from '../../model/screen-edit/viewport.ts';
 import { remove } from '../../model/screen-doc.ts';
 import { AppElement, icon } from '../base.ts';
 import './mat-grid-editor.css';
@@ -50,6 +59,15 @@ const FIXED_ROW_HEIGHT = 240;
 
 type GridDoc = ScreenModel & { layout: GridLayout };
 
+/** Mục menu chuột phải của trình soạn lưới (feature 035). */
+export interface GridMenuEntry {
+  id: string;
+  label: string;
+  key: string;
+  enabled: boolean;
+  run: () => void;
+}
+
 interface CellAt {
   row: GridRow;
   r: number;
@@ -62,6 +80,14 @@ const TAG_TYPE = 'application/x-mat-tag';
 /** Feature 029: kéo thả ô và hàng trong trình soạn lưới. */
 const CELL_TYPE = 'application/x-mat-grid-cell';
 const ROW_TYPE = 'application/x-mat-grid-row';
+/** Feature 035: vị trí thả khi kéo ô (trước, vào, sau ô đích) hoặc kéo hàng (trên, dưới hàng đích). */
+type DropAt =
+  | { kind: 'cell'; cell: string; zone: 'before' | 'into' | 'after' }
+  | { kind: 'row'; row: string; zone: 'above' | 'below' };
+/** Zoom của trình soạn lưới (chỉ hiển thị): 25 % đến 300 %. */
+const GRID_ZOOM = { min: 0.25, max: 3 } as const;
+const clampGridZoom = (z: number): number =>
+  Math.min(GRID_ZOOM.max, Math.max(GRID_ZOOM.min, clampZoom(z)));
 /** Chiều cao hàng chọn nhanh (feature 029). */
 const QUICK_HEIGHTS = ['auto', 120, 240, 360] as const;
 
@@ -75,6 +101,9 @@ export class MatGridEditor extends AppElement {
     stageWidth: { state: true },
     dragging: { state: true },
     hoverUid: { state: true },
+    zoomLevel: { state: true },
+    hoverRow: { state: true },
+    dropAt: { state: true },
   };
   declare screenId: string;
   declare selCell: string | null;
@@ -87,6 +116,14 @@ export class MatGridEditor extends AppElement {
   declare dragging: boolean;
   /** Phần tử SVG đang rê chuột khi đã vào đồ họa (khung mảnh). */
   declare hoverUid: string | null;
+  /** Feature 035: mức zoom người dùng chọn; `null` là Vừa khung (theo chiều rộng vùng làm việc). */
+  declare zoomLevel: number | null;
+  /** Feature 035: chỉ báo vị trí thả khi kéo ô hoặc hàng. */
+  declare dropAt: DropAt | null;
+  /** Feature 035: hàng đang rê chuột (viền nhạt quanh mọi ô của hàng). */
+  declare hoverRow: string | null;
+  /** Đang kéo đường chia hoặc cạnh ô (không bắt đầu kéo thả HTML5 của ô). */
+  #resizing = false;
 
   readonly #bindRevs = new BindingRevs(() => this.app);
   #readyKey = '';
@@ -109,6 +146,9 @@ export class MatGridEditor extends AppElement {
     this.stageWidth = 0;
     this.dragging = false;
     this.hoverUid = null;
+    this.zoomLevel = null;
+    this.dropAt = null;
+    this.hoverRow = null;
   }
 
   protected override attached(): void {
@@ -134,11 +174,38 @@ export class MatGridEditor extends AppElement {
     this.#ro = null;
   }
 
-  /** Hệ số thu nhỏ để trang xem trước vừa vùng làm việc (không phóng to quá 1). */
-  private zoom(): number {
+  /** Hệ số Vừa khung: trang xem trước vừa vùng làm việc (không phóng to quá 1). */
+  private fitZoom(): number {
     const avail = this.stageWidth - 32;
     return avail > 0 ? Math.min(1, avail / this.previewWidth) : 1;
   }
+
+  /** Hệ số zoom đang dùng (chỉ hiển thị, không đổi tài liệu). */
+  private zoom(): number {
+    return this.zoomLevel ?? this.fitZoom();
+  }
+
+  /** Phóng to (`dir` 1) hoặc thu nhỏ (-1) một nấc (Ctrl+= / Ctrl+-, nút + / −). */
+  zoomBy(dir: 1 | -1, factor = ZOOM_STEP): void {
+    const z = this.zoom();
+    this.zoomLevel = clampGridZoom(dir > 0 ? z * factor : z / factor);
+  }
+
+  /** Vừa khung (Ctrl+0). */
+  zoomFit(): void {
+    this.zoomLevel = null;
+  }
+
+  /** 100 % (bấm ô phần trăm). */
+  zoom100(): void {
+    this.zoomLevel = 1;
+  }
+
+  private readonly onWheel = (e: WheelEvent): void => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    this.zoomBy(e.deltaY < 0 ? 1 : -1, WHEEL_STEP);
+  };
 
   // ---------- dữ liệu ----------
 
@@ -361,6 +428,125 @@ export class MatGridEditor extends AppElement {
     else this.edit((d) => setCellProps(d, cellId, { span: at.cell.span + delta }));
   }
 
+  // ---------- sao chép, dán, nhân bản (feature 035) ----------
+
+  private locked(): boolean {
+    if (this.app.store.state.readOnly) return true;
+    if (this.app.screens.previewMode !== 'off') {
+      this.app.toast(t('reason.screenPreviewLocked'));
+      return true;
+    }
+    return false;
+  }
+
+  /** Chọn ô chứa item đầu của vùng chọn sau thao tác (dán, nhân bản) và đưa focus tới ô. */
+  private selectItemCell(r: ReturnType<typeof addRow> | null | undefined): void {
+    if (!r || r.rejected) return;
+    const item = r.selection?.[0];
+    if (item === undefined) return;
+    for (const row of (r.doc as GridDoc).layout.rows)
+      for (const c of row.cells)
+        if (c.item === item) {
+          this.selCell = c.id;
+          this.focusCell(c.id);
+          return;
+        }
+  }
+
+  /** Ctrl+C: sao chép ô đang chọn (component giữ nguyên mọi thuộc tính); `row` sao chép cả hàng. */
+  copySelected(row = false): void {
+    const d = this.doc();
+    const at = this.find(this.selCell);
+    if (!d || !at) {
+      this.app.toast(t('lay.noCell'));
+      return;
+    }
+    const clip = row ? copyRow(d, at.row.id) : copyCell(d, at.cell.id);
+    if (!clip) return;
+    if (clip.kind === 'cell' && clip.item === null) {
+      this.app.toast(t('lay.copyEmpty'));
+      return;
+    }
+    this.app.screens.gridClip = clip;
+    this.app.toast(t(row ? 'lay.copiedRow' : 'lay.copiedCell'));
+    this.app.requestRender();
+  }
+
+  /** Ctrl+V: dán vào ô trống đang chọn, hoặc ngay sau ô chọn (hàng: ngay dưới hàng chọn). */
+  pasteSelected(): void {
+    const clip = this.app.screens.gridClip;
+    if (!clip) {
+      this.app.toast(t('reason.clipEmpty'));
+      return;
+    }
+    if (this.locked()) return;
+    const target = this.selCell;
+    this.selectItemCell(this.edit((d) => pasteGrid(d, clip, target)));
+  }
+
+  /** Ctrl+D: nhân bản ô đang chọn; Ctrl+Shift+D (`row`): nhân bản cả hàng. */
+  duplicateSelected(row = false): void {
+    const at = this.find(this.selCell);
+    if (!at) {
+      this.app.toast(t('lay.noCell'));
+      return;
+    }
+    if (this.locked()) return;
+    this.selectItemCell(
+      this.edit((d) => (row ? duplicateRow(d, at.row.id) : duplicateCell(d, at.cell.id))),
+    );
+  }
+
+  /** Mục menu chuột phải của ô (editor Màn hình gộp vào menu ngữ cảnh chung). */
+  menuEntries(): GridMenuEntry[] {
+    const at = this.find(this.selCell);
+    const ro = this.app.store.state.readOnly || this.app.screens.previewMode !== 'off';
+    const hasItem = at !== null && at.cell.item !== undefined;
+    const e = (
+      id: string,
+      label: MessageKey,
+      key: string,
+      enabled: boolean,
+      run: () => void,
+    ): GridMenuEntry => ({ id, label: t(label), key, enabled, run });
+    return [
+      e('grid.copy', 'lay.ctx.copy', 'Ctrl+C', hasItem, () => this.copySelected()),
+      e('grid.paste', 'lay.ctx.paste', 'Ctrl+V', !ro && this.app.screens.gridClip !== null, () =>
+        this.pasteSelected(),
+      ),
+      e('grid.duplicate', 'lay.ctx.duplicate', 'Ctrl+D', !ro && hasItem, () =>
+        this.duplicateSelected(),
+      ),
+      e('grid.copyRow', 'lay.ctx.copyRow', 'Ctrl+Shift+C', at !== null, () =>
+        this.copySelected(true),
+      ),
+      e('grid.duplicateRow', 'lay.ctx.duplicateRow', 'Ctrl+Shift+D', !ro && at !== null, () =>
+        this.duplicateSelected(true),
+      ),
+    ];
+  }
+
+  /** Phím tắt của cả trình soạn (ô hoặc vùng làm việc có focus): sao chép, dán, nhân bản, zoom. */
+  private onEditorKey(e: KeyboardEvent): void {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const tgt = e.target as HTMLElement | null;
+    if (tgt?.closest('input, select, textarea, [contenteditable="true"]')) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const code = e.code;
+    let act: (() => void) | null = null;
+    if (k === '=' || k === '+' || code === 'NumpadAdd') act = () => this.zoomBy(1);
+    else if (k === '-' || k === '_' || code === 'NumpadSubtract') act = () => this.zoomBy(-1);
+    else if (k === '0' || code === 'Numpad0') act = () => this.zoomFit();
+    else if (this.entered !== null) return;
+    else if (k === 'c') act = () => this.copySelected(e.shiftKey);
+    else if (k === 'v' && !e.shiftKey) act = () => this.pasteSelected();
+    else if (k === 'd') act = () => this.duplicateSelected(e.shiftKey);
+    if (!act) return;
+    e.preventDefault();
+    e.stopPropagation();
+    act();
+  }
+
   // ---------- bàn phím ----------
 
   private focusCell(id: string | undefined): void {
@@ -411,7 +597,7 @@ export class MatGridEditor extends AppElement {
     } else if (e.key === 'Enter' || e.key === ' ') {
       stop();
       this.select(cellId);
-    } else if (e.key === '+' || e.key === '=' || e.key === '-') {
+    } else if (!e.ctrlKey && !e.metaKey && (e.key === '+' || e.key === '=' || e.key === '-')) {
       // Feature 029: + / − đổi số cột của ô (một chạm, không cần mở ô nhập)
       stop();
       this.edit((x) => setCellProps(x, cellId, { span: at.cell.span + (e.key === '-' ? -1 : 1) }));
@@ -423,6 +609,29 @@ export class MatGridEditor extends AppElement {
   }
 
   // ---------- kéo thả ----------
+
+  private endDrag(): void {
+    this.dragging = false;
+    this.dropAt = null;
+    this.overCell = null;
+  }
+
+  /** Feature 035: kéo cả ô có component (không cần mở thanh nhỏ); không bắt đầu khi đang kéo đường chia hoặc cạnh. */
+  private onCellDragStart(e: DragEvent, cellId: string): void {
+    if (
+      this.#resizing ||
+      this.app.store.state.readOnly ||
+      this.app.screens.previewMode !== 'off' ||
+      this.entered !== null
+    ) {
+      e.preventDefault();
+      return;
+    }
+    e.stopPropagation();
+    e.dataTransfer?.setData(CELL_TYPE, cellId);
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+    this.dragging = true;
+  }
 
   private typeOf(e: DragEvent, prefix: string): string | null {
     for (const type of e.dataTransfer?.types ?? [])
@@ -436,7 +645,15 @@ export class MatGridEditor extends AppElement {
     if (types.includes(CELL_TYPE) || types.includes(ROW_TYPE)) {
       e.preventDefault();
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-      if (this.overCell !== cellId) this.overCell = cellId;
+      const at = this.dropAtOf(e, cellId, types.includes(ROW_TYPE));
+      const cur = this.dropAt;
+      if (
+        at?.kind !== cur?.kind ||
+        at?.zone !== cur?.zone ||
+        (at?.kind === 'cell' ? at.cell : at?.row) !== (cur?.kind === 'cell' ? cur.cell : cur?.row)
+      )
+        this.dropAt = at;
+      if (this.overCell !== null) this.overCell = null;
       return;
     }
     const widget = this.typeOf(e, WIDGET_TYPE);
@@ -447,9 +664,31 @@ export class MatGridEditor extends AppElement {
     if (this.overCell !== cellId) this.overCell = cellId;
   }
 
+  /**
+   * Feature 035: vị trí thả theo con trỏ. Kéo ô: 1/4 trái là chèn trước, 1/4 phải chèn sau, giữa là đặt vào ô (đổi
+   * component). Kéo hàng: nửa trên là chèn trên, nửa dưới chèn dưới. `null` khi ô chưa có kích thước (jsdom).
+   */
+  private dropAtOf(e: DragEvent, cellId: string, row: boolean): DropAt | null {
+    const at = this.find(cellId);
+    const el = e.currentTarget as HTMLElement | null;
+    const rect = el?.getBoundingClientRect();
+    if (!at || !rect || rect.width === 0 || rect.height === 0) return null;
+    if (row) {
+      const above = e.clientY < rect.top + rect.height / 2;
+      return { kind: 'row', row: at.row.id, zone: above ? 'above' : 'below' };
+    }
+    const fx = (e.clientX - rect.left) / rect.width;
+    return {
+      kind: 'cell',
+      cell: cellId,
+      zone: fx < 0.25 ? 'before' : fx > 0.75 ? 'after' : 'into',
+    };
+  }
+
   private onDrop(e: DragEvent, cellId: string): void {
     this.overCell = null;
     this.dragging = false;
+    this.dropAt = null;
     if (this.app.screens.previewMode !== 'off') return;
     if (this.onMoveDrop(e, cellId)) return;
     const widget =
@@ -489,6 +728,7 @@ export class MatGridEditor extends AppElement {
     e.stopPropagation();
     const start = this.find(cellId)?.cell.span;
     if (start === undefined) return;
+    this.#resizing = true;
     const step = this.colStep(rowId);
     const x0 = e.clientX;
     const key = `grid-edge-${Date.now()}`;
@@ -502,6 +742,7 @@ export class MatGridEditor extends AppElement {
     };
     const up = () => {
       this.dragging = false;
+      this.#resizing = false;
       globalThis.removeEventListener('pointermove', move);
       globalThis.removeEventListener('pointerup', up);
     };
@@ -509,40 +750,60 @@ export class MatGridEditor extends AppElement {
     globalThis.addEventListener('pointerup', up);
   }
 
-  /** Áp nhiều bước dời trong một lần sửa (một bước hoàn tác). */
-  private shift(
-    fn: (d: ScreenModel, dir: -1 | 1) => ReturnType<typeof moveCell>,
-    steps: number,
-  ): void {
-    if (steps === 0) return;
-    const dir: -1 | 1 = steps < 0 ? -1 : 1;
-    this.edit((d) => {
-      let r = fn(d, dir);
-      for (let i = 1; i < Math.abs(steps) && !r.rejected; i++) r = fn(r.doc, dir);
-      return r;
-    });
-  }
-
-  /** Feature 029: thả ô (kéo bằng tay nắm) lên ô khác cùng hàng để đổi chỗ; thả hàng lên hàng khác để dời hàng. */
+  /**
+   * Thả ô hoặc hàng (feature 029, mở rộng ở feature 035). Ô: thả vào giữa ô khác (kể cả hàng khác) để đưa component vào
+   * ô đó (đổi chỗ nếu ô đã có), thả ở mép trái hoặc phải để chèn cả ô trước hoặc sau ô đích. Hàng: chèn trên hoặc dưới
+   * hàng đích. Mỗi lần thả là một bước hoàn tác.
+   */
   private onMoveDrop(e: DragEvent, targetCell: string): boolean {
     const cellSrc = e.dataTransfer?.getData(CELL_TYPE) ?? '';
     const rowSrc = e.dataTransfer?.getData(ROW_TYPE) ?? '';
     if (!cellSrc && !rowSrc) return false;
     e.preventDefault();
     const to = this.find(targetCell);
-    if (!to) return true;
+    const d = this.doc();
+    if (!to || !d || this.app.store.state.readOnly) return true;
+    const at = this.dropAtOf(e, targetCell, !cellSrc);
     if (cellSrc) {
       const from = this.find(cellSrc);
-      if (!from) return true;
-      if (from.row.id !== to.row.id) {
-        this.app.toast(t('lay.moveSameRow'));
-        return true;
+      if (!from || cellSrc === targetCell) return true;
+      // không đo được vị trí (jsdom): cùng hàng thì đổi chỗ ô như feature 029, khác hàng thì đặt vào ô
+      const zone =
+        at?.kind === 'cell'
+          ? at.zone
+          : from.row.id === to.row.id
+            ? to.c > from.c
+              ? 'after'
+              : 'before'
+            : 'into';
+      let r;
+      if (zone === 'into' && from.cell.item !== undefined)
+        r = this.edit((x) => moveItemToCell(x, cellSrc, targetCell));
+      else {
+        const index = zone === 'after' ? to.c + 1 : to.c;
+        r = this.edit((x) => moveCellTo(x, cellSrc, to.row.id, index));
+        if (r?.rejected === 'row-overflow' || r?.rejected === 'max-cells') {
+          // toast lý do đã hiện ở app.editScreen; thêm gợi ý thả vào giữa ô
+          this.app.toast(t('lay.dropFull'));
+        }
       }
-      this.shift((d, dir) => moveCell(d, cellSrc, dir), to.c - from.c);
-      this.select(cellSrc);
+      if (r && !r.rejected) {
+        const item = from.cell.item;
+        const cell =
+          item === undefined
+            ? cellSrc
+            : (r.doc as GridDoc).layout.rows.flatMap((x) => x.cells).find((c) => c.item === item)
+                ?.id;
+        if (cell) {
+          this.select(cell);
+          this.focusCell(cell);
+        }
+      }
     } else {
-      const fr = this.doc()?.layout.rows.findIndex((r) => r.id === rowSrc) ?? -1;
-      if (fr >= 0) this.shift((x, dir) => moveRow(x, rowSrc, dir), to.r - fr);
+      const fr = d.layout.rows.findIndex((r) => r.id === rowSrc);
+      if (fr < 0) return true;
+      const below = at?.kind === 'row' ? at.zone === 'below' : to.r > fr;
+      this.edit((x) => moveRowTo(x, rowSrc, below ? to.r + 1 : to.r));
     }
     return true;
   }
@@ -558,6 +819,7 @@ export class MatGridEditor extends AppElement {
     const gap = row?.gap ?? d.layout.gap ?? 12;
     const col = (this.previewWidth - 2 * pad - (GRID_COLUMNS - 1) * gap) / GRID_COLUMNS;
     this.dragging = true;
+    this.#resizing = true;
     this.#drag = {
       row: rowId,
       index,
@@ -578,6 +840,7 @@ export class MatGridEditor extends AppElement {
     const up = () => {
       this.#drag = null;
       this.dragging = false;
+      this.#resizing = false;
       globalThis.removeEventListener('pointermove', move);
       globalThis.removeEventListener('pointerup', up);
     };
@@ -702,6 +965,7 @@ export class MatGridEditor extends AppElement {
           )}
         </span>
         <span class="ge-sep"></span>
+        ${this.zoomGroup()}
         <span class="ge-group" role="group" aria-label=${t('lay.previewWidth')}>
           ${PREVIEW_WIDTHS.map(
             (w) =>
@@ -746,6 +1010,54 @@ export class MatGridEditor extends AppElement {
           : nothing
       }
     </div>`;
+  }
+
+  /** Feature 035: nhóm zoom (chỉ hiển thị) như thanh công cụ của editor tự do: −, phần trăm (về 100 %), +, Vừa khung. */
+  private zoomGroup(): TemplateResult {
+    const pct = Math.round(this.zoom() * 100);
+    return html`<span class="ge-group ge-zoom" role="group" aria-label=${t('lay.zoom')}>
+      <button
+        type="button"
+        class="ibtn"
+        data-act="zoom-out"
+        title=${t('lay.zoomOut')}
+        aria-label=${t('lay.zoomOut')}
+        ?disabled=${this.zoom() <= GRID_ZOOM.min}
+        @click=${() => this.zoomBy(-1)}
+      >
+        ${icon('zoomout')}
+      </button>
+      <button
+        type="button"
+        class="tbtn num ge-zoom-v"
+        data-act="zoom-100"
+        title=${t('lay.zoom100')}
+        @click=${() => this.zoom100()}
+      >
+        ${t('preview.zoomValue', { n: pct })}
+      </button>
+      <button
+        type="button"
+        class="ibtn"
+        data-act="zoom-in"
+        title=${t('lay.zoomIn')}
+        aria-label=${t('lay.zoomIn')}
+        ?disabled=${this.zoom() >= GRID_ZOOM.max}
+        @click=${() => this.zoomBy(1)}
+      >
+        ${icon('zoomin')}
+      </button>
+      <button
+        type="button"
+        class="btn seg"
+        data-act="zoom-fit"
+        title=${t('lay.zoomFit')}
+        aria-pressed=${this.zoomLevel === null ? 'true' : 'false'}
+        @click=${() => this.zoomFit()}
+      >
+        ${icon('fit')} ${t('lay.zoomFitShort')}
+      </button>
+    </span>`;
   }
 
   private num(
@@ -962,7 +1274,7 @@ export class MatGridEditor extends AppElement {
           e.dataTransfer?.setData(CELL_TYPE, cell.id);
           this.dragging = true;
         }}
-        @dragend=${() => (this.dragging = false)}
+        @dragend=${() => this.endDrag()}
         >⠿</span
       >
       ${b('mini-narrow', 'lay.spanLess', '−', span(cell.span - 1), cell.span <= 1)}
@@ -989,11 +1301,34 @@ export class MatGridEditor extends AppElement {
             content: this.nameOfItem(cell.item),
           });
           const inSvg = cell.item !== undefined && cell.item === this.entered;
+          const drop = this.dropAt;
+          const dropCls =
+            drop?.kind === 'cell' && drop.cell === cell.id
+              ? `drop-${drop.zone}`
+              : drop?.kind === 'row' && drop.row === row.id
+                ? `drop-${drop.zone}`
+                : '';
+          const cls = [
+            'ge-cell',
+            inSvg ? 'entered' : '',
+            this.selCell === cell.id ? 'sel' : '',
+            this.overCell === cell.id ? 'over' : '',
+            empty ? 'empty' : '',
+            this.hoverRow === row.id ? 'row-hover' : '',
+            dropCls,
+          ]
+            .filter(Boolean)
+            .join(' ');
+          const ro = this.app.store.state.readOnly;
           return html`<div
-            class="ge-cell ${inSvg ? 'entered' : ''} ${this.selCell === cell.id ? 'sel' : ''} ${
-              this.overCell === cell.id ? 'over' : ''
-            } ${empty ? 'empty' : ''}"
+            class=${cls}
             slot=${`cell-${cell.id}`}
+            draggable=${!empty && !inSvg && !ro ? 'true' : 'false'}
+            @dragstart=${(e: DragEvent) => this.onCellDragStart(e, cell.id)}
+            @dragend=${() => this.endDrag()}
+            @pointerenter=${() => {
+              if (this.hoverRow !== row.id) this.hoverRow = row.id;
+            }}
             data-cell=${cell.id}
             tabindex="0"
             role="button"
@@ -1016,7 +1351,8 @@ export class MatGridEditor extends AppElement {
             ${
               empty
                 ? html`<span class="ge-drop" title=${t('lay.dropHint')}
-                    >${icon('plus')} ${t('lay.drop')}</span
+                    >${icon('plus')}<span class="ge-drop-t">${t('lay.emptyHint')}</span
+                    ><b class="ge-drop-n">${cell.span}/12</b></span
                   >`
                 : nothing
             }
@@ -1047,7 +1383,7 @@ export class MatGridEditor extends AppElement {
                       e.dataTransfer?.setData(ROW_TYPE, row.id);
                       this.dragging = true;
                     }}
-                    @dragend=${() => (this.dragging = false)}
+                    @dragend=${() => this.endDrag()}
                     >⋮⋮</span
                   >`
                 : nothing
@@ -1103,14 +1439,20 @@ export class MatGridEditor extends AppElement {
     if (!d) return nothing;
     const edit = this.app.screens.previewMode === 'off';
     const src = this.source();
-    return html`<div class="ge ${this.dragging ? 'dragging' : ''}">
+    return html`<div
+      class="ge ${this.dragging ? 'dragging' : ''}"
+      @keydown=${(e: KeyboardEvent) => this.onEditorKey(e)}
+      @pointerleave=${() => {
+        if (this.hoverRow !== null) this.hoverRow = null;
+      }}
+    >
       ${this.toolbar(d)}
       ${
         d.layout.rows.length === 0
           ? html`<div class="ge-empty" role="status">${t('lay.noRows')}</div>`
           : nothing
       }
-      <div class="ge-stage">
+      <div class="ge-stage" tabindex="-1" @wheel=${this.onWheel}>
         <div class="ge-page" style=${`width:${this.previewWidth}px;zoom:${this.zoom()}`}>
           <mat-screen
             .screen=${this.#bindRevs.viewDoc(d, edit ? 'edit' : this.app.screens.previewMode)}

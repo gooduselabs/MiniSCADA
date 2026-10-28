@@ -1963,3 +1963,8 @@ mat-tree .sdot.error {
   color: var(--muted);
   font-size: var(--fs-s);
 }
+.tree-ctx .ctx-sep {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--border);
+}

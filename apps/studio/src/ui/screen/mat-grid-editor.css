@@ -382,3 +382,100 @@ mat-grid-editor .ge-bar2 .btn {
   min-height: 24px;
   padding: 0 6px;
 }
+
+/* ---- Feature 035: ô trống dễ thấy, hàng rê chuột, chỉ báo vị trí thả, zoom ---- */
+/* Ô trống: viền nét đứt màu nhấn, nền nhạt, chữ gợi ý và số cột (chiều cao tối thiểu 120 px do mat-screen ở chế độ edit). */
+mat-grid-editor .ge-cell.empty {
+  border: 2px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+mat-grid-editor .ge-cell.empty:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+mat-grid-editor .ge-cell.empty .ge-drop {
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  text-align: center;
+  color: color-mix(in srgb, var(--accent) 80%, var(--fg));
+}
+mat-grid-editor .ge-drop-n {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--fg);
+}
+/* hàng đang rê chuột: viền nhạt quanh mọi ô của hàng */
+mat-grid-editor .ge-cell.row-hover:not(.sel):not(.empty) {
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+}
+mat-grid-editor .ge-cell.row-hover.empty:not(.sel) {
+  border-color: color-mix(in srgb, var(--accent) 80%, transparent);
+}
+/* ô đang chọn: viền nhấn đậm, nổi trên mọi trạng thái khác */
+mat-grid-editor .ge-cell.sel,
+mat-grid-editor .ge-cell.sel.empty {
+  border: 3px solid var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+mat-grid-editor .ge-cell[draggable='true'] {
+  cursor: grab;
+}
+/* chỉ báo vị trí thả */
+mat-grid-editor .ge-cell.drop-into {
+  border: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+mat-grid-editor .ge-cell.drop-before::before,
+mat-grid-editor .ge-cell.drop-after::after,
+mat-grid-editor .ge-cell.drop-above::before,
+mat-grid-editor .ge-cell.drop-below::after {
+  content: '';
+  position: absolute;
+  z-index: 4;
+  background: var(--accent);
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+  pointer-events: none;
+}
+mat-grid-editor .ge-cell.drop-before::before,
+mat-grid-editor .ge-cell.drop-after::after {
+  top: -4px;
+  bottom: -4px;
+  width: 4px;
+}
+mat-grid-editor .ge-cell.drop-before::before {
+  left: -8px;
+}
+mat-grid-editor .ge-cell.drop-after::after {
+  right: -8px;
+}
+mat-grid-editor .ge-cell.drop-above::before,
+mat-grid-editor .ge-cell.drop-below::after {
+  left: -6px;
+  right: -6px;
+  height: 4px;
+}
+mat-grid-editor .ge-cell.drop-above::before {
+  top: -8px;
+}
+mat-grid-editor .ge-cell.drop-below::after {
+  bottom: -8px;
+}
+mat-grid-editor .ge-stage:focus {
+  outline: none;
+}
+mat-grid-editor .ge-zoom {
+  gap: 2px;
+}
+mat-grid-editor .ge-zoom-v {
+  min-width: 52px;
+  justify-content: center;
+}
+/* tay nắm hàng: rõ hơn khi rê chuột qua hàng */
+mat-grid-editor .ge-cell.row-hover .ge-rowgrip {
+  color: var(--accent);
+}
+mat-grid-editor .ge-cell.empty .ge-tag {
+  display: none;
+}

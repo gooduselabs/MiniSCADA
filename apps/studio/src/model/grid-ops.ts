@@ -487,3 +487,255 @@ export function addTemplateRow(
     selection: items.length ? [items[0]!.id] : [],
   };
 }
+
+// ---- Feature 035: kéo thả component giữa các hàng, đổi thứ tự hàng, sao chép, dán, nhân bản ----
+
+/** Vị trí thả so với ô đích: chèn trước, đặt vào ô, chèn sau. */
+export type DropZone = 'before' | 'into' | 'after';
+
+/**
+ * Dời cả ô `cellId` (độ rộng, thuộc tính, component) sang hàng `toRowId` ở vị trí `index` (tính trên hàng đích trước khi
+ * dời). Hàng đích không đủ chỗ thì ô co lại bằng số cột còn trống (tối thiểu 1); hàng nguồn trống hẳn thì bị xóa.
+ */
+export function moveCellTo(
+  doc: ScreenModel,
+  cellId: string,
+  toRowId: string,
+  index: number,
+): GridEditResult {
+  const l = layoutOf(doc);
+  if (!l) return reject(doc, 'not-grid');
+  const at = findCell(l, cellId);
+  if (!at) return reject(doc, 'unknown-cell');
+  const to = l.rows.findIndex((x) => x.id === toRowId);
+  if (to < 0) return reject(doc, 'unknown-row');
+  const cell = l.rows[at.r]!.cells[at.c]!;
+  const sel = cell.item === undefined ? {} : { selection: [cell.item] };
+  if (to === at.r) {
+    const last = l.rows[to]!.cells.length - 1;
+    const dest = Math.max(0, Math.min(index > at.c ? index - 1 : index, last));
+    if (dest === at.c) return { doc, ...sel };
+    const cells = [...l.rows[to]!.cells];
+    cells.splice(at.c, 1);
+    cells.splice(dest, 0, cell);
+    return {
+      ...withLayout(
+        doc,
+        mapRow(l, to, (row) => ({ ...row, cells })),
+      ),
+      ...sel,
+    };
+  }
+  const target = l.rows[to]!;
+  if (target.cells.length >= GRID_LIMITS.cellsPerRow) return reject(doc, 'max-cells');
+  const free = GRID_COLUMNS - sumOf(target.cells);
+  if (free < 1) return reject(doc, 'row-overflow');
+  const moved: GridCell = { ...cell, span: Math.min(cell.span, free) };
+  delete moved.offset;
+  const cells = [...target.cells];
+  cells.splice(Math.max(0, Math.min(index, cells.length)), 0, moved);
+  const rows = l.rows
+    .map((row, i) =>
+      i === to
+        ? { ...row, cells }
+        : i === at.r
+          ? { ...row, cells: row.cells.filter((x) => x.id !== cellId) }
+          : row,
+    )
+    .filter((row) => row.cells.length > 0);
+  return { ...withLayout(doc, { ...l, rows }), ...sel };
+}
+
+/** Đưa component của ô `fromCellId` vào ô `toCellId`; ô đích đã có component thì hai ô đổi component cho nhau. */
+export function moveItemToCell(
+  doc: ScreenModel,
+  fromCellId: string,
+  toCellId: string,
+): GridEditResult {
+  const l = layoutOf(doc);
+  if (!l) return reject(doc, 'not-grid');
+  const a = findCell(l, fromCellId);
+  const b = findCell(l, toCellId);
+  if (!a || !b) return reject(doc, 'unknown-cell');
+  const ia = l.rows[a.r]!.cells[a.c]!.item;
+  const ib = l.rows[b.r]!.cells[b.c]!.item;
+  if (fromCellId === toCellId || ia === undefined) return { doc };
+  const setItem = (c: GridCell, item: string | undefined): GridCell => {
+    const n = { ...c };
+    if (item === undefined) delete n.item;
+    else n.item = item;
+    return n;
+  };
+  const rows = l.rows.map((row) => ({
+    ...row,
+    cells: row.cells.map((c) =>
+      c.id === fromCellId ? setItem(c, ib) : c.id === toCellId ? setItem(c, ia) : c,
+    ),
+  }));
+  return { ...withLayout(doc, { ...l, rows }), selection: [ia] };
+}
+
+/** Dời hàng `rowId` tới vị trí `index` (tính trên danh sách trước khi dời; `rows.length` là cuối). */
+export function moveRowTo(doc: ScreenModel, rowId: string, index: number): GridEditResult {
+  const l = layoutOf(doc);
+  if (!l) return reject(doc, 'not-grid');
+  const r = l.rows.findIndex((x) => x.id === rowId);
+  if (r < 0) return reject(doc, 'unknown-row');
+  const dest = Math.max(0, Math.min(index > r ? index - 1 : index, l.rows.length - 1));
+  if (dest === r) return { doc };
+  const rows = [...l.rows];
+  const [row] = rows.splice(r, 1);
+  rows.splice(dest, 0, row!);
+  return withLayout(doc, { ...l, rows });
+}
+
+type GridItem = ScreenModel['items'][number];
+
+/** Nội dung clipboard của trình soạn lưới: một ô (độ rộng, component) hoặc cả một hàng. */
+export type GridClip =
+  | { kind: 'cell'; cell: GridCell; item: GridItem | null }
+  | { kind: 'row'; row: GridRow; items: GridItem[] };
+
+const cloneJson = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+
+/** Sao chép ô `cellId` (component giữ nguyên mọi thuộc tính, Tag, sự kiện, bảo mật). */
+export function copyCell(doc: ScreenModel, cellId: string): GridClip | null {
+  const l = layoutOf(doc);
+  const at = l ? findCell(l, cellId) : null;
+  if (!l || !at) return null;
+  const cell = l.rows[at.r]!.cells[at.c]!;
+  const item = cell.item === undefined ? undefined : doc.items.find((i) => i.id === cell.item);
+  return { kind: 'cell', cell: cloneJson(cell), item: item ? cloneJson(item) : null };
+}
+
+/** Sao chép hàng `rowId` cùng mọi ô và component. */
+export function copyRow(doc: ScreenModel, rowId: string): GridClip | null {
+  const row = layoutOf(doc)?.rows.find((x) => x.id === rowId);
+  if (!row) return null;
+  const ids = new Set(row.cells.flatMap((c) => (c.item === undefined ? [] : [c.item])));
+  return {
+    kind: 'row',
+    row: cloneJson(row),
+    items: doc.items.filter((i) => ids.has(i.id)).map((i) => cloneJson(i)),
+  };
+}
+
+/** Bản sao item cho lưới: id mới, bỏ tọa độ và dấu bản sao template; mọi thuộc tính khác giữ nguyên. */
+function cloneItem(src: GridItem, used: Set<string>): GridItem {
+  const kind = src.type === 'svg' ? 'svg' : src.widget.replace(/-/g, '_');
+  const id = nextItemId(kind, used);
+  used.add(id);
+  const copy = cloneJson(src) as unknown as Record<string, unknown>;
+  copy.id = id;
+  for (const k of ['x', 'y', 'width', 'height', 'tpl']) delete copy[k];
+  return copy as unknown as GridItem;
+}
+
+/** Số item tối đa của một màn hình (LIMITS_03.items). */
+const MAX_ITEMS = 250;
+
+/** Id hàng mới (tránh cả id ô `reserved` vừa cấp, vì hàng và ô chung không gian tên). */
+function freshRowId(l: GridLayout, reserved: readonly string[]): string {
+  const probe = reserved.map((id) => ({ id, span: 1 }));
+  return freshIds(
+    { ...l, rows: [...l.rows, { id: '', height: 'auto', cells: probe }] },
+    'r',
+    1,
+  )[0]!;
+}
+
+/**
+ * Dán clipboard của lưới. Hàng: chèn ngay dưới hàng của ô `targetCellId` (vắng: cuối màn hình). Ô: ô đích trống thì
+ * đặt component vào ô đó; không thì chèn ô mới ngay sau ô đích (cùng hàng nếu đủ cột, không thì hàng mới ngay dưới).
+ * Item `svg` không nhân bản được (một file binding chỉ thuộc một item). Mọi id (hàng, ô, item) là id mới.
+ */
+export function pasteGrid(
+  doc: ScreenModel,
+  clip: GridClip,
+  targetCellId: string | null,
+): GridEditResult {
+  const l = layoutOf(doc);
+  if (!l) return reject(doc, 'not-grid');
+  const at = targetCellId === null ? null : findCell(l, targetCellId);
+  const used = new Set(doc.items.map((i) => i.id));
+  if (clip.kind === 'row') {
+    if (clip.items.some((i) => i.type === 'svg')) return reject(doc, 'svg-copy');
+    if (l.rows.length >= GRID_LIMITS.rows) return reject(doc, 'max-rows');
+    if (doc.items.length + clip.items.length > MAX_ITEMS) return reject(doc, 'max-items');
+    const cellIds = freshIds(l, 'c', clip.row.cells.length);
+    const rowId = freshRowId(l, cellIds);
+    const byId = new Map(clip.items.map((i) => [i.id, i]));
+    const items: GridItem[] = [];
+    const cells = clip.row.cells.map((c, i) => {
+      const n: GridCell = { ...cloneJson(c), id: cellIds[i]! };
+      const src = c.item === undefined ? undefined : byId.get(c.item);
+      if (src) {
+        const copy = cloneItem(src, used);
+        items.push(copy);
+        n.item = copy.id;
+      } else delete n.item;
+      return n;
+    });
+    const row: GridRow = { ...cloneJson(clip.row), id: rowId, cells };
+    const rows = [...l.rows];
+    rows.splice(at ? at.r + 1 : rows.length, 0, row);
+    return {
+      ...withLayout(doc, { ...l, rows }, [...doc.items, ...items]),
+      selection: items.length ? [items[0]!.id] : [],
+    };
+  }
+  const src = clip.item;
+  if (src?.type === 'svg') return reject(doc, 'svg-copy');
+  if (src && doc.items.length + 1 > MAX_ITEMS) return reject(doc, 'max-items');
+  const copy = src ? cloneItem(src, used) : null;
+  const items = copy ? [...doc.items, copy] : doc.items;
+  const selection = copy ? [copy.id] : [];
+  const target = at ? l.rows[at.r]!.cells[at.c]! : null;
+  if (at && target && target.item === undefined && copy) {
+    const layout = mapRow(l, at.r, (row) => ({
+      ...row,
+      cells: row.cells.map((c, i) => (i === at.c ? { ...c, item: copy.id } : c)),
+    }));
+    return { ...withLayout(doc, layout, items), selection };
+  }
+  const [cellId] = freshIds(l, 'c', 1);
+  const cell: GridCell = { ...cloneJson(clip.cell), id: cellId! };
+  delete cell.offset;
+  if (copy) cell.item = copy.id;
+  else delete cell.item;
+  if (at) {
+    const row = l.rows[at.r]!;
+    const free = GRID_COLUMNS - sumOf(row.cells);
+    if (row.cells.length < GRID_LIMITS.cellsPerRow && free >= cell.span) {
+      const cells = [...row.cells];
+      cells.splice(at.c + 1, 0, cell);
+      return {
+        ...withLayout(
+          doc,
+          mapRow(l, at.r, (x) => ({ ...x, cells })),
+          items,
+        ),
+        selection,
+      };
+    }
+  }
+  if (l.rows.length >= GRID_LIMITS.rows) return reject(doc, 'max-rows');
+  const rowId = freshRowId(l, [cellId!]);
+  const height = at ? l.rows[at.r]!.height : 'auto';
+  const rows = [...l.rows];
+  rows.splice(at ? at.r + 1 : rows.length, 0, { id: rowId, height, cells: [cell] });
+  return { ...withLayout(doc, { ...l, rows }, items), selection };
+}
+
+/** Nhân bản ô (Ctrl+D): bản sao ngay sau ô, component giữ nguyên thuộc tính với id mới. */
+export function duplicateCell(doc: ScreenModel, cellId: string): GridEditResult {
+  const clip = copyCell(doc, cellId);
+  return clip ? pasteGrid(doc, clip, cellId) : reject(doc, 'unknown-cell');
+}
+
+/** Nhân bản hàng (Ctrl+Shift+D): bản sao ngay dưới hàng, mọi ô và component có id mới. */
+export function duplicateRow(doc: ScreenModel, rowId: string): GridEditResult {
+  const clip = copyRow(doc, rowId);
+  const row = layoutOf(doc)?.rows.find((x) => x.id === rowId);
+  return clip && row ? pasteGrid(doc, clip, row.cells[0]?.id ?? null) : reject(doc, 'unknown-row');
+}

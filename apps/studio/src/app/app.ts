@@ -359,6 +359,7 @@ const REJECT_TEXT: Readonly<Record<Rejection, MessageKey>> = {
   'bad-preset': 'scr.rej.badPreset',
   'max-rows': 'scr.rej.maxRows',
   'max-cells': 'scr.rej.maxCells',
+  'svg-copy': 'scr.rej.svgCopy',
 };
 
 /** Câu cho lỗi của `store.upgrade()`. */

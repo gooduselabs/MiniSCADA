@@ -380,49 +380,60 @@ function zonesField(f: FieldModel, env: FieldEnv) {
     env.commit(next.length ? (next as unknown as PropValue) : undefined);
   const upd = (i: number, patch: Partial<(typeof zones)[number]>) =>
     set(zones.map((z, k) => (k === i ? { ...z, ...patch } : z)));
+  // Mỗi vùng một dòng có nhãn (Từ, Đến) và nút xóa biểu tượng 28 px: vừa khung Thuộc tính dọc hẹp (~400 px).
   return html`<div class="pf-zones">
     ${zones.map(
       (z, i) =>
-        html`<div class="pf-zone">
-          <input
-            class="pf-in mono num"
-            inputmode="decimal"
-            aria-label=${t('pf.zone.from', { n: i + 1 })}
-            .value=${String(z.from)}
-            @change=${(e: Event) => {
-              const p = parseNumberText((e.target as HTMLInputElement).value, false);
-              if (p.ok && p.value !== undefined) upd(i, { from: p.value });
-            }}
-          />
-          <input
-            class="pf-in mono num"
-            inputmode="decimal"
-            aria-label=${t('pf.zone.to', { n: i + 1 })}
-            .value=${String(z.to)}
-            @change=${(e: Event) => {
-              const p = parseNumberText((e.target as HTMLInputElement).value, false);
-              if (p.ok && p.value !== undefined) upd(i, { to: p.value });
-            }}
-          />
+        html`<div class="pf-zone" data-zone=${String(i)}>
+          <label class="pf-zl">
+            <span>${t('pf.zone.fromShort')}</span>
+            <input
+              class="pf-in mono num"
+              inputmode="decimal"
+              aria-label=${t('pf.zone.from', { n: i + 1 })}
+              .value=${String(z.from)}
+              @change=${(e: Event) => {
+                const p = parseNumberText((e.target as HTMLInputElement).value, false);
+                if (p.ok && p.value !== undefined) upd(i, { from: p.value });
+              }}
+            />
+          </label>
+          <label class="pf-zl">
+            <span>${t('pf.zone.toShort')}</span>
+            <input
+              class="pf-in mono num"
+              inputmode="decimal"
+              aria-label=${t('pf.zone.to', { n: i + 1 })}
+              .value=${String(z.to)}
+              @change=${(e: Event) => {
+                const p = parseNumberText((e.target as HTMLInputElement).value, false);
+                if (p.ok && p.value !== undefined) upd(i, { to: p.value });
+              }}
+            />
+          </label>
           <input
             type="color"
+            class="pf-zc"
+            title=${t('pf.zone.colorShort')}
             aria-label=${t('pf.zone.color', { n: i + 1 })}
             .value=${/^#[0-9a-fA-F]{6}$/.test(z.color) ? z.color : '#15703a'}
             @input=${(e: Event) => upd(i, { color: (e.target as HTMLInputElement).value })}
           />
           <button
             type="button"
-            class="ibtn sm"
+            class="ibtn pf-zx"
+            data-act="zone-remove"
+            title=${t('pf.zone.removeTip')}
             aria-label=${t('pf.zone.remove', { n: i + 1 })}
             @click=${() => set(zones.filter((_, k) => k !== i))}
           >
-            ${icon('x', 'sm')}
+            ${icon('trash', 'sm')}
           </button>
         </div>`,
     )}
     <button
       type="button"
-      class="btn sm"
+      class="btn sm pf-zadd"
       ?disabled=${zones.length >= max}
       @click=${() => {
         const last = zones[zones.length - 1];
@@ -430,7 +441,7 @@ function zonesField(f: FieldModel, env: FieldEnv) {
         set([...zones, { from, to: from + 10, color: '#c42b2b' }]);
       }}
     >
-      ${t('pf.zone.add')}
+      + ${t('pf.zone.add')}
     </button>
   </div>`;
 }

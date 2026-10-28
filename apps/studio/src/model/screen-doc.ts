@@ -64,7 +64,9 @@ export type Rejection =
   | 'row-overflow'
   | 'bad-preset'
   | 'max-rows'
-  | 'max-cells';
+  | 'max-cells'
+  // feature 035: item svg không nhân bản được
+  | 'svg-copy';
 
 export interface EditResult {
   doc: ScreenModel;

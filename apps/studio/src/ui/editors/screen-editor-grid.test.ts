@@ -1,5 +1,5 @@
 // Editor Màn hình với bố cục lưới (feature 012, T029, T031): màn hình có `layout` mở trình soạn lưới thay cho canvas tự
-// do; Toolbox (nhấp đúp hoặc Enter) gắn widget vào ô đang chọn; lệnh chỉ của bố cục tự do (căn lề, dán, nhân bản, zoom…)
+// do; Toolbox (nhấp đúp hoặc Enter) gắn widget vào ô đang chọn; lệnh chỉ của bố cục tự do (căn lề, phân bố, xếp lớp…)
 // báo không dùng được, không đổi tài liệu.
 import { resolve } from 'node:path';
 import type { GridLayout, ScreenModel } from '@mat/project-schema';
@@ -65,9 +65,9 @@ describe('mat-screen-editor: bố cục lưới', () => {
   it('lệnh chỉ của bố cục tự do: báo, không đổi tài liệu', async () => {
     const { app, el } = await open('tong-quan');
     const before = model(app);
-    el.exec('screen.alignLeft');
-    el.exec('screen.duplicate');
+    // feature 035: dán, nhân bản, zoom đã có ở trình soạn lưới; căn lề vẫn chỉ của bố cục tự do
     el.exec('screen.zoomIn');
+    el.exec('screen.alignLeft');
     expect(app.ui.toast?.text).toContain('bố cục tự do');
     expect(model(app)).toBe(before);
   });

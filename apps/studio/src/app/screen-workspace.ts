@@ -3,6 +3,7 @@
 // giá trị và nơi chứa hành động tương ứng (model/preview-hosts.ts). Không DOM. Chế độ xem trước khóa chỉnh sửa; chuyển về Tắt
 // thì giữ lựa chọn và vùng nhìn.
 import type { ValueTable } from '@mat/expression';
+import type { GridClip } from '../model/grid-ops.ts';
 import type { Binding04, TagDefinition, TagV1 } from '@mat/project-schema';
 import type { ActionHost, AlarmSource, TagSource } from '@mat/ui-components';
 import { createAlarmPreview, type AlarmPreview } from '../model/alarm-preview.ts';
@@ -65,6 +66,8 @@ export class ScreenWorkspace {
   pointer: { x: number; y: number } | null = null;
   private readonly pointerListeners = new Set<() => void>();
   readonly clipboard = new ClipboardStore();
+  /** Feature 035: clipboard của trình soạn lưới (một ô kèm component, hoặc cả hàng); dán được sang màn hình lưới khác. */
+  gridClip: GridClip | null = null;
   private mode: PreviewMode = 'off';
   private readonly views = new Map<string, ScreenView>();
   private hosts: PreviewHosts | null = null;

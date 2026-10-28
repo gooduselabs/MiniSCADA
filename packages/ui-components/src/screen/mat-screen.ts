@@ -230,6 +230,13 @@ export class MatScreen extends LitElement {
       min-height: 0;
       overflow: hidden;
     }
+    /* Trình soạn lưới (chỉ chế độ edit, trang vận hành không đổi): hàng không co, ô trống cao tối thiểu 120 px để dễ thấy và thả */
+    .grid.edit > .row {
+      flex: none;
+    }
+    .grid.edit .cell:not(:has(> .item)) {
+      min-height: 120px;
+    }
     /* lớp phủ của trình soạn lưới (Studio) đặt vào ô qua slot, phủ trên widget */
     .grid .cell ::slotted(*) {
       position: absolute;

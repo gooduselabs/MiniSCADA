@@ -146,16 +146,53 @@ mat-widget-props .wi-actions {
 :is(mat-widget-props, mat-navigation-editor) .pf-hex {
   color: var(--muted);
 }
+/* Vùng màu (đồng hồ kim): mỗi vùng một dòng có nhãn Từ/Đến, ô màu và nút xóa 28 px, cách nhau rõ trong cột hẹp. */
 :is(mat-widget-props, mat-navigation-editor) .pf-zones {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   width: 100%;
+  min-width: 0;
 }
 :is(mat-widget-props, mat-navigation-editor) .pf-zone {
   display: grid;
-  grid-template-columns: 1fr 1fr 38px 24px;
-  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px 28px;
+  gap: 8px;
   align-items: center;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-zl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-zl .pf-in {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-zc {
+  width: 36px;
+  height: 26px;
+  padding: 1px;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--panel);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-zx {
+  width: 28px;
+  height: 28px;
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-zx:hover {
+  color: var(--danger, #c42b2b);
+}
+:is(mat-widget-props, mat-navigation-editor) .pf-zadd {
+  justify-self: start;
 }
 :is(mat-widget-props, mat-navigation-editor) .pf-sug {
   white-space: nowrap;
@@ -280,13 +317,17 @@ mat-widget-props .wi-note {
 mat-widget-props .pf-colors {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px 10px;
   align-items: center;
 }
 mat-widget-props .pf-color-item {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+}
+mat-widget-props .pf-color-item .btn.icon {
+  min-width: 24px;
+  min-height: 24px;
 }
 mat-widget-props .pf-color-item input[type='color'] {
   width: 28px;

@@ -364,6 +364,16 @@ Từ bản này trang vận hành, widget và xem trước màn hình dùng **m�
 
 **Trình soạn lưới thao tác nhanh:** nút mẫu cột một chạm (12, 6+6, 4+4+4, 3×4, 8+4, 4+8) cạnh **Thêm hàng**; chọn ô thì hiện thanh nhỏ trên ô (−/+ cột, thêm ô, xóa ô, tay nắm kéo đổi chỗ); kéo cạnh phải ô cuối hàng hoặc đường chia giữa hai ô để đổi số cột (đường lưới 12 cột hiện rõ khi kéo); kéo tay nắm ⋮⋮ ở đầu hàng để dời hàng; chiều cao hàng chọn nhanh Tự động/120/240/360; phím `+`/`−` đổi số cột, Alt+mũi tên đổi chỗ; mọi thao tác hoàn tác được (Ctrl+Z).
 
+**Ô trống, kéo thả, sao chép, zoom:**
+
+- Ô trống trong editor luôn cao tối thiểu 120 px, viền nét đứt màu nhấn, ghi **Kéo component từ Toolbox vào đây** và số cột (ví dụ 9/12). Ô đang chọn viền màu nhấn đậm; hàng đang rê chuột có viền nét đứt nhạt. Chỉ là hiển thị trong Studio, trang vận hành không đổi.
+- **Kéo component** đã đặt (kéo thẳng ô có component) sang ô khác, kể cả ở hàng khác: thả vào **giữa** ô đích để đặt component vào ô đó (ô đã có thì hai ô đổi component); thả ở **mép trái/phải** (vạch màu nhấn) để chèn cả ô trước/sau ô đích (hàng đích thiếu cột thì ô co lại; hàng nguồn hết ô thì bị xóa). **Kéo tay nắm ⋮⋮** ở đầu hàng lên nửa trên/nửa dưới một hàng khác để chèn hàng phía trên/dưới (vạch ngang chỉ vị trí).
+- **Sao chép, dán, nhân bản** (chọn ô trước; cũng có ở menu chuột phải): Ctrl+C sao chép component, Ctrl+Shift+C sao chép cả hàng, Ctrl+V dán (vào ô trống đang chọn, nếu không thì ngay sau ô chọn; hàng dán ngay dưới hàng chọn), Ctrl+D nhân bản component, Ctrl+Shift+D nhân bản hàng. Bản sao giữ nguyên mọi thuộc tính, Tag, sự kiện, bảo mật, có mã mới; dán được sang màn hình lưới khác. Đồ họa SVG không nhân bản được (mỗi file gắn Tag chỉ thuộc một item).
+- **Zoom** (chỉ hiển thị): nút −, phần trăm (bấm để về 100 %), +, **Vừa khung** trên thanh công cụ; Ctrl+lăn chuột; Ctrl+= / Ctrl+− / Ctrl+0 (Vừa khung).
+- Mọi thao tác trên hoàn tác được (Ctrl+Z).
+
+Ở tab **Hiển thị** của **Đồng hồ kim**, mục **Vùng màu** mỗi vùng một dòng: **Từ**, **Đến**, ô màu và nút thùng rác **Xoá vùng**.
+
 <a id="help-security"></a>
 
 ### 6.3. Bảo mật: vai trò tối thiểu và phân quyền trên thiết bị

@@ -57,8 +57,8 @@ describe('mat-grid-editor', () => {
     expect(cells.map((c) => c.getAttribute('slot'))).toEqual(
       cells.map((c) => `cell-${c.dataset.cell}`),
     );
-    expect(text(cellEl(el, 'c5'))).toContain('Thả component');
-    expect(text(cellEl(el, 'c1'))).not.toContain('Thả component');
+    expect(text(cellEl(el, 'c5'))).toContain('Kéo component từ Toolbox vào đây');
+    expect(text(cellEl(el, 'c1'))).not.toContain('Kéo component từ Toolbox vào đây');
     expect(cellEl(el, 'c1').getAttribute('aria-label')).toContain('4 cột');
     const screen = el.querySelector('mat-screen') as HTMLElement & { mode: string };
     expect(screen.mode).toBe('edit');
@@ -382,5 +382,101 @@ describe('mat-grid-editor: thao tác nhanh (feature 029)', () => {
     expect(text(bar2)).toContain('Ô:');
     expect(text(bar2)).toContain('Hàng:');
     expect(el.querySelectorAll('.ge-bar')).toHaveLength(2);
+  });
+});
+
+describe('mat-grid-editor: feature 035', () => {
+  it('Ctrl+C rồi Ctrl+V vào ô trống: component giữ thuộc tính, id mới; hoàn tác được', async () => {
+    const { app, el } = await open();
+    cellEl(el, 'c2').click();
+    await settled(el);
+    press(cellEl(el, 'c2'), 'c', { ctrlKey: true });
+    expect(app.screens.gridClip?.kind).toBe('cell');
+    cellEl(el, 'c5').click();
+    await settled(el);
+    press(cellEl(el, 'c5'), 'v', { ctrlKey: true });
+    await settled(el);
+    const id = model(app).layout.rows[1]!.cells[1]!.item!;
+    expect(id).not.toBe('dong_ho');
+    const src = model(app).items.find((i) => i.id === 'dong_ho')!;
+    const copy = model(app).items.find((i) => i.id === id)!;
+    expect({ ...copy, id: 'x' }).toEqual({ ...src, id: 'x' });
+    expect(el.selCell).toBe('c5');
+    await app.run('edit.undo');
+    expect(model(app).layout.rows[1]!.cells[1]!.item).toBeUndefined();
+    expect(model(app).items.some((i) => i.id === id)).toBe(false);
+  });
+
+  it('Ctrl+D nhân bản component, Ctrl+Shift+D nhân bản hàng; mỗi lần một bước hoàn tác', async () => {
+    const { app, el } = await open();
+    cellEl(el, 'c4').click();
+    await settled(el);
+    press(cellEl(el, 'c4'), 'd', { ctrlKey: true });
+    await settled(el);
+    // hàng 2 đủ 12 cột: bản sao nằm ở hàng mới ngay dưới
+    expect(model(app).layout.rows).toHaveLength(4);
+    expect(model(app).layout.rows[2]!.cells[0]!.span).toBe(8);
+    const n = model(app).items.length;
+    press(cellEl(el, el.selCell!), 'd', { ctrlKey: true, shiftKey: true });
+    await settled(el);
+    expect(model(app).layout.rows).toHaveLength(5);
+    expect(model(app).items.length).toBe(n + 1);
+    await app.run('edit.undo');
+    await app.run('edit.undo');
+    expect(model(app).layout.rows).toHaveLength(3);
+    expect(model(app).items).toHaveLength(5);
+  });
+
+  it('thả ô sang hàng khác (giữa ô đích): đưa component vào ô trống của hàng đó', async () => {
+    const { app, el } = await open();
+    const types = ['application/x-mat-grid-cell'];
+    cellEl(el, 'c5').dispatchEvent(drag('drop', types, { 'application/x-mat-grid-cell': 'c1' }));
+    await settled(el);
+    expect(model(app).layout.rows[0]!.cells[0]!.item).toBeUndefined();
+    expect(model(app).layout.rows[1]!.cells[1]!.item).toBe('luu_luong');
+    expect(el.selCell).toBe('c5');
+    await app.run('edit.undo');
+    expect(model(app).layout.rows[0]!.cells[0]!.item).toBe('luu_luong');
+  });
+
+  it('ô có component kéo được; ô trống không', async () => {
+    const { el } = await open();
+    expect(cellEl(el, 'c1').getAttribute('draggable')).toBe('true');
+    expect(cellEl(el, 'c5').getAttribute('draggable')).toBe('false');
+  });
+
+  it('zoom chỉ hiển thị: Ctrl+= / Ctrl+- / Ctrl+0, nút phần trăm; tài liệu không đổi', async () => {
+    const { app, el } = await open();
+    const before = JSON.stringify(model(app));
+    const pct = () => text(el.querySelector('[data-act="zoom-100"]'));
+    expect(pct()).toBe('100 %');
+    press(cellEl(el, 'c1'), '=', { ctrlKey: true });
+    await settled(el);
+    expect(pct()).toContain('125');
+    expect(spans(app, 0)).toEqual([4, 4, 4]);
+    press(cellEl(el, 'c1'), '-', { ctrlKey: true });
+    press(cellEl(el, 'c1'), '-', { ctrlKey: true });
+    await settled(el);
+    expect(pct()).toContain('80');
+    press(cellEl(el, 'c1'), '0', { ctrlKey: true });
+    await settled(el);
+    expect(pct()).toContain('100');
+    expect(el.querySelector('[data-act="zoom-fit"]')!.getAttribute('aria-pressed')).toBe('true');
+    expect(JSON.stringify(model(app))).toBe(before);
+    expect(app.store.commandContext().canUndo).toBe(false);
+  });
+
+  it('menu chuột phải có mục sao chép, dán, nhân bản ô và hàng', async () => {
+    const { el } = await open();
+    cellEl(el, 'c1').click();
+    await settled(el);
+    const ids = el.menuEntries().map((m) => `${m.id}:${m.enabled}`);
+    expect(ids).toEqual([
+      'grid.copy:true',
+      'grid.paste:false',
+      'grid.duplicate:true',
+      'grid.copyRow:true',
+      'grid.duplicateRow:true',
+    ]);
   });
 });
