@@ -275,7 +275,7 @@ export default async function gridUx({ page, check, shot, axe }) {
   );
   await shot('8-vung-cot-trong');
   const cellsBefore = await page.$$eval('mat-grid-editor .ge-cell', (e) => e.length);
-  const tool = 'mat-taskcards .tool[data-widget="stat-tile"]';
+  const tool = 'mat-taskcards .tool[data-widget="multi-state"]';
   const hasTool = await page.$(tool);
   if (!hasTool) await page.click('mat-taskcards [role="tab"]').catch(() => {});
   const res = await dragTo(

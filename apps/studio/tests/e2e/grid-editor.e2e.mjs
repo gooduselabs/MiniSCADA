@@ -90,7 +90,7 @@ export default async function gridEditor({ page, check, shot, axe }) {
   const tiles = await page.$eval(
     'mat-grid-editor mat-screen',
     (s) =>
-      [...s.shadowRoot.querySelectorAll('.row')].at(-1).querySelectorAll('mat-w-stat-tile').length,
+      [...s.shadowRoot.querySelectorAll('.row')].at(-1).querySelectorAll('mat-w-card').length,
   );
   check('mẫu "4 thẻ chỉ số": hàng mới có bốn thẻ chỉ số', tiles === 4, String(tiles));
   await shot('5-the-chi-so');
@@ -116,10 +116,10 @@ export default async function gridEditor({ page, check, shot, axe }) {
   const doc = JSON.parse(file.content);
   const tplRow = doc.layout.rows.at(-1);
   check(
-    'tệp đã ghi: hàng mẫu cao 116, bốn ô 3 cột, stat-tile',
+    'tệp đã ghi: hàng mẫu cao 116, bốn ô 3 cột, card nền đặc (037)',
     tplRow.height === 116 &&
       tplRow.cells.map((c) => c.span).join('+') === '3+3+3+3' &&
-      tplRow.cells.every((c) => doc.items.find((x) => x.id === c.item)?.widget === 'stat-tile'),
+      tplRow.cells.every((c) => doc.items.find((x) => x.id === c.item)?.widget === 'card'),
   );
   const last = doc.layout.rows.at(-2);
   check('tệp đã ghi: hàng mới 4+4+4', last.cells.map((c) => c.span).join('+') === '4+4+4');
