@@ -308,4 +308,79 @@ describe('mat-grid-editor: thao tác nhanh (feature 029)', () => {
     expect(cellEl(el, 'c3').querySelector('.ge-edge')).not.toBeNull();
     expect(cellEl(el, 'c1').querySelector('.ge-edge')).toBeNull();
   });
+
+  it('item SVG trong ô: nhấp đúp vào đồ họa (cây phần tử, Gắn Tag), Esc thoát; Enter trên ô đang chọn cũng vào', async () => {
+    const files = readProjectDir(resolve(ROOT, 'tests/project-vectors/v11-valid-full'));
+    delete files['expected.json'];
+    // Thêm item svg của màn hình main vào ô trống c5 của màn hình lưới tong-quan.
+    const main = JSON.parse(files['screens/main.screen.json']!) as ScreenModel;
+    const svg = main.items.find((i) => i.type === 'svg')!;
+    const tq = JSON.parse(files['screens/tong-quan.screen.json']!) as ScreenModel & {
+      layout: GridLayout;
+    };
+    tq.items.push({ ...svg, id: 'do_hoa' });
+    tq.layout.rows.flatMap((r) => r.cells).find((c) => c.id === 'c5')!.item = 'do_hoa';
+    files['screens/tong-quan.screen.json'] = JSON.stringify(tq);
+    const platform = createMockPlatform();
+    platform.control.useProject(files);
+    const app = new StudioApp({ platform, storage: null, windowWidth: 1400, versionGate: false });
+    await app.start();
+    await app.run('project.open');
+    await app.store.idle();
+    app.openEditor('screen:tong-quan');
+    const el = document.createElement('mat-grid-editor') as MatGridEditor;
+    el.app = app;
+    el.screenId = 'tong-quan';
+    document.body.append(el);
+    await settled(el);
+
+    // ô widget thường: nhấp đúp không vào gì
+    cellEl(el, 'c1').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(app.screens.enteredItemId('tong-quan')).toBeNull();
+
+    cellEl(el, 'c5').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    await settled(el);
+    expect(app.screens.enteredItemId('tong-quan')).toBe('do_hoa');
+    expect(app.selectedItems('tong-quan')).toEqual(['do_hoa']);
+    expect(app.screens.svgTab).toBe('bind');
+    expect(cellEl(el, 'c5').classList.contains('entered')).toBe(true);
+    expect(cellEl(el, 'c5').querySelector('mat-svg-overlay')).not.toBeNull();
+    // nhấp trong đồ họa đang vào không thoát (chọn phần tử, không chọn lại ô)
+    cellEl(el, 'c5').click();
+    await settled(el);
+    expect(app.screens.enteredItemId('tong-quan')).toBe('do_hoa');
+
+    press(cellEl(el, 'c5'), 'Escape');
+    await settled(el);
+    expect(app.screens.enteredItemId('tong-quan')).toBeNull();
+
+    // chọn ô rồi Enter: vào đồ họa; chọn ô khác thì thoát
+    cellEl(el, 'c5').click();
+    await settled(el);
+    press(cellEl(el, 'c5'), 'Enter');
+    await settled(el);
+    expect(app.screens.enteredItemId('tong-quan')).toBe('do_hoa');
+    cellEl(el, 'c1').click();
+    await settled(el);
+    expect(app.screens.enteredItemId('tong-quan')).toBeNull();
+
+    // lệnh "Gắn Tag cho phần tử…" (tab Đồ họa, menu chuột phải) bật khi chọn đúng một item svg
+    app.setUiContext({ screenSvgSel: true });
+    expect(app.enabled('screen.enterSvg')).toBe(true);
+    cellEl(el, 'c5').click();
+    await settled(el);
+    await app.run('screen.enterSvg');
+    expect(app.screens.enteredItemId('tong-quan')).toBe('do_hoa');
+  });
+
+  it('thanh công cụ gọn: thuộc tính Ô:/Hàng: ở dòng thứ hai, chỉ khi đang chọn ô', async () => {
+    const { el } = await open();
+    expect(el.querySelector('.ge-bar2')).toBeNull();
+    cellEl(el, 'c1').click();
+    await settled(el);
+    const bar2 = el.querySelector('.ge-bar2');
+    expect(text(bar2)).toContain('Ô:');
+    expect(text(bar2)).toContain('Hàng:');
+    expect(el.querySelectorAll('.ge-bar')).toHaveLength(2);
+  });
 });

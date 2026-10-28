@@ -107,6 +107,7 @@ const setCurrent = (e: MatScreenEditor | null): void => {
 
 /** Menu ngữ cảnh của vùng chọn trên canvas (feature 011, FR-126): template và faceplate. */
 const CTX_COMMANDS: readonly CommandId[] = [
+  'screen.enterSvg',
   'screen.createTemplate',
   'screen.updateInstances',
   'screen.explodeInstance',
@@ -336,6 +337,8 @@ export class MatScreenEditor extends AppElement {
       screenPreview: app.screens.previewMode,
       screenIsPopup: doc?.kind === 'popup',
       screenTplSel: selectedInstances(app, this.screenId).length > 0,
+      screenSvgSel:
+        this.sel().length === 1 && doc?.items.find((i) => i.id === this.sel()[0])?.type === 'svg',
     });
   }
 
@@ -370,7 +373,10 @@ export class MatScreenEditor extends AppElement {
   /** Nhấp phải trên canvas: chọn item dưới con trỏ nếu chưa chọn, rồi hiện menu template của vùng chọn. */
   private onContextMenu(e: MouseEvent): void {
     const target = e.target as Element | null;
-    if (!target?.closest('mat-screen-canvas')) return;
+    if (!target?.closest('mat-screen-canvas, mat-grid-editor')) return;
+    // Lưới: ô dưới con trỏ (lớp phủ `.ge-cell`); tự do: item dưới con trỏ.
+    const cell = target.closest<HTMLElement>('.ge-cell[data-cell]')?.dataset.cell;
+    if (cell) this.querySelector<MatGridEditor>('mat-grid-editor')?.selectCell(cell);
     const hit = target.closest<HTMLElement>('[data-item]')?.dataset.item;
     if (hit && !this.sel().includes(hit)) this.app.selectItems(this.screenId, [hit]);
     e.preventDefault();

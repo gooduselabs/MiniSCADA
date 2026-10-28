@@ -12,6 +12,7 @@ export const viLayout = {
   'lay.presetCustomPrompt': 'Độ rộng các ô, cách nhau bằng dấu +, tổng không quá 12 (ví dụ 3+6+3)',
   'lay.cell': 'Ô',
   'lay.row': 'Hàng',
+  'lay.selBar': 'Thuộc tính ô và hàng đang chọn',
   'lay.span': 'Rộng (cột)',
   'lay.offset': 'Trống trước',
   'lay.align': 'Căn',
@@ -47,6 +48,8 @@ export const viLayout = {
   'dlg.gridReplace.ok': 'Thay',
   // chuyển tự do → lưới (US5, FR-040; grid-convert.ts, ui/dialogs/grid-convert-dialog.ts)
   'cmd.screen.convertToGrid': 'Chuyển sang bố cục lưới…',
+  'cmd.screen.enterSvg': 'Gắn Tag cho phần tử…',
+  'reason.noSvgSel': 'Chọn một item Đồ họa SVG',
   'reason.alreadyGrid': 'Màn hình đã dùng bố cục lưới',
   'lay.convert.toolbar': 'Chuyển sang lưới',
   'lay.convert.title': 'Chuyển "{name}" sang bố cục lưới',

@@ -11,8 +11,9 @@ import {
   type GridRow,
   type ScreenModel,
 } from '@mat/project-schema';
-import { MemoryTagSource, registerScreen } from '@mat/ui-components';
+import { type MatScreen, MemoryTagSource, registerScreen } from '@mat/ui-components';
 import { html, nothing, type TemplateResult } from 'lit';
+import { bindingSetOf, itemRef, itemTagIds } from '../../app/svg-bind.ts';
 import { t, type MessageKey } from '../../i18n/index.ts';
 import {
   addCell,
@@ -37,6 +38,8 @@ import { hostTagInfo } from '../../model/preview-hosts.ts';
 import { remove } from '../../model/screen-doc.ts';
 import { AppElement, icon } from '../base.ts';
 import './mat-grid-editor.css';
+import './mat-svg-overlay.ts';
+import { BindingRevs, hitUids, pickAt, svgItemRoot, warmHit } from './svg-enter.ts';
 
 registerScreen();
 
@@ -71,6 +74,7 @@ export class MatGridEditor extends AppElement {
     previewWidth: { state: true },
     stageWidth: { state: true },
     dragging: { state: true },
+    hoverUid: { state: true },
   };
   declare screenId: string;
   declare selCell: string | null;
@@ -81,6 +85,12 @@ export class MatGridEditor extends AppElement {
   declare stageWidth: number;
   /** Feature 029: đang kéo (đường chia, cạnh ô, ô, hàng): hiện đường lưới 12 cột rõ. */
   declare dragging: boolean;
+  /** Phần tử SVG đang rê chuột khi đã vào đồ họa (khung mảnh). */
+  declare hoverUid: string | null;
+
+  readonly #bindRevs = new BindingRevs(() => this.app);
+  #readyKey = '';
+  #hoverFrame = 0;
 
   #ro: ResizeObserver | null = null;
 
@@ -98,9 +108,12 @@ export class MatGridEditor extends AppElement {
     this.previewWidth = 1366;
     this.stageWidth = 0;
     this.dragging = false;
+    this.hoverUid = null;
   }
 
   protected override attached(): void {
+    this.app.screens.svgRootProvider = (screen, itemId) =>
+      screen === this.screenId ? this.itemRoot(itemId) : null;
     const RO = (globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver;
     if (!RO) return;
     this.#ro = new RO((entries) => {
@@ -114,6 +127,9 @@ export class MatGridEditor extends AppElement {
   }
 
   protected override detached(): void {
+    // Đóng editor: khôi phục giá trị đã Thử và thoát item (như canvas tự do).
+    if (this.entered !== null) this.app.screens.exitSvgItem();
+    this.app.screens.svgRootProvider = null;
     this.#ro?.disconnect();
     this.#ro = null;
   }
@@ -152,6 +168,98 @@ export class MatGridEditor extends AppElement {
 
   private edit(fn: (d: ScreenModel) => ReturnType<typeof addRow>, mergeKey?: string) {
     return this.app.editScreen(this.screenId, fn, mergeKey);
+  }
+
+  // ---------- vào đồ họa của item svg (feature 008 trên bố cục lưới) ----------
+
+  /** Item `svg` đang vào ở màn hình này. */
+  private get entered(): string | null {
+    return this.app.screens.enteredItemId(this.screenId);
+  }
+
+  private itemRoot(itemId: string): ShadowRoot | null {
+    return svgItemRoot(this.querySelector('mat-screen'), itemId);
+  }
+
+  private isSvg(itemId: string | undefined): boolean {
+    return itemId !== undefined && this.doc()?.items.find((i) => i.id === itemId)?.type === 'svg';
+  }
+
+  /** Vào đồ họa của item `svg` trong ô `cellId` (nhấp đúp, Enter); `false` khi ô không chứa item svg. */
+  private enterCell(cellId: string): boolean {
+    const item = this.find(cellId)?.cell.item;
+    if (this.app.screens.previewMode !== 'off' || item === undefined || !this.isSvg(item))
+      return false;
+    this.selCell = cellId;
+    this.app.enterSvg(this.screenId, item);
+    return true;
+  }
+
+  private exitSvg(): void {
+    this.app.screens.exitSvgItem();
+    this.hoverUid = null;
+    this.app.requestRender();
+  }
+
+  /** Giữ trạng thái "vào item" khớp với vùng chọn; báo DOM của item đã dựng để cây phần tử và khung chọn đọc lại. */
+  protected override updated(): void {
+    const app = this.app;
+    if (this.entered !== null) {
+      const kind = app.store.state.selection?.kind;
+      if (kind === 'items' || kind === undefined)
+        app.screens.syncSvgSelection(app.selectedItems(this.screenId));
+      if (itemRef(app, this.screenId, this.entered ?? '') === null) app.screens.exitSvgItem();
+    }
+    const entered = this.entered;
+    if (entered === null) {
+      this.#readyKey = '';
+      if (this.hoverUid !== null) this.hoverUid = null;
+      return;
+    }
+    const ref = itemRef(app, this.screenId, entered);
+    if (ref === null) return;
+    app.screens.allowTest(entered, itemTagIds(bindingSetOf(app, ref)));
+    const key = `${entered}|${this.#bindRevs.rev(ref.file)}|${app.screens.testEpoch}`;
+    if (key === this.#readyKey) return;
+    this.#readyKey = key;
+    void this.querySelector<MatScreen>('mat-screen')
+      ?.whenReady()
+      .then(() => {
+        if (this.#readyKey === key && this.isConnected) {
+          app.screens.bumpSvg();
+          warmHit(() => (this.entered === entered ? this.itemRoot(entered) : null));
+        }
+      });
+  }
+
+  private onCellClick(e: MouseEvent, cellId: string): void {
+    const item = this.find(cellId)?.cell.item;
+    const entered = this.entered;
+    if (entered !== null && item === entered) {
+      pickAt(this.app, this.itemRoot(entered), e.clientX, e.clientY, {
+        shift: e.shiftKey || e.ctrlKey || e.metaKey,
+        alt: e.altKey,
+      });
+      return;
+    }
+    this.select(cellId);
+  }
+
+  private onCellHover(e: PointerEvent, cellId: string): void {
+    const entered = this.entered;
+    if (entered === null || this.find(cellId)?.cell.item !== entered) return;
+    const { clientX: x, clientY: y } = e;
+    if (this.#hoverFrame !== 0) return;
+    this.#hoverFrame = requestAnimationFrame(() => {
+      this.#hoverFrame = 0;
+      const uid = hitUids(this.itemRoot(entered), x, y)[0] ?? null;
+      if (uid !== this.hoverUid) this.hoverUid = uid;
+    });
+  }
+
+  /** Chọn ô (menu chuột phải của editor Màn hình); ô của đồ họa đang vào giữ nguyên. */
+  selectCell(cellId: string): void {
+    if (this.find(cellId)?.cell.item !== this.entered) this.select(cellId);
   }
 
   private select(cellId: string | null): void {
@@ -289,6 +397,17 @@ export class MatGridEditor extends AppElement {
       stop();
       const row = d.layout.rows[at.r + (e.key === 'ArrowUp' ? -1 : 1)];
       this.focusCell(row?.cells[Math.min(at.c, row.cells.length - 1)]?.id);
+    } else if (e.key === 'Escape' && this.entered !== null) {
+      stop();
+      this.exitSvg();
+    } else if (
+      e.key === 'Enter' &&
+      this.entered === null &&
+      this.selCell === cellId &&
+      this.enterCell(cellId)
+    ) {
+      // Enter trên ô đang chọn chứa item svg: vào đồ họa (như canvas tự do).
+      stop();
     } else if (e.key === 'Enter' || e.key === ' ') {
       stop();
       this.select(cellId);
@@ -490,133 +609,142 @@ export class MatGridEditor extends AppElement {
     const at = this.find(this.selCell);
     const ro = this.app.store.state.readOnly;
     const pm = this.app.screens.previewMode;
-    return html`<div class="ge-bar" role="toolbar" aria-label=${t('lay.toolbar')}>
-      <span class="ge-add">
-        <button
-          type="button"
-          class="btn"
-          data-act="add-row"
-          aria-haspopup="menu"
-          aria-expanded=${this.presetsOpen ? 'true' : 'false'}
-          title=${t('lay.addRowTitle')}
-          ?disabled=${ro}
-          @click=${() => (this.presetsOpen = !this.presetsOpen)}
-        >
-          ${icon('plus')} ${t('lay.addRow')}
-        </button>
-        ${
-          this.presetsOpen
-            ? html`<div class="ge-presets" role="menu" aria-label=${t('lay.presetMenu')}>
-                <div class="ge-sec" role="group" aria-label=${t('lay.presetMenu')}>
-                  <b class="ge-sec-h">${t('lay.presetMenu')}</b>
-                  ${GRID_PRESETS.map(
-                    (p) =>
-                      html`<button
-                        type="button"
-                        role="menuitem"
-                        data-preset=${p.join('+')}
-                        @click=${() => this.addRowPreset(p)}
-                      >
-                        <span class="ge-preview">
-                          ${p.map((s) => html`<i style=${`flex:${s}`}></i>`)}
-                        </span>
-                        <span>${p.join(' + ')}</span>
-                      </button>`,
+    // Hai dòng gọn: dòng 1 luôn có (thêm hàng, chiều rộng, xem trước); dòng 2 chỉ khi đang chọn ô (thuộc tính Ô:, Hàng:).
+    return html`<div class="ge-bars">
+      <div class="ge-bar" role="toolbar" aria-label=${t('lay.toolbar')}>
+        <span class="ge-add">
+          <button
+            type="button"
+            class="btn"
+            data-act="add-row"
+            aria-haspopup="menu"
+            aria-expanded=${this.presetsOpen ? 'true' : 'false'}
+            title=${t('lay.addRowTitle')}
+            ?disabled=${ro}
+            @click=${() => (this.presetsOpen = !this.presetsOpen)}
+          >
+            ${icon('plus')} ${t('lay.addRow')}
+          </button>
+          ${
+            this.presetsOpen
+              ? html`<div class="ge-presets" role="menu" aria-label=${t('lay.presetMenu')}>
+                  <div class="ge-sec" role="group" aria-label=${t('lay.presetMenu')}>
+                    <b class="ge-sec-h">${t('lay.presetMenu')}</b>
+                    ${GRID_PRESETS.map(
+                      (p) =>
+                        html`<button
+                          type="button"
+                          role="menuitem"
+                          data-preset=${p.join('+')}
+                          @click=${() => this.addRowPreset(p)}
+                        >
+                          <span class="ge-preview">
+                            ${p.map((s) => html`<i style=${`flex:${s}`}></i>`)}
+                          </span>
+                          <span>${p.join(' + ')}</span>
+                        </button>`,
+                    )}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      data-preset="custom"
+                      @click=${() => this.addRowCustom()}
+                    >
+                      ${t('lay.presetCustom')}
+                    </button>
+                  </div>
+                  <div class="ge-sec ge-tpls" role="group" aria-label=${t('lay.tplMenu')}>
+                    <b class="ge-sec-h">${t('lay.tplMenu')}</b>
+                    ${ROW_TEMPLATE_IDS.map(
+                      (id) =>
+                        html`<button
+                          type="button"
+                          role="menuitem"
+                          class="ge-tpl"
+                          data-template=${id}
+                          title=${t(`lay.tpl.${id}.hint` as MessageKey)}
+                          @click=${() => this.addRowTemplate(id)}
+                        >
+                          <span class="ge-tpl-pv" aria-hidden="true">
+                            ${ROW_TEMPLATES[id].cells.map(
+                              (c, i) =>
+                                html`<i
+                                  class=${c.widget === 'stat-tile' ? `pv-tile pv-tile-${i}` : 'pv-chart'}
+                                  style=${`flex:${c.span}`}
+                                ></i>`,
+                            )}
+                          </span>
+                          <span class="ge-tpl-t">
+                            <span>${t(`lay.tpl.${id}` as MessageKey)}</span>
+                            <small>${t(`lay.tpl.${id}.hint` as MessageKey)}</small>
+                          </span>
+                        </button>`,
+                    )}
+                  </div>
+                </div>`
+              : nothing
+          }
+        </span>
+        <span class="ge-quick" role="group" aria-label=${t('lay.quickRow')}>
+          ${GRID_PRESETS.slice(0, 6).map(
+            (p) =>
+              html`<button
+                type="button"
+                class="btn seg ge-qp"
+                data-quick=${p.join('+')}
+                title=${t('lay.quickRowTip', { spans: p.join(' + ') })}
+                aria-label=${t('lay.quickRowTip', { spans: p.join(' + ') })}
+                ?disabled=${ro}
+                @click=${() => this.addRowPreset(p)}
+              >
+                <span class="ge-preview">${p.map((s) => html`<i style=${`flex:${s}`}></i>`)}</span>
+              </button>`,
+          )}
+        </span>
+        <span class="ge-sep"></span>
+        <span class="ge-group" role="group" aria-label=${t('lay.previewWidth')}>
+          ${PREVIEW_WIDTHS.map(
+            (w) =>
+              html`<button
+                type="button"
+                class="btn seg"
+                data-width=${String(w)}
+                aria-pressed=${this.previewWidth === w ? 'true' : 'false'}
+                @click=${() => (this.previewWidth = w)}
+              >
+                ${w}
+              </button>`,
+          )}
+        </span>
+        <span class="ge-group" role="group" aria-label=${t('cmd.screen.previewOff' as MessageKey)}>
+          ${(['off', 'sim', 'device'] as const).map(
+            (m) =>
+              html`<button
+                type="button"
+                class="btn seg"
+                data-act=${`preview-${m}`}
+                aria-pressed=${pm === m ? 'true' : 'false'}
+                @click=${() =>
+                  void this.app.run(
+                    m === 'off'
+                      ? 'screen.previewOff'
+                      : m === 'sim'
+                        ? 'screen.previewSim'
+                        : 'screen.previewDevice',
                   )}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    data-preset="custom"
-                    @click=${() => this.addRowCustom()}
-                  >
-                    ${t('lay.presetCustom')}
-                  </button>
-                </div>
-                <div class="ge-sec ge-tpls" role="group" aria-label=${t('lay.tplMenu')}>
-                  <b class="ge-sec-h">${t('lay.tplMenu')}</b>
-                  ${ROW_TEMPLATE_IDS.map(
-                    (id) =>
-                      html`<button
-                        type="button"
-                        role="menuitem"
-                        class="ge-tpl"
-                        data-template=${id}
-                        title=${t(`lay.tpl.${id}.hint` as MessageKey)}
-                        @click=${() => this.addRowTemplate(id)}
-                      >
-                        <span class="ge-tpl-pv" aria-hidden="true">
-                          ${ROW_TEMPLATES[id].cells.map(
-                            (c, i) =>
-                              html`<i
-                                class=${c.widget === 'stat-tile' ? `pv-tile pv-tile-${i}` : 'pv-chart'}
-                                style=${`flex:${c.span}`}
-                              ></i>`,
-                          )}
-                        </span>
-                        <span class="ge-tpl-t">
-                          <span>${t(`lay.tpl.${id}` as MessageKey)}</span>
-                          <small>${t(`lay.tpl.${id}.hint` as MessageKey)}</small>
-                        </span>
-                      </button>`,
-                  )}
-                </div>
-              </div>`
-            : nothing
-        }
-      </span>
-      <span class="ge-quick" role="group" aria-label=${t('lay.quickRow')}>
-        ${GRID_PRESETS.slice(0, 6).map(
-          (p) =>
-            html`<button
-              type="button"
-              class="btn seg ge-qp"
-              data-quick=${p.join('+')}
-              title=${t('lay.quickRowTip', { spans: p.join(' + ') })}
-              aria-label=${t('lay.quickRowTip', { spans: p.join(' + ') })}
-              ?disabled=${ro}
-              @click=${() => this.addRowPreset(p)}
-            >
-              <span class="ge-preview">${p.map((s) => html`<i style=${`flex:${s}`}></i>`)}</span>
-            </button>`,
-        )}
-      </span>
-      ${at ? this.cellProps(at, ro) : nothing} ${at ? this.rowProps(at, ro, d) : nothing}
-      <span class="ge-sep"></span>
-      <span class="ge-group" role="group" aria-label=${t('lay.previewWidth')}>
-        ${PREVIEW_WIDTHS.map(
-          (w) =>
-            html`<button
-              type="button"
-              class="btn seg"
-              data-width=${String(w)}
-              aria-pressed=${this.previewWidth === w ? 'true' : 'false'}
-              @click=${() => (this.previewWidth = w)}
-            >
-              ${w}
-            </button>`,
-        )}
-      </span>
-      <span class="ge-group" role="group" aria-label=${t('cmd.screen.previewOff' as MessageKey)}>
-        ${(['off', 'sim', 'device'] as const).map(
-          (m) =>
-            html`<button
-              type="button"
-              class="btn seg"
-              data-act=${`preview-${m}`}
-              aria-pressed=${pm === m ? 'true' : 'false'}
-              @click=${() =>
-                void this.app.run(
-                  m === 'off'
-                    ? 'screen.previewOff'
-                    : m === 'sim'
-                      ? 'screen.previewSim'
-                      : 'screen.previewDevice',
-                )}
-            >
-              ${t(m === 'off' ? 'preview.mode.off' : m === 'sim' ? 'preview.mode.sim' : 'preview.mode.device')}
-            </button>`,
-        )}
-      </span>
+              >
+                ${t(m === 'off' ? 'preview.mode.off' : m === 'sim' ? 'preview.mode.sim' : 'preview.mode.device')}
+              </button>`,
+          )}
+        </span>
+      </div>
+      ${
+        at
+          ? html`<div class="ge-bar ge-bar2" role="toolbar" aria-label=${t('lay.selBar')}>
+              ${this.cellProps(at, ro)} ${this.rowProps(at, ro, d)}
+            </div>`
+          : nothing
+      }
     </div>`;
   }
 
@@ -650,7 +778,7 @@ export class MatGridEditor extends AppElement {
   private cellProps(at: CellAt, ro: boolean): TemplateResult {
     const c = at.cell;
     return html`<span class="ge-props" role="group" aria-label=${t('lay.cell')}>
-      <b>${t('lay.cell')}</b>
+      <b>${t('lay.cell')}:</b>
       ${this.num('span', 'lay.span', c.span, 1, 12, (v) => this.setCell({ span: v }), ro)}
       ${this.num('offset', 'lay.offset', c.offset ?? 0, 0, 11, (v) => this.setCell({ offset: v }), ro)}
       <label class="ge-field">
@@ -724,7 +852,7 @@ export class MatGridEditor extends AppElement {
     const row = at.row;
     const auto = row.height === 'auto';
     return html`<span class="ge-props" role="group" aria-label=${t('lay.row')}>
-      <b>${t('lay.row')}</b>
+      <b>${t('lay.row')}:</b>
       <label class="ge-field ge-check">
         <input
           type="checkbox"
@@ -860,8 +988,9 @@ export class MatGridEditor extends AppElement {
             span: cell.span,
             content: this.nameOfItem(cell.item),
           });
+          const inSvg = cell.item !== undefined && cell.item === this.entered;
           return html`<div
-            class="ge-cell ${this.selCell === cell.id ? 'sel' : ''} ${
+            class="ge-cell ${inSvg ? 'entered' : ''} ${this.selCell === cell.id ? 'sel' : ''} ${
               this.overCell === cell.id ? 'over' : ''
             } ${empty ? 'empty' : ''}"
             slot=${`cell-${cell.id}`}
@@ -871,7 +1000,12 @@ export class MatGridEditor extends AppElement {
             aria-pressed=${this.selCell === cell.id ? 'true' : 'false'}
             aria-label=${label}
             title=${label}
-            @click=${() => this.select(cell.id)}
+            @click=${(e: MouseEvent) => this.onCellClick(e, cell.id)}
+            @dblclick=${() => this.enterCell(cell.id)}
+            @pointermove=${(e: PointerEvent) => this.onCellHover(e, cell.id)}
+            @pointerleave=${() => {
+              if (inSvg && this.hoverUid !== null) this.hoverUid = null;
+            }}
             @keydown=${(e: KeyboardEvent) => this.onCellKey(e, cell.id)}
             @dragover=${(e: DragEvent) => this.onDragOver(e, cell.id)}
             @dragleave=${() => {
@@ -887,6 +1021,20 @@ export class MatGridEditor extends AppElement {
                 : nothing
             }
             <span class="ge-tag">${cell.span}</span>
+            ${
+              inSvg
+                ? html`<mat-svg-overlay
+                    .app=${this.app}
+                    .screenId=${this.screenId}
+                    .itemId=${cell.item}
+                    .viewport=${{ zoom: this.zoom(), panX: 0, panY: 0 }}
+                    .hoverUid=${this.hoverUid}
+                    .dropUid=${null}
+                    .fill=${true}
+                    .rev=${this.app.screens.svgRevision}
+                  ></mat-svg-overlay>`
+                : nothing
+            }
             ${
               c === 0
                 ? html`<span
@@ -938,6 +1086,7 @@ export class MatGridEditor extends AppElement {
    * đặt cuối danh sách để chọn hay dời ô không làm dịch các lớp phủ khác (giữ nhanh khi di chuyển ô).
    */
   private miniHost(d: GridDoc): TemplateResult<1>[] {
+    if (this.entered !== null) return [];
     for (const row of d.layout.rows)
       for (const cell of row.cells)
         if (cell.id === this.selCell)
@@ -964,7 +1113,7 @@ export class MatGridEditor extends AppElement {
       <div class="ge-stage">
         <div class="ge-page" style=${`width:${this.previewWidth}px;zoom:${this.zoom()}`}>
           <mat-screen
-            .screen=${d}
+            .screen=${this.#bindRevs.viewDoc(d, edit ? 'edit' : this.app.screens.previewMode)}
             .tags=${src.source}
             .host=${src.host}
             .alarms=${src.alarms ?? undefined}

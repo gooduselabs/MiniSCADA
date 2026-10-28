@@ -173,6 +173,7 @@ export type UiContext = Partial<
     | 'screenPreview'
     | 'screenIsPopup'
     | 'screenTplSel'
+    | 'screenSvgSel'
   >
 >;
 

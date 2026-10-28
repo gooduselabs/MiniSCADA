@@ -152,7 +152,8 @@ export type CommandId =
   | 'screen.updateInstances'
   | 'screen.faceplate'
   // Feature 012 (FR-040): chuyển màn hình tự do đang mở sang bố cục lưới (hộp thoại xem trước).
-  | 'screen.convertToGrid';
+  | 'screen.convertToGrid'
+  | 'screen.enterSvg';
 
 /** Trạng thái mà điều kiện bật của lệnh cần; store dựng mỗi khi trạng thái đổi. */
 export interface CommandContext {
@@ -220,6 +221,8 @@ export interface CommandContext {
   screenIsGrid: boolean;
   /** Vùng chọn của editor Màn hình có item của bản sao template. */
   screenTplSel: boolean;
+  /** Vùng chọn của editor Màn hình là đúng một item `svg` (vào đồ họa để gắn Tag cho phần tử). */
+  screenSvgSel: boolean;
 }
 
 export const EMPTY_CONTEXT: CommandContext = {
@@ -255,6 +258,7 @@ export const EMPTY_CONTEXT: CommandContext = {
   format11: false,
   screenIsGrid: false,
   screenTplSel: false,
+  screenSvgSel: false,
 };
 
 /** `true` hoặc khóa i18n của lý do bị khóa (tooltip, bảng lệnh). */
@@ -327,6 +331,7 @@ const format10: Check = (c) => c.format10 || 'reason.needFormat10';
 /** Project 1.1 (bố cục lưới, feature 012). */
 const format11: Check = (c) => c.format11 || 'reason.needFormat11';
 const tplSelected: Check = (c) => c.screenTplSel || 'reason.noInstanceSel';
+const svgSelected: Check = (c) => c.screenSvgSel || 'reason.noSvgSel';
 const popupOpen: Check = (c) => c.screenIsPopup || 'reason.notPopup';
 
 /** Project 0.5 (alarm, feature 009). */
@@ -685,6 +690,8 @@ export const COMMANDS: readonly CommandSpec[] = [
     all(screenEdit, format11, (c) => (c.screenIsGrid ? 'reason.alreadyGrid' : true)),
     { icon: 'grid' },
   ),
+  // Vào đồ họa của item `svg` đang chọn để gắn Tag cho phần tử (canvas tự do và lưới; menu ngữ cảnh, tab Đồ họa).
+  cmd('screen.enterSvg', null, all(needProject, project03, screenOpen, svgSelected)),
 ];
 
 const BY_ID = new Map<string, CommandSpec>(COMMANDS.map((c) => [c.id, c]));

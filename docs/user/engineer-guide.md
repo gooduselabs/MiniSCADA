@@ -406,7 +406,7 @@ Tệp SVG từ 1 MiB có cảnh báo `W_SVG_HEAVY`; từ 5 MiB là lỗi `E_SVG_
 
 ### 7.2. Gắn Tag cho phần tử SVG
 
-Chọn item SVG, Enter (hoặc nhấp đúp) để **vào đồ họa**, chọn phần tử, tab **Gắn Tag**. Có 13 loại hoạt ảnh: **Chữ hiển thị giá trị**, **Màu nền**, **Màu viền**, **Mức chất lỏng**, **Quay**, **Quay liên tục**, **Di chuyển X**, **Di chuyển Y**, **Co giãn**, **Nhấp nháy**, **Dòng chảy**, **Ẩn/hiện**, **Độ mờ**. Cách đổi giá trị: **Trực tiếp**, **Tuyến tính**, **Rời rạc**, **Bảng giá trị**, **Khoảng**. Thanh **Thử giá trị** cho xem trước. Hình ký hiệu mẫu cũ (tệp trong `graphics/symbols/` của project tạo trước đây) có thêm **Gắn nhanh** theo bộ phận.
+Chọn item SVG rồi **vào đồ họa** bằng một trong các cách: nhấp đúp vào đồ họa, nhấn Enter, nút **Gắn Tag cho phần tử…** ở tab **Đồ họa** của bảng thuộc tính, hoặc mục cùng tên trong menu chuột phải. Cách làm giống nhau trên màn hình tự do và màn hình **bố cục lưới** (nhấp đúp vào ô chứa đồ họa, hoặc chọn ô rồi Enter). Khi đã vào, nhấp chọn phần tử trên hình (rê chuột thấy viền phần tử) hoặc trong tab **Phần tử** ở cột trái, rồi dùng tab **Gắn Tag**, **Sự kiện** của bảng thuộc tính; nhấn Esc để thoát. Có 13 loại hoạt ảnh: **Chữ hiển thị giá trị**, **Màu nền**, **Màu viền**, **Mức chất lỏng**, **Quay**, **Quay liên tục**, **Di chuyển X**, **Di chuyển Y**, **Co giãn**, **Nhấp nháy**, **Dòng chảy**, **Ẩn/hiện**, **Độ mờ**. Cách đổi giá trị: **Trực tiếp**, **Tuyến tính**, **Rời rạc**, **Bảng giá trị**, **Khoảng**. Thanh **Thử giá trị** cho xem trước. Hình ký hiệu mẫu cũ (tệp trong `graphics/symbols/` của project tạo trước đây) có thêm **Gắn nhanh** theo bộ phận.
 
 ### 7.3. Project mẫu sơ đồ công nghệ
 

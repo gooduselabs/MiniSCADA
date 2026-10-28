@@ -1261,6 +1261,11 @@ export class StudioApp {
         return openUpdateAll(this);
       case 'screen.faceplate':
         return makeFaceplate(this);
+      case 'screen.enterSvg': {
+        const sid = currentScreenId(this);
+        const id = sid === null ? undefined : this.selectedItems(sid)[0];
+        return sid === null || id === undefined ? undefined : this.enterSvg(sid, id);
+      }
       case 'screen.convertToGrid': {
         const sid = currentScreenId(this);
         return sid === null ? undefined : this.openDialog({ kind: 'gridConvert', screen: sid });
@@ -1639,6 +1644,20 @@ export class StudioApp {
    * nhóm Gắn Tag hoặc Sự kiện rồi đưa focus tới đúng dòng và ô (inspector đọc `screens.jump`). `false` khi lỗi không thuộc
    * phần tử nào (để đường tìm vị trí chung xử lý).
    */
+  /**
+   * Vào đồ họa của item `svg` `itemId` (canvas tự do và lưới): chọn item, mở tab Gắn Tag của inspector. Phần tử chọn trên
+   * canvas hoặc ở cây phần tử.
+   */
+  enterSvg(screen: string, itemId: string): void {
+    const item = this.screenModel(screen)?.items.find((i) => i.id === itemId);
+    if (item?.type !== 'svg') return;
+    this.selectItems(screen, [itemId]);
+    this.screens.enterSvgItem(screen, itemId);
+    this.screens.svgTab = 'bind';
+    this.setInspectorTab('props');
+    this.requestRender();
+  }
+
   private gotoSvgIssue(issue: Issue): boolean {
     const st = this.store.state;
     for (const s of st.outline.screens) {

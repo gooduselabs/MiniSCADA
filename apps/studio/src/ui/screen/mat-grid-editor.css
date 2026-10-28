@@ -2,14 +2,26 @@
    (đặt vào slot `cell-<id>` của <mat-screen>). CSS có phạm vi theo tên thẻ, dùng token của Studio (theme/tokens.css). */
 mat-grid-editor {
   display: block;
+  flex: 1 1 auto;
   height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 mat-grid-editor .ge {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
+}
+/* Thanh công cụ không cuộn và luôn nằm trên vùng làm việc; trang cuộn trong .ge-stage riêng (lớp phủ ô không đè lên thanh). */
+mat-grid-editor .ge-bars {
+  flex: none;
+  position: relative;
+  z-index: 5;
+}
+mat-grid-editor .ge-bar2 {
+  gap: 4px 16px;
+  background: var(--panel-2);
 }
 mat-grid-editor .ge-bar {
   display: flex;
@@ -170,6 +182,8 @@ mat-grid-editor .ge-empty {
 mat-grid-editor .ge-stage {
   flex: 1;
   min-height: 0;
+  isolation: isolate;
+  position: relative;
   overflow: auto;
   padding: 16px;
   background: var(--desk);
@@ -343,4 +357,28 @@ mat-grid-editor .ge-mini-host {
 }
 mat-grid-editor .ge-mini-host .ge-mini {
   pointer-events: auto;
+}
+/* Đã vào đồ họa của item svg trong ô: nhấp chọn phần tử SVG (mat-svg-overlay vẽ khung chọn và khung rê chuột) */
+mat-grid-editor .ge-cell.entered,
+mat-grid-editor .ge-cell.entered:hover {
+  border-color: transparent;
+  background: none;
+  cursor: crosshair;
+}
+mat-grid-editor .ge-cell.entered .ge-tag {
+  display: none;
+}
+/* nhãn "Đang vào" nằm trong ô (phía trên ô có thể là mép vùng cuộn) */
+mat-grid-editor mat-svg-overlay .svo-chip {
+  top: 0;
+  bottom: auto;
+  border-radius: 0 0 calc(var(--k, 1) * 3px) 0;
+}
+/* dòng Ô:/Hàng: gọn để vừa một dòng ở bề rộng thường */
+mat-grid-editor .ge-bar2 .ge-field input[type='number'] {
+  width: 48px;
+}
+mat-grid-editor .ge-bar2 .btn {
+  min-height: 24px;
+  padding: 0 6px;
 }

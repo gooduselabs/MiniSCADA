@@ -204,6 +204,8 @@ export const viScreensInsp = {
   'wi.svg.elements': 'Số phần tử khai',
   'wi.svg.bound': 'Phần tử có binding',
   'wi.svg.bindings': 'Binding (chỉ đọc)',
+  'wi.svg.enterHint':
+    'Nhấp đúp vào đồ họa (hoặc chọn rồi nhấn Enter) để vào đồ họa, chọn phần tử rồi gắn Tag ở tab Gắn Tag. Esc để thoát.',
   'wi.svg.help':
     'Đồ họa SVG chỉ xem ở đây: gắn Tag cho phần tử SVG cần project định dạng 0.4 trở lên.',
 } as const;

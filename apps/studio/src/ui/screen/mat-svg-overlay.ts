@@ -29,6 +29,7 @@ export class MatSvgOverlay extends AppElement {
     hoverUid: { attribute: false },
     dropUid: { attribute: false },
     rev: { attribute: false },
+    fill: { attribute: false },
   };
 
   declare screenId: string;
@@ -40,6 +41,11 @@ export class MatSvgOverlay extends AppElement {
   declare dropUid: string | null;
   /** Số lần DOM của item được dựng lại: đọc lại hộp bao khi đổi. */
   declare rev: number;
+  /**
+   * Trình soạn lưới (feature 012): lớp phủ nằm trong ô chứa item (item lấp đầy ô), nên khung item phủ kín lớp phủ và gốc tọa
+   * độ là chính lớp phủ thay cho vùng nhìn `.vp` của canvas tự do.
+   */
+  declare fill: boolean;
   constructor() {
     super();
     this.screenId = '';
@@ -48,6 +54,7 @@ export class MatSvgOverlay extends AppElement {
     this.hoverUid = null;
     this.dropUid = null;
     this.rev = 0;
+    this.fill = false;
   }
 
   /** Hình chữ nhật thiết kế của phần tử `uid`; `null` khi chưa dựng hoặc không có hộp. */
@@ -72,10 +79,13 @@ export class MatSvgOverlay extends AppElement {
     const item = app.screenModel(this.screenId)?.items.find((i) => i.id === this.itemId);
     if (item === undefined) return nothing;
     const k = 1 / this.viewport.zoom;
-    const frame = html`<div class="svo-item" style=${styleMap(box(item))}>
+    const frame = html`<div
+      class="svo-item"
+      style=${styleMap(this.fill ? { left: '0', top: '0', width: '100%', height: '100%' } : box(item))}
+    >
       <span class="svo-chip">${t('svo.entered', { name: item.name?.trim() || item.id })}</span>
     </div>`;
-    const vp = this.closest('.vp');
+    const vp = this.fill ? this : this.closest('.vp');
     const root = app.screens.svgRoot(this.screenId, this.itemId);
     if (vp === null || root === null)
       return html`<div class="svo" style=${styleMap({ '--k': String(k) })}>${frame}</div>`;

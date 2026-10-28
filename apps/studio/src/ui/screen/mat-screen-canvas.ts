@@ -24,7 +24,6 @@ import { ANIMATION_ROWS, rowBlock, transformsFor } from '../../model/animation-c
 import { EditTestSource } from '../../model/edit-source.ts';
 import { hostTagInfo } from '../../model/preview-hosts.ts';
 import { findByUid, nameOfElement } from '../../model/svg-dom.ts';
-import { applyPick } from '../../model/svg-select.ts';
 import { catalogMinSizeOf } from '../../model/screen-edit/resize.ts';
 import { moveItems } from '../../model/screen-doc.ts';
 import {
@@ -58,10 +57,18 @@ import { AppElement, icon } from '../base.ts';
 import { resolveCanvasKey } from './keymap.ts';
 import './mat-ruler.ts';
 import './mat-svg-overlay.ts';
+import {
+  BindingRevs,
+  ensureHit,
+  hitUids,
+  parentUid,
+  pickAt,
+  svgItemRoot,
+  warmHit,
+} from './svg-enter.ts';
 import './screen-canvas.css';
 
 /** Số phần tử có UID tối đa lấy từ một điểm khi chọn. */
-const HIT_LIMIT = 32;
 
 const ZOOM_COMMANDS: ReadonlySet<string> = new Set([
   'screen.zoomIn',
@@ -144,8 +151,7 @@ export class MatScreenCanvas extends AppElement {
   private hoverFrame = 0;
   private readyKey = '';
   private inertSet = false;
-  private viewDocCache: { doc: ScreenModel; sig: string; out: ScreenModel } | null = null;
-  private readonly bindRevs = new Map<string, { value: unknown; n: number }>();
+  private readonly bindRevs = new BindingRevs(() => this.app);
 
   constructor() {
     super();
@@ -222,30 +228,7 @@ export class MatScreenCanvas extends AppElement {
 
   /** Gốc Shadow DOM của item `svg` `itemId` (cây phần tử đã lọc, có `data-mat-uid`); `null` khi chưa dựng. */
   private itemRoot(itemId: string): ShadowRoot | null {
-    const ms = this.querySelector('mat-screen');
-    const wrappers = ms?.shadowRoot?.querySelectorAll<HTMLElement>('.item');
-    if (!wrappers) return null;
-    for (const w of wrappers)
-      if (w.dataset.itemId === itemId)
-        return w.querySelector<HTMLElement>('.svg-host')?.shadowRoot ?? null;
-    return null;
-  }
-
-  /**
-   * Ở chế độ chỉnh sửa item bị `pointer-events: none` nên hit-test không thấy phần tử SVG: trong Shadow DOM của item đang
-   * vào, cho phần tử nhận con trỏ (kể cả hình `fill="none"`). Dùng stylesheet dựng sẵn, không sửa DOM của SVG.
-   */
-  private static readonly hitRoots = new WeakSet<ShadowRoot>();
-  private ensureHit(root: ShadowRoot): void {
-    if (MatScreenCanvas.hitRoots.has(root)) return;
-    try {
-      const sheet = new CSSStyleSheet();
-      sheet.replaceSync('svg *{pointer-events:all}');
-      root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
-      MatScreenCanvas.hitRoots.add(root);
-    } catch {
-      // Môi trường không có stylesheet dựng sẵn (jsdom): hit-test dùng bản dự phòng của trình duyệt.
-    }
+    return svgItemRoot(this.querySelector('mat-screen'), itemId);
   }
 
   /** Item khác không nhận con trỏ và không focus được khi đang vào một item (thay cho `inert` cả vùng vẽ). */
@@ -260,56 +243,24 @@ export class MatScreenCanvas extends AppElement {
     this.inertSet = entered !== null;
     if (entered !== null) {
       const root = this.itemRoot(entered);
-      if (root) this.ensureHit(root);
+      if (root) ensureHit(root);
     }
   }
 
-  /**
-   * UID của các phần tử SVG dưới điểm client, trên cùng trước. Hình con không có UID quy về tổ tiên gần nhất có UID (nhóm có
-   * UID mà hình con không có vẫn chọn được); mỗi UID một lần.
-   */
+  /** UID của các phần tử SVG dưới điểm client, trên cùng trước (xem `svg-enter.ts`). */
   private hitUids(x: number, y: number): string[] {
     const id = this.entered;
-    const root = id === null ? null : this.itemRoot(id);
-    if (root === null) return [];
-    this.ensureHit(root);
-    // Đồ họa dày có thể xếp hàng nghìn hình tại một điểm: chỉ cần vài lớp trên cùng (chọn, Alt đi lên), dừng sớm và khử trùng bằng
-    // Set để không tốn O(n^2) (SC-018).
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const el of root.elementsFromPoint(x, y)) {
-      const uid = el.closest('[data-mat-uid]')?.getAttribute('data-mat-uid');
-      if (uid && !seen.has(uid)) {
-        seen.add(uid);
-        out.push(uid);
-        if (out.length >= HIT_LIMIT) break;
-      }
-    }
-    return out;
+    return hitUids(id === null ? null : this.itemRoot(id), x, y);
   }
 
   private pickAt(x: number, y: number, mods: { shift: boolean; alt: boolean }): void {
-    const sel = this.app.screens.selectedUids;
-    const hit = this.hitUids(x, y);
-    let uid: string | null = hit[0] ?? null;
-    if (mods.alt) {
-      // Alt+nhấp: phần tử cha có UID của phần tử đang chọn nếu nó nằm dưới con trỏ (nhấp liên tiếp đi lên dần), không thì cha
-      // của phần tử trên cùng. Danh sách `elementsFromPoint` là thứ tự xếp lớp chứ không phải cây cha con nên không dùng trực tiếp.
-      const cur = sel.at(-1);
-      const base = cur !== undefined && hit.includes(cur) ? cur : uid;
-      uid = base === null ? null : (this.parentUid(base) ?? base);
-    }
-    this.app.screens.pickUids(applyPick(sel, uid, mods));
+    const id = this.entered;
+    pickAt(this.app, id === null ? null : this.itemRoot(id), x, y, mods);
   }
 
-  /** UID của tổ tiên gần nhất có UID của phần tử `uid`; `null` khi là phần tử cấp trên cùng. */
   private parentUid(uid: string): string | null {
     const id = this.entered;
-    const root = id === null ? null : this.itemRoot(id);
-    if (root === null) return null;
-    let el = findByUid(root, uid)?.parentElement ?? null;
-    while (el !== null && !el.hasAttribute('data-mat-uid')) el = el.parentElement;
-    return el?.getAttribute('data-mat-uid') ?? null;
+    return parentUid(id === null ? null : this.itemRoot(id), uid);
   }
 
   private selectParent(): void {
@@ -420,29 +371,13 @@ export class MatScreenCanvas extends AppElement {
     });
   }
 
-  /**
-   * Lần `elementsFromPoint` đầu trên một cây lớn dựng cây hit-test (spike T006d: ≈ 60 ms với 20.000 phần tử): làm nóng một lần
-   * ngay sau khi dựng xong để cú nhấp đầu tiên của người dùng không chịu giá đó (SC-018: chọn ≤ 50 ms).
-   */
   private warmHit(itemId: string): void {
-    requestAnimationFrame(() => {
-      const root = this.entered === itemId ? this.itemRoot(itemId) : null;
-      const host = root?.host.getBoundingClientRect();
-      if (root && host) {
-        this.ensureHit(root);
-        root.elementsFromPoint(host.left + host.width / 2, host.top + host.height / 2);
-      }
-    });
+    warmHit(() => (this.entered === itemId ? this.itemRoot(itemId) : null));
   }
 
   /** Số thứ tự bản của file binding: đổi khi nội dung đổi (item dựng lại để áp binding mới). */
   private bindRev(file: string): number {
-    const v = this.app.store.state.docs[file]?.value;
-    const cur = this.bindRevs.get(file);
-    if (cur !== undefined && cur.value === v) return cur.n;
-    const n = (cur?.n ?? 0) + 1;
-    this.bindRevs.set(file, { value: v, n });
-    return n;
+    return this.bindRevs.rev(file);
   }
 
   private vp(): HTMLElement | null {
@@ -924,27 +859,10 @@ export class MatScreenCanvas extends AppElement {
     return Array.isArray(v?.elements) ? (v.elements as never) : [];
   };
 
-  /**
-   * Màn hình đưa cho `<mat-screen>`: mỗi item `svg` mang `bindingFile#<bản>`. Item chỉ dựng lại khi khóa của nó đổi, nên nội
-   * dung binding đổi (gắn Tag, hoàn tác) phải đổi khóa để canvas thấy hiệu ứng ngay. Giữ nguyên đối tượng khi không đổi.
-   */
+  /** Màn hình đưa cho `<mat-screen>`: khóa `bindingFile#<bản>` trên item `svg` (xem `BindingRevs`). */
   private viewDoc(doc: ScreenModel): ScreenModel {
-    if (!doc.items.some((i) => i.type === 'svg')) return doc;
     // Item `svg` giữ nguồn giá trị lúc dựng: đổi chế độ xem trước cũng phải dựng lại (nguồn Mô phỏng, Thiết bị khác nguồn edit).
-    const mode = this.previewing ? this.app.screens.previewMode : 'edit';
-    const tag = (file: string): string =>
-      `${this.bindRev(file)}.${mode}.${this.app.screens.testEpoch}`;
-    const sig = doc.items.map((i) => (i.type === 'svg' ? tag(i.bindingFile) : '')).join(',');
-    const c = this.viewDocCache;
-    if (c !== null && c.doc === doc && c.sig === sig) return c.out;
-    const out: ScreenModel = {
-      ...doc,
-      items: doc.items.map((i) =>
-        i.type === 'svg' ? { ...i, bindingFile: `${i.bindingFile}#${tag(i.bindingFile)}` } : i,
-      ),
-    };
-    this.viewDocCache = { doc, sig, out };
-    return out;
+    return this.bindRevs.viewDoc(doc, this.previewing ? this.app.screens.previewMode : 'edit');
   }
 
   private readonly onTags = (e: Event): void => {

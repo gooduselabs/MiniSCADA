@@ -1045,7 +1045,22 @@ export class MatWidgetProps extends AppElement {
     const outline = this.app.store.state.outline.screens.find((s) => s.id === this.screenId);
     const bound = outline?.itemBindings[item.id];
     const withTag = (bound?.elements ?? []).filter((e) => (e.bindings ?? []).length > 0).length;
-    return html`${prow(t('wi.svg.file'), item.svgFile, { mono: true })}
+    // Lối vào rõ ràng để gắn Tag cho phần tử (canvas tự do và lưới; cũng bằng nhấp đúp, Enter, menu chuột phải).
+    const why = this.app.enabled('screen.enterSvg');
+    return html`<div class="wi-actions">
+        <button
+          type="button"
+          class="btn sm primary"
+          data-act="svg-enter"
+          ?disabled=${why !== true}
+          title=${why === true ? t('wi.svg.enterHint') : t(why as MessageKey)}
+          @click=${() => this.app.enterSvg(this.screenId, item.id)}
+        >
+          ${icon('link')}${t('cmd.screen.enterSvg')}
+        </button>
+        <div class="pf-hint">${t('wi.svg.enterHint')}</div>
+      </div>
+      ${prow(t('wi.svg.file'), item.svgFile, { mono: true })}
       ${prow(t('wi.svg.binding'), item.bindingFile, { mono: true })}
       ${prow(t('wi.svg.viewBox'), item.viewBox.join(' '), { mono: true })}
       ${prow(t('wi.svg.elements'), String(item.elements.length), { mono: true })}

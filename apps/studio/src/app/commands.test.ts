@@ -177,6 +177,8 @@ describe('danh mục lệnh theo contracts/commands.md', () => {
       'screen.faceplate',
       // feature 012 (FR-040): chuyển màn hình tự do sang lưới
       'screen.convertToGrid',
+      // vào đồ họa của item svg (canvas tự do và lưới)
+      'screen.enterSvg',
     ]);
     expect(extra.every((c) => c.menu === null)).toBe(true);
     expect(t(commandById('open.tags')!.label)).toBe('Mở Bảng Tag mặc định');
