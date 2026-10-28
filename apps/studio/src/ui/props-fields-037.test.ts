@@ -31,6 +31,12 @@ describe('props-fields 037', () => {
     expect(draw('equipment', 'faultValue', env(undefined)).textContent).toContain('báo Lỗi');
     expect(draw('card', 'flash', env(undefined)).textContent).toContain('0,6 giây');
   });
+  it('chọn nhiều component có giá trị khác nhau: ô hiện —', () => {
+    const host = draw('card', 'accent', { ...env(undefined), mixed: true });
+    expect(host.querySelector('select')!.selectedOptions[0]!.textContent).toContain('—');
+    const num = draw('card', 'warnAbove', { ...env(undefined), mixed: true });
+    expect(num.querySelector('input')!.placeholder).toContain('—');
+  });
   it('bảng trạng thái: thêm dòng đặt giá trị kế tiếp và màu gợi ý', () => {
     let got: PropValue | undefined;
     const host = draw(

@@ -5,7 +5,7 @@ export const viScreensInsp = {
   'pf.defaultFromTag': 'theo Tag',
   'pf.on': 'Bật',
   'pf.off': 'Tắt',
-  'pf.mixed': 'nhiều giá trị',
+  'pf.mixed': '— (khác nhau)',
   'pf.default': 'mặc định',
   'pf.auto': 'Tự động',
   'pf.reset': 'Mặc định',
