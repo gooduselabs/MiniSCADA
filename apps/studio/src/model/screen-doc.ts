@@ -2,6 +2,7 @@
 // Hàm thuần `(doc, ...args) → { doc, selection?, rejected? }`. Không bao giờ sửa đầu vào; khi không có
 // gì đổi hoặc bị từ chối thì trả đúng `doc` cũ (bên gọi không tạo bước hoàn tác rỗng). Chuỗi hiển thị
 // không nằm ở đây: lý do từ chối là mã để UI tra i18n.
+import { presetProps } from './widget-presets.ts';
 import {
   LIMITS_03,
   SIZE_MAX,
@@ -162,6 +163,7 @@ export function addWidget(
     y: intOf(at.y),
     width: spec.defaultSize[0],
     height: spec.defaultSize[1],
+    ...(presetProps(type) ? { props: presetProps(type) } : {}),
   });
   return { doc: withItems(doc, [...doc.items, it]), selection: [id] };
 }

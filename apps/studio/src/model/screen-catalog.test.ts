@@ -201,13 +201,24 @@ describe('inspectorModelOf', () => {
       'decimals',
       'unit',
       'fontSize',
+      'accent',
+      'fill',
+      'icon',
+      'accentColor',
       'showQuality',
+      'showUnit',
+      'statusText',
       'sparkline',
       'trend',
       'valueColor',
       'background',
       'blinkAbove',
       'blinkBelow',
+      'warnAbove',
+      'warnBelow',
+      'alarmAbove',
+      'alarmBelow',
+      'flash',
     ]);
     expect(m.groups.general).toEqual([]);
     expect(m.groups.security).toEqual([]);
@@ -219,6 +230,14 @@ describe('inspectorModelOf', () => {
         types: ['number', 'bool', 'string'],
         needsWrite: false,
         i18nKey: 'widget.card.slot.value',
+      },
+      {
+        name: 'alarm',
+        required: false,
+        multi: false,
+        types: ['bool'],
+        needsWrite: false,
+        i18nKey: 'widget.card.slot.alarm',
       },
       {
         name: 'status',
@@ -264,8 +283,8 @@ describe('inspectorModelOf', () => {
     expect(inspectorModelOf('line')!.slots[0]).toMatchObject({ multi: true, max: 8 });
     expect(inspectorModelOf('nope')).toBeUndefined();
   });
-  it('dựng được cho cả 29 loại (15 của 007, 2 alarm, 4 lịch sử, 7 dashboard của 014, time-range của 029), mọi trường có nhóm và khóa i18n', () => {
-    expect(WIDGET_CATALOG.widgets).toHaveLength(29);
+  it('dựng được cho cả 32 loại (15 của 007, 2 alarm, 4 lịch sử, 7 dashboard của 014, time-range của 029, 3 của 037), mọi trường có nhóm và khóa i18n', () => {
+    expect(WIDGET_CATALOG.widgets).toHaveLength(32);
     for (const spec of WIDGET_CATALOG.widgets) {
       const m = inspectorModelOf(spec.id)!;
       const all = [...m.groups.general, ...m.groups.display, ...m.groups.security];
@@ -377,7 +396,7 @@ describe('firstFreeSlot (thả Tag lên widget)', () => {
     expect(
       firstFreeSlot(
         spec('card'),
-        wi({ widget: 'card', tags: { value: 'q.r', status: 'q.s' } }),
+        wi({ widget: 'card', tags: { value: 'q.r', alarm: 'q.a', status: 'q.s' } }),
         tag(),
       ),
     ).toEqual({

@@ -37,6 +37,7 @@ import { viDevset } from './vi-devset.ts';
 import { viNewProject } from './vi-newproject.ts';
 import { viDashboard } from './vi-dashboard.ts';
 import { viAtscada } from './vi-atscada.ts';
+import { viComponents } from './vi-components.ts';
 import { viS7 } from './vi-s7.ts';
 import { viMc } from './vi-mc.ts';
 import { viOpcUa } from './vi-opcua.ts';
@@ -490,6 +491,7 @@ export const viMessages = {
   ...viScreensInsp,
   ...viDashboard,
   ...viAtscada,
+  ...viComponents,
   ...viScreensNav,
   ...viSvg,
   ...viQuickBind,

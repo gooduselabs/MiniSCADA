@@ -3,6 +3,7 @@
 // item `svg` có nhóm Chung và "Đồ họa" chỉ đọc. Chọn nhiều item thì chỉ hiện thuộc tính chung (hình học, khóa, ẩn và, khi cùng loại
 // widget, các thuộc tính của loại đó). Lỗi của bộ kiểm tra hiện theo ô (viền đỏ, câu lỗi). Mọi sửa đi qua `app.editScreen`: một bước
 // hoàn tác mỗi cử chỉ, gõ liên tục gộp theo `mergeKey`.
+import { groupBySection } from '../model/prop-sections.ts';
 import {
   catalogWidget,
   isOperableItem,
@@ -552,7 +553,16 @@ export class MatWidgetProps extends AppElement {
     const m = this.model();
     if (!m) return html`<p class="help pad">${t('wi.noDisplay')}</p>`;
     const issues = this.issuesOf();
-    return html`${m.groups.display.map((f) => this.field(f, its, issues))}`;
+    const groups = groupBySection(m.groups.display);
+    // Feature 037: ít thuộc tính (một nhóm) thì không cần tiêu đề nhóm.
+    if (groups.length < 2) return html`${m.groups.display.map((f) => this.field(f, its, issues))}`;
+    return html`${groups.map(
+      (g) =>
+        html`<div class="wi-sec" data-section=${g.section}>
+          <div class="wi-sec-h">${t(`wsec.${g.section}` as MessageKey)}</div>
+          ${g.fields.map((f) => this.field(f, its, issues))}
+        </div>`,
+    )}`;
   }
 
   // ---------- Gắn Tag ----------

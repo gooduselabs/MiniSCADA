@@ -44,14 +44,44 @@ describe('Toolbox nhóm Lịch sử', () => {
     expect(tools.every((x) => x!.draggable)).toBe(true);
   });
 
-  it('project chưa ở định dạng 0.6: không có nhóm Lịch sử (17 widget cũ, 7 widget dashboard của 014 và time-range của 029 vẫn đủ)', async () => {
+  it('project chưa ở định dạng 0.6: không có nhóm Lịch sử (17 widget cũ, 6 widget dashboard của 014 — stat-tile đã gộp vào card ở 037 —, time-range của 029, 3 widget của 037)', async () => {
     const files = historyDemoFiles();
     const p = JSON.parse(files['project.json']!);
     p.schemaVersion = '0.3.0';
     files['project.json'] = JSON.stringify(p);
     const { el } = await toolbox(files);
     expect(el.querySelector('.tool[data-widget="history-trend"]')).toBeNull();
-    expect(el.querySelectorAll('.tool[data-widget]').length).toBe(25);
+    expect(el.querySelectorAll('.tool[data-widget]').length).toBe(27);
+    expect(el.querySelector('.tool[data-widget="stat-tile"]')).toBeNull();
+  });
+});
+
+describe('Toolbox: ô tìm component (037)', () => {
+  it('lọc theo tên hoặc mô tả, không dấu vẫn khớp; không khớp thì báo', async () => {
+    const { el } = await toolbox();
+    const input = el.querySelector<HTMLInputElement>('input.tc-toolsearch')!;
+    expect(input).not.toBeNull();
+    input.value = 'den thap';
+    input.dispatchEvent(new Event('input'));
+    await settled(el);
+    expect(
+      [...el.querySelectorAll<HTMLElement>('.tool[data-widget]')].map((b) => b.dataset['widget']),
+    ).toEqual(['stack-light']);
+    input.value = 'bơm';
+    input.dispatchEvent(new Event('input'));
+    await settled(el);
+    const ids = [...el.querySelectorAll<HTMLElement>('.tool[data-widget]')].map(
+      (b) => b.dataset['widget'],
+    );
+    expect(ids).toContain('equipment');
+    expect(el.querySelector('.tool[data-widget="equipment"]')!.getAttribute('title')).toContain(
+      'Motor',
+    );
+    input.value = 'zzzz';
+    input.dispatchEvent(new Event('input'));
+    await settled(el);
+    expect(el.querySelectorAll('.tool[data-widget]').length).toBe(0);
+    expect(el.textContent).toContain('Không có component khớp');
   });
 });
 

@@ -6,7 +6,7 @@ import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { WIDGET_CATALOG, type WidgetGroup } from '@mat/project-schema';
 import type { TaskCard } from '../app/workspace.ts';
-import { fold, t, type MessageKey } from '../i18n/index.ts';
+import { fold, hasKey, t, type MessageKey } from '../i18n/index.ts';
 import type { IconName } from '../icons/icons.ts';
 import type { DeviceInfo } from '../model/device.ts';
 import { phaseLabel, type Phase } from '../model/tree.ts';
@@ -68,6 +68,11 @@ export const WIDGET_ICON: Readonly<Record<string, IconName>> = {
   clock: 'timer',
   text: 'text',
   image: 'shape',
+  // feature 037
+  'multi-state': 'list',
+  'stack-light': 'lamp',
+  equipment: 'motor',
+  'time-range': 'timer',
 };
 
 const TOOLBOX: ReadonlyArray<{ group: MessageKey; phase: Phase; tools: readonly Tool[] }> = [
@@ -162,14 +167,33 @@ export class MatTaskcards extends AppElement {
     return this.widgetGroups(hasEditor);
   }
 
+  /** Feature 037: chữ trong ô tìm của Toolbox (lọc theo tên và mô tả, có dấu hay không đều khớp). */
+  private toolQuery = '';
+
+  /** Mô tả ngắn của loại widget (`wdesc.<id>`), rỗng khi chưa có. */
+  private descOf(id: string): string {
+    const k = `wdesc.${id}`;
+    return hasKey(k) ? t(k) : '';
+  }
+
   private widgetGroups(hasEditor: boolean) {
     const groups = this.app.store.state.outline.format06
       ? [...WIDGET_GROUPS, HISTORY_GROUP]
       : WIDGET_GROUPS;
-    return groups.map((group) => {
-      const widgets = WIDGET_CATALOG.widgets.filter((w) => w.group === group);
+    const q = fold(this.toolQuery.trim());
+    let shown = 0;
+    const accs = groups.map((group) => {
+      // Loại đã gộp vào loại khác (danh mục 0.8.0: stat-tile → card) không hiện trong Toolbox.
+      const widgets = WIDGET_CATALOG.widgets.filter(
+        (w) =>
+          w.group === group &&
+          !w.deprecated &&
+          (!q || fold(t(w.label as MessageKey)).includes(q) || fold(this.descOf(w.id)).includes(q)),
+      );
+      if (q && widgets.length === 0) return nothing;
+      shown += widgets.length;
       const key = `widget.group.${group}` as MessageKey;
-      const open = this.openGroups.has(key);
+      const open = this.openGroups.has(key) || q !== '';
       return html`<div class="acc">
         <button
           type="button"
@@ -193,6 +217,19 @@ export class MatTaskcards extends AppElement {
         }
       </div>`;
     });
+    return html`<input
+        type="search"
+        class="input tc-toolsearch"
+        placeholder=${t('tc.toolSearch')}
+        aria-label=${t('tc.toolSearch')}
+        .value=${live(this.toolQuery)}
+        @input=${(e: Event) => {
+          this.toolQuery = (e.target as HTMLInputElement).value;
+          this.requestUpdate();
+        }}
+      />${accs}${
+        q && shown === 0 ? html`<p class="empty-row">${t('tc.toolSearchEmpty')}</p>` : nothing
+      }`;
   }
 
   private widgetTool(id: string, label: MessageKey, hasEditor: boolean) {
@@ -202,7 +239,7 @@ export class MatTaskcards extends AppElement {
       class="tool"
       draggable="true"
       data-widget=${id}
-      title=${t('tc.widgetTip', { name })}
+      title=${[this.descOf(id), t('tc.widgetTip', { name })].filter(Boolean).join('\n')}
       @dragstart=${(e: DragEvent) => {
         if (!e.dataTransfer) return;
         e.dataTransfer.setData('application/x-mat-widget', id);

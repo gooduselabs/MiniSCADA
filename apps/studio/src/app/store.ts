@@ -10,6 +10,7 @@ import {
   migrateTo10,
   migrateTo11,
   stripBom,
+  upgradeLegacyWidgets,
   validateProject,
   type Issue,
   type LoadedProject,
@@ -179,6 +180,23 @@ export type UiContext = Partial<
 
 const SCREEN_FILE = /^screens\/[^/]+\.screen\.json$/;
 
+/**
+ * Feature 037: chuyển item loại widget đã gộp (danh mục 0.8.0, `stat-tile` → `card`) trong mọi màn hình. Không có gì đổi
+ * thì trả đúng `docs` cũ (project không bị đánh dấu đã sửa).
+ */
+export function upgradeLegacyDocs(docs: Record<string, ProjectDoc>): Record<string, ProjectDoc> {
+  let out: Record<string, ProjectDoc> | null = null;
+  for (const [rel, doc] of Object.entries(docs)) {
+    if (!SCREEN_FILE.test(rel) || !doc.editable || !doc.value || typeof doc.value !== 'object')
+      continue;
+    const next = upgradeLegacyWidgets(doc.value as { items?: unknown });
+    if (next === null) continue;
+    out ??= { ...docs };
+    out[rel] = withValue(doc, next);
+  }
+  return out ?? docs;
+}
+
 const EMPTY_OUTLINE: ProjectOutline = outlineOf({});
 
 /** `schemaVersion` mới hơn 0.5.x (FR-005): trả phiên bản đó; không thì `null`. */
@@ -305,10 +323,13 @@ export class StudioStore {
       this.set({});
       return;
     }
-    const outline = outlineOf(filesOf(docs));
+    let outline = outlineOf(filesOf(docs));
     const old = !outline.format11 && outline.project !== null;
+    // Feature 037: loại widget đã gộp (stat-tile → card) tự chuyển khi mở; project chưa lưu cho tới khi người dùng Lưu.
+    const docs2 = old ? docs : upgradeLegacyDocs(docs);
+    if (docs2 !== docs) outline = outlineOf(filesOf(docs2));
     this.s = { ...initialState(), project: { display } };
-    this.set({ docs, outline, pendingUpgrade: old });
+    this.set({ docs: docs2, outline, pendingUpgrade: old });
     void this.runValidate();
     if (old) void this.planUpgrade();
   }
@@ -456,7 +477,7 @@ export class StudioStore {
           ? withValue(cur, JSON.parse(stripBom(text)) as unknown)
           : withPending(cur, text);
     }
-    docs = withEditable(docs);
+    docs = upgradeLegacyDocs(withEditable(docs));
     this.cancelTimer();
     this.set({
       docs,

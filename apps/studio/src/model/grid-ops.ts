@@ -1,6 +1,7 @@
 // Thao tác thuần của trình soạn bố cục lưới (feature 012, T024; FR-016 đến FR-021; contracts/project-format-1.1.md §2).
 // Cùng quy ước với screen-doc.ts: `(doc, ...) → { doc, selection?, rejected? }`, không sửa đầu vào, không có gì đổi hoặc bị
 // từ chối thì trả đúng `doc` cũ. Bên gọi gói kết quả thành MỘT sửa đổi `screenUpsert` (một bước hoàn tác).
+import { presetProps } from './widget-presets.ts';
 import {
   catalogWidget,
   GRID_COLUMNS,
@@ -133,7 +134,13 @@ export function attachWidget(doc: ScreenModel, cellId: string, type: string): Gr
   if (!at) return reject(doc, 'unknown-cell');
   if (l.rows[at.r]!.cells[at.c]!.item !== undefined) return reject(doc, 'cell-occupied');
   const id = nextItemId(type.replace(/-/g, '_'), new Set(doc.items.map((i) => i.id)));
-  const item = { id, type: 'widget', widget: type } as unknown as ScreenModel['items'][number];
+  const props = presetProps(type);
+  const item = {
+    id,
+    type: 'widget',
+    widget: type,
+    ...(props ? { props } : {}),
+  } as unknown as ScreenModel['items'][number];
   const layout = mapRow(l, at.r, (row) => ({
     ...row,
     cells: row.cells.map((c, i) => (i === at.c ? { ...c, item: id } : c)),
@@ -417,9 +424,16 @@ export const ROW_TEMPLATES: Readonly<
     height: 116,
     cells: TILE_LOOK.map((look) => ({
       span: 3,
-      widget: 'stat-tile',
+      // Feature 037: Thẻ giá trị nền đặc (thay Thẻ chỉ số màu đã gộp).
+      widget: 'card',
       name: { prop: 'label', kind: 'tile' },
-      props: { color: look.color, icon: look.icon },
+      props: {
+        fill: 'solid',
+        accent: look.color,
+        icon: look.icon,
+        fontSize: 'l',
+        statusText: true,
+      },
     })),
   },
   charts3: {

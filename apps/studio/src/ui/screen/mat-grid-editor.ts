@@ -932,7 +932,7 @@ export class MatGridEditor extends AppElement {
                             ${ROW_TEMPLATES[id].cells.map(
                               (c, i) =>
                                 html`<i
-                                  class=${c.widget === 'stat-tile' ? `pv-tile pv-tile-${i}` : 'pv-chart'}
+                                  class=${c.name.kind === 'tile' ? `pv-tile pv-tile-${i}` : 'pv-chart'}
                                   style=${`flex:${c.span}`}
                                 ></i>`,
                             )}

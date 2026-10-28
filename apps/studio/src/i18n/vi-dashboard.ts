@@ -2,8 +2,8 @@
 // (`widget.<id>.prop.<tên>`, `widget.<id>.prop.<tên>.<giá trị>`), khe Tag mới, mẫu hàng của trình soạn lưới (`lay.tpl.*`).
 export const viDashboard = {
   // ---- Tên widget ----
-  'widget.stat-tile': 'Thẻ chỉ số màu',
-  'widget.kpi': 'Chỉ số KPI',
+  'widget.stat-tile': 'Thẻ chỉ số màu (cũ, tự đổi thành Thẻ giá trị)',
+  'widget.kpi': 'KPI so với mục tiêu',
   'widget.progress': 'Thanh tiến độ',
   'widget.status-list': 'Danh sách trạng thái',
   'widget.clock': 'Đồng hồ ngày giờ',

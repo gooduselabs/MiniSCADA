@@ -446,6 +446,94 @@ function zonesField(f: FieldModel, env: FieldEnv) {
   </div>`;
 }
 
+/** Màu gợi ý cho trạng thái mới của multi-state (feature 037): xám dừng, xanh chạy, đỏ lỗi, cam, xanh dương… */
+const STATE_DEFAULTS = ['#6f7f88', '#268426', '#c84845', '#a36810', '#2c7ac0', '#8753de'];
+
+/**
+ * Bảng trạng thái của `multi-state` (feature 037): mỗi dòng Giá trị, Chữ, Màu, Nhấp nháy, Xóa; thêm dòng đặt sẵn giá trị kế
+ * tiếp và màu gợi ý để người dùng chỉ việc gõ chữ.
+ */
+function statesField(f: FieldModel, env: FieldEnv) {
+  type St = { value: number; text: string; color: string; blink?: boolean };
+  const list = (Array.isArray(env.value) ? env.value : []) as St[];
+  const max = f.maxItems ?? 16;
+  const set = (next: St[]) => env.commit(next.length ? (next as unknown as PropValue) : undefined);
+  const upd = (i: number, patch: Partial<St>) =>
+    set(list.map((z, k) => (k === i ? { ...z, ...patch } : z)));
+  return html`<div class="pf-zones pf-states">
+    ${list.map(
+      (z, i) =>
+        html`<div class="pf-zone" data-state=${String(i)}>
+          <label class="pf-zl">
+            <span>${t('wfield.value')}</span>
+            <input
+              class="pf-in mono num"
+              inputmode="decimal"
+              aria-label=${`${t('wfield.value')} ${i + 1}`}
+              .value=${String(z.value)}
+              @change=${(e: Event) => {
+                const p = parseNumberText((e.target as HTMLInputElement).value, false);
+                if (p.ok && p.value !== undefined) upd(i, { value: p.value });
+              }}
+            />
+          </label>
+          <input
+            class="pf-in pf-stext"
+            maxlength="32"
+            aria-label=${`${t('wfield.text')} ${i + 1}`}
+            placeholder=${t('wfield.text')}
+            .value=${z.text}
+            @change=${(e: Event) => upd(i, { text: (e.target as HTMLInputElement).value })}
+          />
+          <input
+            type="color"
+            class="pf-zc"
+            title=${t('wfield.color')}
+            aria-label=${`${t('wfield.color')} ${i + 1}`}
+            .value=${/^#[0-9a-fA-F]{6}$/.test(z.color) ? z.color : '#6f7f88'}
+            @input=${(e: Event) => upd(i, { color: (e.target as HTMLInputElement).value })}
+          />
+          <label class="pf-chk" title=${t('wfield.blink')}
+            ><input
+              type="checkbox"
+              aria-label=${`${t('wfield.blink')} ${i + 1}`}
+              .checked=${z.blink === true}
+              @change=${(e: Event) => {
+                const on = (e.target as HTMLInputElement).checked;
+                const next: St = { value: z.value, text: z.text, color: z.color };
+                if (on) next.blink = true;
+                set(list.map((x, k) => (k === i ? next : x)));
+              }}
+          /></label>
+          <button
+            type="button"
+            class="ibtn pf-zx"
+            data-act="state-remove"
+            aria-label=${t('pf.zone.remove', { n: i + 1 })}
+            @click=${() => set(list.filter((_, k) => k !== i))}
+          >
+            ${icon('trash', 'sm')}
+          </button>
+        </div>`,
+    )}
+    <button
+      type="button"
+      class="btn sm pf-zadd"
+      data-act="state-add"
+      ?disabled=${list.length >= max}
+      @click=${() => {
+        const next = list.length ? Math.max(...list.map((z) => z.value)) + 1 : 0;
+        set([
+          ...list,
+          { value: next, text: '', color: STATE_DEFAULTS[list.length % STATE_DEFAULTS.length]! },
+        ]);
+      }}
+    >
+      + ${t('wfield.add')}
+    </button>
+  </div>`;
+}
+
 /** Một dòng thuộc tính: nhãn, ô nhập, gợi ý. `local` giữ lỗi nhập tạm của ô (chưa vào tài liệu). */
 export function renderField(
   f: FieldModel,
@@ -536,7 +624,12 @@ export function renderField(
       break;
     }
     case 'array':
-      control = f.name === 'zones' ? zonesField(f, env) : listField(f, env);
+      control =
+        f.name === 'zones'
+          ? zonesField(f, env)
+          : f.name === 'states'
+            ? statesField(f, env)
+            : listField(f, env);
       break;
     case 'object':
       control =
@@ -574,6 +667,7 @@ export function renderField(
       hint ||
       (f.kind === 'array' &&
         f.name !== 'zones' &&
+        f.name !== 'states' &&
         f.items &&
         (f.items as { kind: string }).kind !== 'enum' &&
         (f.items as { kind: string }).kind !== 'color')

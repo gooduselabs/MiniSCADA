@@ -202,7 +202,7 @@ describe('placeInGrid (nhập SVG vào màn hình lưới)', () => {
 // Feature 014: mẫu hàng có sẵn widget (Thêm hàng → "4 thẻ chỉ số", "3 biểu đồ", "2 biểu đồ + 1", "1 biểu đồ rộng").
 describe('addTemplateRow (feature 014)', () => {
   const name = (kind: string, n: number) => `${kind} ${n}`;
-  it('4 thẻ chỉ số: hàng cao 116, bốn ô 3 cột, mỗi ô một stat-tile màu khác nhau, chọn ô đầu', async () => {
+  it('4 thẻ chỉ số: hàng cao 116, bốn ô 3 cột, mỗi ô một Thẻ giá trị nền đặc màu khác nhau (037), chọn ô đầu', async () => {
     const { addTemplateRow } = await import('./grid-ops.ts');
     const r = addTemplateRow(doc(), 'tiles4', name);
     expect(r.rejected).toBeUndefined();
@@ -210,9 +210,12 @@ describe('addTemplateRow (feature 014)', () => {
     expect(row.height).toBe(116);
     expect(row.cells.map((c) => c.span)).toEqual([3, 3, 3, 3]);
     const items = row.cells.map((c) => r.doc.items.find((i) => i.id === c.item)!);
-    expect(items.map((i) => (i as { widget: string }).widget)).toEqual(Array(4).fill('stat-tile'));
+    expect(items.map((i) => (i as { widget: string }).widget)).toEqual(Array(4).fill('card'));
+    expect(items.every((i) => (i as { props: { fill?: string } }).props.fill === 'solid')).toBe(
+      true,
+    );
     const props = items.map((i) => (i as { props: Record<string, unknown> }).props);
-    expect(new Set(props.map((p) => p.color)).size).toBe(4);
+    expect(new Set(props.map((p) => p.accent)).size).toBe(4);
     expect(props.map((p) => p.label)).toEqual(['tile 1', 'tile 2', 'tile 3', 'tile 4']);
     expect(items.every((i) => !('x' in i) && !('tags' in i))).toBe(true);
     expect(r.selection).toEqual([items[0]!.id]);

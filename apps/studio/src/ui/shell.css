@@ -783,6 +783,12 @@ kbd {
 .tool .ic {
   color: var(--accent);
 }
+/* Feature 037: ô tìm component ở đầu Toolbox */
+.tc-toolsearch {
+  display: block;
+  width: calc(100% - 20px);
+  margin: 8px 10px 6px;
+}
 .tc-sec {
   padding: 10px 10px 4px;
   font-size: var(--fs-xs);
