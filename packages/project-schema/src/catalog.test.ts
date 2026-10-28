@@ -238,7 +238,7 @@ describe('danh mục widget', () => {
     expect(prop('line', 'highLimit').kind).toBe('number');
     expect(prop('line', 'lowLimit').kind).toBe('number');
     expect(prop('panel', 'variant')).toMatchObject({
-      options: ['plain', 'card'],
+      options: ['plain', 'card', 'header'],
       default: 'plain',
     });
   });

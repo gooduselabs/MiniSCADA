@@ -39,6 +39,16 @@ export class MatPanel extends MatWidget {
       .acc .head {
         background: color-mix(in srgb, var(--c) 10%, var(--mat-surface, #fff));
       }
+      /* 037: biến thể tiêu đề đặc màu, chữ trắng */
+      .hdr .head {
+        --c0: var(--c, var(--mat-tile-blue, #2c7ac0));
+        background: linear-gradient(90deg, var(--c0), color-mix(in srgb, var(--c0) 82%, #000));
+        color: #fff;
+        border-bottom-color: transparent;
+      }
+      .hdr.acc {
+        border-top: 0;
+      }
     `,
   ];
 
@@ -52,9 +62,10 @@ export class MatPanel extends MatWidget {
     const accent = this.prop('accent', 'none');
     const acc = accent !== 'none' ? accentCss(accent) : undefined;
     // Feature 014: kiểu "card có header" như khung biểu đồ (thanh tiêu đề, nền khung, bo góc, bóng).
-    if (this.prop('variant', 'plain') === 'card')
+    const variant = this.prop('variant', 'plain');
+    if (variant === 'card' || variant === 'header')
       return html`<div
-        class="w framed card ${this.prop('border', true) ? '' : 'no-border'} ${acc ? 'acc' : ''}"
+        class="w framed card ${variant === 'header' ? 'hdr' : ''} ${this.prop('border', true) ? '' : 'no-border'} ${acc ? 'acc' : ''}"
         role="group"
         aria-label=${title}
         style=${styleMap({ background: bg, '--c': acc })}

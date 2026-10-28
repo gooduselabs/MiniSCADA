@@ -20,7 +20,7 @@ export const WIDGET_PRESETS: Readonly<Record<string, Props>> = {
   },
   lamp: { label: '@preset.lamp', glow: true },
   level: { label: '@preset.level', style: 'tank', wave: true },
-  panel: { title: '@preset.panel', variant: 'card', accent: 'blue' },
+  panel: { title: '@preset.panel', variant: 'header', accent: 'blue' },
   kpi: { label: '@preset.kpi' },
   progress: { label: '@preset.progress' },
   'multi-state': {

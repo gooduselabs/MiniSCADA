@@ -14,6 +14,9 @@ export class MatLamp extends MatWidget {
   static override styles = [
     MatWidget.styles,
     css`
+      :host {
+        container-type: size;
+      }
       .row {
         display: flex;
         align-items: center;
@@ -23,8 +26,9 @@ export class MatLamp extends MatWidget {
       .dot {
         --lc: var(--mat-tile-green, var(--mat-good));
         flex: none;
-        width: 22px;
-        height: 22px;
+        /* 037: to theo chiều cao ô (tối thiểu 22 px, tối đa 56 px) */
+        width: clamp(22px, 70cqh, 56px);
+        height: clamp(22px, 70cqh, 56px);
         border-radius: 50%;
         border: 2px solid var(--mat-border-strong);
         background: var(--mat-surface-2);
@@ -46,10 +50,10 @@ export class MatLamp extends MatWidget {
           0 0 0 3px color-mix(in srgb, var(--lc) 22%, transparent),
           0 0 10px 1px color-mix(in srgb, var(--lc) 60%, transparent);
       }
+      /* 037: đèn tắt là màu của chính nó tối đi (vẫn nhận ra đèn gì), không phải xám nhạt */
       .dot.off {
-        background: var(--mat-offline);
-        border-color: var(--mat-offline);
-        opacity: 0.55;
+        background: color-mix(in srgb, var(--lc) 30%, #3a4247);
+        border-color: color-mix(in srgb, var(--lc) 40%, #2a3034);
       }
       .dot.inactive {
         background: transparent;
@@ -114,7 +118,14 @@ export class MatLamp extends MatWidget {
       <div class="row">
         <span
           class=${classMap(dotClass)}
-          style=${styleMap(on && !inactive ? { '--lc': color } : { background: inactive ? undefined : color })}
+          style=${styleMap(
+            on && !inactive
+              ? { '--lc': color }
+              : {
+                  '--lc': safeColor(this.item.props?.onColor),
+                  background: inactive ? undefined : color,
+                },
+          )}
         ></span>
         <span class="texts ${qv.dim ? 'dim' : ''}">
           ${label ? html`<span class="label ellipsis">${label}</span>` : nothing}

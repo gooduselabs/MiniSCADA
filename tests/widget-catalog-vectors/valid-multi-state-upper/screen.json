@@ -115,7 +115,7 @@
             "blink": true
           }
         ],
-        "fill": "soft",
+        "fill": "plain",
         "icon": "star"
       },
       "tags": {

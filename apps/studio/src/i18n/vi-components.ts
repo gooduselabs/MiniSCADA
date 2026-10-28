@@ -168,4 +168,7 @@ export const viComponents = {
   'wprop.faultText': 'Chữ khi lỗi (trống = Lỗi)',
   'legacy.converted': 'Đã chuyển {n} Thẻ chỉ số màu sang Thẻ giá trị — bấm Lưu để giữ.',
   'legacy.dismiss': 'Ẩn thông báo',
+  'widget.panel.prop.variant.header': 'Tiêu đề đặc màu',
+  'widget.multi-state.prop.fill.outline': 'Viền màu',
+  'widget.multi-state.prop.fill.plain': 'Trơn',
 } as const;

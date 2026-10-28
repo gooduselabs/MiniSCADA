@@ -34,10 +34,16 @@ describe('upgradeLegacyWidgets', () => {
     expect(r.props).toEqual({ fill: 'solid', fontSize: 'l', statusText: false, accent: 'teal' });
   });
   it('màu ngoài bảng (sửa tay) về teal', () => {
-    expect(upgradeLegacyItem({ ...tile, props: { color: '#ff0000' } }).props!['accent']).toBe(
-      'teal',
-    );
-    expect(upgradeLegacyItem({ ...tile, props: { color: 'pink' } }).props!['accent']).toBe('teal');
+    expect(
+      (
+        upgradeLegacyItem({ ...tile, props: { color: '#ff0000' } }).props as Record<string, unknown>
+      )['accent'],
+    ).toBe('teal');
+    expect(
+      (upgradeLegacyItem({ ...tile, props: { color: 'pink' } }).props as Record<string, unknown>)[
+        'accent'
+      ],
+    ).toBe('teal');
   });
   it('không có gì đổi thì trả null; item khác giữ nguyên tham chiếu', () => {
     const card = { id: 'c', type: 'widget', widget: 'card' };

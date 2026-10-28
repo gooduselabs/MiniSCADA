@@ -56,6 +56,22 @@ export class MatMultiState extends MatWidget {
         background: color-mix(in srgb, var(--c) 10%, var(--mat-surface, #fff));
         border-left: 4px solid var(--c);
       }
+      /* 037: cùng bộ kiểu nền với Thẻ giá trị */
+      .outline {
+        border: 2px solid var(--c);
+      }
+      .outline .ico,
+      .plain .ico {
+        color: var(--c);
+      }
+      .outline .state,
+      .plain .state {
+        color: color-mix(in srgb, var(--c) 85%, #000);
+      }
+      .outline .label,
+      .plain .label {
+        color: var(--mat-text-muted);
+      }
       .ico {
         flex: none;
         width: 28px;
@@ -104,7 +120,8 @@ export class MatMultiState extends MatWidget {
           ...(info?.valueTable ? { table: this.source.valueTable(info.valueTable) } : {}),
         });
     const color = good ? safeColor(fmt.color) : undefined;
-    const fill = this.prop('fill', 'solid') === 'soft' ? 'soft' : 'solid';
+    const fp = this.prop('fill', 'solid');
+    const fill = ['soft', 'solid', 'outline', 'plain'].includes(fp) ? fp : 'solid';
     const label = this.prop('label', '');
     const ico = dashIcon(this.item.props?.icon, 'ico');
     const blink = !!hit?.blink && this.mode !== 'edit';

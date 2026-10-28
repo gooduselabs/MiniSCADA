@@ -50,7 +50,7 @@ export class MatLevel extends MatWidget {
       }
       .zone-seg {
         position: absolute;
-        opacity: 0.28;
+        opacity: 0.45;
       }
       .vertical .zone-seg {
         left: 0;
@@ -96,30 +96,30 @@ export class MatLevel extends MatWidget {
         background: repeating-linear-gradient(
           to top,
           transparent 0 calc(25% - 1px),
-          color-mix(in srgb, var(--mat-text-muted, #56646a) 45%, transparent) calc(25% - 1px) 25%
+          color-mix(in srgb, var(--mat-text, #1a2225) 55%, transparent) calc(25% - 2px) 25%
         );
-        mask: linear-gradient(90deg, #000 0 14%, transparent 14%);
+        mask: linear-gradient(90deg, #000 0 22%, transparent 22%);
       }
       .horizontal .ticks {
         background: repeating-linear-gradient(
           to right,
           transparent 0 calc(25% - 1px),
-          color-mix(in srgb, var(--mat-text-muted, #56646a) 45%, transparent) calc(25% - 1px) 25%
+          color-mix(in srgb, var(--mat-text, #1a2225) 55%, transparent) calc(25% - 2px) 25%
         );
         mask: linear-gradient(180deg, #000 0 22%, transparent 22%);
       }
       .wave {
         position: absolute;
         left: 0;
-        top: -5px;
+        top: -7px;
         width: 200%;
-        height: 6px;
+        height: 8px;
         background: radial-gradient(
-            ellipse 10px 5px at 10px 6px,
-            var(--lq, var(--mat-tile-blue)) 98%,
+            ellipse 12px 7px at 12px 8px,
+            color-mix(in srgb, var(--lq, var(--mat-tile-blue)) 75%, #fff) 98%,
             transparent 100%
           )
-          0 0 / 20px 6px repeat-x;
+          0 0 / 24px 8px repeat-x;
         animation: mat-wave 2.4s linear infinite;
       }
       @keyframes mat-wave {
@@ -247,11 +247,16 @@ export class MatLevel extends MatWidget {
           this.prop('showValue', true)
             ? html`<div class="readout ${qv.dim ? 'dim' : ''}">
                 <span class="percent">${known ? `${pct}%` : fmt.text}</span>
-                <span>
-                  <span class="value">${fmt.text}</span>${
-                    fmt.unit ? html`<span class="unit">${fmt.unit}</span>` : nothing
-                  }
-                </span>
+                ${
+                  // 037: giá trị đã là phần trăm (đơn vị %) thì không lặp "62% 62.0 %".
+                  known && fmt.unit === '%' && min === 0 && max === 100
+                    ? nothing
+                    : html`<span>
+                        <span class="value">${fmt.text}</span>${
+                          fmt.unit ? html`<span class="unit">${fmt.unit}</span>` : nothing
+                        }
+                      </span>`
+                }
               </div>`
             : nothing
         }

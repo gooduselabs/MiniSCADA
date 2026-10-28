@@ -76,7 +76,7 @@ export class MatStackLight extends MatWidget {
         min-height: 10px;
         min-width: 10px;
         border-radius: 5px;
-        background: color-mix(in srgb, var(--k) 28%, #20262a);
+        background: color-mix(in srgb, var(--k) 38%, #2a3034);
         box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.35);
       }
       .seg.on {

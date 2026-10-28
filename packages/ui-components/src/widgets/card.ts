@@ -257,6 +257,16 @@ export class MatCard extends MatWidget {
         stroke-linejoin: round;
         stroke-linecap: round;
       }
+      /* 037: chưa đủ dữ liệu: đường chờ nét đứt */
+      .spark .wait {
+        stroke: var(--c);
+        stroke-width: 1.5;
+        stroke-dasharray: 4 4;
+        opacity: 0.5;
+      }
+      .fill-solid .spark .wait {
+        stroke: currentColor;
+      }
       .fill-solid .spark polyline {
         stroke: currentColor;
       }
@@ -403,9 +413,13 @@ export class MatCard extends MatWidget {
         preserveAspectRatio="none"
         aria-hidden="true"
       >
-        ${segs!.map(
-          (s) => svg`<polyline points=${s} vector-effect="non-scaling-stroke"></polyline>`,
-        )}
+        ${
+          segs!.length
+            ? segs!.map(
+                (s) => svg`<polyline points=${s} vector-effect="non-scaling-stroke"></polyline>`,
+              )
+            : svg`<line class="wait" x1="0" y1="${SH / 2}" x2="${SW}" y2="${SH / 2}" vector-effect="non-scaling-stroke"></line>`
+        }
       </svg>`;
     return html`<div
       class="w fill-${fill} fs-${fs} lv-${lv} ${qv.cls} ${ico ? 'has-ico' : ''}"
@@ -417,7 +431,7 @@ export class MatCard extends MatWidget {
         '--c': lv === 'ok' ? accentCss(p?.accent, p?.accentColor) : undefined,
       })}
     >
-      ${ico ?? nothing} ${segs && segs.length && fill === 'solid' ? spark('bg') : nothing}
+      ${ico ?? nothing} ${segs && fill === 'solid' ? spark('bg') : nothing}
       ${label ? html`<div class="label ellipsis">${label}</div>` : nothing}
       <div class="main">
         <span

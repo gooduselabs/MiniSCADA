@@ -20,7 +20,7 @@
         "showTitle": true,
         "background": "#FFFFFF",
         "border": true,
-        "variant": "card",
+        "variant": "header",
         "accent": "slate"
       }
     }
