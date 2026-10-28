@@ -89,8 +89,7 @@ export default async function gridEditor({ page, check, shot, axe }) {
   await sleep(600);
   const tiles = await page.$eval(
     'mat-grid-editor mat-screen',
-    (s) =>
-      [...s.shadowRoot.querySelectorAll('.row')].at(-1).querySelectorAll('mat-w-card').length,
+    (s) => [...s.shadowRoot.querySelectorAll('.row')].at(-1).querySelectorAll('mat-w-card').length,
   );
   check('mẫu "4 thẻ chỉ số": hàng mới có bốn thẻ chỉ số', tiles === 4, String(tiles));
   await shot('5-the-chi-so');
