@@ -1785,8 +1785,13 @@ export class StudioApp {
 
   /** Kéo thanh đổi cỡ; `dims` là chiều cao đo được để kẹp (0 = chưa đo). */
   setLayout(
-    patch: Partial<Pick<Workspace, 'leftWidth' | 'detailsHeight' | 'inspectorHeight'>>,
-    dims = { leftColumnHeight: 0, centerHeight: 0 },
+    patch: Partial<
+      Pick<Workspace, 'leftWidth' | 'detailsHeight' | 'inspectorHeight' | 'inspectorWidth'>
+    >,
+    dims: { leftColumnHeight: number; centerHeight: number; centerWidth?: number } = {
+      leftColumnHeight: 0,
+      centerHeight: 0,
+    },
   ): void {
     // đổi chiều cao khung dưới (kéo thanh chia) thì mở lại khung nếu đang gập
     const open = patch.inspectorHeight !== undefined ? { inspectorCollapsed: false } : {};

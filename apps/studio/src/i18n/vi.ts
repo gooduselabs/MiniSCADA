@@ -219,6 +219,7 @@ const viCore = {
   'shell.resize.left': 'Đổi độ rộng cây project',
   'shell.resize.details': 'Đổi chiều cao vùng Details',
   'shell.resize.inspector': 'Đổi chiều cao inspector',
+  'shell.resize.side': 'Đổi độ rộng khung Thuộc tính',
   'shell.onlineChip': 'Đang theo dõi {name}',
   'shell.lostChip': 'Mất kết nối {name}',
   'shell.title': 'mAT Studio',

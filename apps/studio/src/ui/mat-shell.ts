@@ -51,9 +51,10 @@ import './mat-taskcards.ts';
 import './mat-toast.ts';
 import './mat-toolbar.ts';
 import './mat-tree.ts';
-import { renderEditor } from './registry.ts';
+import { renderDock, renderEditor } from './registry.ts';
 
-type Split = 'left' | 'details' | 'inspector';
+/** `inspector`: khung dưới (editor có dock riêng, vd. Logic); `side`: khung Thuộc tính dọc bên phải. */
+type Split = 'left' | 'details' | 'inspector' | 'side';
 
 /** Thứ tự vòng của F6 (contracts/commands.md). */
 const REGIONS = ['tree', 'details', 'editor', 'inspector', 'taskcards', 'statusbar'] as const;
@@ -140,8 +141,10 @@ export class MatShell extends AppElement {
     const dims = {
       leftColumnHeight: left?.getBoundingClientRect().height ?? 0,
       centerHeight: center?.getBoundingClientRect().height ?? 0,
+      centerWidth: center?.getBoundingClientRect().width ?? 0,
     };
     if (split === 'left') this.app.setLayout({ leftWidth: value }, dims);
+    else if (split === 'side') this.app.setLayout({ inspectorWidth: value }, dims);
     else if (split === 'details') this.app.setLayout({ detailsHeight: value }, dims);
     else this.app.setLayout({ inspectorHeight: value }, dims);
   }
@@ -150,6 +153,10 @@ export class MatShell extends AppElement {
     if (split === 'left') {
       const r = this.querySelector('.main')?.getBoundingClientRect();
       return Math.round(e.clientX - (r?.left ?? 0));
+    }
+    if (split === 'side') {
+      const r = this.querySelector('.center')?.getBoundingClientRect();
+      return Math.round((r?.right ?? 0) - e.clientX);
     }
     const box = this.querySelector(
       split === 'details' ? '.left' : '.center',
@@ -161,9 +168,11 @@ export class MatShell extends AppElement {
     const ws = this.app.workspace;
     return split === 'left'
       ? ws.leftWidth
-      : split === 'details'
-        ? ws.detailsHeight
-        : ws.inspectorHeight;
+      : split === 'side'
+        ? ws.inspectorWidth
+        : split === 'details'
+          ? ws.detailsHeight
+          : ws.inspectorHeight;
   }
 
   private onSplitDown(split: Split, e: MouseEvent): void {
@@ -186,22 +195,32 @@ export class MatShell extends AppElement {
   }
 
   private onSplitKey(split: Split, e: KeyboardEvent): void {
-    const grow = split === 'left' ? 'ArrowRight' : 'ArrowUp';
-    const shrink = split === 'left' ? 'ArrowLeft' : 'ArrowDown';
+    // khung Thuộc tính bên phải: kéo sang trái (ArrowLeft) là rộng ra
+    const grow = split === 'left' ? 'ArrowRight' : split === 'side' ? 'ArrowLeft' : 'ArrowUp';
+    const shrink = split === 'left' ? 'ArrowLeft' : split === 'side' ? 'ArrowRight' : 'ArrowDown';
     if (e.key !== grow && e.key !== shrink) return;
     e.preventDefault();
     this.resize(split, this.current(split) + (e.key === grow ? STEP : -STEP));
   }
 
   private splitter(split: Split) {
-    const vertical = split === 'left';
-    const [min, max] = vertical ? [180, 480] : split === 'details' ? [70, 2000] : [90, 2000];
+    const vertical = split === 'left' || split === 'side';
+    const [min, max] =
+      split === 'left'
+        ? [180, 480]
+        : split === 'side'
+          ? [280, 720]
+          : split === 'details'
+            ? [70, 2000]
+            : [90, 2000];
     const label =
       split === 'left'
         ? t('shell.resize.left')
-        : split === 'details'
-          ? t('shell.resize.details')
-          : t('shell.resize.inspector');
+        : split === 'side'
+          ? t('shell.resize.side')
+          : split === 'details'
+            ? t('shell.resize.details')
+            : t('shell.resize.inspector');
     return html`<div
       class=${vertical ? 'split-v' : 'split-h'}
       data-split=${split}
@@ -346,7 +365,12 @@ export class MatShell extends AppElement {
       '--insp-h': ws.inspectorCollapsed
         ? 'var(--insp-collapsed-h, 32px)'
         : `${ws.inspectorHeight}px`,
+      '--insp-w': `${ws.inspectorWidth}px`,
     };
+    // Editor canvas (màn hình SVG, màn hình lưới, mẫu): khung Thuộc tính dọc bên phải canvas (kiểu TIA
+    // Portal/Visual Studio), canvas cao hết vùng giữa. Editor dạng bảng (Tag, ghi dữ liệu...) cần bề
+    // ngang nên giữ khung dưới; Logic có khung dưới riêng (renderDock).
+    const side = isCanvasEditor(active) && !(app.store.state.project && renderDock(app) !== null);
     const online = app.online();
     const simulating = app.simulating() && !online;
     const classes = [
@@ -386,7 +410,7 @@ export class MatShell extends AppElement {
             ${this.splitter('details')} ${this.detailsPane(app)}
           </aside>
           ${this.splitter('left')}
-          <section class="center">
+          <section class="center ${side ? 'side' : ''}">
             <mat-tabs class="tabbar" .app=${app}></mat-tabs>
             <div
               class="editor"
@@ -398,7 +422,7 @@ export class MatShell extends AppElement {
             >
               ${renderEditor(app, active)}
             </div>
-            ${this.splitter('inspector')}
+            ${this.splitter(side ? 'side' : 'inspector')}
             <mat-inspector class="inspector" data-region="inspector" .app=${app}></mat-inspector>
           </section>
           <mat-taskcards
@@ -446,6 +470,11 @@ export class MatShell extends AppElement {
       <mat-admin-dialog .app=${app}></mat-admin-dialog>
       <mat-toast .app=${app}></mat-toast>`;
   }
+}
+
+/** Editor vẽ trên canvas: khung Thuộc tính đặt dọc bên phải. */
+export function isCanvasEditor(id: string): boolean {
+  return id.startsWith('screen:') || id.startsWith('template:');
 }
 
 customElements.define('mat-shell', MatShell);

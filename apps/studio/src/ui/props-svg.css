@@ -667,3 +667,75 @@ mat-test-strip .ts-unit {
   color: var(--muted);
   font-size: var(--fs-xs);
 }
+
+/* Khung Thuộc tính dọc bên phải (cột hẹp ~280–720 px): mỗi dòng gắn Tag xếp hai tầng —
+   tên + mô tả ở trên (nút xoá góc phải), ô Tag + ô chọn cách đổi bên dưới, giá trị tầng cuối. */
+mat-svg-bind .brow {
+  grid-template-columns: 16px minmax(0, 1fr) minmax(0, 1fr) 22px 18px;
+  grid-auto-rows: auto;
+  row-gap: 4px;
+  column-gap: 6px;
+  align-items: center;
+  padding: 6px 8px 6px 6px;
+}
+mat-svg-bind .brow > .tw {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  margin-top: 2px;
+}
+mat-svg-bind .brow > .nm {
+  grid-column: 2 / 4;
+  grid-row: 1;
+}
+mat-svg-bind .brow > .rm {
+  grid-column: 4;
+  grid-row: 1;
+  align-self: start;
+}
+mat-svg-bind .brow > .ind {
+  grid-column: 5;
+  grid-row: 1;
+  align-self: start;
+}
+mat-svg-bind .brow > .tagbtn {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+}
+mat-svg-bind .brow > .xf {
+  grid-column: 3 / 6;
+  grid-row: 2;
+  min-width: 0;
+}
+mat-svg-bind .brow > .val {
+  grid-column: 2 / 6;
+  grid-row: 3;
+}
+mat-svg-bind .brow > .val:empty {
+  display: none;
+}
+mat-svg-bind .brow > .reason {
+  grid-column: 2 / 6;
+  grid-row: 2;
+}
+mat-svg-bind .brow .nm small {
+  white-space: normal;
+}
+mat-svg-bind .svb-tools {
+  flex-wrap: wrap;
+}
+mat-test-strip .teststrip {
+  gap: 6px 8px;
+  padding: 6px 8px;
+}
+mat-test-strip .ts-tag {
+  max-width: none;
+  flex: 1;
+  min-width: 0;
+}
+mat-test-strip .ts-range {
+  flex: 1 1 100%;
+  min-width: 0;
+  order: 10;
+}

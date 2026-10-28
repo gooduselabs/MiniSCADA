@@ -459,6 +459,36 @@ kbd {
   cursor: grab;
 }
 
+/* Khung Thuộc tính dọc bên phải editor (kiểu TIA Portal/Visual Studio): editor cao hết vùng giữa */
+.center.side {
+  grid-template-rows: 32px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 4px var(--insp-w);
+}
+.center.side > .tabbar {
+  grid-column: 1;
+  grid-row: 1;
+}
+.center.side > .editor {
+  grid-column: 1;
+  grid-row: 2;
+}
+.center.side > .split-v {
+  grid-column: 2;
+  grid-row: 1 / -1;
+}
+.center.side > .inspector {
+  grid-column: 3;
+  grid-row: 1 / -1;
+  border-top: 0;
+  border-left: 1px solid var(--border);
+}
+.center.side .insp-tabs {
+  height: 32px;
+}
+.center.side .insp-tabs [role='tab'] {
+  padding: 0 9px;
+}
+
 /* Vùng giữa: tab, editor, inspector */
 .center {
   display: grid;

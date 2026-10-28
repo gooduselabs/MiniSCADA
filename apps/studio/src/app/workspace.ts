@@ -11,6 +11,8 @@ export interface Workspace {
   inspectorHeight: number;
   /** Feature 015: khung dưới gập (chỉ còn dải tab); `inspectorHeight` giữ chiều cao để mở lại. */
   inspectorCollapsed: boolean;
+  /** Độ rộng khung Thuộc tính khi đặt dọc bên phải editor (editor không có khung dưới riêng). */
+  inspectorWidth: number;
   taskCard: TaskCard;
   taskCardOpen: boolean;
   theme: Theme;
@@ -39,6 +41,7 @@ export function defaultWorkspace(windowWidth: number): Workspace {
     detailsHeight: 196,
     inspectorHeight: 218,
     inspectorCollapsed: false,
+    inspectorWidth: 400,
     taskCard: 'toolbox',
     taskCardOpen: windowWidth >= TASK_CARD_MIN_WINDOW,
     theme: 'system',
@@ -72,6 +75,7 @@ export function loadWorkspace(storage: StorageLike | null, windowWidth: number):
   if (isNum(raw.leftWidth)) ws.leftWidth = raw.leftWidth;
   if (isNum(raw.detailsHeight)) ws.detailsHeight = raw.detailsHeight;
   if (isNum(raw.inspectorHeight)) ws.inspectorHeight = raw.inspectorHeight;
+  if (isNum(raw.inspectorWidth)) ws.inspectorWidth = raw.inspectorWidth;
   if (typeof raw.inspectorCollapsed === 'boolean') ws.inspectorCollapsed = raw.inspectorCollapsed;
   if (TASK_CARDS.includes(raw.taskCard as TaskCard)) ws.taskCard = raw.taskCard as TaskCard;
   if (typeof raw.taskCardOpen === 'boolean') ws.taskCardOpen = raw.taskCardOpen;
@@ -99,8 +103,10 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), M
  */
 export function clampLayout(
   ws: Workspace,
-  dims: { leftColumnHeight: number; centerHeight: number },
+  dims: { leftColumnHeight: number; centerHeight: number; centerWidth?: number },
 ): Workspace {
+  // khung Thuộc tính dọc: 280–720 px, chừa ít nhất 320 px cho editor
+  const widthMax = dims.centerWidth && dims.centerWidth > 0 ? dims.centerWidth - 320 : 720;
   const detailsMax = dims.leftColumnHeight > 0 ? dims.leftColumnHeight - 120 : Infinity;
   const inspectorMax = dims.centerHeight > 0 ? dims.centerHeight - 150 : Infinity;
   return {
@@ -108,6 +114,7 @@ export function clampLayout(
     leftWidth: clamp(ws.leftWidth, 180, 480),
     detailsHeight: clamp(ws.detailsHeight, 70, detailsMax),
     inspectorHeight: clamp(ws.inspectorHeight, 90, inspectorMax),
+    inspectorWidth: clamp(ws.inspectorWidth, 280, Math.min(720, widthMax)),
   };
 }
 

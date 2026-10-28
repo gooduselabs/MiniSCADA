@@ -55,12 +55,34 @@ describe('mat-shell', () => {
     expect(split.getAttribute('aria-valuenow')).toBe('464');
   });
 
-  it('kéo thanh ngang của inspector đổi chiều cao inspector', async () => {
+  it('kéo thanh ngang của inspector đổi chiều cao inspector (editor dạng bảng)', async () => {
     const { app } = await newApp();
     const el = await mount<MatShell>('mat-shell', app);
     const split = el.querySelector<HTMLElement>('[data-split="inspector"]')!;
     press(split, 'ArrowUp');
     expect(app.workspace.inspectorHeight).toBe(218 + 16);
+  });
+
+  it('editor canvas: khung Thuộc tính nằm dọc bên phải: kéo thanh dọc đổi độ rộng (kẹp 280–720), mũi tên trái rộng ra', async () => {
+    const { app } = await newApp();
+    const el = await mount<MatShell>('mat-shell', app);
+    await settled(el);
+    expect(el.querySelector('.center')?.classList.contains('side')).toBe(false);
+    app.openEditor('screen:main');
+    await settled(el);
+    expect(el.querySelector('.center')?.classList.contains('side')).toBe(true);
+    expect(el.querySelector('[data-split="inspector"]')).toBeNull();
+    const split = el.querySelector<HTMLElement>('[data-split="side"]')!;
+    press(split, 'ArrowLeft');
+    expect(app.workspace.inspectorWidth).toBe(400 + 16);
+    press(split, 'ArrowRight');
+    expect(app.workspace.inspectorWidth).toBe(400);
+    app.setLayout({ inspectorWidth: 5000 });
+    expect(app.workspace.inspectorWidth).toBe(720);
+    app.setLayout({ inspectorWidth: 10 });
+    expect(app.workspace.inspectorWidth).toBe(280);
+    await settled(el);
+    expect(el.querySelector<HTMLElement>('.win')?.style.getPropertyValue('--insp-w')).toBe('280px');
   });
 
   it('F6 / Shift+F6 chuyển focus qua các vùng theo vòng', async () => {
