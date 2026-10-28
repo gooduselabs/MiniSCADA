@@ -89,12 +89,27 @@ export interface NavigationItem {
   screen?: string;
   /** Định dạng 0.6 (feature 010): mục mở trang báo cáo. */
   report?: string;
+  /** Định dạng 1.1 (feature 030): mục mở trang hệ thống; đúng một trong `screen`, `report`, `system`, `items`. */
+  system?: SystemPageId;
   icon?: string;
   items?: NavigationItem[];
 }
+/** Feature 030: trang hệ thống của trang vận hành mà menu trỏ tới được. */
+export type SystemPageId = 'alarms' | 'alarm-history' | 'history' | 'recipes' | 'admin';
+export const SYSTEM_PAGE_IDS: readonly SystemPageId[] = [
+  'alarms',
+  'alarm-history',
+  'history',
+  'recipes',
+  'admin',
+];
 export interface Navigation {
   position?: 'left' | 'top' | 'hidden';
   items: NavigationItem[];
+  /** Định dạng 0.5 (feature 009), lỗi thời từ feature 030: vẫn đọc được, bị bỏ qua (mục alarm do `items` khai báo). */
+  alarms?: boolean;
+  /** Định dạng 1.1 (feature 030): chuông cảnh báo và toast trên thanh trên cùng; thiếu = true. */
+  alarmBell?: boolean;
 }
 export type Project03 = Project & { navigation?: Navigation };
 

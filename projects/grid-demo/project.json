@@ -30,7 +30,8 @@
       {"label":"Tổng quan","screen":"tong-quan","icon":"home"},
       {"label":"Bồn nước","screen":"bon-nuoc","icon":"tank"},
       {"label":"Giám sát","screen":"giam-sat","icon":"chart"},
-      {"label":"Bơm","screen":"bom","icon":"pump"}
+      {"label":"Bơm","screen":"bom","icon":"pump"},
+      {"label":"Quản trị","system":"admin","icon":"gear"}
     ]
   },
   "maxClients": 10,

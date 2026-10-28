@@ -1,0 +1,60 @@
+{
+  "format": "matscada-project",
+  "schemaVersion": "1.1.0",
+  "projectId": "vector11",
+  "projectName": "Vector 1.1",
+  "projectVersion": "0.1.0",
+  "minRuntimeVersion": "1.1.0",
+  "entryScreen": "main",
+  "screens": [
+    "main",
+    "pump",
+    "bom-chi-tiet",
+    "tong-quan"
+  ],
+  "tagFile": "tags.json",
+  "connectionFile": "connections.json",
+  "valueTables": [
+    "TrangThaiBom"
+  ],
+  "watchTables": [
+    "van-hanh"
+  ],
+  "navigation": {
+    "position": "left",
+    "items": [
+      {
+        "label": "Main",
+        "screen": "main",
+        "icon": "home"
+      },
+      {
+        "label": "Cảnh báo",
+        "system": "alarms"
+      },
+      {
+        "label": "Hệ thống",
+        "items": [
+          {
+            "label": "Lịch sử alarm",
+            "system": "alarm-history"
+          },
+          {
+            "label": "Lịch sử",
+            "system": "history"
+          },
+          {
+            "label": "Công thức",
+            "system": "recipes"
+          }
+        ]
+      }
+    ]
+  },
+  "maxClients": 10,
+  "logic": "logic.json",
+  "templates": [
+    "templates/bom.template.json"
+  ],
+  "theme": "vivid"
+}

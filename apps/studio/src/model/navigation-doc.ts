@@ -1,6 +1,12 @@
 // Thao tác bất biến trên `navigation` của project.json (feature 007, T107; FR-066; research R4).
 // Đường dẫn nút: `[i]` ở gốc, `[g, j]` cho mục `j` của nhóm `g`. Nhóm chỉ một cấp, ≤ 32 lá.
-import type { Navigation, NavigationItem, ScreenKind } from '@mat/project-schema';
+import {
+  SYSTEM_PAGE_IDS,
+  type Navigation,
+  type NavigationItem,
+  type ScreenKind,
+  type SystemPageId,
+} from '@mat/project-schema';
 
 export const NAV_ICONS = [
   'home',
@@ -35,7 +41,10 @@ export type NavRejection =
   | 'not-a-group'
   | 'is-group'
   /** Mục báo cáo (feature 010): mẫu không có trong reports.json. */
-  | 'bad-report';
+  | 'bad-report'
+  /** Feature 030: trang hệ thống lạ, hoặc đã có trong menu. */
+  | 'bad-system'
+  | 'dup-system';
 export interface NavResult {
   nav: Navigation;
   rejected?: NavRejection;
@@ -152,6 +161,66 @@ export function addReportLeaf(
   return { nav: next };
 }
 
+/** Feature 030: biểu tượng mặc định của mỗi trang hệ thống (trùng trang vận hành, apps/runtime-web/src/menu.ts). */
+export const SYSTEM_PAGE_ICON: Readonly<Record<SystemPageId, (typeof NAV_ICONS)[number]>> = {
+  alarms: 'bell',
+  'alarm-history': 'list',
+  history: 'chart',
+  recipes: 'list',
+  admin: 'gear',
+};
+
+/** Feature 030: tệp project cần có để trang hệ thống dùng được (luật W_NAV_SYSTEM; Quản trị luôn có). */
+export const SYSTEM_PAGE_NEEDS: Readonly<
+  Record<SystemPageId, 'alarmFile' | 'loggingFile' | 'recipesFile' | null>
+> = {
+  alarms: 'alarmFile',
+  'alarm-history': 'alarmFile',
+  history: 'loggingFile',
+  recipes: 'recipesFile',
+  admin: null,
+};
+
+export const isSystemPage = (v: unknown): v is SystemPageId =>
+  typeof v === 'string' && (SYSTEM_PAGE_IDS as readonly string[]).includes(v);
+
+export function usesSystem(nav: Navigation, id: SystemPageId): boolean {
+  return nav.items.some((it) => it.system === id || (it.items ?? []).some((c) => c.system === id));
+}
+
+/**
+ * Feature 030: thêm lá trang hệ thống (`system`, không `screen`/`report`). Mỗi trang một lần trong menu; định dạng 1.1
+ * trở lên (editor chặn ở project cũ).
+ */
+export function addSystemLeaf(
+  nav: Navigation,
+  leaf: { label: string; system: SystemPageId; icon?: string },
+  at: { parent?: NavPath; index?: number } = {},
+): NavResult {
+  if (!labelOk(leaf.label)) return reject(nav, 'bad-label');
+  if (!isSystemPage(leaf.system)) return reject(nav, 'bad-system');
+  if (usesSystem(nav, leaf.system)) return reject(nav, 'dup-system');
+  if (leaf.icon !== undefined && !iconOk(leaf.icon)) return reject(nav, 'bad-icon');
+  const next = clone(nav);
+  const dest = listAt(next, at.parent ?? []);
+  if (typeof dest === 'string') return reject(nav, dest);
+  if (countLeaves(nav) >= NAV_MAX_LEAVES) return reject(nav, 'max-leaves');
+  const node: NavigationItem = { label: leaf.label, system: leaf.system };
+  if (leaf.icon !== undefined) node.icon = leaf.icon;
+  const idx = Math.min(dest.list.length, Math.max(0, at.index ?? dest.list.length));
+  dest.list.splice(idx, 0, node);
+  return { nav: next };
+}
+
+/** Feature 030: chuông cảnh báo của thanh trên cùng. Bật là mặc định nên bỏ khóa (project vẫn hợp lệ ở 1.0). */
+export function setAlarmBell(nav: Navigation, on: boolean): NavResult {
+  if (on ? nav.alarmBell === undefined : nav.alarmBell === false) return { nav };
+  const next = clone(nav);
+  if (on) delete next.alarmBell;
+  else next.alarmBell = false;
+  return { nav: next };
+}
+
 /** Đặt mẫu báo cáo cho lá (bỏ `screen`): lá màn hình thành lá báo cáo. */
 export function setReportAt(
   nav: Navigation,
@@ -166,6 +235,7 @@ export function setReportAt(
   if (!reportIds.includes(report)) return reject(nav, 'bad-report');
   if (at.node.report === report && at.node.screen === undefined) return { nav };
   delete at.node.screen;
+  delete at.node.system;
   at.node.report = report;
   return { nav: next };
 }
@@ -257,6 +327,7 @@ export function setScreenAt(
   if (at.node.screen === screen && at.node.report === undefined) return { nav };
   at.node.screen = screen;
   delete at.node.report; // đổi lá báo cáo thành lá màn hình (feature 010)
+  delete at.node.system;
   return { nav: next };
 }
 

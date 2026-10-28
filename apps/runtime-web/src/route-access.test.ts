@@ -91,14 +91,19 @@ describe('buildMenu: quyền (013)', () => {
   it('canView bỏ mục và nhóm rỗng', () => {
     const m = buildMenu(nav, [scr('a'), scr('b'), scr('c')], { canView: (id) => id !== 'b' })!;
     expect(JSON.stringify(m.entries)).not.toContain('"b"');
-    const m2 = buildMenu(nav, [scr('a'), scr('b'), scr('c')], {
+    const withAdmin = {
+      ...nav,
+      items: [...nav.items, { label: 'Quản trị', system: 'admin' as const }],
+    };
+    const m2 = buildMenu(withAdmin, [scr('a'), scr('b'), scr('c')], {
       canView: (id) => id === 'a',
       admin: true,
     })!;
     expect(m2.entries.map((e) => e.label)).toEqual(['A', 'Quản trị']);
   });
-  it('admin: mục Quản trị cuối menu, kể cả khi chỉ có một màn hình', () => {
-    const m = buildMenu(null, [scr('a')], { admin: true })!;
+  it('admin: mục Quản trị chỉ khi navigation khai báo (1.1); project cũ tự thêm cuối menu', () => {
+    expect(buildMenu(null, [scr('a')], { admin: true })).toBeNull();
+    const m = buildMenu(null, [scr('a')], { admin: true, legacySystem: true })!;
     expect(m.entries.at(-1)).toMatchObject({
       screen: '@quan-tri',
       label: 'Quản trị',

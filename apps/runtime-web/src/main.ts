@@ -19,7 +19,7 @@ import { viHist } from './i18n/vi-history.ts';
 import { viRecipe } from './i18n/vi-recipe.ts';
 import { LiveTagSource } from './live-source.ts';
 import { LoginDialog } from './login-dialog.ts';
-import { buildMenu, type AlarmMenuOptions } from './menu.ts';
+import { buildMenu, legacySystemMenu, type AlarmMenuOptions } from './menu.ts';
 import { loginUrl } from './next.ts';
 import type { PasswordDialog } from './password-dialog.ts';
 import { PopupHost } from './popup-host.ts';
@@ -391,6 +391,8 @@ async function main(): Promise<void> {
   let reportList: { id: string; name: string }[] = [];
   // Feature 013: quyền hiệu lực của phiên (null = không giới hạn ở trang: runtime cũ, HTTP, chưa tải).
   let access = new AccessView(null);
+  // Feature 030: từ 1.1 menu chỉ theo navigation; project cũ (không khai báo được mục `system`) giữ cách tự thêm.
+  const legacyMenu = legacySystemMenu(summary.schemaVersion);
   const rebuildMenu = () =>
     shell.setMenu(
       buildMenu(summary.navigation, summary.screens, {
@@ -401,6 +403,7 @@ async function main(): Promise<void> {
         canView: (id) => access.canView(id),
         admin: access.admin,
         recipes: https && !!summary.recipesFile && session.info !== null,
+        legacySystem: legacyMenu,
       }),
       currentId,
     );
@@ -412,6 +415,7 @@ async function main(): Promise<void> {
     pageHost: shell.screenHost,
     bellHost: $('app-alarm-slot'),
     navHost: $('app-nav'),
+    bell: summary.navigation?.alarmBell !== false,
     onMenuMode: (m) => {
       alarmMenu = m;
       rebuildMenu();

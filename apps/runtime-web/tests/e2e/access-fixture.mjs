@@ -56,7 +56,12 @@ export function accessDemo() {
   };
   a.navigation = {
     ...a.navigation,
-    items: [...a.navigation.items, { label: 'Chi phí điện', screen: 'chi-phi', icon: 'bolt' }],
+    items: [
+      ...a.navigation.items,
+      { label: 'Chi phí điện', screen: 'chi-phi', icon: 'bolt' },
+      // feature 030: menu chỉ theo navigation; mục Quản trị khai báo rõ
+      { label: 'Quản trị', system: 'admin', icon: 'gear' },
+    ],
   };
   a.project.navigation = a.navigation;
   a.digest = 'sha256:e2e-access';

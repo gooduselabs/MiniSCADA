@@ -232,6 +232,16 @@ describe('AlarmBell (DOM)', () => {
     expect(b.panel.querySelector('img')).toBeNull();
     expect(text(b.panel)).toContain('<img src=x onerror=1>');
   });
+  it('navigation.alarmBell = false (feature 030): chuông và toast luôn ẩn', () => {
+    const s = src([inst({ id: 'old', priority: 'critical', class: 'critical' })]);
+    const { b } = make(s, operator(), { enabled: false });
+    expect(b.el.hidden).toBe(true);
+    s.upsert(inst({ id: 'n', priority: 'critical', class: 'critical', text: 'Áp suất rất cao' }));
+    s.flush();
+    b.refresh();
+    expect(b.el.hidden).toBe(true);
+    expect(b.toast.hidden).toBe(true);
+  });
   it('alarm khẩn cấp MỚI: chuông rung và toast; alarm có sẵn lúc đầu thì không; bấm toast mở bảng', () => {
     const s = src([inst({ id: 'old', priority: 'critical', class: 'critical' })]);
     const { b } = make(s);

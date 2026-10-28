@@ -12,7 +12,7 @@ Dành cho người vận hành dùng trang mAT SCADA trên Chrome hằng ngày. 
    - `http://<địa chỉ thiết bị>:8080/` chỉ để **xem**, và chỉ khi thiết bị không bắt buộc đăng nhập (mục 2).
 3. Lần đầu Chrome có thể báo chứng chỉ chưa tin cậy. Không tự bấm "tiếp tục". Gọi quản trị viên để cài chứng chỉ cho máy này.
 
-Trang mở ở màn hình đầu. Menu bên trái (hoặc trên) chứa các màn hình. Cửa sổ hẹp thì bấm nút menu ("Mở menu"). Đầu trang hiện "project · màn hình".
+Trang mở ở màn hình đầu. Menu bên trái (hoặc trên) chứa các màn hình và các trang (Alarm, Lịch sử alarm, Lịch sử, Recipe, Quản trị) mà kỹ sư đã đưa vào menu khi cấu hình project; trang không có trong menu thì không có lối vào từ menu. Cửa sổ hẹp thì bấm nút menu ("Mở menu"). Đầu trang hiện "project · màn hình".
 
 ![Trang vận hành: thanh trên có tên project, màn hình, trạng thái Trực tuyến, chuông cảnh báo có số alarm chưa xác nhận và tài khoản; menu bên trái; màn hình Tổng quan với thẻ giá trị, đồng hồ kim và thẻ Nhiệt độ có dấu BAD](img/op-man-hinh.png)
 
@@ -163,7 +163,7 @@ Xử lý một alarm:
 
 **Âm thanh** mặc định tắt. Bấm "Âm thanh: bật/tắt" ở đầu bảng thông báo (bấm chuông) để bật trên máy này. **Tắt tiếng** (nút hiện ở thanh trên khi alarm đang kêu) làm im alarm hiện tại mà không xác nhận; alarm mới vẫn kêu.
 
-Lịch sử alarm: menu **Lịch sử alarm**.
+Lịch sử alarm: menu **Lịch sử alarm** (nếu project đưa trang này vào menu). Project có thể tắt chuông cảnh báo: khi đó không có chuông và thông báo khẩn cấp ở thanh trên, xem alarm ở trang **Alarm** hoặc widget alarm trên màn hình.
 
 **Email cảnh báo:** nếu quản trị viên đã bật (hướng dẫn quản trị mục 4.5), bạn nhận email khi alarm xuất hiện, hết hoặc chưa được xác nhận sau một khoảng thời gian. Tiêu đề có tên trạm và mức, ví dụ "[Trạm bơm số 1] Khẩn cấp: Mức bể cao"; nhiều alarm gần nhau gom vào một email "… 5 sự kiện alarm (2 Khẩn cấp, 3 Quan trọng)". Nội dung có thời gian, mức, Tag và giá trị, thông điệp, trạng thái và liên kết **Mở trang Alarm**. Email chỉ để báo: **xác nhận alarm trên trang Alarm** (trả lời email không có tác dụng). Xác nhận rồi thì không còn email nhắc lại. Muốn nhận hay thôi nhận, nhờ quản trị viên sửa **Email** trong tài khoản của bạn.
 

@@ -15,7 +15,16 @@ import { compareSemver } from './rules.ts';
 import type { GridScreen } from './types-11.ts';
 
 export interface Rule11Input {
-  project: { schemaVersion: string; minRuntimeVersion?: string; theme?: unknown };
+  project: {
+    schemaVersion: string;
+    minRuntimeVersion?: string;
+    theme?: unknown;
+    /** Feature 030: mục trang hệ thống và chuông cảnh báo của menu; tính năng có hay không theo các file dưới. */
+    navigation?: { items?: readonly NavItemLike[]; alarmBell?: unknown };
+    alarmFile?: string;
+    loggingFile?: string;
+    recipesFile?: string;
+  };
   /**
    * Màn hình và popup đã qua schema, theo id. `svg`: theo chỉ số item, binding đã nạp của item `svg` (cho luật
    * E_SECURITY_ITEM: item SVG thao tác được khi có sự kiện ghi).
@@ -27,6 +36,20 @@ export interface Rule11Input {
     >
   >;
 }
+
+interface NavItemLike {
+  system?: unknown;
+  items?: readonly NavItemLike[];
+}
+
+/** Feature 030: tệp project cần có để trang hệ thống dùng được (Quản trị luôn có). */
+const SYSTEM_NEEDS: Readonly<Record<string, 'alarmFile' | 'loggingFile' | 'recipesFile' | null>> = {
+  alarms: 'alarmFile',
+  'alarm-history': 'alarmFile',
+  history: 'loggingFile',
+  recipes: 'recipesFile',
+  admin: null,
+};
 
 const POS_FIELDS = ['x', 'y', 'width', 'height'] as const;
 const LAYOUT_ID_RE = /^[a-z][a-z0-9_-]{0,31}$/;
@@ -54,6 +77,36 @@ export function runRules11(input: Rule11Input): { errors: Issue[]; warnings: Iss
       '/minRuntimeVersion',
       `a 1.1 project needs minRuntimeVersion >= ${MIN_RUNTIME_11}`,
     );
+
+  // ---- menu (feature 030): mục trang hệ thống và chuông cảnh báo chỉ có từ 1.1 ----
+  const nav = project.navigation;
+  if (nav) {
+    if (!is11 && nav.alarmBell !== undefined)
+      err('E_NAV', 'project.json', '/navigation/alarmBell', 'alarmBell needs project format 1.1');
+    const sys = (it: NavItemLike, path: string) => {
+      if (typeof it.system !== 'string') return;
+      if (!is11)
+        return err(
+          'E_NAV',
+          'project.json',
+          `${path}/system`,
+          'system menu entries need project format 1.1',
+        );
+      const need = SYSTEM_NEEDS[it.system];
+      if (need && project[need] === undefined)
+        warn(
+          'W_NAV_SYSTEM',
+          'project.json',
+          `${path}/system`,
+          `system page '${it.system}' is not available: the project has no ${need}`,
+        );
+    };
+    (nav.items ?? []).forEach((it, i) => {
+      const p = `/navigation/items/${i}`;
+      sys(it, p);
+      (it.items ?? []).forEach((c, j) => sys(c, `${p}/items/${j}`));
+    });
+  }
 
   for (const { file, screen: raw } of Object.values(input.screens)) {
     const screen = raw as GridScreen;

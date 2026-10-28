@@ -109,7 +109,7 @@ Nhóm và quy tắc quyền nằm trên thiết bị, **không** nằm trong pro
 **Mở trang Quản trị:**
 
 1. Mở `https://<địa chỉ>:8443/` trên Chrome, đăng nhập bằng tài khoản administrator.
-2. Bấm **Quản trị** ở cuối menu bên trái (địa chỉ `#/quan-tri`). Vai trò khác không thấy mục này; gõ thẳng địa chỉ thì trang báo "Không có quyền xem trang này", máy chủ từ chối mọi lệnh quản trị và ghi nhật ký.
+2. Bấm **Quản trị** trên menu (địa chỉ `#/quan-tri`). Mục này có khi kỹ sư đã thêm trang hệ thống **Quản trị** vào menu (Studio, **Điều hướng**; project dưới 1.1 thì mục tự có ở cuối menu); không có mục thì gõ thẳng địa chỉ `#/quan-tri`. Vai trò khác không thấy mục này; gõ thẳng địa chỉ thì trang báo "Không có quyền xem trang này", máy chủ từ chối mọi lệnh quản trị và ghi nhật ký.
 3. Đầu trang có các thẻ số liệu: **Người dùng**, **Quản trị viên** (đang bật), **Nhóm**, **Quy tắc quyền** (kèm số quy tắc mồ côi), **Đang khóa tạm**. Bấm **Tải lại** để đọc lại dữ liệu từ thiết bị.
 
 Trang chỉ dùng được qua HTTPS. Thao tác trên trang có hiệu lực ngay, không cần nạp lại project, không khởi động lại dịch vụ.

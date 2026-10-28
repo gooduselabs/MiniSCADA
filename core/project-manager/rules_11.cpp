@@ -106,6 +106,36 @@ void runRules11(const json& project, const std::vector<Rules03Input::ScreenDoc>&
         err("E_LAYOUT_VERSION", "project.json", "/minRuntimeVersion",
             std::string("a 1.1 project needs minRuntimeVersion >= ") + kMinRuntime11);
 
+    // ---- menu (feature 030): system page entries and the alarm bell only from 1.1 ----
+    if (project.contains("navigation") && project["navigation"].is_object()) {
+        const json& nav = project["navigation"];
+        if (!v11 && nav.contains("alarmBell"))
+            err("E_NAV", "project.json", "/navigation/alarmBell",
+                "alarmBell needs project format 1.1");
+        const auto sys = [&](const json& it, const std::string& path) {
+            if (!it.is_object() || !it.contains("system") || !it["system"].is_string()) return;
+            if (!v11)
+                return err("E_NAV", "project.json", path + "/system",
+                           "system menu entries need project format 1.1");
+            const std::string id = it["system"].get<std::string>();
+            const char* need = id == "alarms" || id == "alarm-history" ? "alarmFile"
+                               : id == "history"                      ? "loggingFile"
+                               : id == "recipes"                      ? "recipesFile"
+                                                                      : nullptr;
+            if (need && !project.contains(need))
+                warn("W_NAV_SYSTEM", "project.json", path + "/system",
+                     "system page '" + id + "' is not available: the project has no " + need);
+        };
+        const json& items = arrayOf(nav, "items");
+        for (size_t i = 0; i < items.size(); ++i) {
+            const std::string p = "/navigation/items/" + std::to_string(i);
+            sys(items[i], p);
+            const json& sub = arrayOf(items[i], "items");
+            for (size_t j = 0; j < sub.size(); ++j)
+                sys(sub[j], p + "/items/" + std::to_string(j));
+        }
+    }
+
     for (const auto& sd : screens) {
         const std::string& file = sd.file;
         const json& screen = sd.screen;

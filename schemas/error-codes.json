@@ -4144,6 +4144,13 @@
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
+      "code": "W_NAV_SYSTEM",
+      "http": null,
+      "group": "screens",
+      "message": "Mục menu trỏ trang hệ thống mà project không có tính năng tương ứng (Alarm cần alarmFile, Lịch sử cần loggingFile, Công thức cần recipesFile): trang vận hành bỏ qua mục",
+      "usedIn": ["core/project-manager", "packages/project-schema"]
+    },
+    {
       "code": "W_OPCUA_CERT_NOT_PINNED",
       "http": null,
       "group": "tags",

@@ -294,6 +294,15 @@ Mở **Tag** > **Bảng Tag mặc định**. Mỗi dòng là một Tag.
 
 Mở **Màn hình** trên cây. **Thêm màn hình** hoặc **Thêm popup**; **Đặt làm màn hình đầu** cho màn hình mở đầu tiên; **Mở Điều hướng** để sửa menu của trang vận hành.
 
+**Điều hướng (menu của trang vận hành).** Menu trên thiết bị gồm **đúng** các mục khai báo ở đây, theo thứ tự trên cây; trang vận hành không tự thêm mục nào. Bên trái là cây mục (màn hình, báo cáo, nhóm một cấp, tối đa 32 mục; kéo hoặc Alt+↑/↓ để sắp xếp). Dưới cây là nhóm **Trang hệ thống**: **Alarm**, **Lịch sử alarm**, **Lịch sử**, **Công thức**, **Quản trị**; bấm **+** ở một dòng để thêm trang đó vào menu (vào nhóm đang chọn nếu có), rồi đặt nhãn, biểu tượng (để **Mặc định** thì dùng biểu tượng sẵn của trang) và vị trí như mục màn hình. Mỗi trang hệ thống chỉ thêm một lần.
+
+- Trang cần tính năng tương ứng: Alarm và Lịch sử alarm cần project có alarm, Lịch sử cần cấu hình lưu trữ, Công thức cần công thức (recipe). Thiếu thì dòng hiện cảnh báo vàng, kiểm tra project báo `W_NAV_SYSTEM` và trang vận hành bỏ qua mục đó.
+- **Quản trị** chỉ hiện với quản trị viên. Không thêm mục Quản trị thì quản trị viên vẫn vào được bằng đường dẫn `#/quan-tri`.
+- Mục **Alarm** có huy hiệu số alarm chưa xác nhận.
+- **Chuông cảnh báo** (cột phải, dưới **Vị trí menu**): bỏ chọn **Hiện chuông và thông báo khẩn cấp** để ẩn chuông và thông báo alarm khẩn cấp ở thanh trên cùng (âm thanh alarm, trang Alarm và widget alarm vẫn chạy).
+- Không khai báo mục nào thì trang vận hành tự liệt kê mọi màn hình và báo cáo (không có trang hệ thống). **Vị trí menu** **Ẩn menu** thì không có menu.
+- Trang hệ thống và Chuông cảnh báo cần project định dạng 1.1. Project cũ hơn (0.5, 0.6, 1.0) giữ cách cũ: trang vận hành tự thêm Alarm, Lịch sử alarm, Lịch sử, Quản trị cuối menu; nâng cấp project lên 1.1 rồi thêm các trang hệ thống để tự quyết menu.
+
 Hộp công cụ có các nhóm widget:
 
 - Hiển thị: **Thẻ giá trị**, **Nhãn**, **Đèn báo**, **Đồng hồ kim**, **Mức chất lỏng**, **Khung nhóm**, và các widget dashboard: **Thẻ chỉ số màu**, **Chỉ số KPI**, **Thanh tiến độ**, **Danh sách trạng thái**, **Đồng hồ ngày giờ**, **Ghi chú**, **Ảnh** (mục 6.1.1).

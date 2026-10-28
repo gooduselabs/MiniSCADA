@@ -37,6 +37,26 @@
         "label": "Thư viện component",
         "screen": "thu-vien",
         "icon": "list"
+      },
+      {
+        "label": "Alarm",
+        "system": "alarms",
+        "icon": "bell"
+      },
+      {
+        "label": "Lịch sử alarm",
+        "system": "alarm-history",
+        "icon": "list"
+      },
+      {
+        "label": "Lịch sử",
+        "system": "history",
+        "icon": "chart"
+      },
+      {
+        "label": "Quản trị",
+        "system": "admin",
+        "icon": "gear"
       }
     ]
   },

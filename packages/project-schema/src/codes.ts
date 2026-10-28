@@ -268,6 +268,8 @@ export type WarningCode =
   | 'W_TEMPLATE_DRIFT'
   // feature 012 (contracts/project-format-1.1.md §3): item của màn hình lưới không nằm trong ô nào
   | 'W_LAYOUT_ITEM_ORPHAN'
+  // feature 030: mục menu trỏ trang hệ thống mà project không có tính năng tương ứng
+  | 'W_NAV_SYSTEM'
   // feature 011 (contracts/logic-engine.md §11): logic.json
   | 'W_LOGIC_PT_ROUNDED'
   | 'W_LOGIC_WRITE_CONFLICT'

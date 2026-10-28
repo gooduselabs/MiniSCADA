@@ -279,6 +279,8 @@ class Rules {
         };
         const auto leaf = [&](const json& it, const std::string& path) {
             ++leaves;
+            // feature 030: a system page; version and feature checks in rules_11 (the 1.x family)
+            if (it.contains("system")) return;
             if (it.contains("report")) {
                 // feature 010: an entry that opens a report; reports.json that failed: skipped
                 bool missing = !project_.contains("reportsFile");

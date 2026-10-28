@@ -131,7 +131,12 @@
           }
         },
         "alarms": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Định dạng 0.5 (feature 009), lỗi thời từ feature 030: vẫn được đọc nhưng bị bỏ qua; mục alarm do items khai báo (system)."
+        },
+        "alarmBell": {
+          "type": "boolean",
+          "description": "Định dạng 1.1 (feature 030): chuông cảnh báo và toast trên thanh trên cùng; thiếu = true."
         }
       }
     },
@@ -221,6 +226,10 @@
         },
         "report": {
           "$ref": "#/definitions/screenId"
+        },
+        "system": {
+          "description": "Định dạng 1.1 (feature 030): mục mở trang hệ thống của trang vận hành.",
+          "enum": ["alarms", "alarm-history", "history", "recipes", "admin"]
         }
       },
       "oneOf": [
@@ -229,6 +238,9 @@
         },
         {
           "required": ["report"]
+        },
+        {
+          "required": ["system"]
         },
         {
           "required": ["items"]

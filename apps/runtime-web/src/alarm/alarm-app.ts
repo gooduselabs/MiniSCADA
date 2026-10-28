@@ -26,6 +26,8 @@ export interface AlarmAppDeps {
   navHost: HTMLElement;
   /** Menu cần dựng lại vì có/không có mục alarm (status đổi giữa none, unsupported, còn lại). */
   onMenuMode: (m: AlarmMenuOptions) => void;
+  /** Feature 030: `navigation.alarmBell` của project (false: ẩn chuông và toast). Thiếu = true. */
+  bell?: boolean;
   doc?: Document;
 }
 
@@ -82,6 +84,7 @@ export class AlarmApp {
       navigate: () => {
         location.hash = '#/alarms';
       },
+      enabled: d.bell !== false,
       doc,
     });
     d.bellHost.append(this.bell.el);

@@ -65,7 +65,12 @@
         "label": "Ghi PLC của logic",
         "report": "logic-ngay",
         "icon": "doc"
-      }
+      },
+      {"label":"Alarm","system":"alarms","icon":"bell"},
+      {"label":"Lịch sử alarm","system":"alarm-history","icon":"list"},
+      {"label":"Lịch sử","system":"history","icon":"chart"},
+      {"label":"Recipe","system":"recipes","icon":"list"},
+      {"label":"Quản trị","system":"admin","icon":"gear"}
     ]
   },
   "maxClients": 10,

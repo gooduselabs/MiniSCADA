@@ -43,6 +43,8 @@ export interface ProjectSummary {
   stamp: ProjectStamp | null;
   /** Project 0.6: file mẫu báo cáo trong /project/ (feature 010). */
   reportsFile?: string;
+  /** `schemaVersion` của project.json (feature 030: dưới 1.1 thì menu tự thêm trang hệ thống như cũ). */
+  schemaVersion?: string;
   /** Project 1.1 (feature 024): có recipe (`recipesFile`); trang Recipe đọc qua API, không qua /project/. */
   recipesFile?: string;
 }
@@ -221,6 +223,9 @@ export class ProjectStore {
       navigation: isObj(body.navigation) ? (body.navigation as unknown as Navigation) : null,
       screens,
       stamp: activeStamp(200, body),
+      ...(typeof project.schemaVersion === 'string'
+        ? { schemaVersion: project.schemaVersion }
+        : {}),
       ...(typeof project.reportsFile === 'string' ? { reportsFile: project.reportsFile } : {}),
       ...(typeof project.recipesFile === 'string' ? { recipesFile: project.recipesFile } : {}),
     };

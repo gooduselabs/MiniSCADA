@@ -1,5 +1,6 @@
 // T087/T103: mục menu của trang lịch sử và báo cáo (feature 010): `navigation[].report`, tự thêm báo cáo khi không có
-// `navigation`, mục "Lịch sử" khi lưu trữ bật và có phiên, khóa `@history`, `@report/<id>`.
+// `navigation`; feature 030: mục "Lịch sử" chỉ khi navigation khai báo `system: history` (lưu trữ bật, có phiên),
+// khóa `@history`, `@report/<id>`.
 import { describe, expect, it } from 'vitest';
 import { buildMenu, type MenuEntry } from './menu.ts';
 import type { ScreenSummary } from './project-store.ts';
@@ -19,27 +20,28 @@ const keys = (entries: MenuEntry[]): string[] =>
   entries.flatMap((e) => (e.kind === 'item' ? [e.screen] : e.items.map((i) => i.screen)));
 
 describe('buildMenu với báo cáo và lịch sử', () => {
-  it('không có navigation: màn hình, rồi mỗi mẫu báo cáo, rồi Lịch sử', () => {
+  it('không có navigation: màn hình, rồi mỗi mẫu báo cáo; không tự thêm Lịch sử', () => {
     const m = buildMenu(null, SCREENS, { reports: REPORTS, history: true })!;
-    expect(keys(m.entries)).toEqual(['a', 'b', '@report/dien-ngay', '@report/dien-ca', '@history']);
+    expect(keys(m.entries)).toEqual(['a', 'b', '@report/dien-ngay', '@report/dien-ca']);
     const rep = m.entries[2]!;
     expect(rep).toMatchObject({ kind: 'item', label: 'Điện năng theo ngày', icon: 'doc' });
-    expect(m.entries[4]).toMatchObject({ label: 'Lịch sử', icon: 'chart' });
   });
 
-  it('có navigation: mục báo cáo theo navigation, không tự thêm mẫu khác; Lịch sử vẫn thêm cuối', () => {
+  it('có navigation: mục báo cáo theo navigation, không tự thêm mẫu khác; Lịch sử theo mục system', () => {
     const m = buildMenu(
       {
         position: 'left',
         items: [
           { label: 'A', screen: 'a' },
           { label: 'Báo cáo điện', report: 'dien-ca', icon: 'bolt' },
+          { label: 'Lịch sử', system: 'history' },
         ],
       } as never,
       SCREENS,
       { reports: REPORTS, history: true },
     )!;
     expect(keys(m.entries)).toEqual(['a', '@report/dien-ca', '@history']);
+    expect(m.entries[2]).toMatchObject({ label: 'Lịch sử', icon: 'chart', system: true });
     expect(m.entries[1]).toEqual({
       kind: 'item',
       label: 'Báo cáo điện',
@@ -69,9 +71,9 @@ describe('buildMenu với báo cáo và lịch sử', () => {
     expect(keys(m.entries)).toEqual(['a', '@report/dien-ngay']);
   });
 
-  it('một màn hình nhưng có báo cáo hoặc Lịch sử: vẫn có menu', () => {
+  it('một màn hình nhưng có báo cáo: vẫn có menu; Lịch sử không tự thêm', () => {
     expect(buildMenu(null, [scr('a')], { reports: REPORTS })).not.toBeNull();
-    expect(buildMenu(null, [scr('a')], { history: true })).not.toBeNull();
+    expect(buildMenu(null, [scr('a')], { history: true })).toBeNull();
     expect(buildMenu(null, [scr('a')])).toBeNull();
   });
 
@@ -81,9 +83,17 @@ describe('buildMenu với báo cáo và lịch sử', () => {
     ).toBeNull();
   });
 
-  it('history=false hoặc không truyền: không có mục Lịch sử', () => {
-    expect(keys(buildMenu(null, SCREENS, { history: false })!.entries)).toEqual(['a', 'b']);
-    expect(keys(buildMenu(null, SCREENS)!.entries)).toEqual(['a', 'b']);
+  it('mục system: history bị bỏ khi history=false hoặc không truyền', () => {
+    const nav = {
+      position: 'left',
+      items: [
+        { label: 'A', screen: 'a' },
+        { label: 'B', screen: 'b' },
+        { label: 'Lịch sử', system: 'history' },
+      ],
+    } as never;
+    expect(keys(buildMenu(nav, SCREENS, { history: false })!.entries)).toEqual(['a', 'b']);
+    expect(keys(buildMenu(nav, SCREENS)!.entries)).toEqual(['a', 'b']);
   });
 
   it('tên mẫu chứa mã HTML vẫn là chữ thuần (không phần tử, kiểm ở mô hình)', () => {

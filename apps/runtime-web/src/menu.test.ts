@@ -2,7 +2,7 @@
 // biểu tượng từ bộ 16 tên; mọi chữ là chữ.
 import { describe, expect, it, vi } from 'vitest';
 import { ICON_NAMES, createIcon } from './icons.ts';
-import { buildMenu, renderMenu } from './menu.ts';
+import { buildMenu, legacySystemMenu, renderMenu } from './menu.ts';
 import type { ScreenSummary } from './project-store.ts';
 
 const scr = (id: string, kind: 'screen' | 'popup' = 'screen'): ScreenSummary => ({
@@ -138,40 +138,120 @@ describe('renderMenu', () => {
   });
 });
 
-describe('mục alarm của menu (feature 009; ui-alarm.md §11, US1 kịch bản 12)', () => {
-  it('có alarm: hai mục hệ thống sau các mục project; huy hiệu chỉ ở mục Alarm', () => {
-    const m = buildMenu(null, SCREENS, { show: true })!;
-    const last = m.entries.slice(-2);
-    expect(last).toMatchObject([
-      { kind: 'item', label: 'Alarm', screen: 'alarms', system: true, badge: true },
-      { kind: 'item', label: 'Lịch sử alarm', screen: 'alarm-history', system: true },
+describe('trang hệ thống trong menu (feature 030: chỉ theo navigation; ui-alarm.md §11)', () => {
+  const SYS = {
+    position: 'left',
+    items: [
+      { label: 'A', screen: 'a' },
+      { label: 'Cảnh báo', system: 'alarms' },
+      {
+        label: 'Hệ thống',
+        items: [
+          { label: 'Lịch sử alarm', system: 'alarm-history' },
+          { label: 'Lịch sử', system: 'history' },
+          { label: 'Công thức', system: 'recipes', icon: 'table' },
+          { label: 'Quản trị', system: 'admin' },
+        ],
+      },
+    ],
+  } as const;
+  const leaves = (m: ReturnType<typeof buildMenu>) =>
+    (m?.entries ?? []).flatMap((e) => (e.kind === 'item' ? [e] : e.items));
+
+  it('không khai báo navigation: không tự thêm trang hệ thống nào', () => {
+    const m = buildMenu(null, SCREENS, { show: true, history: true, recipes: true, admin: true })!;
+    expect(leaves(m).map((l) => l.screen)).toEqual(['a', 'b', 'c']);
+    expect(buildMenu(null, [scr('a')], { show: true, admin: true })).toBeNull();
+  });
+  it('mục system theo thứ tự, nhãn và icon cấu hình; icon mặc định khi thiếu; huy hiệu chỉ ở Alarm', () => {
+    const m = buildMenu(SYS as never, SCREENS, {
+      show: true,
+      history: true,
+      recipes: true,
+      admin: true,
+    })!;
+    expect(leaves(m).map((l) => [l.screen, l.label, l.icon])).toEqual([
+      ['a', 'A', undefined],
+      ['alarms', 'Cảnh báo', 'bell'],
+      ['alarm-history', 'Lịch sử alarm', 'list'],
+      ['@history', 'Lịch sử', 'chart'],
+      ['@recipes', 'Công thức', 'table'],
+      ['@quan-tri', 'Quản trị', 'gear'],
     ]);
     const nav = renderMenu(m, 'a', () => undefined, 'Menu');
     expect(nav.querySelectorAll('[data-badge="alarms"]')).toHaveLength(1);
     expect((nav.querySelector('[data-badge="alarms"]') as HTMLElement).hidden).toBe(true);
   });
-  it('project không có alarm: không có hai mục', () => {
-    const m = buildMenu(null, SCREENS, { show: false })!;
-    expect(m.entries.some((e) => e.kind === 'item' && e.screen === 'alarms')).toBe(false);
-    expect(buildMenu(null, SCREENS)!.entries).toHaveLength(3);
+  it('tính năng không có: mục bị bỏ (Quản trị chỉ với administrator)', () => {
+    const plain = buildMenu(SYS as never, SCREENS, {});
+    expect(plain).toBeNull();
+    const admin = buildMenu(SYS as never, SCREENS, { admin: true })!;
+    expect(leaves(admin).map((l) => l.screen)).toEqual(['a', '@quan-tri']);
   });
-  it('navigation.alarms = false ẩn hai mục', () => {
-    const nav = { position: 'left', items: [{ label: 'A', screen: 'a' }], alarms: false } as never;
-    const m = buildMenu(nav, SCREENS, { show: true })!;
-    expect(m.entries.map((e) => e.label)).toEqual(['A']);
+  it('mục system id lạ bị bỏ (lớp phòng thủ)', () => {
+    const nav = {
+      position: 'left',
+      items: [
+        { label: 'A', screen: 'a' },
+        { label: 'X', system: 'toString' },
+        { label: 'B', screen: 'b' },
+      ],
+    } as never;
+    expect(leaves(buildMenu(nav, SCREENS, { admin: true })).map((l) => l.screen)).toEqual([
+      'a',
+      'b',
+    ]);
   });
-  it('một màn hình mà có alarm: vẫn có menu (mục Alarm đủ làm menu ≥ 2 mục)', () => {
-    const m = buildMenu(null, [scr('a')], { show: true })!;
-    expect(m.entries.map((e) => e.label)).toEqual(['A', 'Alarm', 'Lịch sử alarm']);
-    expect(buildMenu(null, [scr('a')], { show: false })).toBeNull();
+  it('một trang hệ thống đơn lẻ vẫn là menu', () => {
+    const nav = { position: 'top', items: [{ label: 'Alarm', system: 'alarms' }] } as never;
+    expect(buildMenu(nav, [scr('a')], { show: true })!.entries).toHaveLength(1);
   });
-  it('position hidden: không menu dù có alarm', () => {
-    expect(buildMenu({ position: 'hidden', items: [] }, SCREENS, { show: true })).toBeNull();
+  it('position hidden: không menu, kể cả administrator', () => {
+    expect(buildMenu({ ...SYS, position: 'hidden' } as never, SCREENS, { admin: true })).toBeNull();
   });
   it('thiết bị chưa hỗ trợ: chú thích "chưa hỗ trợ", không huy hiệu', () => {
-    const m = buildMenu(null, SCREENS, { show: true, unsupported: true })!;
+    const m = buildMenu(SYS as never, SCREENS, { show: true, unsupported: true })!;
     const nav = renderMenu(m, 'a', () => undefined, 'Menu');
     expect(nav.querySelector('[data-badge]')).toBeNull();
     expect(nav.textContent).toContain('(chưa hỗ trợ)');
+  });
+});
+
+describe('project dưới 1.1 (feature 030: legacySystem giữ cách tự thêm cũ)', () => {
+  it('legacySystemMenu: dưới 1.1 hoặc không rõ là true; 1.1 trở lên là false', () => {
+    expect(['0.5.0', '0.6.2', '1.0.0', undefined, 'x'].map(legacySystemMenu)).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+    ]);
+    expect(['1.1.0', '1.12.3', '2.0.0'].map(legacySystemMenu)).toEqual([false, false, false]);
+  });
+  it('tự thêm Alarm, Lịch sử alarm, Lịch sử, Công thức, Quản trị cuối menu khi tính năng có', () => {
+    const m = buildMenu(null, SCREENS, {
+      legacySystem: true,
+      show: true,
+      history: true,
+      admin: true,
+    })!;
+    expect(m.entries.map((e) => (e.kind === 'item' ? e.screen : '?'))).toEqual([
+      'a',
+      'b',
+      'c',
+      'alarms',
+      'alarm-history',
+      '@history',
+      '@quan-tri',
+    ]);
+  });
+  it('navigation.alarms = false ẩn hai mục alarm', () => {
+    const nav = { position: 'left', items: [{ label: 'A', screen: 'a' }], alarms: false } as never;
+    const m = buildMenu(nav, SCREENS, { legacySystem: true, show: true });
+    expect(m).toBeNull();
+  });
+  it('một màn hình mà có alarm: vẫn có menu', () => {
+    const m = buildMenu(null, [scr('a')], { legacySystem: true, show: true })!;
+    expect(m.entries.map((e) => e.label)).toEqual(['A', 'Alarm', 'Lịch sử alarm']);
   });
 });

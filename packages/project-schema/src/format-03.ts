@@ -54,7 +54,7 @@ const SECURITY_KEYS = ['view', 'operate', 'minRole'] as const;
 const ROW_KEYS = ['id', 'height', 'gap', 'cells'] as const;
 const CELL_KEYS = ['id', 'span', 'offset', 'align', 'minHeight', 'item'] as const;
 /** Thứ tự khóa của mục menu; `report` (định dạng 0.6, mục mở trang báo cáo) đứng sau `screen`. */
-const NAV_ITEM_KEYS = ['label', 'screen', 'report', 'icon'] as const;
+const NAV_ITEM_KEYS = ['label', 'screen', 'report', 'system', 'icon'] as const;
 
 const isObj = (v: unknown): v is Obj => v !== null && typeof v === 'object' && !Array.isArray(v);
 const pick = (o: Obj, keys: readonly string[]): Obj => {
@@ -216,6 +216,9 @@ function formatNavigation(nav: Navigation): string {
   if (nav.position !== undefined) lines.push(`    "position": ${JSON.stringify(nav.position)}`);
   const items = nav.items.map((i) => '      ' + JSON.stringify(navItem(i)));
   lines.push(items.length > 0 ? `    "items": [\n${items.join(',\n')}\n    ]` : '    "items": []');
+  // 0.5 (feature 009): `alarms`; 1.1 (feature 030): `alarmBell`
+  if (nav.alarms !== undefined) lines.push(`    "alarms": ${JSON.stringify(nav.alarms)}`);
+  if (nav.alarmBell !== undefined) lines.push(`    "alarmBell": ${JSON.stringify(nav.alarmBell)}`);
   return `{\n${lines.join(',\n')}\n  }`;
 }
 

@@ -2808,6 +2808,11 @@ files['project.json'] = json({
       { label: 'Sơ đồ công nghệ', screen: 'so-do-cong-nghe', icon: 'pump' },
       { label: 'Tổng quan', screen: 'tong-quan', icon: 'home' },
       { label: 'Thư viện component', screen: 'thu-vien', icon: 'list' },
+      // feature 030: menu chỉ theo navigation; trang hệ thống khai báo rõ để giữ menu như trước
+      { label: 'Alarm', system: 'alarms', icon: 'bell' },
+      { label: 'Lịch sử alarm', system: 'alarm-history', icon: 'list' },
+      { label: 'Lịch sử', system: 'history', icon: 'chart' },
+      { label: 'Quản trị', system: 'admin', icon: 'gear' },
     ],
   },
   maxClients: 10,

@@ -295,6 +295,8 @@ export function runRules03(input: Rule03Input): { errors: Issue[]; warnings: Iss
     let leaves = 0;
     const leaf = (it: NavigationItem, path: string) => {
       leaves++;
+      // feature 030: trang hệ thống; phiên bản và tính năng kiểm ở rules-11.ts (họ 1.x)
+      if (it.system !== undefined) return;
       if (it.report !== undefined) {
         // feature 010: mục báo cáo; reports.json lỗi thì bỏ qua (luật cần file đó)
         const missing =

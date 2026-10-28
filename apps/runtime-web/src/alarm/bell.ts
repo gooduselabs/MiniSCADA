@@ -104,6 +104,8 @@ export interface AlarmBellOptions {
   soundEl?: HTMLElement;
   /** Thời gian hiện toast (ms). */
   toastMs?: number;
+  /** Feature 030: `navigation.alarmBell` của project; false: chuông và toast luôn ẩn. Thiếu = true. */
+  enabled?: boolean;
   /** Thời gian cho bước xác nhận lần hai của "Xác nhận tất cả" (ms). */
   confirmMs?: number;
   doc?: Document;
@@ -387,7 +389,7 @@ export class AlarmBell {
     const src = this.#o.source;
     const snap = src.snapshot();
     const status = src.status();
-    const m = bellModel(snap, status);
+    const m = this.#o.enabled === false ? null : bellModel(snap, status);
     this.el.hidden = m === null;
     if (!m) {
       this.close(false);

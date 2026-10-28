@@ -2,7 +2,15 @@
 // tối đa 32 lá), kéo sắp xếp bằng chuột hoặc Alt+mũi tên, tạo nhóm, nhãn, màn hình đích (chỉ màn hình thường, không popup), biểu
 // tượng trong bộ 16, vị trí menu và xem trước menu. Mọi sửa là một sửa đổi `navigation` của project.json (một bước hoàn tác;
 // gõ nhãn gộp theo `mergeKey`). Thao tác thuần ở model/navigation-doc.ts.
-import type { Navigation, NavigationItem } from '@mat/project-schema';
+// Feature 030: menu của trang vận hành 100 % theo cấu hình ở đây: nhóm "Trang hệ thống" (Alarm, Lịch sử alarm, Lịch sử,
+// Công thức, Quản trị) thêm vào menu như màn hình (lá `system`), và ô "Chuông cảnh báo" (`navigation.alarmBell`); cả hai
+// cần project định dạng 1.1.
+import {
+  SYSTEM_PAGE_IDS,
+  type Navigation,
+  type NavigationItem,
+  type SystemPageId,
+} from '@mat/project-schema';
 import { html, nothing, type TemplateResult } from 'lit';
 import { t, type MessageKey } from '../../i18n/index.ts';
 import type { IconName } from '../../icons/icons.ts';
@@ -13,6 +21,12 @@ import {
   addGroup,
   addLeaf,
   addReportLeaf,
+  addSystemLeaf,
+  isSystemPage,
+  SYSTEM_PAGE_ICON,
+  SYSTEM_PAGE_NEEDS,
+  setAlarmBell,
+  usesSystem,
   countLeaves,
   defaultNavigation,
   groupItems,
@@ -123,6 +137,22 @@ export class MatNavigationEditor extends AppElement {
     }));
   }
 
+  private get project(): Record<string, unknown> {
+    return (this.app.store.state.outline.project ?? {}) as unknown as Record<string, unknown>;
+  }
+
+  /** Feature 030: mục `system` và `alarmBell` chỉ có từ định dạng 1.1. */
+  private get format11(): boolean {
+    const m = /^(\d+)\.(\d+)\./.exec(String(this.project.schemaVersion ?? ''));
+    return !!m && (Number(m[1]) > 1 || (Number(m[1]) === 1 && Number(m[2]) >= 1));
+  }
+
+  /** Tệp project còn thiếu để trang hệ thống dùng được (null: dùng được). */
+  private missingFor(id: SystemPageId): 'alarmFile' | 'loggingFile' | 'recipesFile' | null {
+    const need = SYSTEM_PAGE_NEEDS[id];
+    return need && this.project[need] === undefined ? need : null;
+  }
+
   private get editable(): boolean {
     return !this.app.store.state.readOnly;
   }
@@ -191,6 +221,23 @@ export class MatNavigationEditor extends AppElement {
       nav,
       { label: pick.name, report: pick.id },
       reports.map((x) => x.id),
+      parent ? { parent } : {},
+    );
+    if (this.commit(r)) {
+      const list = parent ? r.nav.items[parent[0]!]!.items! : r.nav.items;
+      this.selected = parent ? [parent[0]!, list.length - 1] : [list.length - 1];
+    }
+  }
+
+  private addSystemCmd(id: SystemPageId): void {
+    const nav = this.nav;
+    if (!nav || !this.format11) return;
+    const sel = this.selected;
+    const parent: NavPath | undefined =
+      sel && sel.length >= 1 && nav.items[sel[0]!]?.items ? [sel[0]!] : undefined;
+    const r = addSystemLeaf(
+      nav,
+      { label: t(`nav.sys.${id}` as MessageKey), system: id },
       parent ? { parent } : {},
     );
     if (this.commit(r)) {
@@ -427,11 +474,18 @@ export class MatNavigationEditor extends AppElement {
     const screen = r.node.screen ? this.app.screenModel(r.node.screen) : null;
     const report =
       r.node.report !== undefined ? this.reports().find((x) => x.id === r.node.report) : undefined;
+    const sys = isSystemPage(r.node.system) ? r.node.system : null;
     const broken =
-      !r.isGroup && (r.node.report !== undefined ? !report : !screen || screen.kind === 'popup');
+      !r.isGroup &&
+      (r.node.system !== undefined
+        ? !sys || !this.format11
+        : r.node.report !== undefined
+          ? !report
+          : !screen || screen.kind === 'popup');
+    const miss = !r.isGroup && !broken && sys !== null ? this.missingFor(sys) : null;
     void nav;
     return html`<div
-      class="ne-row lvl${r.level} ${sel ? 'sel' : ''} ${over} ${broken ? 'bad' : ''}"
+      class="ne-row lvl${r.level} ${sel ? 'sel' : ''} ${over} ${broken ? 'bad' : ''} ${miss ? 'warn' : ''}"
       role="treeitem"
       id="ne-${key(r.path).replace('.', '-')}"
       aria-level=${r.level}
@@ -452,23 +506,33 @@ export class MatNavigationEditor extends AppElement {
         @pointerup=${(e: PointerEvent) => this.onGripUp(e)}
         >${icon('grip', 'sm')}</span
       >
-      ${icon(r.isGroup ? 'group' : (ICON_OF[r.node.icon ?? ''] ?? 'screen'))}
+      ${icon(r.isGroup ? 'group' : this.iconOf(r.node))}
       <span class="nm">${r.node.label}</span>
       ${
         r.isGroup
           ? html`<span class="sub">${t('nav.groupCount', { n: r.node.items?.length ?? 0 })}</span>`
           : html`<span class="sub mono"
                 >${
-                  r.node.report !== undefined
-                    ? (report?.name ?? r.node.report)
-                    : screen
-                      ? screen.name
-                      : (r.node.screen ?? '')
+                  r.node.system !== undefined
+                    ? sys
+                      ? t('nav.sys.rowSub', { name: t(`nav.sys.${sys}` as MessageKey) })
+                      : String(r.node.system)
+                    : r.node.report !== undefined
+                      ? (report?.name ?? r.node.report)
+                      : screen
+                        ? screen.name
+                        : (r.node.screen ?? '')
                 }</span
               >${
                 broken
                   ? html`<span class="visually-hidden">${t('nav.brokenTarget')}</span>`
-                  : nothing
+                  : miss
+                    ? html`<span class="ne-flag" title=${t(`nav.sys.missing.${miss}` as MessageKey)}
+                        >${icon('warn', 'sm')}<span class="visually-hidden"
+                          >${t(`nav.sys.missing.${miss}` as MessageKey)}</span
+                        ></span
+                      >`
+                    : nothing
               }`
       }
     </div>`;
@@ -485,6 +549,7 @@ export class MatNavigationEditor extends AppElement {
     const reports = this.reports();
     const isReport = !isGroup && node.report !== undefined;
     const badReport = isReport && !reports.some((x) => x.id === node.report);
+    const sys = !isGroup && node.system !== undefined ? node.system : undefined;
     return html`<div class="ne-form">
       <div class="pf-row">
         <label class="pf-l" for="ne-label">${t('nav.label')}</label>
@@ -512,74 +577,76 @@ export class MatNavigationEditor extends AppElement {
         isGroup
           ? nothing
           : html`${
-                isReport
-                  ? html`<div class="pf-row ${badReport ? 'bad' : ''}">
-                      <label class="pf-l" for="ne-report">${t('nav.report')}</label>
-                      <div class="pf-v">
-                        <select
-                          id="ne-report"
-                          class="pf-in"
-                          ?disabled=${!ed}
-                          aria-invalid=${badReport ? 'true' : 'false'}
-                          @change=${(e: Event) =>
-                            this.commit(
-                              setReportAt(
-                                nav,
-                                sel,
-                                (e.target as HTMLSelectElement).value,
-                                reports.map((x) => x.id),
-                              ),
+                sys !== undefined
+                  ? this.systemField(sys)
+                  : isReport
+                    ? html`<div class="pf-row ${badReport ? 'bad' : ''}">
+                        <label class="pf-l" for="ne-report">${t('nav.report')}</label>
+                        <div class="pf-v">
+                          <select
+                            id="ne-report"
+                            class="pf-in"
+                            ?disabled=${!ed}
+                            aria-invalid=${badReport ? 'true' : 'false'}
+                            @change=${(e: Event) =>
+                              this.commit(
+                                setReportAt(
+                                  nav,
+                                  sel,
+                                  (e.target as HTMLSelectElement).value,
+                                  reports.map((x) => x.id),
+                                ),
+                              )}
+                          >
+                            ${
+                              badReport
+                                ? html`<option value=${node.report ?? ''} selected>
+                                    ${node.report}
+                                  </option>`
+                                : nothing
+                            }
+                            ${reports.map(
+                              (x) =>
+                                html`<option value=${x.id} ?selected=${node.report === x.id}>
+                                  ${x.name}
+                                </option>`,
                             )}
-                        >
-                          ${
-                            badReport
-                              ? html`<option value=${node.report ?? ''} selected>
-                                  ${node.report}
-                                </option>`
-                              : nothing
-                          }
-                          ${reports.map(
-                            (x) =>
-                              html`<option value=${x.id} ?selected=${node.report === x.id}>
-                                ${x.name}
-                              </option>`,
-                          )}
-                        </select>
-                      </div>
-                      ${
-                        badReport
-                          ? html`<div class="pf-err" role="alert">${t('nav.brokenReport')}</div>`
-                          : nothing
-                      }
-                    </div>`
-                  : html`<div class="pf-row ${bad ? 'bad' : ''}">
-                      <label class="pf-l" for="ne-screen">${t('nav.screen')}</label>
-                      <div class="pf-v">
-                        <select
-                          id="ne-screen"
-                          class="pf-in"
-                          ?disabled=${!ed}
-                          @change=${(e: Event) =>
-                            this.commit(
-                              setScreenAt(
-                                nav,
-                                sel,
-                                (e.target as HTMLSelectElement).value,
-                                this.screens(),
-                              ),
+                          </select>
+                        </div>
+                        ${
+                          badReport
+                            ? html`<div class="pf-err" role="alert">${t('nav.brokenReport')}</div>`
+                            : nothing
+                        }
+                      </div>`
+                    : html`<div class="pf-row ${bad ? 'bad' : ''}">
+                        <label class="pf-l" for="ne-screen">${t('nav.screen')}</label>
+                        <div class="pf-v">
+                          <select
+                            id="ne-screen"
+                            class="pf-in"
+                            ?disabled=${!ed}
+                            @change=${(e: Event) =>
+                              this.commit(
+                                setScreenAt(
+                                  nav,
+                                  sel,
+                                  (e.target as HTMLSelectElement).value,
+                                  this.screens(),
+                                ),
+                              )}
+                          >
+                            ${bad ? html`<option value=${node.screen ?? ''} selected>${node.screen}</option>` : nothing}
+                            ${screens.map(
+                              (s) =>
+                                html`<option value=${s.id} ?selected=${node.screen === s.id}>
+                                  ${s.name ?? s.id}
+                                </option>`,
                             )}
-                        >
-                          ${bad ? html`<option value=${node.screen ?? ''} selected>${node.screen}</option>` : nothing}
-                          ${screens.map(
-                            (s) =>
-                              html`<option value=${s.id} ?selected=${node.screen === s.id}>
-                                ${s.name ?? s.id}
-                              </option>`,
-                          )}
-                        </select>
-                      </div>
-                      ${bad ? html`<div class="pf-err" role="alert">${t('nav.brokenTarget')}</div>` : nothing}
-                    </div>`
+                          </select>
+                        </div>
+                        ${bad ? html`<div class="pf-err" role="alert">${t('nav.brokenTarget')}</div>` : nothing}
+                      </div>`
               }
               <div class="pf-row">
                 <label class="pf-l" for="ne-icon">${t('nav.icon')}</label>
@@ -594,7 +661,13 @@ export class MatNavigationEditor extends AppElement {
                     }}
                   >
                     <option value="" ?selected=${node.icon === undefined}>
-                      ${t('nav.icon.none')}
+                      ${
+                        isSystemPage(sys)
+                          ? t('nav.icon.default', {
+                              name: t(`nav.icon.${SYSTEM_PAGE_ICON[sys]}` as MessageKey),
+                            })
+                          : t('nav.icon.none')
+                      }
                     </option>
                     ${NAV_ICONS.map(
                       (n) =>
@@ -637,6 +710,105 @@ export class MatNavigationEditor extends AppElement {
     </div>`;
   }
 
+  /** Feature 030: ô chỉ đọc "Trang hệ thống" của lá `system`, kèm lời nhắc khi tính năng chưa có. */
+  private systemField(id: string): TemplateResult {
+    const known = isSystemPage(id);
+    const miss = known ? this.missingFor(id) : null;
+    const err = !known ? t('nav.err.bad-system') : !this.format11 ? t('nav.sys.needs11') : null;
+    return html`<div class="pf-row ${err ? 'bad' : ''}">
+      <span class="pf-l" id="ne-sys-l">${t('nav.sys.page')}</span>
+      <div class="pf-v">
+        <output class="pf-in ne-sys-out" id="ne-system" aria-labelledby="ne-sys-l"
+          >${known ? t(`nav.sys.${id}` as MessageKey) : id}</output
+        >
+      </div>
+      ${
+        err
+          ? html`<div class="pf-err" role="alert">${err}</div>`
+          : miss
+            ? html`<div class="pf-hint warn">${t(`nav.sys.missing.${miss}` as MessageKey)}</div>`
+            : id === 'admin'
+              ? html`<div class="pf-hint">${t('nav.sys.adminNote')}</div>`
+              : nothing
+      }
+    </div>`;
+  }
+
+  /** Feature 030: ô "Chuông cảnh báo" (`navigation.alarmBell`, mặc định bật). */
+  private bell(nav: Navigation): TemplateResult {
+    const on = nav.alarmBell !== false;
+    const f11 = this.format11;
+    return html`<div class="pf-row ne-bell">
+      <span class="pf-l">${t('nav.bell')}</span>
+      <div class="pf-v">
+        <label class="ne-check">
+          <input
+            id="ne-bell"
+            type="checkbox"
+            .checked=${on}
+            ?disabled=${!this.editable || (!f11 && on)}
+            aria-describedby="ne-bell-help"
+            @change=${(e: Event) =>
+              this.commit(setAlarmBell(nav, (e.target as HTMLInputElement).checked))}
+          />
+          <span>${t('nav.bell.show')}</span>
+        </label>
+      </div>
+      <div class="pf-hint" id="ne-bell-help">
+        ${f11 ? t('nav.bell.help') : t('nav.sys.needs11')}
+      </div>
+    </div>`;
+  }
+
+  /** Feature 030: nhóm "Trang hệ thống": mỗi trang dựng sẵn một dòng, thêm vào menu như màn hình. */
+  private systemPages(nav: Navigation): TemplateResult {
+    const ed = this.editable;
+    const f11 = this.format11;
+    const full = countLeaves(nav) >= NAV_MAX_LEAVES;
+    return html`<section class="ne-sys" aria-labelledby="ne-sys-title">
+      <h3 class="wi-sub" id="ne-sys-title">${t('nav.sys.title')}</h3>
+      <p class="help ne-sys-help">${f11 ? t('nav.sys.help') : t('nav.sys.needs11')}</p>
+      <ul class="ne-sys-list">
+        ${SYSTEM_PAGE_IDS.map((id) => {
+          const name = t(`nav.sys.${id}` as MessageKey);
+          const inMenu = usesSystem(nav, id);
+          const miss = this.missingFor(id);
+          const status = inMenu
+            ? t('nav.sys.inMenu')
+            : miss
+              ? t(`nav.sys.missing.${miss}` as MessageKey)
+              : id === 'admin'
+                ? t('nav.sys.adminNote')
+                : '';
+          return html`<li class="ne-sys-row ${miss && !inMenu ? 'warn' : ''}" data-system=${id}>
+            ${icon(ICON_OF[SYSTEM_PAGE_ICON[id]] ?? 'screen')}
+            <span class="nm">${name}</span>
+            <span class="sub">${status}</span>
+            <button
+              class="ibtn"
+              type="button"
+              data-act="add-system"
+              data-system=${id}
+              ?disabled=${!ed || !f11 || inMenu || full}
+              aria-label=${t('nav.sys.add', { name })}
+              title=${t('nav.sys.add', { name })}
+              @click=${() => this.addSystemCmd(id)}
+            >
+              ${icon('plus')}
+            </button>
+          </li>`;
+        })}
+      </ul>
+    </section>`;
+  }
+
+  private iconOf(it: NavigationItem): IconName {
+    const own = ICON_OF[it.icon ?? ''];
+    if (own) return own;
+    if (isSystemPage(it.system)) return ICON_OF[SYSTEM_PAGE_ICON[it.system]] ?? 'screen';
+    return 'screen';
+  }
+
   /** Xem trước menu: cùng thứ tự và biểu tượng như trang vận hành. */
   private previewMenu(nav: Navigation): TemplateResult {
     const pos = nav.position ?? 'left';
@@ -654,9 +826,7 @@ export class MatNavigationEditor extends AppElement {
   }
 
   private menuLeaf(it: NavigationItem): TemplateResult {
-    return html`<span class="mi"
-      >${icon(ICON_OF[it.icon ?? ''] ?? 'screen', 'sm')}${it.label}</span
-    >`;
+    return html`<span class="mi">${icon(this.iconOf(it), 'sm')}${it.label}</span>`;
   }
 
   protected override render() {
@@ -701,9 +871,10 @@ export class MatNavigationEditor extends AppElement {
           >
             ${rows.length ? rows.map((r) => this.rowView(r, nav)) : html`<p class="help pad">${t('nav.emptyTree')}</p>`}
           </div>
+          ${this.systemPages(nav)}
         </div>
         <div class="ne-right">
-          ${this.position(nav)} ${this.form(nav)}
+          ${this.position(nav)} ${this.bell(nav)} ${this.form(nav)}
           <h3 class="wi-sub">${t('nav.preview')}</h3>
           ${this.previewMenu(nav)}
         </div>

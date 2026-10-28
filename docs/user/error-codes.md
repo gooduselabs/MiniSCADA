@@ -12,14 +12,14 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 580 mã.
+Tổng cộng 581 mã.
 
 ## Mục lục
 
 - [Định dạng và phiên bản project](#format) (15)
 - [Tag, địa chỉ Modbus, cổng serial và bảng giá trị](#tags) (44)
 - [Biểu thức của Tag tính toán](#expression) (10)
-- [Màn hình, widget, binding và điều hướng](#screens) (49)
+- [Màn hình, widget, binding và điều hướng](#screens) (50)
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (31)
 - [Alarm](#alarm) (54)
 - [Lưu trữ, lịch sử và báo cáo](#history) (43)
@@ -175,6 +175,7 @@ Tổng cộng 580 mã.
 | `W_ITEM_COVERED` | — | Widget bị item phía trên che hoàn toàn | `core/project-manager`, `packages/project-schema` |
 | `W_ITEM_OUTSIDE` | — | Item nằm hoàn toàn ngoài màn hình | `core/project-manager`, `packages/project-schema` |
 | `W_LAYOUT_ITEM_ORPHAN` | — | Component của màn hình lưới không nằm trong ô nào nên không hiển thị | `core/project-manager`, `packages/project-schema` |
+| `W_NAV_SYSTEM` | — | Mục menu trỏ trang hệ thống mà project không có tính năng tương ứng (Alarm cần alarmFile, Lịch sử cần loggingFile, Công thức cần recipesFile): trang vận hành bỏ qua mục | `core/project-manager`, `packages/project-schema` |
 | `W_PULSE_READBACK` | — | Hành động `pulse` trên Tag bật đọc lại | `core/project-manager`, `packages/project-schema` |
 | `W_SCREEN_EMPTY` | — | Màn hình không có item | `core/project-manager`, `packages/project-schema` |
 | `W_SCREEN_TAGS_MANY` | — | Màn hình > 500 Tag riêng biệt | `core/project-manager`, `packages/project-schema` |
