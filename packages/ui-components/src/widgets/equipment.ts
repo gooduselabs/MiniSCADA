@@ -69,16 +69,16 @@ export class MatWEquipment extends ControlWidget {
         border-top: 4px solid var(--c);
         border-radius: var(--mat-radius-lg, var(--mat-radius, 4px));
       }
-      .st-run {
+      .w.st-run {
         --c: var(--mat-tile-green, #268426);
       }
-      .st-stop {
+      .w.st-stop {
         --c: #6f7f88;
       }
-      .st-fault {
+      .w.st-fault {
         --c: var(--mat-tile-rose, #c84845);
       }
-      .st-unknown {
+      .w.st-unknown {
         --c: var(--mat-offline, #6b777c);
       }
       .top {
