@@ -53,8 +53,11 @@ import './mat-toolbar.ts';
 import './mat-tree.ts';
 import { renderDock, renderEditor } from './registry.ts';
 
-/** `inspector`: khung dưới (editor có dock riêng, vd. Logic); `side`: khung Thuộc tính dọc bên phải. */
-type Split = 'left' | 'details' | 'inspector' | 'side';
+/**
+ * `inspector`: khung dưới (editor bảng, editor có dock riêng như Logic); `side`: cột Thuộc tính bên phải editor
+ * canvas; `info`: khung dưới Thông tin/Chẩn đoán của editor canvas.
+ */
+type Split = 'left' | 'details' | 'inspector' | 'side' | 'info';
 
 /** Thứ tự vòng của F6 (contracts/commands.md). */
 const REGIONS = ['tree', 'details', 'editor', 'inspector', 'taskcards', 'statusbar'] as const;
@@ -146,6 +149,7 @@ export class MatShell extends AppElement {
     if (split === 'left') this.app.setLayout({ leftWidth: value }, dims);
     else if (split === 'side') this.app.setLayout({ inspectorWidth: value }, dims);
     else if (split === 'details') this.app.setLayout({ detailsHeight: value }, dims);
+    else if (split === 'info') this.app.setLayout({ infoHeight: value }, dims);
     else this.app.setLayout({ inspectorHeight: value }, dims);
   }
 
@@ -172,7 +176,9 @@ export class MatShell extends AppElement {
         ? ws.inspectorWidth
         : split === 'details'
           ? ws.detailsHeight
-          : ws.inspectorHeight;
+          : split === 'info'
+            ? ws.infoHeight
+            : ws.inspectorHeight;
   }
 
   private onSplitDown(split: Split, e: MouseEvent): void {
@@ -366,6 +372,7 @@ export class MatShell extends AppElement {
         ? 'var(--insp-collapsed-h, 32px)'
         : `${ws.inspectorHeight}px`,
       '--insp-w': `${ws.inspectorWidth}px`,
+      '--info-h': ws.infoCollapsed ? 'var(--insp-collapsed-h, 32px)' : `${ws.infoHeight}px`,
     };
     // Editor canvas (màn hình SVG, màn hình lưới, mẫu): khung Thuộc tính dọc bên phải canvas (kiểu TIA
     // Portal/Visual Studio), canvas cao hết vùng giữa. Editor dạng bảng (Tag, ghi dữ liệu...) cần bề
@@ -423,7 +430,22 @@ export class MatShell extends AppElement {
               ${renderEditor(app, active)}
             </div>
             ${this.splitter(side ? 'side' : 'inspector')}
-            <mat-inspector class="inspector" data-region="inspector" .app=${app}></mat-inspector>
+            <mat-inspector
+              class="inspector ${side ? 'side-props' : ''}"
+              data-region="inspector"
+              .mode=${side ? 'props' : 'full'}
+              .app=${app}
+            ></mat-inspector>
+            ${
+              side
+                ? html`${this.splitter('info')}
+                    <mat-inspector
+                      class="inspector info-dock ${ws.infoCollapsed ? 'collapsed' : ''}"
+                      .mode=${'bottom'}
+                      .app=${app}
+                    ></mat-inspector>`
+                : nothing
+            }
           </section>
           <mat-taskcards
             class="right ${ws.taskCardOpen ? '' : 'collapsed'}"

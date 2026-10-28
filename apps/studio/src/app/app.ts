@@ -1532,6 +1532,7 @@ export class StudioApp {
     await this.store.validateNow();
     const { errors, warnings } = this.counts();
     this.setUi({ inspectorTab: 'info' });
+    if (errors > 0) this.setInfoCollapsed(false);
     this.toast(t('toast.validated', { e: errors, w: warnings }));
   }
 
@@ -1780,6 +1781,11 @@ export class StudioApp {
       this.setWorkspace({ inspectorCollapsed: collapsed });
   }
 
+  /** 036: gập/mở khung dưới Thông tin/Chẩn đoán của editor canvas. */
+  setInfoCollapsed(collapsed: boolean): void {
+    if (collapsed !== this.ws.infoCollapsed) this.setWorkspace({ infoCollapsed: collapsed });
+  }
+
   setTheme(theme: Theme): void {
     this.setWorkspace({ theme });
   }
@@ -1787,7 +1793,10 @@ export class StudioApp {
   /** Kéo thanh đổi cỡ; `dims` là chiều cao đo được để kẹp (0 = chưa đo). */
   setLayout(
     patch: Partial<
-      Pick<Workspace, 'leftWidth' | 'detailsHeight' | 'inspectorHeight' | 'inspectorWidth'>
+      Pick<
+        Workspace,
+        'leftWidth' | 'detailsHeight' | 'inspectorHeight' | 'inspectorWidth' | 'infoHeight'
+      >
     >,
     dims: { leftColumnHeight: number; centerHeight: number; centerWidth?: number } = {
       leftColumnHeight: 0,
@@ -1795,7 +1804,10 @@ export class StudioApp {
     },
   ): void {
     // đổi chiều cao khung dưới (kéo thanh chia) thì mở lại khung nếu đang gập
-    const open = patch.inspectorHeight !== undefined ? { inspectorCollapsed: false } : {};
+    const open = {
+      ...(patch.inspectorHeight !== undefined ? { inspectorCollapsed: false } : {}),
+      ...(patch.infoHeight !== undefined ? { infoCollapsed: false } : {}),
+    };
     this.ws = clampLayout({ ...this.ws, ...patch, ...open }, dims);
     saveWorkspace(this.storage, this.ws);
     this.emit();
@@ -1817,7 +1829,15 @@ export class StudioApp {
   }
 
   setInspectorTab(tab: InspectorTab): void {
+    // chọn Thông tin/Chẩn đoán (nhấp tab, số lỗi ở thanh trạng thái...) thì mở khung dưới của editor canvas
+    const open = tab !== 'props' && this.ws.infoCollapsed;
+    if (open) {
+      this.ws = { ...this.ws, infoCollapsed: false };
+      saveWorkspace(this.storage, this.ws);
+    }
+    // một lần báo người nghe cho cả hai thay đổi
     if (tab !== this.u.inspectorTab) this.setUi({ inspectorTab: tab });
+    else if (open) this.emit();
   }
 
   setFindQuery(q: string): void {

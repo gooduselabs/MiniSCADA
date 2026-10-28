@@ -85,6 +85,48 @@ describe('mat-shell', () => {
     expect(el.querySelector<HTMLElement>('.win')?.style.getPropertyValue('--insp-w')).toBe('280px');
   });
 
+  it('036: editor canvas: cột phải chỉ có Thuộc tính, Thông tin/Chẩn đoán ở khung dưới gập sẵn, nhấp tab thì mở', async () => {
+    const { app } = await newApp();
+    const el = await mount<MatShell>('mat-shell', app);
+    app.openEditor('screen:main');
+    await settled(el);
+    const side = el.querySelector<HTMLElement>('mat-inspector.side-props')!;
+    expect(side.querySelector('.insp-title')?.textContent).toBe('Thuộc tính');
+    expect(side.querySelector('[role="tab"]')).toBeNull();
+    const dock = el.querySelector<HTMLElement>('mat-inspector.info-dock')!;
+    const tabs = [...dock.querySelectorAll('[role="tab"]')].map((b) => b.textContent!.trim());
+    expect(tabs.map((x) => x.replace(/d+$/, '').trim())).toEqual(['Thông tin', 'Chẩn đoán']);
+    expect(app.workspace.infoCollapsed).toBe(true);
+    expect(dock.querySelector('.insp-body')).toBeNull();
+    expect(el.querySelector<HTMLElement>('.win')?.style.getPropertyValue('--info-h')).toContain(
+      '32px',
+    );
+    dock.querySelector<HTMLElement>('#insp-btab-diag')!.click();
+    await settled(el);
+    expect(app.workspace.infoCollapsed).toBe(false);
+    expect(dock.querySelector('.insp-body')).not.toBeNull();
+    expect(el.querySelector<HTMLElement>('.win')?.style.getPropertyValue('--info-h')).toBe('200px');
+    // chọn phần tử (tab Thuộc tính) không làm gập khung dưới; cột phải vẫn hiện Thuộc tính
+    app.setInspectorTab('props');
+    await settled(el);
+    expect(app.workspace.infoCollapsed).toBe(false);
+    dock.querySelector<HTMLElement>('.insp-toggle')!.click();
+    await settled(el);
+    expect(app.workspace.infoCollapsed).toBe(true);
+    // thanh kéo chiều cao khung dưới mở lại khung
+    press(el.querySelector<HTMLElement>('[data-split="info"]')!, 'ArrowUp');
+    expect(app.workspace.infoCollapsed).toBe(false);
+    expect(app.workspace.infoHeight).toBe(216);
+    await app.run('view.resetLayout');
+    expect(app.workspace.infoCollapsed).toBe(true);
+    expect(app.workspace.infoHeight).toBe(200);
+    // editor bảng: khung dưới đầy đủ như cũ
+    app.openEditor('tags');
+    await settled(el);
+    expect(el.querySelector('mat-inspector.info-dock')).toBeNull();
+    expect(el.querySelectorAll('mat-inspector [role="tab"]').length).toBe(3);
+  });
+
   it('F6 / Shift+F6 chuyển focus qua các vùng theo vòng', async () => {
     const { app } = await newApp();
     const el = await mount<MatShell>('mat-shell', app);

@@ -13,6 +13,9 @@ export interface Workspace {
   inspectorCollapsed: boolean;
   /** Độ rộng khung Thuộc tính khi đặt dọc bên phải editor (editor không có khung dưới riêng). */
   inspectorWidth: number;
+  /** 036: khung dưới Thông tin/Chẩn đoán của editor canvas (cột phải chỉ có Thuộc tính): chiều cao và trạng thái gập. */
+  infoHeight: number;
+  infoCollapsed: boolean;
   taskCard: TaskCard;
   taskCardOpen: boolean;
   theme: Theme;
@@ -42,6 +45,8 @@ export function defaultWorkspace(windowWidth: number): Workspace {
     inspectorHeight: 218,
     inspectorCollapsed: false,
     inspectorWidth: 400,
+    infoHeight: 200,
+    infoCollapsed: true,
     taskCard: 'toolbox',
     taskCardOpen: windowWidth >= TASK_CARD_MIN_WINDOW,
     theme: 'system',
@@ -76,6 +81,8 @@ export function loadWorkspace(storage: StorageLike | null, windowWidth: number):
   if (isNum(raw.detailsHeight)) ws.detailsHeight = raw.detailsHeight;
   if (isNum(raw.inspectorHeight)) ws.inspectorHeight = raw.inspectorHeight;
   if (isNum(raw.inspectorWidth)) ws.inspectorWidth = raw.inspectorWidth;
+  if (isNum(raw.infoHeight)) ws.infoHeight = raw.infoHeight;
+  if (typeof raw.infoCollapsed === 'boolean') ws.infoCollapsed = raw.infoCollapsed;
   if (typeof raw.inspectorCollapsed === 'boolean') ws.inspectorCollapsed = raw.inspectorCollapsed;
   if (TASK_CARDS.includes(raw.taskCard as TaskCard)) ws.taskCard = raw.taskCard as TaskCard;
   if (typeof raw.taskCardOpen === 'boolean') ws.taskCardOpen = raw.taskCardOpen;
@@ -114,6 +121,7 @@ export function clampLayout(
     leftWidth: clamp(ws.leftWidth, 180, 480),
     detailsHeight: clamp(ws.detailsHeight, 70, detailsMax),
     inspectorHeight: clamp(ws.inspectorHeight, 90, inspectorMax),
+    infoHeight: clamp(ws.infoHeight, 90, inspectorMax),
     inspectorWidth: clamp(ws.inspectorWidth, 280, Math.min(720, widthMax)),
   };
 }

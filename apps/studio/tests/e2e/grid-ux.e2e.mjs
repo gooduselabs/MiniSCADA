@@ -253,4 +253,44 @@ export default async function gridUx({ page, check, shot, axe }) {
   await sleep(150);
   await shot('7-vung-mau');
   await axe('khung Thuộc tính tab Hiển thị đồng hồ kim');
+
+  // 8. (036) phần cột còn trống cuối hàng: vùng "+ Thêm ô (n cột)" thả component từ Toolbox vào được, nhấp thêm ô
+  await page.click(cellSel('c1'));
+  const free0 = await page.$$eval('mat-grid-editor .ge-free', (e) => e.length);
+  await page.click('mat-grid-editor [data-act="mini-narrow"]');
+  await waitFor(
+    page,
+    (n) => document.querySelectorAll('mat-grid-editor .ge-free').length === n + 1,
+    free0,
+  );
+  const freeSel = await page.$$eval('mat-grid-editor .ge-free', (els) => {
+    const e = els.find((x) => x.textContent.includes('1 cột'));
+    const r = e?.getBoundingClientRect();
+    return e ? { row: e.dataset.free, text: e.textContent.trim(), w: r.width, h: r.height } : null;
+  });
+  check(
+    'hàng thiếu cột: hiện vùng "Thêm ô (1 cột)" có kích thước',
+    !!freeSel && freeSel.w > 20 && freeSel.h > 20,
+    JSON.stringify(freeSel),
+  );
+  await shot('8-vung-cot-trong');
+  const cellsBefore = await page.$$eval('mat-grid-editor .ge-cell', (e) => e.length);
+  const tool = 'mat-taskcards .tool[data-widget="stat-tile"]';
+  const hasTool = await page.$(tool);
+  if (!hasTool) await page.click('mat-taskcards [role="tab"]').catch(() => {});
+  const res = await dragTo(
+    page,
+    tool,
+    `mat-grid-editor .ge-free[data-free="${freeSel?.row}"]`,
+    0.5,
+    0.5,
+  );
+  await sleep(300);
+  const cellsAfter = await page.$$eval('mat-grid-editor .ge-cell', (e) => e.length);
+  check(
+    'thả component Toolbox vào vùng cột trống: thêm ô mới có component',
+    res === 'ok' && cellsAfter === cellsBefore + 1,
+    `${res} ${cellsBefore}→${cellsAfter}`,
+  );
+  await shot('9-tha-vao-cot-trong');
 }

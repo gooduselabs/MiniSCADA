@@ -459,9 +459,10 @@ kbd {
   cursor: grab;
 }
 
-/* Khung Thuộc tính dọc bên phải editor (kiểu TIA Portal/Visual Studio): editor cao hết vùng giữa */
+/* Editor canvas (036): cột Thuộc tính bên phải editor (kiểu TIA Portal/Visual Studio); Thông tin và Chẩn đoán ở
+   khung dưới rộng hết vùng giữa, mặc định gập (chỉ dải tab) để canvas cao */
 .center.side {
-  grid-template-rows: 32px minmax(0, 1fr);
+  grid-template-rows: 32px minmax(0, 1fr) 4px var(--info-h);
   grid-template-columns: minmax(0, 1fr) 4px var(--insp-w);
 }
 .center.side > .tabbar {
@@ -474,13 +475,34 @@ kbd {
 }
 .center.side > .split-v {
   grid-column: 2;
-  grid-row: 1 / -1;
+  grid-row: 1 / 3;
 }
-.center.side > .inspector {
+.center.side > .side-props {
   grid-column: 3;
-  grid-row: 1 / -1;
+  grid-row: 1 / 3;
   border-top: 0;
   border-left: 1px solid var(--border);
+}
+.center.side > .split-h {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+.center.side > .info-dock {
+  grid-column: 1 / -1;
+  grid-row: 4;
+}
+.insp-head .insp-title {
+  align-self: center;
+  padding: 0 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.insp-tabs .insp-toggle {
+  align-self: center;
+  margin-right: 4px;
+}
+.insp-tabs .insp-toggle.closed .ic {
+  transform: rotate(180deg);
 }
 .center.side .insp-tabs {
   height: 32px;

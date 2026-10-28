@@ -92,3 +92,14 @@ describe('CSP của Studio', () => {
     expect(main).toMatch(/new StudioApp\(\{[^}]*link: deviceLink/);
   });
 });
+
+// 036: Tauri trên Windows mặc định nuốt kéo-thả (dragDropEnabled true) nên HTML5 drop trong WebView2 không tới trang:
+// kéo component từ Toolbox, kéo đổi ô trong trình soạn lưới cần tắt. Studio không nhận file kéo từ Explorer.
+describe('cửa sổ Tauri', () => {
+  it('tắt bộ xử lý kéo-thả file của Tauri để HTML5 drag-drop chạy trong WebView2', () => {
+    const conf = JSON.parse(readFileSync(CONF, 'utf8')) as {
+      app: { windows: Array<{ dragDropEnabled?: boolean }> };
+    };
+    expect(conf.app.windows.every((w) => w.dragDropEnabled === false)).toBe(true);
+  });
+});

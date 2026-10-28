@@ -1138,10 +1138,10 @@ export class MatGridEditor extends AppElement {
         data-act="cell-add"
         title=${t('lay.cellAdd')}
         aria-label=${t('lay.cellAdd')}
-        ?disabled=${ro}
-        @click=${() => this.edit((d) => addCell(d, at.row.id))}
+        ?disabled=${ro || this.freeOf(at.row) === 0}
+        @click=${() => this.addFreeCell(at.row.id)}
       >
-        ${icon('plus')}
+        ${icon('plus')} ${t('lay.cellAdd')}
       </button>
       <button
         type="button"
@@ -1414,7 +1414,92 @@ export class MatGridEditor extends AppElement {
           </div>`;
         }),
       )
+      .concat(this.freeAreas(d))
       .concat(this.miniHost(d));
+  }
+
+  /** Số cột còn trống cuối hàng (0 khi hàng đã đủ 12 cột hoặc đủ số ô tối đa). */
+  private freeOf(row: GridRow): number {
+    if (row.cells.length >= 12) return 0;
+    return Math.max(0, GRID_COLUMNS - row.cells.reduce((a, c) => a + (c.offset ?? 0) + c.span, 0));
+  }
+
+  /** 036: thêm một ô phủ phần cột còn trống của hàng; trả id ô mới. */
+  private addFreeCell(rowId: string): string | null {
+    const r = this.edit((d) => addCell(d, rowId));
+    if (!r || r.rejected) return null;
+    const row = (r.doc as GridDoc).layout.rows.find((x) => x.id === rowId);
+    const id = row?.cells[row.cells.length - 1]?.id ?? null;
+    if (id) this.select(id);
+    return id;
+  }
+
+  /** 036: thả vào vùng cột trống cuối hàng: component từ Toolbox thành ô mới, ô đang kéo dời sang cuối hàng. */
+  private onFreeDrop(e: DragEvent, row: GridRow): void {
+    this.overCell = null;
+    this.dragging = false;
+    this.dropAt = null;
+    if (this.app.screens.previewMode !== 'off' || this.app.store.state.readOnly) return;
+    const cellSrc = e.dataTransfer?.getData(CELL_TYPE) ?? '';
+    if (cellSrc) {
+      e.preventDefault();
+      const r = this.edit((x) => moveCellTo(x, cellSrc, row.id, row.cells.length));
+      if (r && !r.rejected) this.select(cellSrc);
+      return;
+    }
+    const widget =
+      e.dataTransfer?.getData('application/x-mat-widget') || this.typeOf(e, WIDGET_TYPE);
+    if (!widget) return;
+    e.preventDefault();
+    const id = this.addFreeCell(row.id);
+    if (id) void this.attach(id, widget);
+  }
+
+  /**
+   * 036: phần cột còn trống cuối mỗi hàng (vd. ô 8/12 còn 4 cột) hiện thành vùng nét đứt "+ Thêm ô (4 cột)": nhấp để
+   * thêm ô, thả component hoặc ô vào được. Đặt trong slot của ô cuối hàng, lệch sang phải bằng CSS.
+   */
+  private freeAreas(d: GridDoc): TemplateResult<1>[] {
+    if (this.entered !== null || this.app.store.state.readOnly) return [];
+    const gap = d.layout.gap ?? 12;
+    return d.layout.rows.flatMap((row) => {
+      const free = this.freeOf(row);
+      const last = row.cells[row.cells.length - 1];
+      if (!free || !last) return [];
+      const label = t('lay.freeAdd', { n: free });
+      const over = this.overCell === `free-${row.id}`;
+      return [
+        html`<div
+          class="ge-free ${over ? 'over' : ''}"
+          slot=${`cell-${last.id}`}
+          data-free=${row.id}
+          role="button"
+          tabindex="0"
+          title=${label}
+          aria-label=${label}
+          style=${`--g:${row.gap ?? gap}px;--s:${last.span};--f:${free}`}
+          @click=${() => this.addFreeCell(row.id)}
+          @keydown=${(e: KeyboardEvent) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            this.addFreeCell(row.id);
+          }}
+          @dragover=${(e: DragEvent) => {
+            const types = e.dataTransfer?.types ?? [];
+            if (!types.includes(CELL_TYPE) && this.typeOf(e, WIDGET_TYPE) === null) return;
+            e.preventDefault();
+            if (this.dropAt !== null) this.dropAt = null;
+            if (!over) this.overCell = `free-${row.id}`;
+          }}
+          @dragleave=${() => {
+            if (this.overCell === `free-${row.id}`) this.overCell = null;
+          }}
+          @drop=${(e: DragEvent) => this.onFreeDrop(e, row)}
+        >
+          ${icon('plus')}<span>${label}</span>
+        </div>`,
+      ];
+    });
   }
 
   /**

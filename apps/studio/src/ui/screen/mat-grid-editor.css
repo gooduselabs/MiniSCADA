@@ -479,3 +479,30 @@ mat-grid-editor .ge-cell.row-hover .ge-rowgrip {
 mat-grid-editor .ge-cell.empty .ge-tag {
   display: none;
 }
+
+/* 036: phần cột còn trống cuối hàng: vùng nét đứt "+ Thêm ô (n cột)", nhấp hoặc thả component vào */
+mat-grid-editor .ge-free {
+  position: absolute;
+  inset: 0 auto 0 calc(100% + var(--g));
+  width: calc((100% - (var(--s) - 1) * var(--g)) / var(--s) * var(--f) + (var(--f) - 1) * var(--g));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--panel-2) 60%, transparent);
+  color: var(--muted);
+  font-size: var(--fs-sm, 12px);
+  cursor: pointer;
+  z-index: 1;
+}
+mat-grid-editor .ge-free:hover,
+mat-grid-editor .ge-free:focus-visible,
+mat-grid-editor .ge-free.over {
+  color: var(--accent);
+  background: var(--accent-soft);
+  outline: none;
+}

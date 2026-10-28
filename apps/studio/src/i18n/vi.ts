@@ -270,6 +270,18 @@ const viCore = {
   'insp.issue.noJump': 'Lỗi này không có chỗ để nhảy tới; xem file {file}.',
   'insp.issue.error': 'Lỗi',
   'insp.issue.warning': 'Cảnh báo',
+  'insp.dock.open': 'Mở khung Thông tin',
+  'insp.dock.close': 'Thu gọn khung Thông tin',
+  'issue.layout.rows': "Màn hình '{screen}' vượt giới hạn {max} hàng: xóa bớt hàng.",
+  'issue.layout.cells':
+    "Màn hình '{screen}', hàng {row}: một hàng cần từ 1 đến {max} ô (hàng trống hoặc quá nhiều ô).",
+  'issue.layout.span':
+    "Màn hình '{screen}', hàng {row}, ô {cell}: độ rộng ô sai hoặc hàng rộng quá {cols} cột.",
+  'issue.layout.id': "Màn hình '{screen}': mã hàng hoặc ô không hợp lệ hay bị trùng.",
+  'issue.layout.itemRef':
+    "Màn hình '{screen}', hàng {row}, ô {cell}: ô trỏ tới component không còn trên màn hình.",
+  'issue.layout.itemDup': "Màn hình '{screen}': một component được đặt ở nhiều ô.",
+  'issue.layout.columns': "Màn hình '{screen}': lưới phải có {cols} cột.",
   'insp.issues': 'Lỗi và cảnh báo',
   'insp.diag.offTitle': 'Chưa kết nối thiết bị',
   'insp.diag.offText': 'Kết nối theo dõi (Ctrl+K) để xem trạng thái thiết bị và lưu trữ.',

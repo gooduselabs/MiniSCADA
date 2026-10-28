@@ -27,6 +27,7 @@ export const viLayout = {
   'lay.cellLeft': 'Đưa ô sang trái (Alt+←)',
   'lay.cellRight': 'Đưa ô sang phải (Alt+→)',
   'lay.cellAdd': 'Thêm ô vào hàng',
+  'lay.freeAdd': 'Thêm ô ({n} cột)',
   'lay.cellRemove': 'Xóa ô',
   'lay.rowUp': 'Đưa hàng lên (Alt+↑)',
   'lay.rowDown': 'Đưa hàng xuống (Alt+↓)',

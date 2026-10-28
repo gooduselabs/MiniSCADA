@@ -301,10 +301,11 @@ export function removeCell(doc: ScreenModel, cellId: string): GridEditResult {
   const at = findCell(l, cellId);
   if (!at) return reject(doc, 'unknown-cell');
   const gone = l.rows[at.r]!.cells[at.c]!.item;
-  const layout = mapRow(l, at.r, (row) => ({
-    ...row,
-    cells: row.cells.filter((_, i) => i !== at.c),
-  }));
+  // hàng hết ô thì bỏ luôn hàng (hàng không có ô là bố cục sai, E_LAYOUT_LIMIT)
+  const cells = l.rows[at.r]!.cells.filter((_, i) => i !== at.c);
+  const layout = cells.length
+    ? mapRow(l, at.r, (row) => ({ ...row, cells }))
+    : { ...l, rows: l.rows.filter((_, i) => i !== at.r) };
   return {
     ...withLayout(
       doc,

@@ -167,6 +167,10 @@ describe('grid-ops', () => {
     const rc = removeCell(doc(), 'c1');
     expect(L(rc.doc).rows[0]!.cells.map((c) => c.id)).toEqual(['c2', 'c3']);
     expect(rc.doc.items).toEqual([]);
+    // 036: xóa ô cuối cùng của hàng thì bỏ cả hàng (hàng không ô là E_LAYOUT_LIMIT)
+    let d = doc();
+    for (const id of ['c1', 'c2', 'c3']) d = removeCell(d, id).doc as typeof d;
+    expect(L(d).rows).toEqual([]);
     const rr = removeRow(doc(), 'r1');
     expect(L(rr.doc).rows).toEqual([]);
     expect(rr.doc.items).toEqual([]);

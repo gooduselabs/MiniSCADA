@@ -8,6 +8,7 @@ import type { InspectorTab } from '../app/app.ts';
 import { t } from '../i18n/index.ts';
 import { severityOf } from '../model/issue-map.ts';
 import { AppElement, icon } from './base.ts';
+import { issueText } from './issue-text.ts';
 import { renderDiagnostics, renderDock, renderProps, type InspectorView } from './registry.ts';
 
 const TABS: ReadonlyArray<{ id: InspectorTab; label: 'insp.props' | 'insp.info' | 'insp.diag' }> = [
@@ -17,6 +18,12 @@ const TABS: ReadonlyArray<{ id: InspectorTab; label: 'insp.props' | 'insp.info' 
 ];
 
 const issueId = (i: number) => `issue-${i}`;
+
+/**
+ * 036: `full` ba tab (editor bảng); `props` chỉ Thuộc tính (cột phải editor canvas); `bottom` chỉ Thông tin và
+ * Chẩn đoán (khung dưới editor canvas, gập được).
+ */
+export type InspectorMode = 'full' | 'props' | 'bottom';
 
 /** Một dòng thuộc tính: nhãn, giá trị (chữ), phần thêm bên phải. */
 export const prow = (
@@ -32,6 +39,29 @@ export const prow = (
 
 export class MatInspector extends AppElement {
   private cursor = 0;
+  private modeValue: InspectorMode = 'full';
+
+  get mode(): InspectorMode {
+    return this.modeValue;
+  }
+
+  set mode(m: InspectorMode) {
+    if (m === this.modeValue) return;
+    this.modeValue = m;
+    this.requestUpdate();
+  }
+
+  private tabs() {
+    return this.modeValue === 'bottom' ? TABS.filter((x) => x.id !== 'props') : TABS;
+  }
+
+  /** Tab đang hiện: khung dưới không có Thuộc tính nên hiện Thông tin. */
+  private shownTab(): InspectorTab {
+    const tab = this.app.ui.inspectorTab;
+    if (this.modeValue === 'props') return 'props';
+    if (this.modeValue === 'bottom' && tab === 'props') return 'info';
+    return tab;
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -39,15 +69,16 @@ export class MatInspector extends AppElement {
   }
 
   private onTabKey(e: KeyboardEvent, tab: InspectorTab): void {
-    const i = TABS.findIndex((x) => x.id === tab);
+    const tabs = this.tabs();
+    const i = tabs.findIndex((x) => x.id === tab);
     let j: number;
-    if (e.key === 'ArrowRight') j = (i + 1) % TABS.length;
-    else if (e.key === 'ArrowLeft') j = (i - 1 + TABS.length) % TABS.length;
+    if (e.key === 'ArrowRight') j = (i + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
     else if (e.key === 'Home') j = 0;
-    else if (e.key === 'End') j = TABS.length - 1;
+    else if (e.key === 'End') j = tabs.length - 1;
     else return;
     e.preventDefault();
-    this.app.setInspectorTab(TABS[j].id);
+    this.app.setInspectorTab(tabs[j]!.id);
     void this.updateComplete.then(() =>
       this.querySelector<HTMLElement>('.insp-tabs [aria-selected="true"]')?.focus(),
     );
@@ -136,7 +167,7 @@ export class MatInspector extends AppElement {
       >
       <span class="mono code">${it.code}</span>
       <span class="loc mono">${it.file}${it.path ? ` ${it.path}` : ''}</span>
-      <span class="msg">${it.message}</span>
+      <span class="msg">${issueText(this.app, it)}</span>
     </div>`;
   }
 
@@ -180,7 +211,8 @@ export class MatInspector extends AppElement {
     // Editor có khung dưới riêng (Logic: Inspector trái, Thông tin và Thử logic phải; feature 011).
     const dock = app.store.state.project ? renderDock(app) : null;
     if (dock !== null) return dock;
-    const tab = app.ui.inspectorTab;
+    const tab = this.shownTab();
+    if (this.modeValue === 'props') return this.renderProps();
     const view =
       tab === 'info' ? this.infoView() : tab === 'diag' ? this.diagView() : this.propsView();
     const { errors, warnings } = app.counts();
@@ -191,16 +223,20 @@ export class MatInspector extends AppElement {
             >${warnings}</span
           >`
         : nothing;
+    const bottom = this.modeValue === 'bottom';
+    const collapsed = bottom && app.workspace.infoCollapsed;
+    const pid = bottom ? 'insp-panel-b' : 'insp-panel';
+    const tid = (id: string) => (bottom ? `insp-btab-${id}` : `insp-tab-${id}`);
     return html`<div class="insp-tabs">
         <div class="insp-tablist" role="tablist" aria-label=${t('shell.inspector')}>
-          ${TABS.map(
+          ${this.tabs().map(
             (x) =>
               html`<button
                 type="button"
                 role="tab"
-                id="insp-tab-${x.id}"
+                id=${tid(x.id)}
                 aria-selected=${tab === x.id ? 'true' : 'false'}
-                aria-controls="insp-panel"
+                aria-controls=${collapsed ? nothing : pid}
                 tabindex=${tab === x.id ? 0 : -1}
                 @click=${() => app.setInspectorTab(x.id)}
                 @keydown=${(e: KeyboardEvent) => this.onTabKey(e, x.id)}
@@ -210,13 +246,49 @@ export class MatInspector extends AppElement {
           )}
         </div>
         <span class="insp-ctx" title=${view.ctx}>${view.ctx}</span>
+        ${
+          bottom
+            ? html`<button
+                type="button"
+                class="ibtn sm insp-toggle ${collapsed ? 'closed' : ''}"
+                aria-expanded=${collapsed ? 'false' : 'true'}
+                aria-label=${t(collapsed ? 'insp.dock.open' : 'insp.dock.close')}
+                title=${t(collapsed ? 'insp.dock.open' : 'insp.dock.close')}
+                @click=${() => app.setInfoCollapsed(!collapsed)}
+              >
+                ${icon('chev-d', 'sm')}
+              </button>`
+            : nothing
+        }
+      </div>
+      ${
+        collapsed
+          ? nothing
+          : html`<div
+              class="insp-body"
+              id=${pid}
+              role="tabpanel"
+              tabindex="0"
+              aria-labelledby=${tid(tab)}
+            >
+              ${view.body}
+            </div>`
+      }`;
+  }
+
+  /** Cột Thuộc tính bên phải editor canvas: tiêu đề nhỏ "Thuộc tính" và tên phần tử đang chọn. */
+  private renderProps() {
+    const view = this.propsView();
+    return html`<div class="insp-tabs insp-head">
+        <span class="insp-title" id="insp-props-title">${t('insp.props')}</span>
+        <span class="insp-ctx" title=${view.ctx}>${view.ctx}</span>
       </div>
       <div
         class="insp-body"
         id="insp-panel"
-        role="tabpanel"
+        role="region"
         tabindex="0"
-        aria-labelledby="insp-tab-${tab}"
+        aria-labelledby="insp-props-title"
       >
         ${view.body}
       </div>`;
