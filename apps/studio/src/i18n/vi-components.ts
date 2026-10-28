@@ -166,4 +166,6 @@ export const viComponents = {
   'wprop.runText': 'Chữ khi chạy (trống = Đang chạy)',
   'wprop.stoppedText': 'Chữ khi dừng (trống = Dừng)',
   'wprop.faultText': 'Chữ khi lỗi (trống = Lỗi)',
+  'legacy.converted': 'Đã chuyển {n} Thẻ chỉ số màu sang Thẻ giá trị — bấm Lưu để giữ.',
+  'legacy.dismiss': 'Ẩn thông báo',
 } as const;

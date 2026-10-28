@@ -1996,3 +1996,18 @@ mat-tree .sdot.error {
   margin: 4px 2px;
   background: var(--border);
 }
+
+/* Feature 037: dải báo đã đổi widget loại cũ khi mở project */
+.legacy-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: var(--fs-sm, 12px);
+  background: var(--warn-soft, #fdefda);
+  color: var(--fg);
+  border-bottom: 1px solid var(--border);
+}
+.legacy-banner span {
+  flex: 1;
+}

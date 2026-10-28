@@ -419,6 +419,21 @@ export class MatShell extends AppElement {
           ${this.splitter('left')}
           <section class="center ${side ? 'side' : ''}">
             <mat-tabs class="tabbar" .app=${app}></mat-tabs>
+            ${
+              app.store.state.legacyConverted
+                ? html`<div class="legacy-banner" role="status">
+                    <span>${t('legacy.converted', { n: app.store.state.legacyConverted })}</span>
+                    <button
+                      type="button"
+                      class="ibtn"
+                      aria-label=${t('legacy.dismiss')}
+                      @click=${() => app.store.dismissLegacyNotice()}
+                    >
+                      ×
+                    </button>
+                  </div>`
+                : nothing
+            }
             <div
               class="editor"
               id="editor-panel"

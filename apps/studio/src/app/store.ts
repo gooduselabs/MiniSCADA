@@ -143,6 +143,8 @@ export interface StudioState {
   readonly refusal: { version: string } | null;
   /** Số thứ tự của lần kiểm đã áp. */
   readonly checkSeq: number;
+  /** Feature 037: số widget loại cũ (stat-tile) vừa tự đổi khi mở; > 0 thì hiện dải báo "bấm Lưu để giữ". */
+  readonly legacyConverted: number;
   readonly checking: boolean;
   readonly history: EditHistory<string>;
   readonly tabs: readonly EditorId[];
@@ -185,16 +187,28 @@ const SCREEN_FILE = /^screens\/[^/]+\.screen\.json$/;
  * thì trả đúng `docs` cũ (project không bị đánh dấu đã sửa).
  */
 export function upgradeLegacyDocs(docs: Record<string, ProjectDoc>): Record<string, ProjectDoc> {
+  return convertLegacyDocs(docs).docs;
+}
+
+/** Như upgradeLegacyDocs, kèm số item đã đổi (cho dải báo). */
+export function convertLegacyDocs(docs: Record<string, ProjectDoc>): {
+  docs: Record<string, ProjectDoc>;
+  converted: number;
+} {
+  let converted = 0;
   let out: Record<string, ProjectDoc> | null = null;
   for (const [rel, doc] of Object.entries(docs)) {
     if (!SCREEN_FILE.test(rel) || !doc.editable || !doc.value || typeof doc.value !== 'object')
       continue;
     const next = upgradeLegacyWidgets(doc.value as { items?: unknown });
     if (next === null) continue;
+    const before = (doc.value as { items?: Array<{ widget?: string }> }).items ?? [];
+    const after = (next as { items?: Array<{ widget?: string }> }).items ?? [];
+    converted += after.filter((it, i) => it?.widget !== before[i]?.widget).length;
     out ??= { ...docs };
     out[rel] = withValue(doc, next);
   }
-  return out ?? docs;
+  return { docs: out ?? docs, converted };
 }
 
 const EMPTY_OUTLINE: ProjectOutline = outlineOf({});
@@ -230,6 +244,7 @@ const initialState = (): StudioState => ({
   loaded03: null,
   loaded05: null,
   pendingUpgrade: false,
+  legacyConverted: 0,
   upgradePlan: null,
   upgrade: null,
   readOnly: false,
@@ -326,10 +341,16 @@ export class StudioStore {
     let outline = outlineOf(filesOf(docs));
     const old = !outline.format11 && outline.project !== null;
     // Feature 037: loại widget đã gộp (stat-tile → card) tự chuyển khi mở; project chưa lưu cho tới khi người dùng Lưu.
-    const docs2 = old ? docs : upgradeLegacyDocs(docs);
-    if (docs2 !== docs) outline = outlineOf(filesOf(docs2));
+    // Không vào lịch sử hoàn tác (lịch sử bắt đầu rỗng): Ctrl+Z không đưa thẻ cũ trở lại.
+    const conv = old ? { docs, converted: 0 } : convertLegacyDocs(docs);
+    if (conv.docs !== docs) outline = outlineOf(filesOf(conv.docs));
     this.s = { ...initialState(), project: { display } };
-    this.set({ docs: docs2, outline, pendingUpgrade: old });
+    this.set({
+      docs: conv.docs,
+      outline,
+      pendingUpgrade: old,
+      legacyConverted: conv.converted,
+    });
     void this.runValidate();
     if (old) void this.planUpgrade();
   }
@@ -437,6 +458,11 @@ export class StudioStore {
     this.set({ upgradePlan: plan });
   }
 
+  /** Đóng dải báo đổi widget cũ (thay đổi vẫn chờ lưu). */
+  dismissLegacyNotice(): void {
+    if (this.s.legacyConverted) this.set({ legacyConverted: 0 });
+  }
+
   /** Mở chỉ đọc (người dùng chọn trong hộp thoại Nâng cấp): khóa mọi sửa; Nạp xuống vẫn nguyên trạng. */
   openReadOnly(): void {
     if (!this.s.project || !this.s.pendingUpgrade) return;
@@ -477,13 +503,15 @@ export class StudioStore {
           ? withValue(cur, JSON.parse(stripBom(text)) as unknown)
           : withPending(cur, text);
     }
-    docs = upgradeLegacyDocs(withEditable(docs));
+    const conv = convertLegacyDocs(withEditable(docs));
+    docs = conv.docs;
     this.cancelTimer();
     this.set({
       docs,
       outline: outlineOf(filesOf(docs)),
       pendingUpgrade: false,
       upgradePlan: null,
+      legacyConverted: conv.converted,
       history: createHistory<string>(),
       upgrade: {
         from,
@@ -690,6 +718,7 @@ export class StudioStore {
       if (r.status !== 'saved') return r;
       files.push(doc.rel);
     }
+    if (this.s.legacyConverted) this.set({ legacyConverted: 0 });
     return { status: 'saved', files };
   }
 
