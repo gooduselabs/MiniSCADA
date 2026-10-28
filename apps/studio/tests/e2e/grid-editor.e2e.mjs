@@ -51,7 +51,7 @@ export default async function gridEditor({ page, check, shot, axe }) {
   const empty = await page.$$eval('mat-grid-editor .ge-cell.empty', (e) =>
     e.map((x) => x.dataset.cell),
   );
-  const kinds = ['card', 'gauge', 'lamp'];
+  const kinds = ['card', 'gauge', 'multi-state'];
   for (let i = 0; i < 3; i++) {
     const box = await page.$eval(`mat-grid-editor .ge-cell[data-cell="${empty[i]}"]`, (e) => {
       const r = e.getBoundingClientRect();

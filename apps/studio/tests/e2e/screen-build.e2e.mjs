@@ -18,7 +18,7 @@ import {
 const WIDGETS = [
   'card',
   'label',
-  'lamp',
+  'multi-state', // 037: Đèn báo gộp vào Đèn / trạng thái
   'gauge',
   'level',
   'panel',
@@ -66,7 +66,7 @@ function emptyProject() {
 const BIND = [
   ['card_1', 'TANK01.LEVEL'],
   ['label_1', 'PUMP01.NAME'],
-  ['lamp_1', 'PUMP01.FAULT'],
+  ['multi_state_1', 'PUMP01.FAULT'],
   ['gauge_1', 'TANK01.LEVEL'],
   ['level_1', 'TANK01.LEVEL'],
   ['line_1', 'TANK01.LEVEL'],
