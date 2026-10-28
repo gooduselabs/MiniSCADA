@@ -49,3 +49,38 @@ Chưa làm (đã cân nhắc, để sau): **Bộ đếm giờ chạy** (cần t�
 ## 4. Hiệu năng
 
 Chuyển động: nháy số 600 ms một lần khi giá trị đổi (`animation` nền, hai tên luân phiên); sóng mặt chất lỏng là một dải 6 px dịch `transform` 2,4 s; quay rotor `transform: rotate` 1,4 s; nhấp nháy dùng `mat-blink` có sẵn (`steps`). Tất cả chỉ ở chế độ chạy, tắt khi giảm chuyển động. Gói khởi động runtime-web: 187,4 KB → 193,4 KB gzip (ngân sách 244,1 KB).
+
+## 5. Vòng 2 (sau review độc lập, 2026-10-29)
+
+**Nguyên tắc mặc định.** Mặc định của danh mục = hành vi cũ, để project cũ không tự đổi giao diện: `card.fill` = `plain`, `card.flash` = `false`, `lamp.glow`/`multi-state.glow` = `false`, `level.wave` = `false`, `panel.accent` = `none`. Giao diện mới (nền nhạt, nháy số, quầng, sóng, tiêu đề đặc màu) chỉ đến từ giá trị khởi đầu của Studio khi thả component mới (`apps/studio/src/model/widget-presets.ts`).
+
+**Gộp thêm.**
+- **Đèn báo (`lamp`) → Đèn / trạng thái (`multi-state`)**: thêm `shape` (`text` / `lamp` / `lamp-square`) và các thuộc tính bật/tắt của đèn cũ (`useValueTable`, `onText`, `offText`, `onColor`, `offColor`, `invert`, `blinkOn`, `glow`, `showText`). `lamp` đánh dấu `deprecated`, runtime vẫn vẽ; Studio tự đổi khi mở (khe `state` → `value`). Test `lamp-merge.test.ts` kiểm cùng chữ và cùng trạng thái sáng/tắt ở 8 tình huống. Cỡ tối thiểu của `multi-state` hạ xuống 24 × 24 để đèn cũ nhỏ vẫn hợp lệ.
+- **Thanh tiến độ**: Toolbox gọi là "Vòng tiến độ (%)", preset `shape: ring`; dạng thanh dùng Mức chất lỏng kiểu Thanh. Project cũ có `progress` dạng thanh vẫn chạy.
+
+**Tự đổi khi mở.** Banner "Đã chuyển N component kiểu cũ … — bấm Lưu để giữ"; không vào lịch sử hoàn tác; lưu xong thì ẩn. Không đổi item sinh từ template (`tpl`, để tránh `W_TEMPLATE_DRIFT`), không đổi tệp màn hình có khóa lạ (để bộ kiểm tra vẫn báo lỗi trên đĩa). `stat-tile` có màu ngoài bảng thì đổi về `teal`.
+
+**Hiệu năng (BL335).**
+- Rotor của Thiết bị là một `<svg>` riêng, quay bằng `transform` của cả phần tử (compositor), không quay `<g>` trong SVG.
+- Bỏ `will-change` thường trực ở bồn.
+- Một IntersectionObserver dùng chung đặt thuộc tính `still` cho widget ngoài vùng nhìn, đang thiết kế, hoặc khi project đặt `motion: off`. CSS chung tắt mọi hoạt ảnh bên trong; nhấp nháy báo động thay bằng viền đỏ đứng yên.
+- Thiết lập project **Chuyển động của widget: Bật/Tắt** (`project.json` `motion`, Studio › Thiết lập › Runtime).
+- Đo bằng e2e `apps/runtime-web/tests/e2e/motion-perf.e2e.mjs`: 20 thiết bị đang quay + 10 bồn có sóng, CPU giả lập chậm 4×, đo 5 giây.
+
+| Chế độ | Khung/giây | Script | Số lần tính lại style | Số lần layout |
+|---|---|---|---|---|
+| Bật | 92,4 | 92 ms | 8 | 8 |
+| Tắt | 93,2 | 60 ms | 8 | 8 |
+
+Quay và sóng không gây tính lại style hay layout theo khung.
+
+**Tiện dụng thêm.**
+- Chuột phải → **Đổi thành…** (đổi loại tại chỗ, giữ Tag, nhãn, vị trí).
+- **Sao chép / dán định dạng** (Ctrl+Alt+C / Ctrl+Alt+V và menu ngữ cảnh): chỉ thuộc tính trình bày, không Tag.
+- **Kéo nhiều Tag** (chọn nhiều dòng ở bảng Tag) thả vào lưới → một hàng Thẻ giá trị; Tag BOOL thành đèn.
+- Chọn nhiều component: ô có giá trị khác nhau hiện "—".
+- Gợi ý tiếng Việt dưới các ô khó hiểu (`runValue`, `faultValue`, `accentColor`, `blinkAbove`, `flash`…).
+
+**Chưa làm.**
+- "Lưu làm mẫu" cho màn hình lưới: template hiện chỉ có ở bố cục tự do.
+- Nút xem trước trạng thái (Chạy/Dừng/Lỗi, mức 0–100) cho component lưới: hiện dùng chế độ Mô phỏng hoặc Thử giá trị.

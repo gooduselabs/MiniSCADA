@@ -305,7 +305,7 @@ Mở **Màn hình** trên cây. **Thêm màn hình** hoặc **Thêm popup**; **�
 
 Hộp công cụ có ô **Tìm component…** ở trên cùng (gõ tên hoặc công dụng, có dấu hay không dấu đều được, ví dụ "bom", "den thap"); rê chuột lên một component để xem mô tả ngắn. Các nhóm widget:
 
-- Hiển thị: **Thẻ giá trị**, **Nhãn**, **Đèn báo**, **Đồng hồ kim**, **Mức chất lỏng** (thanh hoặc bồn chứa), **Khung nhóm**, **Nhãn đa trạng thái**, **Đèn tháp**, và các widget dashboard: **KPI so với mục tiêu**, **Thanh tiến độ**, **Danh sách trạng thái**, **Đồng hồ ngày giờ**, **Ghi chú**, **Ảnh** (mục 6.1.1, 6.1.2).
+- Hiển thị: **Thẻ giá trị**, **Nhãn**, **Đèn / trạng thái**, **Đồng hồ kim**, **Mức chất lỏng** (thanh hoặc bồn chứa), **Khung nhóm**, **Đèn tháp**, và các widget dashboard: **KPI so với mục tiêu**, **Vòng tiến độ (%)**, **Danh sách trạng thái**, **Đồng hồ ngày giờ**, **Ghi chú**, **Ảnh** (mục 6.1.1, 6.1.2).
 - Biểu đồ: **Biểu đồ đường**, **Biểu đồ cột**, **Biểu đồ tròn**; bảng: **Bảng Tag sống**. Biểu đồ, đồng hồ kim và bảng có thuộc tính **Tiêu đề**: điền vào thì widget thành khung có thanh tiêu đề (như các khung "Biểu đồ nhiệt độ" của dashboard).
 - Điều khiển: **Nút bấm**, **Công tắc**, **Đặt giá trị**, **Thanh trượt**, **Chọn từ danh sách**, **Hẹn giờ Từ–Đến**, **Thiết bị (motor, bơm, quạt, van)**.
 
@@ -358,11 +358,19 @@ Lỗi thường gặp: `E_LAYOUT_SPAN` (tổng các ô của hàng quá 12 cột
 |---|---|---|
 | **Thiết bị (motor, bơm, quạt, van)** (`equipment`) | Biểu tượng thiết bị tô màu theo trạng thái: **Đang chạy** (xanh lá), **Dừng** (xám), **Lỗi** (đỏ, chữ nhấp nháy); cánh quạt, bánh công tác, đầu trục quay khi chạy; van: **Mở**/**Đóng** | Khe **Tag trạng thái chạy** (BOOL, hoặc số bằng **Giá trị "đang chạy"**), **Tag lỗi** (tùy chọn) hoặc **Giá trị "lỗi"**; **Loại thiết bị**, **Chuyển động khi chạy**; khe **Tag lệnh chạy/dừng** (tùy chọn, cần quyền ghi) cho hai nút **Chạy**/**Dừng** (BOOL ghi true/false; số ghi **Giá trị ghi khi chạy/dừng**), có hộp xác nhận và vai trò tối thiểu như nút bấm |
 | **Đèn tháp** (`stack-light`) | Đèn tháp đỏ, vàng, xanh lá, xanh dương trên cột có đế; chỉ vẽ tầng đã gắn Tag | Khe **Tầng đỏ**, **Tầng vàng**, **Tầng xanh lá**, **Tầng xanh dương** (BOOL hoặc số khác 0 = sáng); **Đỏ nhấp nháy khi sáng**; hướng dọc hoặc ngang |
-| **Nhãn đa trạng thái** (`multi-state`) | Chữ và màu theo giá trị (ví dụ 0 Dừng, 1 Chạy, 2 Lỗi), khối màu đặc hoặc nền nhạt, có biểu tượng | **Bảng trạng thái** (mỗi dòng Giá trị, Chữ, Màu, Nhấp nháy; tối đa 16); bảng trống thì dùng Bảng giá trị của Tag |
+| **Đèn / trạng thái** (`multi-state`, thay Đèn báo) | **Kiểu**: khối chữ màu, đèn tròn, đèn vuông. Chữ và màu theo giá trị (ví dụ 0 Dừng, 1 Chạy, 2 Lỗi); đèn sáng có quầng, đèn tắt là màu của nó tối đi | **Bảng trạng thái** (mỗi dòng Giá trị, Chữ, Màu, Nhấp nháy; tối đa 16); bảng trống thì dùng Bảng giá trị của Tag, không có bảng thì bật/tắt (khác 0 = bật) với **Chữ/Màu khi bật/tắt**, **Đảo bật/tắt**, **Nhấp nháy khi bật**, **Quầng sáng**; kiểu nền như Thẻ giá trị |
 
 **Mức chất lỏng** có **Kiểu** "Bồn chứa" (bồn bo tròn có vạch chia, gợn sóng nhẹ trên mặt chất lỏng khi chạy, tắt bằng **Gợn sóng mặt chất lỏng**) và **Màu chất lỏng**. **Đèn báo** có **Quầng sáng khi bật** (mặc định bật). **Khung nhóm** có **Màu nhấn** (vạch màu và tiêu đề màu). Mọi chuyển động là CSS nhẹ, chỉ chạy ở trang vận hành (không chạy khi thiết kế) và tự tắt khi máy đặt "giảm chuyển động".
 
-**Project cũ:** widget **Thẻ chỉ số màu** (`stat-tile`) vẫn chạy đúng trên thiết bị. Khi mở project trong Studio, mỗi thẻ tự đổi thành **Thẻ giá trị** kiểu **Đặc màu** giữ nguyên màu, biểu tượng, Tag; project được đánh dấu chưa lưu, bấm **Lưu** để ghi (không lưu thì tệp trên đĩa giữ nguyên).
+**Project cũ:** widget **Thẻ chỉ số màu** (`stat-tile`) và **Đèn báo** (`lamp`) vẫn chạy đúng trên thiết bị, và giao diện các widget cũ không tự đổi (mặc định giữ như trước; màu, quầng, sóng, nháy chỉ có ở component mới thả vào). Khi mở project trong Studio, thẻ chỉ số màu tự đổi thành **Thẻ giá trị** kiểu **Đặc màu**, đèn báo thành **Đèn / trạng thái** kiểu đèn, giữ nguyên màu, biểu tượng, Tag. Dải báo "Đã chuyển N component kiểu cũ … — bấm Lưu để giữ" hiện trên editor. Thay đổi không vào hoàn tác; không lưu thì tệp trên đĩa giữ nguyên. Component sinh từ template không bị đổi.
+
+**Thao tác nhanh:**
+- Chuột phải lên component → **Đổi thành…** để đổi loại tại chỗ, giữ Tag, nhãn, vị trí.
+- **Sao chép định dạng** (Ctrl+Alt+C) và **Dán định dạng** (Ctrl+Alt+V) chép màu, kiểu nền, biểu tượng, ngưỡng; không chép Tag.
+- Chọn nhiều dòng ở bảng Tag rồi kéo thả vào lưới: thêm một hàng Thẻ giá trị, mỗi Tag một ô (Tag BOOL thành đèn).
+- Chọn nhiều component cùng loại để sửa thuộc tính chung; ô có giá trị khác nhau hiện "—".
+
+**Chuyển động của widget** (Thiết lập › Runtime, mặc định **Bật**): đặt **Tắt** nếu thiết bị yếu hoặc màn hình có rất nhiều widget. Khi tắt, báo động nhấp nháy thành viền đỏ đứng yên. Widget ngoài vùng nhìn tự dừng chuyển động.
 
 **Biểu đồ đường** có thêm **Ngưỡng cao**, **Ngưỡng thấp** (vẽ đường nét đứt đỏ và xanh ngọc, có trong chú giải; trục giá trị tự nới để thấy ngưỡng) và **Nhãn trục thời gian**, **Nhãn trục giá trị**. **Đồng hồ kim** nay gọn trong khung (bán kính tối đa 150 px), số đọc ở dưới. **Khung nhóm** có **Kiểu khung** "Card có thanh tiêu đề".
 
