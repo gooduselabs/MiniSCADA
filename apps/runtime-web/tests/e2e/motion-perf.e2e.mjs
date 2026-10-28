@@ -1,4 +1,4 @@
-/* global document, requestAnimationFrame, performance */
+/* global document, requestAnimationFrame */
 // Hiệu năng chuyển động (feature 037, review BL335): màn hình 20 Thiết bị đang chạy (rotor quay) và 10 bồn có gợn sóng trên
 // project grid-demo của runtime giả. CPU giả lập chậm 4 lần (gần BL335). Đo trong 5 giây: số khung hình (rAF), thời gian
 // script, số lần tính lại style và layout (Performance.getMetrics), so với khi project tắt chuyển động (`motion: off`).
