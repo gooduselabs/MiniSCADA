@@ -26,7 +26,7 @@ describe('mat-w-lamp (FR-026)', () => {
     const src = makeSource([tagInfo('b', { type: 'BOOL' })]);
     src.set('b', { value: true, quality: 'GOOD' });
     const el = await mount(lamp({ onColor: '#00aa00', offColor: '#555555' }), src);
-    expect(dot(el).style.background).toMatch(/#00aa00|rgb\(0, 170, 0\)/);
+    expect(dot(el).style.getPropertyValue('--lc')).toMatch(/#00aa00|rgb\(0, 170, 0\)/);
     src.set('b', { value: false, quality: 'GOOD' });
     await el.updateComplete;
     expect(dot(el).style.background).toMatch(/#555555|rgb\(85, 85, 85\)/);
@@ -63,7 +63,7 @@ describe('mat-w-lamp (FR-026)', () => {
     src.set('n', { value: 2, quality: 'GOOD' });
     const el = await mount(lamp(undefined, 'n'), src);
     expect(textOf(el, '.state-text')).toBe('Sự cố');
-    expect(dot(el).style.background).toMatch(/#c42b2b|rgb\(196, 43, 43\)/);
+    expect(dot(el).style.getPropertyValue('--lc')).toMatch(/#c42b2b|rgb\(196, 43, 43\)/);
   });
 
   it('useValueTable=false bỏ qua bảng của Tag', async () => {
@@ -127,5 +127,17 @@ describe('mat-w-lamp (FR-026)', () => {
     expect(el.shadowRoot!.querySelector('img')).toBeNull();
     expect(el.shadowRoot!.querySelector('script')).toBeNull();
     expect(textOf(el, '.state-text')).toBe('<img src=x onerror=1>');
+  });
+});
+
+// Feature 037: quầng sáng khi bật, tắt được.
+describe('mat-w-lamp 037', () => {
+  it('glow mặc định bật khi đèn sáng; glow=false thì không', async () => {
+    const src = makeSource([tagInfo('b', { type: 'BOOL' })]);
+    src.set('b', { value: true, quality: 'GOOD' });
+    expect(dot(await mount(lamp(), src)).classList.contains('glow')).toBe(true);
+    expect(dot(await mount(lamp({ glow: false }), src)).classList.contains('glow')).toBe(false);
+    src.set('b', { value: false, quality: 'GOOD' });
+    expect(dot(await mount(lamp(), src)).classList.contains('glow')).toBe(false);
   });
 });

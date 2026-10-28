@@ -29,6 +29,9 @@ import { MatClock } from './clock.ts';
 import { MatText } from './text.ts';
 import { MatImage } from './image.ts';
 import { MatWTimeRange } from './time-range.ts';
+import { MatWEquipment } from './equipment.ts';
+import { MatMultiState } from './multi-state.ts';
+import { MatStackLight } from './stack-light.ts';
 
 /** Loại widget (khóa `widget` của danh mục) → lớp phần tử. */
 export const WIDGET_ELEMENTS: Record<string, CustomElementConstructor> = {
@@ -64,6 +67,10 @@ export const WIDGET_ELEMENTS: Record<string, CustomElementConstructor> = {
   image: MatImage,
   // feature 029 (danh mục 0.7.0): hẹn giờ Từ–Đến
   'time-range': MatWTimeRange,
+  // feature 037 (danh mục 0.8.0)
+  'multi-state': MatMultiState,
+  'stack-light': MatStackLight,
+  equipment: MatWEquipment,
 };
 
 export const tagNameOf = (widget: string): string => `mat-w-${widget}`;

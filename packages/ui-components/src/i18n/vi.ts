@@ -67,6 +67,8 @@ export const vi = {
       UNKNOWN: 'Không rõ',
     } satisfies Record<Quality, string>,
     alarm: 'Cảnh báo',
+    /** Feature 037: vượt ngưỡng cảnh báo nhẹ (warnAbove/warnBelow). */
+    warn: 'Chú ý',
     goal: 'Mục tiêu',
     ofGoal: 'so với mục tiêu',
     highLimit: 'Ngưỡng cao',

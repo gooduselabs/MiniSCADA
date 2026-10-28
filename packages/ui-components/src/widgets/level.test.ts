@@ -63,11 +63,11 @@ describe('mat-w-level (FR-027)', () => {
       }),
       src,
     );
-    expect(fill(el).style.background).toMatch(/#c42b2b|rgb\(196, 43, 43\)/);
+    expect(fill(el).style.getPropertyValue('--lq')).toMatch(/#c42b2b|rgb\(196, 43, 43\)/);
     expect(el.shadowRoot!.querySelectorAll('.zone-seg')).toHaveLength(2);
     src.set('t1', { value: 10, quality: 'GOOD' });
     await el.updateComplete;
-    expect(fill(el).style.background).toMatch(/#15703a|rgb\(21, 112, 58\)/);
+    expect(fill(el).style.getPropertyValue('--lq')).toMatch(/#15703a|rgb\(21, 112, 58\)/);
   });
 
   it('quality BAD: nhãn chữ, phần đầy mờ; UNKNOWN: "?", aria-valuenow = min (role=meter bắt buộc có)', async () => {
@@ -87,5 +87,31 @@ describe('mat-w-level (FR-027)', () => {
     src.set('t1', { value: 50, quality: 'GOOD' });
     const el = await mount(level({ showValue: false }), src);
     expect(el.shadowRoot!.querySelector('.value')).toBeNull();
+  });
+});
+
+// Feature 037: kiểu bồn, màu chất lỏng, gợn sóng.
+describe('mat-w-level 037', () => {
+  const lv = (props: Record<string, string | number | boolean>) =>
+    widgetItem('level', { value: 't1' }, props);
+  it('style=tank: bồn có vạch chia; sóng chỉ ở chế độ chạy, tắt được', async () => {
+    const src = makeSource([tagInfo('t1', { min: 0, max: 100 })]);
+    src.set('t1', { value: 50, quality: 'GOOD' });
+    const el = await mount(lv({ style: 'tank' }), src);
+    expect(el.shadowRoot!.querySelector('.w.tank')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('.ticks')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('.wave')).not.toBeNull();
+    const off = await mount(lv({ style: 'tank', wave: false }), src);
+    expect(off.shadowRoot!.querySelector('.wave')).toBeNull();
+    const ed = await mount(lv({ style: 'tank' }), src, 'edit');
+    expect(ed.shadowRoot!.querySelector('.wave')).toBeNull();
+    const bar = await mount(lv({}), src);
+    expect(bar.shadowRoot!.querySelector('.wave')).toBeNull();
+  });
+  it('color đặt màu chất lỏng; vùng màu thắng', async () => {
+    const src = makeSource([tagInfo('t1', { min: 0, max: 100 })]);
+    src.set('t1', { value: 50, quality: 'GOOD' });
+    const el = await mount(lv({ color: '#112233' }), src);
+    expect(fill(el).style.getPropertyValue('--lq')).toMatch(/#112233|rgb\(17, 34, 51\)/);
   });
 });

@@ -1,4 +1,6 @@
 // Widget `lamp` (FR-026): BOOL hoặc số (qua bảng giá trị), hình tròn hoặc vuông, nhãn, chữ trạng thái đi kèm.
+// Feature 037: đèn sáng có quầng (`glow`, mặc định bật; chỉ `box-shadow` tĩnh, không hoạt ảnh) và ánh kim nổi khối;
+// màu sáng mặc định là xanh lá rõ (`--mat-tile-green`).
 import { lookupValueTable } from '@mat/expression';
 import { css, html, nothing, type TemplateResult } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
@@ -19,9 +21,10 @@ export class MatLamp extends MatWidget {
         min-width: 0;
       }
       .dot {
+        --lc: var(--mat-tile-green, var(--mat-good));
         flex: none;
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         border-radius: 50%;
         border: 2px solid var(--mat-border-strong);
         background: var(--mat-surface-2);
@@ -30,8 +33,18 @@ export class MatLamp extends MatWidget {
         border-radius: 3px;
       }
       .dot.on {
-        background: var(--mat-good);
-        border-color: var(--mat-good);
+        background: radial-gradient(
+          circle at 35% 30%,
+          color-mix(in srgb, var(--lc) 35%, #fff) 0%,
+          var(--lc) 55%,
+          color-mix(in srgb, var(--lc) 80%, #000) 100%
+        );
+        border-color: color-mix(in srgb, var(--lc) 75%, #000);
+      }
+      .dot.on.glow {
+        box-shadow:
+          0 0 0 3px color-mix(in srgb, var(--lc) 22%, transparent),
+          0 0 10px 1px color-mix(in srgb, var(--lc) 60%, transparent);
       }
       .dot.off {
         background: var(--mat-offline);
@@ -93,6 +106,7 @@ export class MatLamp extends MatWidget {
       square: this.prop('shape', 'circle') === 'square',
       on: !inactive && on,
       blink: !inactive && on && this.prop('blinkOn', false),
+      glow: !inactive && on && this.prop('glow', true),
       off: !inactive && !on,
       inactive,
     };
@@ -100,7 +114,7 @@ export class MatLamp extends MatWidget {
       <div class="row">
         <span
           class=${classMap(dotClass)}
-          style=${styleMap({ background: inactive ? undefined : color })}
+          style=${styleMap(on && !inactive ? { '--lc': color } : { background: inactive ? undefined : color })}
         ></span>
         <span class="texts ${qv.dim ? 'dim' : ''}">
           ${label ? html`<span class="label ellipsis">${label}</span>` : nothing}

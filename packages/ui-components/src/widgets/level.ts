@@ -1,9 +1,12 @@
 // Widget `level` (FR-027): thanh mức dọc hoặc ngang, min–max, màu theo vùng, hiện % và giá trị.
+// Feature 037: `style` = `tank` vẽ bồn bo tròn hai đầu có vạch chia; `color` đặt màu chất lỏng (vùng màu vẫn thắng);
+// `wave` (mặc định bật) vẽ gợn sóng nhẹ trên mặt chất lỏng của bồn dọc ở chế độ chạy: một dải mỏng dịch bằng
+// `transform` (CSS thuần, không JS theo khung hình), tắt khi giảm chuyển động.
 import { css, html, nothing, type TemplateResult } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
 import { fraction, resolveRange, zoneColorAt, zoneSegments } from '../chart/geometry.ts';
 import { formatValue, numberOf } from '../format/format-value.ts';
-import { MatWidget } from './base.ts';
+import { MatWidget, safeColor } from './base.ts';
 import { vi } from '../i18n/vi.ts';
 
 export class MatLevel extends MatWidget {
@@ -59,7 +62,79 @@ export class MatLevel extends MatWidget {
       }
       .fill {
         position: absolute;
-        background: var(--mat-accent);
+        background: var(--lq, var(--mat-tile-blue, var(--mat-accent)));
+        transition:
+          height 0.4s ease-out,
+          width 0.4s ease-out;
+      }
+      .tank .track {
+        border-width: 2px;
+        border-radius: 16px / 10px;
+        background: linear-gradient(
+          90deg,
+          var(--mat-surface-2) 0%,
+          var(--mat-surface, #fff) 45%,
+          var(--mat-surface-2) 100%
+        );
+      }
+      .tank .fill {
+        background: linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--lq, var(--mat-tile-blue)) 80%, #000) 0%,
+          var(--lq, var(--mat-tile-blue)) 45%,
+          color-mix(in srgb, var(--lq, var(--mat-tile-blue)) 85%, #000) 100%
+        );
+      }
+      .tank.horizontal .track {
+        height: 40px;
+        border-radius: 10px / 16px;
+      }
+      .ticks {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to top,
+          transparent 0 calc(25% - 1px),
+          color-mix(in srgb, var(--mat-text-muted, #56646a) 45%, transparent) calc(25% - 1px) 25%
+        );
+        mask: linear-gradient(90deg, #000 0 14%, transparent 14%);
+      }
+      .horizontal .ticks {
+        background: repeating-linear-gradient(
+          to right,
+          transparent 0 calc(25% - 1px),
+          color-mix(in srgb, var(--mat-text-muted, #56646a) 45%, transparent) calc(25% - 1px) 25%
+        );
+        mask: linear-gradient(180deg, #000 0 22%, transparent 22%);
+      }
+      .wave {
+        position: absolute;
+        left: 0;
+        top: -5px;
+        width: 200%;
+        height: 6px;
+        background: radial-gradient(
+            ellipse 10px 5px at 10px 6px,
+            var(--lq, var(--mat-tile-blue)) 98%,
+            transparent 100%
+          )
+          0 0 / 20px 6px repeat-x;
+        animation: mat-wave 2.4s linear infinite;
+        will-change: transform;
+      }
+      @keyframes mat-wave {
+        to {
+          transform: translateX(-50%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .wave {
+          animation: none;
+        }
+        .fill {
+          transition: none;
+        }
       }
       .vertical .fill {
         left: 0;
@@ -123,12 +198,23 @@ export class MatLevel extends MatWidget {
     const pct = Math.round(f * 100);
     const horizontal = this.prop('orientation', 'vertical') === 'horizontal';
     const zones = zoneSegments(this.item.props?.zones, min, max);
-    const color = known ? zoneColorAt(zones, Math.min(max, Math.max(min, n))) : undefined;
+    const color =
+      (known ? zoneColorAt(zones, Math.min(max, Math.max(min, n))) : undefined) ??
+      safeColor(this.item.props?.color);
+    const tank = this.prop('style', 'bar') === 'tank';
+    const wave =
+      tank &&
+      !horizontal &&
+      known &&
+      pct > 2 &&
+      pct < 99 &&
+      this.mode !== 'edit' &&
+      this.prop('wave', true);
     const dim = horizontal ? 'width' : 'height';
     const label = this.prop('label', '');
     const valueText = fmt.unit ? `${fmt.text} ${fmt.unit}` : fmt.text;
     return html`<div
-      class="w ${horizontal ? 'horizontal' : 'vertical'} ${qv.cls}"
+      class="w ${horizontal ? 'horizontal' : 'vertical'} ${tank ? 'tank' : ''} ${qv.cls}"
       role="meter"
       aria-label=${label || this.nameOf(id) || vi.widget.level!}
       aria-valuemin=${min}
@@ -152,8 +238,11 @@ export class MatLevel extends MatWidget {
           })}
           <div
             class="fill ${qv.dim ? 'dim' : ''}"
-            style=${styleMap({ [dim]: `${pct}%`, background: color })}
-          ></div>
+            style=${styleMap({ [dim]: `${pct}%`, '--lq': color })}
+          >
+            ${wave ? html`<div class="wave" aria-hidden="true"></div>` : nothing}
+          </div>
+          ${tank ? html`<div class="ticks" aria-hidden="true"></div>` : nothing}
         </div>
         ${
           this.prop('showValue', true)
