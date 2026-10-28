@@ -185,4 +185,15 @@ export const viComponents = {
   'widget.multi-state.prop.blinkOn': 'Nhấp nháy khi bật',
   'widget.multi-state.prop.showText': 'Hiện chữ trạng thái',
   'widget.multi-state.prop.useValueTable': 'Dùng Bảng giá trị của Tag',
+  // ---- Gợi ý dưới ô thuộc tính ----
+  'whelp.runValue': 'Tag trạng thái là số: giá trị nghĩa là đang chạy (thường 1). Tag BOOL: bỏ qua.',
+  'whelp.faultValue': 'Tag trạng thái bằng giá trị này thì báo Lỗi (ví dụ 2). Để trống nếu dùng Tag lỗi riêng.',
+  'whelp.accentColor': 'Chọn màu riêng thay cho bảng màu nhấn; để Tự động thì dùng Màu nhấn.',
+  'whelp.blinkAbove': 'Số nhấp nháy khi giá trị vượt mức này (để trống: không nhấp nháy).',
+  'whelp.blinkBelow': 'Số nhấp nháy khi giá trị thấp hơn mức này.',
+  'whelp.flash': 'Nền số sáng lên 0,6 giây mỗi lần giá trị đổi, giúp thấy số vừa cập nhật.',
+  'whelp.warnAbove': 'Thẻ chuyển cam khi vượt mức này.',
+  'whelp.alarmAbove': 'Thẻ chuyển đỏ khi vượt mức này.',
+  'whelp.startValue': 'Tag lệnh là số: giá trị ghi khi bấm Chạy (Tag nguyên thì làm tròn).',
+  'whelp.stopValue': 'Tag lệnh là số: giá trị ghi khi bấm Dừng.',
 } as const;

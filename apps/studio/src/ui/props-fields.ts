@@ -640,7 +640,9 @@ export function renderField(
     default:
       control = textField(f, env, local, setError);
   }
-  const hint = rangeHint(f);
+  // 037: gợi ý ngắn cho thuộc tính khó hiểu (`whelp.<tên>`), sau gợi ý khoảng giá trị.
+  const help = `whelp.${f.name}`;
+  const hint = rangeHint(f) ?? (hasKey(help) ? t(help) : null);
   const err = local.error ? t(local.error) : env.issue;
   return html`<div
     class="pf-row ${err ? 'bad' : ''}"
