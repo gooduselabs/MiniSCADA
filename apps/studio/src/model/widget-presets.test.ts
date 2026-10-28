@@ -42,6 +42,7 @@ describe('WIDGET_PRESETS', () => {
     expect((r.doc.items[0] as { props?: object }).props).toEqual({
       label: 'Mức bồn',
       style: 'tank',
+      wave: true,
     });
   });
 });
