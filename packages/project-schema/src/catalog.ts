@@ -79,6 +79,12 @@ export interface WidgetSpec {
   props: PropSpec[];
   events: EventSpec[];
   security?: { minRole: string[]; default: string };
+  /**
+   * Danh mục 0.8.0 (feature 037): loại cũ đã gộp vào loại khác. Runtime và validator vẫn nhận (project cũ chạy đúng);
+   * Toolbox không còn hiện, Studio tự chuyển sang `replacedBy` khi mở project (`upgradeLegacyWidgets`).
+   */
+  deprecated?: boolean;
+  replacedBy?: string;
 }
 
 export interface WidgetCatalog {

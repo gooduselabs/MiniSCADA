@@ -20,7 +20,8 @@
         "showTitle": true,
         "background": "#FFFFFF",
         "border": true,
-        "variant": "card"
+        "variant": "card",
+        "accent": "slate"
       }
     }
   ]

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "multistate1",
+      "type": "widget",
+      "widget": "multi-state",
+      "x": 0,
+      "y": 0,
+      "width": 220,
+      "height": 64,
+      "props": {
+        "label": "",
+        "states": [],
+        "fill": "solid",
+        "icon": "none"
+      },
+      "tags": {
+        "value": "L.LEVEL"
+      }
+    }
+  ]
+}

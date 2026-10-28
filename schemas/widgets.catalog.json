@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.7.0",
+  "catalogVersion": "0.8.0",
   "actions": {
     "popup": {
       "keys": ["screen", "args"],
@@ -67,6 +67,13 @@
           "needsWrite": false
         },
         {
+          "name": "alarm",
+          "required": false,
+          "multi": false,
+          "types": ["bool"],
+          "needsWrite": false
+        },
+        {
           "name": "status",
           "required": false,
           "multi": false,
@@ -105,9 +112,83 @@
           "group": "display"
         },
         {
+          "name": "accent",
+          "kind": "enum",
+          "options": [
+            "blue",
+            "teal",
+            "green",
+            "orange",
+            "rose",
+            "violet",
+            "indigo",
+            "cyan",
+            "olive",
+            "slate"
+          ],
+          "default": "blue",
+          "group": "display"
+        },
+        {
+          "name": "fill",
+          "kind": "enum",
+          "options": ["soft", "solid", "outline", "plain"],
+          "default": "soft",
+          "group": "display"
+        },
+        {
+          "name": "icon",
+          "kind": "enum",
+          "options": [
+            "none",
+            "thermometer",
+            "droplet",
+            "wave",
+            "wind",
+            "sun",
+            "lightbulb",
+            "gas",
+            "flame",
+            "fan",
+            "snowflake",
+            "pump",
+            "valve",
+            "bolt",
+            "power",
+            "pressure",
+            "tank",
+            "motor",
+            "gear",
+            "clock",
+            "alert",
+            "star"
+          ],
+          "default": "none",
+          "group": "display"
+        },
+        {
+          "name": "accentColor",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
+          "group": "display"
+        },
+        {
           "name": "showQuality",
           "kind": "bool",
           "default": true,
+          "group": "display"
+        },
+        {
+          "name": "showUnit",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "statusText",
+          "kind": "bool",
+          "default": false,
           "group": "display"
         },
         {
@@ -144,6 +225,32 @@
         {
           "name": "blinkBelow",
           "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "warnAbove",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "warnBelow",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "alarmAbove",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "alarmBelow",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "flash",
+          "kind": "bool",
+          "default": true,
           "group": "display"
         }
       ],
@@ -284,6 +391,12 @@
           "kind": "bool",
           "default": false,
           "group": "display"
+        },
+        {
+          "name": "glow",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
         }
       ],
       "events": []
@@ -405,6 +518,13 @@
           "group": "display"
         },
         {
+          "name": "style",
+          "kind": "enum",
+          "options": ["bar", "tank"],
+          "default": "bar",
+          "group": "display"
+        },
+        {
           "name": "label",
           "kind": "string",
           "maxLength": 40,
@@ -470,6 +590,19 @@
           "kind": "bool",
           "default": true,
           "group": "display"
+        },
+        {
+          "name": "color",
+          "kind": "color",
+          "allowAuto": true,
+          "default": "auto",
+          "group": "display"
+        },
+        {
+          "name": "wave",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
         }
       ],
       "events": []
@@ -513,6 +646,25 @@
           "kind": "enum",
           "options": ["plain", "card"],
           "default": "plain",
+          "group": "display"
+        },
+        {
+          "name": "accent",
+          "kind": "enum",
+          "options": [
+            "none",
+            "blue",
+            "teal",
+            "green",
+            "orange",
+            "rose",
+            "violet",
+            "indigo",
+            "cyan",
+            "olive",
+            "slate"
+          ],
+          "default": "none",
           "group": "display"
         }
       ],
@@ -647,7 +799,9 @@
           "group": "display"
         }
       ],
-      "events": []
+      "events": [],
+      "deprecated": true,
+      "replacedBy": "card"
     },
     {
       "id": "kpi",
@@ -971,6 +1125,160 @@
           "kind": "string",
           "maxLength": 80,
           "default": "",
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "multi-state",
+      "group": "display",
+      "label": "widget.multi-state",
+      "defaultSize": [220, 64],
+      "minSize": [96, 32],
+      "slots": [
+        {
+          "name": "value",
+          "required": true,
+          "multi": false,
+          "types": ["number", "bool"],
+          "needsWrite": false
+        }
+      ],
+      "props": [
+        {
+          "name": "label",
+          "kind": "string",
+          "maxLength": 40,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "states",
+          "kind": "array",
+          "items": {
+            "kind": "object",
+            "fields": [
+              {
+                "name": "value",
+                "kind": "number"
+              },
+              {
+                "name": "text",
+                "kind": "string",
+                "maxLength": 32
+              },
+              {
+                "name": "color",
+                "kind": "color",
+                "allowAuto": false
+              },
+              {
+                "name": "blink",
+                "kind": "bool",
+                "default": false
+              }
+            ]
+          },
+          "maxItems": 16,
+          "default": [],
+          "group": "display"
+        },
+        {
+          "name": "fill",
+          "kind": "enum",
+          "options": ["solid", "soft"],
+          "default": "solid",
+          "group": "display"
+        },
+        {
+          "name": "icon",
+          "kind": "enum",
+          "options": [
+            "none",
+            "thermometer",
+            "droplet",
+            "wave",
+            "wind",
+            "sun",
+            "lightbulb",
+            "gas",
+            "flame",
+            "fan",
+            "snowflake",
+            "pump",
+            "valve",
+            "bolt",
+            "power",
+            "pressure",
+            "tank",
+            "motor",
+            "gear",
+            "clock",
+            "alert",
+            "star"
+          ],
+          "default": "none",
+          "group": "display"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "stack-light",
+      "group": "display",
+      "label": "widget.stack-light",
+      "defaultSize": [90, 200],
+      "minSize": [32, 72],
+      "slots": [
+        {
+          "name": "red",
+          "required": false,
+          "multi": false,
+          "types": ["bool", "number"],
+          "needsWrite": false
+        },
+        {
+          "name": "yellow",
+          "required": false,
+          "multi": false,
+          "types": ["bool", "number"],
+          "needsWrite": false
+        },
+        {
+          "name": "green",
+          "required": false,
+          "multi": false,
+          "types": ["bool", "number"],
+          "needsWrite": false
+        },
+        {
+          "name": "blue",
+          "required": false,
+          "multi": false,
+          "types": ["bool", "number"],
+          "needsWrite": false
+        }
+      ],
+      "props": [
+        {
+          "name": "label",
+          "kind": "string",
+          "maxLength": 40,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "orientation",
+          "kind": "enum",
+          "options": ["vertical", "horizontal"],
+          "default": "vertical",
+          "group": "display"
+        },
+        {
+          "name": "blinkRed",
+          "kind": "bool",
+          "default": true,
           "group": "display"
         }
       ],
@@ -1718,6 +2026,120 @@
           "maxLength": 16,
           "default": "Đến",
           "group": "display"
+        },
+        {
+          "name": "confirmText",
+          "kind": "string",
+          "maxLength": 200,
+          "default": "",
+          "group": "security"
+        }
+      ],
+      "events": [],
+      "security": {
+        "minRole": ["operator", "engineer", "administrator"],
+        "default": "operator"
+      }
+    },
+    {
+      "id": "equipment",
+      "group": "control",
+      "label": "widget.equipment",
+      "defaultSize": [200, 150],
+      "minSize": [96, 72],
+      "slots": [
+        {
+          "name": "state",
+          "required": true,
+          "multi": false,
+          "types": ["bool", "number"],
+          "needsWrite": false
+        },
+        {
+          "name": "fault",
+          "required": false,
+          "multi": false,
+          "types": ["bool", "number"],
+          "needsWrite": false
+        },
+        {
+          "name": "target",
+          "required": false,
+          "multi": false,
+          "types": ["bool", "number"],
+          "needsWrite": true
+        }
+      ],
+      "props": [
+        {
+          "name": "label",
+          "kind": "string",
+          "maxLength": 40,
+          "default": "",
+          "group": "display"
+        },
+        {
+          "name": "kind",
+          "kind": "enum",
+          "options": ["motor", "pump", "fan", "valve"],
+          "default": "motor",
+          "group": "display"
+        },
+        {
+          "name": "runValue",
+          "kind": "number",
+          "default": 1,
+          "group": "display"
+        },
+        {
+          "name": "faultValue",
+          "kind": "number",
+          "group": "display"
+        },
+        {
+          "name": "animate",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "showButtons",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
+        },
+        {
+          "name": "startText",
+          "kind": "string",
+          "maxLength": 16,
+          "default": "Chạy",
+          "group": "display"
+        },
+        {
+          "name": "stopText",
+          "kind": "string",
+          "maxLength": 16,
+          "default": "Dừng",
+          "group": "display"
+        },
+        {
+          "name": "startValue",
+          "kind": "number",
+          "default": 1,
+          "group": "general"
+        },
+        {
+          "name": "stopValue",
+          "kind": "number",
+          "default": 0,
+          "group": "general"
+        },
+        {
+          "name": "confirm",
+          "kind": "enum",
+          "options": ["always", "none"],
+          "default": "always",
+          "group": "security"
         },
         {
           "name": "confirmText",

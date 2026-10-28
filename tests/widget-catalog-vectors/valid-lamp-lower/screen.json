@@ -23,7 +23,8 @@
         "invert": false,
         "useValueTable": false,
         "showText": false,
-        "blinkOn": false
+        "blinkOn": false,
+        "glow": false
       },
       "tags": {
         "state": "L.LEVEL"

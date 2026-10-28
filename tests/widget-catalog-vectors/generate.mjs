@@ -208,6 +208,14 @@ const propValue = (w, p, hi) => {
       if (p.items.options) return p.items.options.slice(0, lo ? (p.minItems ?? 0) : n);
       // danh mục 0.7.0 (feature 029): mảng màu (colors của line, history-trend)
       if (p.items.kind === 'color') return Array.from({ length: n }, () => '#FFFFFF');
+      // danh mục 0.8.0 (feature 037): bảng trạng thái của multi-state
+      if (p.name === 'states')
+        return Array.from({ length: n }, (_, i) => ({
+          value: i,
+          text: 'ằ'.repeat(32),
+          color: '#FF0000',
+          blink: true,
+        }));
       return Array.from({ length: n }, () => (lo ? '' : 'ằ'.repeat(p.items.maxLength)));
     }
     case 'object':
@@ -262,6 +270,10 @@ for (const w of catalog.widgets) {
       item.tags = { target: 'L.CMD' }; // confirm = none chỉ hợp lệ với Tag BOOL (switch nhận cả Tag số từ 029)
       warnings.push(E('W_CONFIRM_NONE', '/items/0/props/confirm'));
       item.security = { minRole: 'engineer' };
+    } else if (w.id === 'equipment' && hi) {
+      item.tags = { ...item.tags, target: 'L.CMD' }; // confirm = none chỉ hợp lệ với Tag BOOL
+      warnings.push(E('W_CONFIRM_NONE', '/items/0/props/confirm'));
+      item.security = { minRole: 'administrator' };
     } else if (w.group === 'control' && hi) item.security = { minRole: 'administrator' };
     if (w.group === 'control' && !hi) item.security = { minRole: 'operator' };
     // select: cận dưới dùng bảng của Tag nên không cần props.table; ở đây đã có props.table

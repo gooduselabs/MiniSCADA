@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "main",
+  "name": "Main",
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "items": [
+    {
+      "id": "equipment1",
+      "type": "widget",
+      "widget": "equipment",
+      "x": 0,
+      "y": 0,
+      "width": 200,
+      "height": 150,
+      "props": {
+        "label": "",
+        "kind": "motor",
+        "animate": false,
+        "showButtons": false,
+        "startText": "",
+        "stopText": "",
+        "confirm": "always",
+        "confirmText": ""
+      },
+      "tags": {
+        "state": "L.LEVEL"
+      },
+      "security": {
+        "minRole": "operator"
+      }
+    }
+  ]
+}

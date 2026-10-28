@@ -20,7 +20,8 @@
         "showTitle": false,
         "background": "auto",
         "border": false,
-        "variant": "plain"
+        "variant": "plain",
+        "accent": "none"
       }
     }
   ]

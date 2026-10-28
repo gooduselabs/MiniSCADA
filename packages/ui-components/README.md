@@ -2,7 +2,7 @@
 
 <!-- Sinh bởi tools/gen-widget-docs.mjs từ schemas/widgets.catalog.json. Không sửa tay: sửa danh mục rồi chạy lại. -->
 
-Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 29 widget (phiên bản danh mục 0.7.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
+Thư viện widget và màn hình v1 của mAT SCADA (Lit, Shadow DOM, không phụ thuộc framework). Dùng chung cho trang vận hành (`apps/runtime-web`) và xem trước của Studio. Danh mục 32 widget (phiên bản danh mục 0.8.0) nằm ở `schemas/widgets.catalog.json`; hai bộ kiểm tra (TS và C++) và Studio đọc cùng tệp đó.
 
 ## Nhúng
 
@@ -36,6 +36,7 @@ Nhóm: Hiển thị. Cỡ mặc định 220 × 110, nhỏ nhất 96 × 56.
 | Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
 |---|---|---|---|---|
 | `value` | có | không | number, bool, string | không |
+| `alarm` | không | không | bool | không |
 | `status` | không | không | number, bool, string | không |
 
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
@@ -44,13 +45,24 @@ Nhóm: Hiển thị. Cỡ mặc định 220 × 110, nhỏ nhất 96 × 56.
 | `decimals` | int | `1` | ≥ 0, ≤ 6 |
 | `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
 | `fontSize` | enum | `"m"` | `s`, `m`, `l`, `xl` |
+| `accent` | enum | `"blue"` | `blue`, `teal`, `green`, `orange`, `rose`, `violet`, `indigo`, `cyan`, `olive`, `slate` |
+| `fill` | enum | `"soft"` | `soft`, `solid`, `outline`, `plain` |
+| `icon` | enum | `"none"` | `none`, `thermometer`, `droplet`, `wave`, `wind`, `sun`, `lightbulb`, `gas`, `flame`, `fan`, `snowflake`, `pump`, `valve`, `bolt`, `power`, `pressure`, `tank`, `motor`, `gear`, `clock`, `alert`, `star` |
+| `accentColor` | color | `"auto"` |  |
 | `showQuality` | bool | `true` |  |
+| `showUnit` | bool | `true` |  |
+| `statusText` | bool | `false` |  |
 | `sparkline` | bool | `false` |  |
 | `trend` | bool | `false` |  |
 | `valueColor` | color | `"auto"` |  |
 | `background` | color | `"auto"` |  |
 | `blinkAbove` | number |  |  |
 | `blinkBelow` | number |  |  |
+| `warnAbove` | number |  |  |
+| `warnBelow` | number |  |  |
+| `alarmAbove` | number |  |  |
+| `alarmBelow` | number |  |  |
+| `flash` | bool | `true` |  |
 
 ### `label` (`<mat-w-label>`)
 
@@ -88,6 +100,7 @@ Nhóm: Hiển thị. Cỡ mặc định 140 × 40, nhỏ nhất 24 × 24.
 | `useValueTable` | bool | `true` |  |
 | `showText` | bool | `true` |  |
 | `blinkOn` | bool | `false` |  |
+| `glow` | bool | `true` |  |
 
 ### `gauge` (`<mat-w-gauge>`)
 
@@ -119,6 +132,7 @@ Nhóm: Hiển thị. Cỡ mặc định 100 × 260, nhỏ nhất 40 × 80.
 | Thuộc tính | Kiểu | Mặc định | Ràng buộc |
 |---|---|---|---|
 | `orientation` | enum | `"vertical"` | `vertical`, `horizontal` |
+| `style` | enum | `"bar"` | `bar`, `tank` |
 | `label` | string | `""` | ≤ 40 ký tự |
 | `min` | number | theo Tag (`min`) |  |
 | `max` | number | theo Tag (`max`) |  |
@@ -126,6 +140,8 @@ Nhóm: Hiển thị. Cỡ mặc định 100 × 260, nhỏ nhất 40 × 80.
 | `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
 | `zones` | array | `[]` | ≤ 4 phần tử |
 | `showValue` | bool | `true` |  |
+| `color` | color | `"auto"` |  |
+| `wave` | bool | `true` |  |
 
 ### `panel` (`<mat-w-panel>`)
 
@@ -138,6 +154,7 @@ Nhóm: Hiển thị. Cỡ mặc định 400 × 300, nhỏ nhất 80 × 60.
 | `background` | color | `"auto"` |  |
 | `border` | bool | `true` |  |
 | `variant` | enum | `"plain"` | `plain`, `card` |
+| `accent` | enum | `"none"` | `none`, `blue`, `teal`, `green`, `orange`, `rose`, `violet`, `indigo`, `cyan`, `olive`, `slate` |
 
 ### `stat-tile` (`<mat-w-stat-tile>`)
 
@@ -248,6 +265,38 @@ Nhóm: Hiển thị. Cỡ mặc định 320 × 240, nhỏ nhất 48 × 48.
 | `src` | string | `""` | ≤ 128 ký tự |
 | `fit` | enum | `"contain"` | `contain`, `cover` |
 | `alt` | string | `""` | ≤ 80 ký tự |
+
+### `multi-state` (`<mat-w-multi-state>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 220 × 64, nhỏ nhất 96 × 32.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `value` | có | không | number, bool | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `states` | array | `[]` | ≤ 16 phần tử |
+| `fill` | enum | `"solid"` | `solid`, `soft` |
+| `icon` | enum | `"none"` | `none`, `thermometer`, `droplet`, `wave`, `wind`, `sun`, `lightbulb`, `gas`, `flame`, `fan`, `snowflake`, `pump`, `valve`, `bolt`, `power`, `pressure`, `tank`, `motor`, `gear`, `clock`, `alert`, `star` |
+
+### `stack-light` (`<mat-w-stack-light>`)
+
+Nhóm: Hiển thị. Cỡ mặc định 90 × 200, nhỏ nhất 32 × 72.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `red` | không | không | bool, number | không |
+| `yellow` | không | không | bool, number | không |
+| `green` | không | không | bool, number | không |
+| `blue` | không | không | bool, number | không |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `orientation` | enum | `"vertical"` | `vertical`, `horizontal` |
+| `blinkRed` | bool | `true` |  |
 
 ## Nhóm Biểu đồ
 
@@ -441,6 +490,31 @@ Nhóm: Điều khiển. Cỡ mặc định 300 × 64, nhỏ nhất 200 × 48.
 | `format` | enum | `"hourMinute"` | `hourMinute`, `minutes` |
 | `fromText` | string | `"Từ"` | ≤ 16 ký tự |
 | `toText` | string | `"Đến"` | ≤ 16 ký tự |
+| `confirmText` | string | `""` | ≤ 200 ký tự |
+
+### `equipment` (`<mat-w-equipment>`)
+
+Nhóm: Điều khiển. Cỡ mặc định 200 × 150, nhỏ nhất 96 × 72.
+
+| Khe Tag | Bắt buộc | Nhiều Tag | Kiểu | Cần ghi |
+|---|---|---|---|---|
+| `state` | có | không | bool, number | không |
+| `fault` | không | không | bool, number | không |
+| `target` | không | không | bool, number | có |
+
+| Thuộc tính | Kiểu | Mặc định | Ràng buộc |
+|---|---|---|---|
+| `label` | string | `""` | ≤ 40 ký tự |
+| `kind` | enum | `"motor"` | `motor`, `pump`, `fan`, `valve` |
+| `runValue` | number | `1` |  |
+| `faultValue` | number |  |  |
+| `animate` | bool | `true` |  |
+| `showButtons` | bool | `true` |  |
+| `startText` | string | `"Chạy"` | ≤ 16 ký tự |
+| `stopText` | string | `"Dừng"` | ≤ 16 ký tự |
+| `startValue` | number | `1` |  |
+| `stopValue` | number | `0` |  |
+| `confirm` | enum | `"always"` | `always`, `none` |
 | `confirmText` | string | `""` | ≤ 200 ký tự |
 
 ## Nhóm Alarm

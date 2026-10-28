@@ -20,11 +20,18 @@
         "decimals": 0,
         "unit": "",
         "fontSize": "s",
+        "accent": "blue",
+        "fill": "soft",
+        "icon": "none",
+        "accentColor": "auto",
         "showQuality": false,
+        "showUnit": false,
+        "statusText": false,
         "sparkline": false,
         "trend": false,
         "valueColor": "auto",
-        "background": "auto"
+        "background": "auto",
+        "flash": false
       },
       "tags": {
         "value": "L.LEVEL"

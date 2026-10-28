@@ -44,6 +44,7 @@ export {
 export type { RenameCode, RenameHit, RenameProject, RenameResult } from './rename.ts';
 export * from './types-03.ts';
 export * from './catalog.ts';
+export * from './widget-aliases.ts';
 export {
   runRules03,
   LIMITS_03,

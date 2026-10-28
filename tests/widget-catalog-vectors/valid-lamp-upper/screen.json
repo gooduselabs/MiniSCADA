@@ -23,7 +23,8 @@
         "invert": true,
         "useValueTable": true,
         "showText": true,
-        "blinkOn": true
+        "blinkOn": true,
+        "glow": true
       },
       "tags": {
         "state": "L.LEVEL"

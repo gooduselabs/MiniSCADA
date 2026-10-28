@@ -20,14 +20,22 @@
         "decimals": 6,
         "unit": "ằằằằằằằằằằằằằằằằ",
         "fontSize": "xl",
+        "accent": "slate",
+        "fill": "plain",
+        "icon": "star",
+        "accentColor": "#FFFFFF",
         "showQuality": true,
+        "showUnit": true,
+        "statusText": true,
         "sparkline": true,
         "trend": true,
         "valueColor": "#FFFFFF",
-        "background": "#FFFFFF"
+        "background": "#FFFFFF",
+        "flash": true
       },
       "tags": {
         "value": "L.LEVEL",
+        "alarm": "L.FLAG",
         "status": "L.LEVEL"
       }
     }

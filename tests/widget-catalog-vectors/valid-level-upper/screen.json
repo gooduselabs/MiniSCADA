@@ -17,6 +17,7 @@
       "height": 700,
       "props": {
         "orientation": "horizontal",
+        "style": "tank",
         "label": "ằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằằ",
         "decimals": 6,
         "unit": "ằằằằằằằằằằằằằằằằ",
@@ -43,6 +44,8 @@
           }
         ],
         "showValue": true,
+        "color": "#FFFFFF",
+        "wave": true,
         "min": -1000,
         "max": 1000
       },

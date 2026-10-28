@@ -2543,6 +2543,115 @@ const SECTIONS = [
     ],
   ],
   [
+    'Component 037',
+    [
+      {
+        height: 116,
+        cells: [
+          [
+            3,
+            w(
+              'w_card_solid',
+              'card',
+              {
+                label: 'Thẻ giá trị nền đặc',
+                fill: 'solid',
+                accent: 'teal',
+                icon: 'thermometer',
+                fontSize: 'l',
+                statusText: true,
+                warnAbove: 70,
+                alarmAbove: 75,
+              },
+              { value: 'DEMO.TEMP' },
+            ),
+          ],
+          [
+            3,
+            w(
+              'w_card_outline',
+              'card',
+              {
+                label: 'Thẻ giá trị viền',
+                fill: 'outline',
+                accent: 'violet',
+                icon: 'pressure',
+                sparkline: true,
+                decimals: 2,
+              },
+              { value: 'DEMO.PRESS' },
+            ),
+          ],
+          [
+            3,
+            w(
+              'w_multi_state',
+              'multi-state',
+              {
+                label: 'Nhãn đa trạng thái (multi-state)',
+                icon: 'gear',
+                states: [
+                  { value: 0, text: 'Tay', color: '#a36810' },
+                  { value: 1, text: 'Tự động', color: '#268426' },
+                ],
+              },
+              { value: 'DEMO.MODE' },
+            ),
+          ],
+          [
+            3,
+            w(
+              'w_level_tank',
+              'level',
+              { label: 'Bồn (level kiểu tank)', style: 'tank', orientation: 'horizontal' },
+              { value: 'DEMO.LEVEL' },
+            ),
+          ],
+        ],
+      },
+      {
+        height: 180,
+        cells: [
+          [
+            4,
+            w(
+              'w_equip_pump',
+              'equipment',
+              { label: 'Bơm mẫu (equipment)', kind: 'pump' },
+              { state: 'DEMO.RUN', fault: 'LIT101.HI', target: 'DEMO.CMD' },
+            ),
+          ],
+          [
+            3,
+            w(
+              'w_equip_fan',
+              'equipment',
+              { label: 'Quạt mẫu', kind: 'fan' },
+              { state: 'DEMO.FAN' },
+            ),
+          ],
+          [
+            2,
+            w(
+              'w_stack',
+              'stack-light',
+              { label: 'Đèn tháp' },
+              { red: 'LIT101.HI', yellow: 'DEMO.FAN', green: 'DEMO.RUN' },
+            ),
+          ],
+          [
+            3,
+            w('w_panel_accent', 'panel', {
+              title: 'Khung màu nhấn',
+              variant: 'card',
+              accent: 'blue',
+            }),
+          ],
+        ],
+      },
+    ],
+  ],
+  [
     'Lịch sử',
     [
       {

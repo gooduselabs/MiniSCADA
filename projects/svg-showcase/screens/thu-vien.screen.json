@@ -284,218 +284,281 @@
       },
       {
         "id": "r16",
-        "height": 24,
+        "height": 116,
         "cells": [
           {
             "id": "c37",
+            "span": 3,
+            "item": "w_card_solid"
+          },
+          {
+            "id": "c38",
+            "span": 3,
+            "item": "w_card_outline"
+          },
+          {
+            "id": "c39",
+            "span": 3,
+            "item": "w_multi_state"
+          },
+          {
+            "id": "c40",
+            "span": 3,
+            "item": "w_level_tank"
+          }
+        ]
+      },
+      {
+        "id": "r17",
+        "height": 180,
+        "cells": [
+          {
+            "id": "c41",
+            "span": 4,
+            "item": "w_equip_pump"
+          },
+          {
+            "id": "c42",
+            "span": 3,
+            "item": "w_equip_fan"
+          },
+          {
+            "id": "c43",
+            "span": 2,
+            "item": "w_stack"
+          },
+          {
+            "id": "c44",
+            "span": 3,
+            "item": "w_panel_accent"
+          }
+        ]
+      },
+      {
+        "id": "r18",
+        "height": 36,
+        "cells": [
+          {
+            "id": "c45",
+            "span": 12,
+            "item": "muc_7"
+          }
+        ]
+      },
+      {
+        "id": "r19",
+        "height": 24,
+        "cells": [
+          {
+            "id": "c46",
             "span": 6,
             "item": "ten_w_h_trend"
           },
           {
-            "id": "c38",
+            "id": "c47",
             "span": 6,
             "item": "ten_w_h_table"
           }
         ]
       },
       {
-        "id": "r17",
+        "id": "r20",
         "height": 300,
         "cells": [
           {
-            "id": "c39",
+            "id": "c48",
             "span": 6,
             "item": "w_h_trend"
           },
           {
-            "id": "c40",
+            "id": "c49",
             "span": 6,
             "item": "w_h_table"
           }
         ]
       },
       {
-        "id": "r18",
+        "id": "r21",
         "height": 24,
         "cells": [
           {
-            "id": "c41",
+            "id": "c50",
             "span": 8,
             "item": "ten_w_h_bar"
           },
           {
-            "id": "c42",
+            "id": "c51",
             "span": 4,
             "item": "ten_w_h_pie"
           }
         ]
       },
       {
-        "id": "r19",
+        "id": "r22",
         "height": 280,
         "cells": [
           {
-            "id": "c43",
+            "id": "c52",
             "span": 8,
             "item": "w_h_bar"
           },
           {
-            "id": "c44",
+            "id": "c53",
             "span": 4,
             "item": "w_h_pie"
           }
         ]
       },
       {
-        "id": "r20",
+        "id": "r23",
         "height": 36,
         "cells": [
           {
-            "id": "c45",
+            "id": "c54",
             "span": 12,
             "item": "muc_ky_hieu"
           }
         ]
       },
       {
-        "id": "r21",
+        "id": "r24",
         "height": 150,
         "cells": [
           {
-            "id": "c46",
+            "id": "c55",
             "span": 2,
             "item": "kh_tank_vertical"
           },
           {
-            "id": "c47",
+            "id": "c56",
             "span": 2,
             "item": "kh_tank_horizontal"
           },
           {
-            "id": "c48",
+            "id": "c57",
             "span": 2,
             "item": "kh_pump_centrifugal"
           },
           {
-            "id": "c49",
+            "id": "c58",
             "span": 2,
             "item": "kh_pump_dosing"
           },
           {
-            "id": "c50",
+            "id": "c59",
             "span": 2,
             "item": "kh_valve_gate"
           },
           {
-            "id": "c51",
+            "id": "c60",
             "span": 2,
             "item": "kh_valve_control"
           }
         ]
       },
       {
-        "id": "r22",
+        "id": "r25",
         "height": 28,
         "cells": [
           {
-            "id": "c52",
+            "id": "c61",
             "span": 2,
             "item": "ten_kh_tank_vertical"
           },
           {
-            "id": "c53",
+            "id": "c62",
             "span": 2,
             "item": "ten_kh_tank_horizontal"
           },
           {
-            "id": "c54",
+            "id": "c63",
             "span": 2,
             "item": "ten_kh_pump_centrifugal"
           },
           {
-            "id": "c55",
+            "id": "c64",
             "span": 2,
             "item": "ten_kh_pump_dosing"
           },
           {
-            "id": "c56",
+            "id": "c65",
             "span": 2,
             "item": "ten_kh_valve_gate"
           },
           {
-            "id": "c57",
+            "id": "c66",
             "span": 2,
             "item": "ten_kh_valve_control"
           }
         ]
       },
       {
-        "id": "r23",
+        "id": "r26",
         "height": 150,
         "cells": [
           {
-            "id": "c58",
+            "id": "c67",
             "span": 2,
             "item": "kh_valve_check"
           },
           {
-            "id": "c59",
+            "id": "c68",
             "span": 2,
             "item": "kh_motor_ac"
           },
           {
-            "id": "c60",
+            "id": "c69",
             "span": 2,
             "item": "kh_fan"
           },
           {
-            "id": "c61",
+            "id": "c70",
             "span": 2,
             "item": "kh_pipe_h"
           },
           {
-            "id": "c62",
+            "id": "c71",
             "span": 2,
             "item": "kh_pipe_v"
           },
           {
-            "id": "c63",
+            "id": "c72",
             "span": 2,
             "item": "kh_pipe_elbow"
           }
         ]
       },
       {
-        "id": "r24",
+        "id": "r27",
         "height": 28,
         "cells": [
           {
-            "id": "c64",
+            "id": "c73",
             "span": 2,
             "item": "ten_kh_valve_check"
           },
           {
-            "id": "c65",
+            "id": "c74",
             "span": 2,
             "item": "ten_kh_motor_ac"
           },
           {
-            "id": "c66",
+            "id": "c75",
             "span": 2,
             "item": "ten_kh_fan"
           },
           {
-            "id": "c67",
+            "id": "c76",
             "span": 2,
             "item": "ten_kh_pipe_h"
           },
           {
-            "id": "c68",
+            "id": "c77",
             "span": 2,
             "item": "ten_kh_pipe_v"
           },
           {
-            "id": "c69",
+            "id": "c78",
             "span": 2,
             "item": "ten_kh_pipe_elbow"
           }
@@ -1348,6 +1411,136 @@
     },
     {
       "id": "muc_6",
+      "type": "widget",
+      "widget": "label",
+      "props": {
+        "text": "Component 037",
+        "fontSize": 20,
+        "bold": true
+      }
+    },
+    {
+      "id": "w_card_solid",
+      "type": "widget",
+      "widget": "card",
+      "props": {
+        "label": "Thẻ giá trị nền đặc",
+        "fill": "solid",
+        "accent": "teal",
+        "icon": "thermometer",
+        "fontSize": "l",
+        "statusText": true,
+        "warnAbove": 70,
+        "alarmAbove": 75
+      },
+      "tags": {
+        "value": "DEMO.TEMP"
+      }
+    },
+    {
+      "id": "w_card_outline",
+      "type": "widget",
+      "widget": "card",
+      "props": {
+        "label": "Thẻ giá trị viền",
+        "fill": "outline",
+        "accent": "violet",
+        "icon": "pressure",
+        "sparkline": true,
+        "decimals": 2
+      },
+      "tags": {
+        "value": "DEMO.PRESS"
+      }
+    },
+    {
+      "id": "w_multi_state",
+      "type": "widget",
+      "widget": "multi-state",
+      "props": {
+        "label": "Nhãn đa trạng thái (multi-state)",
+        "icon": "gear",
+        "states": [
+          {
+            "value": 0,
+            "text": "Tay",
+            "color": "#a36810"
+          },
+          {
+            "value": 1,
+            "text": "Tự động",
+            "color": "#268426"
+          }
+        ]
+      },
+      "tags": {
+        "value": "DEMO.MODE"
+      }
+    },
+    {
+      "id": "w_level_tank",
+      "type": "widget",
+      "widget": "level",
+      "props": {
+        "label": "Bồn (level kiểu tank)",
+        "style": "tank",
+        "orientation": "horizontal"
+      },
+      "tags": {
+        "value": "DEMO.LEVEL"
+      }
+    },
+    {
+      "id": "w_equip_pump",
+      "type": "widget",
+      "widget": "equipment",
+      "props": {
+        "label": "Bơm mẫu (equipment)",
+        "kind": "pump"
+      },
+      "tags": {
+        "state": "DEMO.RUN",
+        "fault": "LIT101.HI",
+        "target": "DEMO.CMD"
+      }
+    },
+    {
+      "id": "w_equip_fan",
+      "type": "widget",
+      "widget": "equipment",
+      "props": {
+        "label": "Quạt mẫu",
+        "kind": "fan"
+      },
+      "tags": {
+        "state": "DEMO.FAN"
+      }
+    },
+    {
+      "id": "w_stack",
+      "type": "widget",
+      "widget": "stack-light",
+      "props": {
+        "label": "Đèn tháp"
+      },
+      "tags": {
+        "red": "LIT101.HI",
+        "yellow": "DEMO.FAN",
+        "green": "DEMO.RUN"
+      }
+    },
+    {
+      "id": "w_panel_accent",
+      "type": "widget",
+      "widget": "panel",
+      "props": {
+        "title": "Khung màu nhấn",
+        "variant": "card",
+        "accent": "blue"
+      }
+    },
+    {
+      "id": "muc_7",
       "type": "widget",
       "widget": "label",
       "props": {

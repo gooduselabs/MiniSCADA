@@ -17,11 +17,14 @@
       "height": 260,
       "props": {
         "orientation": "vertical",
+        "style": "bar",
         "label": "",
         "decimals": 0,
         "unit": "",
         "zones": [],
         "showValue": false,
+        "color": "auto",
+        "wave": false,
         "min": 0,
         "max": 1
       },

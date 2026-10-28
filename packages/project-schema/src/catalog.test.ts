@@ -23,6 +23,9 @@ const IDS = [
   'clock',
   'text',
   'image',
+  // danh mục 0.8.0 (feature 037)
+  'multi-state',
+  'stack-light',
   'line',
   'bar',
   'pie',
@@ -42,11 +45,13 @@ const IDS = [
 ];
 // danh mục 0.7.0 (feature 029): hẹn giờ Từ–Đến (sau select)
 IDS.splice(IDS.indexOf('select') + 1, 0, 'time-range');
+// danh mục 0.8.0 (feature 037): thiết bị Motor/Bơm/Quạt/Van (sau time-range)
+IDS.splice(IDS.indexOf('time-range') + 1, 0, 'equipment');
 
 describe('danh mục widget', () => {
-  it('có đúng 29 id theo contract (15 của 007, 2 của 009, 4 của 010, 7 của 014, 1 của 029)', () => {
+  it('có đúng 32 id theo contract (15 của 007, 2 của 009, 4 của 010, 7 của 014, 1 của 029, 3 của 037)', () => {
     expect(WIDGET_CATALOG.widgets.map((w) => w.id)).toEqual(IDS);
-    expect(WIDGET_CATALOG.catalogVersion).toBe('0.7.0');
+    expect(WIDGET_CATALOG.catalogVersion).toBe('0.8.0');
   });
 
   it('id đúng dạng, nhóm hợp lệ, minSize <= defaultSize', () => {
@@ -306,5 +311,51 @@ describe('checkPropValue', () => {
   it('tableRef: chuỗi tên', () => {
     expect(checkPropValue(p({ kind: 'tableRef' }), 'TrangThai')).toBeNull();
     expect(checkPropValue(p({ kind: 'tableRef' }), 3)).not.toBeNull();
+  });
+});
+
+// Feature 037: gộp Thẻ chỉ số màu vào Thẻ giá trị, widget mới.
+describe('danh mục 0.8.0 (037)', () => {
+  const prop = (w: string, p: string) => catalogWidget(w)!.props.find((x) => x.name === p)!;
+  it('stat-tile còn trong danh mục nhưng đã lỗi thời, thay bằng card', () => {
+    expect(catalogWidget('stat-tile')).toMatchObject({ deprecated: true, replacedBy: 'card' });
+    expect(WIDGET_CATALOG.widgets.filter((w) => w.deprecated).map((w) => w.id)).toEqual([
+      'stat-tile',
+    ]);
+  });
+  it('card có màu nhấn, kiểu nền, biểu tượng, ngưỡng, khe alarm', () => {
+    expect(prop('card', 'accent')).toMatchObject({ kind: 'enum', default: 'blue' });
+    expect(prop('card', 'accent').options).toEqual(
+      expect.arrayContaining(prop('stat-tile', 'color').options!),
+    );
+    expect(prop('card', 'fill').options).toEqual(['soft', 'solid', 'outline', 'plain']);
+    expect(prop('card', 'icon').options).toEqual(prop('stat-tile', 'icon').options);
+    for (const n of ['warnAbove', 'warnBelow', 'alarmAbove', 'alarmBelow'])
+      expect(prop('card', n).kind, n).toBe('number');
+    expect(catalogWidget('card')!.slots.map((s) => s.name)).toEqual(['value', 'alarm', 'status']);
+  });
+  it('widget mới: equipment (điều khiển, khe ghi tùy chọn), stack-light, multi-state', () => {
+    const eq = catalogWidget('equipment')!;
+    expect(eq.group).toBe('control');
+    expect(eq.slots.map((s) => [s.name, s.required, s.needsWrite])).toEqual([
+      ['state', true, false],
+      ['fault', false, false],
+      ['target', false, true],
+    ]);
+    expect(prop('equipment', 'kind').options).toEqual(['motor', 'pump', 'fan', 'valve']);
+    expect(catalogWidget('stack-light')!.slots.map((s) => s.name)).toEqual([
+      'red',
+      'yellow',
+      'green',
+      'blue',
+    ]);
+    const states = prop('multi-state', 'states');
+    expect(
+      checkPropValue(states, [
+        { value: 0, text: 'Dừng', color: '#6b777c' },
+        { value: 1, text: 'Chạy', color: '#268426', blink: false },
+      ]),
+    ).toBeNull();
+    expect(checkPropValue(states, [{ value: 0, text: 'x', color: 'red' }])).not.toBeNull();
   });
 });
