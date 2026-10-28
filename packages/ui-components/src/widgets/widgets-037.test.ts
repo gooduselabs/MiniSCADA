@@ -34,12 +34,12 @@ describe('mat-w-equipment', () => {
     const el = await equip(env, { state: 'RUN' }, { kind: 'fan', label: 'Quạt 1' });
     expect(root(el).querySelector('.w')!.classList.contains('st-stop')).toBe(true);
     expect(textOf(el, '.pill')).toBe('Dừng');
-    expect(root(el).querySelector('.sym.spin')).toBeNull();
+    expect(root(el).querySelector('.sq.spin')).toBeNull();
     env.source.set('RUN', { value: true });
     await settle(el);
     expect(root(el).querySelector('.w')!.classList.contains('st-run')).toBe(true);
     expect(textOf(el, '.pill')).toBe('Đang chạy');
-    expect(root(el).querySelector('.sym.spin')).not.toBeNull();
+    expect(root(el).querySelector('.sq.spin')).not.toBeNull();
     expect(root(el).querySelector('.w')!.getAttribute('aria-label')).toContain('Đang chạy');
   });
 
@@ -103,6 +103,36 @@ describe('mat-w-equipment', () => {
     const env = makeEnv();
     const el = await equip(env, { state: 'RUN', target: 'RUN' }, {}, 'edit');
     expect(root(el).querySelector<HTMLButtonElement>('.b-start')!.disabled).toBe(true);
+  });
+});
+
+describe('mat-w-equipment (vòng 2)', () => {
+  it('chữ trạng thái đổi được; câu xác nhận có tên thiết bị; aria của nút', async () => {
+    const env = makeEnv();
+    env.source.set('RUN', { value: true });
+    const el = await equip(env, { state: 'RUN', target: 'RUN' }, { label: 'Bơm cấp P-101', runText: 'Đang bơm' });
+    expect(textOf(el, '.pill')).toBe('Đang bơm');
+    const b = root(el).querySelector<HTMLButtonElement>('.b-start')!;
+    expect(b.getAttribute('aria-label')).toBe('Chạy Bơm cấp P-101');
+    b.click();
+    await settle(el);
+    expect(dialog()!.shadowRoot!.textContent).toContain('Chạy Bơm cấp P-101?');
+  });
+  it('Tag số nguyên: giá trị lệnh làm tròn', async () => {
+    const env = makeEnv();
+    const el = (await equip(env, { state: 'MODE', target: 'MODE' }, { startValue: 2.6 })) as unknown as {
+      commandValue(s: boolean): unknown;
+    };
+    expect(el.commandValue(true)).toBe(3);
+    expect(el.commandValue(false)).toBe(0);
+  });
+  it('rotor là phần tử svg riêng quay quanh tâm (compositor)', async () => {
+    const env = makeEnv();
+    env.source.set('RUN', { value: true });
+    const el = await equip(env, { state: 'RUN' }, { kind: 'pump' });
+    const r = root(el).querySelector<SVGElement>('.sq.spin > svg.rotor')!;
+    expect(r).not.toBeNull();
+    expect(r.getAttribute('style')).toContain('transform-origin');
   });
 });
 
@@ -172,5 +202,21 @@ describe('mat-w-multi-state', () => {
     );
     s.set('m', { value: 7, quality: 'GOOD' });
     expect(textOf(await mount(widgetItem('multi-state', { value: 'm' }), s), '.state')).toBe('7');
+  });
+});
+
+describe('chuyển động (still)', () => {
+  it('project tắt chuyển động hoặc chế độ edit: phần tử có thuộc tính still; bật lại thì bỏ', async () => {
+    const { setMotion } = await import('./motion.ts');
+    const s = makeSource([tagInfo('t', { type: 'BOOL' })]);
+    s.set('t', { value: true, quality: 'GOOD' });
+    const el = await mount(widgetItem('stack-light', { red: 't' }), s);
+    expect(el.hasAttribute('still')).toBe(false);
+    setMotion(document, false);
+    expect(el.hasAttribute('still')).toBe(true);
+    setMotion(document, true);
+    expect(el.hasAttribute('still')).toBe(false);
+    const ed = await mount(widgetItem('stack-light', { red: 't' }), s, 'edit');
+    expect(ed.hasAttribute('still')).toBe(true);
   });
 });

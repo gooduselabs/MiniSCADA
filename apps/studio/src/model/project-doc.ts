@@ -46,7 +46,9 @@ export type ProjectField =
   | 'entryScreen'
   | 'maxClients'
   // định dạng 1.1 (feature 012): chủ đề giao diện
-  | 'theme';
+  | 'theme'
+  // feature 037: chuyển động của widget trên trang vận hành (on/off)
+  | 'motion';
 
 /** Khóa của Tag 0.1 theo thứ tự file chuẩn (data-model của 004 §3.1); cũng là các cột của Bảng Tag 0.1. */
 export const TAG_KEY_ORDER = ['id', 'type', 'description', 'unit', 'min', 'max', 'source'] as const;

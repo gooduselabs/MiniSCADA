@@ -121,7 +121,6 @@ export class MatLevel extends MatWidget {
           )
           0 0 / 20px 6px repeat-x;
         animation: mat-wave 2.4s linear infinite;
-        will-change: transform;
       }
       @keyframes mat-wave {
         to {

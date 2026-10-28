@@ -84,6 +84,18 @@ export const widgetStyles = css`
       outline-offset: 1px;
     }
   }
+  /* Feature 037: widget đứng yên (thiết kế, ngoài vùng nhìn, project tắt chuyển động): không hoạt ảnh nào chạy;
+     nhấp nháy báo động thành viền đỏ đứng yên để không mất thông tin. */
+  :host([still]) *,
+  :host([still]) *::before,
+  :host([still]) *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  :host([still]) .blink {
+    outline: 2px solid var(--mat-bad, #c42b2b);
+    outline-offset: 1px;
+  }
   .status2 {
     font-size: 12px;
     font-weight: 600;

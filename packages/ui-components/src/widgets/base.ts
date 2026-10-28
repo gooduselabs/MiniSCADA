@@ -17,6 +17,7 @@ import type { ActionHost, TagInfo, TagSource } from '../host/types.ts';
 import { itemTagIds } from '../screen/layers.ts';
 import { installTokens } from '../styles/tokens.ts';
 import { widgetStyles } from '../styles/widget-styles.ts';
+import { motionOn, onMotionChange, watchVisible } from './motion.ts';
 
 type Widen<T> = T extends string
   ? string
@@ -57,6 +58,9 @@ export class MatWidget extends LitElement {
   #subSource: TagSource | null = null;
   #dirtyHidden = false;
   #visHandler: (() => void) | null = null;
+  #inView = true;
+  #offVis: (() => void) | null = null;
+  #offMotion: (() => void) | null = null;
 
   constructor() {
     super();
@@ -179,9 +183,27 @@ export class MatWidget extends LitElement {
     super.connectedCallback();
     installTokens(this.ownerDocument);
     this.#sync();
+    this.#offVis = watchVisible(this, (v) => {
+      this.#inView = v;
+      this.#syncStill();
+    });
+    this.#offMotion = onMotionChange(() => this.#syncStill());
+    this.#syncStill();
+  }
+
+  /**
+   * Feature 037: thuộc tính `still` (tắt mọi hoạt ảnh CSS bên trong) khi đang thiết kế, ngoài vùng nhìn, hoặc project tắt
+   * chuyển động. Widget vẫn đặt lớp spin/wave/blink theo dữ liệu; CSS chung quyết định có chạy không.
+   */
+  #syncStill(): void {
+    const still = this.mode === 'edit' || !this.#inView || !motionOn(this.ownerDocument);
+    this.toggleAttribute('still', still);
   }
 
   override disconnectedCallback(): void {
+    this.#offVis?.();
+    this.#offMotion?.();
+    this.#offVis = this.#offMotion = null;
     this.#unsubscribe();
     this.#clearVis();
     super.disconnectedCallback();
@@ -189,6 +211,7 @@ export class MatWidget extends LitElement {
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('item') || changed.has('source')) this.#sync();
+    if (changed.has('mode')) this.#syncStill();
   }
 
   #unsubscribe(): void {

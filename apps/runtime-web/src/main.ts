@@ -3,7 +3,7 @@
 // Giữ hành vi của 004/005/006 (FR-021): cảnh báo Chrome < 120, không mở WebSocket khi thiết bị chưa có project hợp lệ
 // (chỉ hỏi lại projects/active, T104a), banner 4429, tự tải lại khi project đổi (hash giữ nguyên qua reload.ts).
 import '../../../packages/ui-components/src/styles/tokens.css';
-import { MatScreen, registerScreen, registerWidgets } from '@mat/ui-components';
+import { MatScreen, registerScreen, registerWidgets, setMotion } from '@mat/ui-components';
 import { AccessView, emptyForUser, fetchAccess, filterScreen, sessionEnded } from './access.ts';
 import { WebActionHost } from './action-host.ts';
 import { AlarmApp } from './alarm/alarm-app.ts';
@@ -383,6 +383,8 @@ async function main(): Promise<void> {
   const routable = summary.screens.filter((s) => s.kind === 'screen').map((s) => s.id);
   let entry = routable.includes(summary.entry) ? summary.entry : (routable[0] ?? summary.entry);
   shell.setProject(summary.name);
+  // Feature 037: thiết lập project "Chuyển động: Tắt" — widget đọc thuộc tính này (setMotion của ui-components).
+  setMotion(document, summary.motion !== 'off');
   // Alarm (feature 009, 026): chuông và bảng thông báo, huy hiệu, trang Alarm và Lịch sử; mục menu theo trạng thái nguồn alarm.
   let alarmMenu: AlarmMenuOptions = { show: false };
   let currentId = entry;

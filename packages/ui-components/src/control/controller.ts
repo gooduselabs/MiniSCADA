@@ -152,7 +152,11 @@ export class ControlController {
     return effectiveLimits(this.#d.item, info);
   }
 
-  propose(kind: WriteKind, value: boolean | number | string, opts?: { pulseMs?: number }): boolean {
+  propose(
+    kind: WriteKind,
+    value: boolean | number | string,
+    opts?: { pulseMs?: number; text?: string },
+  ): boolean {
     this.error = null;
     if (this.#phase !== 'idle') return false;
     if (this.#lock()) {
@@ -173,7 +177,9 @@ export class ControlController {
     const confirm: 'always' | 'none' =
       p['confirm'] === 'none' && info.type === 'BOOL' ? 'none' : 'always';
     const text =
-      typeof p['confirmText'] === 'string' && p['confirmText'] ? p['confirmText'] : undefined;
+      typeof p['confirmText'] === 'string' && p['confirmText']
+        ? p['confirmText']
+        : opts?.text || undefined; // feature 037: câu hỏi riêng của widget ("Chạy Bơm 1?") khi project không đặt
     const draft: Draft = { spec: built, info, current, confirm, ...(text ? { text } : {}) };
     if (confirm === 'none') {
       this.#send(draft);

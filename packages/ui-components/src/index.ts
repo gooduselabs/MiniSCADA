@@ -22,6 +22,7 @@ export * from './screen/svg-events.ts';
 export * from './control/svg-action-controller.ts';
 export * from './styles/tokens.ts';
 export * from './widgets/base.ts';
+export * from './widgets/motion.ts';
 export * from './widgets/register.ts';
 export * from './widgets/card.ts';
 export * from './widgets/label.ts';

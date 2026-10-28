@@ -16,7 +16,7 @@ import { AppElement, icon } from '../base.ts';
 import { registerEditor } from '../registry.ts';
 import './tag-grid.css';
 
-type FieldKey = Exclude<ProjectField, 'theme'> | 'projectId' | 'minRuntimeVersion';
+type FieldKey = Exclude<ProjectField, 'theme' | 'motion'> | 'projectId' | 'minRuntimeVersion';
 
 const FIELDS: Readonly<Record<FieldKey, { label: MessageKey; help: MessageKey }>> = {
   projectName: { label: 'settings.projectName', help: 'settings.projectName.help' },
@@ -175,6 +175,23 @@ export class SettingsEditor extends AppElement {
     );
   }
 
+  /** Feature 037: Chuyển động của widget (quay, sóng, nhấp nháy) trên trang vận hành; vắng = Bật. */
+  private motionField(value: string) {
+    return html`<div class="field">
+      <label for="set-motion">${t('settings.motion')}</label>
+      <select
+        class="select"
+        id="set-motion"
+        aria-describedby="set-motion-help"
+        @change=${(e: Event) => this.edit('motion', (e.currentTarget as HTMLSelectElement).value)}
+      >
+        <option value="on" .selected=${live(value !== 'off')}>${t('settings.motion.on')}</option>
+        <option value="off" .selected=${live(value === 'off')}>${t('settings.motion.off')}</option>
+      </select>
+      <p class="help" id="set-motion-help">${t('settings.motion.help')}</p>
+    </div>`;
+  }
+
   /** Feature 029: không còn chọn chủ đề; project cũ có `theme` thì chỉ báo nhẹ là trường này bị bỏ qua. */
   private themeNote(value: string) {
     if (!value) return nothing;
@@ -288,7 +305,8 @@ export class SettingsEditor extends AppElement {
         <fieldset>
           <legend>${t('settings.runtime')}</legend>
           ${this.entryField(asText(p.entryScreen), s.outline.screens, byField)}
-          ${this.clientsField(asText(p.maxClients), byField)} ${this.themeNote(asText(p.theme))}
+          ${this.clientsField(asText(p.maxClients), byField)} ${this.motionField(asText(p.motion))}
+          ${this.themeNote(asText(p.theme))}
           ${this.readonlyField('minRuntimeVersion', asText(p.minRuntimeVersion), byField)}
         </fieldset>
         ${

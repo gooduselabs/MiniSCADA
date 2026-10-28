@@ -170,6 +170,10 @@
       "maxLength": 128,
       "pattern": "\\.json$"
     },
+    "motion": {
+      "enum": ["on", "off"],
+      "description": "Định dạng 1.x (feature 037): chuyển động của widget trên trang vận hành (quay, sóng, nhấp nháy, nháy số). Vắng = on."
+    },
     "theme": {
       "enum": ["vivid", "industrial", "dark"],
       "description": "Định dạng 1.1 (feature 012), lỗi thời từ feature 029: vẫn được đọc để project cũ hợp lệ nhưng bị bỏ qua; trang vận hành và widget chỉ dùng một giao diện ATSCADA."

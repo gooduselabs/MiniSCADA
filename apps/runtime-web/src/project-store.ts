@@ -47,6 +47,8 @@ export interface ProjectSummary {
   schemaVersion?: string;
   /** Project 1.1 (feature 024): có recipe (`recipesFile`); trang Recipe đọc qua API, không qua /project/. */
   recipesFile?: string;
+  /** Feature 037: `motion: off` tắt chuyển động của widget (thiết bị yếu, màn hình đông). */
+  motion?: 'on' | 'off';
 }
 
 export type OpenResult =
@@ -228,6 +230,7 @@ export class ProjectStore {
         : {}),
       ...(typeof project.reportsFile === 'string' ? { reportsFile: project.reportsFile } : {}),
       ...(typeof project.recipesFile === 'string' ? { recipesFile: project.recipesFile } : {}),
+      ...(project.motion === 'off' ? { motion: 'off' as const } : {}),
     };
   }
 

@@ -158,4 +158,12 @@ export const viComponents = {
   'preset.bar': 'So sánh',
   'preset.pie': 'Tỷ lệ',
   'preset.tag-table': 'Bảng Tag',
+  'settings.motion': 'Chuyển động của widget',
+  'settings.motion.on': 'Bật',
+  'settings.motion.off': 'Tắt',
+  'settings.motion.help':
+    'Quay cánh bơm/quạt, gợn sóng bồn, nhấp nháy, nháy số trên trang vận hành. Tắt nếu thiết bị yếu hoặc màn hình có rất nhiều widget; báo động vẫn hiện bằng viền đỏ.',
+  'wprop.runText': 'Chữ khi chạy (trống = Đang chạy)',
+  'wprop.stoppedText': 'Chữ khi dừng (trống = Dừng)',
+  'wprop.faultText': 'Chữ khi lỗi (trống = Lỗi)',
 } as const;

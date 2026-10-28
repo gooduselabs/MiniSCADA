@@ -7,6 +7,17 @@ export const vi = {
   noValue: '—',
   /** Hướng của card khi bật trend (feature 012). */
   trend: { up: 'tăng', down: 'giảm', flat: 'không đổi' },
+  /** Feature 037: chữ trạng thái và câu xác nhận của widget Thiết bị. */
+  equip: {
+    run: 'Đang chạy',
+    stop: 'Dừng',
+    fault: 'Lỗi',
+    unknown: 'Không rõ',
+    open: 'Mở',
+    closed: 'Đóng',
+    start: 'Chạy',
+    confirm: '{cmd} {name}?',
+  },
   unknownValue: '?',
   quality: {
     GOOD: 'Tốt',
