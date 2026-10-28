@@ -4,20 +4,21 @@
 // Widget không được chuyển động thì có thuộc tính `still` trên phần tử chủ; CSS chung (widget-styles) tắt mọi
 // `animation` bên trong, nên trình duyệt không vẽ lại khung hình nào cho quay, sóng, nhấp nháy, nháy số.
 const ATTR = 'matMotion';
-const listeners = new Set<() => void>();
+/** Sự kiện trên document khi thiết lập đổi (công cụ đo, trang vận hành phát lại được). */
+export const MOTION_EVENT = 'mat-motion';
 
 export function setMotion(doc: Document, on: boolean): void {
   const v = on ? 'on' : 'off';
   if (doc.documentElement.dataset[ATTR] === v) return;
   doc.documentElement.dataset[ATTR] = v;
-  for (const l of [...listeners]) l();
+  doc.dispatchEvent(new Event(MOTION_EVENT));
 }
 
 export const motionOn = (doc: Document): boolean => doc.documentElement.dataset[ATTR] !== 'off';
 
-export function onMotionChange(fn: () => void): () => void {
-  listeners.add(fn);
-  return () => listeners.delete(fn);
+export function onMotionChange(doc: Document, fn: () => void): () => void {
+  doc.addEventListener(MOTION_EVENT, fn);
+  return () => doc.removeEventListener(MOTION_EVENT, fn);
 }
 
 type VisFn = (visible: boolean) => void;

@@ -110,7 +110,11 @@ describe('mat-w-equipment (vòng 2)', () => {
   it('chữ trạng thái đổi được; câu xác nhận có tên thiết bị; aria của nút', async () => {
     const env = makeEnv();
     env.source.set('RUN', { value: true });
-    const el = await equip(env, { state: 'RUN', target: 'RUN' }, { label: 'Bơm cấp P-101', runText: 'Đang bơm' });
+    const el = await equip(
+      env,
+      { state: 'RUN', target: 'RUN' },
+      { label: 'Bơm cấp P-101', runText: 'Đang bơm' },
+    );
     expect(textOf(el, '.pill')).toBe('Đang bơm');
     const b = root(el).querySelector<HTMLButtonElement>('.b-start')!;
     expect(b.getAttribute('aria-label')).toBe('Chạy Bơm cấp P-101');
@@ -120,7 +124,11 @@ describe('mat-w-equipment (vòng 2)', () => {
   });
   it('Tag số nguyên: giá trị lệnh làm tròn', async () => {
     const env = makeEnv();
-    const el = (await equip(env, { state: 'MODE', target: 'MODE' }, { startValue: 2.6 })) as unknown as {
+    const el = (await equip(
+      env,
+      { state: 'MODE', target: 'MODE' },
+      { startValue: 2.6 },
+    )) as unknown as {
       commandValue(s: boolean): unknown;
     };
     expect(el.commandValue(true)).toBe(3);

@@ -187,7 +187,7 @@ export class MatWidget extends LitElement {
       this.#inView = v;
       this.#syncStill();
     });
-    this.#offMotion = onMotionChange(() => this.#syncStill());
+    this.#offMotion = onMotionChange(this.ownerDocument, () => this.#syncStill());
     this.#syncStill();
   }
 
