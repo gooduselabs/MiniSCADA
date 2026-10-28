@@ -2,6 +2,7 @@
 // bằng <mat-screen mode="edit"> (cùng cách hiển thị với trang vận hành) và đặt lớp phủ vào slot `cell-<id>` của từng ô:
 // chọn ô, vùng thả widget, đường chia cột. Thanh công cụ: Thêm hàng theo mẫu cột, thuộc tính ô và hàng, chiều rộng xem
 // trước, chế độ xem trước. Mọi sửa đổi đi qua `app.editScreen` (một bước hoàn tác; lý do từ chối hiện ở toast).
+import { addTagRows } from '../../model/widget-ops-037.ts';
 import {
   catalogWidget,
   GRID_COLUMNS,
@@ -691,6 +692,8 @@ export class MatGridEditor extends AppElement {
     this.dropAt = null;
     if (this.app.screens.previewMode !== 'off') return;
     if (this.onMoveDrop(e, cellId)) return;
+    const at = this.find(cellId);
+    if (at && this.onTagsDrop(e, at.r + 1)) return;
     const widget =
       e.dataTransfer?.getData('application/x-mat-widget') || this.typeOf(e, WIDGET_TYPE);
     if (widget) {
@@ -707,6 +710,30 @@ export class MatGridEditor extends AppElement {
         new CustomEvent('canvas-tag-drop', { detail: { itemId: item, tagId: tag }, bubbles: true }),
       );
     }
+  }
+
+  /**
+   * Feature 037: thả nhiều Tag (chọn nhiều dòng ở bảng Tag rồi kéo) → thêm hàng Thẻ giá trị sau hàng `at - 1`, mỗi Tag một ô
+   * (Tag BOOL thành Đèn / trạng thái). Trả `true` khi đã xử lý.
+   */
+  private onTagsDrop(e: DragEvent, at: number): boolean {
+    const raw = e.dataTransfer?.getData('application/x-mat-tags');
+    if (!raw || this.app.store.state.readOnly) return false;
+    let ids: string[];
+    try {
+      ids = (JSON.parse(raw) as unknown[]).filter((x): x is string => typeof x === 'string');
+    } catch {
+      return false;
+    }
+    if (ids.length < 2) return false;
+    e.preventDefault();
+    const tags = ids
+      .map((id) => this.app.screens.tagInfos().get(id))
+      .filter((x): x is NonNullable<typeof x> => !!x)
+      .map((x) => ({ id: x.id, type: x.type }));
+    const r = this.edit((d) => addTagRows(d, tags, at));
+    if (r && !r.rejected) this.app.toast(t('tagrow.added', { n: tags.length }));
+    return true;
   }
 
   /** Bước kéo theo cột (px màn hình) của một hàng. */
@@ -1447,6 +1474,8 @@ export class MatGridEditor extends AppElement {
       if (r && !r.rejected) this.select(cellSrc);
       return;
     }
+    const ri = this.doc()?.layout.rows.findIndex((x) => x.id === row.id) ?? -1;
+    if (this.onTagsDrop(e, ri + 1)) return;
     const widget =
       e.dataTransfer?.getData('application/x-mat-widget') || this.typeOf(e, WIDGET_TYPE);
     if (!widget) return;

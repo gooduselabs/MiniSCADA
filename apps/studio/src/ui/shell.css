@@ -2011,3 +2011,12 @@ mat-tree .sdot.error {
 .legacy-banner span {
   flex: 1;
 }
+/* Feature 037: tiêu đề nhóm "Đổi thành…" trong menu ngữ cảnh */
+.ctx-head {
+  padding: 4px 12px 2px;
+  font-size: var(--fs-xs, 11px);
+  color: var(--fg-muted, #56646a);
+}
+.ctx-item.ctx-sub {
+  padding-left: 22px;
+}

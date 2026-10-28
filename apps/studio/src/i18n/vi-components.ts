@@ -186,8 +186,10 @@ export const viComponents = {
   'widget.multi-state.prop.showText': 'Hiện chữ trạng thái',
   'widget.multi-state.prop.useValueTable': 'Dùng Bảng giá trị của Tag',
   // ---- Gợi ý dưới ô thuộc tính ----
-  'whelp.runValue': 'Tag trạng thái là số: giá trị nghĩa là đang chạy (thường 1). Tag BOOL: bỏ qua.',
-  'whelp.faultValue': 'Tag trạng thái bằng giá trị này thì báo Lỗi (ví dụ 2). Để trống nếu dùng Tag lỗi riêng.',
+  'whelp.runValue':
+    'Tag trạng thái là số: giá trị nghĩa là đang chạy (thường 1). Tag BOOL: bỏ qua.',
+  'whelp.faultValue':
+    'Tag trạng thái bằng giá trị này thì báo Lỗi (ví dụ 2). Để trống nếu dùng Tag lỗi riêng.',
   'whelp.accentColor': 'Chọn màu riêng thay cho bảng màu nhấn; để Tự động thì dùng Màu nhấn.',
   'whelp.blinkAbove': 'Số nhấp nháy khi giá trị vượt mức này (để trống: không nhấp nháy).',
   'whelp.blinkBelow': 'Số nhấp nháy khi giá trị thấp hơn mức này.',
@@ -196,4 +198,10 @@ export const viComponents = {
   'whelp.alarmAbove': 'Thẻ chuyển đỏ khi vượt mức này.',
   'whelp.startValue': 'Tag lệnh là số: giá trị ghi khi bấm Chạy (Tag nguyên thì làm tròn).',
   'whelp.stopValue': 'Tag lệnh là số: giá trị ghi khi bấm Dừng.',
+  'change.to': 'Đổi thành…',
+  'fmt.copy': 'Sao chép định dạng',
+  'fmt.paste': 'Dán định dạng',
+  'fmt.copied':
+    'Đã chép định dạng (màu, kiểu nền, biểu tượng, ngưỡng). Chọn component khác và bấm Ctrl+Alt+V.',
+  'tagrow.added': 'Đã thêm {n} thẻ từ các Tag kéo vào.',
 } as const;

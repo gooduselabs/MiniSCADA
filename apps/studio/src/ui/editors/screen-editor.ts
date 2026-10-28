@@ -1,6 +1,13 @@
 // Editor Màn hình 0.3 (feature 007, T112, FR-058, FR-067, FR-071): thanh công cụ + canvas, gắn lệnh của bảng lệnh vào hành
 // động trên tài liệu màn hình (model/screen-doc.ts), nhận widget kéo từ Toolbox và Tag kéo từ Details, báo cho thanh trạng
 // thái và ngữ cảnh lệnh. Màn hình 0.1 và 0.2 vẫn dùng `screen-preview.ts` (xem, kiểm tra, xem trước, nạp xuống nguyên trạng).
+import {
+  changeTargets,
+  changeWidgetType,
+  copyFormat,
+  pasteFormat,
+  type FormatClip,
+} from '../../model/widget-ops-037.ts';
 import { catalogWidget, type ScreenModel } from '@mat/project-schema';
 import { html, nothing } from 'lit';
 import type { CommandId } from '../../app/commands.ts';
@@ -378,6 +385,7 @@ export class MatScreenEditor extends AppElement {
       class="ed ed-fill se"
       @canvas-tag-drop=${this.onTagDrop}
       @contextmenu=${(e: MouseEvent) => this.onContextMenu(e)}
+      @keydown=${(e: KeyboardEvent) => this.onFormatKey(e)}
     >
       ${this.readOnlyBanner()}
       ${
@@ -391,6 +399,96 @@ export class MatScreenEditor extends AppElement {
       }
       ${this.menuView()}
     </div>`;
+  }
+
+  /**
+   * Feature 037: Ctrl+Alt+C chép định dạng của component đang chọn (màu, kiểu nền, biểu tượng, ngưỡng; không Tag),
+   * Ctrl+Alt+V dán lên các component đang chọn (một bước hoàn tác). Không đụng Ctrl+Shift+C (chép hàng của lưới).
+   */
+  private onFormatKey(e: KeyboardEvent): void {
+    if (!(e.ctrlKey || e.metaKey) || !e.altKey || e.shiftKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'c') {
+      e.preventDefault();
+      this.copyFormatSel();
+    } else if (k === 'v') {
+      e.preventDefault();
+      this.pasteFormatSel();
+    }
+  }
+
+  copyFormatSel(): void {
+    const doc = this.app.screenModel(this.screenId);
+    const it = doc?.items.find((i) => i.id === this.sel()[0]);
+    const clip = it ? copyFormat(it) : null;
+    if (!clip) return;
+    formatClip = clip;
+    this.app.toast(t('fmt.copied'));
+  }
+
+  pasteFormatSel(): void {
+    if (!formatClip || this.sel().length === 0) return;
+    const clip = formatClip;
+    const ids = [...this.sel()];
+    this.app.editScreen(this.screenId, (d) => pasteFormat(d, ids, clip));
+  }
+
+  /** Mục định dạng và "Đổi thành…" của menu ngữ cảnh khi chọn đúng một widget. */
+  private changeMenu() {
+    const doc = this.app.screenModel(this.screenId);
+    const one =
+      this.sel().length === 1 ? doc?.items.find((i) => i.id === this.sel()[0]) : undefined;
+    if (!one || one.type !== 'widget' || this.app.store.state.readOnly) return nothing;
+    const id = one.id;
+    const targets = changeTargets(one.widget);
+    return html`<button
+        class="ctx-item"
+        type="button"
+        role="menuitem"
+        data-cmd="fmt.copy"
+        @click=${() => {
+          this.closeMenu();
+          this.copyFormatSel();
+        }}
+      >
+        <span class="lbl">${t('fmt.copy')}</span><span class="sc">Ctrl+Alt+C</span>
+      </button>
+      <button
+        class="ctx-item"
+        type="button"
+        role="menuitem"
+        data-cmd="fmt.paste"
+        aria-disabled=${formatClip ? 'false' : 'true'}
+        @click=${() => {
+          if (!formatClip) return;
+          this.closeMenu();
+          this.pasteFormatSel();
+        }}
+      >
+        <span class="lbl">${t('fmt.paste')}</span><span class="sc">Ctrl+Alt+V</span>
+      </button>
+      ${
+        targets.length
+          ? html`<div class="ctx-sep" role="separator"></div>
+              <div class="ctx-head" role="presentation">${t('change.to')}</div>
+              ${targets.map(
+                (w) =>
+                  html`<button
+                    class="ctx-item ctx-sub"
+                    type="button"
+                    role="menuitem"
+                    data-change=${w}
+                    @click=${() => {
+                      this.closeMenu();
+                      this.app.editScreen(this.screenId, (d) => changeWidgetType(d, id, w));
+                    }}
+                  >
+                    <span class="lbl">${t(`widget.${w}` as MessageKey)}</span>
+                  </button>`,
+              )}`
+          : nothing
+      }
+      <div class="ctx-sep" role="separator"></div>`;
   }
 
   /** Nhấp phải trên canvas: chọn item dưới con trỏ nếu chưa chọn, rồi hiện menu template của vùng chọn. */
@@ -446,7 +544,7 @@ export class MatScreenEditor extends AppElement {
             this.closeMenu();
         }}
       >
-        ${this.gridMenu()}
+        ${this.gridMenu()} ${this.changeMenu()}
         ${CTX_COMMANDS.map((id) => {
           const why = this.app.enabled(id);
           const on = why === true;
@@ -512,6 +610,9 @@ function focusInspector(): void {
     )
     ?.focus();
 }
+
+/** Bộ nhớ định dạng của Ctrl+Alt+C (dùng chung mọi màn hình trong phiên). */
+let formatClip: FormatClip | null = null;
 
 customElements.define('mat-screen-editor', MatScreenEditor);
 

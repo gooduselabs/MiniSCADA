@@ -636,6 +636,12 @@ export class MatGrid extends LitElement {
     if (!id || !e.dataTransfer) return;
     e.dataTransfer.setData('application/x-mat-tag', id);
     e.dataTransfer.setData('text/plain', id);
+    // Feature 037: kéo khi đang chọn nhiều dòng (dòng kéo nằm trong vùng chọn): kèm danh sách id để thả vào lưới thành hàng thẻ.
+    const sel = this.selectedRows();
+    if (this.dragColumn && sel.length > 1 && sel.includes(row)) {
+      const ids = sel.map((r) => this.adapter.text(r, this.dragColumn!)).filter(Boolean);
+      e.dataTransfer.setData('application/x-mat-tags', JSON.stringify(ids));
+    }
     e.dataTransfer.effectAllowed = 'link';
   }
 
