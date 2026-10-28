@@ -147,8 +147,7 @@ export default async function run(ctx) {
   const off = await measure(page);
   const report = { on, off, note: 'CPU giả lập chậm 4×, 5 s, 20 equipment chạy + 10 bồn có sóng' };
   mkdirSync(OUT, { recursive: true });
-  writeFileSync(join(OUT, 'motion-perf.json'), JSON.stringify(report, null, 2) + '
-');
+  writeFileSync(join(OUT, 'motion-perf.json'), `${JSON.stringify(report, null, 2)}\n`);
   ctx.check(
     'bật chuyển động: quay và sóng không tính lại style/layout mỗi khung (chạy trên compositor)',
     on.styleRecalcs < on.fps * 5 * 0.1 && on.layouts < on.fps * 5 * 0.2,
