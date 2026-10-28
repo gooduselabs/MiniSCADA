@@ -280,7 +280,20 @@ test('Tổng quan: 1 item svg và ít nhất 24 widget, đủ 15 loại của da
   // Project mẫu này (phần nền 0.3, nay 1.0): minh họa 15 loại của danh mục 007. Widget nhóm "alarm" (feature 009) cần project 0.5
   // (alarms.json) và nhóm "history" (feature 010) cần project 0.6 nên có dự án mẫu riêng, không đưa vào đây.
   // 7 widget của feature 014 (thẻ chỉ số màu…) minh họa ở projects/grid-demo, không ở đây.
-  const f014 = new Set(['stat-tile', 'kpi', 'progress', 'status-list', 'clock', 'text', 'image']);
+  // time-range (029) và 3 widget của feature 037 (multi-state, stack-light, equipment) minh họa ở projects/svg-showcase (trang Thư viện component).
+  const f014 = new Set([
+    'stat-tile',
+    'kpi',
+    'progress',
+    'status-list',
+    'clock',
+    'text',
+    'image',
+    'multi-state',
+    'stack-light',
+    'equipment',
+    'time-range',
+  ]);
   const own = catalog.widgets.filter(
     (w) => w.group !== 'alarm' && w.group !== 'history' && !f014.has(w.id),
   );
