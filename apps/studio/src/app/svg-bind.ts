@@ -7,7 +7,11 @@ import {
   newBinding,
   rowById,
   rowOfBinding,
+  spinPresetTransform,
+  spinSpeedOf,
+  SPIN_PRESETS,
   type ElementKind,
+  type SpinPreset,
   type RowId,
   type TransformKind04,
 } from '../model/animation-catalog.ts';
@@ -208,13 +212,18 @@ export function retag(
   bindingId: string,
   tagId: string,
 ): BindRejection | null {
-  const r = updateBinding(
-    bindingSetOf(app, ref),
-    uid,
-    bindingId,
-    { source: { type: 'tag', tagId } },
-    bindCtx(app, ref, uid, tagId),
-  );
+  const set = bindingSetOf(app, ref);
+  const old = elementOf(set, uid)?.bindings?.find((x) => x.id === bindingId);
+  const patch: Partial<Binding04> = { source: { type: 'tag', tagId } };
+  // Quay khi chạy theo tốc độ preset: đổi Tag BOOL ↔ số thì dựng lại phép rời rạc theo kiểu Tag mới (giữ tốc độ). Giữ
+  // nguyên phép của BOOL ({true→rpm}, mặc định 0) cho Tag số làm phần tử không bao giờ quay.
+  if (old?.animation === 'spin') {
+    const infos = app.screens.tagInfos();
+    const speed = spinSpeedOf(old, infos.get(old.source.tagId));
+    if (speed in SPIN_PRESETS)
+      patch.transform = spinPresetTransform(speed as SpinPreset, infos.get(tagId));
+  }
+  const r = updateBinding(set, uid, bindingId, patch, bindCtx(app, ref, uid, tagId));
   if (r.rejected !== undefined) return r.rejected;
   commitSet(app, ref, r.set);
   return null;

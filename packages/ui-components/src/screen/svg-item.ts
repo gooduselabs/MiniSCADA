@@ -32,6 +32,8 @@ export interface SvgItemOptions {
   loadSvg: (path: string) => Promise<string>;
   loadBindings: (path: string) => Promise<ElementBindings02[]>;
   raf: (cb: () => void) => unknown;
+  /** Thay `prefers-reduced-motion` cho DomApplier (Studio: `() => false`); vắng thì theo hệ điều hành. */
+  reducedMotion?: () => boolean;
   /** Gọi khi đã tải xong (thành công hay lỗi). */
   onLoaded?: () => void;
   /** Cấp ngữ cảnh để gắn `events.click` của phần tử; vắng thì không gắn sự kiện. */
@@ -269,6 +271,7 @@ export class SvgItemView {
       bindings: withBindings as unknown as ElementEntry04[],
       raf: this.opt.raf,
       doc: host.ownerDocument,
+      ...(this.opt.reducedMotion ? { reducedMotion: this.opt.reducedMotion } : {}),
       tagTypes,
       valueTables,
       tagValueTables,

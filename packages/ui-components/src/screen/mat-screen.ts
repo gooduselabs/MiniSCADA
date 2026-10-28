@@ -94,6 +94,7 @@ export class MatScreen extends LitElement {
     autoHeight: { type: Boolean, reflect: true, attribute: 'auto-height' },
     viewport: { attribute: false },
     env: { attribute: false },
+    forceMotion: { attribute: false },
   };
 
   declare screen: ScreenModel;
@@ -112,6 +113,13 @@ export class MatScreen extends LitElement {
   declare viewport: Size | 'auto';
   /** Tiêm rAF/ResizeObserver (test); vắng thì dùng của trình duyệt. */
   declare env: ScreenEnv | undefined;
+  /**
+   * Bỏ qua `prefers-reduced-motion` của hệ điều hành cho hoạt ảnh binding (quay, nhấp nháy, dòng chảy) của item `svg`.
+   * Studio bật: người thiết kế phải thấy hoạt ảnh khi Thử giá trị/Mô phỏng dù Windows tắt "Hiệu ứng hoạt ảnh" (WebView2
+   * khi đó báo `reduce` và quay bị hủy hẳn). Trang vận hành để mặc định `false` (tôn trọng trợ năng, contract binding-animation).
+   * Chỉ có hiệu lực với item dựng sau khi đặt.
+   */
+  declare forceMotion: boolean;
 
   #slots = new Map<string, Slot>();
   #slotsScreenId = '';
@@ -150,6 +158,7 @@ export class MatScreen extends LitElement {
     this.popup = null;
     this.mode = 'run';
     this.autoHeight = false;
+    this.forceMotion = false;
     this.viewport = 'auto';
     this.loadSvg = async () => {
       throw new Error('loadSvg not set');
@@ -603,6 +612,7 @@ export class MatScreen extends LitElement {
         loadSvg: this.loadSvg,
         loadBindings: this.loadBindings,
         raf: (cb) => this.#env().raf(cb),
+        ...(this.forceMotion ? { reducedMotion: () => false } : {}),
         events: () => ({
           screenId: this.screen.id,
           host: this.host,

@@ -1118,6 +1118,7 @@ export class MatGridEditor extends AppElement {
             .host=${src.host}
             .alarms=${src.alarms ?? undefined}
             .mode=${edit ? 'edit' : 'run'}
+            .forceMotion=${true}
             .autoHeight=${true}
             .viewport=${{ width: this.previewWidth, height: 800 }}
             .loadSvg=${this.loadSvg}

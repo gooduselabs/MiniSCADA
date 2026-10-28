@@ -99,6 +99,8 @@ export class Preview {
       bindings: a.bindings,
       tagTypes: a.tagTypes,
       doc: a.host.ownerDocument,
+      // Studio luôn chạy hoạt ảnh xem trước dù Windows tắt hiệu ứng (prefers-reduced-motion), xem MatScreen.forceMotion.
+      reducedMotion: () => false,
     });
     return [...new Set([...mounted.missingUids, ...this.applier.missing])];
   }

@@ -201,6 +201,7 @@ export class MatAdminPreview extends AppElement {
         .tags=${previewSource(this.app)}
         .host=${this.host}
         .mode=${'run'}
+        .forceMotion=${true}
         .viewport=${'auto'}
         style=${this.screenStyle()}
         aria-label=${t('admin.preview.label', { name: this.model.name || this.model.id })}

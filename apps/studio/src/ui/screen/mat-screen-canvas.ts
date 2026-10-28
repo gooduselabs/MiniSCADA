@@ -1020,6 +1020,7 @@ export class MatScreenCanvas extends AppElement {
       .alarms=${edit || !hosts ? undefined : (hosts.alarms ?? undefined)}
       .history=${edit ? undefined : historyFor(this.app, this.app.screens.previewMode)}
       .mode=${edit ? 'edit' : 'run'}
+      .forceMotion=${true}
       .viewport=${doc.size}
       .loadSvg=${this.loadSvg}
       .loadBindings=${this.loadBindings}

@@ -802,6 +802,56 @@ export default async function svgBind({ page, check, shot, axe }) {
     await clickBtn(page, 'mat-test-strip .ts-reset');
     await sleep(250);
   }
+  // Quay khi chạy với Tag số (FLOAT, tốc độ preset: rời rạc 0 → 0, còn lại → rpm): phải THỰC SỰ xoay (góc đổi theo
+  // thời gian) và quay quanh tâm của chính phần tử (tâm hộp bao trên màn hình đứng yên). Windows tắt "Hiệu ứng hoạt ảnh"
+  // thì WebView2 báo prefers-reduced-motion: reduce; canvas Studio vẫn phải quay (lỗi người dùng báo).
+  {
+    await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    await page.click(`mat-svg-tree [data-uid="${UIDS.rotor}"]`);
+    await page.click('#svp-tab-bind');
+    await page.waitForSelector('[data-row="spin"]');
+    await dropTag(page, rowSel('spin'), 'TANK01.LEVEL');
+    await waitFor(page, () =>
+      document.querySelector('[data-row="spin"] .tagbtn')?.textContent.includes('TANK01.LEVEL'),
+    );
+    // Đổi Tag BOOL → FLOAT: tốc độ preset giữ nguyên (phép rời rạc dựng lại theo Tag số, không thành "Tự thiết lập").
+    const spd = await page.$eval('[data-row="spin"] select.spd', (s) => s.value);
+    check('Quay khi chạy: đổi Tag BOOL → FLOAT giữ tốc độ Vừa', spd === 'medium', spd);
+    await page.focus('[data-row="spin"] .tagbtn');
+    await page.waitForSelector('mat-test-strip .ts-range');
+    await setRange(page, 44);
+    await sleep(400);
+    const sample = () =>
+      page.evaluate((u) => {
+        const root = document
+          .querySelector('mat-screen-canvas mat-screen')
+          .shadowRoot.querySelector('.item[data-item-id="svg1"] .svg-host').shadowRoot;
+        const el = root.querySelector(`[data-mat-uid="${u}"]`);
+        const r = el.getBoundingClientRect();
+        return {
+          t: getComputedStyle(el).transform,
+          cx: r.x + r.width / 2,
+          cy: r.y + r.height / 2,
+          anims: el.getAnimations().map((a) => `${a.playState}@${a.playbackRate}`),
+        };
+      }, UIDS.rotor);
+    const s1 = await sample();
+    await sleep(370);
+    const s2 = await sample();
+    check(
+      'Quay khi chạy, Tag FLOAT = 44 (rời rạc → 300 rpm): góc thay đổi theo thời gian',
+      s1.t !== s2.t && s1.anims.some((a) => a.startsWith('running')),
+      JSON.stringify([s1, s2]),
+    );
+    check(
+      'Quay khi chạy: xoay quanh tâm của phần tử (tâm hộp bao đứng yên)',
+      Math.abs(s1.cx - s2.cx) < 3 && Math.abs(s1.cy - s2.cy) < 3,
+      JSON.stringify([s1, s2]),
+    );
+    await clickBtn(page, 'mat-test-strip .ts-reset');
+    await sleep(250);
+    await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+  }
   check(
     'đủ 12 mục (cộng Mức chất lỏng ở trên là 13 loại) đều thấy hiệu ứng trên canvas',
     done.length === 12 && done.every(Boolean),
