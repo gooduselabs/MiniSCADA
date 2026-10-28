@@ -346,7 +346,7 @@ export class MatCard extends MatWidget {
   #flashClass(text: string): string {
     const prev = this.#lastText;
     this.#lastText = text;
-    if (this.mode === 'edit' || !this.prop('flash', true)) return '';
+    if (this.mode === 'edit' || !this.prop('flash', false)) return '';
     if (prev !== null && prev !== text) this.#flash++;
     return this.#flash === 0 ? '' : this.#flash % 2 ? 'fl-a' : 'fl-b';
   }
@@ -367,8 +367,8 @@ export class MatCard extends MatWidget {
     const label = this.prop('label', '');
     const size = this.prop('fontSize', 'm');
     const fs = ['s', 'm', 'l', 'xl'].includes(size) ? size : 'm';
-    const fillProp = this.prop('fill', 'soft');
-    const fill = (FILLS as readonly string[]).includes(fillProp) ? fillProp : 'soft';
+    const fillProp = this.prop('fill', 'plain');
+    const fill = (FILLS as readonly string[]).includes(fillProp) ? fillProp : 'plain';
     const alarmId = this.tagOf('alarm');
     const alarmOn =
       alarmId !== undefined && this.source.get(alarmId).value === true && state.quality === 'GOOD';

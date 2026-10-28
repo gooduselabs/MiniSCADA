@@ -209,7 +209,7 @@ export class MatLevel extends MatWidget {
       pct > 2 &&
       pct < 99 &&
       this.mode !== 'edit' &&
-      this.prop('wave', true);
+      this.prop('wave', false);
     const dim = horizontal ? 'width' : 'height';
     const label = this.prop('label', '');
     const valueText = fmt.unit ? `${fmt.text} ${fmt.unit}` : fmt.text;

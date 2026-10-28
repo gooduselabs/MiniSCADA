@@ -132,12 +132,12 @@ describe('mat-w-lamp (FR-026)', () => {
 
 // Feature 037: quầng sáng khi bật, tắt được.
 describe('mat-w-lamp 037', () => {
-  it('glow mặc định bật khi đèn sáng; glow=false thì không', async () => {
+  it('glow=true có quầng khi đèn sáng; mặc định (project cũ) không', async () => {
     const src = makeSource([tagInfo('b', { type: 'BOOL' })]);
     src.set('b', { value: true, quality: 'GOOD' });
-    expect(dot(await mount(lamp(), src)).classList.contains('glow')).toBe(true);
-    expect(dot(await mount(lamp({ glow: false }), src)).classList.contains('glow')).toBe(false);
-    src.set('b', { value: false, quality: 'GOOD' });
+    expect(dot(await mount(lamp({ glow: true }), src)).classList.contains('glow')).toBe(true);
     expect(dot(await mount(lamp(), src)).classList.contains('glow')).toBe(false);
+    src.set('b', { value: false, quality: 'GOOD' });
+    expect(dot(await mount(lamp({ glow: true }), src)).classList.contains('glow')).toBe(false);
   });
 });

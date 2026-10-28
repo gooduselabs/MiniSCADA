@@ -5,13 +5,27 @@ import type { PropValue, WidgetItem } from './types-03.ts';
 
 type Props = Record<string, PropValue>;
 
+const TILE_ACCENTS: readonly string[] = [
+  'teal',
+  'blue',
+  'rose',
+  'violet',
+  'olive',
+  'indigo',
+  'orange',
+  'cyan',
+  'green',
+  'slate',
+];
+
 /** `stat-tile` (Thẻ chỉ số màu) → `card` kiểu nền đặc: giữ màu, biểu tượng, dòng trạng thái, khe Tag. */
 function statTileToCard(it: WidgetItem): WidgetItem {
   const src: Props = { ...(it.props ?? {}) };
   const props: Props = { fill: 'solid', fontSize: 'l', statusText: true };
   const color = src['color'];
   delete src['color'];
-  props['accent'] = typeof color === 'string' ? color : 'teal';
+  // Màu ngoài bảng (project sửa tay) về teal, mặc định cũ của stat-tile: thẻ mới luôn hợp lệ với danh mục.
+  props['accent'] = typeof color === 'string' && TILE_ACCENTS.includes(color) ? color : 'teal';
   for (const [k, v] of Object.entries(src)) props[k] = v;
   return { ...it, widget: 'card', props };
 }

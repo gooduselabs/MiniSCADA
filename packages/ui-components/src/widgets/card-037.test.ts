@@ -29,10 +29,11 @@ describe('thresholdLevel, accentCss', () => {
 });
 
 describe('mat-w-card 037', () => {
-  it('mặc định có màu: nền nhạt màu xanh dương, không xám', async () => {
+  it('mặc định (project cũ) giữ kiểu trơn; fill=soft thì nền nhạt màu xanh dương', async () => {
     const src = makeSource([tagInfo('t1')]);
     src.set('t1', { value: 1, quality: 'GOOD' });
-    const el = await mount(card(), src);
+    expect(w(await mount(card(), src)).classList.contains('fill-plain')).toBe(true);
+    const el = await mount(card({ fill: 'soft' }), src);
     expect(w(el).classList.contains('fill-soft')).toBe(true);
     expect(w(el).style.getPropertyValue('--c')).toBe('var(--mat-tile-blue)');
   });
@@ -77,10 +78,10 @@ describe('mat-w-card 037', () => {
     expect(el.shadowRoot!.querySelector('.stat')).toBeNull();
   });
 
-  it('nháy nhẹ khi giá trị đổi ở chế độ chạy; không nháy lần đầu, khi flash=false hoặc ở edit', async () => {
+  it('nháy nhẹ khi giá trị đổi ở chế độ chạy (flash=true); không nháy lần đầu, mặc định hoặc ở edit', async () => {
     const src = makeSource([tagInfo('t1')]);
     src.set('t1', { value: 1, quality: 'GOOD' });
-    const el = await mount(card(), src);
+    const el = await mount(card({ flash: true }), src);
     const v = () => el.shadowRoot!.querySelector('.value')!.classList;
     expect(v().contains('fl-a') || v().contains('fl-b')).toBe(false);
     src.set('t1', { value: 2, quality: 'GOOD' });
@@ -89,11 +90,11 @@ describe('mat-w-card 037', () => {
     src.set('t1', { value: 3, quality: 'GOOD' });
     await el.updateComplete;
     expect(v().contains('fl-b')).toBe(true);
-    const off = await mount(card({ flash: false }), src);
+    const off = await mount(card(), src);
     src.set('t1', { value: 4, quality: 'GOOD' });
     await off.updateComplete;
     expect(off.shadowRoot!.querySelector('.value')!.className).not.toMatch(/fl-/);
-    const ed = await mount(card(), src, 'edit');
+    const ed = await mount(card({ flash: true }), src, 'edit');
     src.set('t1', { value: 5, quality: 'GOOD' });
     await ed.updateComplete;
     expect(ed.shadowRoot!.querySelector('.value')!.className).not.toMatch(/fl-/);

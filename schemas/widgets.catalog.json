@@ -133,7 +133,7 @@
           "name": "fill",
           "kind": "enum",
           "options": ["soft", "solid", "outline", "plain"],
-          "default": "soft",
+          "default": "plain",
           "group": "display"
         },
         {
@@ -250,7 +250,7 @@
         {
           "name": "flash",
           "kind": "bool",
-          "default": true,
+          "default": false,
           "group": "display"
         }
       ],
@@ -395,7 +395,7 @@
         {
           "name": "glow",
           "kind": "bool",
-          "default": true,
+          "default": false,
           "group": "display"
         }
       ],
@@ -601,7 +601,7 @@
         {
           "name": "wave",
           "kind": "bool",
-          "default": true,
+          "default": false,
           "group": "display"
         }
       ],

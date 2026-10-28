@@ -106,7 +106,7 @@ export class MatLamp extends MatWidget {
       square: this.prop('shape', 'circle') === 'square',
       on: !inactive && on,
       blink: !inactive && on && this.prop('blinkOn', false),
-      glow: !inactive && on && this.prop('glow', true),
+      glow: !inactive && on && this.prop('glow', false),
       off: !inactive && !on,
       inactive,
     };

@@ -97,13 +97,13 @@ describe('mat-w-level 037', () => {
   it('style=tank: bồn có vạch chia; sóng chỉ ở chế độ chạy, tắt được', async () => {
     const src = makeSource([tagInfo('t1', { min: 0, max: 100 })]);
     src.set('t1', { value: 50, quality: 'GOOD' });
-    const el = await mount(lv({ style: 'tank' }), src);
+    const el = await mount(lv({ style: 'tank', wave: true }), src);
     expect(el.shadowRoot!.querySelector('.w.tank')).not.toBeNull();
     expect(el.shadowRoot!.querySelector('.ticks')).not.toBeNull();
     expect(el.shadowRoot!.querySelector('.wave')).not.toBeNull();
-    const off = await mount(lv({ style: 'tank', wave: false }), src);
+    const off = await mount(lv({ style: 'tank' }), src);
     expect(off.shadowRoot!.querySelector('.wave')).toBeNull();
-    const ed = await mount(lv({ style: 'tank' }), src, 'edit');
+    const ed = await mount(lv({ style: 'tank', wave: true }), src, 'edit');
     expect(ed.shadowRoot!.querySelector('.wave')).toBeNull();
     const bar = await mount(lv({}), src);
     expect(bar.shadowRoot!.querySelector('.wave')).toBeNull();
