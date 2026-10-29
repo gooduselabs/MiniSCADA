@@ -1,0 +1,60 @@
+/* Trang nhóm trên cây (sửa lỗi 039). */
+.group-page .gp-intro {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 20px 24px 8px;
+  max-width: 720px;
+}
+.group-page .gp-intro p {
+  margin: 0 0 6px;
+}
+.group-page .gp-what {
+  font-size: 14px;
+  color: var(--fg);
+}
+.group-page .gp-example {
+  color: var(--muted);
+}
+.group-page .gp-add {
+  margin: 8px 24px 4px;
+  height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+.group-page .gp-sub {
+  margin: 18px 24px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.group-page .gp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 24px 24px;
+  display: grid;
+  gap: 4px;
+  max-width: 520px;
+}
+.group-page .gp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+}
+.group-page .gp-item:hover {
+  border-color: var(--accent);
+}
+.group-page .gp-item span:first-of-type {
+  flex: 1;
+}
+.group-page .gp-empty {
+  padding: 0 24px;
+}

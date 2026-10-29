@@ -138,3 +138,19 @@ export function applyRename(app: StudioApp, name: string): RenameResult | null {
   }
   return null;
 }
+
+/**
+ * Nút "Thêm …" của trang nhóm (sửa lỗi 039): thêm một mục vào nhóm `ref` (không phụ thuộc nút đang chọn), chọn và mở
+ * editor của mục mới.
+ */
+export function treeAddTo(app: StudioApp, ref: NodeRef): void {
+  const plan = planAdd(ref, app.store.state.outline);
+  if (!plan.edits.length) {
+    if (plan.reason) app.toast(t(plan.reason));
+    return;
+  }
+  app.store.edit(plan.edits);
+  app.revealNode(plan.select);
+  app.selectNode(plan.select, true);
+  app.toast(t('tree.added'));
+}

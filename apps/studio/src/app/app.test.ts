@@ -88,10 +88,10 @@ describe('StudioApp', () => {
     expect([...app.ui.expanded]).toEqual(expect.arrayContaining(['device', 'tagsFolder']));
   });
 
-  it('nút nhóm chỉ mở/đóng, mục giai đoạn mở trang giải thích', async () => {
+  it('nút nhóm mở trang nhóm (sửa lỗi 039), mục giai đoạn mở trang giải thích', async () => {
     const { app } = await withProject();
     app.selectNode('tagsFolder');
-    expect(app.store.state.tabs).toEqual(['start']);
+    expect(app.store.state.active).toBe('group:tagsFolder');
     app.toggleNode('tagsFolder');
     expect(app.ui.expanded.has('tagsFolder')).toBe(false);
     app.selectNode('reports');

@@ -2,6 +2,7 @@
 // EditorId.
 import './start-page.ts';
 import './phase-page.ts';
+import './group-page.ts';
 import './settings-editor.ts';
 import './tag-grid.ts';
 import './tag-props.ts';

@@ -129,8 +129,8 @@ describe('buildTree: project mẫu', () => {
     expect(node(root, 'device').editor).toBe('device');
     expect(node(root, 'tags').editor).toBe('tags');
     expect(node(root, 'logging').editor).toBe('logging');
-    expect(node(root, 'tagsFolder').editor).toBeNull();
-    expect(node(root, 'screens').editor).toBeNull();
+    expect(node(root, 'tagsFolder').editor).toBe('group:tagsFolder');
+    expect(node(root, 'screens').editor).toBe('group:screens');
   });
 
   it('id ổn định giữa hai lần dựng', () => {
@@ -363,7 +363,7 @@ describe('buildTree: project 0.2', () => {
     expect(ids(vt)).toEqual(['valuetable:TrangThaiBom']);
     const wt = node(root, 'watchTables');
     expect(wt.count).toBe(1);
-    expect(wt.editor).toBeNull();
+    expect(wt.editor).toBe('group:watchTables');
     expect(ids(wt)).toEqual(['watch:van-hanh']);
     expect(node(root, 'watch:van-hanh').editor).toBe('watch:van-hanh');
     expect(node(root, 'watch:van-hanh').label).toBe('Vận hành');
@@ -375,7 +375,7 @@ describe('buildTree: project 0.2', () => {
       expect(node(root, id).phase, id).toBeUndefined();
     expect(node(root, 'calc').editor).toBe('calc');
     expect(node(root, 'driverDiag').editor).toBe('driverDiag');
-    expect(node(root, 'valueTables').editor).toBeNull();
+    expect(node(root, 'valueTables').editor).toBe('group:valueTables');
     expect(node(root, 'valuetable:TrangThaiBom').editor).toBe('vt:TrangThaiBom');
     expect(node(root, 'alarm').phase).toBeUndefined();
   });
@@ -457,7 +457,7 @@ describe('Người dùng và quyền (feature 027)', () => {
   it('nhóm mục quản trị của thiết bị, Nhật ký là editor Audit; không còn trang giai đoạn', () => {
     const root = buildTree(input());
     const users = node(root, 'users');
-    expect(users.editor).toBeNull();
+    expect(users.editor).toBe('group:users');
     expect(users.phase).toBeUndefined();
     expect(ids(users)).toEqual([
       'admin:users',

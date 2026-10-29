@@ -97,7 +97,12 @@ export type EditorId =
   | 'logic'
   /** Người dùng và quyền của thiết bị Online (feature 027): `admin:users`, `admin:groups`, … (app/admin-workspace.ts). */
   | `admin:${string}`
-  | `phase:${PhasePageKey}`;
+  | `phase:${PhasePageKey}`
+  /** Trang nhóm trên cây (bấm vào mục nhóm): giải thích, danh sách mục con, nút Thêm (sửa lỗi 039). */
+  | `group:${GroupKey}`;
+
+/** Mục nhóm trên cây có trang riêng (editor `group:{key}`). */
+export type GroupKey = 'valueTables' | 'watchTables' | 'screens' | 'tagsFolder' | 'alarm' | 'users';
 
 /** Trạng thái phiên thiết bị (data-model §9), dùng chung với `device-session.ts`. */
 export type DeviceSessionState = SessionState;
@@ -197,7 +202,7 @@ function alarmNode(input: TreeInput): TreeNode {
       id: 'alarm',
       label: t('tree.alarm'),
       icon: 'bell',
-      editor: null,
+      editor: 'group:alarm',
       children: [
         { id: 'alarmList', label: t('tree.alarmList'), icon: 'bell', editor: 'alarmUpgrade' },
         { id: 'alarmClasses', label: t('tree.alarmClasses'), icon: 'list', editor: 'alarmUpgrade' },
@@ -212,7 +217,7 @@ function alarmNode(input: TreeInput): TreeNode {
     id: 'alarm',
     label: t('tree.alarm'),
     icon: 'bell',
-    editor: null,
+    editor: 'group:alarm',
     count: instanceTotal(o),
     children: [
       {
@@ -253,7 +258,7 @@ function usersNode(): TreeNode {
     id: 'users',
     label: t('tree.users'),
     icon: 'users',
-    editor: null,
+    editor: 'group:users',
     children: [
       ...kids.map(([k, label, icon]): TreeNode => ({
         id: `admin:${k}`,
@@ -501,7 +506,7 @@ function deviceChildren02(
     id: 'valueTables',
     label: t('tree.valueTables'),
     icon: 'list',
-    editor: null,
+    editor: 'group:valueTables',
     count: outline.valueTables.length,
     children: outline.valueTables.map((v) => ({
       id: `valuetable:${v.name}`,
@@ -514,7 +519,7 @@ function deviceChildren02(
     id: 'watchTables',
     label: t('tree.watchTables'),
     icon: 'table',
-    editor: null,
+    editor: 'group:watchTables',
     count: outline.watchTables.length,
     children: outline.watchTables.map((w) => ({
       id: `watch:${w.id}`,
@@ -530,7 +535,7 @@ function deviceChildren02(
       id: 'tagsFolder',
       label: t('tree.tags'),
       icon: 'tag',
-      editor: null,
+      editor: 'group:tagsFolder',
       children: [tags, calc],
     },
     valueTables,
@@ -543,7 +548,7 @@ function deviceChildren02(
       id: 'screens',
       label: t('tree.screens'),
       icon: 'screen',
-      editor: null,
+      editor: 'group:screens',
       count: outline.screens.length,
       children: screens,
     },
@@ -639,7 +644,7 @@ function buildNodes(input: TreeInput): TreeNode {
               id: 'tagsFolder',
               label: t('tree.tags'),
               icon: 'tag',
-              editor: null,
+              editor: 'group:tagsFolder',
               children: [tags, phaseNode('calc', 'calc', 'tree.calc')],
             },
             phaseNode('valueTables', 'valueTables', 'tree.valueTables'),
@@ -649,7 +654,7 @@ function buildNodes(input: TreeInput): TreeNode {
               id: 'screens',
               label: t('tree.screens'),
               icon: 'screen',
-              editor: null,
+              editor: 'group:screens',
               children: screens,
             },
             phaseNode('reports', 'reports', 'tree.reports'),
