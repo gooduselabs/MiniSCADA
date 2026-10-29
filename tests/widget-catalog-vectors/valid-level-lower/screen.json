@@ -23,6 +23,7 @@
         "unit": "",
         "zones": [],
         "showValue": false,
+        "showRaw": false,
         "color": "auto",
         "wave": false,
         "min": 0,

@@ -29,6 +29,9 @@ export const viComponents = {
   'wprop.flash': 'Nháy nhẹ khi giá trị đổi',
   'wprop.glow': 'Quầng sáng khi bật',
   'wprop.wave': 'Gợn sóng mặt chất lỏng',
+  // 044: Thanh tiến độ/Mức chất lỏng tự tính %, giá trị thô (m³, kW…) chỉ hiện khi bật.
+  'wprop.showRaw': 'Hiện thêm giá trị thô',
+  'widget.progress.prop.showValue': 'Hiện thêm giá trị thô',
   'wprop.states': 'Bảng trạng thái (giá trị → chữ, màu)',
   'wprop.blinkRed': 'Đỏ nhấp nháy khi sáng',
   'wprop.kind': 'Loại thiết bị',
@@ -194,6 +197,10 @@ export const viComponents = {
   'whelp.accentColor': 'Chọn màu riêng thay cho bảng màu nhấn; để Tự động thì dùng Màu nhấn.',
   'whelp.blinkAbove': 'Số nhấp nháy khi giá trị vượt mức này (để trống: không nhấp nháy).',
   'whelp.blinkBelow': 'Số nhấp nháy khi giá trị thấp hơn mức này.',
+  'whelp.showRaw':
+    'Ngoài phần trăm, hiện thêm giá trị theo đơn vị của Tag (vd 62 % và 3,1 m³). Đơn vị đã là % thì không hiện lặp.',
+  'widget.progress.prop.showValue.help':
+    'Ngoài phần trăm, hiện thêm giá trị theo đơn vị của Tag (vd 62 % và 3,1 m³). Đơn vị đã là % thì không hiện lặp.',
   'whelp.flash': 'Nền số sáng lên 0,6 giây mỗi lần giá trị đổi, giúp thấy số vừa cập nhật.',
   'whelp.warnAbove': 'Thẻ chuyển cam khi vượt mức này.',
   'whelp.alarmAbove': 'Thẻ chuyển đỏ khi vượt mức này.',

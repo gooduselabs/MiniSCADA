@@ -594,6 +594,12 @@
           "group": "display"
         },
         {
+          "name": "showRaw",
+          "kind": "bool",
+          "default": false,
+          "group": "display"
+        },
+        {
           "name": "color",
           "kind": "color",
           "allowAuto": true,
@@ -933,7 +939,7 @@
         {
           "name": "showValue",
           "kind": "bool",
-          "default": true,
+          "default": false,
           "group": "display"
         }
       ],

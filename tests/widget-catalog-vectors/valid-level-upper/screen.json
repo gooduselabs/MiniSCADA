@@ -44,6 +44,7 @@
           }
         ],
         "showValue": true,
+        "showRaw": true,
         "color": "#FFFFFF",
         "wave": true,
         "min": -1000,

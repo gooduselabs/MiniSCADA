@@ -140,6 +140,7 @@ Nhóm: Hiển thị. Cỡ mặc định 100 × 260, nhỏ nhất 40 × 80.
 | `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
 | `zones` | array | `[]` | ≤ 4 phần tử |
 | `showValue` | bool | `true` |  |
+| `showRaw` | bool | `false` |  |
 | `color` | color | `"auto"` |  |
 | `wave` | bool | `false` |  |
 
@@ -213,7 +214,7 @@ Nhóm: Hiển thị. Cỡ mặc định 260 × 72, nhỏ nhất 120 × 40.
 | `unit` | string | theo Tag (`unit`) | ≤ 16 ký tự |
 | `shape` | enum | `"bar"` | `bar`, `ring` |
 | `color` | color | `"auto"` |  |
-| `showValue` | bool | `true` |  |
+| `showValue` | bool | `false` |  |
 
 ### `status-list` (`<mat-w-status-list>`)
 
@@ -547,6 +548,9 @@ Nhóm: Alarm. Cỡ mặc định 640 × 260, nhỏ nhất 320 × 120.
 | `showAck` | bool | `true` |  |
 | `search` | bool | `true` |  |
 | `exportCsv` | bool | `true` |  |
+| `ackAll` | bool | `true` |  |
+| `mode` | enum | `"compact"` | `compact`, `full` |
+| `source` | enum | `"active"` | `active`, `history` |
 
 ### `alarm-count` (`<mat-w-alarm-count>`)
 

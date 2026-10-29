@@ -29,14 +29,17 @@ describe('mat-w-level (FR-027)', () => {
     expect(fill(el).style.height).toBe('0%');
   });
 
-  it('min/max theo Tag rồi 0–100; hiện % và giá trị', async () => {
+  it('min/max theo Tag rồi 0–100; mặc định chỉ hiện %, showRaw hiện thêm giá trị (044)', async () => {
     const src = makeSource([tagInfo('t1', { min: 0, max: 8, unit: 'm' })]);
     src.set('t1', { value: 2, quality: 'GOOD' });
     const el = await mount(level({ decimals: 1 }), src);
     expect(fill(el).style.height).toBe('25%');
     expect(textOf(el, '.percent')).toBe('25%');
-    expect(textOf(el, '.value')).toBe('2.0');
-    expect(textOf(el, '.unit')).toBe('m');
+    expect(el.shadowRoot!.querySelector('.value')).toBeNull();
+    const raw = await mount(level({ decimals: 1, showRaw: true }), src);
+    expect(textOf(raw, '.percent')).toBe('25%');
+    expect(textOf(raw, '.value')).toBe('2.0');
+    expect(textOf(raw, '.unit')).toBe('m');
   });
 
   it('role=meter, aria-valuemin/max/now', async () => {
@@ -77,7 +80,8 @@ describe('mat-w-level (FR-027)', () => {
     expect(textOf(bad, '.badge')).toBe('BAD');
     expect(fill(bad).classList.contains('dim')).toBe(true);
     const unk = await mount(level(undefined, 'lạ'), src);
-    expect(textOf(unk, '.value')).toBe('?');
+    expect(textOf(unk, '.percent')).toBe('?');
+    expect(unk.shadowRoot!.querySelector('.value')).toBeNull();
     expect(unk.shadowRoot!.querySelector('.w')!.getAttribute('aria-valuenow')).toBe('0');
     expect(fill(unk).style.height).toBe('0%');
   });

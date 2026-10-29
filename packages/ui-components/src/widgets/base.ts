@@ -124,7 +124,8 @@ export class MatWidget extends LitElement {
    */
   protected statusLine(): TemplateResult | typeof nothing {
     const id = this.tagOf('status');
-    if (!id || !this.source) return nothing;
+    // 044: khe Trạng thái gắn đúng Tag của giá trị thì không lặp số lần hai.
+    if (!id || !this.source || id === this.tagOf('value')) return nothing;
     const info = this.source.info(id);
     const table = info?.valueTable ? this.source.valueTable(info.valueTable) : undefined;
     const f = formatValue(this.source.get(id), info, { decimals: 0, ...(table ? { table } : {}) });

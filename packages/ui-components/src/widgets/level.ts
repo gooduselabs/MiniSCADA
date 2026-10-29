@@ -1,4 +1,4 @@
-// Widget `level` (FR-027): thanh mức dọc hoặc ngang, min–max, màu theo vùng, hiện % và giá trị.
+// Widget `level` (FR-027): thanh mức dọc hoặc ngang, min–max, màu theo vùng, hiện % (giá trị thô khi `showRaw`, 044).
 // Feature 037: `style` = `tank` vẽ bồn bo tròn hai đầu có vạch chia; `color` đặt màu chất lỏng (vùng màu vẫn thắng);
 // `wave` (mặc định bật) vẽ gợn sóng nhẹ trên mặt chất lỏng của bồn dọc ở chế độ chạy: một dải mỏng dịch bằng
 // `transform` (CSS thuần, không JS theo khung hình), tắt khi giảm chuyển động.
@@ -246,8 +246,9 @@ export class MatLevel extends MatWidget {
             ? html`<div class="readout ${qv.dim ? 'dim' : ''}">
                 <span class="percent">${known ? `${pct}%` : fmt.text}</span>
                 ${
-                  // 037: giá trị đã là phần trăm (đơn vị %) thì không lặp "62% 62.0 %".
-                  known && fmt.unit === '%' && min === 0 && max === 100
+                  // 044: mặc định chỉ hiện %, giá trị thô (m, m³…) khi bật showRaw; giá trị đã là % (0–100) thì không lặp.
+                  !this.prop('showRaw', false) ||
+                  (known && fmt.unit === '%' && min === 0 && max === 100)
                     ? nothing
                     : html`<span>
                         <span class="value">${fmt.text}</span>${

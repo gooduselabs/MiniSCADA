@@ -33,6 +33,8 @@ export interface FieldEnv {
 const OMIT_DEFAULT: ReadonlySet<string> = new Set([
   'widget.alarm-list.prop.mode',
   'widget.alarm-list.prop.source',
+  // 044: runtime cũ không biết showRaw.
+  'widget.level.prop.showRaw',
 ]);
 
 export const fieldId = (name: string): string => `pf-${name}`;
@@ -556,7 +558,10 @@ export function renderField(
           type="checkbox"
           .checked=${env.value === undefined ? f.default === true : env.value === true}
           .indeterminate=${env.mixed}
-          @change=${(e: Event) => env.commit((e.target as HTMLInputElement).checked)}
+          @change=${(e: Event) => {
+            const v = (e.target as HTMLInputElement).checked;
+            env.commit(OMIT_DEFAULT.has(f.i18nKey) && v === f.default ? undefined : v);
+          }}
         />${env.mixed ? t('pf.mixed') : ''}</label
       >`;
       break;

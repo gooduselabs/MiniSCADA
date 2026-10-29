@@ -119,7 +119,10 @@ export class MatProgress extends MatWidget {
     const f = known ? fraction(n, min, max) : 0;
     const pct = `${Math.round(f * 100)} %`;
     const label = this.prop('label', '');
-    const show = this.prop('showValue', true);
+    // 044: phần trăm là số chính; giá trị thô chỉ hiện khi bật `showValue` (mặc định danh mục false, project cũ ghi
+    // tường minh true vẫn hiện), và không bao giờ khi nó trùng phần trăm (đơn vị %, thang 0–100).
+    const same = fmt.unit === '%' && min === 0 && max === 100;
+    const show = this.prop('showValue', false) && !same;
     const color = safeColor(this.item.props?.color);
     const ring = this.prop('shape', 'bar') === 'ring';
     const valueText = `${fmt.text}${fmt.unit ? ' ' + fmt.unit : ''}`;
