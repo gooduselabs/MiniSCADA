@@ -81,4 +81,10 @@ export default async function treeGroups({ page, check, shot, axe }) {
       active,
     );
   }
+  const errs = await page.evaluate(() =>
+    window.__matApp.store.state.issues
+      .filter((i) => i.code.startsWith('E_'))
+      .map((i) => `${i.file} ${i.code} ${i.message}`),
+  );
+  check('sau khi bấm mọi mục và thêm bảng: 0 lỗi', errs.length === 0, errs.join(' | '));
 }

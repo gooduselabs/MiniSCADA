@@ -144,8 +144,8 @@ export default async function reports({ page, check, shot, axe, url }) {
   await treeItem(page, 'Lưu trữ');
   await page.waitForSelector('mat-logging-editor [data-act="create"]');
   await page.click('mat-logging-editor [data-act="create"]');
+  // Tạo cấu hình đã có sẵn một nhóm (sửa lỗi 039): thêm một nhóm nữa.
   await page.waitForSelector('mat-logging-editor [data-act="add-group"]');
-  await page.click('mat-logging-editor [data-act="add-group"]');
   await page.click('mat-logging-editor [data-act="add-group"]');
   await page.waitForSelector(gridCell(LG, 1, 'id'));
   await setCell(page, LG, 0, 'id', 'dien');

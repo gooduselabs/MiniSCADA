@@ -9,6 +9,7 @@
 // Mỗi thay đổi là MỘT sửa đổi `{ kind: 'reports' }` (một bước hoàn tác của Studio). Tùy chọn của định dạng 1.1 (loại báo cáo, kỳ
 // tuần/khoảng, thẻ, biểu đồ, thời gian ON) bị khóa kèm lý do ở project cũ. Trang `reports` là thư viện mẫu có sẵn (lệnh
 // "Thêm báo cáo…"). Mọi chữ của người dùng đi qua binding của Lit (văn bản thuần).
+import { issueText as issueMsg } from '../../app/code-text.ts';
 import type {
   ReportChartKind,
   ReportFn,
@@ -350,7 +351,7 @@ export class TemplatesEditor extends AppElement {
     const list = b.file.filter((x) => x.path === '/logo');
     if (!list.length) return nothing;
     return html`<div class="te-err" data-error="logo" role="alert">
-      ${list.map((x) => html`<div><span class="mono">${x.code}</span> ${x.message}</div>`)}
+      ${list.map((x) => html`<div><span class="mono">${x.code}</span> ${issueMsg(x)}</div>`)}
     </div>`;
   }
 
@@ -374,7 +375,7 @@ export class TemplatesEditor extends AppElement {
     const list = b.fields.get(this.index())?.get(name);
     if (!list?.length) return nothing;
     return html`<div class="te-err" data-error=${name} role="alert">
-      ${list.map((x) => html`<div><span class="mono">${x.code}</span> ${x.message}</div>`)}
+      ${list.map((x) => html`<div><span class="mono">${x.code}</span> ${issueMsg(x)}</div>`)}
     </div>`;
   }
 
@@ -383,7 +384,7 @@ export class TemplatesEditor extends AppElement {
     const list = [...(m ?? [])].filter(([k]) => k.startsWith(`${col}:`)).flatMap(([, v]) => v);
     if (!list.length) return nothing;
     return html`<div class="te-err" data-error=${`col-${col}`} role="alert">
-      ${list.map((x) => html`<div><span class="mono">${x.code}</span> ${x.message}</div>`)}
+      ${list.map((x) => html`<div><span class="mono">${x.code}</span> ${issueMsg(x)}</div>`)}
     </div>`;
   }
 

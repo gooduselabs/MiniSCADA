@@ -5,6 +5,7 @@
 // lỗi ở trường không có ô sửa liệt kê ở đầu editor. Mỗi lần gõ là một sửa đổi của store, gộp thành một
 // bước hoàn tác cho mỗi ô (khóa gộp `settings:{trường}`). Nhận vị trí lỗi bằng app.takeReveal('settings')
 // và focus đúng ô.
+import { issueText as issueMsg } from '../../app/code-text.ts';
 import type { Issue } from '@mat/project-schema';
 import { html, nothing, type PropertyValues } from 'lit';
 import { live } from 'lit/directives/live.js';
@@ -86,7 +87,7 @@ export class SettingsEditor extends AppElement {
           ? html`<p class=${bad ? 'err-text' : 'help'} id="${id}-err">
               ${icon(bad ? 'err' : 'warn', `sm ${bad ? 'err' : 'warn'}`)}
               ${issues!
-                .map((i) => t('settings.issue', { code: i.code, message: i.message }))
+                .map((i) => t('settings.issue', { code: i.code, message: issueMsg(i) }))
                 .join(' · ')}
             </p>`
           : nothing
@@ -259,7 +260,7 @@ export class SettingsEditor extends AppElement {
           ${issues.map(
             (i) =>
               html`<li>
-                <span class="mono">${i.code}</span><span class="mono">${i.path}</span>${i.message}
+                <span class="mono">${i.code}</span><span class="mono">${i.path}</span>${issueMsg(i)}
               </li>`,
           )}
         </ul>

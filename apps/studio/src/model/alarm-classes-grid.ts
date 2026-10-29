@@ -149,6 +149,8 @@ export class AlarmClassesGrid implements GridAdapter {
       const id = this.doc.classes[r]?.id;
       if (id) doc = removeClass(doc, id);
     }
+    // Phải còn ít nhất một lớp (E_ALARM_CLASS_COUNT, sửa lỗi 039): không xóa lớp cuối cùng.
+    if (!doc.classes.length) return [];
     return this.edits(doc);
   }
 

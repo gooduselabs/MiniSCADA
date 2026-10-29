@@ -3,6 +3,7 @@
 // tác như Bảng Tag), khung Ước tính ghi bên phải (cập nhật theo mỗi sửa đổi), form Kết nối DB ngoài (không mật khẩu) bên dưới,
 // inspector theo nhóm đang chọn (logging-props.ts). Lỗi và cảnh báo của bộ kiểm tra hiện NGAY tại ô; lưu được khi còn lỗi.
 // Chỉ đọc (kèm băng Nâng cấp) khi project chưa phải định dạng 0.6. Dữ liệu project chỉ đi vào giao diện qua binding của Lit.
+import { issueText as issueMsg } from '../../app/code-text.ts';
 import type { Connection, Issue, LoggingConfig } from '@mat/project-schema';
 import { html, nothing, type PropertyValues } from 'lit';
 import { live } from 'lit/directives/live.js';
@@ -44,7 +45,7 @@ const messages = (m: ReadonlyMap<string, readonly Issue[]> | undefined): Map<str
   for (const [k, v] of m ?? [])
     out.set(
       k,
-      v.map((i) => i.message),
+      v.map((i) => issueMsg(i)),
     );
   return out;
 };
@@ -398,7 +399,7 @@ export class LoggingEditor extends AppElement {
         ${b.file.map(
           (i) =>
             html`<li class=${severityOf(i) === 'warning' ? 'warn' : 'err'}>
-              <span class="mono">${i.code}</span> ${i.message}
+              <span class="mono">${i.code}</span> ${issueMsg(i)}
             </li>`,
         )}
       </ul>
@@ -515,7 +516,7 @@ export class LoggingEditor extends AppElement {
                 ${
                   msgs.length
                     ? html`<ul class="le-cerr">
-                        ${msgs.map((i) => html`<li class=${severityOf(i) === 'warning' ? 'warn' : 'err'}>${i.message}</li>`)}
+                        ${msgs.map((i) => html`<li class=${severityOf(i) === 'warning' ? 'warn' : 'err'}>${issueMsg(i)}</li>`)}
                       </ul>`
                     : nothing
                 }
@@ -706,7 +707,7 @@ export class LoggingEditor extends AppElement {
                 type="button"
                 data-act="create"
                 ?disabled=${ro}
-                @click=${() => this.edit({ schemaVersion: '0.6.0', groups: [] })}
+                @click=${() => this.edit(addGroup({ schemaVersion: '0.6.0', groups: [] }))}
               >
                 ${t('hist.ed.create')}
               </button>`

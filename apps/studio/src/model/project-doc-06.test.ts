@@ -87,13 +87,26 @@ describe('định dạng 0.6 trong Studio', () => {
     p.navigation.items = p.navigation.items.filter((i: { report?: string }) => !i.report);
     files['project.json'] = JSON.stringify(p, null, 2);
     const docs = open(files);
-    const cfg: ReportsConfig = { schemaVersion: '0.6.0', reports: [] };
+    const cfg: ReportsConfig = { schemaVersion: '0.6.0', org: 'Nhà máy A', reports: [] };
     const out = applyDocEdits(docs, [{ kind: 'reports', value: cfg }]);
     expect(out['reports.json']).toBeDefined();
     expect((out['project.json']!.value as { reportsFile?: string }).reportsFile).toBe(
       'reports.json',
     );
     expect(writeOrder(out).map((d) => d.rel)).toEqual(['reports.json', 'project.json']);
+  });
+
+  it('sửa lỗi 039: lưu trữ, báo cáo rỗng thì bỏ file và khóa trong project.json (schema đòi ít nhất một mục)', () => {
+    const docs = open();
+    const out = applyDocEdits(docs, [
+      { kind: 'logging', value: { schemaVersion: '0.6.0', groups: [] } },
+      { kind: 'reports', value: { schemaVersion: '0.6.0', reports: [] } },
+    ]);
+    const proj = out['project.json']!.value as { loggingFile?: string; reportsFile?: string };
+    expect(proj.loggingFile).toBeUndefined();
+    expect(proj.reportsFile).toBeUndefined();
+    expect((out['logging.json'] as { removed?: boolean } | undefined)?.removed ?? true).toBe(true);
+    expect((out['reports.json'] as { removed?: boolean } | undefined)?.removed ?? true).toBe(true);
   });
 
   it('hoàn tác khôi phục logging.json', () => {

@@ -26,4 +26,20 @@ export const viGroup = {
     'Người dùng, nhóm và quyền của thiết bị: quản lý khi Online bằng tài khoản administrator.',
   'group.users.example':
     'Ví dụ: nhóm Vận hành chỉ xem và điều khiển bơm, nhóm Bảo trì sửa thông số.',
+  // ---- Câu dễ hiểu cho lỗi E_SCHEMA (sửa lỗi 039) ----
+  'schema.root': 'tệp',
+  'schema.emptyList': '"{field}" đang trống: cần ít nhất {min} mục.',
+  'schema.fewItems': '"{field}" có {n} mục, cần ít nhất {min}.',
+  'schema.manyItems': '"{field}" có {n} mục, nhiều nhất {max}.',
+  'schema.required': '"{field}" thiếu trường bắt buộc "{prop}".',
+  'schema.property': 'Trường "{prop}" có giá trị không hợp lệ hoặc không được phép.',
+  'schema.type': '"{field}" sai kiểu dữ liệu, cần {want}.',
+  'schema.tooLong': '"{field}" dài quá, tối đa {max} ký tự.',
+  'schema.tooShort': '"{field}" ngắn quá, tối thiểu {min} ký tự.',
+  'schema.pattern': '"{field}" sai định dạng.',
+  'schema.max': '"{field}" lớn quá, tối đa {limit}.',
+  'schema.min': '"{field}" nhỏ quá, tối thiểu {limit}.',
+  'schema.enum': '"{field}" không phải giá trị được phép.',
+  'schema.duplicate': '"{field}" có mục trùng nhau.',
+  'schema.other': '"{field}" không hợp lệ ({message}).',
 } as const;

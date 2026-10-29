@@ -30,7 +30,7 @@ const number = (s: string): number => Number(s);
  * Câu cho một lỗi hay cảnh báo của bộ kiểm tra. Mã của project 0.2 có câu tiếng Việt riêng (cảnh báo thời gian quét
  * lấy số từ `message`); mã của 0.1 và mã lạ giữ `message` của bộ kiểm tra.
  */
-export function issueText(issue: { code: string; message: string }): string {
+export function issueText(issue: { code: string; message: string; path?: string }): string {
   const { code, message } = issue;
   if (code === 'W_RTU_SCAN_TIME') {
     const m = /estimated (\d+) ms for one (\w+) scan round, longer than the (\d+) ms period/.exec(
@@ -52,6 +52,7 @@ export function issueText(issue: { code: string; message: string }): string {
   if (ua) return t(ua);
   const mq = mqttIssueKey(code, message);
   if (mq) return t(mq);
+  if (code === 'E_SCHEMA') return schemaText(message, issue.path);
   const key = lookup('issue', code);
   return key ? t(key) : message;
 }
@@ -139,4 +140,45 @@ export function writeCodeText(code: string, extra: WriteCodeExtra = {}): string 
 export function probeCodeText(code: string): string {
   const key = lookup('probeCode', code);
   return key ? t(key) : unknownText(code);
+}
+
+/**
+ * Câu tiếng Việt cho lỗi E_SCHEMA (sửa lỗi 039): bộ kiểm tra schema (@cfworker/json-schema) trả câu tiếng Anh thô như
+ * "Array has too few items (0 < 1)"; ở đây dịch các dạng hay gặp, kèm tên trường lấy từ đường dẫn. Dạng lạ: câu chung
+ * kèm câu gốc.
+ */
+export function schemaText(message: string, path = ''): string {
+  const segs = path.split('/').filter(Boolean);
+  const lastName = [...segs].reverse().find((s) => !/^\d+$/.test(s));
+  const field = lastName ?? t('schema.root');
+  let m: RegExpExecArray | null;
+  if ((m = /^Array has too few items \((\d+) < (\d+)\)/.exec(message)))
+    return Number(m[1]) === 0
+      ? t('schema.emptyList', { field, min: Number(m[2]) })
+      : t('schema.fewItems', { field, n: Number(m[1]), min: Number(m[2]) });
+  if ((m = /^Array has too many items \((\d+) > (\d+)\)/.exec(message)))
+    return t('schema.manyItems', { field, n: Number(m[1]), max: Number(m[2]) });
+  if ((m = /^Instance does not have required property "([^"]+)"/.exec(message)))
+    return t('schema.required', { field, prop: m[1]! });
+  if (
+    (m =
+      /^Property "([^"]+)" does not match (additional properties |unevaluated properties )?schema/.exec(
+        message,
+      ))
+  )
+    return t('schema.property', { prop: m[1]! });
+  if ((m = /^Instance type "([^"]+)" is invalid\. Expected "(.+)"/.exec(message)))
+    return t('schema.type', { field, want: m[2]!.replace(/", "/g, ', ') });
+  if ((m = /^String is too long \((\d+) > (\d+)\)/.exec(message)))
+    return t('schema.tooLong', { field, max: Number(m[2]) });
+  if ((m = /^String is too short \((\d+) < (\d+)\)/.exec(message)))
+    return t('schema.tooShort', { field, min: Number(m[2]) });
+  if (/^String does not match (pattern|format)/.test(message))
+    return t('schema.pattern', { field });
+  if ((m = /^(-?[\d.e+]+) is (greater|less) than (or equal to )?\s*(-?[\d.e+]+)/.exec(message)))
+    return t(m[2] === 'greater' ? 'schema.max' : 'schema.min', { field, limit: m[4]! });
+  if (/^Instance does not match any of /.test(message)) return t('schema.enum', { field });
+  if (/^Duplicate items/.test(message)) return t('schema.duplicate', { field });
+  if (/[À-ỹ]/.test(message)) return message; // câu đã là tiếng Việt (vd. chuỗi quá dài theo byte)
+  return t('schema.other', { field, message });
 }

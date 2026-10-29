@@ -206,6 +206,10 @@ export interface Touched {
   templates: Set<string>;
   logic: boolean;
   logicLayout: boolean;
+  /** File lưu trữ bị bỏ vì không còn nhóm và kết nối (sửa lỗi 039): xóa file, bỏ `loggingFile`. */
+  loggingRemoved?: string;
+  /** Như trên cho mẫu báo cáo: không còn mẫu nào thì bỏ file báo cáo. */
+  reportsRemoved?: string;
 }
 
 const newTouched = (): Touched => ({
@@ -286,6 +290,24 @@ function ensureConnections(s: EditableProject, touched: Touched): ConnectionsCon
   return s.connections;
 }
 
+/**
+ * Mọi tệp cùng schemaVersion với project.json (E_SCHEMA_VERSION từ 0.4): bảng giá trị, bảng theo dõi, lưu trữ mới tạo
+ * (mẫu ghi '0.2.0', '0.6.0') nhận phiên bản của project (sửa lỗi 039, như screenUpsert).
+ */
+function withProjectVersion<T extends object>(s: EditableProject, doc: T): T {
+  const v = (s.project as { schemaVersion?: unknown } | null)?.schemaVersion;
+  if (typeof v === 'string') (doc as { schemaVersion?: string }).schemaVersion = v;
+  return doc;
+}
+
+/** Cấu hình lưu trữ không có nhóm, kết nối, múi giờ: tương đương không lưu trữ. */
+const isEmptyLogging = (v: LoggingConfig): boolean =>
+  (v.groups?.length ?? 0) === 0 && !(v.connections?.length ?? 0) && v.timeZone === undefined;
+
+/** Không còn mẫu báo cáo, thông tin đơn vị, logo: tương đương không có báo cáo. */
+const isEmptyReports = (v: ReportsConfig): boolean =>
+  (v.reports?.length ?? 0) === 0 && v.org === undefined && v.logo === undefined;
+
 function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched): void {
   const tagList = tagListOf(s);
   for (const e of edits) {
@@ -298,12 +320,35 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
         if (!isObject(s.project)) break;
         const key = e.kind === 'logging' ? 'loggingFile' : 'reportsFile';
         const rec = s.project as unknown as Record<string, unknown>;
+        if (e.kind === 'reports' && isEmptyReports(e.value)) {
+          // reports.schema đòi ít nhất một mẫu: hết mẫu thì bỏ file thay vì ghi danh sách rỗng.
+          if (typeof rec.reportsFile === 'string') {
+            touched.reportsRemoved = rec.reportsFile;
+            delete rec.reportsFile;
+            touched.project = true;
+          }
+          s.reports = null;
+          touched.reports = true;
+          break;
+        }
+        if (e.kind === 'logging' && isEmptyLogging(e.value)) {
+          // Không còn nhóm, kết nối: schema đòi ít nhất một nhóm nên không ghi file rỗng mà bỏ hẳn (project không lưu trữ
+          // là hợp lệ, runtime bỏ qua khi thiếu `loggingFile`).
+          if (typeof rec.loggingFile === 'string') {
+            touched.loggingRemoved = rec.loggingFile;
+            delete rec.loggingFile;
+            touched.project = true;
+          }
+          s.logging = null;
+          touched.logging = true;
+          break;
+        }
         if (typeof rec[key] !== 'string') {
           rec[key] = e.kind === 'logging' ? LOGGING_FILE : REPORTS_FILE;
           touched.project = true;
         }
         if (e.kind === 'logging') {
-          s.logging = clone(e.value);
+          s.logging = withProjectVersion(s, clone(e.value));
           touched.logging = true;
         } else {
           s.reports = clone(e.value);
@@ -318,7 +363,7 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
           rec.recipesFile = RECIPES_FILE;
           touched.project = true;
         }
-        s.recipes = clone(e.value);
+        s.recipes = withProjectVersion(s, clone(e.value));
         touched.recipes = true;
         break;
       }
@@ -392,7 +437,7 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
           list.push(name);
           touched.project = true;
         }
-        s.valueTables[name] = clone(e.table);
+        s.valueTables[name] = withProjectVersion(s, clone(e.table));
         touched.valueTables.add(name);
         break;
       }
@@ -481,8 +526,8 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
           else s.alarmClasses = null;
         } else {
           if (typeof rec[key] !== 'string') rec[key] = isAlarms ? ALARMS_FILE : ALARM_CLASSES_FILE;
-          if (isAlarms) s.alarms = clone(e.doc as AlarmsFile);
-          else s.alarmClasses = clone(e.doc as AlarmClassesFile);
+          if (isAlarms) s.alarms = withProjectVersion(s, clone(e.doc as AlarmsFile));
+          else s.alarmClasses = withProjectVersion(s, clone(e.doc as AlarmClassesFile));
         }
         touched.project = true;
         if (isAlarms) touched.alarms = true;
@@ -500,7 +545,7 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
           touched.project = true;
         }
         s.templates ??= {};
-        s.templates[e.template.id] = clone(e.template);
+        s.templates[e.template.id] = withProjectVersion(s, clone(e.template));
         touched.templates.add(e.template.id);
         break;
       }
@@ -523,7 +568,7 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
           rec.logic = LOGIC_FILE;
           touched.project = true;
         }
-        s.logic = clone(e.doc);
+        s.logic = withProjectVersion(s, clone(e.doc));
         touched.logic = true;
         break;
       }
@@ -555,7 +600,7 @@ function run(s: EditableProject, edits: readonly ProjectEdit[], touched: Touched
           list.push(e.table.id);
           touched.project = true;
         }
-        s.watchTables[e.table.id] = clone(e.table);
+        s.watchTables[e.table.id] = withProjectVersion(s, clone(e.table));
         touched.watchTables.add(e.table.id);
         break;
       }
@@ -1109,8 +1154,12 @@ export function applyDocEdits(
     );
   for (const f of touched.svgBindings) syncTable(f, state.svgBindings?.[f]);
   const rec06 = state.project as unknown as Record<string, unknown>;
+  if (touched.loggingRemoved && typeof rec06.loggingFile !== 'string')
+    syncTable(touched.loggingRemoved, undefined);
   if (touched.logging && state.logging && typeof rec06.loggingFile === 'string')
     syncTable(rec06.loggingFile, state.logging);
+  if (touched.reportsRemoved && typeof rec06.reportsFile !== 'string')
+    syncTable(touched.reportsRemoved, undefined);
   if (touched.reports && state.reports && typeof rec06.reportsFile === 'string')
     syncTable(rec06.reportsFile, state.reports);
   if (touched.recipes && state.recipes && typeof rec06.recipesFile === 'string')
