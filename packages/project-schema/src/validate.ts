@@ -168,6 +168,18 @@ type Kind =
  * features 008 và 009 cộng lưu trữ nâng cao, báo cáo của feature 010).
  */
 type SchemaSet = '0.1' | '0.2' | '0.3' | '0.4' | '0.5' | '0.6' | '1.0';
+/** Từ khóa chỉ gói lỗi của schema con: bỏ khi đã có lỗi ở instance sâu hơn (sửa lỗi 042). */
+const WRAPPERS = new Set([
+  'properties',
+  'items',
+  '$ref',
+  'allOf',
+  'anyOf',
+  'oneOf',
+  'if',
+  'then',
+  'else',
+]);
 const make = (s: unknown) => new Validator(s as Schema, '7', false);
 const validators: Record<SchemaSet, Partial<Record<Kind, Validator>>> = {
   '0.1': {
@@ -433,11 +445,27 @@ async function loadJson<T>(
   if (!validator) return data as T; // alarms.json, alarm-classes.json: luật làm tay (alarm-rules.ts)
   const res = validator.validate(data);
   if (!res.valid) {
-    // Bỏ lỗi tổng hợp của từ khóa bao ngoài (properties/items/$ref…) khi đã có lỗi chi tiết hơn.
-    const leaf = res.errors.filter(
-      (e) =>
-        !res.errors.some((o) => o !== e && o.keywordLocation.startsWith(e.keywordLocation + '/')),
-    );
+    // Bỏ lỗi tổng hợp của từ khóa bao ngoài (properties/items/$ref…) khi đã có lỗi chi tiết hơn. Sửa lỗi 042: với
+    // shortCircuit tắt, @cfworker còn báo lỗi "dây chuyền" (additionalProperties cho thuộc tính đã khai báo nhưng
+    // giá trị sai, schema `false` ở đường dẫn instance) làm banner nói "Trường groups không hợp lệ" và tô đỏ nhầm ô
+    // (lỗi ở /groups/0 rơi vào cột Chế độ). Chỉ giữ lỗi sâu nhất: bỏ `false`, bỏ lỗi của từ khóa bao ngoài khi có
+    // lỗi thật ở instance sâu hơn, bỏ additionalProperties khi thuộc tính nó nêu có lỗi bên trong.
+    const real = res.errors.filter((e) => e.keyword !== 'false');
+    const deeper = (loc: string): boolean =>
+      real.some((o) => o.instanceLocation.startsWith(loc + '/'));
+    const leaf = real.filter((e) => {
+      if (real.some((o) => o !== e && o.keywordLocation.startsWith(e.keywordLocation + '/')))
+        return false;
+      if (e.keyword === 'additionalProperties') {
+        const prop = /^Property "([^"]+)"/.exec(e.error)?.[1];
+        const at = `${e.instanceLocation}/${prop}`;
+        return (
+          prop === undefined ||
+          !real.some((o) => o.instanceLocation === at || o.instanceLocation.startsWith(at + '/'))
+        );
+      }
+      return !(WRAPPERS.has(e.keyword) && deeper(e.instanceLocation));
+    });
     const seen = new Set<string>();
     for (const e of leaf.length ? leaf : res.errors) {
       const path = e.instanceLocation.replace(/^#/, '');

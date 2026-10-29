@@ -394,6 +394,20 @@ export function estimateLogging(
   const groups: GroupEstimate[] = [];
   // Thứ tự cộng theo thứ tự nhóm trong file (bản C++ cộng cùng thứ tự).
   for (const g of cfg.groups) {
+    // Nhóm chưa có Tag không ghi gì (sửa lỗi 042: trước đây vẫn tính hàng rỗng + commit, 0 Tag ra ~429 MB/ngày).
+    if (g.tags.length === 0) {
+      groups.push({
+        rowsPerDay: 0,
+        basis: 'exact',
+        rowBytes: 0,
+        rawWrite: 0,
+        aggWrite: 0,
+        rawStorage: 0,
+        aggStorage: 0,
+        aggTags: 0,
+      });
+      continue;
+    }
     let rowBytes = 24;
     for (const t of g.tags) rowBytes += cellBytes(tagTypes.get(t.tagId), t.maxLength);
     const periodic = g.mode === 'cyclic' || (g.mode === 'trigger' && g.trigger?.edge === 'active');

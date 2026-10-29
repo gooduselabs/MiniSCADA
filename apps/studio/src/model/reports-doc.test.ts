@@ -397,3 +397,17 @@ describe('setLogo (feature 024)', () => {
     expect(base.logo).toBeUndefined();
   });
 });
+
+describe('042: nhãn của bảng lưu trữ', () => {
+  it('addColumns lấy nhãn hiển thị của Tag trong bảng lưu trữ làm tên cột mặc định', () => {
+    const l = logging();
+    const g = l.groups.find((x) => x.id === 'dien')!;
+    g.tags.find((x) => x.tagId === 'METER1.KW')!.label = 'Công suất';
+    const base: ReportsConfig = {
+      schemaVersion: '0.1.0',
+      reports: [{ id: 'a', name: 'A', group: 'dien', period: 'day', columns: [] }],
+    };
+    const r = addColumns(base, 0, ['METER1.KW'], l, types());
+    expect(r.cfg.reports[0]!.columns![0]!.label).toBe('Công suất');
+  });
+});

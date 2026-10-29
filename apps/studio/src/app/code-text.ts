@@ -182,3 +182,24 @@ export function schemaText(message: string, path = ''): string {
   if (/[À-ỹ]/.test(message)) return message; // câu đã là tiếng Việt (vd. chuỗi quá dài theo byte)
   return t('schema.other', { field, message });
 }
+
+/**
+ * Câu cho lỗi của logging.json kèm tên nhóm (sửa lỗi 042): nhóm 0 Tag nói rõ cách thêm Tag; lỗi khác của trường con
+ * của nhóm có tiền tố "Bảng lưu trữ 'X':" để người dùng biết nhóm nào.
+ */
+export function loggingIssueText(
+  issue: { code: string; message: string; path?: string },
+  cfg: { groups?: readonly { id?: string; name?: string }[] } | null | undefined,
+): string {
+  const m = /^\/groups\/(\d+)(\/.*)?$/.exec(issue.path ?? '');
+  if (!m) return issueText(issue);
+  const g = cfg?.groups?.[Number(m[1])];
+  const name = g?.name || g?.id || String(Number(m[1]) + 1);
+  if (
+    issue.code === 'E_SCHEMA' &&
+    m[2] === '/tags' &&
+    /^Array has too few items \(0 < /.test(issue.message)
+  )
+    return t('hist.issue.noTags', { name });
+  return t('hist.issue.inGroup', { name, text: issueText(issue) });
+}

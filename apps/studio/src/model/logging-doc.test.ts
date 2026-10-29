@@ -77,7 +77,7 @@ describe('chế độ hiển thị ↔ trường', () => {
     expect(back.mode).toBe('onChange');
   });
 
-  it('chọn Chu kỳ: periodMs mặc định 1000, xóa min/max/trigger/expectedRowsPerDay', () => {
+  it('chọn Chu kỳ: periodMs mặc định 10 s (042), xóa min/max/trigger/expectedRowsPerDay', () => {
     const g = {
       ...cfg0().groups[0]!,
       maxIntervalMs: 60000,
@@ -86,7 +86,7 @@ describe('chế độ hiển thị ↔ trường', () => {
     };
     const c = setDisplayMode(g, 'cyclic');
     expect(c.mode).toBe('cyclic');
-    expect(c.periodMs).toBe(1000);
+    expect(c.periodMs).toBe(10_000);
     for (const k of ['minIntervalMs', 'maxIntervalMs', 'expectedRowsPerDay', 'trigger'] as const)
       expect(c[k]).toBeUndefined();
   });
@@ -99,7 +99,7 @@ describe('chế độ hiển thị ↔ trường', () => {
     expect(t.maxIntervalMs).toBeUndefined();
     const act = setTrigger(t, { edge: 'active' });
     expect(act.trigger!.edge).toBe('active');
-    expect(act.periodMs).toBe(1000);
+    expect(act.periodMs).toBe(10_000);
     const back = setTrigger(act, { edge: 'both' });
     expect(back.periodMs).toBeUndefined();
     // chuyển khỏi Kích hoạt rồi lại vào: threshold không rò
@@ -116,11 +116,11 @@ describe('chế độ hiển thị ↔ trường', () => {
 });
 
 describe('nhóm', () => {
-  it('addGroup: id duy nhất, mặc định Chu kỳ 1 s, 30 ngày', () => {
+  it('addGroup: id duy nhất, mặc định Chu kỳ 10 s (042), 30 ngày', () => {
     const c = addGroup(cfg0());
     expect(c.groups.length).toBe(2);
     const g = c.groups[1]!;
-    expect(g).toMatchObject({ mode: 'cyclic', periodMs: 1000, retentionDays: 30, tags: [] });
+    expect(g).toMatchObject({ mode: 'cyclic', periodMs: 10_000, retentionDays: 30, tags: [] });
     expect(new Set(c.groups.map((x) => x.id)).size).toBe(2);
     expect(addGroup(c).groups[2]!.id).not.toBe(g.id);
   });

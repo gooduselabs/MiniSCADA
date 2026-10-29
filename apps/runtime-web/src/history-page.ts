@@ -251,7 +251,9 @@ export class HistoryPage {
       cb.value = t.tagId;
       cb.checked = this.#sel.tags.includes(t.tagId);
       cb.addEventListener('change', () => this.#toggle(t.tagId, cb.checked));
-      lab.append(cb, el('span', undefined, ` ${t.tagId}${t.unit ? ` (${t.unit})` : ''}`));
+      // 042: nhãn hiển thị của bảng lưu trữ (nếu có) trước tên Tag.
+      const name = t.label ? `${t.label} — ${t.tagId}` : t.tagId;
+      lab.append(cb, el('span', undefined, ` ${name}${t.unit ? ` (${t.unit})` : ''}`));
       this.#boxes.push(cb);
       return lab;
     });

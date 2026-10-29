@@ -2,7 +2,7 @@
 // chung `mat-grid` (chọn ô, bộ gõ, dán, điền xuống, hoàn tác như Bảng Tag). Mỗi lần áp chữ thành MỘT sửa đổi
 // `{ kind: 'logging' }` (một bước hoàn tác); chữ không đọc được bị từ chối theo ô, còn giá trị sai luật (id, độ dài...) vẫn
 // ghi và hiện lỗi theo ô từ bộ kiểm tra: lưu được khi còn lỗi (FR-054).
-import type { LoggingConfig, TagDataType } from '@mat/project-schema';
+import { defaultTableName, type LoggingConfig, type TagDataType } from '@mat/project-schema';
 import { OFF_WORDS, ON_WORDS } from '../i18n/bool-words.ts';
 import { t } from '../i18n/index.ts';
 import type { EstimateView } from './estimate-view.ts';
@@ -98,6 +98,8 @@ export interface GroupAdapterOptions {
   types: ReadonlyMap<string, TagDataType> | null;
   estimate: EstimateView;
   readOnly: boolean;
+  /** Mô tả Tag theo id (nhãn hiển thị mặc định, 042); vắng thì dùng tên Tag. */
+  descriptions?: ReadonlyMap<string, string> | null;
 }
 
 const rej = (c: CellChange, reason: string): Rejected => ({
@@ -117,6 +119,7 @@ export function groupAdapter(o: GroupAdapterOptions): GridAdapter {
   const columns: GridColumn[] = [
     { key: 'id', label: t('hist.col.id'), kind: 'text', width: 110, mono: true, name: true },
     { key: 'name', label: t('hist.col.name'), kind: 'text', width: 180 },
+    { key: 'table', label: t('hist.col.table'), kind: 'text', width: 130, mono: true },
     { key: 'mode', label: t('hist.col.mode'), kind: 'select', width: 100 },
     { key: 'interval', label: t('hist.col.interval'), kind: 'text', width: 150 },
     { key: 'retention', label: t('hist.col.retention'), kind: 'number', width: 90, end: true },
@@ -148,6 +151,8 @@ export function groupAdapter(o: GroupAdapterOptions): GridAdapter {
         return g.id;
       case 'name':
         return g.name;
+      case 'table':
+        return g.table ?? defaultTableName(g.id);
       case 'mode':
         return modeLabel(displayModeOf(g));
       case 'interval':
@@ -182,6 +187,17 @@ export function groupAdapter(o: GroupAdapterOptions): GridAdapter {
         case 'name':
           cfg = setGroupField(cfg, row, c.col, c.text.trim());
           break;
+        case 'table': {
+          // Trống hoặc bằng tên mặc định theo id: bỏ khóa (giữ file gọn, runtime tự đặt).
+          const g = cfg.groups[row]!;
+          cfg = setGroupField(
+            cfg,
+            row,
+            'table',
+            txt === '' || txt === defaultTableName(g.id) ? undefined : txt,
+          );
+          break;
+        }
         case 'retention': {
           const n = parseNumber(txt);
           if (n === null || !Number.isInteger(n) || n < 0) rejected.push(rej(c, 'hist.err.int'));
@@ -265,12 +281,14 @@ export function tagAdapter(o: TagAdapterOptions): GridAdapter {
   const columns: GridColumn[] = [
     { key: 'tag', label: t('hist.tcol.tag'), kind: 'text', width: 220, mono: true, name: true },
     { key: 'column', label: t('hist.tcol.column'), kind: 'text', width: 150, mono: true },
+    { key: 'label', label: t('hist.tcol.label'), kind: 'text', width: 180 },
     { key: 'deadband', label: t('hist.tcol.deadband'), kind: 'number', width: 90, end: true },
     { key: 'length', label: t('hist.tcol.length'), kind: 'number', width: 80, end: true },
     { key: 'agg', label: t('hist.tcol.agg'), kind: 'select', width: 90 },
     { key: 'note', label: t('hist.tcol.note'), kind: 'readonly', width: 220 },
   ];
   const tags = o.cfg.groups[o.group]?.tags ?? [];
+  const defaultLabel = (id: string): string => o.descriptions?.get(id) || id;
   const typeOf = (row: number): TagDataType | undefined => {
     const id = tags[row]?.tagId;
     return id === undefined ? undefined : o.types?.get(id);
@@ -285,6 +303,8 @@ export function tagAdapter(o: TagAdapterOptions): GridAdapter {
         return tg.tagId;
       case 'column':
         return tg.column ?? tg.tagId.replace(/\./g, '_');
+      case 'label':
+        return tg.label ?? defaultLabel(tg.tagId);
       case 'deadband':
         return tg.deadband === undefined ? '' : String(tg.deadband);
       case 'length':
@@ -317,6 +337,18 @@ export function tagAdapter(o: TagAdapterOptions): GridAdapter {
         case 'column':
           cfg = setTagField(cfg, o.group, row, 'column', txt === '' ? undefined : txt);
           break;
+        case 'label': {
+          // Chỉ ghi khi khác nhãn mặc định: runtime cũ từ chối khóa `label`, file không đổi khi không đặt nhãn.
+          const def = defaultLabel(tags[row]!.tagId);
+          cfg = setTagField(
+            cfg,
+            o.group,
+            row,
+            'label',
+            txt === '' || txt === def ? undefined : txt,
+          );
+          break;
+        }
         case 'deadband':
         case 'length': {
           const field = c.col === 'deadband' ? 'deadband' : 'maxLength';
@@ -366,6 +398,6 @@ export function tagAdapter(o: TagAdapterOptions): GridAdapter {
     options: (_row, col) => (col === 'agg' ? [ON(), OFF()] : null),
     apply,
     remove: (rows) => [{ kind: 'logging', value: removeTags(o.cfg, o.group, rows) }],
-    searchText: (row) => tags[row]?.tagId ?? '',
+    searchText: (row) => `${tags[row]?.tagId ?? ''} ${tags[row]?.label ?? ''}`,
   };
 }

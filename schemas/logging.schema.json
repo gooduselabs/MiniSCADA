@@ -125,6 +125,12 @@
           "type": "string",
           "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,62}$"
         },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[^\\x00-\\x1F\\x7F]+$"
+        },
         "deadband": {
           "type": "number",
           "minimum": 0

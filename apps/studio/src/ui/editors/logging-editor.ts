@@ -3,7 +3,7 @@
 // tác như Bảng Tag), khung Ước tính ghi bên phải (cập nhật theo mỗi sửa đổi), form Kết nối DB ngoài (không mật khẩu) bên dưới,
 // inspector theo nhóm đang chọn (logging-props.ts). Lỗi và cảnh báo của bộ kiểm tra hiện NGAY tại ô; lưu được khi còn lỗi.
 // Chỉ đọc (kèm băng Nâng cấp) khi project chưa phải định dạng 0.6. Dữ liệu project chỉ đi vào giao diện qua binding của Lit.
-import { issueText as issueMsg } from '../../app/code-text.ts';
+import { loggingIssueText } from '../../app/code-text.ts';
 import type { Connection, Issue, LoggingConfig } from '@mat/project-schema';
 import { html, nothing, type PropertyValues } from 'lit';
 import { live } from 'lit/directives/live.js';
@@ -26,7 +26,14 @@ import { addTags, duplicateGroup, removeConnection, tagTypesOf } from '../../mod
 import { MAX_GROUPS, groupAdapter, tagAdapter } from '../../model/logging-grid.ts';
 import { bucketLoggingIssues, type LoggingIssueBuckets } from '../../model/logging-issues.ts';
 import { applyMeasure, measureOf } from '../../model/logging-online.ts';
-import { addGroup, removeGroup, MAX_TAGS_PER_GROUP } from '../../model/logging-doc.ts';
+import {
+  addGroup,
+  removeGroup,
+  MAX_TAGS_PER_GROUP,
+  FAST_PERIOD_MS,
+  displayModeOf,
+} from '../../model/logging-doc.ts';
+import { defaultColumnName } from '@mat/project-schema';
 import { parseNameList, suggestTags } from '../../model/watch-table.ts';
 import { AppElement, icon } from '../base.ts';
 import '../estimate-panel.ts';
@@ -40,15 +47,32 @@ import './logging-editor.css';
 /** Ô chọn theo StudioApp và lưới: giữ khi chuyển tab. */
 const memory = new WeakMap<StudioApp, Map<string, GridState>>();
 
-const messages = (m: ReadonlyMap<string, readonly Issue[]> | undefined): Map<string, string[]> => {
+const messages = (
+  m: ReadonlyMap<string, readonly Issue[]> | undefined,
+  cfg: LoggingConfig | null,
+): Map<string, string[]> => {
   const out = new Map<string, string[]>();
   for (const [k, v] of m ?? [])
     out.set(
       k,
-      v.map((i) => issueMsg(i)),
+      v.map((i) => loggingIssueText(i, cfg)),
     );
   return out;
 };
+
+/** Cảnh báo nhẹ của Studio (042): bảng ghi theo chu kỳ dưới 5 s làm mòn eMMC; gộp vào cảnh báo theo ô. */
+function withFastWarns(
+  base: Map<string, string[]>,
+  cfg: LoggingConfig | null,
+): Map<string, string[]> {
+  cfg?.groups.forEach((g, i) => {
+    const periodic = displayModeOf(g) === 'cyclic' || g.trigger?.edge === 'active';
+    if (!periodic || g.periodMs === undefined || g.periodMs >= FAST_PERIOD_MS) return;
+    const key = `${i}:interval`;
+    base.set(key, [...(base.get(key) ?? []), t('hist.warn.fastPeriod')]);
+  });
+  return base;
+}
 
 export class LoggingEditor extends AppElement {
   static override properties = {
@@ -56,12 +80,18 @@ export class LoggingEditor extends AppElement {
     hi: { state: true },
     open: { state: true },
     revealed: { state: true },
+    picking: { state: true },
+    pickFilter: { state: true },
+    picked: { state: true },
   };
 
   declare query: string;
   declare hi: number;
   declare open: boolean;
   declare revealed: number | null;
+  declare picking: boolean;
+  declare pickFilter: string;
+  declare picked: ReadonlySet<string>;
 
   private cache: { key: unknown[]; est: EstimateView } | null = null;
   private adapterCache: { key: unknown[]; groups: GridAdapter; tags: GridAdapter | null } | null =
@@ -73,6 +103,9 @@ export class LoggingEditor extends AppElement {
     this.hi = -1;
     this.open = false;
     this.revealed = null;
+    this.picking = false;
+    this.pickFilter = '';
+    this.picked = new Set();
   }
 
   // ---------- Dữ liệu ----------
@@ -97,6 +130,18 @@ export class LoggingEditor extends AppElement {
   private types() {
     const o = this.app.store.state.outline;
     return o.tags ? tagTypesOf(o.tags) : null;
+  }
+
+  /** Mô tả Tag theo id: nhãn hiển thị mặc định (042). */
+  private descriptions(): Map<string, string> | null {
+    const list = this.app.store.state.outline.tags?.tags as
+      readonly { id?: unknown; description?: unknown }[] | undefined;
+    if (!list) return null;
+    const out = new Map<string, string>();
+    for (const x of list)
+      if (typeof x.id === 'string' && typeof x.description === 'string' && x.description !== '')
+        out.set(x.id, x.description);
+    return out;
   }
 
   private estimate(): EstimateView {
@@ -131,7 +176,7 @@ export class LoggingEditor extends AppElement {
     const key = [cfg, types, est, ro, gi];
     const c = this.adapterCache;
     if (c && c.key.length === key.length && c.key.every((k, i) => k === key[i])) return c;
-    const base = { cfg, types, estimate: est, readOnly: ro };
+    const base = { cfg, types, estimate: est, readOnly: ro, descriptions: this.descriptions() };
     const next = {
       key,
       groups: groupAdapter(base),
@@ -399,7 +444,7 @@ export class LoggingEditor extends AppElement {
         ${b.file.map(
           (i) =>
             html`<li class=${severityOf(i) === 'warning' ? 'warn' : 'err'}>
-              <span class="mono">${i.code}</span> ${issueMsg(i)}
+              <span class="mono">${i.code}</span> ${loggingIssueText(i, this.cfg())}
             </li>`,
         )}
       </ul>
@@ -516,7 +561,7 @@ export class LoggingEditor extends AppElement {
                 ${
                   msgs.length
                     ? html`<ul class="le-cerr">
-                        ${msgs.map((i) => html`<li class=${severityOf(i) === 'warning' ? 'warn' : 'err'}>${issueMsg(i)}</li>`)}
+                        ${msgs.map((i) => html`<li class=${severityOf(i) === 'warning' ? 'warn' : 'err'}>${loggingIssueText(i, cfg)}</li>`)}
                       </ul>`
                     : nothing
                 }
@@ -608,7 +653,7 @@ export class LoggingEditor extends AppElement {
         }
         <span class="help">${t('hist.ed.saveWithErrors')}</span>
       </div>
-      ${this.banner()}${this.issuesBlock(b)}
+      ${this.banner()}${this.issuesBlock(b)}${this.picker(group)}
       <div class="le-body">
         <div class="le-main">
           <section class="le-sec">
@@ -627,8 +672,8 @@ export class LoggingEditor extends AppElement {
                 .adapter=${a.groups}
                 .state=${this.gridState('groups')}
                 .label=${t('hist.ed.groups')}
-                .issues=${messages(b.groupCells)}
-                .warns=${messages(b.groupWarns)}
+                .issues=${messages(b.groupCells, cfg)}
+                .warns=${withFastWarns(messages(b.groupWarns, cfg), cfg)}
                 @grid-state=${this.onGridState('groups')}
                 @grid-edit=${this.onGridEdit}
                 @grid-notice=${this.onGridNotice}
@@ -642,6 +687,7 @@ export class LoggingEditor extends AppElement {
               </h3>
               <span class="grow"></span>
               ${group ? this.addBox(ro) : nothing}
+              ${group ? this.tbtn('pick-tags', t('hist.ed.pickTags'), this.openPicker, { disabled: ro, reason: readOnlyReason, ic: 'plus' }) : nothing}
               ${group ? this.tbtn('del-tags', t('hist.ed.delTags'), this.delTagsCmd, { disabled: ro, reason: readOnlyReason, ic: 'x' }) : nothing}
               ${group ? html`<span class="muted num" role="status">${t('hist.ed.tagCount', { n: group.tags.length, max: MAX_TAGS_PER_GROUP })}</span>` : nothing}
             </div>
@@ -657,8 +703,8 @@ export class LoggingEditor extends AppElement {
                       .adapter=${a.tags}
                       .state=${this.gridState(`tags:${gi}`)}
                       .label=${t('hist.ed.tagsOf', { name: group.name || group.id })}
-                      .issues=${messages(b.tagCells.get(gi))}
-                      .warns=${messages(b.tagWarns.get(gi))}
+                      .issues=${messages(b.tagCells.get(gi), cfg)}
+                      .warns=${messages(b.tagWarns.get(gi), cfg)}
                       .dragColumn=${'tag'}
                       @grid-state=${this.onGridState('tags')}
                       @grid-edit=${this.onGridEdit}
@@ -670,15 +716,24 @@ export class LoggingEditor extends AppElement {
               }
               ${
                 group && group.tags.length === 0
-                  ? html`<div class="empty le-empty">
+                  ? html`<div class="empty le-empty" data-role="no-tags">
                       ${icon('table', 'lg')}<b>${t('hist.ed.noTags')}</b>
                       <p>${t('hist.ed.noTagsHelp')}</p>
+                      <button
+                        class="btn primary sm"
+                        type="button"
+                        data-act="pick-tags-empty"
+                        ?disabled=${ro}
+                        @click=${this.openPicker}
+                      >
+                        ${icon('plus')} ${t('hist.ed.pickTags')}
+                      </button>
                     </div>`
                   : nothing
               }
             </div>
           </section>
-          ${this.connections(b)}
+          ${group ? this.preview(group) : nothing} ${this.connections(b)}
         </div>
         <aside class="le-side" role="region" tabindex="0" aria-label=${t('hist.est.title')}>
           <mat-estimate-panel
@@ -689,6 +744,140 @@ export class LoggingEditor extends AppElement {
         </aside>
       </div>
     </div>`;
+  }
+
+  // ---------- Chọn nhiều Tag (042) ----------
+
+  private openPicker = (): void => {
+    if (!this.guard()) return;
+    this.picking = true;
+    this.pickFilter = '';
+    this.picked = new Set();
+  };
+
+  private closePicker = (): void => {
+    this.picking = false;
+  };
+
+  private togglePick(id: string): void {
+    const next = new Set(this.picked);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    this.picked = next;
+  }
+
+  private confirmPick = (): void => {
+    const ids = [...this.picked];
+    this.picking = false;
+    this.addTags(ids);
+  };
+
+  private picker(group: LoggingConfig['groups'][number] | null) {
+    if (!this.picking || !group) return nothing;
+    const have = new Set(group.tags.map((x) => x.tagId));
+    const desc = this.descriptions();
+    const f = this.pickFilter.trim().toLowerCase();
+    const ids = [...(this.types()?.keys() ?? [])].filter(
+      (id) =>
+        !have.has(id) &&
+        (!f || id.toLowerCase().includes(f) || (desc?.get(id) ?? '').toLowerCase().includes(f)),
+    );
+    const title = t('hist.ed.pickTitle', { name: group.name || group.id });
+    return html`<div class="le-picker-back" @click=${this.closePicker}></div>
+      <div
+        class="le-picker"
+        role="dialog"
+        aria-modal="true"
+        aria-label=${title}
+        data-role="tag-picker"
+        @keydown=${(e: KeyboardEvent) => {
+          if (e.key === 'Escape') this.closePicker();
+        }}
+      >
+        <h3>${title}</h3>
+        <input
+          class="input sm"
+          type="search"
+          data-role="pick-filter"
+          aria-label=${t('hist.ed.pickFilter')}
+          placeholder=${t('hist.ed.pickFilter')}
+          .value=${live(this.pickFilter)}
+          @input=${(e: Event) => (this.pickFilter = (e.target as HTMLInputElement).value)}
+        />
+        ${
+          ids.length
+            ? html`<ul class="le-picklist">
+                ${ids.map(
+                  (id) =>
+                    html`<li>
+                      <label>
+                        <input
+                          type="checkbox"
+                          data-tag=${id}
+                          .checked=${live(this.picked.has(id))}
+                          @change=${() => this.togglePick(id)}
+                        />
+                        <span class="mono">${id}</span>
+                        ${desc?.get(id) ? html`<span class="muted">${desc.get(id)}</span>` : nothing}
+                      </label>
+                    </li>`,
+                )}
+              </ul>`
+            : html`<p class="help">${t('hist.ed.pickNone')}</p>`
+        }
+        <div class="le-pickbar">
+          <button class="btn sm" type="button" data-act="pick-cancel" @click=${this.closePicker}>
+            ${t('hist.ed.pickCancel')}
+          </button>
+          <button
+            class="btn primary sm"
+            type="button"
+            data-act="pick-add"
+            ?disabled=${this.picked.size === 0}
+            @click=${this.confirmPick}
+          >
+            ${t('hist.ed.pickAdd', { n: this.picked.size })}
+          </button>
+        </div>
+      </div>`;
+  }
+
+  // ---------- Xem trước bảng (042) ----------
+
+  private preview(group: LoggingConfig['groups'][number]) {
+    const desc = this.descriptions();
+    const cols = group.tags.map((x) => ({
+      column: x.column ?? defaultColumnName(x.tagId),
+      label: x.label ?? (desc?.get(x.tagId) || x.tagId),
+    }));
+    return html`<section class="le-sec le-preview" data-role="table-preview">
+      <div class="le-sech"><h3>${t('hist.ed.preview')}</h3></div>
+      ${
+        cols.length
+          ? html`<div class="le-prevbox">
+                <table>
+                  <thead>
+                    <tr>
+                      <th class="mono">${t('hist.ed.previewTime')}</th>
+                      ${cols.map((c) => html`<th class="mono">${c.column}</th>`)}
+                    </tr>
+                    <tr class="le-prevlabels">
+                      <td></td>
+                      ${cols.map((c) => html`<td>${c.label}</td>`)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="mono muted">2026-10-29 08:00:00</td>
+                      ${cols.map(() => html`<td class="muted">…</td>`)}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="help">${t('hist.ed.previewNote')}</p>`
+          : html`<p class="help">${t('hist.ed.previewEmpty')}</p>`
+      }
+    </section>`;
   }
 
   private empty() {

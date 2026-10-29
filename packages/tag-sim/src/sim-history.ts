@@ -36,6 +36,8 @@ export interface SimHistoryTag {
   tagId: string;
   type: TagDataType;
   unit?: string;
+  /** Nhãn hiển thị của cột (logging.json `label`, 042). */
+  label?: string;
   sim: SimConfig;
   /** false: Tag không có tổng hợp (mặc định true cho Tag số và BOOL). */
   aggregate?: boolean;
@@ -153,6 +155,7 @@ export class SimHistorySource implements HistorySource {
           column: t.tagId.replace(/\./g, '_'),
           type: t.type,
           ...(t.unit !== undefined ? { unit: t.unit } : {}),
+          ...(t.label ? { label: t.label } : {}),
           aggregated: g.aggregates && t.aggregate !== false && t.type !== 'STRING',
           orphan: false,
         })),

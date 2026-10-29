@@ -1,7 +1,7 @@
 // Inspector › Thuộc tính của nhóm lưu trữ đang chọn (feature 010, T120, contracts/studio-010.md §1.1): năm nhóm Chung, Chế độ,
 // Lưu trữ, Đích, Tổng hợp; trường theo chế độ (chu kỳ / khoảng tối thiểu và tối đa / Tag kích hoạt, cạnh, ngưỡng). Chữ gõ xong
 // (sự kiện `change`) mới áp: mỗi lần là MỘT sửa đổi `{ kind: 'logging' }`. Chỉ đọc khi chưa phải định dạng 0.6.
-import { issueText as issueMsg } from '../../app/code-text.ts';
+import { loggingIssueText } from '../../app/code-text.ts';
 import { html, nothing, type TemplateResult } from 'lit';
 import type { StudioApp } from '../../app/app.ts';
 import { t } from '../../i18n/index.ts';
@@ -321,7 +321,7 @@ export function groupInspector(app: StudioApp, index: number) {
     ? html`<section class="lgp-sec" data-role="group-issues">
         <h4>${t('hist.insp.issues')}</h4>
         <ul class="lgp-issues">
-          ${mine.map((i) => html`<li class=${i.code.startsWith('E_') ? 'err' : 'warn'}><span class="mono">${i.code}</span> ${issueMsg(i)}</li>`)}
+          ${mine.map((i) => html`<li class=${i.code.startsWith('E_') ? 'err' : 'warn'}><span class="mono">${i.code}</span> ${loggingIssueText(i, s.outline.logging)}</li>`)}
         </ul>
       </section>`
     : nothing;

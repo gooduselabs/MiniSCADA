@@ -133,7 +133,7 @@ export class MatHistoryBar extends MatHistoryWidget {
   }
 
   #labelOf(i: number): string {
-    return this.#labels()[i] || this.#tags()[i] || '';
+    return this.#labels()[i] || this.catalogLabel(this.#tags()[i]) || this.#tags()[i] || '';
   }
 
   #cfg() {

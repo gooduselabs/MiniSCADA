@@ -254,3 +254,82 @@ mat-logging-editor .le-cerr {
 .lgp .lgp-issues li.warn {
   color: var(--warn);
 }
+/* 042: nút trong khung "chưa có Tag" bấm được dù khung không nhận chuột */
+mat-logging-editor .le-empty button {
+  pointer-events: auto;
+  margin-top: 6px;
+}
+/* 042: chọn nhiều Tag */
+mat-logging-editor .le-picker-back {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 25%);
+  z-index: 40;
+}
+mat-logging-editor .le-picker {
+  position: fixed;
+  z-index: 41;
+  top: 12vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 92vw);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: var(--bg, #fff);
+  border: 1px solid var(--line, #ccc);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 25%);
+}
+mat-logging-editor .le-picker h3 {
+  margin: 0;
+  font-size: 14px;
+}
+mat-logging-editor .le-picklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  flex: 1;
+  border: 1px solid var(--line, #ccc);
+  border-radius: 4px;
+}
+mat-logging-editor .le-picklist label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+mat-logging-editor .le-picklist li:hover {
+  background: var(--hover, rgb(0 0 0 / 5%));
+}
+mat-logging-editor .le-pickbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+/* 042: xem trước bảng */
+mat-logging-editor .le-prevbox {
+  overflow-x: auto;
+  border: 1px solid var(--line, #ccc);
+  border-radius: 4px;
+}
+mat-logging-editor .le-prevbox table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+mat-logging-editor .le-prevbox th,
+mat-logging-editor .le-prevbox td {
+  padding: 3px 10px;
+  border-right: 1px solid var(--line, #ddd);
+  white-space: nowrap;
+  text-align: left;
+}
+mat-logging-editor .le-prevlabels td {
+  font-size: 11px;
+  color: var(--muted, #666);
+  border-bottom: 1px solid var(--line, #ddd);
+}

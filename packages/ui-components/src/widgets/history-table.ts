@@ -129,7 +129,7 @@ export class MatHistoryTable extends MatHistoryWidget {
     const l = Array.isArray(labels) ? labels[i] : undefined;
     if (typeof l === 'string' && l) return l;
     const id = this.#tags()[i] ?? '';
-    return this.source?.info(id)?.description || id;
+    return this.catalogLabel(id) || this.source?.info(id)?.description || id;
   }
 
   #infoOf(tagId: string): TagInfo {

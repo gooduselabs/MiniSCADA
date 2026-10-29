@@ -127,6 +127,12 @@ export abstract class MatHistoryWidget extends MatWidget {
   // ---- khai báo cho lớp con ----------------------------------------------------------------------------------
 
   /** Nhóm lưu trữ của widget (thuộc tính `group`). */
+  /** Nhãn hiển thị của cột theo bảng lưu trữ (042); rỗng khi chưa đặt. */
+  protected catalogLabel(tagId: string | undefined): string {
+    if (!tagId) return '';
+    return this.group?.tags.find((t) => t.tagId === tagId)?.label ?? '';
+  }
+
   protected groupId(): string {
     return this.prop('group', '');
   }

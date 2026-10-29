@@ -138,6 +138,7 @@ LoggingModel buildLoggingModel(const json& logging, const TagStore& store) {
             c.type = store.def(*idx).type;
             c.column = tj.contains("column") ? tj["column"].get<std::string>()
                                              : defaultColumnName(c.tagId);
+            c.label = tj.value("label", std::string());
             c.deadband = tj.value("deadband", 0.0);
             c.maxLength = tj.value("maxLength", 255);
             c.aggregate = tj.value("aggregate", true);

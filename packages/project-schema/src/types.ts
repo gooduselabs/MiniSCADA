@@ -45,6 +45,8 @@ export type TlsMode = 'disable' | 'prefer' | 'require' | 'verify-full';
 export interface LoggedTag {
   tagId: string;
   column?: string;
+  /** Dòng 1.x (042): nhãn hiển thị của cột ở Lịch sử, báo cáo, biểu đồ, file xuất; runtime cũ từ chối khóa này. */
+  label?: string;
   deadband?: number;
   maxLength?: number;
   /** Định dạng 0.6 (feature 010): false loại Tag khỏi tổng hợp; mặc định true cho Tag số/BOOL. */

@@ -32,6 +32,18 @@ TEST(LoggingConfig, SqliteAffinityFollowsTagType) {
     EXPECT_STREQ(sqliteAffinity(TagType::STRING), "TEXT");
 }
 
+TEST(LoggingConfig, LabelIsOptional) {
+    // 042: label (format 1.x) is read when present; empty otherwise.
+    TagStore s;
+    fillDemo(s);
+    json cfg = json::parse(R"({"schemaVersion": "1.0.0", "groups": [{"id": "a", "name": "A",
+      "mode": "cyclic", "periodMs": 10000, "retentionDays": 7,
+      "tags": [{"tagId": "TANK01.LEVEL", "label": "Mức bồn %"}, {"tagId": "MOTOR01.RUN"}]}]})");
+    LoggingModel m = buildLoggingModel(cfg, s);
+    EXPECT_EQ(m.groups[0].columns[0].label, "Mức bồn %");
+    EXPECT_EQ(m.groups[0].columns[1].label, "");
+}
+
 TEST(LoggingConfig, BuildsModelWithDefaults) {
     TagStore s;
     fillDemo(s);

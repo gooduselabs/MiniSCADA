@@ -3,7 +3,7 @@
 import { GRID_COLUMNS, GRID_LIMITS, type Issue } from '@mat/project-schema';
 import type { StudioApp } from '../app/app.ts';
 import { t } from '../i18n/index.ts';
-import { issueText as codeText } from '../app/code-text.ts';
+import { issueText as codeText, loggingIssueText } from '../app/code-text.ts';
 
 /** Tên màn hình chứa file `issue.file` ('screens/<id>.screen.json'), vắng thì id. */
 function screenName(app: StudioApp, file: string): string | null {
@@ -16,6 +16,8 @@ function screenName(app: StudioApp, file: string): string | null {
 
 /** Thông điệp dễ hiểu của một lỗi (tiếng Việt khi biết mã, không thì thông điệp gốc). */
 export function issueText(app: StudioApp, it: Issue): string {
+  const o = app.store.state.outline;
+  if (o.loggingFile !== null && it.file === o.loggingFile) return loggingIssueText(it, o.logging);
   if (!it.code.startsWith('E_LAYOUT_')) return codeText(it);
   const screen = screenName(app, it.file) ?? it.file;
   const row = /\/layout\/rows\/(\d+)/.exec(it.path ?? '');

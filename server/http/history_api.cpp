@@ -194,7 +194,9 @@ json numOrNull(const std::optional<double>& v) {
 }
 
 json tagInfo(const QueryTag& t) {
-    return {{"tagId", t.tagId}, {"column", t.column}, {"type", t.type}, {"unit", t.unit}};
+    json j = {{"tagId", t.tagId}, {"column", t.column}, {"type", t.type}, {"unit", t.unit}};
+    if (!t.label.empty()) j["label"] = t.label;  // 042: only when set (older clients ignore it)
+    return j;
 }
 
 struct Common {

@@ -44,6 +44,7 @@ export function simHistoryGroups(
         tagId: lt.tagId,
         type,
         ...(typeof t?.unit === 'string' ? { unit: t.unit } : {}),
+        ...(lt.label ? { label: lt.label } : {}),
         sim,
         ...(lt.aggregate === false ? { aggregate: false } : {}),
       };

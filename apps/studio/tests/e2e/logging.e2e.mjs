@@ -101,6 +101,16 @@ export default async function logging({ page, check, shot, axe }) {
   for (let r = 0; r < 4; r++) ids.push(await gridText(page, cell(G, r, 'id')));
   check('thêm bốn nhóm bằng nút Thêm nhóm (id duy nhất)', new Set(ids).size === 4, ids.join(','));
 
+  // ---------- 1b (042). Bảng rỗng: gợi ý + nút Thêm Tag…, chu kỳ mặc định 10 s ----------
+  const iv0 = await gridText(page, cell(G, 0, 'interval'));
+  check('bảng mới: chu kỳ mặc định 10 s', iv0 === '10 s', iv0);
+  await page.waitForSelector(`${ED} [data-role="no-tags"] [data-act="pick-tags-empty"]`);
+  check('bảng 0 Tag: khung gợi ý có nút Thêm Tag…', true);
+  await page.click(`${ED} [data-act="pick-tags-empty"]`);
+  await page.waitForSelector(`${ED} [data-role="tag-picker"]`);
+  await page.click(`${ED} [data-act="pick-cancel"]`);
+  await waitFor(page, (n) => !document.querySelector(`${n} [data-role="tag-picker"]`), ED);
+
   // ---------- 2. Bốn chế độ ----------
   await setCell(page, G, 0, 'name', 'Chu kỳ 1 s');
   await setCell(page, G, 1, 'mode', 'Thay đổi');

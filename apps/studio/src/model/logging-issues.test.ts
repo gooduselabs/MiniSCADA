@@ -90,3 +90,22 @@ describe('bucketLoggingIssues', () => {
     expect(b.file.length).toBe(1);
   });
 });
+
+describe('042: lỗi ở chính nhóm tô đúng ô', () => {
+  it('thiếu tags → ô Số Tag; 0 Tag ở /tags → ô Số Tag; tên bảng → ô Tên bảng; không tô Chế độ', () => {
+    const mk = (path: string, message: string): Issue =>
+      ({ code: 'E_SCHEMA', file: 'logging.json', path, message }) as Issue;
+    const b = bucketLoggingIssues(
+      [
+        mk('/groups/0', 'Instance does not have required property "tags".'),
+        mk('/groups/1/tags', 'Array has too few items (0 < 1).'),
+        mk('/groups/2/table', 'String does not match pattern.'),
+      ],
+      'logging.json',
+    );
+    expect(b.groupCells.get('0:tags')).toHaveLength(1);
+    expect(b.groupCells.get('1:tags')).toHaveLength(1);
+    expect(b.groupCells.get('2:table')).toHaveLength(1);
+    expect([...b.groupCells.keys()].some((k) => k.endsWith(':mode'))).toBe(false);
+  });
+});

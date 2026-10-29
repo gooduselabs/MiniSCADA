@@ -25,6 +25,7 @@ struct QueryTag {
     std::string type;  // FLOAT32 ... as in tags.json
     std::string unit;
     bool aggregated = false;
+    std::string label;  // 042: display label from logging.json; empty when not set (last: aggregate init)
     bool numeric() const { return type != "STRING"; }
 };
 

@@ -306,6 +306,7 @@ HistoryCatalog buildCatalog(const LoggingModel& model,
             QueryTag t;
             t.tagId = g.columns[i].tagId;
             t.column = g.columns[i].column;
+            t.label = g.columns[i].label;
             t.type = typeName(g.columns[i].type);
             t.unit = unitOf ? unitOf(t.tagId) : "";
             t.aggregated =
@@ -688,7 +689,9 @@ QueryStatus exportCsv(ReaderPool::Lease& lease, const ExportParams& p,
     if (p.bom) out.append(csvBom());
     if (p.res == ResParam::Raw) {
         std::vector<std::string> names;
-        for (size_t t : p.tags) names.push_back(g.tags[t].column);
+        // 042: the display label (logging.json `label`) heads the column when set.
+        for (size_t t : p.tags)
+            names.push_back(g.tags[t].label.empty() ? g.tags[t].column : g.tags[t].label);
         out.append(csvHeader(names));
         Stmt s;
         if (!s.prepare(db,
@@ -722,7 +725,8 @@ QueryStatus exportCsv(ReaderPool::Lease& lease, const ExportParams& p,
         if (it == cids.end()) continue;
         wanted.push_back(it->second);
         wantedTags.push_back(t);
-        for (const auto& f : fields) names.push_back(g.tags[t].column + "." + f);
+        const std::string& head = g.tags[t].label.empty() ? g.tags[t].column : g.tags[t].label;
+        for (const auto& f : fields) names.push_back(head + "." + f);
     }
     out.append(csvHeader(names));
     Stmt s;

@@ -18,7 +18,10 @@ import type { ProjectEdit } from './project-doc.ts';
 export type DisplayMode = 'cyclic' | 'onChange' | 'combined' | 'trigger';
 
 export const MAX_TAGS_PER_GROUP = 200;
-export const DEFAULT_PERIOD_MS = 1000;
+/** Chu kỳ mặc định của bảng mới (042: 10 s thay 1 s, đỡ mòn eMMC). */
+export const DEFAULT_PERIOD_MS = 10_000;
+/** Dưới mức này editor cảnh báo nhẹ về mòn eMMC (042). */
+export const FAST_PERIOD_MS = 5000;
 export const DEFAULT_MAX_INTERVAL_MS = 60_000;
 export const DEFAULT_STRING_LENGTH = 64;
 
@@ -234,7 +237,7 @@ export function setTagField(
   cfg: LoggingConfig,
   group: number,
   row: number,
-  field: 'tagId' | 'column' | 'deadband' | 'maxLength' | 'aggregate',
+  field: 'tagId' | 'column' | 'label' | 'deadband' | 'maxLength' | 'aggregate',
   value: string | number | boolean | undefined,
 ): LoggingConfig {
   if (!cfg.groups[group]?.tags[row]) return cfg;

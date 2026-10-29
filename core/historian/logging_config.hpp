@@ -25,6 +25,7 @@ struct LoggedColumn {
     double deadband = 0;
     int maxLength = 255;    // STRING only
     bool aggregate = true;  // 0.2: false leaves the column out of the aggregate tables
+    std::string label;      // 1.x (042): display label; empty = column/tag name (last: aggregate init)
 };
 
 // 0.2 `trigger` group: the row is written on an edge of this tag (which need not be a column).

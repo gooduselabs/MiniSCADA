@@ -365,11 +365,18 @@ export function addColumns(
           : bool
             ? [format11 ? 'onTime' : 'sum']
             : ['avg'];
-      cols.push(
-        bool
-          ? { tagId: id, unit: t('rpt.unit.hour'), decimals: 2, functions }
-          : { tagId: id, functions },
-      );
+      // 042: nhãn hiển thị của Tag trong bảng lưu trữ làm tên cột báo cáo mặc định (tối đa 60 ký tự của reports).
+      const label = logging?.groups
+        .find((g) => g.id === tpl.group)
+        ?.tags.find((x) => x.tagId === id)
+        ?.label?.slice(0, 60);
+      const col: ReportsConfig['reports'][number]['columns'] extends (infer C)[] | undefined
+        ? C
+        : never = bool
+        ? { tagId: id, unit: t('rpt.unit.hour'), decimals: 2, functions }
+        : { tagId: id, functions };
+      if (label) col.label = label;
+      cols.push(col);
     }
   }
   return { cfg: cols.length === before ? cfg : next, rejected };

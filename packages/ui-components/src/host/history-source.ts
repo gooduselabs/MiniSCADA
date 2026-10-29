@@ -9,6 +9,8 @@ export type HistoryRes = 'raw' | '1m' | '1h';
 export interface HistoryCatalogTag {
   tagId: string;
   column: string;
+  /** Nhãn hiển thị của cột (logging.json `label`, 042); vắng khi chưa đặt hoặc runtime cũ. */
+  label?: string;
   type: string;
   unit?: string;
   aggregated: boolean;

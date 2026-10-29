@@ -41,7 +41,7 @@ function groupCol(field: string | undefined): string {
       return 'tags';
     default:
       // periodMs, minIntervalMs, maxIntervalMs, trigger, expectedRowsPerDay
-      return field === 'table' || field === 'destinations' ? 'name' : 'interval';
+      return field === 'table' ? 'table' : field === 'destinations' ? 'name' : 'interval';
   }
 }
 
@@ -49,6 +49,8 @@ function tagCol(field: string | undefined): string {
   switch (field) {
     case 'column':
       return 'column';
+    case 'label':
+      return 'label';
     case 'deadband':
       return 'deadband';
     case 'maxLength':
@@ -101,7 +103,15 @@ export function bucketLoggingIssues(
         if (!inner) map.set(gi, (inner = new Map()));
         push(inner, key, issue);
       } else {
-        const col = groupCol(rest?.split('/')[0]);
+        // Lỗi ở chính nhóm nêu tên thuộc tính (thiếu trường, khóa thừa): tô đúng ô của thuộc tính đó (042), không
+        // mặc định cột Chế độ.
+        const named =
+          rest === undefined
+            ? /^(?:Instance does not have required property|Property) "([^"]+)"/.exec(
+                issue.message,
+              )?.[1]
+            : undefined;
+        const col = groupCol(named ?? rest?.split('/')[0]);
         push(warn ? out.groupWarns : out.groupCells, `${gi}:${col}`, issue);
       }
       continue;

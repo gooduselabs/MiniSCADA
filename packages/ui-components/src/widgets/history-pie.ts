@@ -152,7 +152,9 @@ export class MatHistoryPie extends MatHistoryWidget {
   #labelOf(i: number): string {
     const l = this.item?.props?.labels;
     const v = Array.isArray(l) ? l[i] : undefined;
-    return (typeof v === 'string' && v) || this.#tags()[i] || '';
+    return (
+      (typeof v === 'string' && v) || this.catalogLabel(this.#tags()[i]) || this.#tags()[i] || ''
+    );
   }
 
   #cfg() {

@@ -274,3 +274,57 @@ describe('form Kết nối DB ngoài', () => {
     expect(loggingOf(app).groups[0]!.destinations).toEqual([id]);
   });
 });
+
+describe('042: bảng lưu trữ thân thiện', () => {
+  it('bảng mới: chu kỳ 10 s, 0 Tag → khung gợi ý có nút Thêm Tag…, chọn nhiều Tag thêm một lần', async () => {
+    const { app } = await newHistoryApp();
+    const el = await mountEditor(app);
+    btn(el, 'add-group')!.click();
+    await settled(el);
+    const gi = loggingOf(app).groups.length - 1;
+    expect(loggingOf(app).groups[gi]!.periodMs).toBe(10_000);
+    app.select({ kind: 'group', index: gi });
+    await settled(el);
+    expect(el.querySelector('[data-role="no-tags"]')).not.toBeNull();
+    btn(el, 'pick-tags-empty')!.click();
+    await settled(el);
+    const boxes = [
+      ...el.querySelectorAll<HTMLInputElement>('[data-role="tag-picker"] input[type="checkbox"]'),
+    ];
+    expect(boxes.length).toBeGreaterThan(1);
+    expect(btn(el, 'pick-add')!.disabled).toBe(true);
+    boxes[0]!.click();
+    boxes[1]!.click();
+    await settled(el);
+    btn(el, 'pick-add')!.click();
+    await settled(el);
+    expect(loggingOf(app).groups[gi]!.tags.map((t) => t.tagId)).toEqual([
+      boxes[0]!.dataset.tag,
+      boxes[1]!.dataset.tag,
+    ]);
+    expect(el.querySelector('[data-role="tag-picker"]')).toBeNull();
+  });
+
+  it('chu kỳ < 5 s: cảnh báo mòn eMMC ở ô Chu kỳ; xem trước bảng có time + mỗi Tag một cột, nhãn hiển thị', async () => {
+    const { app } = await newHistoryApp();
+    const el = await mountEditor(app);
+    typeInto(el, 'groups', 0, 'mode', 'Chu kỳ');
+    await settled(el);
+    typeInto(el, 'groups', 0, 'interval', '1 s');
+    app.select({ kind: 'group', index: 0 });
+    await settled(el);
+    expect(loggingOf(app).groups[0]).toMatchObject({ mode: 'cyclic', periodMs: 1000 });
+    expect(grid(el, 'groups').warns.get('0:interval')?.join(' ')).toMatch(/eMMC/);
+    typeInto(el, 'tags', 0, 'label', 'Nhãn thử');
+    await settled(el);
+    const prev = el.querySelector('[data-role="table-preview"]')!;
+    const heads = [...prev.querySelectorAll('thead tr:first-child th')].map((x) =>
+      norm(x.textContent),
+    );
+    expect(heads[0]).toBe('time');
+    expect(heads.length).toBe(loggingOf(app).groups[0]!.tags.length + 1);
+    expect(norm(prev.querySelector('.le-prevlabels')?.textContent)).toContain('Nhãn thử');
+    expect(loggingOf(app).groups[0]!.tags[0]!.label).toBe('Nhãn thử');
+    expect(cellText(el, 'groups', 0, 'table')).not.toBe('');
+  });
+});
