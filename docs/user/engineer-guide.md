@@ -508,9 +508,68 @@ Cần project định dạng 1.0.0 (mục 3); project cũ hơn thì các lệnh 
 
 Logic chạy trên runtime 1.0.0, theo chu kỳ quét (`logic.scanMs`, mặc định 100 ms). Mọi khối nằm trong `logic.json`, sửa ở nút **Logic** trên cây (các nhóm Luật, Timer, Counter, Cộng dồn, Giờ chạy, Lịch, Ghi PLC; tất cả mở chung tab "Logic"). Project chưa có logic: bấm **Tạo logic.json**. Project định dạng cũ hơn 1.0.0: editor báo "Logic cần project định dạng 1.0.0", nâng cấp project trước (mục 3).
 
-Tab Logic có hai khung nhìn của cùng `logic.json`, chọn bằng nút **Sơ đồ** / **Bảng** đầu thanh công cụ (Studio nhớ lựa chọn trên máy): **Sơ đồ** (mặc định, mục 9.1) vẽ khối và dây nối kiểu FBD; **Bảng** liệt kê khối theo nhóm như trước (mục 9.2).
+Tab Logic có ba khung nhìn của cùng `logic.json`, chọn bằng nút đầu thanh công cụ (Studio nhớ lựa chọn trên máy): **Luật** (mặc định, mục 9.0) — mỗi luật là một thẻ đọc như câu, đủ cho hầu hết việc; **Nâng cao: Sơ đồ** (mục 9.1) vẽ khối và dây nối kiểu FBD; **Nâng cao: Bảng** liệt kê khối theo nhóm (mục 9.2). Ba khung nhìn sửa cùng một tệp, đổi qua lại lúc nào cũng được.
 
-### 9.1. Sơ đồ khối
+### 9.0. Luật dạng thẻ (cách dễ nhất)
+
+Mỗi luật là một **thẻ** có màu và icon theo cách kích hoạt, đọc như một câu tiếng Việt:
+
+| Thẻ | Màu, icon | Câu mẫu |
+|---|---|---|
+| **Khi giá trị** | xanh dương, tia sét | KHI Nhiệt độ lò > 80 liên tục 5 giây ➜ THÌ Bật Quạt làm mát |
+| **Theo giờ** | tím, đồng hồ | VÀO LÚC 07:00 mỗi ngày ➜ THÌ Bật Bơm 1 · hoặc TỪ 07:00 ĐẾN 17:00 thứ 2 – thứ 6 |
+| **Lặp lại** | xanh ngọc, mũi tên vòng | MỖI 5 phút ➜ THÌ Cộng thêm 1 vào Bộ đếm |
+| **Trễ / Timer** | cam, đồng hồ cát | Trễ bật KHI Bơm chạy bật liên tục 5 giây THÌ đầu ra bật |
+| **Đếm** | xanh lá | MỖI LẦN Cảm biến bật lên ➜ cộng 1; ĐỦ 10 lần thì bật đầu ra |
+| **Nâng cao** | xám, *fx* | luật có biểu thức phức tạp: "Luật nâng cao — mở bằng trình soạn đầy đủ" |
+
+Mọi ô trong câu là **chip** bấm được: ô Tag (bấm để tìm theo tên hoặc mô tả, hoặc kéo một Tag từ danh sách **Tag** của task card bên phải thả vào), phép so sánh (=, ≠, >, ≥, <, ≤, **bật lên**, **tắt xuống**), giá trị (hoặc nút bên cạnh để so với một Tag khác), **VÀ / HOẶC** để thêm điều kiện, **liên tục … giây** để lọc nhiễu (0 = làm ngay). Phần **THÌ** có một hoặc nhiều việc: **Bật**, **Tắt**, **Ghi** Tag = giá trị, **Đảo** (Tag nội bộ BOOL), **Xung** Tag trong X giây (Tag thiết bị), **Cộng thêm** n vào Tag, **Ghi biểu thức**. Phần **KHI HẾT** (không bắt buộc) là việc làm khi điều kiện hết đúng; với lịch "từ … đến …" là việc làm **lúc kết thúc**.
+
+Ghi vào **Tag thiết bị** (PLC) thì Studio tự khai quyền ghi cho Tag đó (mục **Ghi PLC**, id `wa_…`, chip "ghi xuống thiết bị" trên thẻ); giới hạn tần suất và giá trị cho phép chỉnh ở Nâng cao: Bảng › Ghi PLC. Ghi vào **Tag nội bộ** không cần khai.
+
+Trên mỗi thẻ: công tắc **bật/tắt luật**, **Thử**, **Nhân bản**, *fx* (**Mở trong trình soạn đầy đủ**), **Xóa**, **Nhóm** (xếp luật theo khu vực, ví dụ "Khu bồn"; chỉ để xem trong Studio, lưu trong `logic.layout.json`). Kéo thẻ (giữ chỗ trống của thẻ hoặc biểu tượng ⋮⋮) thả lên thẻ khác để đổi thứ tự. Thanh trên cùng có bộ lọc theo loại và ô **Tìm luật, Tag…**. Lỗi hiện ngay trong thẻ bằng câu (ô đỏ): "Chưa chọn Tag cho điều kiện", "Tag … chỉ đọc — không ghi được", "Giờ … sai — nhập dạng HH:MM"… Còn lỗi thì không nạp xuống được (như mọi lỗi khác).
+
+**Thử** mở khung ngay dưới câu: nhập giá trị giả cho các Tag của điều kiện (luật Theo giờ: chọn thứ và giờ giả lập), bấm **Chạy thử**. Studio chạy đúng luật đó bằng bộ Thử logic (cùng engine với thiết bị, kể cả thời gian giữ liên tục và giới hạn ghi) rồi báo "Luật KÍCH HOẠT sau 5 giây" kèm việc sẽ làm (Tag = giá trị, "gửi lệnh ghi xuống thiết bị" hay "đặt Tag nội bộ", hoặc bị chặn vì sao), hoặc "Điều kiện chưa đúng — luật không làm gì". Không có gì được gửi ra thiết bị.
+
+**Thêm luật** mở bộ chọn mẫu có hình: *Bằng giá trị thì làm…*, *Vượt ngưỡng thì làm…*, *Đến giờ thì làm…*, *Lặp lại mỗi…*, *Chạy máy theo lịch* (giờ bật / giờ tắt), *Đếm số lần*, *Trễ bật / trễ tắt (TON/TOF)*, *Khóa liên động*. Chọn một mẫu, thẻ mới hiện ở cuối danh sách với các ô Tag nhấp nháy viền đứt: chỉ còn chọn Tag và sửa số.
+
+![Khung nhìn Luật: thẻ "Khi giá trị" (xanh dương) và "Theo giờ" (tím) đọc như câu với các chip Tag, phép so sánh, giá trị, liên tục … giây; thẻ "Nâng cao" xám; bộ lọc theo loại và nút Thêm luật](img/eng-logic-luat.png)
+
+![Bộ chọn mẫu Thêm luật: tám mẫu có hình minh họa — bằng giá trị, vượt ngưỡng, đến giờ, lặp lại, chạy theo lịch, đếm, trễ bật/tắt, khóa liên động](img/eng-logic-mau.png)
+
+#### Ví dụ 1 — Bằng giá trị thì bật
+
+"Khi trạng thái bơm = 1 thì bật chế độ tự động."
+
+1. Cây project › **Logic** (tab mở ở khung nhìn **Luật**). Bấm **Thêm luật** › **Bằng giá trị thì làm…**.
+2. Ở chip **chọn Tag…** sau **KHI**: gõ "PUMP01.STATE", chọn dòng. Ô giá trị để **1** (sửa nếu cần).
+3. Ở **THÌ**: để **Bật**, bấm chip **chọn Tag…** và chọn `INT.MODE_AUTO`.
+4. Đặt tên luật ở đầu thẻ, ví dụ "Chọn tự động khi trạng thái = 1".
+5. **Thử** › nhập `PUMP01.STATE` = 1 › **Chạy thử**: thấy "Luật KÍCH HOẠT … INT.MODE_AUTO = true (đặt Tag nội bộ)".
+
+Muốn tự tắt lại khi trạng thái khác 1: **KHI HẾT** › **Thêm việc khi hết** › **Tắt** `INT.MODE_AUTO`.
+
+#### Ví dụ 2 — 7 giờ sáng thì chạy bơm
+
+1. **Thêm luật** › **Đến giờ thì làm…**. Thẻ tím hiện "VÀO LÚC 07:00 mỗi ngày".
+2. Đổi giờ ở ô giờ nếu cần; ô ngày chọn **mỗi ngày**, **thứ 2 – thứ 6**, **thứ 7, CN** hoặc **chọn ngày** (bấm từng thứ).
+3. **THÌ** › **Bật** › chọn Tag thiết bị `PUMP01.RUN_CMD` (thẻ hiện chip "ghi xuống thiết bị": Studio đã tự khai quyền ghi).
+4. **Thử** › chọn T2, 07:00 › **Chạy thử**: "Luật KÍCH HOẠT … PUMP01.RUN_CMD = true (gửi lệnh ghi xuống thiết bị)".
+
+Muốn bơm chạy cả khung giờ (07:00 bật, 17:00 tắt): dùng mẫu **Chạy máy theo lịch**, hoặc đổi "vào lúc" thành **trong khung giờ** và thêm việc **LÚC KẾT THÚC** › **Tắt**. Bên trong, luật "Theo giờ" là một khối **Lịch** (khung một phút cho "vào lúc") cộng một luật dùng đầu ra của lịch; khi đồng hồ thiết bị chưa đồng bộ, luật tạm treo.
+
+#### Ví dụ 3 — Vượt ngưỡng liên tục thì tắt
+
+"Mức bồn > 80 % liên tục 5 giây thì tắt bơm."
+
+1. **Thêm luật** › **Vượt ngưỡng thì làm…** (sẵn "> 80 liên tục 5 giây", việc **Tắt**).
+2. Chip Tag sau **KHI**: kéo `TANK01.LEVEL` từ danh sách Tag bên phải thả vào (hoặc bấm và tìm).
+3. **THÌ** › **Tắt** › chọn `PUMP01.RUN_CMD`.
+4. **Thử** với `TANK01.LEVEL` = 85: kích hoạt sau 5 giây, "PUMP01.RUN_CMD = false"; với 70: "Điều kiện chưa đúng".
+
+**Luật nâng cao**: điều kiện có phép tính, hàm, hay trộn VÀ với HOẶC (ví dụ `TANK01.LEVEL * 2 > TANK01.SP + 5`) hiện thẻ xám "Luật nâng cao — mở bằng trình soạn đầy đủ"; nút đó mở Bảng ở đúng luật. Mọi thứ của Sơ đồ và Bảng (mục 9.1, 9.2) vẫn dùng được như trước. Engine hiện **chưa** có: kích hoạt theo alarm, gửi thông báo từ luật, "chờ X giây rồi…" giữa các việc, điều kiện "thay đổi giá trị" (bất kỳ thay đổi nào) — thay bằng điều kiện so sánh, bật lên/tắt xuống, hoặc giữ liên tục.
+
+### 9.1. Nâng cao: Sơ đồ khối
 
 Mỗi khối là một nút: đầu khối có loại (Luật, TON/TOF/TP, Counter, Cộng dồn, Giờ chạy, Lịch, Ghi PLC) và id; bên trái là cổng vào (ô biểu thức: `when`, `in`, `up`, `down`, `reset`, `source`, `run`), bên phải là cổng ra (Tag logic `q`, `et`, `value`, `reached`, `total`…; luật có ↑ Khi lên và ↓ Khi xuống); dòng cuối tóm tắt tham số (giữ 5 s, PT 1 min, đặt trước 1000…). Biểu thức của cổng vào được vẽ thành cổng logic: `&&` là **AND**, `||` là **OR**, `!` là **NOT**, so sánh là ô "> 80", "< 20"…; phép tính khác (số học, hàm) là ô biểu thức. Tag đầu vào là hộp tên Tag gắn vào chân (đi theo khối). Đầu ra của khối dùng ở khối khác nối bằng dây liền; hành động của luật tới mục **Ghi PLC** hoặc Tag đích là dây đứt màu hổ phách. Chấm cổng xanh dương là BOOL, tím là số.
 
@@ -534,7 +593,7 @@ Sơ đồ không đổi định dạng `logic.json`. Vị trí khối lưu riên
 
 ![Sơ đồ có lỗi: Tag số PUMP01.FLOW nối vào điều kiện BOOL và Tag TANK09.LEVEL không có trong project: hộp Tag, dây, cổng và viền khối đỏ; tab Thông tin liệt kê E_LOGIC_TYPE và E_LOGIC_TAG_REF](img/eng-logic-so-do-loi.png)
 
-### 9.2. Bảng và các khối
+### 9.2. Nâng cao: Bảng và các khối
 
 Thao tác ở Bảng: **Thêm khối** (Insert), **Xóa** (Delete), **Chuyển lên**/**Chuyển xuống**, F2 đổi id (Studio cập nhật mọi tham chiếu), ô "Tìm id, tên, Tag", ô "Chỉ dòng lỗi", **Kiểm tra** (F7). Dock dưới có **Inspector** (trường của khối đang chọn), **Thông tin** (lỗi và cảnh báo, nhấp đúp để nhảy tới ô; F8 / Shift+F8 tới lỗi kế / trước ở bất kỳ đâu trong editor) và **Thử logic**. Task card **Khối / Tag** bên phải: kéo một khối vào bảng (hoặc nhấp đúp) để thêm, kéo một Tag vào ô biểu thức. Giới hạn: 200 luật, 100 timer, 100 counter, 50 cộng dồn, 50 giờ chạy, 50 lịch, 100 mục ghi (`E_LOGIC_LIMIT`).
 

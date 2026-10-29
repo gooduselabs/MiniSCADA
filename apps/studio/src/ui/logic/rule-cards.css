@@ -798,7 +798,7 @@ select.lgc-chip {
 }
 .lgc-tpl-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 10px;
 }
 .lgc-tpl-item {
@@ -844,6 +844,7 @@ select.lgc-chip {
   display: block;
   width: 100%;
   height: auto;
+  max-height: 84px;
 }
 
 /* nét vẽ của hình minh họa */
