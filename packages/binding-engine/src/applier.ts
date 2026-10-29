@@ -703,8 +703,11 @@ export class DomApplier {
       }
   }
 
-  /** Đổi `prefers-reduced-motion` giữa chừng: dựng lại hoặc gỡ hoạt ảnh theo giá trị gần nhất. */
-  private refreshMotion(): void {
+  /**
+   * Đổi điều kiện chuyển động giữa chừng (`prefers-reduced-motion`, hoặc `reducedMotion` tiêm vào như thiết lập project
+   * "Chuyển động của widget" ở trang vận hành, ADR 056): dựng lại hoặc gỡ hoạt ảnh theo giá trị gần nhất.
+   */
+  refreshMotion(): void {
     if (this.disposed) return;
     for (const list of this.byTag.values())
       for (const s of list)

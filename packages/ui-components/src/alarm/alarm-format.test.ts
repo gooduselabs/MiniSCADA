@@ -408,3 +408,36 @@ describe('BlinkClock (§8)', () => {
     expect(root.dataset.blinkPhase).toBe('on');
   });
 });
+
+describe('BlinkClock theo thiết lập project, không theo prefers-reduced-motion (ADR 056)', () => {
+  it('matchMedia báo reduce vẫn nhấp nháy khi motion Bật; Tắt thì still và dừng', () => {
+    const orig = globalThis.matchMedia;
+    globalThis.matchMedia = ((q: string) => ({
+      matches: q.includes('reduce'),
+      addEventListener() {},
+      removeEventListener() {},
+    })) as unknown as typeof matchMedia;
+    try {
+      document.documentElement.dataset.matMotion = 'on';
+      const timers: Array<() => void> = [];
+      const clock = new BlinkClock({
+        root: document.documentElement,
+        hidden: () => false,
+        setTimer: (fn) => timers.push(fn),
+        clearTimer: () => timers.splice(0),
+      });
+      const off = clock.acquire();
+      expect(timers.length).toBe(1);
+      expect(clock.still).toBe(false);
+      document.documentElement.dataset.matMotion = 'off';
+      document.dispatchEvent(new Event('mat-motion'));
+      expect(timers.length).toBe(0);
+      expect(clock.still).toBe(true);
+      expect(clock.phase).toBe('on');
+      off();
+    } finally {
+      globalThis.matchMedia = orig;
+      delete document.documentElement.dataset.matMotion;
+    }
+  });
+});

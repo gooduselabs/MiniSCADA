@@ -121,17 +121,14 @@ export class MatAlarmCount extends MatWidget {
         --c-soft: var(--mat-alarm-green-soft);
         --c-ink: var(--mat-alarm-green-ink);
       }
-      @media (prefers-reduced-motion: no-preference) {
-        :host([data-blink-phase='off']) button.blink {
-          background: var(--c-soft);
-          color: var(--mat-text);
-        }
+      /* ADR 056: blink follows the project motion setting, not prefers-reduced-motion. */
+      :host([data-blink-phase='off']) button.blink {
+        background: var(--c-soft);
+        color: var(--mat-text);
       }
-      @media (prefers-reduced-motion: reduce) {
-        button.blink {
-          outline: 3px solid var(--mat-text);
-          outline-offset: 2px;
-        }
+      :host([data-blink-still]) button.blink {
+        outline: 3px solid var(--mat-text);
+        outline-offset: 2px;
       }
     `,
   ];
@@ -167,11 +164,13 @@ export class MatAlarmCount extends MatWidget {
     if (blink && !this.#blinkOff) {
       this.#blinkOff = sharedBlinkClock(this.ownerDocument).acquire((p) => {
         this.dataset.blinkPhase = p;
+        this.toggleAttribute('data-blink-still', sharedBlinkClock(this.ownerDocument).still);
       });
     } else if (!blink && this.#blinkOff) {
       this.#blinkOff();
       this.#blinkOff = null;
       delete this.dataset.blinkPhase;
+      this.removeAttribute('data-blink-still');
     }
   }
 

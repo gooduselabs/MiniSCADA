@@ -309,7 +309,7 @@ Khóa **không chặn xem**: viewer thấy đủ bảng, banner, số đếm (US
 - **Tối đa 1 Hz** (FR-058, D25): chu kỳ 1 s, nửa sáng nửa tối (không nhanh hơn 3 lần/giây, WCAG 2.3.1).
 - **`BlinkClock`** (đơn lẻ trên trang): một bộ hẹn giờ 500 ms đổi thuộc tính `data-blink-phase="on|off"` ở phần tử gốc của trang; CSS của hàng và banner phản ứng theo `:root[data-blink-phase="off"] .mat-alarm-blink`. Mọi hàng nhấp nháy **đồng pha** (tốt hơn CSS animation theo từng phần tử). Dừng khi `document.hidden`. Chỉ chạy khi có ít nhất một phần tử đăng ký nhấp nháy.
 - **Hàng nhấp nháy** khi: `ACTIVE_UNACK` **và** lớp `blink`. Pha tối đổi nền sang `--mat-alarm-<màu>-soft`; chữ không đổi.
-- **`prefers-reduced-motion: reduce`:** `BlinkClock` không khởi động; thay bằng **viền đậm tĩnh** 3 px màu của lớp quanh hàng và banner (US1 kịch bản 2). Theo dõi thay đổi tùy chọn bằng `matchMedia(...).addEventListener('change')`.
+- **Thiết lập project "Chuyển động của widget" Tắt** (ADR-056 thay `prefers-reduced-motion`, vốn không còn tắt nhấp nháy báo động): `BlinkClock` không khởi động, `still` đúng, phần tử nhận `data-blink-still` và vẽ **viền đậm tĩnh** 3 px quanh hàng/nút. Theo dõi thay đổi bằng sự kiện `mat-motion` (`onMotionChange`).
 - `RTN_UNACK`: không nhấp nháy mạnh; viền 2 px nét đứt màu của lớp.
 - Chế độ `edit` (Studio): không có `BlinkClock`, trạng thái hiển thị tĩnh theo pha "sáng".
 - Tab ẩn: trình duyệt tự giảm nhấp nháy; tiêu đề tab báo thay (§11, FR-066).

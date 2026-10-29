@@ -245,9 +245,28 @@ export default async function run(ctx) {
     shownStates.join(','),
   );
 
-  // ---- giảm chuyển động (CDP) ----
+  // ---- giảm chuyển động (CDP): ADR 056 — hoạt ảnh trạng thái vẫn chạy, chỉ thiết lập project tắt được ----
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
-  await until(async () => (await animCount()) === 0, 'giảm chuyển động gỡ hoạt ảnh');
+  await sleep(300);
+  const reducedStates = [
+    ...(await probe('el_fan')).states,
+    ...(await probe('el_blink')).states,
+    ...(await probe('el_pipe')).states,
+  ];
+  ctx.check(
+    'prefers-reduced-motion: reduce, motion Bật: quay/nhấp nháy/dòng chảy vẫn running',
+    (await animCount()) === 3 &&
+      reducedStates.length === 3 &&
+      reducedStates.every((s) => s === 'running'),
+    reducedStates.join(','),
+  );
+  const setMotion = (v) =>
+    page.evaluate((m) => {
+      document.documentElement.dataset.matMotion = m;
+      document.dispatchEvent(new Event('mat-motion'));
+    }, v);
+  await setMotion('off');
+  await until(async () => (await animCount()) === 0, 'motion Tắt gỡ hoạt ảnh');
   const rb = [];
   const rp = [];
   for (let i = 0; i < 6; i++) {
@@ -262,9 +281,10 @@ export default async function run(ctx) {
   );
   ctx.check('giảm chuyển động: dòng chảy đứng yên', new Set(rp).size === 1, rp.join(','));
   await axeMotion(ctx, 'trang có hoạt ảnh, giảm chuyển động (T114)', 'reduce');
+  await setMotion('on');
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
-  await until(async () => (await animCount()) === 3, 'bỏ giảm chuyển động dựng lại hoạt ảnh');
-  ctx.check('bỏ giảm chuyển động: hoạt ảnh trở lại', true);
+  await until(async () => (await animCount()) === 3, 'motion Bật dựng lại hoạt ảnh');
+  ctx.check('motion Bật lại: hoạt ảnh trở lại', true);
   await axeMotion(
     ctx,
     'trang có hoạt ảnh đang chạy: quay, nhấp nháy, dòng chảy (T114)',

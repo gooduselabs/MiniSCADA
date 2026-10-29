@@ -68,20 +68,14 @@ export const widgetStyles = css`
     flex-direction: column;
     padding: 8px 10px;
   }
-  /* Feature 029: nhấp nháy theo ngưỡng; giảm chuyển động thì viền đỏ đứng yên thay cho nhấp nháy. */
+  /* Feature 029: nhấp nháy theo ngưỡng. Báo động là thông tin vận hành (ADR 056): không theo prefers-reduced-motion;
+     chỉ "still" (thiết lập project, ngoài vùng nhìn, thiết kế) mới thay bằng viền đỏ đứng yên. */
   .blink {
     animation: mat-blink 1s steps(2, start) infinite;
   }
   @keyframes mat-blink {
     to {
       visibility: hidden;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .blink {
-      animation: none;
-      outline: 2px solid var(--mat-bad, #c42b2b);
-      outline-offset: 1px;
     }
   }
   /* Feature 037: widget đứng yên (thiết kế, ngoài vùng nhìn, project tắt chuyển động): không hoạt ảnh nào chạy;

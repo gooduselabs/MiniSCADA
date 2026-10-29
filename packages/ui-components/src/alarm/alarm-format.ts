@@ -12,6 +12,7 @@ import type {
   AlarmState,
 } from '../host/types.ts';
 import { vi } from '../i18n/vi.ts';
+import { motionOn, onMotionChange } from '../widgets/motion.ts';
 import type { AlarmIconName } from './alarm-icons.ts';
 
 export type AlarmColumn = 'time' | 'priority' | 'area' | 'text' | 'value' | 'state' | 'ackUser';
@@ -383,7 +384,8 @@ export interface BlinkClockOptions {
 
 /**
  * Một bộ hẹn giờ 500 ms đổi `data-blink-phase="on|off"` ở gốc trang (chu kỳ 1 s = 1 Hz, WCAG 2.3.1): mọi hàng nhấp nháy
- * đồng pha. Chỉ chạy khi có người đăng ký, tab hiện và không `prefers-reduced-motion` (khi đó viền đậm tĩnh bằng CSS).
+ * đồng pha. Chỉ chạy khi có người đăng ký, tab hiện và thiết lập project bật chuyển động (tắt: `still`, viền đậm tĩnh
+ * bằng CSS). Không theo `prefers-reduced-motion` (ADR 056).
  */
 export class BlinkClock {
   phase: BlinkPhase = 'on';
@@ -402,10 +404,10 @@ export class BlinkClock {
     this.#root = o.root ?? document.documentElement;
     this.#set = o.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
     this.#clear = o.clearTimer ?? ((h) => clearTimeout(h as ReturnType<typeof setTimeout>));
-    this.#reduced =
-      o.reducedMotion ??
-      (() =>
-        typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    // Báo động là thông tin vận hành (ADR 056): không theo `prefers-reduced-motion`, chỉ theo thiết lập project
+    // "Chuyển động của widget" (setMotion).
+    const doc = this.#root.ownerDocument;
+    this.#reduced = o.reducedMotion ?? (() => !motionOn(doc));
     this.#hidden = o.hidden ?? (() => typeof document !== 'undefined' && document.hidden);
     this.#period = o.periodMs ?? 500;
   }
@@ -430,10 +432,12 @@ export class BlinkClock {
     if (this.#wired || typeof document === 'undefined') return;
     this.#wired = true;
     document.addEventListener('visibilitychange', () => this.#sync());
-    if (typeof matchMedia === 'function') {
-      const mq = matchMedia('(prefers-reduced-motion: reduce)');
-      mq.addEventListener?.('change', () => this.#sync());
-    }
+    onMotionChange(this.#root.ownerDocument, () => this.#sync());
+  }
+
+  /** Có người đăng ký nhưng thiết lập tắt chuyển động: CSS vẽ viền đậm tĩnh thay cho nhấp nháy. */
+  get still(): boolean {
+    return this.#refs > 0 && this.#reduced();
   }
 
   #running(): boolean {

@@ -77,20 +77,20 @@
   background: var(--mat-alarm-amber);
   color: var(--mat-alarm-amber-ink);
 }
+/* Rung chuông một lần là trang trí: theo prefers-reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
   .al-bell-btn[data-ring] .al-bell-ic {
     transform-origin: 50% 2px;
     animation: al-bell-ring 1.1s ease-in-out;
   }
-  .al-bell-btn[data-priority='critical'] .al-bell-badge {
-    animation: al-bell-pulse 2s ease-out infinite;
-  }
 }
-@media (prefers-reduced-motion: reduce) {
-  /* Không chuyển động: vòng viền tĩnh cho khẩn cấp. */
-  .al-bell-btn[data-priority='critical'] {
-    box-shadow: 0 0 0 2px var(--mat-alarm-red);
-  }
+/* Nhịp badge khẩn cấp là thông tin vận hành (ADR 056): không theo prefers-reduced-motion, chỉ theo thiết lập project
+   "Chuyển động của widget" (setMotion: data-mat-motion trên <html>); tắt thì vòng viền tĩnh. */
+:root:not([data-mat-motion='off']) .al-bell-btn[data-priority='critical'] .al-bell-badge {
+  animation: al-bell-pulse 2s ease-out infinite;
+}
+:root[data-mat-motion='off'] .al-bell-btn[data-priority='critical'] {
+  box-shadow: 0 0 0 2px var(--mat-alarm-red);
 }
 @keyframes al-bell-ring {
   0%,

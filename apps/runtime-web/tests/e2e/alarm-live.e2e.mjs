@@ -539,14 +539,30 @@ export default async function run(ctx) {
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
   await open(ctx, https, '#/alarms');
   await until(async () => (await bell(page)).n !== '', 'chuông (giảm chuyển động)');
+  // ADR 056: nhấp nháy báo động là thông tin vận hành — vẫn chạy khi motion Bật dù OS báo reduce.
+  const phases = async () => {
+    const ph = new Set();
+    for (let i = 0; i < 8; i++) {
+      ph.add(await page.evaluate(() => document.documentElement.dataset.blinkPhase ?? 'none'));
+      await sleep(150);
+    }
+    return ph;
+  };
+  let ph = await phases();
+  ctx.check('reduce + motion Bật: đồng hồ nhấp nháy vẫn chạy', ph.has('off'), [...ph].join(','));
+  await page.evaluate(() => {
+    document.documentElement.dataset.matMotion = 'off';
+    document.dispatchEvent(new Event('mat-motion'));
+  });
+  await sleep(300);
   b = await bell(page);
-  ctx.check('giảm chuyển động: badge không nháy', b.anim === 'none', JSON.stringify(b));
-  const ph = new Set();
-  for (let i = 0; i < 8; i++) {
-    ph.add(await page.evaluate(() => document.documentElement.dataset.blinkPhase ?? 'none'));
-    await sleep(150);
-  }
-  ctx.check('giảm chuyển động: đồng hồ nhấp nháy không chạy', !ph.has('off'), [...ph].join(','));
+  ctx.check('motion Tắt: badge không nháy', b.anim === 'none', JSON.stringify(b));
+  ph = await phases();
+  ctx.check('motion Tắt: đồng hồ nhấp nháy không chạy', !ph.has('off'), [...ph].join(','));
+  await page.evaluate(() => {
+    document.documentElement.dataset.matMotion = 'on';
+    document.dispatchEvent(new Event('mat-motion'));
+  });
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
 
   // ---- Kịch bản 12: project không có alarm ----

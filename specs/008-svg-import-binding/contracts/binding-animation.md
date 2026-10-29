@@ -97,13 +97,13 @@ Phần tử có một hoặc nhiều binding thuộc `transform.rotate` (tĩnh h
 - Web Animations: `opacity` giữa `1` và `minOpacity`, hoặc `fill`/`stroke` giữa giá trị hiện tại và `color` (bắt buộc khi `mode` ≠ `opacity`); hai khung hình, `easing: steps(1, jump-none)`, `duration` = `period`, `iterations` vô hạn.
 - **Chung pha:** `startTime` = `floor(document.timeline.currentTime / period) · period` cho mọi hoạt ảnh nhấp nháy cùng `period` của một màn hình.
 - Tắt: `cancel()` và xóa thuộc tính `style` đã đặt.
-- `prefers-reduced-motion: reduce`: không tạo hoạt ảnh; bật = `style.opacity = 1` (mode `opacity`) hoặc `fill`/`stroke` = `color`; tắt = trả về gốc.
+- `reducedMotion()` đúng (mặc định `prefers-reduced-motion: reduce`; trang vận hành và Studio: thiết lập project "Chuyển động của widget" Tắt, ADR-056): không tạo hoạt ảnh; bật = `style.opacity = 1` (mode `opacity`) hoặc `fill`/`stroke` = `color`; tắt = trả về gốc.
 
 ### 4.6 `effect.flow`
 - Điều kiện: phần tử có nét (`stroke` ≠ `none`); nếu chưa có `stroke-dasharray` thì `style.setProperty('stroke-dasharray', dash)`.
 - Web Animations: `strokeDashoffset: 0 → -P` (`P` = tổng các số của `dash`, nhân đôi nếu số phần tử lẻ), `duration = P / 60 · 1000` ms (tốc độ gốc 60 đơn vị/giây), `iterations` vô hạn, `easing: linear`, `direction` thuận hoặc `reverse`; tốc độ `s` đặt bằng `updatePlaybackRate(s / 60)`; `s = 0` thì `pause()`.
 - Chiều: `reverse` XOR (`byValueSign` và giá trị < 0).
-- `prefers-reduced-motion`: đứng yên (không hoạt ảnh); `stroke-dasharray` vẫn đặt.
+- `reducedMotion()` đúng (xem trên, ADR-056): đứng yên (không hoạt ảnh); `stroke-dasharray` vẫn đặt.
 
 ## 5. Hoạt ảnh vô hạn, tab ẩn, dọn dẹp
 
@@ -121,7 +121,8 @@ export interface DomApplierOptions {
   tagUnits?: Record<string, string | undefined>;
   /** Đo hộp bao cục bộ; mặc định `el.getBBox()`. Test thay bằng hàm giả. */
   measure?: (el: Element) => { x: number; y: number; width: number; height: number };
-  /** `prefers-reduced-motion`; mặc định `matchMedia('(prefers-reduced-motion: reduce)')`. */
+  /** Mặc định `matchMedia('(prefers-reduced-motion: reduce)')`. mat-screen `forceMotion` (trang vận hành, Studio) tiêm
+   *  `() => !motionOn(doc)` và gọi `refreshMotion()` khi có sự kiện `mat-motion` (ADR-056). */
   reducedMotion?: () => boolean;
   /** Đồng hồ trang cho pha nhấp nháy; mặc định `document.timeline.currentTime`. */
   now?: () => number;

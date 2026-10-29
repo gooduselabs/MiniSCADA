@@ -127,10 +127,8 @@ export class MatLevel extends MatWidget {
           transform: translateX(-50%);
         }
       }
+      /* Sóng mức là trạng thái vận hành (ADR 056): chỉ "still" tắt; chuyển tiếp chiều cao là trang trí. */
       @media (prefers-reduced-motion: reduce) {
-        .wave {
-          animation: none;
-        }
         .fill {
           transition: none;
         }

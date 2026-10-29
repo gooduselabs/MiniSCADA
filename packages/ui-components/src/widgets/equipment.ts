@@ -183,11 +183,7 @@ export class MatWEquipment extends ControlWidget {
           transform: rotate(360deg);
         }
       }
-      @media (prefers-reduced-motion: reduce) {
-        .spin .rotor {
-          animation: none;
-        }
-      }
+      /* Rotor quay là trạng thái vận hành (ADR 056): không theo prefers-reduced-motion, chỉ "still". */
       .btns {
         display: flex;
         gap: 6px;

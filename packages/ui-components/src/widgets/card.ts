@@ -303,6 +303,7 @@ export class MatCard extends MatWidget {
           background: rgba(255, 255, 255, 0.32);
         }
       }
+      /* Nháy số khi đổi giá trị là trang trí (ADR 056): vẫn theo prefers-reduced-motion. */
       @media (prefers-reduced-motion: reduce) {
         .fl-a,
         .fl-b {

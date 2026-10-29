@@ -1,5 +1,7 @@
 # ADR-024: Binding 0.4.0 và animation: đích mới, `rangeMap`, hợp biến đổi, hoạt ảnh bằng Web Animations
 
+> Sửa đổi: điểm 6, 7 (`prefers-reduced-motion`) ở trang vận hành và Studio thay bằng thiết lập project — xem [ADR-056](056-operational-motion-not-reduced.md).
+
 - **Trạng thái:** **Accepted** phần đã đo trên x64 (feature 008, 2026-10-16): hợp biến đổi, `clipLevel`, hoạt ảnh (SC-008, SC-014), tương thích 0.1 đến 0.3 (SC-011). **Vẫn Proposed** phần chờ: Chrome 120 và máy yếu (ngưỡng `W_ANIM_MANY` 64, D34), BL335 (T123, T124). Tổng hợp: [008-acceptance.md](../reports/008-acceptance.md).
 - **Ngày:** 2026-10-16 (đề xuất 2026-10-13)
 - **Liên quan:** [specs/008-svg-import-binding](../../specs/008-svg-import-binding/plan.md), research R1, R8–R12; contracts [project-format-0.4.md](../../specs/008-svg-import-binding/contracts/project-format-0.4.md), [binding-animation.md](../../specs/008-svg-import-binding/contracts/binding-animation.md); [ADR-004](004-schema-versioning.md), [ADR-007](007-screen-isolation.md), [ADR-013](013-screen-model-v1.md), [ADR-015](015-expression-language.md) (khoảng của bảng giá trị); lộ trình v2 §4.4; Constitution II, V, VII.

@@ -292,6 +292,8 @@ async function main(): Promise<void> {
   screenEl.tags = source;
   screenEl.host = host;
   screenEl.mode = 'run';
+  // ADR 056: hoạt ảnh trạng thái không theo prefers-reduced-motion, chỉ theo thiết lập project (setMotion bên dưới).
+  screenEl.forceMotion = true;
   screenEl.history = histSource;
   screenEl.viewport = 'auto';
   screenEl.loadSvg = (p) => store.loadSvg(p);

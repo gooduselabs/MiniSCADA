@@ -14,6 +14,7 @@ import { vi } from '../i18n/vi.ts';
 import type { ModalRegistry } from '../control/modal-registry.ts';
 import type { ActionHost, TagSource } from '../host/types.ts';
 import { bindSvgEvents, type StatusSink } from './svg-events.ts';
+import { onMotionChange } from '../widgets/motion.ts';
 
 /** Ngữ cảnh gắn sự kiện phần tử (0.4): đọc lại mỗi lần `syncEvents` để theo host/mode hiện thời. */
 export interface SvgItemEventsContext {
@@ -32,7 +33,10 @@ export interface SvgItemOptions {
   loadSvg: (path: string) => Promise<string>;
   loadBindings: (path: string) => Promise<ElementBindings02[]>;
   raf: (cb: () => void) => unknown;
-  /** Thay `prefers-reduced-motion` cho DomApplier (Studio: `() => false`); vắng thì theo hệ điều hành. */
+  /**
+   * Thay `prefers-reduced-motion` cho DomApplier (mat-screen `forceMotion`: `() => !motionOn(doc)`, ADR 056); vắng thì
+   * theo hệ điều hành. Có giá trị thì nghe sự kiện `mat-motion` để áp lại.
+   */
   reducedMotion?: () => boolean;
   /** Gọi khi đã tải xong (thành công hay lỗi). */
   onLoaded?: () => void;
@@ -56,6 +60,7 @@ export class SvgItemView {
   readonly key: string;
   #ids: string[] = [];
   #applier: DomApplier | null = null;
+  #motionOff: (() => void) | null = null;
   #mounted: MountedScreen | null = null;
   #events: ElementEvents = [];
   #eventsBound: { dispose(): void; refresh(): void } | null = null;
@@ -224,6 +229,8 @@ export class SvgItemView {
     this.#eventsBound = null;
     this.#eventsCtx = null;
     this.#events = [];
+    this.#motionOff?.();
+    this.#motionOff = null;
     this.#applier?.dispose();
     this.#applier = null;
     this.#ids = [];
@@ -280,6 +287,9 @@ export class SvgItemView {
       restoreOnDispose: true,
     });
     this.#applier = applier;
+    // Trang vận hành: reducedMotion theo thiết lập project (ADR 056); đổi thiết lập thì dựng lại/gỡ hoạt ảnh.
+    if (this.opt.reducedMotion)
+      this.#motionOff = onMotionChange(host.ownerDocument, () => applier.refreshMotion());
     if (mounted.missingUids.length || applier.missing.length)
       console.warn('elementUid không có trong SVG, bỏ binding:', [
         ...new Set([...mounted.missingUids, ...applier.missing]),
@@ -312,6 +322,8 @@ export class SvgItemView {
     this.#eventsBound?.dispose();
     this.#eventsBound = null;
     this.#events = [];
+    this.#motionOff?.();
+    this.#motionOff = null;
     this.#applier?.dispose();
     this.#applier = null;
     this.#mounted?.unmount();

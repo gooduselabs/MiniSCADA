@@ -19,6 +19,7 @@ import type { HistorySource } from '../host/history-source.ts';
 import { vi } from '../i18n/vi.ts';
 import { installTokens } from '../styles/tokens.ts';
 import { elementNameFor, registerWidgets } from '../widgets/register.ts';
+import { motionOn } from '../widgets/motion.ts';
 import { computeFit, type Fit } from './fit.ts';
 import { collectTagIds, isHistoryWidget, layersOf } from './layers.ts';
 import { deepActiveElement, missingTagsOf, nextFocusIndex, trapTab } from './popup-layer.ts';
@@ -114,9 +115,10 @@ export class MatScreen extends LitElement {
   /** Tiêm rAF/ResizeObserver (test); vắng thì dùng của trình duyệt. */
   declare env: ScreenEnv | undefined;
   /**
-   * Bỏ qua `prefers-reduced-motion` của hệ điều hành cho hoạt ảnh binding (quay, nhấp nháy, dòng chảy) của item `svg`.
-   * Studio bật: người thiết kế phải thấy hoạt ảnh khi Thử giá trị/Mô phỏng dù Windows tắt "Hiệu ứng hoạt ảnh" (WebView2
-   * khi đó báo `reduce` và quay bị hủy hẳn). Trang vận hành để mặc định `false` (tôn trọng trợ năng, contract binding-animation).
+   * Bỏ qua `prefers-reduced-motion` của hệ điều hành cho hoạt ảnh binding (quay, nhấp nháy, dòng chảy) của item `svg`;
+   * khi đó chỉ thiết lập project "Chuyển động của widget" (`setMotion`, `motionOn`) quyết định. Studio và trang vận hành
+   * đều bật (ADR 056): hoạt ảnh trạng thái là thông tin vận hành, RDP/chế độ hiệu năng của Windows báo `reduce` không được
+   * làm mất. Mặc định `false` (theo hệ điều hành) cho nơi nhúng khác.
    * Chỉ có hiệu lực với item dựng sau khi đặt.
    */
   declare forceMotion: boolean;
@@ -619,7 +621,7 @@ export class MatScreen extends LitElement {
         loadSvg: this.loadSvg,
         loadBindings: this.loadBindings,
         raf: (cb) => this.#env().raf(cb),
-        ...(this.forceMotion ? { reducedMotion: () => false } : {}),
+        ...(this.forceMotion ? { reducedMotion: () => !motionOn(doc) } : {}),
         events: () => ({
           screenId: this.screen.id,
           host: this.host,

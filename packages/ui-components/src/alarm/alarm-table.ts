@@ -306,21 +306,18 @@ export class MatAlarmTable extends LitElement {
     tr[data-attn] {
       box-shadow: inset 0 0 0 3px var(--mat-warn, #8f5e00);
     }
-    @media (prefers-reduced-motion: no-preference) {
-      :host([data-blink-phase='off']) tr.blink {
-        background: var(--c-soft);
-        color: var(--mat-text, #1a2225);
-      }
-      :host([data-blink-phase='off']) tr.blink .sub,
-      :host([data-blink-phase='off']) tr.blink button.act:not(.primary) {
-        color: var(--mat-text-muted, #56646a);
-      }
+    /* ADR 056: blink follows the project motion setting, not prefers-reduced-motion. */
+    :host([data-blink-phase='off']) tr.blink {
+      background: var(--c-soft);
+      color: var(--mat-text, #1a2225);
     }
-    @media (prefers-reduced-motion: reduce) {
-      tr.blink {
-        outline: 3px solid var(--mat-text, #1a2225);
-        outline-offset: -3px;
-      }
+    :host([data-blink-phase='off']) tr.blink .sub,
+    :host([data-blink-phase='off']) tr.blink button.act:not(.primary) {
+      color: var(--mat-text-muted, #56646a);
+    }
+    :host([data-blink-still]) tr.blink {
+      outline: 3px solid var(--mat-text, #1a2225);
+      outline-offset: -3px;
     }
   `;
 
@@ -436,11 +433,13 @@ export class MatAlarmTable extends LitElement {
     if (blink && !this.#blinkOff) {
       this.#blinkOff = sharedBlinkClock(this.ownerDocument).acquire((p) => {
         this.dataset.blinkPhase = p;
+        this.toggleAttribute('data-blink-still', sharedBlinkClock(this.ownerDocument).still);
       });
     } else if (!blink && this.#blinkOff) {
       this.#blinkOff();
       this.#blinkOff = null;
       delete this.dataset.blinkPhase;
+      this.removeAttribute('data-blink-still');
     }
     // Đếm ngược hạn tạm ẩn mỗi giây (tab Tạm ẩn).
     if (this.tab === 'shelved' && this.#rows.length > 0) this.#startTick();

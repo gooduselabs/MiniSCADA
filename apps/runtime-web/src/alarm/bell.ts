@@ -2,7 +2,7 @@
 //  - `bellModel`, `bellItems`, `relativeTime` thuần (test được); `AlarmBell` dựng DOM bằng createElement/textContent (chuỗi
 //    project không bao giờ vào innerHTML).
 //  - Chuông: badge số alarm chưa xác nhận (`counts.unack`, 99+), màu theo mức cao nhất; rung nhẹ khi có alarm mới
-//    (chỉ khi không bật `prefers-reduced-motion`, CSS).
+//    (chỉ khi không bật `prefers-reduced-motion`, CSS); nhịp badge khẩn cấp theo thiết lập project (ADR 056).
 //  - Bảng thông báo: hộp thoại không chặn (role="dialog") neo dưới chuông, đóng bằng Esc/bấm ra ngoài, focus về chuông.
 //  - Toast: alarm khẩn cấp MỚI chưa xác nhận, tự ẩn, bấm để mở bảng. Không phải vùng đọc (AlarmAnnouncer đã báo role="alert").
 import {
