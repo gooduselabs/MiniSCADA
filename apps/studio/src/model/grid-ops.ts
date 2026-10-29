@@ -1,7 +1,7 @@
 // Thao tác thuần của trình soạn bố cục lưới (feature 012, T024; FR-016 đến FR-021; contracts/project-format-1.1.md §2).
 // Cùng quy ước với screen-doc.ts: `(doc, ...) → { doc, selection?, rejected? }`, không sửa đầu vào, không có gì đổi hoặc bị
 // từ chối thì trả đúng `doc` cũ. Bên gọi gói kết quả thành MỘT sửa đổi `screenUpsert` (một bước hoàn tác).
-import { presetProps } from './widget-presets.ts';
+import { baseWidget, presetProps } from './widget-presets.ts';
 import {
   catalogWidget,
   GRID_COLUMNS,
@@ -126,7 +126,8 @@ export function addCell(doc: ScreenModel, rowId: string): GridEditResult {
 }
 
 /** Gắn một widget mới vào ô trống; item mới không có tọa độ (ô quyết định cỡ). */
-export function attachWidget(doc: ScreenModel, cellId: string, type: string): GridEditResult {
+export function attachWidget(doc: ScreenModel, cellId: string, tool: string): GridEditResult {
+  const type = baseWidget(tool);
   const l = layoutOf(doc);
   if (!l) return reject(doc, 'not-grid');
   if (catalogWidget(type) === undefined) return reject(doc, 'unknown-widget');
@@ -134,7 +135,9 @@ export function attachWidget(doc: ScreenModel, cellId: string, type: string): Gr
   if (!at) return reject(doc, 'unknown-cell');
   if (l.rows[at.r]!.cells[at.c]!.item !== undefined) return reject(doc, 'cell-occupied');
   const id = nextItemId(type.replace(/-/g, '_'), new Set(doc.items.map((i) => i.id)));
-  const props = presetProps(type);
+  const props = presetProps(tool);
+  // Feature 041: bảng alarm trong ô hẹp (< 8 cột) dùng kiểu Gọn (mặc định của danh mục, không ghi khóa).
+  if (type === 'alarm-list' && props && l.rows[at.r]!.cells[at.c]!.span < 8) delete props.mode;
   const item = {
     id,
     type: 'widget',
@@ -154,7 +157,7 @@ export function replaceWidget(doc: ScreenModel, cellId: string, type: string): G
   if (!l) return reject(doc, 'not-grid');
   const at = findCell(l, cellId);
   if (!at) return reject(doc, 'unknown-cell');
-  if (catalogWidget(type) === undefined) return reject(doc, 'unknown-widget');
+  if (catalogWidget(baseWidget(type)) === undefined) return reject(doc, 'unknown-widget');
   const old = l.rows[at.r]!.cells[at.c]!.item;
   if (old === undefined) return attachWidget(doc, cellId, type);
   const cleared = withLayout(

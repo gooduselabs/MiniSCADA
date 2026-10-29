@@ -29,6 +29,12 @@ export interface FieldEnv {
   suggestion?: PropValue | undefined;
 }
 
+/** Thuộc tính enum không ghi vào project khi bằng mặc định (feature 041: runtime cũ từ chối thuộc tính lạ). */
+const OMIT_DEFAULT: ReadonlySet<string> = new Set([
+  'widget.alarm-list.prop.mode',
+  'widget.alarm-list.prop.source',
+]);
+
 export const fieldId = (name: string): string => `pf-${name}`;
 
 /** Nhãn của thuộc tính: riêng của widget nếu có, không thì nhãn dùng chung. */
@@ -560,7 +566,8 @@ export function renderField(
         class="pf-in"
         @change=${(e: Event) => {
           const v = (e.target as HTMLSelectElement).value;
-          env.commit(v === '' ? undefined : v);
+          // 041: thuộc tính mới mà runtime cũ từ chối: bằng mặc định thì bỏ khóa (project cũ không đổi).
+          env.commit(v === '' || (OMIT_DEFAULT.has(f.i18nKey) && v === f.default) ? undefined : v);
         }}
       >
         ${env.mixed ? html`<option value="" selected>${t('pf.mixed')}</option>` : nothing}
@@ -641,8 +648,10 @@ export function renderField(
       control = textField(f, env, local, setError);
   }
   // 037: gợi ý ngắn cho thuộc tính khó hiểu (`whelp.<tên>`), sau gợi ý khoảng giá trị.
-  const help = `whelp.${f.name}`;
-  const hint = rangeHint(f) ?? (hasKey(help) ? t(help) : null);
+  // 041: gợi ý riêng của thuộc tính (`<khóa i18n>.help`) ưu tiên hơn gợi ý dùng chung.
+  const own = `${f.i18nKey}.help`;
+  const help = hasKey(own) ? own : `whelp.${f.name}`;
+  const hint = rangeHint(f) ?? (hasKey(help) ? t(help as MessageKey) : null);
   const err = local.error ? t(local.error) : env.issue;
   return html`<div
     class="pf-row ${err ? 'bad' : ''}"

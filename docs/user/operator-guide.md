@@ -143,7 +143,7 @@ Nút xung (bấm rồi tự nhả): hộp xác nhận ghi "Xung N ms rồi trả
 ## 6. Alarm
 
 - **Chuông cảnh báo** ở thanh trên (cạnh "Trực tuyến"): số trên chuông là số alarm **chưa xác nhận** (trên 99 hiện "99+"); màu số theo mức cao nhất đang có (đỏ: Khẩn cấp, cam: Quan trọng, vàng: Nhỏ, xanh: Lưu ý). Có alarm mới thì chuông rung nhẹ (máy bật "giảm hiệu ứng chuyển động" thì không rung; chuông có viền đỏ cố định khi có alarm Khẩn cấp).
-- Bấm chuông mở **bảng thông báo**: alarm chưa xác nhận lên đầu, Khẩn cấp và mới nhất trước. Mỗi dòng có hình mức ưu tiên, nội dung, tên alarm và giá trị lúc bật, thời gian ("2 phút trước"), trạng thái. Lọc **Chưa xác nhận** / **Tất cả**; nút **Xác nhận** trên từng dòng; **Xác nhận tất cả** ở cuối bảng (bấm hai lần để chắc chắn); **Xem tất cả alarm** mở trang **Alarm**. Đóng bảng bằng Esc, nút ✕ hoặc bấm ra ngoài. Chưa đăng nhập hay không đủ quyền thì nút Xác nhận bị khóa, bảng ghi lý do.
+- Bấm chuông mở **bảng thông báo**: alarm chưa xác nhận lên đầu, Khẩn cấp và mới nhất trước. Mỗi dòng có hình mức ưu tiên, nội dung, tên alarm và giá trị lúc bật, thời gian ("2 phút trước"), trạng thái. Lọc **Chưa xác nhận** / **Tất cả**; nút **Xác nhận** trên từng dòng; **Xác nhận tất cả** ở cuối bảng (bấm hai lần để chắc chắn); **Xem tất cả alarm** mở màn hình có **Bảng alarm** trong menu (nếu project có), không thì trang **Alarm**. Đóng bảng bằng Esc, nút ✕ hoặc bấm ra ngoài. Chưa đăng nhập hay không đủ quyền thì nút Xác nhận bị khóa, bảng ghi lý do.
 - Alarm **Khẩn cấp** mới còn hiện một **thông báo nhỏ ở góc dưới phải** trong vài giây; bấm vào để mở bảng thông báo.
 - Mất kết nối: chuông có dấu "!" và bảng ghi "Mất kết nối tới thiết bị". Chế độ kiosk (`?kiosk=1`): chuông nổi ở góc trên phải.
 
@@ -152,7 +152,7 @@ Nút xung (bấm rồi tự nhả): hộp xác nhận ghi "Xung N ms rồi trả
 - Bốn mức ưu tiên, mỗi mức một hình: **Khẩn cấp** (tam giác có "!"), **Quan trọng** (hình thoi), **Nhỏ** (hình tròn), **Lưu ý** (hình vuông có "i").
 - Trạng thái: "Đang có, chưa xác nhận", "Đang có, đã xác nhận", "Đã hết, chưa xác nhận", "Tạm ẩn".
 
-**Tìm alarm ở đâu?** Ba chỗ, chỗ nào cũng xác nhận được: **chuông** ở thanh trên (luôn có, trừ khi project tắt), trang **Alarm** trong menu (nếu project có mục này), và **Bảng alarm** đặt trên màn hình (có nút **Xác nhận** từng dòng và **Xác nhận tất cả** ở thanh trên của bảng). Không thấy alarm nào mà nghi có sự cố: báo kỹ sư.
+**Tìm alarm ở đâu?** Ba chỗ, chỗ nào cũng xác nhận được: **chuông** ở thanh trên (luôn có, trừ khi project tắt), trang **Alarm** trong menu (nếu project có mục này), và **Bảng alarm** đặt trên màn hình. Bảng alarm có hai kiểu: **Đầy đủ** dùng giống hệt trang Alarm (tab Đang có / Tạm ẩn, bộ lọc, tìm, Xác nhận, Xác nhận tất cả, Tạm ẩn…, chọn nhiều dòng, phím tắt khi đã bấm vào bảng); **Gọn** chỉ có danh sách, nút **Xác nhận** từng dòng và **Xác nhận tất cả** ở thanh trên. Bảng cũng có thể hiện **lịch sử alarm** (dùng như trang Lịch sử alarm). Không thấy alarm nào mà nghi có sự cố: báo kỹ sư.
 
 Xử lý một alarm:
 

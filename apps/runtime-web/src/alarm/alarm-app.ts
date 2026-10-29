@@ -5,7 +5,7 @@ import type { AlarmSource, ActionHost } from '@mat/ui-components';
 import type { ConnState, LiveConnection } from '@mat/live-client';
 import { vi } from '../i18n/vi.ts';
 import type { AlarmMenuOptions } from '../menu.ts';
-import { AlarmPage } from './alarm-page.ts';
+import { AlarmPage, injectAlarmPanelCss } from './alarm-page.ts';
 import { LiveAlarmSource } from './alarm-client.ts';
 import { TabTitle, applyBadge, badgeModel } from './badge.ts';
 import { AlarmAnnouncer } from './announcer.ts';
@@ -28,6 +28,8 @@ export interface AlarmAppDeps {
   onMenuMode: (m: AlarmMenuOptions) => void;
   /** Feature 030: `navigation.alarmBell` của project (false: ẩn chuông và toast). Thiếu = true. */
   bell?: boolean;
+  /** Feature 041: "Xem tất cả alarm" của chuông (main.ts chọn màn hình có Bảng alarm hoặc #/alarms). Vắng: #/alarms. */
+  viewAll?: () => void;
   doc?: Document;
 }
 
@@ -61,7 +63,8 @@ export class AlarmApp {
     this.alarms = new LiveAlarmSource({ conn: d.conn, onState: d.onState, now: d.now });
     const src: AlarmSource = this.alarms;
 
-    this.page = new AlarmPage({ source: src, host: d.host });
+    injectAlarmPanelCss(doc);
+    this.page = new AlarmPage({ source: src, host: d.host, doc });
     this.history = new HistoryPage({ source: src });
     d.pageHost.append(this.page.el, this.history.el);
 
@@ -81,9 +84,11 @@ export class AlarmApp {
       source: src,
       host: d.host,
       soundEl: this.#soundBox,
-      navigate: () => {
-        location.hash = '#/alarms';
-      },
+      navigate:
+        d.viewAll ??
+        (() => {
+          location.hash = '#/alarms';
+        }),
       enabled: d.bell !== false,
       doc,
     });

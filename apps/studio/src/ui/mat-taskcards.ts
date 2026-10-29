@@ -11,6 +11,7 @@ import type { IconName } from '../icons/icons.ts';
 import type { DeviceInfo } from '../model/device.ts';
 import { phaseLabel, type Phase } from '../model/tree.ts';
 import { updateAccess } from '../model/update-flow.ts';
+import { TOOL_VARIANTS, baseWidget } from '../model/widget-presets.ts';
 import { otaButton } from './dialogs/update-wizard.ts';
 import { AppElement, icon } from './base.ts';
 import './taskcards-context.css';
@@ -211,7 +212,12 @@ export class MatTaskcards extends AppElement {
         ${
           open
             ? html`<div class="items">
-                ${widgets.map((w) => this.widgetTool(w.id, w.label as MessageKey, hasEditor))}
+                ${widgets.flatMap((w) => [
+                  this.widgetTool(w.id, w.label as MessageKey, hasEditor),
+                  ...Object.entries(TOOL_VARIANTS)
+                    .filter(([, v]) => v.widget === w.id)
+                    .map(([id, v]) => this.widgetTool(id, v.label, hasEditor)),
+                ])}
               </div>`
             : nothing
         }
@@ -259,7 +265,7 @@ export class MatTaskcards extends AppElement {
         if (!hasEditor) this.app.toast(t('tc.openScreenFirst'));
       }}
     >
-      ${icon(WIDGET_ICON[id] ?? 'card', 'lg')}<span>${name}</span>
+      ${icon(WIDGET_ICON[baseWidget(id)] ?? 'card', 'lg')}<span>${name}</span>
     </button>`;
   }
 

@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./fixtures": "./src/fixtures/alarm-fixtures.ts"
+    "./fixtures": "./src/fixtures/alarm-fixtures.ts",
+    "./alarm-panel-vi": "./src/i18n/alarm-panel-vi.ts",
+    "./alarm-panels": "./src/alarm/panels/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

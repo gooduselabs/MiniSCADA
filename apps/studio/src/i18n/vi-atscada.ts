@@ -24,6 +24,20 @@ export const viAtscada = {
   'widget.alarm-list.prop.search': 'Ô tìm kiếm',
   'widget.alarm-list.prop.exportCsv': 'Nút xuất CSV',
   'widget.alarm-list.prop.ackAll': 'Nút Xác nhận tất cả',
+  // ---- feature 041: kiểu hiển thị và nguồn của Bảng alarm ----
+  'widget.alarm-list.prop.mode': 'Kiểu hiển thị',
+  'widget.alarm-list.prop.mode.full': 'Đầy đủ',
+  'widget.alarm-list.prop.mode.compact': 'Gọn',
+  'widget.alarm-list.prop.mode.help':
+    'Đầy đủ: như trang Alarm hệ thống (tab Đang có/Tạm ẩn, bộ lọc, tìm, Xác nhận, Tạm ẩn, chọn nhiều, phím tắt). Gọn: chỉ danh sách và nút Xác nhận, cho ô nhỏ.',
+  'widget.alarm-list~history': 'Lịch sử alarm',
+  'wdesc.alarm-list~history':
+    'Bảng alarm hiển thị lịch sử (như trang Lịch sử alarm): khoảng thời gian, bộ lọc, tải thêm, xuất CSV.',
+  'widget.alarm-list.prop.source': 'Hiển thị',
+  'widget.alarm-list.prop.source.active': 'Alarm hiện hành',
+  'widget.alarm-list.prop.source.history': 'Lịch sử alarm',
+  'widget.alarm-list.prop.source.help':
+    'Lịch sử alarm: như trang Lịch sử alarm hệ thống (khoảng thời gian, bộ lọc, tải thêm, xuất CSV); kiểu Gọn hiện các lần xảy ra gần nhất.',
   // ---- time-range ----
   'widget.time-range': 'Hẹn giờ Từ–Đến',
   'widget.time-range.prop.format': 'Cách lưu giờ',

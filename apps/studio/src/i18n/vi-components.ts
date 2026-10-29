@@ -126,7 +126,8 @@ export const viComponents = {
   'wdesc.slider': 'Thanh trượt đặt giá trị.',
   'wdesc.select': 'Chọn chế độ từ Bảng giá trị.',
   'wdesc.time-range': 'Hẹn giờ Từ–Đến.',
-  'wdesc.alarm-list': 'Bảng alarm đang hoạt động.',
+  'wdesc.alarm-list':
+    'Bảng alarm đang hoạt động; kiểu Đầy đủ như trang Alarm hệ thống (lọc, Tạm ẩn, chọn nhiều), kiểu Gọn cho ô nhỏ.',
   'wdesc.alarm-count': 'Số alarm đang hoạt động.',
 
   // ---- Toolbox, bảng thuộc tính ----

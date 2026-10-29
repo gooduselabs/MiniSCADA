@@ -3,6 +3,7 @@
 // danh sách lệnh cho canvas. Không đổi tài liệu: chỉ phát `preview` khi kéo và `commit` khi thả (đúng
 // một bước hoàn tác mỗi cử chỉ). Esc/`cancel` hủy, không đổi gì.
 import { catalogWidget, type Item, type Rect, type ScreenModel } from '@mat/project-schema';
+import { baseWidget } from '../widget-presets.ts';
 import { addWidget, moveItems, resizeItems, type Rejection } from '../screen-doc.ts';
 import { boundsOf } from './align.ts';
 import { hitTest, itemsInRect } from './hit.ts';
@@ -390,7 +391,7 @@ export function createGesture(ctx: GestureContext): Gesture {
     mods: Modifiers,
   ): { doc: ScreenModel; res: ReturnType<typeof addWidget>; guides: Guide[] } {
     const doc = ctx.getDoc();
-    const spec = catalogWidget(widget);
+    const spec = catalogWidget(baseWidget(widget));
     const [w, h] = spec?.defaultSize ?? [0, 0];
     const s = snapBox(
       { x: point.x, y: point.y, width: w, height: h },

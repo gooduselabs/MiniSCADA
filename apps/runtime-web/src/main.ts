@@ -7,6 +7,7 @@ import { MatScreen, registerScreen, registerWidgets, setMotion } from '@mat/ui-c
 import { AccessView, emptyForUser, fetchAccess, filterScreen, sessionEnded } from './access.ts';
 import { WebActionHost } from './action-host.ts';
 import { AlarmApp } from './alarm/alarm-app.ts';
+import { bellTarget } from './alarm/bell-target.ts';
 import './alarm/alarm.css';
 import './alarm/bell.css';
 import { vi } from './i18n/vi.ts';
@@ -397,9 +398,10 @@ async function main(): Promise<void> {
   let access = new AccessView(null);
   // Feature 030: từ 1.1 menu chỉ theo navigation; project cũ (không khai báo được mục `system`) giữ cách tự thêm.
   const legacyMenu = legacySystemMenu(summary.schemaVersion);
+  let menuModel: ReturnType<typeof buildMenu> = null;
   const rebuildMenu = () =>
     shell.setMenu(
-      buildMenu(summary.navigation, summary.screens, {
+      (menuModel = buildMenu(summary.navigation, summary.screens, {
         ...alarmMenu,
         show: alarmMenu.show && access.page('alarms'),
         history: historyOn && access.page('history'),
@@ -408,7 +410,7 @@ async function main(): Promise<void> {
         admin: access.admin,
         recipes: https && !!summary.recipesFile && session.info !== null,
         legacySystem: legacyMenu,
-      }),
+      })),
       currentId,
     );
   const alarmApp = new AlarmApp({
@@ -420,6 +422,13 @@ async function main(): Promise<void> {
     bellHost: $('app-alarm-slot'),
     navHost: $('app-nav'),
     bell: summary.navigation?.alarmBell !== false,
+    // Feature 041: "Xem tất cả alarm" mở màn hình trong menu có Bảng alarm (ưu tiên kiểu Đầy đủ), không thì #/alarms.
+    viewAll: () => {
+      void bellTarget(menuModel, (id) => store.screen(id)).then((id) => {
+        if (router) router.go(id);
+        else location.hash = `#/${encodeURIComponent(id)}`;
+      });
+    },
     onMenuMode: (m) => {
       alarmMenu = m;
       rebuildMenu();

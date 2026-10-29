@@ -41,7 +41,26 @@ export const WIDGET_PRESETS: Readonly<Record<string, Props>> = {
   bar: { title: '@preset.bar' },
   pie: { title: '@preset.pie' },
   'tag-table': { title: '@preset.tag-table' },
+  // Feature 041: bảng alarm mới thả vào là kiểu Đầy đủ (ô lưới hẹp < 8 cột: Gọn, xem grid-ops.attachWidget).
+  'alarm-list': { mode: 'full' },
 };
+
+/**
+ * Feature 041: mục Toolbox là preset của một loại có sẵn (cùng `widget`, không thêm loại mới). Id mục dạng `<loại>~<tên>`.
+ */
+export const TOOL_VARIANTS: Readonly<
+  Record<string, { widget: string; label: MessageKey; desc: MessageKey; props: Props }>
+> = {
+  'alarm-list~history': {
+    widget: 'alarm-list',
+    label: 'widget.alarm-list~history',
+    desc: 'wdesc.alarm-list~history',
+    props: { mode: 'full', source: 'history' },
+  },
+};
+
+/** Loại của danh mục cho id mục Toolbox (bỏ hậu tố preset). */
+export const baseWidget = (id: string): string => TOOL_VARIANTS[id]?.widget ?? id;
 
 function resolve(v: PropValue): PropValue {
   if (typeof v === 'string') return v.startsWith('@') ? t(v.slice(1) as MessageKey) : v;
@@ -53,6 +72,7 @@ function resolve(v: PropValue): PropValue {
 
 /** Bản sao sâu của thuộc tính khởi đầu với chữ đã dịch (`undefined` khi loại không có). */
 export function presetProps(widget: string): Record<string, PropValue> | undefined {
-  const p = WIDGET_PRESETS[widget];
+  const v = TOOL_VARIANTS[widget];
+  const p = v ? { ...(WIDGET_PRESETS[v.widget] ?? {}), ...v.props } : WIDGET_PRESETS[widget];
   return p ? (resolve(p) as Record<string, PropValue>) : undefined;
 }

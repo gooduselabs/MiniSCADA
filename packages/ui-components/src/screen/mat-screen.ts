@@ -34,6 +34,8 @@ const STATUS_MS = 6000;
 export const GRID_NARROW_PX = 768;
 /** Feature 040: widget mà trong hàng lưới "auto" lấy chiều cao mặc định của danh mục làm tối thiểu. */
 const AUTO_ROW_DEFAULT_H: ReadonlySet<string> = new Set(['alarm-list']);
+/** Feature 041: chiều cao tối thiểu (px) của alarm-list kiểu Đầy đủ trong hàng "auto". */
+export const FULL_ALARM_LIST_MIN_H = 360;
 
 /** Cột bắt đầu (tính từ 1) của từng ô trong hàng: sau các ô trước và khoảng trống `offset` của chính ô. */
 function cellStarts(cells: GridLayout['rows'][number]['cells']): number[] {
@@ -827,7 +829,12 @@ export class MatScreen extends LitElement {
       if (it?.type !== 'widget') return 0;
       const w = catalogWidget(it.widget);
       // Feature 040: bảng alarm trong hàng "auto" cao theo cỡ mặc định, không co về cỡ tối thiểu (chỉ thấy 1 dòng).
-      return (AUTO_ROW_DEFAULT_H.has(it.widget) ? w?.defaultSize[1] : w?.minSize[1]) ?? 0;
+      const base = (AUTO_ROW_DEFAULT_H.has(it.widget) ? w?.defaultSize[1] : w?.minSize[1]) ?? 0;
+      // Feature 041: bảng alarm kiểu Đầy đủ (thanh tab, lọc, nút) cần chỗ cho bảng: tối thiểu 360 px.
+      const full =
+        it.widget === 'alarm-list' &&
+        (it.props as Record<string, unknown> | undefined)?.mode === 'full';
+      return full ? Math.max(base, FULL_ALARM_LIST_MIN_H) : base;
     };
     return html`<div
         class="viewport"

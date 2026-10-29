@@ -2337,6 +2337,20 @@
           "kind": "bool",
           "default": true,
           "group": "display"
+        },
+        {
+          "name": "mode",
+          "kind": "enum",
+          "options": ["compact", "full"],
+          "default": "compact",
+          "group": "general"
+        },
+        {
+          "name": "source",
+          "kind": "enum",
+          "options": ["active", "history"],
+          "default": "active",
+          "group": "general"
         }
       ],
       "events": []

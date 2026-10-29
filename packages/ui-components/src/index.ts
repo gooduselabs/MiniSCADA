@@ -54,6 +54,7 @@ export * from './alarm/alarm-table.ts';
 export * from './alarm/alarm-widget-props.ts';
 export * from './alarm/mat-alarm-list.ts';
 export * from './alarm/mat-alarm-count.ts';
+export { previewHistoryFetch } from './alarm/panels/history-preview.ts';
 export * from './host/history-source.ts';
 export * from './host/fake-history-source.ts';
 export { historyEnv, type HistoryEnv } from './widgets/history-trend.ts';

@@ -46,6 +46,7 @@ import {
 import { hostTagInfo } from '../../model/preview-hosts.ts';
 import { clampZoom, WHEEL_STEP, ZOOM_STEP } from '../../model/screen-edit/viewport.ts';
 import { remove } from '../../model/screen-doc.ts';
+import { baseWidget } from '../../model/widget-presets.ts';
 import { AppElement, icon } from '../base.ts';
 import './mat-grid-editor.css';
 import './mat-svg-overlay.ts';
@@ -390,12 +391,12 @@ export class MatGridEditor extends AppElement {
   private async attach(cellId: string, type: string): Promise<void> {
     const at = this.find(cellId);
     if (!at) return;
-    if (catalogWidget(type) === undefined) return;
+    if (catalogWidget(baseWidget(type)) === undefined) return;
     if (at.cell.item !== undefined) {
       const choice = await this.app.ask({
         kind: 'gridReplace',
         from: this.nameOfItem(at.cell.item),
-        to: t(`widget.${type}` as MessageKey),
+        to: t(`widget.${baseWidget(type)}` as MessageKey),
       });
       if (choice !== 'ok') return;
       this.edit((d) => replaceWidget(d, cellId, type));

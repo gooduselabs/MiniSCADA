@@ -231,6 +231,11 @@ export interface AlarmSource {
   status(): AlarmSourceStatus;
   /** Giờ tham chiếu (ms UTC), cùng nguồn với TagSource.now(). */
   now(): number;
+  /**
+   * Feature 041: thay `fetch` của bảng Lịch sử alarm (URL `/api/v1/alarms/history?...`). Studio Mô phỏng trả lịch sử giả;
+   * vắng: gọi thiết bị bằng fetch của trình duyệt (runtime).
+   */
+  historyFetch?: (url: string) => Promise<Response>;
 }
 
 export type AlarmAckResultCode =

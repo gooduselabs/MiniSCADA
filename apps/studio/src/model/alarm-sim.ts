@@ -29,7 +29,7 @@ import type {
   AlarmSource,
   AlarmSourceStatus,
 } from '@mat/ui-components';
-import { AlarmNotifier, emptyCounts } from '@mat/ui-components';
+import { AlarmNotifier, emptyCounts, previewHistoryFetch } from '@mat/ui-components';
 import { SimEngine } from './sim-engine.ts';
 
 export const ALARM_SIM_TICK_MS = 250;
@@ -577,7 +577,7 @@ export class AlarmSim {
 
   /** Nguồn alarm cho bảng và widget; `status` = `live` (có alarm) hoặc `none`. */
   source(): AlarmSource {
-    return {
+    const src: AlarmSource = {
       snapshot: () => this.snapshot(),
       subscribe: (fn) => this.notifier.subscribe(fn),
       counts: () => this.snapshot().counts,
@@ -586,6 +586,9 @@ export class AlarmSim {
       status: (): AlarmSourceStatus => (this.defs.instances.length ? 'live' : 'none'),
       now: () => this.epochNowMs,
     };
+    // Feature 041: Bảng alarm kiểu Lịch sử xem trước bằng lịch sử dựng từ snapshot (không có thiết bị).
+    src.historyFetch = previewHistoryFetch(src);
+    return src;
   }
 
   /** Ba hàm alarm của `ActionHost` (ghép với `SimActionHost` của 007 bằng `Object.assign`). */

@@ -9,6 +9,7 @@ import {
   type FormatClip,
 } from '../../model/widget-ops-037.ts';
 import { catalogWidget, type ScreenModel } from '@mat/project-schema';
+import { baseWidget } from '../../model/widget-presets.ts';
 import { html, nothing } from 'lit';
 import type { CommandId } from '../../app/commands.ts';
 import { bindTag } from '../../app/screen-bind.ts';
@@ -175,7 +176,7 @@ export class MatScreenEditor extends AppElement {
       gridEd.attachToSelected(type);
       return;
     }
-    const spec = catalogWidget(type);
+    const spec = catalogWidget(baseWidget(type));
     const c = this.canvas()?.viewCenter() ?? { x: 0, y: 0 };
     const [w, h] = spec?.defaultSize ?? [0, 0];
     const at = { x: Math.round(c.x - w / 2), y: Math.round(c.y - h / 2) };

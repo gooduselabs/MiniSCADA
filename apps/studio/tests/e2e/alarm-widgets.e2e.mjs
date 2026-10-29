@@ -59,4 +59,79 @@ export default async function alarmWidgets({ page, check, shot, axe }) {
   );
   await shot('alarm-widgets');
   await axeBoth(page, axe, 'Màn hình có widget alarm');
+
+  // ---- Feature 041: Kiểu hiển thị Đầy đủ / Gọn, Hiển thị hiện hành / Lịch sử, preset "Lịch sử alarm" ----
+  check(
+    'Toolbox có mục "Lịch sử alarm" (preset của alarm-list)',
+    tools.includes('alarm-list~history'),
+    tools.join(','),
+  );
+  await page.$eval('mat-screen-canvas .oi[data-item^="alarm_list"]', (e) => {
+    const r = e.getBoundingClientRect();
+    e.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        clientX: r.x + 5,
+        clientY: r.y + 5,
+        pointerId: 1,
+        button: 0,
+      }),
+    );
+    e.dispatchEvent(
+      new PointerEvent('pointerup', {
+        bubbles: true,
+        clientX: r.x + 5,
+        clientY: r.y + 5,
+        pointerId: 1,
+        button: 0,
+      }),
+    );
+  });
+  await sleep(200);
+  const field = await page
+    .$eval('mat-inspector [data-field="prop:mode"]', (e) => ({
+      text: e.textContent.replace(/s+/g, ' '),
+      value: e.querySelector('select')?.value ?? null,
+      opts: [...e.querySelectorAll('option')].map((o) => o.textContent.trim()),
+    }))
+    .catch(() => null);
+  check(
+    'Inspector: ô "Kiểu hiển thị" Đầy đủ / Gọn kèm mô tả; bảng mới thả là Đầy đủ',
+    !!field &&
+      /Kiểu hiển thị/.test(field.text) &&
+      /trang Alarm hệ thống/.test(field.text) &&
+      field.value === 'full' &&
+      field.opts.includes('Đầy đủ') &&
+      field.opts.includes('Gọn'),
+    JSON.stringify(field),
+  );
+  const src = await page
+    .$eval('mat-inspector [data-field="prop:source"]', (e) =>
+      [...e.querySelectorAll('option')].map((o) => o.textContent.trim()),
+    )
+    .catch(() => null);
+  check(
+    'Inspector: ô "Hiển thị" Alarm hiện hành / Lịch sử alarm',
+    !!src && src.includes('Alarm hiện hành') && src.includes('Lịch sử alarm'),
+    JSON.stringify(src),
+  );
+  await page.$eval('mat-screen-toolbar [data-mode="sim"]', (b) => b.click());
+  let full = false;
+  for (let i = 0; i < 30 && !full; i++) {
+    await sleep(150);
+    full = await page.evaluate(() => {
+      const all = (root) => {
+        const out = [];
+        for (const e of root.querySelectorAll('*')) {
+          if (e.tagName === 'MAT-W-ALARM-LIST') out.push(e);
+          if (e.shadowRoot) out.push(...all(e.shadowRoot));
+        }
+        return out;
+      };
+      return all(document).some((w) => !!w.shadowRoot?.querySelector('.al-tabs'));
+    });
+  }
+  check('Mô phỏng: Bảng alarm Đầy đủ hiện tab và bộ lọc như trang Alarm', full);
+  await page.$eval('mat-screen-toolbar [data-mode="off"]', (b) => b.click());
+  await sleep(200);
 }
