@@ -457,10 +457,17 @@ EffectiveAccess computeAccess(const ResourceCatalog& catalog, const AccessFile& 
     a.liveSet.insert(a.liveTags.begin(), a.liveTags.end());
     a.historySet.insert(a.historyTags.begin(), a.historyTags.end());
 
-    // D21: the alarms of the live Tags; one without a Tag goes with the page of the alarms.
+    // D21: the alarms of the live Tags; one without a Tag goes with the page of the alarms, and so
+    // does (feature 040) one whose Tag no screen, logging group or report has: no rule restricts it.
+    std::set<std::string> shown;
+    for (const CatalogScreen& s : catalog.screens)
+        for (const CatalogItem& i : s.items) shown.insert(i.tags.begin(), i.tags.end());
+    for (const auto& g : catalog.historyGroups) shown.insert(g.tags.begin(), g.tags.end());
+    for (const auto& r : catalog.reports) shown.insert(r.tags.begin(), r.tags.end());
     for (const CatalogAlarm& al : catalog.alarms) {
-        const bool ok = a.admin || (al.tag.empty() ? a.pageSet.count("alarms") > 0
-                                                   : a.liveSet.count(al.tag) > 0);
+        const bool byPage = al.tag.empty() || shown.count(al.tag) == 0;
+        const bool ok = a.admin || (byPage ? a.pageSet.count("alarms") > 0
+                                           : a.liveSet.count(al.tag) > 0);
         if (ok) a.alarms.push_back(al.id);
     }
     sortUnique(a.alarms);

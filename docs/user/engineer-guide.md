@@ -635,7 +635,27 @@ Kỹ sư không cập nhật runtime: việc này cần tài khoản administrat
 
 ## 12. Alarm, lưu trữ, báo cáo
 
-- **Alarm** > **Danh sách alarm**: loại **Số** (bit), **Ngưỡng** (HH, H, L, LL, Deadband, Trễ bật, Trễ tắt), **Quality**. **Lớp alarm**: ưu tiên, màu, nhấp nháy, cần xác nhận, âm thanh. **Thử alarm** để xem trước.
+### Alarm từng bước
+
+Mục tiêu: khi có sự cố, người vận hành **thấy ngay** trên trang web và **xác nhận** được. Làm lần lượt:
+
+1. **Lớp alarm** (cây > **Alarm** > **Lớp alarm**). Project mới có sẵn bốn lớp: **Khẩn cấp**, **Quan trọng**, **Nhỏ**, **Lưu ý**. Mỗi lớp quy định màu, nhấp nháy, âm thanh và **Cần xác nhận** (Lưu ý mặc định không cần). Thường chỉ cần dùng lớp có sẵn.
+2. **Thêm alarm** (cây > **Alarm** > **Danh sách alarm** > **Thêm**, hoặc **Tạo alarm cho Tag…**). Chọn loại:
+   - **Số** (bit): báo khi Tag BOOL bằng 1 (hoặc 0).
+   - **Ngưỡng**: điền **HH**, **H**, **L**, **LL** cần dùng, mỗi mức một lớp; thêm **Deadband** và **Trễ bật**/**Trễ tắt** nếu giá trị dao động quanh ngưỡng.
+   - **Quality**: báo khi mất kết nối thiết bị.
+   Viết **Nội dung** dễ hiểu cho người vận hành (ví dụ "Nhiệt độ lò cao").
+3. **Hiển thị trên web**. Có ba lối vào, nên dùng cả ba:
+   - **Chuông cảnh báo** (thanh trên trang web): **bật sẵn** ở mọi project. Số trên chuông là số alarm chưa xác nhận; bấm chuông mở danh sách alarm có nút **Xác nhận**, kể cả khi menu không có trang Alarm. Bật/tắt ở **Điều hướng** > ô **Chuông cảnh báo**.
+   - **Trang Alarm** trong menu: khi thêm alarm **đầu tiên**, Studio tự thêm mục **Alarm** vào **Điều hướng** (và bật chuông nếu đang tắt), có thông báo; không muốn thì Ctrl+Z. Thêm tay: **Điều hướng** > **Trang hệ thống** > **Thêm Alarm vào menu**.
+   - **Bảng alarm** trên màn hình: kéo component **Bảng alarm** vào màn hình. Không cần chỉnh gì: mặc định hiện **mọi alarm đang báo và chưa xác nhận**, cột Thời gian, Mức, Nội dung, Giá trị, Trạng thái, nút **Xác nhận** từng dòng và **Xác nhận tất cả**, ô tìm kiếm, **Xuất CSV**. Trên màn hình lưới, hàng cao "Tự động" vẫn đủ chỗ cho bảng (tối thiểu 260 px). Chỉ đặt **Khu vực**, **Lớp**, **Mức tối thiểu** khi muốn lọc bớt.
+   Nếu project có alarm mà chuông tắt và menu không có trang Alarm, tab **Thông tin** báo **W_ALARM_NO_ACCESS** kèm nút **Thêm trang Alarm và chuông vào menu**.
+4. **Thử trước khi nạp**: **Thử alarm** trên trang Danh sách alarm, hoặc mở màn hình ở chế độ **Mô phỏng**: Bảng alarm hiện alarm mô phỏng theo giá trị Tag mô phỏng; nút Xác nhận dùng được để thử.
+5. **Nạp xuống** như mục 10.
+6. **Kiểm tra trên thiết bị**: mở trang web, tạo điều kiện báo (hoặc chờ), xem chuông có số, bấm chuông thấy alarm, **Xác nhận** được. Người đã đăng nhập không phải quản trị viên vẫn thấy alarm của Tag không nằm trên màn hình nào (alarm đó theo quyền xem trang Alarm); alarm của Tag có trên màn hình theo quyền xem màn hình đó (mục 6.3).
+
+### Lưu trữ
+
 - **Lưu trữ**: nhóm theo **Chu kỳ**, **Thay đổi**, **Kết hợp** hoặc **Kích hoạt**; khung **Ước tính ghi** cho số MB/ngày. Vượt ngân sách ghi thì Studio hỏi trước khi nạp xuống. Ghi nhiều làm mòn bộ nhớ eMMC: chỉ lưu Tag cần.
 - **Báo cáo**: xem mục 12.1.
 

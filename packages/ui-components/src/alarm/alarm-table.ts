@@ -626,6 +626,21 @@ export class MatAlarmTable extends LitElement {
     this.#emit('mat-alarm-sort', this.sort);
   }
 
+  /** Feature 040: xác nhận mọi hàng đang hiện còn chưa xác nhận (nút "Xác nhận tất cả" của widget alarm-list). */
+  ackAllVisible(): void {
+    const items = this.#rows
+      .filter((r) => (r.state === 'ACTIVE_UNACK' || r.state === 'RTN_UNACK') && !r.shelved)
+      .map((r) => ({ id: r.id, occurrence: r.occurrence }));
+    void this.#ack(items);
+  }
+
+  /** Số hàng đang hiện còn chưa xác nhận. */
+  get unackedVisible(): number {
+    return this.#rows.filter(
+      (r) => (r.state === 'ACTIVE_UNACK' || r.state === 'RTN_UNACK') && !r.shelved,
+    ).length;
+  }
+
   #ackSelectionOrFocus(): void {
     const byId = new Map(this.#rows.map((r) => [r.id, r]));
     let ids = [...this._selection].filter((id) => byId.has(id));

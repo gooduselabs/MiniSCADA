@@ -3927,6 +3927,13 @@
       "usedIn": ["core/project-manager", "packages/project-schema"]
     },
     {
+      "code": "W_ALARM_NO_ACCESS",
+      "http": null,
+      "group": "alarm",
+      "message": "Project có alarm nhưng trang web không có lối vào: chuông cảnh báo tắt và menu không có mục Alarm (chỉ Studio; nút sửa nhanh thêm mục Alarm và bật chuông)",
+      "usedIn": ["packages/project-schema"]
+    },
+    {
       "code": "W_ALARM_NO_ACK_CRITICAL",
       "http": null,
       "group": "alarm",

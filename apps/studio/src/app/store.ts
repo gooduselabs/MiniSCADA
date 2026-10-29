@@ -1,6 +1,7 @@
 // Store của Studio (feature 004, T031, data-model §3–§8): trạng thái project đang mở và các hành động
 // sửa, hoàn tác, kiểm tra liên tục, tab, lựa chọn, lưu và xử lý xung đột. Logic thuần, không DOM; giao
 // diện (ui/*) đăng ký nghe và gọi hành động. Đọc/ghi file qua lớp platform (Rust hoặc bản giả e2e).
+import { alarmAccessIssue, withAlarmAccess } from '../model/alarm-access.ts';
 import {
   migrate01to02,
   migrateTo03,
@@ -539,12 +540,35 @@ export class StudioStore {
   edit(edits: readonly ProjectEdit[], mergeKey?: string): void {
     if (!this.s.project || edits.length === 0) return;
     const before = snapshotOf(this.s.docs);
-    const docs = applyDocEdits(this.s.docs, edits);
+    let docs = applyDocEdits(this.s.docs, edits);
     if (snapshotOf(docs) === before) return;
+    let outline = outlineOf(filesOf(docs));
+    // Feature 040: alarm đầu tiên của project: cùng bước hoàn tác, thêm mục "Alarm" vào menu và bật chuông để người
+    // vận hành thấy alarm trên web (người dùng bỏ được bằng Ctrl+Z hoặc ở Điều hướng).
+    let autoAccess = false;
+    const hadAlarms = (this.s.outline.alarms?.alarms.length ?? 0) > 0;
+    if (!hadAlarms && (outline.alarms?.alarms.length ?? 0) > 0 && outline.navigation) {
+      const nav = withAlarmAccess(
+        outline.navigation,
+        outline.project?.schemaVersion,
+        this.alarmMenuLabel,
+      );
+      if (nav && !edits.some((e) => e.kind === 'navigation')) {
+        docs = applyDocEdits(docs, [{ kind: 'navigation', value: nav }]);
+        outline = outlineOf(filesOf(docs));
+        autoAccess = true;
+      }
+    }
     const history = recordEdit(this.s.history, before, this.now(), mergeKey);
-    this.set({ docs, history, outline: outlineOf(filesOf(docs)) });
+    this.set({ docs, history, outline });
     this.scheduleValidate();
+    if (autoAccess) this.onNotice?.('alarm.access.auto');
   }
+
+  /** Feature 040: nhãn mục menu "Alarm" khi tự thêm (app đặt theo i18n). */
+  alarmMenuLabel = 'Alarm';
+  /** Feature 040: báo cho app một việc Studio tự làm kèm thao tác của người dùng (khóa i18n), app hiện toast. */
+  onNotice: ((key: 'alarm.access.auto') => void) | null = null;
 
   /**
    * Áp một thay đổi lấy từ nơi khác (So sánh › Đọc lên phần chọn, feature 005, FR-030) thành MỘT bước hoàn tác:
@@ -616,6 +640,17 @@ export class StudioStore {
     }, VALIDATE_DELAY_MS);
   }
 
+  /** Cảnh báo riêng của Studio (không có ở bộ kiểm dùng chung với thiết bị). Feature 040: lối vào alarm trên web. */
+  private studioAdvice(): Issue[] {
+    const o = this.s.outline;
+    const w = alarmAccessIssue(
+      o.project?.schemaVersion,
+      o.navigation,
+      o.alarms?.alarms.length ?? 0,
+    );
+    return w ? [w] : [];
+  }
+
   private runValidate(): Promise<void> {
     const seq = ++this.requested;
     const docs = this.s.docs;
@@ -632,7 +667,7 @@ export class StudioStore {
       (r) => {
         if (seq !== this.requested) return;
         this.set({
-          issues: [...r.errors, ...r.warnings],
+          issues: [...r.errors, ...r.warnings, ...this.studioAdvice()],
           loaded: r.project ?? null,
           loaded02: r.project02 ?? null,
           // 0.4 (feature 008) trả `project04` thay vì `project03`: cùng cấu trúc tập file.

@@ -15,6 +15,7 @@ import {
 } from './template-actions.ts';
 import { recipeAddType } from './recipe-actions.ts';
 import { t, type MessageKey } from '../i18n/index.ts';
+import { withAlarmAccess } from '../model/alarm-access.ts';
 import { monitorFetch, monitorSocket } from '../model/device-adapters.ts';
 import { DeviceSession, type SessionState } from '../model/device-session.ts';
 import {
@@ -449,6 +450,8 @@ export class StudioApp {
     this.versionGate = deps.versionGate ?? true;
     this.now = deps.now ?? (() => Date.now());
     this.store = deps.store ?? new StudioStore({ platform: deps.platform });
+    this.store.alarmMenuLabel = t('nav.sys.alarms');
+    this.store.onNotice = (key) => this.toast(t(key));
     this.link = deps.link ?? null;
     const link = this.link;
     this.session =
@@ -1721,6 +1724,21 @@ export class StudioApp {
   }
 
   /** Mở editor chứa chỗ sai và để sẵn vị trí cho editor lấy (`takeReveal`). */
+  /**
+   * Feature 040: sửa nhanh W_ALARM_NO_ACCESS: thêm mục "Alarm" vào menu và bật chuông (một bước hoàn tác).
+   * Trả false khi không đổi được (chỉ đọc, project cũ, menu đầy).
+   */
+  fixAlarmAccess(): boolean {
+    const st = this.store.state;
+    const nav = st.outline.navigation;
+    if (st.readOnly || !nav) return false;
+    const next = withAlarmAccess(nav, st.outline.project?.schemaVersion, t('nav.sys.alarms'));
+    if (!next) return false;
+    this.store.edit([{ kind: 'navigation', value: next }]);
+    this.toast(t('alarm.access.fixed'));
+    return true;
+  }
+
   gotoIssue(issue: Issue): boolean {
     if (issue.code === 'E_REF_UID' && this.reimportIssue(issue)) return true;
     if (this.gotoSvgIssue(issue)) return true;

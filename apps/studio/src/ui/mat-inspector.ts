@@ -168,6 +168,21 @@ export class MatInspector extends AppElement {
       <span class="mono code">${it.code}</span>
       <span class="loc mono">${it.file}${it.path ? ` ${it.path}` : ''}</span>
       <span class="msg">${issueText(this.app, it)}</span>
+      ${
+        it.code === 'W_ALARM_NO_ACCESS' && !this.app.store.state.readOnly
+          ? html`<button
+              class="btn fix"
+              type="button"
+              data-fix="alarm-access"
+              @click=${(e: Event) => {
+                e.stopPropagation();
+                this.app.fixAlarmAccess();
+              }}
+            >
+              ${t('alarm.access.fix')}
+            </button>`
+          : nothing
+      }
     </div>`;
   }
 

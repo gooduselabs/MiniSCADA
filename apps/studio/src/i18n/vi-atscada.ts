@@ -23,6 +23,7 @@ export const viAtscada = {
   'widget.history-table.prop.search': 'Ô tìm kiếm',
   'widget.alarm-list.prop.search': 'Ô tìm kiếm',
   'widget.alarm-list.prop.exportCsv': 'Nút xuất CSV',
+  'widget.alarm-list.prop.ackAll': 'Nút Xác nhận tất cả',
   // ---- time-range ----
   'widget.time-range': 'Hẹn giờ Từ–Đến',
   'widget.time-range.prop.format': 'Cách lưu giờ',

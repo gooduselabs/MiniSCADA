@@ -270,6 +270,8 @@ export type WarningCode =
   | 'W_LAYOUT_ITEM_ORPHAN'
   // feature 030: mục menu trỏ trang hệ thống mà project không có tính năng tương ứng
   | 'W_NAV_SYSTEM'
+  // feature 040 (chỉ Studio): project có alarm mà web không có lối vào (chuông tắt, menu không có mục Alarm)
+  | 'W_ALARM_NO_ACCESS'
   // feature 011 (contracts/logic-engine.md §11): logic.json
   | 'W_LOGIC_PT_ROUNDED'
   | 'W_LOGIC_WRITE_CONFLICT'

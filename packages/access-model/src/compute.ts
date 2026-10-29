@@ -126,10 +126,20 @@ export function computeAccess(
     for (const r of catalog.reports)
       if (allowed(`report:${r.id}`, 'view')) for (const t of r.tags) history.add(t);
 
+  // Tag mà quyền có thể giới hạn: có trên màn hình, trong nhóm lưu trữ hoặc mẫu báo cáo.
+  const shown = new Set([
+    ...catalog.screens.flatMap((s) => s.items.flatMap((it) => it.tags)),
+    ...catalog.historyGroups.flatMap((g) => g.tags),
+    ...catalog.reports.flatMap((r) => r.tags),
+  ]);
   const alarms = admin
     ? catalog.alarms.map((a) => a.id)
     : catalog.alarms
-        .filter((a) => (a.tag === null ? pages.includes('alarms') : live.has(a.tag)))
+        .filter((a) =>
+          // Feature 040: alarm của Tag không ở màn hình, nhóm lưu trữ hay báo cáo nào (vd. Tag chỉ dùng cho alarm) đi theo
+          // trang Alarm như alarm không có Tag; Tag có ở đó thì theo quyền xem Tag sống (D21).
+          a.tag === null || !shown.has(a.tag) ? pages.includes('alarms') : live.has(a.tag),
+        )
         .map((a) => a.id);
 
   return {

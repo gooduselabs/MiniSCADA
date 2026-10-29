@@ -12,7 +12,7 @@ Danh mục mọi mã lỗi và cảnh báo mà thiết bị (runtime), Studio v�
   khác (danh sách lỗi, kết quả ghi, quality, cảnh báo).
 - Cột **Nơi dùng** là phần mã nguồn phát hoặc kiểm tra mã này.
 
-Tổng cộng 581 mã.
+Tổng cộng 582 mã.
 
 ## Mục lục
 
@@ -21,7 +21,7 @@ Tổng cộng 581 mã.
 - [Biểu thức của Tag tính toán](#expression) (10)
 - [Màn hình, widget, binding và điều hướng](#screens) (50)
 - [SVG, hoạt ảnh, sự kiện và nhập SVG](#svg) (31)
-- [Alarm](#alarm) (54)
+- [Alarm](#alarm) (55)
 - [Lưu trữ, lịch sử và báo cáo](#history) (43)
 - [Gói project (.matscada)](#package) (16)
 - [Nạp xuống, đọc lên, kho project và kiểm tra sức khỏe](#deploy) (20)
@@ -278,6 +278,7 @@ Tổng cộng 581 mã.
 | `W_ALARM_CHATTER_RISK` | — | Không có deadband và trễ: alarm có thể chập chờn | `core/project-manager`, `packages/project-schema` |
 | `W_ALARM_COUNT_HIGH` | — | Hơn 200 instance: cân nhắc gọn lại | `core/project-manager`, `packages/project-schema` |
 | `W_ALARM_DEVICE_EMPTY` | — | Thiết bị không có Tag đọc từ nó | `core/project-manager`, `packages/project-schema` |
+| `W_ALARM_NO_ACCESS` | — | Project có alarm nhưng trang web không có lối vào: chuông cảnh báo tắt và menu không có mục Alarm (chỉ Studio; nút sửa nhanh thêm mục Alarm và bật chuông) | `packages/project-schema` |
 | `W_ALARM_NO_ACK_CRITICAL` | — | Lớp khẩn cấp không cần xác nhận | `core/project-manager`, `packages/project-schema` |
 | `W_WIDGET_ALARM_REF` | — | Widget alarm tham chiếu khu vực hoặc lớp không có trong project | `core/project-manager`, `packages/project-schema` |
 

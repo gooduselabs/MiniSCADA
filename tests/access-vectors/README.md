@@ -27,7 +27,7 @@ Danh mục nền: màn hình `tong-quan`, `bom-1`, `bao-tri` và popup `popup-bo
    - `pages`: các tên `alarms`, `history`, `reports`, `watch` được `view` (không có `admin`); `admin` là `role == administrator`.
    - `liveTags`: hợp Tag của mọi item được xem (trên màn hình được xem).
    - `historyTags`: `liveTags` ∪ Tag của `history:<g>` được xem nếu `page:history` được xem ∪ Tag của `report:<id>` được xem nếu `page:reports` được xem.
-   - `alarms`: id alarm có `tag` thuộc `liveTags`, **không phụ thuộc** `page:alarms` (widget alarm trên màn hình vẫn dùng); trang Alarm chỉ mở khi `alarms ∈ pages`. Alarm có `tag: null` (của thiết bị, driver) thuộc `alarms` khi `alarms ∈ pages` (quyết định 2026-10-20; ca `alarm-without-tag-*`).
+   - `alarms`: id alarm có `tag` thuộc `liveTags`, **không phụ thuộc** `page:alarms` (widget alarm trên màn hình vẫn dùng); trang Alarm chỉ mở khi `alarms ∈ pages`. Alarm có `tag: null` (của thiết bị, driver) thuộc `alarms` khi `alarms ∈ pages` (quyết định 2026-10-20; ca `alarm-without-tag-*`). Feature 040: alarm có `tag` không nằm ở màn hình, nhóm lưu trữ hay mẫu báo cáo nào (không quy tắc nào giới hạn được Tag đó) cũng thuộc `alarms` khi `alarms ∈ pages` (ca `alarm-tag-unrestricted-*`).
    - Administrator: mọi màn hình, không ẩn, không khóa, bốn trang, mọi Tag của item (`liveTags`), cộng mọi Tag của nhóm và mẫu (`historyTags`), mọi alarm.
 7. **Thứ tự:** mọi mảng sắp theo chuỗi (byte; tên toàn ASCII) và không trùng, trừ `screens`; `orphans` sắp theo `resource` rồi `level`. `hiddenItems`/`lockedItems` chỉ có khóa khi danh sách khác rỗng (đối tượng rỗng `{}` khi không có gì).
 

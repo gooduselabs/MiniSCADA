@@ -32,6 +32,8 @@ export { nextFocusIndex };
 const STATUS_MS = 6000;
 /** Bố cục lưới (feature 012, FR-026): dưới chiều rộng này các ô xếp chồng một cột. */
 export const GRID_NARROW_PX = 768;
+/** Feature 040: widget mà trong hàng lưới "auto" lấy chiều cao mặc định của danh mục làm tối thiểu. */
+const AUTO_ROW_DEFAULT_H: ReadonlySet<string> = new Set(['alarm-list']);
 
 /** Cột bắt đầu (tính từ 1) của từng ô trong hàng: sau các ô trước và khoảng trống `offset` của chính ô. */
 function cellStarts(cells: GridLayout['rows'][number]['cells']): number[] {
@@ -822,7 +824,10 @@ export class MatScreen extends LitElement {
     const byId = new Map(s.items.map((i) => [i.id, i]));
     const minOf = (id: string | undefined): number => {
       const it = id === undefined ? undefined : byId.get(id);
-      return it?.type === 'widget' ? (catalogWidget(it.widget)?.minSize[1] ?? 0) : 0;
+      if (it?.type !== 'widget') return 0;
+      const w = catalogWidget(it.widget);
+      // Feature 040: bảng alarm trong hàng "auto" cao theo cỡ mặc định, không co về cỡ tối thiểu (chỉ thấy 1 dòng).
+      return (AUTO_ROW_DEFAULT_H.has(it.widget) ? w?.defaultSize[1] : w?.minSize[1]) ?? 0;
     };
     return html`<div
         class="viewport"

@@ -2331,6 +2331,12 @@
           "kind": "bool",
           "default": true,
           "group": "display"
+        },
+        {
+          "name": "ackAll",
+          "kind": "bool",
+          "default": true,
+          "group": "display"
         }
       ],
       "events": []

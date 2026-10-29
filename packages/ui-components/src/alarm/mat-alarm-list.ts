@@ -1,8 +1,10 @@
 // Widget `alarm-list` (Bảng alarm; FR-069, FR-070; contracts/ui-alarm.md §13.1): danh sách alarm đang có thỏa bộ lọc, dựa trên
 // `<mat-alarm-table>` dùng chung. Không khe Tag, không gọi mạng: chỉ đọc `AlarmSource` (`.alarms` do nơi chứa cấp) và gọi `ActionHost`.
-// Không hộp chọn, không "Xác nhận tất cả", không tạm ẩn (việc của trang).
+// Không hộp chọn, không tạm ẩn (việc của trang). Feature 040: nút "Xác nhận tất cả" (prop `ackAll`) xác nhận các hàng đang
+// hiện; trên lưới hàng "auto" mat-screen cho ô cao tối thiểu bằng cỡ mặc định (không co bảng về một dòng).
 // Feature 029: ô tìm kiếm (lọc theo chữ và tên alarm, bỏ dấu) và nút xuất CSV các alarm đang hiện (props `search`, `exportCsv`).
 import { css, html, nothing, type TemplateResult } from 'lit';
+import type { MatAlarmTable } from './alarm-table.ts';
 import type { AlarmInstance, AlarmSource } from '../host/types.ts';
 import { MatWidget } from '../widgets/base.ts';
 import { listProps } from './alarm-widget-props.ts';
@@ -121,6 +123,10 @@ export class MatAlarmList extends MatWidget {
     };
   }
 
+  #ackAll = (): void => {
+    this.renderRoot.querySelector<MatAlarmTable>('mat-alarm-table')?.ackAllVisible();
+  };
+
   /** Alarm đang hiện (cùng bộ lọc với bảng), xuất CSV và tải về. */
   #export = (): void => {
     const src = this.alarms;
@@ -143,9 +149,10 @@ export class MatAlarmList extends MatWidget {
     const p = listProps(this.item);
     const search = this.prop('search', true);
     const csv = this.prop('exportCsv', true);
+    const ackAll = this.prop('ackAll', true) && p.showAck;
     return html`<div class="outer">
       ${
-        search || csv
+        search || csv || ackAll
           ? html`<div class="bar">
               ${
                 search
@@ -158,6 +165,18 @@ export class MatAlarmList extends MatWidget {
                       @input=${(e: Event) => (this._q = (e.target as HTMLInputElement).value)}
                     />`
                   : html`<span class="sp"></span>`
+              }
+              ${
+                ackAll
+                  ? html`<button
+                      type="button"
+                      data-act="ack-all"
+                      ?disabled=${this.mode === 'edit' || !this.alarms}
+                      @click=${this.#ackAll}
+                    >
+                      ${alarmVi.listAckAll}
+                    </button>`
+                  : nothing
               }
               ${
                 csv

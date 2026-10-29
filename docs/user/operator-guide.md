@@ -152,6 +152,8 @@ Nút xung (bấm rồi tự nhả): hộp xác nhận ghi "Xung N ms rồi trả
 - Bốn mức ưu tiên, mỗi mức một hình: **Khẩn cấp** (tam giác có "!"), **Quan trọng** (hình thoi), **Nhỏ** (hình tròn), **Lưu ý** (hình vuông có "i").
 - Trạng thái: "Đang có, chưa xác nhận", "Đang có, đã xác nhận", "Đã hết, chưa xác nhận", "Tạm ẩn".
 
+**Tìm alarm ở đâu?** Ba chỗ, chỗ nào cũng xác nhận được: **chuông** ở thanh trên (luôn có, trừ khi project tắt), trang **Alarm** trong menu (nếu project có mục này), và **Bảng alarm** đặt trên màn hình (có nút **Xác nhận** từng dòng và **Xác nhận tất cả** ở thanh trên của bảng). Không thấy alarm nào mà nghi có sự cố: báo kỹ sư.
+
 Xử lý một alarm:
 
 1. Đọc nội dung, xem giá trị lúc bật.

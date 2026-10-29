@@ -330,6 +330,13 @@ export const viAlarm = {
   'issue.E_ALARM_AREA_COUNT': 'Quá 64 khu vực',
   'issue.E_ALARM_CLASS_COUNT': 'Cần 1 đến 16 lớp',
   'issue.W_ALARM_COUNT_HIGH': 'Hơn 200 instance: cân nhắc gọn lại',
+  // Feature 040: lối vào alarm trên web
+  'issue.W_ALARM_NO_ACCESS':
+    'Project có alarm nhưng trang web chưa có chỗ xem: chuông cảnh báo đang tắt và menu không có mục Alarm. Người vận hành sẽ không thấy alarm.',
+  'alarm.access.fix': 'Thêm trang Alarm và chuông vào menu',
+  'alarm.access.fixed': 'Đã thêm mục Alarm vào menu và bật chuông cảnh báo.',
+  'alarm.access.auto':
+    'Đã thêm mục "Alarm" vào menu và bật chuông để người vận hành thấy alarm trên web (Ctrl+Z để hoàn tác).',
   'issue.W_ALARM_NO_ACK_CRITICAL': 'Lớp khẩn cấp không cần xác nhận',
   'issue.W_ALARM_CHATTER_RISK': 'Không có deadband và trễ: alarm có thể chập chờn',
   'issue.W_ALARM_DEVICE_EMPTY': 'Thiết bị không có Tag đọc từ nó',
