@@ -251,7 +251,11 @@ export function removeLogicBlock(app: StudioApp, kind: LogicKind, id: string): v
 }
 
 export function setView(app: StudioApp, view: LogicView): void {
+  const prev = logicUi(app).view;
   logicUi(app).view = view;
+  // Feature 043: thẻ luật tự đủ (sửa, lỗi, thử ngay trong thẻ) nên khung dưới gập lại cho rộng chỗ; về Nâng cao thì mở lại.
+  if (prev !== view && (view === 'cards' || prev === 'cards'))
+    app.setInspectorCollapsed(view === 'cards');
   try {
     globalThis.localStorage?.setItem(VIEW_KEY, view);
   } catch {

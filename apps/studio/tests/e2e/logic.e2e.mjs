@@ -168,7 +168,7 @@ export default async function logic(ctx) {
   // ---------- 1. Cây và bảng khối ----------
   check('cây có nút Logic', Boolean(await page.$('mat-tree [id="ti-logic"]')));
   await treeNode(page, 'logic');
-  // Feature 015: khung nhìn mặc định là Sơ đồ; kịch bản này kiểm bảng của 011.
+  // Feature 043: khung nhìn mặc định là Luật (thẻ); kịch bản này kiểm bảng của 011 (Nâng cao).
   await page.waitForSelector('mat-logic-editor [data-view="table"]');
   await page.$eval('mat-logic-editor [data-view="table"]', (b) => b.click());
   await page.waitForSelector('mat-logic-editor table.lg-grid');

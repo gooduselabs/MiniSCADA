@@ -349,9 +349,8 @@ mat-logic-cards.lgc {
   gap: 6px;
   line-height: 1.2;
 }
-.lgc-line.else.faint .lgc-kw.else,
-.lgc-line.else.faint .lgc-arrow {
-  opacity: 0.55;
+.lgc-line.else.faint .lgc-kw.else {
+  background: transparent;
 }
 .lgc-arrow {
   color: var(--c);
@@ -428,7 +427,7 @@ select.lgc-chip {
   text-align: right;
 }
 .lgc-time {
-  width: 96px;
+  width: 124px;
 }
 .lgc-expr {
   width: 220px;

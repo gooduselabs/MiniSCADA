@@ -5,6 +5,7 @@
 // của thẻ nhớ nguồn (`src`) và chỉ viết lại phần đã đổi nghĩa. Hàm thuần, không DOM, trả tài liệu MỚI.
 import { parseExpression, type ExprNode } from '@mat/expression';
 import type { LogicAction, LogicDoc, TagV1 } from '@mat/project-schema';
+import { t } from '../i18n/index.ts';
 import { blocksOf, suggestId, type Block, type LogicKind } from './logic-doc.ts';
 
 export type CmpOp = '==' | '!=' | '>' | '>=' | '<' | '<=';
@@ -286,7 +287,12 @@ export function readAction(a: LogicAction, doc: LogicDoc): CardAction | null {
 }
 
 const sameAction = (a: CardAction, b: CardAction) => {
-  const strip = ({ src: _s, write: _w, ...rest }: CardAction) => rest;
+  const strip = (x: CardAction) => {
+    const rest: Partial<CardAction> = { ...x };
+    delete rest.src;
+    delete rest.write;
+    return rest;
+  };
   return eq(strip(a), strip(b));
 };
 
@@ -628,7 +634,8 @@ export function duplicateRule(doc: LogicDoc, id: string): { doc: LogicDoc; id: s
   const copy = clone(rules[i]!);
   const nid = suggestId(next, 'rule');
   copy.id = nid;
-  if (typeof copy.name === 'string' && copy.name) copy.name = `${copy.name} (bản sao)`.slice(0, 80);
+  if (typeof copy.name === 'string' && copy.name)
+    copy.name = t('lgc.copyName', { name: copy.name }).slice(0, 80);
   const card = readRuleCard(doc, rules[i]!);
   if (card.trigger.type === 'time') {
     const s = (next.schedules ?? []).find((x) => x.id === (card.trigger as TimeTrigger).schedule);
@@ -829,11 +836,12 @@ export function wallFor(day: number, hm: string, tzOffsetMin = 420): number {
 /** Tag logic dễ đọc: `LOGIC.T_1.Q` → "Timer t_1 xong". */
 export function logicTagLabel(doc: LogicDoc | null | undefined, tag: string): string | null {
   if (!doc || !tag.startsWith('LOGIC.')) return null;
-  for (const t of doc.timers ?? []) if (t.q === tag) return `Timer ${t.id} xong`;
+  for (const tm of doc.timers ?? []) if (tm.q === tag) return t('lgc.out.timer', { id: tm.id });
   for (const c of doc.counters ?? []) {
-    if (c.reached === tag) return `Đếm ${c.id} đủ`;
-    if (c.value === tag) return `Số đếm ${c.id}`;
+    if (c.reached === tag) return t('lgc.out.reached', { id: c.id });
+    if (c.value === tag) return t('lgc.out.value', { id: c.id });
   }
-  for (const s of doc.schedules ?? []) if (s.out === tag) return `Lịch ${s.id} đang trong giờ`;
+  for (const s of doc.schedules ?? [])
+    if (s.out === tag) return t('lgc.out.schedule', { id: s.id });
   return null;
 }

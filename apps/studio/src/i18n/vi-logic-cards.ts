@@ -196,5 +196,10 @@ export const viLogicCards = {
   'lgc.tpl.close': 'Đóng',
   'lgc.tpl.advanced': 'Khối trống trong trình soạn đầy đủ',
   'lgc.tpl.full': 'Đã đủ {n} luật — xóa bớt để thêm',
+  'lgc.copyName': '{name} (bản sao)',
+  'lgc.out.timer': 'Timer {id} xong',
+  'lgc.out.reached': 'Đếm {id} đủ',
+  'lgc.out.value': 'Số đếm {id}',
+  'lgc.out.schedule': 'Lịch {id} đang trong giờ',
   'lgc.added': 'Đã thêm luật "{name}" — chọn Tag ở các ô màu',
 } as const;

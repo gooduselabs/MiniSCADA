@@ -50,6 +50,7 @@ import './plc-chip.ts';
 import './logic.css';
 
 export class LogicEditor extends AppElement {
+  private autoCollapsed = false;
   private readonly onDoc = (e: Event): void => {
     const ui = logicUi(this.app);
     if (ui.menu && !this.querySelector('.lg-add')?.contains(e.target as Node)) {
@@ -60,6 +61,11 @@ export class LogicEditor extends AppElement {
 
   protected override attached(): void {
     startLive(this.app);
+    // Feature 043: khung nhìn Luật không cần khung dưới (Inspector): gập khi mở editor ở khung nhìn này.
+    if (logicUi(this.app).view === 'cards' && !this.app.workspace.inspectorCollapsed) {
+      this.app.setInspectorCollapsed(true);
+      this.autoCollapsed = true;
+    }
     ensureDockHeight(
       this.app,
       logicUi(this.app).dockTab === 'test' ? testDockHeight(this.app) : DOCK_HEIGHT.info,
@@ -69,6 +75,10 @@ export class LogicEditor extends AppElement {
 
   protected override detached(): void {
     stopLive(this.app);
+    // trả lại khung dưới cho editor khác nếu chính editor Logic đã gập nó
+    if (this.autoCollapsed && this.app.workspace.inspectorCollapsed)
+      this.app.setInspectorCollapsed(false);
+    this.autoCollapsed = false;
     restoreDockHeight(this.app);
     document.removeEventListener('pointerdown', this.onDoc, true);
   }
@@ -221,7 +231,7 @@ export class LogicEditor extends AppElement {
           <button
             type="button"
             data-view="table"
-            aria-pressed=${diagram ? 'false' : 'true'}
+            aria-pressed=${ui.view === 'table' ? 'true' : 'false'}
             title=${t('lgd.view.tableTip')}
             @click=${() => setView(app, 'table')}
           >

@@ -171,6 +171,9 @@ export default async function logicDiagram(ctx) {
   await setTheme(page, 'light');
   await openAndWait(page, project(), 'D:\\Projects\\tram-bom');
   await treeNode(page, 'logic');
+  // Feature 043: mặc định là khung nhìn Luật (thẻ); Sơ đồ nằm trong Nâng cao
+  await page.waitForSelector('mat-logic-editor [data-view="diagram"]');
+  await page.$eval('mat-logic-editor [data-view="diagram"]', (b) => b.click());
   await page.waitForSelector('mat-logic-editor mat-logic-diagram .lgd-view');
   await page.evaluate(() => {
     const app = window.__matApp;
@@ -192,7 +195,7 @@ export default async function logicDiagram(ctx) {
     wires: document.querySelectorAll('mat-logic-diagram g.wr').length,
     table: document.querySelector('mat-logic-editor table.lg-grid') !== null,
   }));
-  check('khung nhìn mặc định là Sơ đồ (không bảng)', info.view === 'true' && !info.table);
+  check('khung nhìn Sơ đồ (không bảng)', info.view === 'true' && !info.table);
   check(
     'sơ đồ có đủ 8 khối của 7 nhóm',
     info.blocks.length === 8 && info.blocks.includes('w_pump_run') && info.blocks.includes('s_day'),

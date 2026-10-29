@@ -1582,7 +1582,7 @@ export class LogicCards extends AppElement {
         />
       </div>
       <datalist id="lgc-groups">${names.map((n) => html`<option value=${n}></option>`)}</datalist>
-      <div class="lgc-list" role="list" aria-label=${t('lgc.list')}>
+      <div class="lgc-list" role="group" aria-label=${t('lgc.list')}>
         ${
           all.length === 0
             ? html`<div class="lgc-empty">
@@ -1625,7 +1625,7 @@ export class LogicCards extends AppElement {
                           </button>`
                         : nothing
                     }
-                    ${collapsed ? nothing : list.map((c) => html`<div role="listitem">${this.renderCard(c, issues, doc)}</div>`)}
+                    ${collapsed ? nothing : list.map((c) => this.renderCard(c, issues, doc))}
                   </section>`;
                 })
         }
