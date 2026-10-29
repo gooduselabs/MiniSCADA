@@ -40,6 +40,19 @@
   /* Bản sao template (feature 011, T007 quyết định 11): tím riêng, khác chọn (petrol) và lỗi; luôn kèm biểu tượng, chữ */
   --tplc: #7a3fb8;
   --tpl-soft: #efe5fa;
+  /* Loại luật của Logic (feature 043): kích hoạt theo giá trị, giờ, lặp, trễ, đếm, nâng cao; luôn kèm icon và chữ */
+  --lr-value: #1d4ed8;
+  --lr-value-soft: #dbeafe;
+  --lr-time: #6d28d9;
+  --lr-time-soft: #ede9fe;
+  --lr-every: #0f766e;
+  --lr-every-soft: #ccfbf1;
+  --lr-timer: #c2410c;
+  --lr-timer-soft: #ffedd5;
+  --lr-counter: #15803d;
+  --lr-counter-soft: #dcfce7;
+  --lr-adv: #475569;
+  --lr-adv-soft: #e2e8f0;
   /* Vùng vẽ, lớp phủ, bóng */
   --canvas: #dfe5e8;
   --scrim: rgba(12, 22, 26, 0.36);
@@ -91,6 +104,18 @@
     --sim-soft: #2a1f40;
     --tplc: #c49bf5;
     --tpl-soft: #2a1f40;
+    --lr-value: #60a5fa;
+    --lr-value-soft: #172a4a;
+    --lr-time: #a78bfa;
+    --lr-time-soft: #2a1f48;
+    --lr-every: #2dd4bf;
+    --lr-every-soft: #0f3532;
+    --lr-timer: #fb923c;
+    --lr-timer-soft: #3d2210;
+    --lr-counter: #4ade80;
+    --lr-counter-soft: #13321f;
+    --lr-adv: #94a3b8;
+    --lr-adv-soft: #232c38;
     --canvas: #0e1214;
     --scrim: rgba(0, 0, 0, 0.55);
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -131,6 +156,18 @@
   --sim-soft: #2a1f40;
   --tplc: #c49bf5;
   --tpl-soft: #2a1f40;
+  --lr-value: #60a5fa;
+  --lr-value-soft: #172a4a;
+  --lr-time: #a78bfa;
+  --lr-time-soft: #2a1f48;
+  --lr-every: #2dd4bf;
+  --lr-every-soft: #0f3532;
+  --lr-timer: #fb923c;
+  --lr-timer-soft: #3d2210;
+  --lr-counter: #4ade80;
+  --lr-counter-soft: #13321f;
+  --lr-adv: #94a3b8;
+  --lr-adv-soft: #232c38;
   --canvas: #0e1214;
   --scrim: rgba(0, 0, 0, 0.55);
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);

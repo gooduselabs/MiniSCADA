@@ -44,6 +44,7 @@ import {
 } from './logic-state.ts';
 import { rulesTable } from './rules-table.ts';
 import './logic-diagram.ts';
+import './rule-cards.ts';
 import './logic-dock.ts';
 import './plc-chip.ts';
 import './logic.css';
@@ -180,6 +181,7 @@ export class LogicEditor extends AppElement {
       online && support.logic && support.logicWrites === 'off' && (doc.writes ?? []).length > 0;
     const retain = retainBytesPerDay(doc, 60);
     const diagram = ui.view === 'diagram';
+    const cards = ui.view === 'cards';
     return html`<div
       class="ed ed-fill lg-ed"
       @keydown=${(e: KeyboardEvent) => this.onKey(e)}
@@ -196,6 +198,17 @@ export class LogicEditor extends AppElement {
     >
       <div class="ed-tools lg-tools" role="toolbar" aria-label=${t('logic.toolbar')}>
         <span class="seg lg-view" role="group" aria-label=${t('lgd.view')}>
+          <button
+            type="button"
+            data-view="cards"
+            class="lg-view-cards"
+            aria-pressed=${cards ? 'true' : 'false'}
+            title=${t('lgc.viewTip')}
+            @click=${() => setView(app, 'cards')}
+          >
+            ${icon('bolt', 'sm')}${t('lgc.view')}
+          </button>
+          <span class="lg-view-adv" aria-hidden="true">${t('lgc.advanced')}</span>
           <button
             type="button"
             data-view="diagram"
@@ -225,69 +238,73 @@ export class LogicEditor extends AppElement {
         >
           ${icon('check')}${t('logic.tb.check')}
         </button>
-        <span class="lg-add">
-          <button
-            type="button"
-            class="tbtn"
-            data-act="add"
-            aria-haspopup="menu"
-            aria-expanded=${ui.menu ? 'true' : 'false'}
-            title=${t('logic.tb.addTip')}
-            ?disabled=${ro}
-            @click=${() => {
-              ui.menu = !ui.menu;
-              app.requestRender();
-              if (ui.menu)
-                void this.updateComplete.then(() =>
-                  this.querySelector<HTMLElement>('.lg-add [role="menuitem"]')?.focus(),
-                );
-            }}
-          >
-            ${icon('plus')}${t('logic.tb.add')}${icon('chev-d', 'sm')}
-          </button>
-          ${
-            ui.menu
-              ? html`<div
-                  class="menu lg-menu"
-                  role="menu"
-                  aria-label=${t('logic.tb.add')}
-                  @keydown=${(e: KeyboardEvent) => {
-                    if (e.key === 'Escape') {
-                      ui.menu = false;
-                      app.requestRender();
-                      return;
-                    }
-                    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-                    e.preventDefault();
-                    const items = [
-                      ...this.querySelectorAll<HTMLElement>('.lg-add [role="menuitem"]'),
-                    ];
-                    const i = items.indexOf(document.activeElement as HTMLElement);
-                    items[
-                      (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
-                    ]?.focus();
+        ${
+          cards
+            ? nothing
+            : html`<span class="lg-add">
+                <button
+                  type="button"
+                  class="tbtn"
+                  data-act="add"
+                  aria-haspopup="menu"
+                  aria-expanded=${ui.menu ? 'true' : 'false'}
+                  title=${t('logic.tb.addTip')}
+                  ?disabled=${ro}
+                  @click=${() => {
+                    ui.menu = !ui.menu;
+                    app.requestRender();
+                    if (ui.menu)
+                      void this.updateComplete.then(() =>
+                        this.querySelector<HTMLElement>('.lg-add [role="menuitem"]')?.focus(),
+                      );
                   }}
                 >
-                  ${LOGIC_KINDS.map(
-                    (k) =>
-                      html`<button
-                        type="button"
-                        role="menuitem"
-                        data-add=${k}
-                        aria-disabled=${counts[k] >= KIND_LIMIT[k] ? 'true' : 'false'}
-                        @click=${() => {
-                          if (counts[k] < KIND_LIMIT[k]) this.add(k);
+                  ${icon('plus')}${t('logic.tb.add')}${icon('chev-d', 'sm')}
+                </button>
+                ${
+                  ui.menu
+                    ? html`<div
+                        class="menu lg-menu"
+                        role="menu"
+                        aria-label=${t('logic.tb.add')}
+                        @keydown=${(e: KeyboardEvent) => {
+                          if (e.key === 'Escape') {
+                            ui.menu = false;
+                            app.requestRender();
+                            return;
+                          }
+                          if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+                          e.preventDefault();
+                          const items = [
+                            ...this.querySelectorAll<HTMLElement>('.lg-add [role="menuitem"]'),
+                          ];
+                          const i = items.indexOf(document.activeElement as HTMLElement);
+                          items[
+                            (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+                          ]?.focus();
                         }}
                       >
-                        ${icon(KIND_ICON[k])}${kindLabel(k)}<span class="grow"></span
-                        ><span class="muted sm-text">${counts[k]}/${KIND_LIMIT[k]}</span>
-                      </button>`,
-                  )}
-                  <div class="note">${t('logic.tb.limits')}</div>
-                </div>`
-              : nothing
-          }
-        </span>
+                        ${LOGIC_KINDS.map(
+                          (k) =>
+                            html`<button
+                              type="button"
+                              role="menuitem"
+                              data-add=${k}
+                              aria-disabled=${counts[k] >= KIND_LIMIT[k] ? 'true' : 'false'}
+                              @click=${() => {
+                                if (counts[k] < KIND_LIMIT[k]) this.add(k);
+                              }}
+                            >
+                              ${icon(KIND_ICON[k])}${kindLabel(k)}<span class="grow"></span
+                              ><span class="muted sm-text">${counts[k]}/${KIND_LIMIT[k]}</span>
+                            </button>`,
+                        )}
+                        <div class="note">${t('logic.tb.limits')}</div>
+                      </div>`
+                    : nothing
+                }
+              </span>`
+        }
         <button
           type="button"
           class="tbtn"
@@ -297,19 +314,23 @@ export class LogicEditor extends AppElement {
         >
           ${icon('play')}${t('logic.dock.test')}
         </button>
-        <span class="tsep"></span>
-        <button
-          type="button"
-          class="tbtn"
-          data-act="delete"
-          title=${t('logic.tb.deleteTip')}
-          ?disabled=${ro || !sel}
-          @click=${() => this.removeSelected()}
-        >
-          ${icon('x')}${t('logic.tb.delete')}
-        </button>
         ${
-          diagram
+          cards
+            ? nothing
+            : html`<span class="tsep"></span>
+                <button
+                  type="button"
+                  class="tbtn"
+                  data-act="delete"
+                  title=${t('logic.tb.deleteTip')}
+                  ?disabled=${ro || !sel}
+                  @click=${() => this.removeSelected()}
+                >
+                  ${icon('x')}${t('logic.tb.delete')}
+                </button>`
+        }
+        ${
+          diagram || cards
             ? nothing
             : html`<button
                   type="button"
@@ -352,49 +373,51 @@ export class LogicEditor extends AppElement {
         }
       </div>
       ${
-        diagram
-          ? html`<mat-logic-diagram class="lg-dia" .app=${app}></mat-logic-diagram>`
-          : html`<div class="ed-tools lg-sub">
-                <span class="seg lg-seg" role="group" aria-label=${t('logic.groups')}>
-                  ${LOGIC_KINDS.map(
-                    (k) =>
-                      html`<button
-                        type="button"
-                        data-kind=${k}
-                        aria-pressed=${k === kind ? 'true' : 'false'}
-                        @click=${() => setKind(app, k)}
-                      >
-                        ${icon(KIND_ICON[k], 'sm')}${kindLabel(k)}
-                      </button>`,
-                  )}
-                </span>
-                <input
-                  class="input sm"
-                  data-role="search"
-                  type="search"
-                  placeholder=${t('logic.search')}
-                  aria-label=${t('logic.search')}
-                  .value=${ui.search}
-                  @input=${(e: Event) => {
-                    ui.search = (e.target as HTMLInputElement).value;
-                    app.requestRender();
-                  }}
-                />
-                <label class="row inline sm-text"
-                  ><input
-                    type="checkbox"
-                    data-role="only-err"
-                    .checked=${ui.onlyErr}
-                    @change=${(e: Event) => {
-                      ui.onlyErr = (e.target as HTMLInputElement).checked;
+        cards
+          ? html`<mat-logic-cards class="lgc" .app=${app}></mat-logic-cards>`
+          : diagram
+            ? html`<mat-logic-diagram class="lg-dia" .app=${app}></mat-logic-diagram>`
+            : html`<div class="ed-tools lg-sub">
+                  <span class="seg lg-seg" role="group" aria-label=${t('logic.groups')}>
+                    ${LOGIC_KINDS.map(
+                      (k) =>
+                        html`<button
+                          type="button"
+                          data-kind=${k}
+                          aria-pressed=${k === kind ? 'true' : 'false'}
+                          @click=${() => setKind(app, k)}
+                        >
+                          ${icon(KIND_ICON[k], 'sm')}${kindLabel(k)}
+                        </button>`,
+                    )}
+                  </span>
+                  <input
+                    class="input sm"
+                    data-role="search"
+                    type="search"
+                    placeholder=${t('logic.search')}
+                    aria-label=${t('logic.search')}
+                    .value=${ui.search}
+                    @input=${(e: Event) => {
+                      ui.search = (e.target as HTMLInputElement).value;
                       app.requestRender();
                     }}
-                  />${t('logic.onlyErr')}</label
-                >
-                <span class="grow"></span>
-                <span class="muted sm-text">${t('logic.keys')}</span>
-              </div>
-              <div class="gridwrap">${rulesTable(app, kind)}</div> `
+                  />
+                  <label class="row inline sm-text"
+                    ><input
+                      type="checkbox"
+                      data-role="only-err"
+                      .checked=${ui.onlyErr}
+                      @change=${(e: Event) => {
+                        ui.onlyErr = (e.target as HTMLInputElement).checked;
+                        app.requestRender();
+                      }}
+                    />${t('logic.onlyErr')}</label
+                  >
+                  <span class="grow"></span>
+                  <span class="muted sm-text">${t('logic.keys')}</span>
+                </div>
+                <div class="gridwrap">${rulesTable(app, kind)}</div> `
       }
       <div class="lg-counts sm-text muted" role="status">
         ${LOGIC_KINDS.map((k) => `${kindLabel(k)} ${counts[k]}/${KIND_LIMIT[k]}`).join(' · ')} ·

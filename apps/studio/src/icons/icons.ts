@@ -4,6 +4,11 @@
 // DOM nên dùng <svg class="ic"><use href="#i-tên"></use></svg>. Nội dung SVG là tài nguyên của Studio,
 // không phải dữ liệu project; dựng bằng DOMParser, không qua innerHTML.
 import add from '@fluentui/svg-icons/icons/add_16_regular.svg?raw';
+import arrowRepeatAll from '@fluentui/svg-icons/icons/arrow_repeat_all_16_regular.svg?raw';
+import clock from '@fluentui/svg-icons/icons/clock_16_regular.svg?raw';
+import copy from '@fluentui/svg-icons/icons/copy_16_regular.svg?raw';
+import flash from '@fluentui/svg-icons/icons/flash_16_regular.svg?raw';
+import hourglassHalf from '@fluentui/svg-icons/icons/hourglass_half_16_regular.svg?raw';
 import alert from '@fluentui/svg-icons/icons/alert_16_regular.svg?raw';
 import arrowClockwise from '@fluentui/svg-icons/icons/arrow_clockwise_16_regular.svg?raw';
 import arrowCollapseAll from '@fluentui/svg-icons/icons/arrow_collapse_all_16_regular.svg?raw';
@@ -90,6 +95,11 @@ const FLUENT = {
   online: plugConnected,
   offline: plugDisconnected,
   play,
+  bolt: flash,
+  clock,
+  repeat: arrowRepeatAll,
+  copy,
+  hourglass: hourglassHalf,
   search,
   project: folder,
   home,

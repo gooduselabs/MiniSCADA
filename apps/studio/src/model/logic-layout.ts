@@ -16,6 +16,8 @@ export interface LogicLayoutDoc {
   kind: 'mat-logic-layout';
   version: 1;
   nodes: Record<string, NodePos>;
+  /** Feature 043: nhóm / khu vực của thẻ luật (id khối → tên nhóm), chỉ để xem trong Studio. */
+  groups?: Record<string, string>;
 }
 
 export const emptyLayout = (): LogicLayoutDoc => ({
@@ -37,11 +39,18 @@ export function readLayout(v: unknown): LogicLayoutDoc {
   const out = emptyLayout();
   if (v === null || typeof v !== 'object' || Array.isArray(v)) return out;
   const nodes = (v as { nodes?: unknown }).nodes;
-  if (nodes === null || typeof nodes !== 'object' || Array.isArray(nodes)) return out;
-  for (const [k, p] of Object.entries(nodes as Record<string, unknown>)) {
+  const okNodes = nodes !== null && typeof nodes === 'object' && !Array.isArray(nodes);
+  for (const [k, p] of Object.entries(okNodes ? (nodes as Record<string, unknown>) : {})) {
     if (p === null || typeof p !== 'object') continue;
     const { x, y } = p as { x?: unknown; y?: unknown };
     if (isNum(x) && isNum(y)) out.nodes[k] = { x: clamp(x), y: clamp(y) };
+  }
+  const groups = (v as { groups?: unknown }).groups;
+  if (groups !== null && typeof groups === 'object' && !Array.isArray(groups)) {
+    const g: Record<string, string> = {};
+    for (const [k, n] of Object.entries(groups as Record<string, unknown>))
+      if (typeof n === 'string' && n.trim()) g[k] = n.trim().slice(0, 60);
+    if (Object.keys(g).length) out.groups = g;
   }
   return out;
 }
@@ -79,4 +88,15 @@ export function pruneLayout(layout: LogicLayoutDoc, keep: ReadonlySet<string>): 
   const nodes: Record<string, NodePos> = {};
   for (const [k, v] of Object.entries(layout.nodes)) if (keep.has(k)) nodes[k] = v;
   return { ...layout, nodes };
+}
+
+/** Đặt (tên rỗng: bỏ) nhóm của một thẻ luật (feature 043). */
+export function setGroup(layout: LogicLayoutDoc, id: string, name: string): LogicLayoutDoc {
+  const groups = { ...(layout.groups ?? {}) };
+  const n = name.trim().slice(0, 60);
+  if (n) groups[id] = n;
+  else delete groups[id];
+  const out: LogicLayoutDoc = { ...layout, groups };
+  if (Object.keys(groups).length === 0) delete out.groups;
+  return out;
 }

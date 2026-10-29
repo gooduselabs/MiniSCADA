@@ -46,7 +46,7 @@ export interface LogicUi {
   savedHeight: number | null;
   /** Lỗi mà F8 / Shift+F8 vừa nhảy tới (chỉ số trong danh sách có vị trí), -1 khi chưa nhảy. */
   issueCursor: number;
-  /** Feature 015: khung nhìn Sơ đồ (mặc định) hoặc Bảng. */
+  /** Khung nhìn: Luật (thẻ, mặc định, feature 043), Sơ đồ hoặc Bảng (Nâng cao, feature 015). */
   view: LogicView;
   /** Nút Tag/Tag đích đang chọn trên sơ đồ (khối chọn theo `sel`). */
   dsel: string | null;
@@ -60,14 +60,16 @@ export interface LogicUi {
   simListeners: Set<() => void>;
 }
 
-export type LogicView = 'diagram' | 'table';
+export type LogicView = 'cards' | 'diagram' | 'table';
 const VIEW_KEY = 'mat-studio.logic-view';
 
 function readView(): LogicView {
   try {
-    return globalThis.localStorage?.getItem(VIEW_KEY) === 'table' ? 'table' : 'diagram';
+    // Feature 043: mặc định là "Luật" (thẻ dạng câu); Sơ đồ và Bảng là chế độ Nâng cao.
+    const v = globalThis.localStorage?.getItem(VIEW_KEY);
+    return v === 'table' || v === 'diagram' ? v : 'cards';
   } catch {
-    return 'diagram';
+    return 'cards';
   }
 }
 

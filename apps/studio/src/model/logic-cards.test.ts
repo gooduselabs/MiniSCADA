@@ -17,6 +17,7 @@ import {
   writeRuleCard,
   writeTimerCard,
   type RuleCard,
+  type TimeTrigger,
 } from './logic-cards.ts';
 import { checkLogicDoc } from './logic-doc.ts';
 import { LOGIC_TAGS, pumpLogic } from './logic-fixtures.ts';
@@ -172,7 +173,10 @@ describe('mẫu và sửa ô', () => {
     card = ruleCard(doc, r.id);
     doc = writeRuleCard(
       doc,
-      { ...card, trigger: { ...(card.trigger as never), from: '06:30', days: [1, 2, 3, 4, 5] } },
+      {
+        ...card,
+        trigger: { ...(card.trigger as TimeTrigger), from: '06:30', days: [1, 2, 3, 4, 5] },
+      },
       TAGS,
     );
     expect(doc.schedules![0]!.weekly[0]).toEqual({

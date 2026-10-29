@@ -32,6 +32,7 @@ import { viRecipes } from './vi-recipes.ts';
 import { viTemplate } from './vi-template.ts';
 import { viLogic } from './vi-logic.ts';
 import { viLogicDiagram } from './vi-logic-diagram.ts';
+import { viLogicCards } from './vi-logic-cards.ts';
 import { viUpdate } from './vi-update.ts';
 import { viDevset } from './vi-devset.ts';
 import { viNewProject } from './vi-newproject.ts';
@@ -503,6 +504,7 @@ export const viMessages = {
   ...viTemplate,
   ...viLogic,
   ...viLogicDiagram,
+  ...viLogicCards,
   ...viUpdate,
   ...viDevset,
   ...viS7,
